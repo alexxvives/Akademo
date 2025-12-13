@@ -2,12 +2,8 @@ import { requireAuth } from '@/lib/auth';
 import { getDB } from '@/lib/db';
 import { handleApiError, successResponse, errorResponse } from '@/lib/api-utils';
 
-export async function GET(
-  request: Request,
-  context: { params: Promise<Record<string, never>> }
-) {
+export async function GET(request: Request) {
   try {
-    await context.params; // Ensure params are awaited even if empty
     const session = await requireAuth();
     const { searchParams } = new URL(request.url);
     const videoId = searchParams.get('videoId');

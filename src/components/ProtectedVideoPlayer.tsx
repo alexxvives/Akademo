@@ -89,16 +89,50 @@ export default function ProtectedVideoPlayer({
     }
   };
 
-  // Track play time - increment from same event as currentTime for perfect sync
-  const lastRecordedTime = useRef<number>(0);
+  // Track play time - increment every second when playing
+  const watchTimeInterval = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Save any remaining time when paused
-    if (!isPlaying && playTimeTracker.current > 0) {
-      saveProgress(playTimeTracker.current);
-      playTimeTracker.current = 0;
+    // Clear any existing interval
+    if (watchTimeInterval.current) {
+      clearInterval(watchTimeInterval.current);
+      watchTimeInterval.current = null;
     }
-  }, [isPlaying]);
+
+    // Start tracking if playing and not unlimited user
+    if (isPlaying && !isUnlimitedUser && canPlay) {
+      watchTimeInterval.current = setInterval(() => {
+        setPlayState(prev => {
+          const newTotalTime = (prev?.totalWatchTimeSeconds || 0) + 1;
+          return {
+            ...prev,
+            totalWatchTimeSeconds: newTotalTime,
+            sessionStartTime: prev?.sessionStartTime || new Date().toISOString(),
+          };
+        });
+        
+        playTimeTracker.current += 1;
+        
+        // Save every 5 seconds
+        if (playTimeTracker.current >= 5) {
+          saveProgress(playTimeTracker.current);
+          playTimeTracker.current = 0;
+        }
+      }, 1000);
+    } else {
+      // Save any remaining time when paused
+      if (playTimeTracker.current > 0) {
+        saveProgress(playTimeTracker.current);
+        playTimeTracker.current = 0;
+      }
+    }
+
+    return () => {
+      if (watchTimeInterval.current) {
+        clearInterval(watchTimeInterval.current);
+      }
+    };
+  }, [isPlaying, isUnlimitedUser, canPlay]);
 
   // Update current time and detect duration
   useEffect(() => {
@@ -108,31 +142,6 @@ export default function ProtectedVideoPlayer({
     const handleTimeUpdate = () => {
       const newCurrentTime = video.currentTime;
       setCurrentTime(newCurrentTime);
-      
-      // Increment watch time in sync with current time (only when playing and not unlimited user)
-      if (isPlaying && !isUnlimitedUser) {
-        const elapsed = Math.floor(newCurrentTime) - lastRecordedTime.current;
-        if (elapsed >= 1) {
-          lastRecordedTime.current = Math.floor(newCurrentTime);
-          
-          setPlayState(prev => {
-            const newTotalTime = (prev?.totalWatchTimeSeconds || 0) + elapsed;
-            return {
-              ...prev,
-              totalWatchTimeSeconds: newTotalTime,
-              sessionStartTime: prev?.sessionStartTime || new Date().toISOString(),
-            };
-          });
-          
-          playTimeTracker.current += elapsed;
-          
-          // Save every 5 seconds
-          if (playTimeTracker.current >= 5) {
-            saveProgress(playTimeTracker.current);
-            playTimeTracker.current = 0;
-          }
-        }
-      }
       
       // Enforce time limit strictly - pause if limit reached
       if (!canPlay && isPlaying) {
