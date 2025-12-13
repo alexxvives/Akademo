@@ -466,15 +466,15 @@ export const playStateQueries = {
     
     // Use INSERT OR IGNORE to prevent duplicates if UNIQUE constraint fails
     await db.prepare(`
-      INSERT OR IGNORE INTO VideoPlayState (id, videoId, studentId, totalWatchTimeSeconds, lastPositionSeconds, sessionStartTime, lastWatchedAt, createdAt, updatedAt)
-      VALUES (?, ?, ?, 0, 0, ?, ?, ?, ?)
+      INSERT OR IGNORE INTO VideoPlayState (id, videoId, studentId, totalWatchTimeSeconds, lastPositionSeconds, status, sessionStartTime, lastWatchedAt, createdAt, updatedAt)
+      VALUES (?, ?, ?, 0, 0, 'ACTIVE', ?, ?, ?, ?)
     `).bind(id, videoId, studentId, now, now, now, now).run();
     
     // Return the record (either just created or existing)
     return this.findByVideoAndStudent(videoId, studentId);
   },
 
-  async upsert(videoId: string, studentId: string, data: { totalWatchTimeSeconds?: number; lastPositionSeconds?: number }) {
+  async upsert(videoId: string, studentId: string, data: { totalWatchTimeSeconds?: number; lastPositionSeconds?: number; status?: string }) {
     const db = await getDB();
     const existing = await this.findByVideoAndStudent(videoId, studentId);
     const now = new Date().toISOString();
@@ -484,6 +484,7 @@ export const playStateQueries = {
         UPDATE VideoPlayState 
         SET totalWatchTimeSeconds = ?, 
             lastPositionSeconds = ?, 
+            status = ?,
             sessionStartTime = COALESCE(sessionStartTime, ?),
             lastWatchedAt = ?, 
             updatedAt = ?
@@ -491,14 +492,15 @@ export const playStateQueries = {
       `).bind(
         data.totalWatchTimeSeconds ?? (existing as any).totalWatchTimeSeconds,
         data.lastPositionSeconds ?? (existing as any).lastPositionSeconds,
+        data.status ?? (existing as any).status,
         now, now, now, videoId, studentId
       ).run();
     } else {
       const id = generateId();
       await db.prepare(`
-        INSERT INTO VideoPlayState (id, videoId, studentId, totalWatchTimeSeconds, lastPositionSeconds, sessionStartTime, lastWatchedAt, createdAt, updatedAt)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).bind(id, videoId, studentId, data.totalWatchTimeSeconds || 0, data.lastPositionSeconds || 0, now, now, now, now).run();
+        INSERT INTO VideoPlayState (id, videoId, studentId, totalWatchTimeSeconds, lastPositionSeconds, status, sessionStartTime, lastWatchedAt, createdAt, updatedAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(id, videoId, studentId, data.totalWatchTimeSeconds || 0, data.lastPositionSeconds || 0, data.status || 'ACTIVE', now, now, now, now).run();
     }
     
     return this.findByVideoAndStudent(videoId, studentId);

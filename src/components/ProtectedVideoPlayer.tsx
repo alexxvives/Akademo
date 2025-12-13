@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 interface VideoPlayState {
   totalWatchTimeSeconds: number;
   sessionStartTime: string | null;
+  status?: string;
 }
 
 interface ProtectedVideoPlayerProps {
@@ -38,7 +39,7 @@ export default function ProtectedVideoPlayer({
   const [showControls, setShowControls] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [videoDuration, setVideoDuration] = useState(durationSeconds);
-  const [isLocked, setIsLocked] = useState(false);
+  const [isLocked, setIsLocked] = useState(initialPlayState?.status === 'BLOCKED');
 
   // Teachers and admins have unlimited watch time
   const isUnlimitedUser = userRole === 'TEACHER' || userRole === 'ADMIN';
@@ -88,51 +89,16 @@ export default function ProtectedVideoPlayer({
     }
   };
 
-  // Track play time - simplified approach
+  // Track play time - increment from same event as currentTime for perfect sync
+  const lastRecordedTime = useRef<number>(0);
+
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-
-    if (isPlaying && canPlay) {
-      interval = setInterval(() => {
-        // Increment watch time by 1 second (simple, like currentTime)
-        setPlayState(prev => {
-          const newTotalTime = (prev?.totalWatchTimeSeconds || 0) + 1;
-          return {
-            ...prev,
-            totalWatchTimeSeconds: newTotalTime,
-            sessionStartTime: prev?.sessionStartTime || new Date().toISOString(),
-          };
-        });
-        
-        // Track for API save
-        playTimeTracker.current += 1;
-        
-        // Check if limit reached (only for students)
-        if (!isUnlimitedUser && playState && playState.totalWatchTimeSeconds >= maxWatchTimeSeconds) {
-          if (videoRef.current) {
-            videoRef.current.pause();
-            setIsPlaying(false);
-          }
-        }
-
-        // Save every 5 seconds
-        if (playTimeTracker.current >= 5) {
-          saveProgress(playTimeTracker.current);
-          playTimeTracker.current = 0;
-        }
-      }, 1000);
-    } else {
-      // Save any remaining time when paused
-      if (playTimeTracker.current > 0) {
-        saveProgress(playTimeTracker.current);
-        playTimeTracker.current = 0;
-      }
+    // Save any remaining time when paused
+    if (!isPlaying && playTimeTracker.current > 0) {
+      saveProgress(playTimeTracker.current);
+      playTimeTracker.current = 0;
     }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isPlaying, canPlay, isUnlimitedUser, maxWatchTimeSeconds, playState]);
+  }, [isPlaying]);
 
   // Update current time and detect duration
   useEffect(() => {
@@ -140,12 +106,39 @@ export default function ProtectedVideoPlayer({
     if (!video) return;
 
     const handleTimeUpdate = () => {
-      setCurrentTime(video.currentTime);
+      const newCurrentTime = video.currentTime;
+      setCurrentTime(newCurrentTime);
+      
+      // Increment watch time in sync with current time (only when playing and not unlimited user)
+      if (isPlaying && !isUnlimitedUser) {
+        const elapsed = Math.floor(newCurrentTime) - lastRecordedTime.current;
+        if (elapsed >= 1) {
+          lastRecordedTime.current = Math.floor(newCurrentTime);
+          
+          setPlayState(prev => {
+            const newTotalTime = (prev?.totalWatchTimeSeconds || 0) + elapsed;
+            return {
+              ...prev,
+              totalWatchTimeSeconds: newTotalTime,
+              sessionStartTime: prev?.sessionStartTime || new Date().toISOString(),
+            };
+          });
+          
+          playTimeTracker.current += elapsed;
+          
+          // Save every 5 seconds
+          if (playTimeTracker.current >= 5) {
+            saveProgress(playTimeTracker.current);
+            playTimeTracker.current = 0;
+          }
+        }
+      }
       
       // Enforce time limit strictly - pause if limit reached
       if (!canPlay && isPlaying) {
         video.pause();
         setIsPlaying(false);
+        setIsLocked(true);
       }
     };
 
@@ -156,8 +149,8 @@ export default function ProtectedVideoPlayer({
     };
 
     const handlePlay = () => {
-      // Prevent play if limit reached
-      if (!canPlay) {
+      // Prevent play if limit reached or locked
+      if (!canPlay || isLocked) {
         video.pause();
         setIsPlaying(false);
         return;
@@ -367,7 +360,7 @@ export default function ProtectedVideoPlayer({
             />
             <div className="flex justify-between text-xs text-white mt-1">
               <span>{formatTime(currentTime)} / {formatTime(videoDuration || durationSeconds)}</span>
-              <span>Watch time remaining: {formatTime(watchTimeRemaining)}</span>
+              <span>{formatTime(watchTimeRemaining)}</span>
             </div>
           </div>
 

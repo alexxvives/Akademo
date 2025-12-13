@@ -28,12 +28,25 @@ export async function POST(request: Request) {
       return errorResponse('Play state not found', 404);
     }
 
+    // Check if already blocked
+    if (playState.status === 'BLOCKED') {
+      return errorResponse('Video access blocked - watch time limit reached', 403);
+    }
+
     // Update watch time
     const newTotalWatchTime = playState.totalWatchTimeSeconds + data.watchTimeElapsed;
+
+    // Check if need to block (get video to check limit)
+    const { videoQueries } = await import('@/lib/db');
+    const video = await videoQueries.findById(data.videoId) as any;
+    const maxWatchTime = video ? (video.durationSeconds * video.maxWatchTimeMultiplier) : Infinity;
+    
+    const shouldBlock = newTotalWatchTime >= maxWatchTime;
 
     const updatedPlayState = await playStateQueries.upsert(data.videoId, data.studentId, {
       totalWatchTimeSeconds: newTotalWatchTime,
       lastPositionSeconds: data.currentPositionSeconds,
+      status: shouldBlock ? 'BLOCKED' : 'ACTIVE',
     });
 
     return Response.json(

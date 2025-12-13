@@ -33,9 +33,11 @@ export async function GET(
 
     // Get or create play state (only for students)
     if (session.role === 'STUDENT') {
-      let playState = await playStateQueries.findByVideoAndStudent(id, session.id);
+      let playState = await playStateQueries.findByVideoAndStudent(id, session.id) as any;
       if (!playState) {
         await playStateQueries.create(id, session.id);
+      } else if (playState.status === 'BLOCKED') {
+        return errorResponse('Video access blocked - watch time limit reached', 403);
       }
     }
 

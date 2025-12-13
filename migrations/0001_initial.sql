@@ -113,6 +113,7 @@ CREATE TABLE IF NOT EXISTS VideoPlayState (
   studentId TEXT NOT NULL,
   totalWatchTimeSeconds REAL NOT NULL DEFAULT 0,
   lastPositionSeconds REAL NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'ACTIVE',
   sessionStartTime TEXT,
   lastWatchedAt TEXT,
   createdAt TEXT NOT NULL DEFAULT (datetime('now')),
