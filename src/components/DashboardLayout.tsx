@@ -28,10 +28,13 @@ export default function DashboardLayout({
     checkAuth();
     
     if (role === 'STUDENT') {
-      const interval = setInterval(checkSession, 30000);
+      // Create initial device session
+      fetch('/api/session/check', { method: 'POST' });
+      // Then check every 10 seconds for faster logout detection
+      const interval = setInterval(checkSession, 10000);
       return () => clearInterval(interval);
     }
-  }, []);
+  }, [role]);
 
   const checkAuth = async () => {
     try {

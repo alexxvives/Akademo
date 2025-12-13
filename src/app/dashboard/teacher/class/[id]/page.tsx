@@ -50,12 +50,23 @@ export default function TeacherClassPage() {
   const [uploading, setUploading] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [editingVideo, setEditingVideo] = useState<string | null>(null);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
 
   const [videoFormData, setVideoFormData] = useState({
     title: '',
     description: '',
     maxWatchTimeMultiplier: 2.0,
     file: null as File | null,
+    durationSeconds: null as number | null,
+  });
+
+  const [editVideoFormData, setEditVideoFormData] = useState({
+    title: '',
+    description: '',
+    maxWatchTimeMultiplier: 2.0,
   });
 
   const [documentFormData, setDocumentFormData] = useState({
@@ -104,12 +115,15 @@ export default function TeacherClassPage() {
       formData.append('description', videoFormData.description);
       formData.append('classId', classId);
       formData.append('maxWatchTimeMultiplier', videoFormData.maxWatchTimeMultiplier.toString());
+      if (videoFormData.durationSeconds) {
+        formData.append('durationSeconds', videoFormData.durationSeconds.toString());
+      }
 
       const response = await fetch('/api/videos', { method: 'POST', body: formData });
       const result = await response.json();
 
       if (result.success) {
-        setVideoFormData({ title: '', description: '', maxWatchTimeMultiplier: 2.0, file: null });
+        setVideoFormData({ title: '', description: '', maxWatchTimeMultiplier: 2.0, file: null, durationSeconds: null });
         setShowVideoForm(false);
         loadClass();
       } else {
@@ -149,6 +163,91 @@ export default function TeacherClassPage() {
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleVideoEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingVideo) return;
+    
+    setUploading(true);
+    try {
+      const response = await fetch(`/api/videos/${editingVideo}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editVideoFormData),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setEditingVideo(null);
+        loadClass();
+      } else {
+        alert(result.message || 'Failed to update video');
+      }
+    } catch (error) {
+      alert('An error occurred while updating');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleVideoDelete = async (videoId: string) => {
+    if (!confirm('Are you sure you want to delete this video? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/videos/${videoId}`, {
+        method: 'DELETE',
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setSelectedVideo(null);
+        loadClass();
+      } else {
+        alert(result.message || 'Failed to delete video');
+      }
+    } catch (error) {
+      alert('An error occurred while deleting');
+    }
+  };
+
+  const startEditingVideo = (video: any) => {
+    setEditingVideo(video.id);
+    setEditVideoFormData({
+      title: video.title,
+      description: video.description || '',
+      maxWatchTimeMultiplier: video.maxWatchTimeMultiplier,
+    });
+  };
+
+  const loadAnalytics = async () => {
+    setAnalyticsLoading(true);
+    try {
+      const response = await fetch(`/api/analytics?classId=${classId}`);
+      const result = await response.json();
+      if (result.success) {
+        setAnalyticsData(result.data);
+      }
+    } catch (error) {
+      console.error('Failed to load analytics:', error);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
+
+  const formatDuration = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    }
+    if (minutes > 0) {
+      return `${minutes}m ${secs}s`;
+    }
+    return `${secs}s`;
   };
 
   if (loading) {
@@ -205,6 +304,12 @@ export default function TeacherClassPage() {
           >
             + Upload Document
           </button>
+          <button
+            onClick={() => { setShowAnalytics(!showAnalytics); if (!showAnalytics) loadAnalytics(); }}
+            className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-all ${showAnalytics ? 'bg-green-600 text-white' : 'bg-white border border-gray-200 text-gray-700 hover:border-gray-300'}`}
+          >
+            📊 View Analytics
+          </button>
         </div>
 
         {/* Video Upload Form */}
@@ -225,7 +330,20 @@ export default function TeacherClassPage() {
                       e.target.value = '';
                       return;
                     }
-                    setVideoFormData({ ...videoFormData, file });
+                    
+                    // Extract video duration
+                    if (file) {
+                      const video = document.createElement('video');
+                      video.preload = 'metadata';
+                      video.onloadedmetadata = () => {
+                        window.URL.revokeObjectURL(video.src);
+                        const duration = Math.floor(video.duration);
+                        setVideoFormData({ ...videoFormData, file, durationSeconds: duration });
+                      };
+                      video.src = URL.createObjectURL(file);
+                    } else {
+                      setVideoFormData({ ...videoFormData, file, durationSeconds: null });
+                    }
                   }}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
                 />
@@ -275,6 +393,65 @@ export default function TeacherClassPage() {
           </form>
         )}
 
+        {/* Edit Video Modal */}
+        {editingVideo && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl max-w-md w-full p-6">
+              <h3 className="font-semibold text-gray-900 mb-4">Edit Video</h3>
+              <form onSubmit={handleVideoEdit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Title</label>
+                  <input
+                    type="text"
+                    required
+                    value={editVideoFormData.title}
+                    onChange={(e) => setEditVideoFormData({ ...editVideoFormData, title: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
+                  <textarea
+                    value={editVideoFormData.description}
+                    onChange={(e) => setEditVideoFormData({ ...editVideoFormData, description: e.target.value })}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Watch Time Multiplier</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="10"
+                    step="0.5"
+                    value={editVideoFormData.maxWatchTimeMultiplier}
+                    onChange={(e) => setEditVideoFormData({ ...editVideoFormData, maxWatchTimeMultiplier: parseFloat(e.target.value) })}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Students can watch for this many times the video duration</p>
+                </div>
+                <div className="flex gap-3">
+                  <button 
+                    type="submit" 
+                    disabled={uploading}
+                    className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm disabled:opacity-50"
+                  >
+                    {uploading ? 'Saving...' : 'Save Changes'}
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => setEditingVideo(null)}
+                    className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-600 hover:text-gray-900 rounded-lg font-medium text-sm"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
         {/* Document Upload Form */}
         {showDocumentForm && (
           <form onSubmit={handleDocumentUpload} className="bg-white rounded-xl border border-gray-200 p-5">
@@ -319,6 +496,69 @@ export default function TeacherClassPage() {
               </div>
             </div>
           </form>
+        )}
+
+        {/* Analytics Panel */}
+        {showAnalytics && (
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <h3 className="font-semibold text-gray-900 mb-4">📊 Class Analytics</h3>
+            {analyticsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="w-6 h-6 border-2 border-gray-200 border-t-blue-600 rounded-full animate-spin" />
+              </div>
+            ) : analyticsData ? (
+              <div className="space-y-6">
+                {/* Video Stats */}
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-3">Video Watch Statistics</h4>
+                  <div className="space-y-2">
+                    {analyticsData.videos.map((video: any) => (
+                      <div key={video.id} className="bg-gray-50 rounded-lg p-3">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="font-medium text-sm">{video.title}</div>
+                          <div className="text-xs text-gray-500">{video.studentsWatched || 0} students</div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                          <div>
+                            <div className="text-gray-500">Avg Watch Time</div>
+                            <div className="font-medium">{formatDuration(video.avgWatchTime || 0)}</div>
+                          </div>
+                          <div>
+                            <div className="text-gray-500">Total Watch Time</div>
+                            <div className="font-medium">{formatDuration(video.totalWatchTime || 0)}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Student Engagement */}
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-3">Student Engagement</h4>
+                  <div className="space-y-2">
+                    {analyticsData.studentEngagement.map((student: any) => (
+                      <div key={student.studentId} className="bg-gray-50 rounded-lg p-3">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="font-medium text-sm">{student.firstName} {student.lastName}</div>
+                            <div className="text-xs text-gray-500">{student.email}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-xs text-gray-500">Watch Time</div>
+                            <div className="font-medium text-sm">{formatDuration(student.totalWatchTime || 0)}</div>
+                            <div className="text-xs text-gray-500 mt-1">{student.videosWatched || 0} videos</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">No analytics data available</div>
+            )}
+          </div>
         )}
 
         {/* Videos List */}
@@ -377,11 +617,13 @@ export default function TeacherClassPage() {
               {classData.videos.map((video) => (
                 <div 
                   key={video.id} 
-                  className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-blue-300 transition-all cursor-pointer"
-                  onClick={() => setSelectedVideo(video.id)}
+                  className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-blue-300 transition-all"
                 >
                   {/* Video Thumbnail */}
-                  <div className="aspect-video bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center relative group">
+                  <div 
+                    className="aspect-video bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center relative group cursor-pointer"
+                    onClick={() => setSelectedVideo(video.id)}
+                  >
                     <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
                       <svg className="w-7 h-7 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M8 5v14l11-7z" />
@@ -398,10 +640,32 @@ export default function TeacherClassPage() {
                     {video.description && (
                       <p className="text-sm text-gray-500 line-clamp-2 mb-3">{video.description}</p>
                     )}
-                    <div className="flex gap-3 text-xs text-gray-500">
+                    <div className="flex gap-3 text-xs text-gray-500 mb-3">
                       <span>Watch limit: {video.maxWatchTimeMultiplier}×</span>
                       <span>•</span>
                       <span>{new Date(video.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          startEditingVideo(video);
+                        }}
+                        className="flex-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded text-xs font-medium transition-colors"
+                      >
+                        ✏️ Edit
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleVideoDelete(video.id);
+                        }}
+                        className="flex-1 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded text-xs font-medium transition-colors"
+                      >
+                        🗑️ Delete
+                      </button>
                     </div>
                   </div>
                 </div>

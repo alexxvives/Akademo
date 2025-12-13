@@ -13,6 +13,7 @@ export async function POST(request: Request) {
     const description = formData.get('description') as string;
     const classId = formData.get('classId') as string;
     const maxWatchTimeMultiplier = formData.get('maxWatchTimeMultiplier') as string;
+    const durationSeconds = formData.get('durationSeconds') as string;
 
     if (!file || !title || !classId) {
       return errorResponse('Missing required fields');
@@ -49,6 +50,7 @@ export async function POST(request: Request) {
       description: description || undefined,
       classId,
       uploadId: upload.id,
+      durationSeconds: durationSeconds ? parseFloat(durationSeconds) : undefined,
       maxWatchTimeMultiplier: maxWatchTimeMultiplier ? parseFloat(maxWatchTimeMultiplier) : 2.0,
     });
 

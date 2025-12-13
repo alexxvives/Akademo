@@ -31,10 +31,12 @@ export async function GET(
       }
     }
 
-    // Get or create play state
-    let playState = await playStateQueries.findByVideoAndStudent(id, session.id);
-    if (!playState) {
-      await playStateQueries.create(id, session.id);
+    // Get or create play state (only for students)
+    if (session.role === 'STUDENT') {
+      let playState = await playStateQueries.findByVideoAndStudent(id, session.id);
+      if (!playState) {
+        await playStateQueries.create(id, session.id);
+      }
     }
 
     // Serve video file from R2

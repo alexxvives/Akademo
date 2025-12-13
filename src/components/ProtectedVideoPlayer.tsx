@@ -38,6 +38,7 @@ export default function ProtectedVideoPlayer({
   const [showControls, setShowControls] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [videoDuration, setVideoDuration] = useState(durationSeconds);
+  const [isLocked, setIsLocked] = useState(false);
 
   // Teachers and admins have unlimited watch time
   const isUnlimitedUser = userRole === 'TEACHER' || userRole === 'ADMIN';
@@ -46,13 +47,21 @@ export default function ProtectedVideoPlayer({
   const maxWatchTimeSeconds = isUnlimitedUser ? Infinity : effectiveDuration * maxWatchTimeMultiplier;
   const watchTimeRemaining = isUnlimitedUser ? Infinity : Math.max(0, maxWatchTimeSeconds - (playState?.totalWatchTimeSeconds || 0));
   // If duration is 0, allow unlimited playback until duration is detected
-  const canPlay = isUnlimitedUser || effectiveDuration === 0 || watchTimeRemaining > 0;
+  const canPlay = !isLocked && (isUnlimitedUser || effectiveDuration === 0 || watchTimeRemaining > 0);
+
+  // Lock video when limit reached
+  useEffect(() => {
+    if (!isUnlimitedUser && watchTimeRemaining <= 0 && effectiveDuration > 0) {
+      setIsLocked(true);
+      if (videoRef.current && !videoRef.current.paused) {
+        videoRef.current.pause();
+      }
+    }
+  }, [watchTimeRemaining, isUnlimitedUser, effectiveDuration]);
 
   // Save progress to server
   const saveProgress = async (elapsedSeconds: number) => {
     if (elapsedSeconds <= 0) return;
-    // Don't track for unlimited users
-    if (isUnlimitedUser) return;
 
     try {
       const response = await fetch('/api/video/progress', {
@@ -71,30 +80,40 @@ export default function ProtectedVideoPlayer({
         throw new Error(data.error || 'Failed to save progress');
       }
 
-      const data = await response.json();
-      if (data.success && data.data.playState) {
-        setPlayState(data.data.playState);
-      }
+      // Don't update local state with API response - causes jumps
+      // Local state already has the latest accumulated time
     } catch (err) {
       console.error('Failed to save progress:', err);
       // Don't set error for progress save failures to avoid disrupting playback
     }
   };
 
-  // Track play time
+  // Track play time - simplified approach
   useEffect(() => {
     let interval: NodeJS.Timeout;
 
     if (isPlaying && canPlay) {
       interval = setInterval(() => {
-        const now = Date.now();
+        // Increment watch time by 1 second (simple, like currentTime)
+        setPlayState(prev => {
+          const newTotalTime = (prev?.totalWatchTimeSeconds || 0) + 1;
+          return {
+            ...prev,
+            totalWatchTimeSeconds: newTotalTime,
+            sessionStartTime: prev?.sessionStartTime || new Date().toISOString(),
+          };
+        });
         
-        if (lastUpdateTime.current !== null) {
-          const elapsed = (now - lastUpdateTime.current) / 1000;
-          playTimeTracker.current += elapsed;
+        // Track for API save
+        playTimeTracker.current += 1;
+        
+        // Check if limit reached (only for students)
+        if (!isUnlimitedUser && playState && playState.totalWatchTimeSeconds >= maxWatchTimeSeconds) {
+          if (videoRef.current) {
+            videoRef.current.pause();
+            setIsPlaying(false);
+          }
         }
-        
-        lastUpdateTime.current = now;
 
         // Save every 5 seconds
         if (playTimeTracker.current >= 5) {
@@ -108,21 +127,12 @@ export default function ProtectedVideoPlayer({
         saveProgress(playTimeTracker.current);
         playTimeTracker.current = 0;
       }
-      lastUpdateTime.current = null;
     }
 
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isPlaying, canPlay]);
-
-  // Check if watch time limit reached
-  useEffect(() => {
-    if (!canPlay && isPlaying && videoRef.current) {
-      videoRef.current.pause();
-      setIsPlaying(false);
-    }
-  }, [canPlay, isPlaying]);
+  }, [isPlaying, canPlay, isUnlimitedUser, maxWatchTimeSeconds, playState]);
 
   // Update current time and detect duration
   useEffect(() => {
@@ -131,6 +141,12 @@ export default function ProtectedVideoPlayer({
 
     const handleTimeUpdate = () => {
       setCurrentTime(video.currentTime);
+      
+      // Enforce time limit strictly - pause if limit reached
+      if (!canPlay && isPlaying) {
+        video.pause();
+        setIsPlaying(false);
+      }
     };
 
     const handleLoadedMetadata = () => {
@@ -139,8 +155,24 @@ export default function ProtectedVideoPlayer({
       }
     };
 
+    const handlePlay = () => {
+      // Prevent play if limit reached
+      if (!canPlay) {
+        video.pause();
+        setIsPlaying(false);
+        return;
+      }
+      setIsPlaying(true);
+    };
+
+    const handlePause = () => {
+      setIsPlaying(false);
+    };
+
     video.addEventListener('timeupdate', handleTimeUpdate);
     video.addEventListener('loadedmetadata', handleLoadedMetadata);
+    video.addEventListener('play', handlePlay);
+    video.addEventListener('pause', handlePause);
     
     // Check if metadata already loaded
     if (video.duration && !isNaN(video.duration) && video.duration !== Infinity) {
@@ -150,8 +182,10 @@ export default function ProtectedVideoPlayer({
     return () => {
       video.removeEventListener('timeupdate', handleTimeUpdate);
       video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      video.removeEventListener('play', handlePlay);
+      video.removeEventListener('pause', handlePause);
     };
-  }, []);
+  }, [canPlay, isPlaying]);
 
   // Prevent context menu
   useEffect(() => {
@@ -185,7 +219,7 @@ export default function ProtectedVideoPlayer({
   };
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!videoRef.current || !canPlay) return;
+    if (!videoRef.current) return;
     
     const newTime = parseFloat(e.target.value);
     videoRef.current.currentTime = newTime;
@@ -193,9 +227,9 @@ export default function ProtectedVideoPlayer({
   };
 
   const skipTime = (seconds: number) => {
-    if (!videoRef.current || !canPlay) return;
+    if (!videoRef.current) return;
     
-    const newTime = Math.max(0, Math.min(durationSeconds, currentTime + seconds));
+    const newTime = Math.max(0, Math.min(videoDuration || durationSeconds, currentTime + seconds));
     videoRef.current.currentTime = newTime;
     setCurrentTime(newTime);
   };
@@ -215,6 +249,8 @@ export default function ProtectedVideoPlayer({
   };
 
   const formatTime = (seconds: number): string => {
+    if (!isFinite(seconds)) return 'Unlimited';
+    
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = Math.floor(seconds % 60);
@@ -224,6 +260,8 @@ export default function ProtectedVideoPlayer({
     }
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
   };
+
+
 
   if (!canPlay) {
     return (
@@ -251,27 +289,15 @@ export default function ProtectedVideoPlayer({
           
           <p className="text-gray-600 mb-6">
             You've used all {formatTime(maxWatchTimeSeconds)} of watch time for this video.
-            You can restart the video to watch again.
+            Please contact your teacher if you need more time.
           </p>
           
-          <div className="bg-white rounded-lg p-4 mb-6 border border-gray-200">
+          <div className="bg-white rounded-lg p-4 border border-gray-200">
             <div className="text-sm text-gray-500 mb-1">Total Watch Time Used</div>
             <div className="text-2xl font-bold text-gray-900">
               {formatTime(playState?.totalWatchTimeSeconds || 0)} / {formatTime(maxWatchTimeSeconds)}
             </div>
           </div>
-          
-          <button
-            onClick={handleRestart}
-            className="px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 
-                     transition-colors font-medium"
-          >
-            Restart Video
-          </button>
-          
-          <p className="text-xs text-gray-500 mt-4">
-            Note: Restarting allows unlimited reviews, but watch time continues to accumulate
-          </p>
         </div>
       </div>
     );
@@ -313,6 +339,7 @@ export default function ProtectedVideoPlayer({
           onPause={() => setIsPlaying(false)}
           controlsList="nodownload nofullscreen"
           disablePictureInPicture
+          style={{ pointerEvents: isLocked ? 'none' : 'auto' }}
         />
 
         {/* Custom Controls */}
@@ -327,7 +354,7 @@ export default function ProtectedVideoPlayer({
             <input
               type="range"
               min="0"
-              max={durationSeconds}
+              max={videoDuration || durationSeconds}
               value={currentTime}
               onChange={handleSeek}
               className="w-full h-1.5 bg-white/30 rounded-lg appearance-none cursor-pointer 
@@ -339,7 +366,7 @@ export default function ProtectedVideoPlayer({
                        [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
             />
             <div className="flex justify-between text-xs text-white mt-1">
-              <span>{formatTime(currentTime)} / {formatTime(durationSeconds)}</span>
+              <span>{formatTime(currentTime)} / {formatTime(videoDuration || durationSeconds)}</span>
               <span>Watch time remaining: {formatTime(watchTimeRemaining)}</span>
             </div>
           </div>
@@ -389,18 +416,6 @@ export default function ProtectedVideoPlayer({
               </svg>
             </button>
 
-            {/* Restart */}
-            <button
-              onClick={handleRestart}
-              className="text-white hover:text-blue-300 transition-colors p-1 ml-2"
-              title="Restart video"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            </button>
-
             {/* Volume Control */}
             <div className="flex items-center gap-2 ml-auto">
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -446,19 +461,21 @@ export default function ProtectedVideoPlayer({
           </div>
         </div>
         
-        {/* Progress Bar for Total Watch Time */}
-        <div className="mt-4">
-          <div className="flex justify-between text-xs text-gray-500 mb-1">
-            <span>Watch Time Progress</span>
-            <span>{Math.round(((playState?.totalWatchTimeSeconds || 0) / maxWatchTimeSeconds) * 100)}%</span>
+        {/* Progress Bar for Total Watch Time - Only show for students */}
+        {!isUnlimitedUser && (
+          <div className="mt-4">
+            <div className="flex justify-between text-xs text-gray-500 mb-1">
+              <span>Watch Time Progress</span>
+              <span>{Math.round(((playState?.totalWatchTimeSeconds || 0) / maxWatchTimeSeconds) * 100)}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-1.5">
+              <div
+                className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
+                style={{ width: `${Math.min(100, ((playState?.totalWatchTimeSeconds || 0) / maxWatchTimeSeconds) * 100)}%` }}
+              />
+            </div>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-1.5">
-            <div
-              className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
-              style={{ width: `${Math.min(100, ((playState?.totalWatchTimeSeconds || 0) / maxWatchTimeSeconds) * 100)}%` }}
-            />
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
