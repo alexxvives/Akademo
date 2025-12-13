@@ -1,6 +1,5 @@
-import { promises as fs } from 'fs';
-import path from 'path';
 import { NextRequest } from 'next/server';
+import { getStorageAdapter } from '@/lib/storage';
 
 export async function GET(
   request: NextRequest,
@@ -10,31 +9,35 @@ export async function GET(
     const { key } = await params;
     const decodedKey = decodeURIComponent(key);
     
-    const uploadDir = process.env.UPLOAD_DIR || './uploads';
-    const filePath = path.join(uploadDir, decodedKey);
-
-    // Read file
-    const fileBuffer = await fs.readFile(filePath);
+    const storage = getStorageAdapter();
+    const object = await storage.getObject(decodedKey);
     
-    // Determine content type
-    const ext = path.extname(filePath).toLowerCase();
-    const contentTypes: { [key: string]: string } = {
-      '.mp4': 'video/mp4',
-      '.pdf': 'application/pdf',
-      '.jpg': 'image/jpeg',
-      '.jpeg': 'image/jpeg',
-      '.png': 'image/png',
-    };
+    if (!object) {
+      return new Response('File not found', { status: 404 });
+    }
 
-    const contentType = contentTypes[ext] || 'application/octet-stream';
+    // Determine content type from key extension if not in metadata
+    let contentType = object.contentType;
+    if (!contentType) {
+      const ext = decodedKey.split('.').pop()?.toLowerCase() || '';
+      const contentTypes: { [key: string]: string } = {
+        'mp4': 'video/mp4',
+        'pdf': 'application/pdf',
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'png': 'image/png',
+      };
+      contentType = contentTypes[ext] || 'application/octet-stream';
+    }
 
-    return new Response(fileBuffer, {
+    return new Response(object.body, {
       headers: {
         'Content-Type': contentType,
-        'Content-Length': fileBuffer.length.toString(),
+        'Content-Length': object.size.toString(),
       },
     });
   } catch (error) {
+    console.error('Error serving file:', error);
     return new Response('File not found', { status: 404 });
   }
 }

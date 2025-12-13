@@ -14,6 +14,7 @@ interface ProtectedVideoPlayerProps {
   maxWatchTimeMultiplier: number;
   durationSeconds: number;
   initialPlayState: VideoPlayState;
+  userRole?: string;
 }
 
 export default function ProtectedVideoPlayer({
@@ -23,6 +24,7 @@ export default function ProtectedVideoPlayer({
   maxWatchTimeMultiplier,
   durationSeconds,
   initialPlayState,
+  userRole,
 }: ProtectedVideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const lastSaveTimeRef = useRef<number>(0);
@@ -35,14 +37,22 @@ export default function ProtectedVideoPlayer({
   const [isPlaying, setIsPlaying] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [videoDuration, setVideoDuration] = useState(durationSeconds);
 
-  const maxWatchTimeSeconds = durationSeconds * maxWatchTimeMultiplier;
-  const watchTimeRemaining = Math.max(0, maxWatchTimeSeconds - playState.totalWatchTimeSeconds);
-  const canPlay = watchTimeRemaining > 0;
+  // Teachers and admins have unlimited watch time
+  const isUnlimitedUser = userRole === 'TEACHER' || userRole === 'ADMIN';
+  // Use video duration from metadata if durationSeconds is 0 or not set
+  const effectiveDuration = videoDuration || durationSeconds || 0;
+  const maxWatchTimeSeconds = isUnlimitedUser ? Infinity : effectiveDuration * maxWatchTimeMultiplier;
+  const watchTimeRemaining = isUnlimitedUser ? Infinity : Math.max(0, maxWatchTimeSeconds - (playState?.totalWatchTimeSeconds || 0));
+  // If duration is 0, allow unlimited playback until duration is detected
+  const canPlay = isUnlimitedUser || effectiveDuration === 0 || watchTimeRemaining > 0;
 
   // Save progress to server
   const saveProgress = async (elapsedSeconds: number) => {
     if (elapsedSeconds <= 0) return;
+    // Don't track for unlimited users
+    if (isUnlimitedUser) return;
 
     try {
       const response = await fetch('/api/video/progress', {
@@ -62,10 +72,12 @@ export default function ProtectedVideoPlayer({
       }
 
       const data = await response.json();
-      setPlayState(data.playState);
+      if (data.success && data.data.playState) {
+        setPlayState(data.data.playState);
+      }
     } catch (err) {
       console.error('Failed to save progress:', err);
-      setError(err instanceof Error ? err.message : 'Failed to save progress');
+      // Don't set error for progress save failures to avoid disrupting playback
     }
   };
 
@@ -112,7 +124,7 @@ export default function ProtectedVideoPlayer({
     }
   }, [canPlay, isPlaying]);
 
-  // Update current time
+  // Update current time and detect duration
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -121,8 +133,24 @@ export default function ProtectedVideoPlayer({
       setCurrentTime(video.currentTime);
     };
 
+    const handleLoadedMetadata = () => {
+      if (video.duration && !isNaN(video.duration) && video.duration !== Infinity) {
+        setVideoDuration(video.duration);
+      }
+    };
+
     video.addEventListener('timeupdate', handleTimeUpdate);
-    return () => video.removeEventListener('timeupdate', handleTimeUpdate);
+    video.addEventListener('loadedmetadata', handleLoadedMetadata);
+    
+    // Check if metadata already loaded
+    if (video.duration && !isNaN(video.duration) && video.duration !== Infinity) {
+      setVideoDuration(video.duration);
+    }
+    
+    return () => {
+      video.removeEventListener('timeupdate', handleTimeUpdate);
+      video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+    };
   }, []);
 
   // Prevent context menu
@@ -199,47 +227,49 @@ export default function ProtectedVideoPlayer({
 
   if (!canPlay) {
     return (
-      <div className="w-full bg-primary-50 border border-primary-200 rounded-lg p-8 text-center">
+      <div className="w-full bg-gray-50 border border-gray-200 rounded-xl p-8 text-center">
         <div className="max-w-md mx-auto">
-          <svg
-            className="mx-auto h-16 w-16 text-primary-400 mb-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg
+              className="h-8 w-8 text-gray-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
           
-          <h3 className="text-xl font-semibold text-primary-900 mb-2">
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">
             Watch Time Limit Reached
           </h3>
           
-          <p className="text-primary-700 mb-6">
+          <p className="text-gray-600 mb-6">
             You've used all {formatTime(maxWatchTimeSeconds)} of watch time for this video.
             You can restart the video to watch again.
           </p>
           
-          <div className="bg-white rounded-lg p-4 mb-6 border border-primary-100">
-            <div className="text-sm text-primary-600 mb-1">Total Watch Time Used</div>
-            <div className="text-2xl font-bold text-primary-900">
-              {formatTime(playState.totalWatchTimeSeconds)} / {formatTime(maxWatchTimeSeconds)}
+          <div className="bg-white rounded-lg p-4 mb-6 border border-gray-200">
+            <div className="text-sm text-gray-500 mb-1">Total Watch Time Used</div>
+            <div className="text-2xl font-bold text-gray-900">
+              {formatTime(playState?.totalWatchTimeSeconds || 0)} / {formatTime(maxWatchTimeSeconds)}
             </div>
           </div>
           
           <button
             onClick={handleRestart}
-            className="px-6 py-3 bg-primary-500 text-white rounded-lg hover:bg-primary-600 
-                     transition-colors font-medium shadow-sm"
+            className="px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 
+                     transition-colors font-medium"
           >
             Restart Video
           </button>
           
-          <p className="text-xs text-primary-500 mt-4">
+          <p className="text-xs text-gray-500 mt-4">
             Note: Restarting allows unlimited reviews, but watch time continues to accumulate
           </p>
         </div>
@@ -248,9 +278,9 @@ export default function ProtectedVideoPlayer({
   }
 
   return (
-    <div className="w-full bg-primary-50 rounded-lg overflow-hidden border border-primary-200 shadow-sm">
+    <div className="w-full bg-white rounded-xl overflow-hidden border border-gray-200">
       {error && (
-        <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
+        <div className="bg-red-50 border-l-4 border-red-400 p-4">
           <div className="flex">
             <div className="flex-shrink-0">
               <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -271,7 +301,7 @@ export default function ProtectedVideoPlayer({
       >
         {/* Watermark */}
         <div className="absolute top-4 right-4 bg-black/50 text-white px-3 py-1 rounded text-xs font-medium z-10 pointer-events-none">
-          Academy Hive
+          ACADEMO
         </div>
 
         {/* Video Element */}
@@ -303,9 +333,9 @@ export default function ProtectedVideoPlayer({
               className="w-full h-1.5 bg-white/30 rounded-lg appearance-none cursor-pointer 
                        [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 
                        [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full 
-                       [&::-webkit-slider-thumb]:bg-primary-500 [&::-webkit-slider-thumb]:cursor-pointer
+                       [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:cursor-pointer
                        [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 
-                       [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-primary-500 
+                       [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-blue-500 
                        [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
             />
             <div className="flex justify-between text-xs text-white mt-1">
@@ -318,7 +348,7 @@ export default function ProtectedVideoPlayer({
             {/* Skip Back 10s */}
             <button
               onClick={() => skipTime(-10)}
-              className="text-white hover:text-primary-300 transition-colors p-1"
+              className="text-white hover:text-blue-300 transition-colors p-1"
               title="Skip back 10 seconds"
             >
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -330,7 +360,7 @@ export default function ProtectedVideoPlayer({
             {/* Play/Pause */}
             <button
               onClick={handlePlayPause}
-              className="text-white hover:text-primary-300 transition-colors p-1"
+              className="text-white hover:text-blue-300 transition-colors p-1"
             >
               {isPlaying ? (
                 <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -350,7 +380,7 @@ export default function ProtectedVideoPlayer({
             {/* Skip Forward 10s */}
             <button
               onClick={() => skipTime(10)}
-              className="text-white hover:text-primary-300 transition-colors p-1"
+              className="text-white hover:text-blue-300 transition-colors p-1"
               title="Skip forward 10 seconds"
             >
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -362,7 +392,7 @@ export default function ProtectedVideoPlayer({
             {/* Restart */}
             <button
               onClick={handleRestart}
-              className="text-white hover:text-primary-300 transition-colors p-1 ml-2"
+              className="text-white hover:text-blue-300 transition-colors p-1 ml-2"
               title="Restart video"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -398,34 +428,34 @@ export default function ProtectedVideoPlayer({
       </div>
 
       {/* Stats Panel */}
-      <div className="p-4 bg-white border-t border-primary-100">
+      <div className="p-4 bg-gray-50 border-t border-gray-200">
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
-            <div className="text-sm text-primary-600 mb-1">Current Position</div>
-            <div className="text-lg font-semibold text-primary-900">{formatTime(currentTime)}</div>
+            <div className="text-xs text-gray-500 mb-1">Current Position</div>
+            <div className="text-sm font-semibold text-gray-900">{formatTime(currentTime)}</div>
           </div>
           <div>
-            <div className="text-sm text-primary-600 mb-1">Total Watch Time</div>
-            <div className="text-lg font-semibold text-primary-900">
-              {formatTime(playState.totalWatchTimeSeconds)}
+            <div className="text-xs text-gray-500 mb-1">Total Watch Time</div>
+            <div className="text-sm font-semibold text-gray-900">
+              {formatTime(playState?.totalWatchTimeSeconds || 0)}
             </div>
           </div>
           <div>
-            <div className="text-sm text-primary-600 mb-1">Time Remaining</div>
-            <div className="text-lg font-semibold text-primary-900">{formatTime(watchTimeRemaining)}</div>
+            <div className="text-xs text-gray-500 mb-1">Time Remaining</div>
+            <div className="text-sm font-semibold text-gray-900">{formatTime(watchTimeRemaining)}</div>
           </div>
         </div>
         
         {/* Progress Bar for Total Watch Time */}
         <div className="mt-4">
-          <div className="flex justify-between text-xs text-primary-600 mb-1">
+          <div className="flex justify-between text-xs text-gray-500 mb-1">
             <span>Watch Time Progress</span>
-            <span>{Math.round((playState.totalWatchTimeSeconds / maxWatchTimeSeconds) * 100)}%</span>
+            <span>{Math.round(((playState?.totalWatchTimeSeconds || 0) / maxWatchTimeSeconds) * 100)}%</span>
           </div>
-          <div className="w-full bg-primary-100 rounded-full h-2">
+          <div className="w-full bg-gray-200 rounded-full h-1.5">
             <div
-              className="bg-primary-500 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${Math.min(100, (playState.totalWatchTimeSeconds / maxWatchTimeSeconds) * 100)}%` }}
+              className="bg-blue-600 h-1.5 rounded-full transition-all duration-300"
+              style={{ width: `${Math.min(100, ((playState?.totalWatchTimeSeconds || 0) / maxWatchTimeSeconds) * 100)}%` }}
             />
           </div>
         </div>

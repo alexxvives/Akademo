@@ -1,9 +1,11 @@
-import { PrismaClient } from '@prisma/client';
+// DEPRECATED: This file is no longer used.
+// The application now uses raw D1 queries from src/lib/db.ts
+// This file is kept for reference only.
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
-};
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const prisma: any = null;
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient();
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function getPrismaClient(): Promise<any> {
+  throw new Error('Prisma is deprecated. Use D1 queries from src/lib/db.ts instead.');
+}

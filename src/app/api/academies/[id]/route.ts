@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { academyQueries, membershipQueries, classQueries } from '@/lib/db';
 import { requireRole } from '@/lib/auth';
 import { handleApiError, successResponse, errorResponse } from '@/lib/api-utils';
 
@@ -8,49 +8,21 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const academy = await prisma.academy.findUnique({
-      where: { id },
-      include: {
-        owner: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-        memberships: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                email: true,
-                firstName: true,
-                lastName: true,
-                role: true,
-              },
-            },
-          },
-        },
-        classes: {
-          include: {
-            _count: {
-              select: {
-                enrollments: true,
-                videos: true,
-                documents: true,
-              },
-            },
-          },
-        },
-      },
-    });
+    const academy = await academyQueries.findWithOwner(id);
 
     if (!academy) {
       return errorResponse('Academy not found', 404);
     }
 
-    return Response.json(successResponse(academy));
+    // Get memberships and classes
+    const memberships = await membershipQueries.findByAcademyWithUser(id);
+    const classes = await classQueries.findByAcademy(id);
+
+    return Response.json(successResponse({
+      ...academy,
+      memberships,
+      classes,
+    }));
   } catch (error) {
     return handleApiError(error);
   }

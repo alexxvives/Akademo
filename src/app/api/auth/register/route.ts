@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { userQueries, academyQueries } from '@/lib/db';
 import { hashPassword } from '@/lib/auth';
 import { successResponse, errorResponse, handleApiError } from '@/lib/api-utils';
 import { z } from 'zod';
@@ -17,9 +17,7 @@ export async function POST(request: Request) {
     const data = registerSchema.parse(body);
 
     // Check if user already exists
-    const existing = await prisma.user.findUnique({
-      where: { email: data.email },
-    });
+    const existing = await userQueries.findByEmail(data.email);
 
     if (existing) {
       return errorResponse('Email already registered');
@@ -27,35 +25,30 @@ export async function POST(request: Request) {
 
     // Create user
     const hashedPassword = await hashPassword(data.password);
-    const user = await prisma.user.create({
-      data: {
-        email: data.email,
-        password: hashedPassword,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        role: data.role,
-      },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        role: true,
-      },
+    const user = await userQueries.create({
+      email: data.email,
+      password: hashedPassword,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      role: data.role,
     });
 
     // Auto-create academy for teachers
     if (data.role === 'TEACHER') {
-      await prisma.academy.create({
-        data: {
-          name: `${data.firstName} ${data.lastName}'s Academy`,
-          description: `Welcome to ${data.firstName}'s teaching space`,
-          ownerId: user.id,
-        },
+      await academyQueries.create({
+        name: `${data.firstName} ${data.lastName}'s Academy`,
+        description: `Welcome to ${data.firstName}'s teaching space`,
+        ownerId: user.id,
       });
     }
 
-    return Response.json(successResponse(user), { status: 201 });
+    return Response.json(successResponse({
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+    }), { status: 201 });
   } catch (error) {
     return handleApiError(error);
   }

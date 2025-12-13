@@ -132,15 +132,12 @@ export interface R2Range {
 
 // Helper to get Cloudflare bindings in Next.js API routes
 export function getCloudflareContext(): CloudflareEnv | null {
-  // In Cloudflare Workers/Pages, the env is available via getRequestContext
+  // In Cloudflare Workers, the env is available via @opennextjs/cloudflare
   try {
-    // @ts-ignore - This is injected by Cloudflare at runtime
-    const { env } = getRequestContext();
-    return env as CloudflareEnv;
+    const { getCloudflareContext: getCtx } = require('@opennextjs/cloudflare');
+    const ctx = getCtx();
+    return ctx?.env as CloudflareEnv;
   } catch {
     return null;
   }
 }
-
-// Declare the global function that Cloudflare injects
-declare function getRequestContext(): { env: CloudflareEnv };

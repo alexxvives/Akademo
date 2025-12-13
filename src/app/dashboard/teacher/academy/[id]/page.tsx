@@ -44,25 +44,17 @@ export default function AcademyManagePage() {
   const [academy, setAcademy] = useState<Academy | null>(null);
   const [loading, setLoading] = useState(true);
   const [showClassForm, setShowClassForm] = useState(false);
-  const [classFormData, setClassFormData] = useState({
-    name: '',
-    description: '',
-  });
+  const [classFormData, setClassFormData] = useState({ name: '', description: '' });
 
   useEffect(() => {
-    if (academyId) {
-      loadAcademy();
-    }
+    if (academyId) loadAcademy();
   }, [academyId]);
 
   const loadAcademy = async () => {
     try {
       const response = await fetch(`/api/academies/${academyId}`);
       const result = await response.json();
-
-      if (result.success) {
-        setAcademy(result.data);
-      }
+      if (result.success) setAcademy(result.data);
     } catch (error) {
       console.error('Failed to load academy:', error);
     } finally {
@@ -77,15 +69,9 @@ export default function AcademyManagePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       });
-
       const result = await response.json();
-
-      if (result.success) {
-        alert(`Student ${status.toLowerCase()} successfully!`);
-        loadAcademy();
-      } else {
-        alert(result.error || 'Failed to update membership');
-      }
+      if (result.success) loadAcademy();
+      else alert(result.error || 'Failed to update membership');
     } catch (error) {
       alert('An error occurred');
     }
@@ -93,21 +79,14 @@ export default function AcademyManagePage() {
 
   const handleCreateClass = async (e: React.FormEvent) => {
     e.preventDefault();
-
     try {
       const response = await fetch('/api/classes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...classFormData,
-          academyId: academyId,
-        }),
+        body: JSON.stringify({ ...classFormData, academyId }),
       });
-
       const result = await response.json();
-
       if (result.success) {
-        alert('Class created successfully!');
         setClassFormData({ name: '', description: '' });
         setShowClassForm(false);
         loadAcademy();
@@ -122,8 +101,8 @@ export default function AcademyManagePage() {
   if (loading) {
     return (
       <DashboardLayout role="TEACHER">
-        <div className="text-center py-12">
-          <div className="text-xl text-gray-600">Loading...</div>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="w-6 h-6 border-2 border-gray-200 border-t-blue-600 rounded-full animate-spin" />
         </div>
       </DashboardLayout>
     );
@@ -132,8 +111,11 @@ export default function AcademyManagePage() {
   if (!academy) {
     return (
       <DashboardLayout role="TEACHER">
-        <div className="text-center py-12">
-          <div className="text-xl text-gray-600">Academy not found</div>
+        <div className="max-w-5xl mx-auto text-center py-12">
+          <p className="text-gray-500">Academy not found</p>
+          <Link href="/dashboard/teacher" className="text-blue-600 hover:text-blue-700 text-sm font-medium mt-2 inline-block">
+            ← Back to Dashboard
+          </Link>
         </div>
       </DashboardLayout>
     );
@@ -144,67 +126,45 @@ export default function AcademyManagePage() {
 
   return (
     <DashboardLayout role="TEACHER">
-      <div className="space-y-8">
-        {/* Academy Header */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex justify-between items-start">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                {academy.name}
-              </h2>
-              {academy.description && (
-                <p className="text-gray-600">{academy.description}</p>
-              )}
-              <div className="flex gap-6 mt-4 text-sm text-gray-500">
-                <span>👥 {approvedMemberships.length} Members</span>
-                <span>📚 {academy.classes.length} Classes</span>
-                <span>
-                  🎥{' '}
-                  {academy.classes.reduce((sum, c) => sum + c._count.videos, 0)}{' '}
-                  Videos
-                </span>
-              </div>
-            </div>
-            <Link
-              href="/dashboard/teacher"
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold"
-            >
-              ← Back
+      <div className="max-w-5xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div>
+            <Link href="/dashboard/teacher" className="text-sm text-gray-500 hover:text-gray-700 mb-2 inline-block">
+              ← Back to Dashboard
             </Link>
+            <h1 className="text-2xl font-bold text-gray-900">{academy.name}</h1>
+            {academy.description && <p className="text-gray-500 text-sm mt-1">{academy.description}</p>}
+          </div>
+          <div className="flex gap-4 text-sm text-gray-500">
+            <span>{approvedMemberships.length} members</span>
+            <span>{academy.classes.length} classes</span>
           </div>
         </div>
 
-        {/* Pending Membership Requests */}
+        {/* Pending Requests */}
         {pendingMemberships.length > 0 && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">
-              Pending Membership Requests ({pendingMemberships.length})
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <h3 className="font-semibold text-amber-900 mb-3">
+              {pendingMemberships.length} pending request{pendingMemberships.length > 1 ? 's' : ''}
             </h3>
             <div className="space-y-3">
               {pendingMemberships.map((membership) => (
-                <div
-                  key={membership.id}
-                  className="flex justify-between items-center p-4 border border-gray-200 rounded-lg"
-                >
+                <div key={membership.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white rounded-lg p-3 border border-amber-100">
                   <div>
-                    <p className="font-semibold text-gray-900">
-                      {membership.user.firstName} {membership.user.lastName}
-                    </p>
-                    <p className="text-sm text-gray-600">{membership.user.email}</p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Requested: {new Date(membership.requestedAt).toLocaleString()}
-                    </p>
+                    <p className="font-medium text-gray-900">{membership.user.firstName} {membership.user.lastName}</p>
+                    <p className="text-sm text-gray-500">{membership.user.email}</p>
                   </div>
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleApproveReject(membership.id, 'APPROVED')}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
+                      className="px-3 py-1.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium text-sm"
                     >
                       Approve
                     </button>
                     <button
                       onClick={() => handleApproveReject(membership.id, 'REJECTED')}
-                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold"
+                      className="px-3 py-1.5 text-gray-600 hover:text-gray-900 font-medium text-sm"
                     >
                       Reject
                     </button>
@@ -216,66 +176,48 @@ export default function AcademyManagePage() {
         )}
 
         {/* Classes Section */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold text-gray-900">
-              Classes ({academy.classes.length})
-            </h3>
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Classes</h2>
             <button
               onClick={() => setShowClassForm(!showClassForm)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium text-sm"
             >
-              + Create Class
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/>
+              </svg>
+              Add Class
             </button>
           </div>
 
-          {/* Create Class Form */}
           {showClassForm && (
-            <form onSubmit={handleCreateClass} className="mb-6 p-4 border border-gray-200 rounded-lg">
-              <h4 className="font-semibold text-gray-900 mb-3">New Class</h4>
+            <form onSubmit={handleCreateClass} className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
               <div className="space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Class Name
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Class Name</label>
                   <input
                     type="text"
                     required
                     value={classFormData.name}
-                    onChange={(e) =>
-                      setClassFormData({ ...classFormData, name: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    onChange={(e) => setClassFormData({ ...classFormData, name: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    placeholder="e.g., Introduction to JavaScript"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description (optional)
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Description (optional)</label>
                   <textarea
                     value={classFormData.description}
-                    onChange={(e) =>
-                      setClassFormData({
-                        ...classFormData,
-                        description: e.target.value,
-                      })
-                    }
+                    onChange={(e) => setClassFormData({ ...classFormData, description: e.target.value })}
                     rows={2}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-none"
                   />
                 </div>
-                <div className="flex gap-2">
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
-                  >
-                    Create
+                <div className="flex gap-3">
+                  <button type="submit" className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium text-sm">
+                    Create Class
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowClassForm(false)}
-                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 font-semibold"
-                  >
+                  <button type="button" onClick={() => setShowClassForm(false)} className="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium text-sm">
                     Cancel
                   </button>
                 </div>
@@ -283,31 +225,39 @@ export default function AcademyManagePage() {
             </form>
           )}
 
-          {/* Classes List */}
           {academy.classes.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              No classes yet. Create your first class to get started!
+            <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+              <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                </svg>
+              </div>
+              <h3 className="text-base font-semibold text-gray-900 mb-1">No classes yet</h3>
+              <p className="text-gray-500 text-sm">Create your first class to start teaching</p>
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-2 gap-4">
               {academy.classes.map((classItem) => (
                 <Link
                   key={classItem.id}
                   href={`/dashboard/teacher/class/${classItem.id}`}
-                  className="block p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
+                  className="group bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-sm transition-all p-5"
                 >
-                  <h4 className="font-semibold text-gray-900 mb-2">
-                    {classItem.name}
-                  </h4>
+                  <div className="flex items-start justify-between mb-2">
+                    <h4 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                      {classItem.name}
+                    </h4>
+                    <span className="text-xs text-gray-400 group-hover:text-blue-600 transition-colors">
+                      Manage →
+                    </span>
+                  </div>
                   {classItem.description && (
-                    <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                      {classItem.description}
-                    </p>
+                    <p className="text-sm text-gray-500 mb-3 line-clamp-2">{classItem.description}</p>
                   )}
-                  <div className="flex gap-4 text-sm text-gray-500">
-                    <span>👥 {classItem._count.enrollments} Students</span>
-                    <span>🎥 {classItem._count.videos} Videos</span>
-                    <span>📄 {classItem._count.documents} Docs</span>
+                  <div className="flex gap-4 text-xs text-gray-500">
+                    <span>{classItem._count.enrollments} students</span>
+                    <span>{classItem._count.videos} videos</span>
+                    <span>{classItem._count.documents} docs</span>
                   </div>
                 </Link>
               ))}
@@ -315,26 +265,19 @@ export default function AcademyManagePage() {
           )}
         </div>
 
-        {/* Members List */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">
-            Approved Members ({approvedMemberships.length})
-          </h3>
+        {/* Members */}
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Members ({approvedMemberships.length})</h2>
           {approvedMemberships.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              No approved members yet.
+            <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+              <p className="text-gray-500 text-sm">No members yet</p>
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {approvedMemberships.map((membership) => (
-                <div
-                  key={membership.id}
-                  className="p-4 border border-gray-200 rounded-lg"
-                >
-                  <p className="font-semibold text-gray-900">
-                    {membership.user.firstName} {membership.user.lastName}
-                  </p>
-                  <p className="text-sm text-gray-600">{membership.user.email}</p>
+                <div key={membership.id} className="bg-white rounded-xl border border-gray-200 p-4">
+                  <p className="font-medium text-gray-900">{membership.user.firstName} {membership.user.lastName}</p>
+                  <p className="text-sm text-gray-500">{membership.user.email}</p>
                 </div>
               ))}
             </div>

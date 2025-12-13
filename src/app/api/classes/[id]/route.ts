@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { classQueries, videoQueries, documentQueries, enrollmentQueries } from '@/lib/db';
 import { requireAuth } from '@/lib/auth';
 import { handleApiError, successResponse, errorResponse } from '@/lib/api-utils';
 
@@ -10,43 +10,7 @@ export async function GET(
     const session = await requireAuth();
     const { id } = await params;
 
-    const classData = await prisma.class.findUnique({
-      where: { id },
-      include: {
-        academy: {
-          select: {
-            id: true,
-            name: true,
-            ownerId: true,
-          },
-        },
-        videos: {
-          orderBy: {
-            createdAt: 'desc',
-          },
-        },
-        documents: {
-          orderBy: {
-            createdAt: 'desc',
-          },
-        },
-        enrollments: {
-          include: {
-            student: {
-              select: {
-                id: true,
-                email: true,
-                firstName: true,
-                lastName: true,
-              },
-            },
-          },
-          orderBy: {
-            enrolledAt: 'desc',
-          },
-        },
-      },
-    });
+    const classData = await classQueries.findWithAcademyAndCounts(id) as any;
 
     if (!classData) {
       return errorResponse('Class not found', 404);
@@ -55,19 +19,18 @@ export async function GET(
     // Check access permissions
     if (session.role === 'TEACHER') {
       // Teachers can only access classes in their academies
-      if (classData.academy.ownerId !== session.id) {
+      const db = await (await import('@/lib/db')).getDB();
+      const membership = await db
+        .prepare('SELECT id FROM AcademyMembership WHERE userId = ? AND academyId = ?')
+        .bind(session.id, classData.academyId)
+        .first();
+
+      if (!membership) {
         return errorResponse('Forbidden', 403);
       }
     } else if (session.role === 'STUDENT') {
       // Students can only access classes they're enrolled in
-      const enrollment = await prisma.classEnrollment.findUnique({
-        where: {
-          classId_studentId: {
-            classId: id,
-            studentId: session.id,
-          },
-        },
-      });
+      const enrollment = await enrollmentQueries.findByClassAndStudent(id, session.id);
 
       if (!enrollment) {
         return errorResponse('Forbidden - not enrolled in this class', 403);
@@ -75,7 +38,17 @@ export async function GET(
     }
     // Admins can access all classes
 
-    return Response.json(successResponse(classData));
+    // Get videos, documents, and enrollments
+    const videos = await videoQueries.findByClass(id);
+    const documents = await documentQueries.findByClass(id);
+    const enrollments = await enrollmentQueries.findByClassWithStudent(id);
+
+    return Response.json(successResponse({
+      ...classData,
+      videos,
+      documents,
+      enrollments,
+    }));
   } catch (error) {
     return handleApiError(error);
   }

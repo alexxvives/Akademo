@@ -1,25 +1,23 @@
 #:schema node_modules/wrangler/config-schema.json
 name = "academy-hive"
+main = ".open-next/worker.js"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
-pages_build_output_dir = ".open-next"
 
-# D1 Database - for Pages, bindings must be configured in the dashboard
-# Go to: Cloudflare Dashboard > Workers & Pages > academy-hive > Settings > Bindings
-# Add D1 Database: Variable name = "DB", Database = "academy-hive-db"
+# Assets configuration
+[assets]
+directory = ".open-next/assets"
+
+# D1 Database
 [[d1_databases]]
 binding = "DB"
 database_name = "academy-hive-db"
 database_id = "ca4bf79c-127b-4cf6-b5da-9353e6f442ff"
 
 # R2 Storage for videos and documents
-# Add R2 Bucket: Variable name = "STORAGE", Bucket = "academy-hive-storage"
 [[r2_buckets]]
 binding = "STORAGE"
 bucket_name = "academy-hive-storage"
-
-# Environment variables (set these via wrangler secret)
-# JWT_SECRET - set via: wrangler pages secret put JWT_SECRET --project-name academy-hive
 
 [vars]
 STORAGE_TYPE = "r2"

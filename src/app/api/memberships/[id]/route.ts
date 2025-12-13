@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { membershipQueries, academyQueries } from '@/lib/db';
 import { requireRole } from '@/lib/auth';
 import { handleApiError, successResponse, errorResponse } from '@/lib/api-utils';
 import { z } from 'zod';
@@ -17,42 +17,28 @@ export async function PATCH(
     const body = await request.json();
     const data = updateMembershipSchema.parse(body);
 
-    // Get membership with academy
-    const membership = await prisma.academyMembership.findUnique({
-      where: { id },
-      include: { academy: true },
-    });
+    // Get membership
+    const membership = await membershipQueries.findById(id) as any;
 
     if (!membership) {
       return errorResponse('Membership not found', 404);
     }
 
+    // Get academy
+    const academy = await academyQueries.findById(membership.academyId) as any;
+
     // Check if user owns the academy (unless admin)
-    if (session.role !== 'ADMIN' && membership.academy.ownerId !== session.id) {
+    if (session.role !== 'ADMIN' && academy.ownerId !== session.id) {
       return errorResponse('Forbidden', 403);
     }
 
-    // Update membership
-    const updated = await prisma.academyMembership.update({
-      where: { id },
-      data: {
-        status: data.status,
-        approvedAt: data.status === 'APPROVED' ? new Date() : null,
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-        academy: true,
-      },
-    });
+    // Update membership status
+    await membershipQueries.updateStatus(id, data.status);
 
-    return Response.json(successResponse(updated));
+    // Get updated membership
+    const updated = await membershipQueries.findById(id) as Record<string, unknown>;
+
+    return Response.json(successResponse({ ...updated, academy }));
   } catch (error) {
     return handleApiError(error);
   }

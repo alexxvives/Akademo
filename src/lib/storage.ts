@@ -1,6 +1,3 @@
-import { promises as fs } from 'fs';
-import path from 'path';
-import { randomBytes } from 'crypto';
 import { getCloudflareContext, R2Bucket } from './cloudflare';
 
 export interface StorageAdapter {
@@ -8,45 +5,7 @@ export interface StorageAdapter {
   getUrl(key: string): Promise<string>;
   delete(key: string): Promise<void>;
   getStream(key: string): Promise<ReadableStream | null>;
-}
-
-class LocalStorageAdapter implements StorageAdapter {
-  private uploadDir: string;
-
-  constructor() {
-    this.uploadDir = process.env.UPLOAD_DIR || './uploads';
-  }
-
-  async upload(file: File, folder: string): Promise<string> {
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const filename = `${randomBytes(16).toString('hex')}-${file.name}`;
-    const folderPath = path.join(this.uploadDir, folder);
-    const filePath = path.join(folderPath, filename);
-
-    // Ensure directory exists
-    await fs.mkdir(folderPath, { recursive: true });
-
-    // Write file
-    await fs.writeFile(filePath, buffer);
-
-    // Return relative path
-    return path.join(folder, filename).replace(/\\/g, '/');
-  }
-
-  async getUrl(key: string): Promise<string> {
-    // For local storage, we'll serve via API route
-    return `/api/storage/serve/${encodeURIComponent(key)}`;
-  }
-
-  async delete(key: string): Promise<void> {
-    const filePath = path.join(this.uploadDir, key);
-    await fs.unlink(filePath);
-  }
-
-  async getStream(key: string): Promise<ReadableStream | null> {
-    // Local storage doesn't use streams in the same way
-    return null;
-  }
+  getObject(key: string): Promise<{ body: ReadableStream; contentType?: string; size: number } | null>;
 }
 
 class R2StorageAdapter implements StorageAdapter {
@@ -65,7 +24,9 @@ class R2StorageAdapter implements StorageAdapter {
 
   async upload(file: File, folder: string): Promise<string> {
     const bucket = this.getBucket();
-    const filename = `${randomBytes(16).toString('hex')}-${file.name}`;
+    // Use crypto.randomUUID() which is available in Workers
+    const id = crypto.randomUUID().replace(/-/g, '');
+    const filename = `${id}-${file.name}`;
     const key = `${folder}/${filename}`;
 
     const arrayBuffer = await file.arrayBuffer();
@@ -98,27 +59,23 @@ class R2StorageAdapter implements StorageAdapter {
     const object = await bucket.get(key);
     return object?.body || null;
   }
-}
 
-// Singleton instances
-let localAdapter: LocalStorageAdapter | null = null;
-let r2Adapter: R2StorageAdapter | null = null;
-
-export function getStorageAdapter(): StorageAdapter {
-  const storageType = process.env.STORAGE_TYPE || 'local';
-
-  switch (storageType) {
-    case 'r2':
-      if (!r2Adapter) r2Adapter = new R2StorageAdapter();
-      return r2Adapter;
-    case 'local':
-    default:
-      if (!localAdapter) localAdapter = new LocalStorageAdapter();
-      return localAdapter;
+  async getObject(key: string): Promise<{ body: ReadableStream; contentType?: string; size: number } | null> {
+    const bucket = this.getBucket();
+    const object = await bucket.get(key);
+    if (!object) return null;
+    return {
+      body: object.body,
+      contentType: object.httpMetadata?.contentType,
+      size: object.size
+    };
   }
 }
 
-// Helper to check if running on Cloudflare
-export function isCloudflare(): boolean {
-  return getCloudflareContext() !== null;
+// Singleton instance
+let r2Adapter: R2StorageAdapter | null = null;
+
+export function getStorageAdapter(): StorageAdapter {
+  if (!r2Adapter) r2Adapter = new R2StorageAdapter();
+  return r2Adapter;
 }

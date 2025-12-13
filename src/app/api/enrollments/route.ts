@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { enrollmentQueries, classQueries } from '@/lib/db';
 import { requireRole } from '@/lib/auth';
 import { handleApiError, successResponse, errorResponse } from '@/lib/api-utils';
 import { z } from 'zod';
@@ -16,10 +16,7 @@ export async function POST(request: Request) {
 
     // Verify class ownership (unless admin)
     if (session.role !== 'ADMIN') {
-      const classRecord = await prisma.class.findUnique({
-        where: { id: data.classId },
-        include: { academy: true },
-      });
+      const classRecord = await classQueries.findWithAcademyAndCounts(data.classId) as any;
 
       if (!classRecord || classRecord.academy.ownerId !== session.id) {
         return errorResponse('Forbidden', 403);
@@ -27,36 +24,16 @@ export async function POST(request: Request) {
     }
 
     // Check if already enrolled
-    const existing = await prisma.classEnrollment.findUnique({
-      where: {
-        classId_studentId: {
-          classId: data.classId,
-          studentId: data.studentId,
-        },
-      },
-    });
+    const existing = await enrollmentQueries.findByClassAndStudent(data.classId, data.studentId);
 
     if (existing) {
       return errorResponse('Student already enrolled');
     }
 
     // Create enrollment
-    const enrollment = await prisma.classEnrollment.create({
-      data: {
-        classId: data.classId,
-        studentId: data.studentId,
-      },
-      include: {
-        student: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-        class: true,
-      },
+    const enrollment = await enrollmentQueries.create({
+      classId: data.classId,
+      studentId: data.studentId,
     });
 
     return Response.json(successResponse(enrollment), { status: 201 });
@@ -75,34 +52,27 @@ export async function GET(request: Request) {
       return errorResponse('Class ID required');
     }
 
-    // Verify class ownership (unless admin)
-    if (session.role !== 'ADMIN') {
-      const classRecord = await prisma.class.findUnique({
-        where: { id: classId },
-        include: { academy: true },
-      });
+    // Teachers can view enrollments from classes in their academy
+    if (session.role === 'TEACHER') {
+      const classRecord = await classQueries.findWithAcademyAndCounts(classId) as any;
+      
+      if (!classRecord) {
+        return errorResponse('Class not found', 404);
+      }
 
-      if (!classRecord || classRecord.academy.ownerId !== session.id) {
+      // Verify teacher is member of the class's academy
+      const db = await (await import('@/lib/db')).getDB();
+      const membership = await db
+        .prepare('SELECT id FROM AcademyMembership WHERE userId = ? AND academyId = ?')
+        .bind(session.id, classRecord.academyId)
+        .first();
+
+      if (!membership) {
         return errorResponse('Forbidden', 403);
       }
     }
 
-    const enrollments = await prisma.classEnrollment.findMany({
-      where: { classId },
-      include: {
-        student: {
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-          },
-        },
-      },
-      orderBy: {
-        enrolledAt: 'desc',
-      },
-    });
+    const enrollments = await enrollmentQueries.findByClassWithStudent(classId);
 
     return Response.json(successResponse(enrollments));
   } catch (error) {

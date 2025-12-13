@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { playStateQueries } from '@/lib/db';
 import { requireAuth } from '@/lib/auth';
 import { handleApiError, successResponse, errorResponse } from '@/lib/api-utils';
 import { z } from 'zod';
@@ -22,14 +22,7 @@ export async function POST(request: Request) {
     }
 
     // Get current play state
-    const playState = await prisma.videoPlayState.findUnique({
-      where: {
-        videoId_studentId: {
-          videoId: data.videoId,
-          studentId: data.studentId,
-        },
-      },
-    });
+    const playState = await playStateQueries.findByVideoAndStudent(data.videoId, data.studentId) as any;
 
     if (!playState) {
       return errorResponse('Play state not found', 404);
@@ -38,18 +31,9 @@ export async function POST(request: Request) {
     // Update watch time
     const newTotalWatchTime = playState.totalWatchTimeSeconds + data.watchTimeElapsed;
 
-    const updatedPlayState = await prisma.videoPlayState.update({
-      where: {
-        videoId_studentId: {
-          videoId: data.videoId,
-          studentId: data.studentId,
-        },
-      },
-      data: {
-        totalWatchTimeSeconds: newTotalWatchTime,
-        lastWatchedAt: new Date(),
-        sessionStartTime: playState.sessionStartTime || new Date(),
-      },
+    const updatedPlayState = await playStateQueries.upsert(data.videoId, data.studentId, {
+      totalWatchTimeSeconds: newTotalWatchTime,
+      lastPositionSeconds: data.currentPositionSeconds,
     });
 
     return Response.json(
@@ -80,30 +64,14 @@ export async function GET(request: Request) {
       return errorResponse('Unauthorized', 403);
     }
 
-    const playState = await prisma.videoPlayState.findUnique({
-      where: {
-        videoId_studentId: {
-          videoId,
-          studentId: targetStudentId,
-        },
-      },
-    });
+    let playState = await playStateQueries.findByVideoAndStudent(videoId, targetStudentId);
 
     if (!playState) {
       // Create initial play state
-      const newPlayState = await prisma.videoPlayState.create({
-        data: {
-          videoId,
-          studentId: targetStudentId,
-          totalWatchTimeSeconds: 0,
-        },
+      playState = await playStateQueries.upsert(videoId, targetStudentId, {
+        totalWatchTimeSeconds: 0,
+        lastPositionSeconds: 0,
       });
-
-      return Response.json(
-        successResponse({
-          playState: newPlayState,
-        })
-      );
     }
 
     return Response.json(

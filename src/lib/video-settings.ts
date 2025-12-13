@@ -1,45 +1,52 @@
-import { prisma } from './prisma';
+import { videoQueries, classQueries, academyQueries, settingsQueries } from './db';
+
+// Types for database records
+interface Video {
+  classId: string;
+  maxWatchTimeMultiplier?: number | null;
+}
+
+interface Class {
+  academyId: string;
+  defaultMaxWatchTimeMultiplier?: number | null;
+}
+
+interface Academy {
+  defaultMaxWatchTimeMultiplier?: number | null;
+}
+
+interface PlatformSettings {
+  defaultMaxWatchTimeMultiplier: number;
+}
 
 export async function getPlatformSettings() {
-  let settings = await prisma.platformSettings.findUnique({
-    where: { id: 'platform_settings' },
-  });
-
-  if (!settings) {
-    settings = await prisma.platformSettings.create({
-      data: {
-        id: 'platform_settings',
-        defaultMaxWatchTimeMultiplier: 2.0,
-      },
-    });
-  }
-
-  return settings;
+  return await settingsQueries.get();
 }
 
 export async function getEffectiveVideoSettings(videoId: string) {
-  const video = await prisma.video.findUnique({
-    where: { id: videoId },
-    include: {
-      class: {
-        include: {
-          academy: true,
-        },
-      },
-    },
-  });
+  const video = await videoQueries.findById(videoId) as Video | null;
 
   if (!video) {
     throw new Error('Video not found');
   }
 
-  const platformSettings = await getPlatformSettings();
+  const classData = await classQueries.findById(video.classId) as Class | null;
+  if (!classData) {
+    throw new Error('Class not found');
+  }
+
+  const academy = await academyQueries.findById(classData.academyId) as Academy | null;
+  if (!academy) {
+    throw new Error('Academy not found');
+  }
+
+  const platformSettings = await getPlatformSettings() as PlatformSettings;
 
   // Priority: Video > Class > Academy > Platform
   const maxWatchTimeMultiplier =
     video.maxWatchTimeMultiplier ??
-    video.class.defaultMaxWatchTimeMultiplier ??
-    video.class.academy.defaultMaxWatchTimeMultiplier ??
+    classData.defaultMaxWatchTimeMultiplier ??
+    academy.defaultMaxWatchTimeMultiplier ??
     platformSettings.defaultMaxWatchTimeMultiplier;
 
   return {

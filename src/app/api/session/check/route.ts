@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { sessionQueries } from '@/lib/db';
 import { requireRole, getSession } from '@/lib/auth';
 import { generateDeviceFingerprint, getClientIP } from '@/lib/device-fingerprint';
 import { handleApiError, successResponse } from '@/lib/api-utils';
@@ -17,41 +17,12 @@ export async function POST(request: Request) {
 
     // For students, enforce single active session
     if (session.role === 'STUDENT') {
-      // Deactivate all other sessions
-      await prisma.deviceSession.updateMany({
-        where: {
-          userId: session.id,
-          deviceFingerprint: {
-            not: fingerprint.fingerprint,
-          },
-          isActive: true,
-        },
-        data: {
-          isActive: false,
-        },
-      });
-
-      // Create or update current session
-      await prisma.deviceSession.upsert({
-        where: {
-          userId_deviceFingerprint: {
-            userId: session.id,
-            deviceFingerprint: fingerprint.fingerprint,
-          },
-        },
-        create: {
-          userId: session.id,
-          deviceFingerprint: fingerprint.fingerprint,
-          userAgent: fingerprint.userAgent,
-          ipHash: fingerprint.ipHash,
-          browser: fingerprint.browser,
-          os: fingerprint.os,
-          isActive: true,
-        },
-        update: {
-          lastActiveAt: new Date(),
-          isActive: true,
-        },
+      // Deactivate all other sessions and create/update current one
+      await sessionQueries.deactivateOthers(session.id, fingerprint.fingerprint);
+      await sessionQueries.upsert(session.id, fingerprint.fingerprint, {
+        userAgent: fingerprint.userAgent,
+        browser: fingerprint.browser,
+        os: fingerprint.os,
       });
     }
 
@@ -74,27 +45,23 @@ export async function GET(request: Request) {
       return Response.json(successResponse({ valid: false }));
     }
 
-    const userAgent = request.headers.get('user-agent') || '';
-    const ip = getClientIP(request);
-    const fingerprint = generateDeviceFingerprint(userAgent, ip);
+    // Only enforce single device for students
+    if (session.role === 'STUDENT') {
+      const userAgent = request.headers.get('user-agent') || '';
+      const ip = getClientIP(request);
+      const fingerprint = generateDeviceFingerprint(userAgent, ip);
 
-    // Check if this device has an active session
-    const deviceSession = await prisma.deviceSession.findUnique({
-      where: {
-        userId_deviceFingerprint: {
-          userId: session.id,
-          deviceFingerprint: fingerprint.fingerprint,
-        },
-      },
-    });
+      // Check if this device has an active session
+      const deviceSession = await sessionQueries.findByUserAndFingerprint(session.id, fingerprint.fingerprint) as any;
 
-    if (!deviceSession || !deviceSession.isActive) {
-      return Response.json(
-        successResponse({
-          valid: false,
-          message: 'Your session has been terminated because you logged in from another device.',
-        })
-      );
+      if (!deviceSession || !deviceSession.isActive) {
+        return Response.json(
+          successResponse({
+            valid: false,
+            message: 'Your session has been terminated because you logged in from another device.',
+          })
+        );
+      }
     }
 
     return Response.json(successResponse({ valid: true }));

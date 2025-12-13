@@ -16,11 +16,14 @@ export function generateDeviceFingerprint(
   const parser = new UAParser(userAgent);
   const result = parser.getResult();
 
+  // Don't include IP in fingerprint as it can change frequently
+  // causing false session terminations
   const fingerprintData = [
     userAgent,
     result.browser.name || '',
+    result.browser.version || '',
     result.os.name || '',
-    ip,
+    result.os.version || '',
   ].join('|');
 
   const fingerprint = crypto

@@ -8,69 +8,244 @@ interface Academy {
   id: string;
   name: string;
   description: string | null;
-  _count: {
-    memberships: number;
-    classes: number;
-  };
+}
+
+interface Membership {
+  id: string;
+  status: string;
+  academyName: string;
+  academyDescription: string | null;
+  requestedAt: string;
+}
+
+interface Class {
+  id: string;
+  name: string;
+  description: string | null;
+  academyName: string;
+  enrollmentCount: number;
+  students?: Student[];
+}
+
+interface Student {
+  id: string;
+  name: string;
+  email: string;
+}
+
+interface EnrolledStudent {
+  id: string;
+  name: string;
+  email: string;
+  classId: string;
+  className: string;
 }
 
 export default function TeacherDashboard() {
-  const [academies, setAcademies] = useState<Academy[]>([]);
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [formData, setFormData] = useState({ name: '', description: '' });
+  const [memberships, setMemberships] = useState<Membership[]>([]);
+  const [availableAcademies, setAvailableAcademies] = useState<Academy[]>([]);
+  const [classes, setClasses] = useState<Class[]>([]);
+  const [enrolledStudents, setEnrolledStudents] = useState<EnrolledStudent[]>([]);
+  const [academyName, setAcademyName] = useState<string>('');
+  const [showBrowse, setShowBrowse] = useState(false);
+  const [showCreateStudent, setShowCreateStudent] = useState(false);
+  const [studentForm, setStudentForm] = useState({ email: '', firstName: '', lastName: '', classId: '' });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadAcademies();
+    loadData();
   }, []);
 
-  const loadAcademies = async () => {
+  const loadData = async () => {
     try {
-      const response = await fetch('/api/academies');
-      const result = await response.json();
+      const [membershipsRes, academiesRes, classesRes] = await Promise.all([
+        fetch('/api/requests/teacher'),
+        fetch('/api/explore/academies'),
+        fetch('/api/classes'),
+      ]);
 
-      if (result.success) {
-        setAcademies(result.data);
+      const [membershipsResult, academiesResult, classesResult] = await Promise.all([
+        membershipsRes.json(),
+        academiesRes.json(),
+        classesRes.json(),
+      ]);
+
+      if (Array.isArray(membershipsResult)) {
+        setMemberships(membershipsResult);
+        // Set academy name from first membership
+        if (membershipsResult.length > 0) {
+          setAcademyName(membershipsResult[0].academyName);
+        }
+      }
+      
+      if (Array.isArray(academiesResult)) {
+        setAvailableAcademies(academiesResult);
+      }
+
+      if (classesResult.success && Array.isArray(classesResult.data)) {
+        const classList = classesResult.data;
+        setClasses(classList);
+        
+        // Fetch students for all classes
+        const allStudents: EnrolledStudent[] = [];
+        for (const cls of classList) {
+          try {
+            const enrollRes = await fetch(`/api/enrollments?classId=${cls.id}`);
+            const enrollData = await enrollRes.json();
+            if (enrollData.success && Array.isArray(enrollData.data)) {
+              const studentsInClass = enrollData.data.map((e: any) => ({
+                id: e.student.id,
+                name: `${e.student.firstName} ${e.student.lastName}`,
+                email: e.student.email,
+                classId: cls.id,
+                className: cls.name,
+              }));
+              allStudents.push(...studentsInClass);
+            }
+          } catch (err) {
+            console.error(`Failed to load students for class ${cls.id}:`, err);
+          }
+        }
+        setEnrolledStudents(allStudents);
       }
     } catch (error) {
-      console.error('Failed to load academies:', error);
+      console.error('Failed to load data:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreateAcademy = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleRequestMembership = async (academyId: string) => {
     try {
-      const response = await fetch('/api/academies', {
+      const response = await fetch('/api/requests/teacher', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ academyId }),
       });
 
       const result = await response.json();
 
       if (result.success) {
-        alert('Academy created successfully!');
-        setFormData({ name: '', description: '' });
-        setShowCreateForm(false);
-        loadAcademies();
+        alert('Request sent to academy!');
+        setShowBrowse(false);
+        loadData();
       } else {
-        alert(result.error || 'Failed to create academy');
+        alert(result.error || 'Failed to send request');
       }
     } catch (error) {
       alert('An error occurred');
     }
   };
 
+  const handleCreateStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/users/create-student', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(studentForm),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`Estudiante creado exitosamente.\nEmail: ${studentForm.email}\nContraseña: password`);
+        setStudentForm({ email: '', firstName: '', lastName: '', classId: '' });
+        setShowCreateStudent(false);
+      } else {
+        alert(data.error || 'Failed to create student');
+      }
+    } catch (error) {
+      alert('Error creating student');
+    }
+  };
+
+  const approvedMemberships = memberships.filter(m => m.status === 'APPROVED');
+  const hasAcademy = approvedMemberships.length > 0;
+
+  // Don't show "Join Academy" screen if teacher already has an approved membership
+  // or if they're currently browsing academies
+  const shouldShowJoinPrompt = !hasAcademy && !showBrowse && memberships.length === 0;
+
   if (loading) {
     return (
       <DashboardLayout role="TEACHER">
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-            <p className="text-gray-600">Loading your dashboard...</p>
+          <div className="w-6 h-6 border-2 border-gray-200 border-t-blue-600 rounded-full animate-spin" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (shouldShowJoinPrompt) {
+    return (
+      <DashboardLayout role="TEACHER">
+        <div className="max-w-2xl mx-auto mt-20">
+          <div className="bg-white border-2 border-dashed border-gray-300 rounded-2xl p-12 text-center">
+            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">Join an Academy First</h2>
+            <p className="text-gray-600 mb-8">
+              You need to be part of an academy before you can create classes and manage students.
+            </p>
+            <button
+              onClick={() => setShowBrowse(true)}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 font-medium transition-all"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              Browse Academies
+            </button>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (showBrowse) {
+    return (
+      <DashboardLayout role="TEACHER">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl font-bold text-gray-900">Browse Academies</h1>
+            <button
+              onClick={() => setShowBrowse(false)}
+              className="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
+            >
+              ← Back
+            </button>
+          </div>
+
+          <div className="grid gap-4">
+            {availableAcademies.map((academy: any) => {
+              const alreadyRequested = memberships.some(m => m.academyName === academy.name);
+              return (
+                <div key={academy.id} className="bg-white border border-gray-200 rounded-xl p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">{academy.name}</h3>
+                      {academy.description && (
+                        <p className="text-gray-600 text-sm">{academy.description}</p>
+                      )}
+                    </div>
+                    {!alreadyRequested ? (
+                      <button
+                        onClick={() => handleRequestMembership(academy.id)}
+                        className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium text-sm"
+                      >
+                        Request to Join
+                      </button>
+                    ) : (
+                      <span className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium">
+                        {memberships.find(m => m.academyName === academy.name)?.status === 'APPROVED' ? 'Member' : 'Pending'}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </DashboardLayout>
@@ -79,216 +254,213 @@ export default function TeacherDashboard() {
 
   return (
     <DashboardLayout role="TEACHER">
-      <div className="space-y-8">
-        {/* Hero Section */}
-        <div className="bg-gradient-to-r from-indigo-600 to-purple-700 rounded-2xl shadow-xl p-8 text-white">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">Teacher Dashboard 👨‍🏫</h1>
-              <p className="text-indigo-100 text-lg mb-6">
-                Manage your academies, classes, and empower your students
-              </p>
-              <div className="flex gap-6 text-indigo-100">
-                <div className="flex items-center gap-2">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3z"/>
-                  </svg>
-                  <span className="font-semibold">{academies.length} {academies.length === 1 ? 'Academy' : 'Academies'}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd"/>
-                  </svg>
-                  <span className="font-semibold">
-                    {academies.reduce((sum, a) => sum + a._count.classes, 0)} Total Classes
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
-                  </svg>
-                  <span className="font-semibold">
-                    {academies.reduce((sum, a) => sum + a._count.memberships, 0)} Students
-                  </span>
-                </div>
+      <div className="max-w-5xl mx-auto space-y-8">
+        {/* Header with Academy Branding */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Teacher Dashboard</h1>
+            {academyName && (
+              <div className="flex items-center gap-2 mt-2">
+                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                  {academyName}
+                </span>
               </div>
-            </div>
-            {!showCreateForm && (
-              <button
-                onClick={() => setShowCreateForm(true)}
-                className="flex items-center gap-2 px-6 py-3 bg-white text-indigo-700 rounded-xl hover:bg-indigo-50 font-bold shadow-lg transition-all duration-200 hover:scale-105"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/>
-                </svg>
-                Create Academy
-              </button>
             )}
           </div>
         </div>
 
-        {/* Create Academy Form */}
-        {showCreateForm && (
-          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h3 className="text-2xl font-bold text-gray-900">Create New Academy</h3>
-                <p className="text-gray-600 mt-1">Set up your teaching space and invite students</p>
-              </div>
-              <button
-                onClick={() => setShowCreateForm(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-              </button>
+        {/* Classes with Students */}
+        {classes.length > 0 && (
+          <div className="bg-white border border-gray-200 rounded-xl p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Mis Clases</h2>
+            <div className="space-y-6">
+              {classes.map((cls) => {
+                const classStudents = enrolledStudents.filter(s => s.classId === cls.id);
+                return (
+                  <div key={cls.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                    {/* Class Header */}
+                    <Link
+                      href={`/dashboard/teacher/class/${cls.id}`}
+                      className="block p-4 bg-gradient-to-r from-purple-50 to-purple-100 border-b border-purple-200 hover:from-purple-100 hover:to-purple-150 transition-colors"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-bold text-gray-900 text-lg">{cls.name}</h3>
+                          {cls.description && (
+                            <p className="text-sm text-gray-600 mt-1">{cls.description}</p>
+                          )}
+                          <p className="text-xs text-gray-500 mt-1">{cls.academyName}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="px-3 py-1 bg-white rounded-full border border-purple-300 text-purple-700 text-sm font-medium">
+                            {classStudents.length} estudiantes
+                          </span>
+                          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </div>
+                      </div>
+                    </Link>
+
+                    {/* Students in Class */}
+                    {classStudents.length > 0 && (
+                      <div className="p-4 bg-white">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {classStudents.map((student) => (
+                            <div key={student.id} className="border border-gray-200 rounded-lg p-3 hover:shadow-sm transition-shadow">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                  <span className="text-green-600 font-semibold text-xs">
+                                    {student.name.charAt(0).toUpperCase()}
+                                  </span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-gray-900 text-sm truncate">{student.name}</p>
+                                  <p className="text-xs text-gray-500 truncate">{student.email}</p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {classStudents.length === 0 && (
+                      <div className="p-4 bg-gray-50 text-center text-sm text-gray-500">
+                        No hay estudiantes inscritos en esta clase
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-            
-            <form onSubmit={handleCreateAcademy} className="space-y-6">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Academy Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  placeholder="e.g., Web Development Masterclass"
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Description (optional)
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                  rows={4}
-                  placeholder="Describe what students will learn in your academy..."
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors resize-none"
-                />
-              </div>
-              <div className="flex gap-4 pt-4">
-                <button
-                  type="submit"
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 font-bold shadow-lg hover:shadow-xl transition-all duration-200"
-                >
-                  Create Academy
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowCreateForm(false)}
-                  className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 font-bold transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
           </div>
         )}
 
-        {/* Academies List */}
-        <div>
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">My Academies</h2>
-              <p className="text-gray-600 mt-1">Manage your teaching spaces</p>
-            </div>
+        <div className="bg-white border border-gray-200 rounded-xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Mis Estudiantes</h2>
+            <button
+              onClick={() => setShowCreateStudent(true)}
+              className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium text-sm flex items-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Crear Estudiante
+            </button>
           </div>
 
-          {academies.length === 0 ? (
-            <div className="bg-white rounded-2xl shadow-lg p-12 text-center border border-gray-100">
-              <div className="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-10 h-10 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                </svg>
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
-                No academies yet
-              </h3>
-              <p className="text-gray-600 mb-8 max-w-md mx-auto">
-                Create your first academy to start teaching and sharing knowledge with students around the world!
-              </p>
-              <button
-                onClick={() => setShowCreateForm(true)}
-                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 font-bold shadow-lg hover:shadow-xl transition-all duration-200"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/>
-                </svg>
-                Create Your First Academy
-              </button>
+          {enrolledStudents.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <p className="mb-2">No hay estudiantes inscritos aún.</p>
+              <p className="text-sm">Crea estudiantes y ellos podrán inscribirse en tus clases.</p>
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {academies.map((academy) => (
-                <div key={academy.id} className="group bg-white rounded-2xl shadow-md hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-indigo-300">
-                  <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-6 border-b border-gray-100">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="w-14 h-14 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-2xl shadow-lg">
-                        {academy.name.charAt(0)}
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">
+                {enrolledStudents.length} estudiante{enrolledStudents.length !== 1 ? 's' : ''} inscrito{enrolledStudents.length !== 1 ? 's' : ''}
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {enrolledStudents.map((student) => (
+                  <div key={`${student.id}-${student.classId}`} className="border border-gray-200 rounded-lg p-3 hover:shadow-sm transition-shadow">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-green-600 font-semibold text-sm">
+                          {student.name.charAt(0).toUpperCase()}
+                        </span>
                       </div>
-                      <span className="px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-full">
-                        Active
-                      </span>
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900 group-hover:text-indigo-600 transition-colors">
-                      {academy.name}
-                    </h3>
-                  </div>
-                  
-                  <div className="p-6">
-                    {academy.description && (
-                      <p className="text-sm text-gray-600 mb-5 line-clamp-3">
-                        {academy.description}
-                      </p>
-                    )}
-                    
-                    <div className="grid grid-cols-2 gap-4 mb-6">
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                          <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500">Students</p>
-                          <p className="text-lg font-bold text-gray-900">{academy._count.memberships}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
-                          <svg className="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3z"/>
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500">Classes</p>
-                          <p className="text-lg font-bold text-gray-900">{academy._count.classes}</p>
-                        </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-gray-900 truncate">{student.name}</h3>
+                        <p className="text-sm text-gray-500 truncate">{student.email}</p>
+                        <p className="text-xs text-gray-400 mt-1 truncate">Clase: {student.className}</p>
                       </div>
                     </div>
-
-                    <Link
-                      href={`/dashboard/teacher/academy/${academy.id}`}
-                      className="block w-full px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 font-bold text-center shadow-md hover:shadow-lg transition-all duration-200 group-hover:scale-105"
-                    >
-                      Manage Academy →
-                    </Link>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
         </div>
       </div>
+
+      {showCreateStudent && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-gray-900">Crear Estudiante</h2>
+              <button
+                onClick={() => {
+                  setShowCreateStudent(false);
+                  setStudentForm({ email: '', firstName: '', lastName: '', classId: '' });
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateStudent} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={studentForm.email}
+                  onChange={(e) => setStudentForm({ ...studentForm, email: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                  placeholder="estudiante@email.com"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nombre
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={studentForm.firstName}
+                  onChange={(e) => setStudentForm({ ...studentForm, firstName: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                  placeholder="Juan"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Apellido
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={studentForm.lastName}
+                  onChange={(e) => setStudentForm({ ...studentForm, lastName: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                  placeholder="Pérez"
+                />
+              </div>
+
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <p className="text-sm text-yellow-800">
+                  <strong>Nota:</strong> La contraseña del estudiante será: <strong>password</strong>
+                </p>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium transition-colors"
+              >
+                Crear Estudiante
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }
