@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import Link from 'next/link';
+import { BarChart, DonutChart, StatCard } from '@/components/Charts';
 
 interface Academy {
   id: string;
@@ -62,28 +63,13 @@ export default function TeacherDashboard() {
   const [classes, setClasses] = useState<Class[]>([]);
   const [enrolledStudents, setEnrolledStudents] = useState<EnrolledStudent[]>([]);
   const [pendingEnrollments, setPendingEnrollments] = useState<PendingEnrollment[]>([]);
-  const [currentUser, setCurrentUser] = useState<any>(null);
   const [academyName, setAcademyName] = useState<string>('');
   const [showBrowse, setShowBrowse] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [linkCopied, setLinkCopied] = useState(false);
 
   useEffect(() => {
     loadData();
-    loadUser();
   }, []);
-
-  const loadUser = async () => {
-    try {
-      const response = await fetch('/api/auth/me');
-      const result = await response.json();
-      if (result.success) {
-        setCurrentUser(result.data);
-      }
-    } catch (error) {
-      console.error('Failed to load user:', error);
-    }
-  };
 
   const loadData = async () => {
     try {
@@ -192,14 +178,6 @@ export default function TeacherDashboard() {
     }
   };
 
-  const copyJoinLink = () => {
-    if (!currentUser) return;
-    const link = `${window.location.origin}/join/${currentUser.id}`;
-    navigator.clipboard.writeText(link);
-    setLinkCopied(true);
-    setTimeout(() => setLinkCopied(false), 2000);
-  };
-
   const approvedMemberships = memberships.filter(m => m.status === 'APPROVED');
   const hasAcademy = approvedMemberships.length > 0;
 
@@ -296,7 +274,7 @@ export default function TeacherDashboard() {
 
   return (
     <DashboardLayout role="TEACHER">
-      <div className="max-w-5xl mx-auto space-y-8">
+      <div className="max-w-6xl mx-auto space-y-8">
         {/* Header with Academy Branding */}
         <div className="flex items-center justify-between">
           <div>
@@ -311,39 +289,99 @@ export default function TeacherDashboard() {
           </div>
         </div>
 
-        {/* Join Link Section */}
-        {currentUser && (
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                </svg>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCard
+            title="Total Estudiantes"
+            value={enrolledStudents.length}
+            icon={
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            }
+            trend={enrolledStudents.length > 0 ? 'up' : undefined}
+          />
+          <StatCard
+            title="Clases Activas"
+            value={classes.length}
+            icon={
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+            }
+          />
+          <StatCard
+            title="Pendientes"
+            value={pendingEnrollments.length}
+            icon={
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            }
+          />
+          <StatCard
+            title="Promedio por Clase"
+            value={classes.length > 0 ? Math.round(enrolledStudents.length / classes.length) : 0}
+            icon={
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            }
+          />
+        </div>
+
+        {/* Charts Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Students per Class Chart */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Estudiantes por Clase</h3>
+            {classes.length > 0 ? (
+              <div className="h-64">
+                <BarChart
+                  data={classes.map(cls => ({
+                    label: cls.name.length > 15 ? cls.name.substring(0, 15) + '...' : cls.name,
+                    value: enrolledStudents.filter(s => s.classId === cls.id).length
+                  }))}
+                  showValues={true}
+                />
               </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-900 mb-1">Enlace de Invitación para Estudiantes</h3>
-                <p className="text-sm text-gray-600 mb-3">
-                  Comparte este enlace con tus estudiantes. Ellos podrán registrarse y solicitar acceso a tus clases.
-                </p>
-                <div className="flex items-center gap-2">
-                  <code className="flex-1 px-3 py-2 bg-white rounded-lg border border-gray-200 text-sm text-gray-700 truncate">
-                    {`${typeof window !== 'undefined' ? window.location.origin : ''}/join/${currentUser.id}`}
-                  </code>
-                  <button
-                    onClick={copyJoinLink}
-                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-                      linkCopied 
-                        ? 'bg-green-500 text-white' 
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
-                    }`}
-                  >
-                    {linkCopied ? '¡Copiado!' : 'Copiar'}
-                  </button>
+            ) : (
+              <div className="h-64 flex items-center justify-center text-gray-400">
+                <div className="text-center">
+                  <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  <p>Crea tu primera clase para ver estadísticas</p>
                 </div>
               </div>
-            </div>
+            )}
           </div>
-        )}
+
+          {/* Class Distribution */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Distribución de Estudiantes</h3>
+            {classes.length > 0 && enrolledStudents.length > 0 ? (
+              <div className="h-64">
+                <DonutChart
+                  data={classes.map(cls => ({
+                    label: cls.name,
+                    value: enrolledStudents.filter(s => s.classId === cls.id).length
+                  })).filter(d => d.value > 0)}
+                />
+              </div>
+            ) : (
+              <div className="h-64 flex items-center justify-center text-gray-400">
+                <div className="text-center">
+                  <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                  </svg>
+                  <p>Sin datos de distribución</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Pending Approvals Section */}
         {pendingEnrollments.length > 0 && (
@@ -397,73 +435,42 @@ export default function TeacherDashboard() {
           </div>
         )}
 
-        {/* Classes with Students */}
-        {classes.length > 0 && (
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Mis Clases</h2>
-            <div className="space-y-6">
-              {classes.map((cls) => {
-                const classStudents = enrolledStudents.filter(s => s.classId === cls.id);
-                return (
-                  <div key={cls.id} className="border border-gray-200 rounded-lg overflow-hidden">
-                    {/* Class Header */}
-                    <Link
-                      href={`/dashboard/teacher/class/${cls.id}`}
-                      className="block p-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 hover:bg-gray-100 transition-colors"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h3 className="font-bold text-gray-900 text-lg">{cls.name}</h3>
-                          {cls.description && (
-                            <p className="text-sm text-gray-600 mt-1">{cls.description}</p>
-                          )}
-                          <p className="text-xs text-gray-500 mt-1">{cls.academyName}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="px-3 py-1 bg-white rounded-full border border-gray-300 text-gray-700 text-sm font-medium">
-                            {classStudents.length} estudiantes
-                          </span>
-                          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                          </svg>
-                        </div>
-                      </div>
-                    </Link>
-
-                    {/* Students in Class */}
-                    {classStudents.length > 0 && (
-                      <div className="p-4 bg-white">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                          {classStudents.map((student) => (
-                            <div key={student.id} className="border border-gray-200 rounded-lg p-3 hover:shadow-sm transition-shadow">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                  <span className="text-green-600 font-semibold text-xs">
-                                    {student.name.charAt(0).toUpperCase()}
-                                  </span>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-medium text-gray-900 text-sm truncate">{student.name}</p>
-                                  <p className="text-xs text-gray-500 truncate">{student.email}</p>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {classStudents.length === 0 && (
-                      <div className="p-4 bg-gray-50 text-center text-sm text-gray-500">
-                        No hay estudiantes inscritos en esta clase
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Link
+            href="/dashboard/teacher/classes"
+            className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all hover:border-brand-300 group"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-brand-100 rounded-xl flex items-center justify-center group-hover:bg-brand-200 transition-colors">
+                <svg className="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Gestionar Clases</h3>
+                <p className="text-sm text-gray-500">Crea nuevas clases o administra las existentes</p>
+              </div>
             </div>
-          </div>
-        )}
+          </Link>
+
+          <Link
+            href="/dashboard/teacher/progress"
+            className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all hover:border-brand-300 group"
+          >
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Ver Progreso</h3>
+                <p className="text-sm text-gray-500">Monitorea el avance de tus estudiantes</p>
+              </div>
+            </div>
+          </Link>
+        </div>
       </div>
     </DashboardLayout>
   );
