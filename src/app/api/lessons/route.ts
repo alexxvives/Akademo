@@ -18,6 +18,7 @@ export async function POST(request: Request) {
     // Get all video files
     const videoFiles: File[] = [];
     const videoTitles: string[] = [];
+    const videoDescriptions: string[] = [];
     const videoDurations: string[] = [];
     
     for (let i = 0; ; i++) {
@@ -25,18 +26,21 @@ export async function POST(request: Request) {
       if (!file) break;
       videoFiles.push(file);
       videoTitles.push(formData.get(`video_title_${i}`) as string || file.name);
+      videoDescriptions.push(formData.get(`video_description_${i}`) as string || '');
       videoDurations.push(formData.get(`video_duration_${i}`) as string || '0');
     }
     
     // Get all document files
     const documentFiles: File[] = [];
     const documentTitles: string[] = [];
+    const documentDescriptions: string[] = [];
     
     for (let i = 0; ; i++) {
       const file = formData.get(`document_${i}`) as File;
       if (!file) break;
       documentFiles.push(file);
-      documentTitles.push(formData.get(`document_title_${i}`) as string || file.name);
+      documentTitles.push(formData.get(`document_title_${i}`) as string || '');
+      documentDescriptions.push(formData.get(`document_description_${i}`) as string || '');
     }
 
     if (!classId) {
@@ -79,8 +83,8 @@ export async function POST(request: Request) {
         continue;
       }
       
-      // Validate file size (100MB limit)
-      if (file.size > 100 * 1024 * 1024) {
+      // Validate file size (500MB limit)
+      if (file.size > 500 * 1024 * 1024) {
         continue;
       }
       
@@ -89,13 +93,13 @@ export async function POST(request: Request) {
         fileName: file.name,
         fileSize: file.size,
         mimeType: file.type,
-        storageType: 'r2',
         storagePath,
         uploadedById: session.id,
       });
       
       const video = await videoQueries.create({
-        title: videoTitles[i],
+        title: videoTitles[i] || file.name,
+        description: videoDescriptions[i] || undefined,
         lessonId: lesson.id,
         uploadId: upload.id,
         durationSeconds: parseFloat(videoDurations[i]) || undefined,
@@ -124,13 +128,13 @@ export async function POST(request: Request) {
         fileName: file.name,
         fileSize: file.size,
         mimeType: file.type,
-        storageType: 'r2',
         storagePath,
         uploadedById: session.id,
       });
       
       const document = await documentQueries.create({
-        title: documentTitles[i],
+        title: documentTitles[i] || file.name,
+        description: documentDescriptions[i] || undefined,
         lessonId: lesson.id,
         uploadId: upload.id,
       });

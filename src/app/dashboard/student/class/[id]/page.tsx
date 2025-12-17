@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import DashboardLayout from '@/components/DashboardLayout';
 import ProtectedVideoPlayer from '@/components/ProtectedVideoPlayer';
+import LiveStreamPlayer from '@/components/LiveStreamPlayer';
 
 interface Video {
   id: string;
@@ -62,9 +63,15 @@ export default function ClassPage() {
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [enrollmentStatus, setEnrollmentStatus] = useState<'PENDING' | 'APPROVED'>('APPROVED');
+
+  // Live Stream
+  const [activeStream, setActiveStream] = useState<any>(null);
+  const [isWatchingStream, setIsWatchingStream] = useState(false);
 
   useEffect(() => {
     loadData();
+    checkActiveStream();
   }, [classId]);
 
   // Handle URL parameters for lesson and video selection
@@ -124,6 +131,8 @@ export default function ClassPage() {
 
       if (classResult.success) {
         setClassData(classResult.data);
+        // Get enrollment status from class data
+        setEnrollmentStatus(classResult.data.enrollmentStatus || 'APPROVED');
       }
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -132,9 +141,33 @@ export default function ClassPage() {
     }
   };
 
+  const checkActiveStream = async () => {
+    try {
+      const res = await fetch(`/api/stream?classId=${classId}`);
+      const result = await res.json();
+      if (result.success && result.data && result.data.status === 'LIVE') {
+        setActiveStream(result.data);
+      }
+    } catch (e) {
+      console.error('Error checking stream:', e);
+    }
+  };
+
+  // Poll for active stream every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(checkActiveStream, 30000);
+    return () => clearInterval(interval);
+  }, [classId]);
+
   const selectLesson = (lesson: Lesson) => {
     const isReleased = new Date(lesson.releaseDate) <= new Date();
     if (!isReleased) return;
+    
+    // Block content access if enrollment is pending
+    if (enrollmentStatus === 'PENDING') {
+      alert('Your enrollment is pending approval. You can view lessons but cannot access content yet.');
+      return;
+    }
     
     router.push(`/dashboard/student/class/${classId}?lesson=${lesson.id}`);
   };
@@ -171,70 +204,126 @@ export default function ClassPage() {
   return (
     <DashboardLayout role="STUDENT">
       <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
-        {/* Header - Always visible */}
-        <div>
-          <Link href="/dashboard/student" className="text-sm text-gray-500 hover:text-gray-900 mb-4 inline-block">
-            ← Back to Dashboard
-          </Link>
-          {classData && (
-            <div className="mb-2">
-              <h1 className="text-2xl font-bold text-gray-900">{classData.name}</h1>
-              {classData.description && (
-                <p className="text-gray-600 mt-1">{classData.description}</p>
-              )}
-              <p className="text-sm text-gray-500 mt-1">{classData.academy.name}</p>
+
+        {/* Pending Enrollment Notice */}
+        {enrollmentStatus === 'PENDING' && (
+          <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-6">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-yellow-900 mb-1">Enrollment Pending Approval</h3>
+                <p className="text-sm text-yellow-800 mb-3">
+                  Your request to join this class is waiting for teacher approval. You can view the lessons below, but you won't be able to access videos or documents until your enrollment is approved.
+                </p>
+                <p className="text-xs text-yellow-700">
+                  The teacher will review your request soon and notify you once approved.
+                </p>
+              </div>
             </div>
-          )}
-          <div className="flex gap-4 text-sm text-gray-600">
-            <span>{lessons.length} lesson{lessons.length !== 1 ? 's' : ''}</span>
           </div>
-        </div>
+        )}
+
+        {/* Live Stream Banner */}
+        {activeStream && !isWatchingStream && !selectedLesson && enrollmentStatus === 'APPROVED' && (
+          <div className="bg-red-600 text-white rounded-xl p-4 flex items-center justify-between animate-pulse">
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-2">
+                <span className="w-3 h-3 bg-white rounded-full" />
+                <span className="font-semibold">LIVE NOW</span>
+              </span>
+              <span className="text-white/80">|</span>
+              <span>{activeStream.title || 'Your teacher is streaming live!'}</span>
+            </div>
+            <button
+              onClick={() => setIsWatchingStream(true)}
+              className="bg-white text-red-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-100"
+            >
+              Join Stream →
+            </button>
+          </div>
+        )}
+
+        {/* Live Stream Player */}
+        {isWatchingStream && activeStream && user && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                <span className="w-2 h-2 bg-red-600 rounded-full animate-pulse" />
+                Live Class
+              </h3>
+              <button
+                onClick={() => setIsWatchingStream(false)}
+                className="text-sm text-gray-500 hover:text-gray-900"
+              >
+                ← Back to lessons
+              </button>
+            </div>
+            <LiveStreamPlayer
+              roomUrl={activeStream.roomUrl}
+              token={activeStream.token}
+              isOwner={false}
+              userName={`${user.firstName} ${user.lastName}`}
+              watermarkText={`${user.firstName} ${user.lastName} • ${user.email}`}
+              onLeave={() => { setIsWatchingStream(false); checkActiveStream(); }}
+              onStreamEnd={() => { setIsWatchingStream(false); setActiveStream(null); }}
+            />
+          </div>
+        )}
 
         {/* Lesson Content View - When a lesson is selected */}
-        {selectedLesson && user && (
+        {selectedLesson && user && !isWatchingStream && (
           <div className="space-y-6">
-            {/* Lesson Header */}
+            {/* Back button when lesson is selected */}
             <button
               onClick={goBackToLessons}
               className="text-sm text-gray-500 hover:text-gray-900 inline-block"
             >
               ← Back to lessons
             </button>
+            
+            {/* Videos Section */}
+            {selectedLesson.videos.length > 0 && (
+              <div className="bg-white rounded-xl border border-gray-200 p-6">
+                {/* Video selector buttons if multiple videos */}
+                {selectedLesson.videos.length > 1 && (
+                  <div className="flex gap-2 flex-wrap mb-4">
+                    {selectedLesson.videos.map((video, index) => (
+                      <button
+                        key={video.id}
+                        onClick={() => selectVideoInLesson(video)}
+                        className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                          selectedVideo?.id === video.id
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        Video {index + 1}
+                      </button>
+                    ))}
+                  </div>
+                )}
 
-            {/* Video Selection - if multiple videos */}
-            {selectedLesson.videos.length > 1 && (
-              <div className="flex gap-2 flex-wrap">
-                {selectedLesson.videos.map((video) => (
-                  <button
-                    key={video.id}
-                    onClick={() => selectVideoInLesson(video)}
-                    className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                      selectedVideo?.id === video.id
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {video.title}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Video Player */}
-            {selectedVideo && (
-              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                <ProtectedVideoPlayer
-                  videoUrl={`/api/video/stream/${selectedVideo.id}`}
-                  videoId={selectedVideo.id}
-                  studentId={user.id}
-                  studentName={`${user.firstName} ${user.lastName}`}
-                  studentEmail={user.email}
-                  maxWatchTimeMultiplier={selectedLesson.maxWatchTimeMultiplier}
-                  durationSeconds={selectedVideo.durationSeconds || 0}
-                  initialPlayState={selectedVideo.playStates?.[0] || { totalWatchTimeSeconds: 0, sessionStartTime: null }}
-                  userRole={user.role}
-                  watermarkIntervalMins={selectedLesson.watermarkIntervalMins}
-                />
+                {/* Video Player */}
+                {selectedVideo && (
+                  <div className="rounded-lg overflow-hidden">
+                    <ProtectedVideoPlayer
+                      videoUrl={`/api/video/stream/${selectedVideo.id}`}
+                      videoId={selectedVideo.id}
+                      studentId={user.id}
+                      studentName={`${user.firstName} ${user.lastName}`}
+                      studentEmail={user.email}
+                      maxWatchTimeMultiplier={selectedLesson.maxWatchTimeMultiplier}
+                      durationSeconds={selectedVideo.durationSeconds || 0}
+                      initialPlayState={selectedVideo.playStates?.[0] || { totalWatchTimeSeconds: 0, sessionStartTime: null }}
+                      userRole={user.role}
+                      watermarkIntervalMins={selectedLesson.watermarkIntervalMins}
+                    />
+                  </div>
+                )}
               </div>
             )}
 
@@ -286,8 +375,14 @@ export default function ClassPage() {
         )}
 
         {/* Lessons Grid - When no lesson is selected */}
-        {!selectedLesson && (
+        {!selectedLesson && !isWatchingStream && (
           <div>
+            <button
+              onClick={() => router.push('/dashboard/student')}
+              className="text-sm text-gray-500 hover:text-gray-900 mb-4 inline-block"
+            >
+              ← Back to classes
+            </button>
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Lessons</h2>
             
             {lessons.length === 0 ? (
@@ -339,20 +434,24 @@ export default function ClassPage() {
                       {/* Video Progress Bars */}
                       {lesson.videos && lesson.videos.length > 0 && (
                         <div className="space-y-2 mb-3">
-                          {lesson.videos.map((video: any) => {
+                          {lesson.videos.map((video: any, index: number) => {
                             const playState = video.playStates?.[0];
                             const watchedSeconds = playState?.totalWatchTimeSeconds || 0;
                             const videoDuration = video.durationSeconds || 0;
+                            
+                            // Only show progress bar if video has valid duration
+                            if (videoDuration <= 0) return null;
+                            
                             const maxWatchSeconds = videoDuration * lesson.maxWatchTimeMultiplier;
                             const remainingSeconds = Math.max(0, maxWatchSeconds - watchedSeconds);
-                            const progressPercent = videoDuration > 0 ? Math.min(100, (watchedSeconds / videoDuration) * 100) : 0;
+                            const progressPercent = Math.min(100, (watchedSeconds / maxWatchSeconds) * 100);
                             const remainingMinutes = Math.ceil(remainingSeconds / 60);
                             
                             return (
                               <div key={video.id}>
                                 <div className="flex items-center justify-between text-xs mb-1">
-                                  <span className="text-gray-600 truncate flex-1">{video.title}</span>
-                                  <span className="text-gray-500 ml-2">{remainingMinutes}min left</span>
+                                  <span className="text-gray-600">Video {index + 1}</span>
+                                  <span className="text-gray-500">{Math.round(progressPercent)}% · {remainingMinutes}min left</span>
                                 </div>
                                 <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
                                   <div 
@@ -366,7 +465,6 @@ export default function ClassPage() {
                         </div>
                       )}
                       
-                      {/* Content Count */}
                       <div className="flex items-center gap-3 text-xs text-gray-500 mb-3">
                         {videoCount > 0 && (
                           <span className="flex items-center gap-1">

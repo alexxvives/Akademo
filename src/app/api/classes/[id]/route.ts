@@ -36,12 +36,15 @@ export async function GET(
       }
     } else if (session.role === 'STUDENT') {
       // Students can only access classes they're enrolled in
-      const enrollment = await enrollmentQueries.findByClassAndStudent(id, session.id);
+      const enrollment = await enrollmentQueries.findByClassAndStudent(id, session.id) as any;
 
       if (!enrollment) {
         console.log('[API /api/classes/[id]] Student not enrolled in class');
         return errorResponse('Forbidden - not enrolled in this class', 403);
       }
+      
+      // Add enrollment status to class data for frontend
+      classData.enrollmentStatus = enrollment.status;
     }
     // Admins can access all classes
 

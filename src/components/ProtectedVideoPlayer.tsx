@@ -86,11 +86,29 @@ export default function ProtectedVideoPlayer({
 
       if (!response.ok) {
         const data = await response.json();
+        // Check if video was blocked
+        if (response.status === 403) {
+          setIsLocked(true);
+          setPlayState(prev => ({ ...prev, status: 'BLOCKED' }));
+          if (videoRef.current && !videoRef.current.paused) {
+            videoRef.current.pause();
+          }
+        }
         throw new Error(data.error || 'Failed to save progress');
       }
 
-      // Don't update local state with API response - causes jumps
-      // Local state already has the latest accumulated time
+      const data = await response.json();
+      if (data.success && data.data.playState) {
+        const newPlayState = data.data.playState;
+        // Update status if backend marked as blocked
+        if (newPlayState.status === 'BLOCKED') {
+          setIsLocked(true);
+          setPlayState(newPlayState);
+          if (videoRef.current && !videoRef.current.paused) {
+            videoRef.current.pause();
+          }
+        }
+      }
     } catch (err) {
       console.error('Failed to save progress:', err);
       // Don't set error for progress save failures to avoid disrupting playback
@@ -225,7 +243,11 @@ export default function ProtectedVideoPlayer({
     return () => video.removeEventListener('contextmenu', preventContextMenu);
   }, []);
 
-  // Student watermark timer - shows every X minutes for 5 seconds
+  // Student watermark timer
+  // Logic: Watermark appears immediately when video starts playing, stays for 5 seconds, then disappears.
+  // After that, it reappears every X minutes (watermarkIntervalMins) for 5 seconds.
+  // This prevents screen recording by periodically overlaying student info on the video.
+  // Design: Semi-transparent diagonal watermark - discreet but visible enough to identify in recordings.
   useEffect(() => {
     if (isUnlimitedUser || !studentName || !isPlaying) {
       setShowWatermark(false);
@@ -371,17 +393,17 @@ export default function ProtectedVideoPlayer({
         className={`relative bg-black ${isFullscreen ? 'flex items-center justify-center h-screen' : ''}`}
       >
         {/* Brand Watermark */}
-        <div className="absolute top-4 right-4 bg-black/50 text-white px-3 py-1 rounded text-xs font-medium z-10 pointer-events-none">
+        <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide z-10 pointer-events-none shadow-lg">
           AKADEMO
         </div>
 
-        {/* Student Watermark - appears periodically, subtle */}
+        {/* Student Watermark - discreet but visible for screen recording detection */}
         {showWatermark && studentName && (
-          <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none animate-pulse">
-            <div className="text-center px-4 py-2 transform rotate-[-15deg]">
-              <div className="text-white/30 text-sm font-medium">{studentName}</div>
+          <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+            <div className="bg-black/20 backdrop-blur-sm border border-white/10 rounded-xl px-6 py-3 transform -rotate-12 shadow-lg">
+              <div className="text-white/90 text-lg font-semibold tracking-wide">{studentName}</div>
               {studentEmail && (
-                <div className="text-white/20 text-xs">{studentEmail}</div>
+                <div className="text-white/70 text-xs font-medium mt-0.5">{studentEmail}</div>
               )}
             </div>
           </div>

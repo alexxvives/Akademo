@@ -1,4 +1,4 @@
-import { videoQueries, academyQueries, settingsQueries } from './db';
+import { videoQueries, academyQueries } from './db';
 
 // Types for database records
 interface VideoWithDetails {
@@ -11,13 +11,8 @@ interface Academy {
   defaultMaxWatchTimeMultiplier?: number | null;
 }
 
-interface PlatformSettings {
-  defaultMaxWatchTimeMultiplier: number;
-}
-
-export async function getPlatformSettings() {
-  return await settingsQueries.get();
-}
+// Default platform settings (no longer in database)
+const DEFAULT_MAX_WATCH_TIME_MULTIPLIER = 2.0;
 
 export async function getEffectiveVideoSettings(videoId: string) {
   // Use findWithDetails to get video with classId and academyId from Lesson join
@@ -36,13 +31,11 @@ export async function getEffectiveVideoSettings(videoId: string) {
     throw new Error('Academy not found');
   }
 
-  const platformSettings = await getPlatformSettings() as PlatformSettings;
-
-  // Priority: Lesson > Academy > Platform
+  // Priority: Lesson > Academy > Default
   const maxWatchTimeMultiplier =
     video.lessonMultiplier ??
     academy.defaultMaxWatchTimeMultiplier ??
-    platformSettings.defaultMaxWatchTimeMultiplier;
+    DEFAULT_MAX_WATCH_TIME_MULTIPLIER;
 
   return {
     maxWatchTimeMultiplier,

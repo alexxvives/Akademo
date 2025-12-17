@@ -45,7 +45,6 @@ model Academy {
   owner       User                @relation("AcademyOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   memberships AcademyMembership[]
   classes     Class[]
-  billing     BillingConfig?
 }
 
 model AcademyMembership {
@@ -151,8 +150,7 @@ model Upload {
   fileName     String
   fileSize     Int
   mimeType     String
-  storageType  String   // "local" or "r2"
-  storagePath  String   // local path or R2 key
+  storagePath  String   // R2 object key
   uploadedById String
   createdAt    DateTime @default(now())
 
@@ -202,32 +200,22 @@ model DeviceSession {
   @@unique([userId, deviceFingerprint])
 }
 
-model PlatformSettings {
-  id    String @id @default("platform_settings")
-  
-  // Platform-wide defaults - now using watch time multiplier
-  defaultMaxWatchTimeMultiplier Float @default(2.0)
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-// Future billing support
-model BillingConfig {
-  id        String   @id @default(cuid())
-  academyId String   @unique
-  
-  // Stripe integration (future)
-  stripeCustomerId       String?
-  stripeSubscriptionId   String?
-  stripePriceId          String?
-  
-  // Settings
-  pricePerStudentPerMonth Float @default(1.0)
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  academy Academy @relation(fields: [academyId], references: [id], onDelete: Cascade)
-}
+// Future billing support - REMOVED (not implemented yet)
+// model BillingConfig {
+//   id        String   @id @default(cuid())
+//   academyId String   @unique
+//   
+//   // Stripe integration (future)
+//   stripeCustomerId       String?
+//   stripeSubscriptionId   String?
+//   stripePriceId          String?
+//   
+//   // Settings
+//   pricePerStudentPerMonth Float @default(1.0)
+//   
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+//
+//   // Relations
+//   academy Academy @relation(fields: [academyId], references: [id], onDelete: Cascade)
+// }

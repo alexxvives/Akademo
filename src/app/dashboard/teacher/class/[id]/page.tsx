@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
 import Link from 'next/link';
 import ProtectedVideoPlayer from '@/components/ProtectedVideoPlayer';
+import LiveStreamPlayer from '@/components/LiveStreamPlayer';
 
 interface Lesson {
   id: string;
@@ -57,25 +58,39 @@ export default function TeacherClassPage() {
 
   // Form states
   const [showLessonForm, setShowLessonForm] = useState(false);
+  const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [lessonFormData, setLessonFormData] = useState({
     title: '',
     description: '',
     releaseDate: new Date().toISOString().split('T')[0],
     maxWatchTimeMultiplier: 2.0,
     watermarkIntervalMins: 5,
-    videos: [] as { file: File; title: string; duration: number }[],
-    documents: [] as { file: File; title: string }[],
+    videos: [] as { file: File; title: string; description: string; duration: number }[],
+    documents: [] as { file: File; title: string; description: string }[],
   });
 
   // Analytics
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [analyticsData, setAnalyticsData] = useState<any>(null);
 
+  // Live Stream
+  const [activeStream, setActiveStream] = useState<any>(null);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamLoading, setStreamLoading] = useState(false);
+  const [showSaveRecording, setShowSaveRecording] = useState(false);
+  const [recordingData, setRecordingData] = useState<any>(null);
+
+  // Pending Enrollments
+  const [pendingEnrollments, setPendingEnrollments] = useState<any[]>([]);
+  const [showPendingRequests, setShowPendingRequests] = useState(false);
+
   useEffect(() => {
     if (classId) {
       loadData();
       loadUser();
+      checkActiveStream();
     }
   }, [classId]);
 
@@ -110,13 +125,23 @@ export default function TeacherClassPage() {
 
   const loadData = async () => {
     try {
-      const [classRes, lessonsRes] = await Promise.all([
+      const [classRes, lessonsRes, pendingRes] = await Promise.all([
         fetch(`/api/classes/${classId}`),
-        fetch(`/api/lessons?classId=${classId}`)
+        fetch(`/api/lessons?classId=${classId}`),
+        fetch(`/api/enrollments/pending`)
       ]);
-      const [classResult, lessonsResult] = await Promise.all([classRes.json(), lessonsRes.json()]);
+      const [classResult, lessonsResult, pendingResult] = await Promise.all([
+        classRes.json(),
+        lessonsRes.json(),
+        pendingRes.json()
+      ]);
       if (classResult.success) setClassData(classResult.data);
       if (lessonsResult.success) setLessons(lessonsResult.data);
+      if (pendingResult.success) {
+        // Filter to only show enrollments for this class
+        const classPending = pendingResult.data.filter((e: any) => e.classId === classId);
+        setPendingEnrollments(classPending);
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -164,6 +189,7 @@ export default function TeacherClassPage() {
       return alert('Please add at least one video or document');
     }
     setUploading(true);
+    setUploadProgress(0);
     try {
       const formData = new FormData();
       formData.append('classId', classId);
@@ -175,29 +201,63 @@ export default function TeacherClassPage() {
       lessonFormData.videos.forEach((v, i) => {
         formData.append(`video_${i}`, v.file);
         formData.append(`video_title_${i}`, v.title);
+        formData.append(`video_description_${i}`, v.description);
         formData.append(`video_duration_${i}`, v.duration.toString());
       });
       lessonFormData.documents.forEach((d, i) => {
         formData.append(`document_${i}`, d.file);
         formData.append(`document_title_${i}`, d.title);
+        formData.append(`document_description_${i}`, d.description);
       });
-      const res = await fetch('/api/lessons', { method: 'POST', body: formData });
-      const result = await res.json();
+      
+      // Use XMLHttpRequest to track upload progress
+      const result = await new Promise<any>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            const percentComplete = (e.loaded / e.total) * 100;
+            setUploadProgress(percentComplete);
+          }
+        });
+        
+        xhr.addEventListener('load', () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const response = JSON.parse(xhr.responseText);
+              resolve(response);
+            } catch (e) {
+              reject(new Error('Failed to parse response'));
+            }
+          } else {
+            reject(new Error(`Upload failed with status ${xhr.status}`));
+          }
+        });
+        
+        xhr.addEventListener('error', () => reject(new Error('Upload failed')));
+        xhr.addEventListener('abort', () => reject(new Error('Upload aborted')));
+        
+        xhr.open('POST', '/api/lessons');
+        xhr.send(formData);
+      });
+      
       if (result.success) {
         setLessonFormData({
           title: '', description: '', releaseDate: new Date().toISOString().split('T')[0],
           maxWatchTimeMultiplier: 2.0, watermarkIntervalMins: 5, videos: [], documents: []
         });
         setShowLessonForm(false);
+        setUploadProgress(0);
         loadData();
       } else {
         alert(result.error || 'Failed to create lesson');
       }
     } catch (e) {
       console.error(e);
-      alert('Error. Check file sizes are under 100MB.');
+      alert('Error uploading files. Check file sizes are under 500MB.');
     } finally {
       setUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -214,8 +274,8 @@ export default function TeacherClassPage() {
   };
 
   const addVideoToForm = (file: File) => {
-    if (file.size > 100 * 1024 * 1024) {
-      alert('File size must be under 100MB');
+    if (file.size > 500 * 1024 * 1024) {
+      alert('File size must be under 500MB');
       return;
     }
     const video = document.createElement('video');
@@ -224,7 +284,7 @@ export default function TeacherClassPage() {
       window.URL.revokeObjectURL(video.src);
       setLessonFormData(p => ({
         ...p,
-        videos: [...p.videos, { file, title: file.name.replace(/\.[^/.]+$/, ''), duration: Math.floor(video.duration) }]
+        videos: [...p.videos, { file, title: '', description: '', duration: Math.floor(video.duration) }]
       }));
     };
     video.src = URL.createObjectURL(file);
@@ -233,8 +293,123 @@ export default function TeacherClassPage() {
   const addDocumentToForm = (file: File) => {
     setLessonFormData(p => ({
       ...p,
-      documents: [...p.documents, { file, title: file.name.replace(/\.[^/.]+$/, '') }]
+      documents: [...p.documents, { file, title: '', description: '' }]
     }));
+  };
+
+  // Live Streaming functions
+  const checkActiveStream = async () => {
+    try {
+      const res = await fetch(`/api/stream?classId=${classId}`);
+      const result = await res.json();
+      if (result.success && result.data) {
+        setActiveStream(result.data);
+        if (result.data.status === 'LIVE') {
+          setIsStreaming(true);
+        }
+      }
+    } catch (e) {
+      console.error('Error checking stream:', e);
+    }
+  };
+
+  const startStream = async () => {
+    setStreamLoading(true);
+    try {
+      const res = await fetch('/api/stream', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ classId, title: `Live Class - ${new Date().toLocaleDateString()}` }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setActiveStream(result.data);
+        setIsStreaming(true);
+      } else {
+        alert(result.error || 'Failed to start stream');
+      }
+    } catch (e) {
+      console.error('Error starting stream:', e);
+      alert('Failed to start stream');
+    } finally {
+      setStreamLoading(false);
+    }
+  };
+
+  const handleStreamEnd = async () => {
+    if (!activeStream) return;
+    try {
+      const res = await fetch(`/api/stream/${activeStream.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'end' }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setIsStreaming(false);
+        if (result.recording) {
+          setRecordingData(result.recording);
+          setShowSaveRecording(true);
+        } else {
+          setActiveStream(null);
+        }
+      }
+    } catch (e) {
+      console.error('Error ending stream:', e);
+    }
+  };
+
+  const handleEditLesson = async (lesson: Lesson) => {
+    // Load lesson details
+    const detail = await loadLessonDetail(lesson.id);
+    if (!detail) return;
+    
+    // Populate form with existing data
+    setLessonFormData({
+      title: detail.title,
+      description: detail.description || '',
+      releaseDate: detail.releaseDate.split('T')[0],
+      maxWatchTimeMultiplier: detail.maxWatchTimeMultiplier,
+      watermarkIntervalMins: detail.watermarkIntervalMins,
+      videos: [],
+      documents: [],
+    });
+    setEditingLessonId(lesson.id);
+    setShowLessonForm(true);
+  };
+
+  const handleUpdateLesson = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingLessonId) return;
+    
+    try {
+      const res = await fetch(`/api/lessons/${editingLessonId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: lessonFormData.title,
+          description: lessonFormData.description,
+          releaseDate: new Date(lessonFormData.releaseDate).toISOString(),
+          maxWatchTimeMultiplier: lessonFormData.maxWatchTimeMultiplier,
+          watermarkIntervalMins: lessonFormData.watermarkIntervalMins,
+        }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setLessonFormData({
+          title: '', description: '', releaseDate: new Date().toISOString().split('T')[0],
+          maxWatchTimeMultiplier: 2.0, watermarkIntervalMins: 5, videos: [], documents: []
+        });
+        setEditingLessonId(null);
+        setShowLessonForm(false);
+        loadData();
+      } else {
+        alert(result.error || 'Failed to update lesson');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error updating lesson');
+    }
   };
 
   const loadAnalytics = async () => {
@@ -244,6 +419,27 @@ export default function TeacherClassPage() {
       if (result.success) setAnalyticsData(result.data);
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const handleEnrollmentAction = async (enrollmentId: string, action: 'approve' | 'reject') => {
+    try {
+      const res = await fetch('/api/enrollments/pending', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enrollmentId, action }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        // Reload pending enrollments
+        setPendingEnrollments(prev => prev.filter(e => e.id !== enrollmentId));
+        loadData(); // Refresh class data with new enrollments
+      } else {
+        alert(result.error || 'Failed to process enrollment');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error processing enrollment');
     }
   };
 
@@ -281,18 +477,76 @@ export default function TeacherClassPage() {
   return (
     <DashboardLayout role="TEACHER">
       <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
-        {/* Header */}
-        <div>
-          <Link href="/dashboard/teacher" className="text-sm text-gray-500 hover:text-gray-900 mb-4 inline-block">
-            ← {classData.academy.name}
-          </Link>
-          <h1 className="text-2xl font-bold text-gray-900">{classData.name}</h1>
-          {classData.description && <p className="text-gray-600 mt-1">{classData.description}</p>}
-          <div className="flex gap-6 mt-2 text-sm text-gray-500">
-            <span>{classData.enrollments.length} students</span>
-            <span>{lessons.length} lessons</span>
+        {/* Header - Only show when no lesson is selected */}
+        {!selectedLesson && (
+          <div>
+            <Link href="/dashboard/teacher" className="text-sm text-gray-500 hover:text-gray-900 mb-4 inline-block">
+              ← {classData.academy.name}
+            </Link>
+            <h1 className="text-2xl font-bold text-gray-900">{classData.name}</h1>
+            {classData.description && <p className="text-gray-600 mt-1">{classData.description}</p>}
+            <div className="flex gap-6 mt-2 text-sm text-gray-500">
+              <span>{classData.enrollments.length} students</span>
+              <span>{lessons.length} lessons</span>
+              {pendingEnrollments.length > 0 && (
+                <button
+                  onClick={() => setShowPendingRequests(!showPendingRequests)}
+                  className="text-orange-600 hover:text-orange-700 font-medium flex items-center gap-1"
+                >
+                  <span className="w-2 h-2 bg-orange-600 rounded-full animate-pulse"></span>
+                  {pendingEnrollments.length} pending request{pendingEnrollments.length !== 1 ? 's' : ''}
+                </button>
+              )}
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Pending Enrollment Requests */}
+        {pendingEnrollments.length > 0 && showPendingRequests && !selectedLesson && (
+          <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-6">
+            <h3 className="font-semibold text-orange-900 mb-4 flex items-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+              Pending Access Requests
+            </h3>
+            <div className="space-y-3">
+              {pendingEnrollments.map((enrollment) => (
+                <div key={enrollment.id} className="bg-white border border-orange-200 rounded-lg p-4 flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-gray-900">
+                      {enrollment.student.firstName} {enrollment.student.lastName}
+                    </p>
+                    <p className="text-sm text-gray-600">{enrollment.student.email}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Requested {new Date(enrollment.enrolledAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEnrollmentAction(enrollment.id, 'approve')}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      onClick={() => handleEnrollmentAction(enrollment.id, 'reject')}
+                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-300"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => setShowPendingRequests(false)}
+              className="mt-4 text-sm text-orange-700 hover:text-orange-800"
+            >
+              Close
+            </button>
+          </div>
+        )}
 
         {/* Selected Lesson View */}
         {selectedLesson && currentUser && (
@@ -313,7 +567,7 @@ export default function TeacherClassPage() {
             {/* Video Tabs */}
             {selectedLesson.videos.length > 1 && (
               <div className="flex gap-2 flex-wrap">
-                {selectedLesson.videos.map((video) => (
+                {selectedLesson.videos.map((video, index) => (
                   <button
                     key={video.id}
                     onClick={() => selectVideoInLesson(video)}
@@ -323,7 +577,7 @@ export default function TeacherClassPage() {
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
-                    {video.title}
+                    Video {index + 1}
                   </button>
                 ))}
               </div>
@@ -389,6 +643,26 @@ export default function TeacherClassPage() {
         {/* Main View - No Lesson Selected */}
         {!selectedLesson && (
           <>
+            {/* Live Stream Active Banner */}
+            {isStreaming && activeStream && (
+              <div className="bg-red-600 text-white rounded-xl p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center gap-2">
+                    <span className="w-3 h-3 bg-white rounded-full animate-pulse" />
+                    <span className="font-semibold">LIVE NOW</span>
+                  </span>
+                  <span className="text-white/80">|</span>
+                  <span>{activeStream.title || 'Live Class'}</span>
+                </div>
+                <button
+                  onClick={() => {/* scroll to stream player */}}
+                  className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-sm font-medium"
+                >
+                  View Stream ↓
+                </button>
+              </div>
+            )}
+
             {/* Action Buttons */}
             <div className="flex flex-wrap gap-3">
               <button
@@ -399,6 +673,34 @@ export default function TeacherClassPage() {
               >
                 + Create Lesson
               </button>
+              
+              {/* Live Stream Button */}
+              {!isStreaming ? (
+                <button
+                  onClick={startStream}
+                  disabled={streamLoading}
+                  className="px-4 py-2.5 rounded-lg font-medium text-sm transition-all bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
+                >
+                  {streamLoading ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Starting...
+                    </>
+                  ) : (
+                    <>
+                      <span className="w-2 h-2 bg-white rounded-full" />
+                      Go Live
+                    </>
+                  )}
+                </button>
+              ) : (
+                <button
+                  onClick={handleStreamEnd}
+                  className="px-4 py-2.5 rounded-lg font-medium text-sm transition-all bg-gray-800 text-white hover:bg-gray-900"
+                >
+                  End Stream
+                </button>
+              )}
               <button
                 onClick={() => { setShowAnalytics(!showAnalytics); if (!showAnalytics) loadAnalytics(); }}
                 className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-all ${
@@ -409,10 +711,65 @@ export default function TeacherClassPage() {
               </button>
             </div>
 
+            {/* Live Stream Player */}
+            {isStreaming && activeStream && currentUser && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-red-600 rounded-full animate-pulse" />
+                    Live Stream
+                  </h3>
+                  <span className="text-sm text-gray-500">
+                    Students can join from their dashboard
+                  </span>
+                </div>
+                <LiveStreamPlayer
+                  roomUrl={activeStream.roomUrl}
+                  token={activeStream.token}
+                  isOwner={true}
+                  userName={`${currentUser.firstName} ${currentUser.lastName}`}
+                  onLeave={() => setIsStreaming(false)}
+                  onStreamEnd={handleStreamEnd}
+                />
+              </div>
+            )}
+
+            {/* Save Recording Modal */}
+            {showSaveRecording && recordingData && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 space-y-4">
+                  <h3 className="font-semibold text-gray-900 text-lg">Stream Ended</h3>
+                  <p className="text-gray-600">
+                    Your stream was recorded ({Math.round(recordingData.duration / 60)} minutes).
+                    Would you like to save it as a lesson video?
+                  </p>
+                  <div className="flex gap-3">
+                    <a
+                      href={recordingData.downloadLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg text-center font-medium hover:bg-blue-700"
+                    >
+                      Download Recording
+                    </a>
+                    <button
+                      onClick={() => { setShowSaveRecording(false); setRecordingData(null); setActiveStream(null); }}
+                      className="px-4 py-2.5 text-gray-600 hover:text-gray-900 font-medium"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Tip: Download the recording, then create a new lesson and upload it to apply watch time limits.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Lesson Form */}
             {showLessonForm && (
-              <form onSubmit={handleLessonCreate} className="bg-white rounded-xl border border-gray-200 p-5 space-y-5">
-                <h3 className="font-semibold text-gray-900">Create New Lesson</h3>
+              <form onSubmit={editingLessonId ? handleUpdateLesson : handleLessonCreate} className="bg-white rounded-xl border border-gray-200 p-5 space-y-5">
+                <h3 className="font-semibold text-gray-900">{editingLessonId ? 'Edit Lesson' : 'Create New Lesson'}</h3>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1.5">Title</label>
@@ -439,16 +796,47 @@ export default function TeacherClassPage() {
                     <p className="text-xs text-gray-500 mt-1">How often watermark appears</p>
                   </div>
                 </div>
+                {!editingLessonId && (
+                  <>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Videos</label>
                   <input type="file" accept="video/mp4" multiple onChange={e => { if (e.target.files) Array.from(e.target.files).forEach(addVideoToForm); e.target.value = ''; }} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"/>
                   {lessonFormData.videos.length > 0 && (
                     <div className="mt-2 space-y-2">
                       {lessonFormData.videos.map((v, i) => (
-                        <div key={i} className="flex items-center gap-2 p-2 bg-blue-50 rounded-lg">
-                          <input type="text" value={v.title} onChange={e => { const nv = [...lessonFormData.videos]; nv[i].title = e.target.value; setLessonFormData({ ...lessonFormData, videos: nv }); }} className="flex-1 px-2 py-1 border border-blue-200 rounded text-sm"/>
-                          <span className="text-xs text-gray-500">{formatDuration(v.duration)}</span>
-                          <button type="button" onClick={() => setLessonFormData({ ...lessonFormData, videos: lessonFormData.videos.filter((_, j) => j !== i) })} className="text-red-500 hover:text-red-700">×</button>
+                        <div key={i} className="p-3 bg-blue-50 rounded-lg space-y-2">
+                          <div className="flex items-center gap-2">
+                            <input 
+                              type="text" 
+                              value={v.title} 
+                              onChange={e => { 
+                                const nv = [...lessonFormData.videos]; 
+                                nv[i].title = e.target.value; 
+                                setLessonFormData({ ...lessonFormData, videos: nv }); 
+                              }} 
+                              placeholder="Video title"
+                              className="flex-1 px-2 py-1 border border-blue-200 rounded text-sm"
+                            />
+                            <span className="text-xs text-gray-500 whitespace-nowrap">{formatDuration(v.duration)}</span>
+                            <button 
+                              type="button" 
+                              onClick={() => setLessonFormData({ ...lessonFormData, videos: lessonFormData.videos.filter((_, j) => j !== i) })} 
+                              className="text-red-500 hover:text-red-700 text-xl leading-none"
+                            >
+                              ×
+                            </button>
+                          </div>
+                          <input 
+                            type="text" 
+                            value={v.description} 
+                            onChange={e => { 
+                              const nv = [...lessonFormData.videos]; 
+                              nv[i].description = e.target.value; 
+                              setLessonFormData({ ...lessonFormData, videos: nv }); 
+                            }} 
+                            placeholder="Video description (optional)"
+                            className="w-full px-2 py-1 border border-blue-200 rounded text-sm"
+                          />
                         </div>
                       ))}
                     </div>
@@ -460,22 +848,72 @@ export default function TeacherClassPage() {
                   {lessonFormData.documents.length > 0 && (
                     <div className="mt-2 space-y-2">
                       {lessonFormData.documents.map((d, i) => (
-                        <div key={i} className="flex items-center gap-2 p-2 bg-red-50 rounded-lg">
-                          <input type="text" value={d.title} onChange={e => { const nd = [...lessonFormData.documents]; nd[i].title = e.target.value; setLessonFormData({ ...lessonFormData, documents: nd }); }} className="flex-1 px-2 py-1 border border-red-200 rounded text-sm"/>
-                          <button type="button" onClick={() => setLessonFormData({ ...lessonFormData, documents: lessonFormData.documents.filter((_, j) => j !== i) })} className="text-red-500 hover:text-red-700">×</button>
+                        <div key={i} className="p-3 bg-red-50 rounded-lg space-y-2">
+                          <div className="flex items-center gap-2">
+                            <input 
+                              type="text" 
+                              value={d.title} 
+                              onChange={e => { 
+                                const nd = [...lessonFormData.documents]; 
+                                nd[i].title = e.target.value; 
+                                setLessonFormData({ ...lessonFormData, documents: nd }); 
+                              }} 
+                              placeholder="Document title (optional)"
+                              className="flex-1 px-2 py-1 border border-red-200 rounded text-sm"
+                            />
+                            <button 
+                              type="button" 
+                              onClick={() => setLessonFormData({ ...lessonFormData, documents: lessonFormData.documents.filter((_, j) => j !== i) })} 
+                              className="text-red-500 hover:text-red-700 text-xl leading-none"
+                            >
+                              ×
+                            </button>
+                          </div>
+                          <input 
+                            type="text" 
+                            value={d.description} 
+                            onChange={e => { 
+                              const nd = [...lessonFormData.documents]; 
+                              nd[i].description = e.target.value; 
+                              setLessonFormData({ ...lessonFormData, documents: nd }); 
+                            }} 
+                            placeholder="Document description (optional)"
+                            className="w-full px-2 py-1 border border-red-200 rounded text-sm"
+                          />
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
+                  </>
+                )}
                 <div className="flex gap-3">
                   <button type="submit" disabled={uploading} className="px-4 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium text-sm disabled:opacity-50">
-                    {uploading ? 'Creating...' : 'Create Lesson'}
+                    {uploading ? 'Creating...' : editingLessonId ? 'Update Lesson' : 'Create Lesson'}
                   </button>
-                  <button type="button" onClick={() => setShowLessonForm(false)} className="px-4 py-2.5 text-gray-600 hover:text-gray-900 font-medium text-sm">
+                  <button type="button" onClick={() => { setShowLessonForm(false); setEditingLessonId(null); }} className="px-4 py-2.5 text-gray-600 hover:text-gray-900 font-medium text-sm">
                     Cancel
                   </button>
                 </div>
+                
+                {/* Upload Progress Bar */}
+                {uploading && (
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+                      <span>Uploading files...</span>
+                      <span>{Math.round(uploadProgress)}%</span>
+                    </div>
+                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-blue-600 transition-all duration-300"
+                        style={{ width: `${uploadProgress}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Please keep this tab open until the upload completes.
+                    </p>
+                  </div>
+                )}
               </form>
             )}
 
@@ -539,6 +977,12 @@ export default function TeacherClassPage() {
                           {!isReleased(lesson.releaseDate) && (
                             <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs rounded-full">Scheduled</span>
                           )}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleEditLesson(lesson); }}
+                            className="px-2 py-1 text-blue-600 hover:bg-blue-50 rounded text-xs font-medium"
+                          >
+                            Edit
+                          </button>
                           <button
                             onClick={(e) => { e.stopPropagation(); handleDeleteLesson(lesson.id); }}
                             className="px-2 py-1 text-red-600 hover:bg-red-50 rounded text-xs"

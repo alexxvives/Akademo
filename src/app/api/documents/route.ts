@@ -31,7 +31,6 @@ export async function POST(request: Request) {
       fileName: file.name,
       fileSize: file.size,
       mimeType: file.type,
-      storageType: 'r2',
       storagePath,
       uploadedById: session.id,
     });

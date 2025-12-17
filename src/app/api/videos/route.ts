@@ -23,10 +23,10 @@ export async function POST(request: Request) {
       return errorResponse('Only video files are allowed');
     }
 
-    // Validate file size (100MB limit for Cloudflare Workers)
-    const maxSize = 100 * 1024 * 1024; // 100MB
+    // Validate file size (500MB limit for video uploads)
+    const maxSize = 500 * 1024 * 1024; // 500MB
     if (file.size > maxSize) {
-      return errorResponse('File size exceeds 100MB limit');
+      return errorResponse('File size exceeds 500MB limit');
     }
 
     // Upload file
@@ -38,7 +38,6 @@ export async function POST(request: Request) {
       fileName: file.name,
       fileSize: file.size,
       mimeType: file.type,
-      storageType: 'r2',
       storagePath,
       uploadedById: session.id,
     });

@@ -117,6 +117,8 @@ export default function JoinPage() {
         if (result.success) {
           setIsLoggedIn(true);
           setCurrentUser(result.data.user);
+          // Re-check auth to ensure session is loaded
+          await checkAuth();
         } else {
           setAuthError(result.error || 'Error al registrarse');
         }
@@ -249,6 +251,7 @@ export default function JoinPage() {
                       required={!showLogin}
                       value={formData.firstName}
                       onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                      autoComplete="given-name"
                       className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
                       placeholder="Juan"
                     />
@@ -260,6 +263,7 @@ export default function JoinPage() {
                       required={!showLogin}
                       value={formData.lastName}
                       onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                      autoComplete="family-name"
                       className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
                       placeholder="García"
                     />
@@ -274,6 +278,7 @@ export default function JoinPage() {
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  autoComplete="email"
                   className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
                   placeholder="tu@email.com"
                 />
@@ -286,6 +291,7 @@ export default function JoinPage() {
                   required
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  autoComplete={showLogin ? "current-password" : "new-password"}
                   className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
                   placeholder="••••••••"
                 />

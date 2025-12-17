@@ -1,5 +1,5 @@
 import { userQueries, academyQueries } from '@/lib/db';
-import { hashPassword } from '@/lib/auth';
+import { hashPassword, createSession } from '@/lib/auth';
 import { successResponse, errorResponse, handleApiError } from '@/lib/api-utils';
 import { z } from 'zod';
 
@@ -42,12 +42,17 @@ export async function POST(request: Request) {
       });
     }
 
+    // Create session to log the user in
+    await createSession(user.id);
+
     return Response.json(successResponse({
-      id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      role: user.role,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+      },
     }), { status: 201 });
   } catch (error) {
     return handleApiError(error);

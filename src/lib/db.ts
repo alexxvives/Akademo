@@ -181,7 +181,7 @@ export const classQueries = {
   async findByStudentEnrollment(studentId: string) {
     const db = await getDB();
     const result = await db.prepare(`
-      SELECT c.*, a.name as academyName,
+      SELECT c.*, a.name as academyName, ce.status as enrollmentStatus,
         (SELECT COUNT(*) FROM ClassEnrollment WHERE classId = c.id) as enrollmentCount,
         (SELECT COUNT(*) FROM Video v JOIN Lesson l ON v.lessonId = l.id WHERE l.classId = c.id) as videoCount,
         (SELECT COUNT(*) FROM Document d JOIN Lesson l ON d.lessonId = l.id WHERE l.classId = c.id) as documentCount
@@ -417,7 +417,7 @@ export const videoQueries = {
   async findByClass(classId: string) {
     const db = await getDB();
     const result = await db.prepare(`
-      SELECT v.*, u.fileName, u.fileSize, u.mimeType, u.storagePath, u.storageType,
+      SELECT v.*, u.fileName, u.fileSize, u.mimeType, u.storagePath,
         l.maxWatchTimeMultiplier as lessonMultiplier, l.watermarkIntervalMins
       FROM Video v
       JOIN Upload u ON v.uploadId = u.id
@@ -429,14 +429,14 @@ export const videoQueries = {
     return (result.results || []).map((v: any) => ({
       ...v,
       maxWatchTimeMultiplier: v.lessonMultiplier || 2.0,
-      upload: { fileName: v.fileName, fileSize: v.fileSize, mimeType: v.mimeType, storagePath: v.storagePath, storageType: v.storageType }
+      upload: { fileName: v.fileName, fileSize: v.fileSize, mimeType: v.mimeType, storagePath: v.storagePath }
     }));
   },
 
   async findByLesson(lessonId: string) {
     const db = await getDB();
     const result = await db.prepare(`
-      SELECT v.*, u.fileName, u.fileSize, u.mimeType, u.storagePath, u.storageType
+      SELECT v.*, u.fileName, u.fileSize, u.mimeType, u.storagePath
       FROM Video v
       JOIN Upload u ON v.uploadId = u.id
       WHERE v.lessonId = ?
@@ -445,7 +445,7 @@ export const videoQueries = {
     
     return (result.results || []).map((v: any) => ({
       ...v,
-      upload: { fileName: v.fileName, fileSize: v.fileSize, mimeType: v.mimeType, storagePath: v.storagePath, storageType: v.storageType }
+      upload: { fileName: v.fileName, fileSize: v.fileSize, mimeType: v.mimeType, storagePath: v.storagePath }
     }));
   },
 
@@ -463,7 +463,7 @@ export const videoQueries = {
   async findWithDetails(id: string) {
     const db = await getDB();
     return db.prepare(`
-      SELECT v.*, u.fileName, u.fileSize, u.mimeType, u.storagePath, u.storageType,
+      SELECT v.*, u.fileName, u.fileSize, u.mimeType, u.storagePath,
         l.classId, l.maxWatchTimeMultiplier as lessonMultiplier, l.watermarkIntervalMins,
         c.name as className, c.academyId, a.ownerId as academyOwnerId
       FROM Video v
@@ -504,7 +504,7 @@ export const documentQueries = {
   async findByClass(classId: string) {
     const db = await getDB();
     const result = await db.prepare(`
-      SELECT d.*, u.fileName, u.fileSize, u.mimeType, u.storagePath, u.storageType
+      SELECT d.*, u.fileName, u.fileSize, u.mimeType, u.storagePath
       FROM Document d
       JOIN Upload u ON d.uploadId = u.id
       JOIN Lesson l ON d.lessonId = l.id
@@ -514,14 +514,14 @@ export const documentQueries = {
     
     return (result.results || []).map((d: any) => ({
       ...d,
-      upload: { fileName: d.fileName, fileSize: d.fileSize, mimeType: d.mimeType, storagePath: d.storagePath, storageType: d.storageType }
+      upload: { fileName: d.fileName, fileSize: d.fileSize, mimeType: d.mimeType, storagePath: d.storagePath }
     }));
   },
 
   async findByLesson(lessonId: string) {
     const db = await getDB();
     const result = await db.prepare(`
-      SELECT d.*, u.fileName, u.fileSize, u.mimeType, u.storagePath, u.storageType
+      SELECT d.*, u.fileName, u.fileSize, u.mimeType, u.storagePath
       FROM Document d
       JOIN Upload u ON d.uploadId = u.id
       WHERE d.lessonId = ?
@@ -530,7 +530,7 @@ export const documentQueries = {
     
     return (result.results || []).map((d: any) => ({
       ...d,
-      upload: { fileName: d.fileName, fileSize: d.fileSize, mimeType: d.mimeType, storagePath: d.storagePath, storageType: d.storageType }
+      upload: { fileName: d.fileName, fileSize: d.fileSize, mimeType: d.mimeType, storagePath: d.storagePath }
     }));
   },
 
@@ -580,7 +580,7 @@ export const lessonQueries = {
     if (!lesson) return null;
     
     const videos = await db.prepare(`
-      SELECT v.*, u.fileName, u.fileSize, u.mimeType, u.storagePath, u.storageType
+      SELECT v.*, u.fileName, u.fileSize, u.mimeType, u.storagePath
       FROM Video v
       JOIN Upload u ON v.uploadId = u.id
       WHERE v.lessonId = ?
@@ -588,7 +588,7 @@ export const lessonQueries = {
     `).bind(id).all();
     
     const documents = await db.prepare(`
-      SELECT d.*, u.fileName, u.fileSize, u.mimeType, u.storagePath, u.storageType
+      SELECT d.*, u.fileName, u.fileSize, u.mimeType, u.storagePath
       FROM Document d
       JOIN Upload u ON d.uploadId = u.id
       WHERE d.lessonId = ?
@@ -600,11 +600,11 @@ export const lessonQueries = {
       class: { id: lesson.classId, name: lesson.className, academyId: lesson.academyId },
       videos: (videos.results || []).map((v: any) => ({
         ...v,
-        upload: { fileName: v.fileName, fileSize: v.fileSize, mimeType: v.mimeType, storagePath: v.storagePath, storageType: v.storageType }
+        upload: { fileName: v.fileName, fileSize: v.fileSize, mimeType: v.mimeType, storagePath: v.storagePath }
       })),
       documents: (documents.results || []).map((d: any) => ({
         ...d,
-        upload: { fileName: d.fileName, fileSize: d.fileSize, mimeType: d.mimeType, storagePath: d.storagePath, storageType: d.storageType }
+        upload: { fileName: d.fileName, fileSize: d.fileSize, mimeType: d.mimeType, storagePath: d.storagePath }
       })),
       academyOwnerId: lesson.academyOwnerId
     };
@@ -650,14 +650,14 @@ export const lessonQueries = {
 
 // Upload queries
 export const uploadQueries = {
-  async create(data: { fileName: string; fileSize: number; mimeType: string; storageType: string; storagePath: string; uploadedById: string }) {
+  async create(data: { fileName: string; fileSize: number; mimeType: string; storagePath: string; uploadedById: string }) {
     const db = await getDB();
     const id = generateId();
     const now = new Date().toISOString();
     await db.prepare(`
-      INSERT INTO Upload (id, fileName, fileSize, mimeType, storageType, storagePath, uploadedById, createdAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(id, data.fileName, data.fileSize, data.mimeType, data.storageType, data.storagePath, data.uploadedById, now).run();
+      INSERT INTO Upload (id, fileName, fileSize, mimeType, storagePath, uploadedById, createdAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).bind(id, data.fileName, data.fileSize, data.mimeType, data.storagePath, data.uploadedById, now).run();
     return { id, ...data, createdAt: now };
   },
 
@@ -763,19 +763,95 @@ export const sessionQueries = {
   },
 };
 
-// Platform settings
-export const settingsQueries = {
-  async get() {
+// LiveStream queries for Daily.co integration
+export const liveStreamQueries = {
+  async findById(id: string) {
     const db = await getDB();
-    let settings = await db.prepare('SELECT * FROM PlatformSettings WHERE id = ?').bind('platform_settings').first();
-    if (!settings) {
-      const now = new Date().toISOString();
-      await db.prepare(`
-        INSERT INTO PlatformSettings (id, defaultMaxWatchTimeMultiplier, createdAt, updatedAt)
-        VALUES ('platform_settings', 2.0, ?, ?)
-      `).bind(now, now).run();
-      settings = await db.prepare('SELECT * FROM PlatformSettings WHERE id = ?').bind('platform_settings').first();
+    const row = await db.prepare(`
+      SELECT ls.*, c.name as className, u.firstName, u.lastName
+      FROM LiveStream ls
+      JOIN Class c ON ls.classId = c.id
+      JOIN users u ON ls.teacherId = u.id
+      WHERE ls.id = ?
+    `).bind(id).first() as any;
+    if (!row) return null;
+    return {
+      ...row,
+      teacher: { firstName: row.firstName, lastName: row.lastName },
+      class: { name: row.className },
+    };
+  },
+
+  async findActiveByClass(classId: string) {
+    const db = await getDB();
+    const row = await db.prepare(`
+      SELECT ls.*, u.firstName, u.lastName
+      FROM LiveStream ls
+      JOIN users u ON ls.teacherId = u.id
+      WHERE ls.classId = ? AND ls.status IN ('PENDING', 'LIVE')
+      ORDER BY ls.createdAt DESC LIMIT 1
+    `).bind(classId).first() as any;
+    if (!row) return null;
+    return {
+      ...row,
+      teacher: { firstName: row.firstName, lastName: row.lastName },
+    };
+  },
+
+  async findByClass(classId: string) {
+    const db = await getDB();
+    const result = await db.prepare(`
+      SELECT ls.*, u.firstName, u.lastName
+      FROM LiveStream ls
+      JOIN users u ON ls.teacherId = u.id
+      WHERE ls.classId = ?
+      ORDER BY ls.createdAt DESC
+    `).bind(classId).all() as any;
+    return (result.results || []).map((row: any) => ({
+      ...row,
+      teacher: { firstName: row.firstName, lastName: row.lastName },
+    }));
+  },
+
+  async create(data: {
+    classId: string;
+    teacherId: string;
+    roomName: string;
+    roomUrl: string;
+    title?: string;
+  }) {
+    const db = await getDB();
+    const id = generateId();
+    await db.prepare(`
+      INSERT INTO LiveStream (id, classId, teacherId, roomName, roomUrl, title, status, createdAt)
+      VALUES (?, ?, ?, ?, ?, ?, 'PENDING', datetime('now'))
+    `).bind(id, data.classId, data.teacherId, data.roomName, data.roomUrl, data.title || null).run();
+    return this.findById(id);
+  },
+
+  async updateStatus(id: string, status: 'PENDING' | 'LIVE' | 'ENDED') {
+    const db = await getDB();
+    if (status === 'LIVE') {
+      await db.prepare(`UPDATE LiveStream SET status = ?, startedAt = datetime('now') WHERE id = ?`).bind(status, id).run();
+    } else if (status === 'ENDED') {
+      await db.prepare(`UPDATE LiveStream SET status = ?, endedAt = datetime('now') WHERE id = ?`).bind(status, id).run();
+    } else {
+      await db.prepare(`UPDATE LiveStream SET status = ? WHERE id = ?`).bind(status, id).run();
     }
-    return settings;
+    return this.findById(id);
+  },
+
+  async setRecordingId(id: string, recordingId: string) {
+    const db = await getDB();
+    await db.prepare(`UPDATE LiveStream SET recordingId = ? WHERE id = ?`).bind(recordingId, id).run();
+    return this.findById(id);
+  },
+
+  async delete(id: string) {
+    const db = await getDB();
+    await db.prepare('DELETE FROM LiveStream WHERE id = ?').bind(id).run();
   },
 };
+
+// Settings queries removed - PlatformSettings table dropped
+// Defaults are now set at Academy/Class/Lesson levels

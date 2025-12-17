@@ -69,30 +69,30 @@ Purpose: Academy management platform with video protection and multi-tenant arch
 - **Columns**:
   - `id` - Upload identifier
   - `fileName`, `fileSize`, `mimeType` - File metadata
-  - `storageType` - 'r2' or other storage backend
-  - `storagePath` - R2 object key
+  - `storagePath` - R2 object key (always R2 storage)
   - `uploadedById` - References User
   - `createdAt` - Timestamp
+- **Note**: Removed `storageType` column (always 'r2')
 
 ### 7. **Video**
-- **Purpose**: Video content in classes
+- **Purpose**: Video content in lessons
 - **Status**: ✅ KEEP - Core feature
 - **Columns**:
   - `id` - Video identifier
-  - `title`, `description` - Video details
-  - `classId` - References Class
+  - `title`, `description` - Video details (now used in upload form)
+  - `lessonId` - References Lesson
   - `uploadId` - References Upload (one-to-one)
   - `durationSeconds` - Video length
-  - `maxWatchTimeMultiplier` - Per-video limit override
   - `createdAt`, `updatedAt` - Timestamps
+- **Note**: Removed `maxWatchTimeMultiplier` (now only at Lesson level)
 
 ### 8. **Document**
-- **Purpose**: Document files in classes (PDFs, etc.)
+- **Purpose**: Document files in lessons (PDFs, etc.)
 - **Status**: ✅ KEEP - Core feature
 - **Columns**:
   - `id` - Document identifier
   - `title`, `description` - Document details
-  - `classId` - References Class
+  - `lessonId` - References Lesson
   - `uploadId` - References Upload (one-to-one)
   - `createdAt`, `updatedAt` - Timestamps
 
@@ -199,5 +199,21 @@ All necessary indexes are in place for:
 - ✅ 0001_initial.sql - All tables created
 - ✅ 0002_approval_system.sql - Added status columns
 - ✅ 0003_seed_users.sql - Test users and academies
+- ✅ 0006_cleanup_schema.sql - Removed PlatformSettings, BillingConfig, Upload.storageType
 
 **Database is clean and properly structured.**
+
+---
+
+## Schema Cleanup Notes (Dec 2025)
+
+**Removed:**
+- ❌ **PlatformSettings** table - Redundant (defaults set at Academy/Class/Lesson levels)
+- ❌ **BillingConfig** table - Not implemented yet, removed for clarity
+- ❌ **Upload.storageType** column - Always 'r2', no longer needed
+
+**Schema Logic - Why This Structure?**
+- **Upload** = Generic file storage metadata (reusable)
+- **Video/Document** = Content-type specific data + title/description
+- **Lesson** = Groups videos & documents with settings (maxWatchTimeMultiplier, watermarkIntervalMins)
+- **Class** → **Lesson** → **Video/Document** → **Upload** = Clean hierarchy

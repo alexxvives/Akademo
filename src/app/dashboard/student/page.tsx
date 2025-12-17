@@ -24,6 +24,7 @@ interface EnrolledClass {
   name: string;
   academyName: string;
   videoCount: number;
+  enrollmentStatus?: 'PENDING' | 'APPROVED';
 }
 
 export default function StudentDashboard() {
@@ -60,6 +61,7 @@ export default function StudentDashboard() {
           name: c.name,
           academyName: c.academy?.name || 'Unknown',
           videoCount: c._count?.videos || 0,
+          enrollmentStatus: c.enrollmentStatus || 'APPROVED',
         })));
       }
     } catch (error) {
@@ -272,9 +274,16 @@ export default function StudentDashboard() {
                 <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-semibold text-sm">
                   {classItem.name.charAt(0)}
                 </div>
-                <span className="text-xs text-gray-400 group-hover:text-blue-600 transition-colors">
-                  View →
-                </span>
+                <div className="flex items-center gap-2">
+                  {classItem.enrollmentStatus === 'PENDING' && (
+                    <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full font-medium">
+                      Pending
+                    </span>
+                  )}
+                  <span className="text-xs text-gray-400 group-hover:text-blue-600 transition-colors">
+                    View →
+                  </span>
+                </div>
               </div>
               <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
                 {classItem.name}

@@ -73,6 +73,7 @@ export async function PATCH(
     const updated = await lessonQueries.update(lessonId, {
       title: data.title,
       description: data.description,
+      releaseDate: data.releaseDate,
       maxWatchTimeMultiplier: data.maxWatchTimeMultiplier,
       watermarkIntervalMins: data.watermarkIntervalMins,
     });
