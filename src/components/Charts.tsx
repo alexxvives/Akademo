@@ -308,12 +308,14 @@ export function StatCard({
   title, 
   value, 
   change, 
+  subtitle,
   icon,
   trend = 'neutral',
 }: { 
   title: string;
   value: string | number;
   change?: string;
+  subtitle?: string;
   icon?: React.ReactNode;
   trend?: 'up' | 'down' | 'neutral';
 }) {
@@ -323,6 +325,9 @@ export function StatCard({
         <div className="flex-1">
           <p className="text-sm font-medium text-gray-600">{title}</p>
           <p className="text-3xl font-bold text-gray-900 mt-2">{value}</p>
+          {subtitle && (
+            <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
+          )}
           {change && (
             <div className="flex items-center gap-1 mt-2">
               {trend === 'up' && (

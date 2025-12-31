@@ -42,7 +42,7 @@ export async function GET(request: Request) {
          WHERE l.classId = c.id) as videoCount
       FROM Class c
       JOIN Academy a ON c.academyId = a.id
-      LEFT JOIN users u ON c.teacherId = u.id
+      LEFT JOIN User u ON c.teacherId = u.id
     `;
 
     let params: any[] = [];

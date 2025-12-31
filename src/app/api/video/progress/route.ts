@@ -21,11 +21,12 @@ export async function POST(request: Request) {
       return errorResponse('Unauthorized', 403);
     }
 
-    // Get current play state
-    const playState = await playStateQueries.findByVideoAndStudent(data.videoId, data.studentId) as any;
+    // Get current play state or create if doesn't exist
+    let playState = await playStateQueries.findByVideoAndStudent(data.videoId, data.studentId) as any;
 
     if (!playState) {
-      return errorResponse('Play state not found', 404);
+      // Create initial play state if it doesn't exist
+      playState = await playStateQueries.create(data.videoId, data.studentId);
     }
 
     // Check if already blocked
@@ -34,7 +35,7 @@ export async function POST(request: Request) {
     }
 
     // Update watch time
-    const newTotalWatchTime = playState.totalWatchTimeSeconds + data.watchTimeElapsed;
+    const newTotalWatchTime = (playState.totalWatchTimeSeconds || 0) + data.watchTimeElapsed;
 
     // Check if need to block (get video to check limit)
     const { videoQueries } = await import('@/lib/db');

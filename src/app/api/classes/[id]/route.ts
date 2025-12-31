@@ -12,7 +12,21 @@ export async function GET(
 
     console.log('[API /api/classes/[id]] GET request for class:', id, 'by user:', session.id, 'role:', session.role);
 
-    const classData = await classQueries.findWithAcademyAndCounts(id) as any;
+    // Try to find by ID first, then by slug
+    let classData = await classQueries.findWithAcademyAndCounts(id) as any;
+    
+    if (!classData) {
+      // Try finding by slug
+      const db = await (await import('@/lib/db')).getDB();
+      const classRow = await db
+        .prepare('SELECT id FROM Class WHERE slug = ?')
+        .bind(id)
+        .first() as any;
+      
+      if (classRow) {
+        classData = await classQueries.findWithAcademyAndCounts(classRow.id) as any;
+      }
+    }
 
     if (!classData) {
       console.log('[API /api/classes/[id]] Class not found:', id);
@@ -36,7 +50,7 @@ export async function GET(
       }
     } else if (session.role === 'STUDENT') {
       // Students can only access classes they're enrolled in
-      const enrollment = await enrollmentQueries.findByClassAndStudent(id, session.id) as any;
+      const enrollment = await enrollmentQueries.findByClassAndStudent(classData.id, session.id) as any;
 
       if (!enrollment) {
         console.log('[API /api/classes/[id]] Student not enrolled in class');
@@ -53,20 +67,20 @@ export async function GET(
     let videos = [];
     let documents = [];
     try {
-      videos = await videoQueries.findByClass(id);
+      videos = await videoQueries.findByClass(classData.id);
       console.log('[API /api/classes/[id]] Found', videos.length, 'videos');
     } catch (err) {
       console.error('[API /api/classes/[id]] Error fetching videos:', err);
     }
     
     try {
-      documents = await documentQueries.findByClass(id);
+      documents = await documentQueries.findByClass(classData.id);
       console.log('[API /api/classes/[id]] Found', documents.length, 'documents');
     } catch (err) {
       console.error('[API /api/classes/[id]] Error fetching documents:', err);
     }
     
-    const enrollments = await enrollmentQueries.findByClassWithStudent(id);
+    const enrollments = await enrollmentQueries.findByClassWithStudent(classData.id);
     console.log('[API /api/classes/[id]] Found', enrollments.length, 'enrollments');
 
     console.log('[API /api/classes/[id]] Returning successful response');

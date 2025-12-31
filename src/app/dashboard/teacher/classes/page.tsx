@@ -7,6 +7,7 @@ import Link from 'next/link';
 interface Class {
   id: string;
   name: string;
+  slug?: string;
   description: string | null;
   studentCount: number;
   lessonCount: number;
@@ -114,7 +115,7 @@ export default function TeacherClasses() {
             {classes.map((cls) => (
               <Link
                 key={cls.id}
-                href={`/dashboard/teacher/class/${cls.id}`}
+                href={`/dashboard/teacher/class/${cls.slug || cls.id}`}
                 className="block bg-white rounded-xl border-2 border-gray-200 hover:border-brand-400 hover:shadow-xl transition-all p-6 group"
               >
                 <div className="flex items-start justify-between">

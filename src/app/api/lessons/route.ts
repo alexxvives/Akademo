@@ -1,7 +1,8 @@
-import { lessonQueries, videoQueries, documentQueries, uploadQueries, membershipQueries, classQueries } from '@/lib/db';
+import { lessonQueries, videoQueries, documentQueries, uploadQueries, membershipQueries, classQueries, getDB } from '@/lib/db';
 import { requireRole } from '@/lib/auth';
 import { getStorageAdapter } from '@/lib/storage';
 import { handleApiError, successResponse, errorResponse } from '@/lib/api-utils';
+import { getBunnyVideo } from '@/lib/bunny-stream';
 
 export async function POST(request: Request) {
   try {
@@ -157,9 +158,39 @@ export async function GET(request: Request) {
     const session = await requireRole(['ADMIN', 'TEACHER', 'STUDENT']);
     const { searchParams } = new URL(request.url);
     const classId = searchParams.get('classId');
+    const checkTranscoding = searchParams.get('checkTranscoding') === 'true';
 
     if (!classId) {
       return errorResponse('Class ID required');
+    }
+
+    // If checkTranscoding is true, update any pending Bunny videos first
+    if (checkTranscoding) {
+      const db = await getDB();
+      // Find all pending Bunny videos in this class
+      const pendingVideos = await db.prepare(`
+        SELECT u.id as uploadId, u.bunnyGuid
+        FROM Upload u
+        JOIN Video v ON v.uploadId = u.id
+        JOIN Lesson l ON v.lessonId = l.id
+        WHERE l.classId = ? AND u.storageType = 'bunny' AND u.bunnyGuid IS NOT NULL AND (u.bunnyStatus IS NULL OR u.bunnyStatus < 4)
+      `).bind(classId).all();
+
+      // Check each video's status with Bunny and update DB
+      for (const video of (pendingVideos.results || []) as any[]) {
+        try {
+          const bunnyVideo = await getBunnyVideo(video.bunnyGuid);
+          if (bunnyVideo && bunnyVideo.status !== undefined) {
+            await uploadQueries.updateBunnyStatusByGuid(video.bunnyGuid, bunnyVideo.status);
+            // If finished, also update duration
+            if (bunnyVideo.status === 4 && bunnyVideo.length > 0) {
+              await videoQueries.updateDurationByBunnyGuid(video.bunnyGuid, bunnyVideo.length);
+            }
+          }
+        } catch (e) {
+          console.error('Failed to check Bunny status for', video.bunnyGuid, e);
+        }
+      }
     }
 
     const lessons = await lessonQueries.findByClass(classId);

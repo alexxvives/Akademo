@@ -32,7 +32,7 @@ export async function GET(request: Request) {
          FROM ClassEnrollment e2 
          JOIN Class c2 ON e2.classId = c2.id 
          WHERE e2.studentId = u.id ${session.role === 'ACADEMY' && academyIds.length > 0 ? 'AND c2.academyId IN (' + academyIds.map(() => '?').join(',') + ')' : ''}) as classCount
-      FROM users u
+      FROM User u
       JOIN ClassEnrollment e ON u.id = e.studentId
       JOIN Class c ON e.classId = c.id
       WHERE u.role = 'STUDENT'

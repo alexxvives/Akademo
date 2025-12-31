@@ -65,8 +65,9 @@ model AcademyMembership {
 }
 
 model Class {
-  id          String   @id @default(cuid())
+  id          String   @id @default(cuid())  
   name        String
+  slug        String?  @unique
   description String?
   academyId   String
   createdAt   DateTime @default(now())

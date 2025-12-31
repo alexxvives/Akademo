@@ -1,6 +1,60 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import Hls from 'hls.js';
+import 'plyr/dist/plyr.css';
+
+// CSS to hide Plyr controls when video is locked + fullscreen fixes for vertical videos
+const hiddenControlsStyle = `
+  .plyr-controls-hidden .plyr__controls,
+  .plyr-controls-hidden .plyr__control--overlaid {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+  
+  /* Fix for vertical videos in fullscreen - no zoom, no crop, just contain */
+  .plyr--fullscreen video,
+  .plyr--fullscreen-fallback video,
+  .plyr:fullscreen video,
+  .plyr:-webkit-full-screen video,
+  .plyr:-moz-full-screen video,
+  .plyr:-ms-fullscreen video {
+    object-fit: contain !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    transform: none !important;
+  }
+  
+  /* Ensure the container also doesn't apply any transforms */
+  .plyr--fullscreen,
+  .plyr--fullscreen-fallback,
+  .plyr:fullscreen,
+  .plyr:-webkit-full-screen,
+  .plyr:-moz-full-screen,
+  .plyr:-ms-fullscreen {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: black !important;
+  }
+  
+  /* Video container in fullscreen */
+  .plyr--fullscreen .plyr__video-wrapper,
+  .plyr--fullscreen-fallback .plyr__video-wrapper {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+`;
+
+// Plyr type for TypeScript
+type PlyrInstance = InstanceType<typeof import('plyr')>;
 
 interface VideoPlayState {
   totalWatchTimeSeconds: number;
@@ -20,6 +74,8 @@ interface ProtectedVideoPlayerProps {
   initialPlayState: VideoPlayState;
   userRole?: string;
   watermarkIntervalMins?: number;
+  hlsUrl?: string;
+  bunnyGuid?: string;
 }
 
 export default function ProtectedVideoPlayer({
@@ -33,43 +89,81 @@ export default function ProtectedVideoPlayer({
   initialPlayState,
   userRole,
   watermarkIntervalMins = 5,
+  hlsUrl,
+  bunnyGuid,
 }: ProtectedVideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const lastSaveTimeRef = useRef<number>(0);
+  const plyrRef = useRef<PlyrInstance | null>(null);
+  const hlsRef = useRef<Hls | null>(null);
   const playTimeTracker = useRef<number>(0);
-  const lastUpdateTime = useRef<number | null>(null);
+  const watchTimeInterval = useRef<NodeJS.Timeout | null>(null);
 
   const [playState, setPlayState] = useState<VideoPlayState>(initialPlayState);
   const [currentTime, setCurrentTime] = useState(0);
+  const currentTimeRef = useRef(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [videoDuration, setVideoDuration] = useState(durationSeconds);
   const [isLocked, setIsLocked] = useState(initialPlayState?.status === 'BLOCKED');
   const [showWatermark, setShowWatermark] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [signedHlsUrl, setSignedHlsUrl] = useState<string | null>(null);
+
+  // Fetch signed URL for Bunny videos
+  useEffect(() => {
+    if (!bunnyGuid) {
+      setSignedHlsUrl(null);
+      setIsLoading(false);
+      return;
+    }
+
+    async function fetchSignedUrl() {
+      try {
+        const response = await fetch(`/api/bunny/video/${bunnyGuid}/stream`);
+        const data = await response.json();
+        console.log('Stream API response:', data);
+        
+        if (data.success && data.data?.hlsUrl) {
+          setSignedHlsUrl(data.data.hlsUrl);
+        } else if (data.data?.error) {
+          // Token key not configured or error, use direct URL as fallback
+          console.warn('Signed URL not available:', data.data.error);
+          // Fallback to direct unsigned URL
+          setSignedHlsUrl(`https://vz-bb8d111e-8eb.b-cdn.net/${bunnyGuid}/playlist.m3u8`);
+        } else {
+          // Unexpected response, use direct URL
+          console.warn('Unexpected API response, using direct URL');
+          setSignedHlsUrl(`https://vz-bb8d111e-8eb.b-cdn.net/${bunnyGuid}/playlist.m3u8`);
+        }
+      } catch (err) {
+        console.error('Failed to fetch signed URL:', err);
+        // Fallback to direct unsigned URL
+        setSignedHlsUrl(`https://vz-bb8d111e-8eb.b-cdn.net/${bunnyGuid}/playlist.m3u8`);
+      }
+    }
+
+    fetchSignedUrl();
+  }, [bunnyGuid]);
 
   // Teachers and admins have unlimited watch time
   const isUnlimitedUser = userRole === 'TEACHER' || userRole === 'ADMIN';
-  // Use video duration from metadata if durationSeconds is 0 or not set
   const effectiveDuration = videoDuration || durationSeconds || 0;
   const maxWatchTimeSeconds = isUnlimitedUser ? Infinity : effectiveDuration * maxWatchTimeMultiplier;
   const watchTimeRemaining = isUnlimitedUser ? Infinity : Math.max(0, maxWatchTimeSeconds - (playState?.totalWatchTimeSeconds || 0));
-  // If duration is 0, allow unlimited playback until duration is detected
   const canPlay = !isLocked && (isUnlimitedUser || effectiveDuration === 0 || watchTimeRemaining > 0);
 
-  // Lock video when limit reached
-  useEffect(() => {
-    if (!isUnlimitedUser && watchTimeRemaining <= 0 && effectiveDuration > 0) {
-      setIsLocked(true);
-      if (videoRef.current && !videoRef.current.paused) {
-        videoRef.current.pause();
-      }
-    }
-  }, [watchTimeRemaining, isUnlimitedUser, effectiveDuration]);
+  // Format time display
+  const formatTime = useCallback((seconds: number): string => {
+    if (!isFinite(seconds)) return '∞';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  }, []);
 
-  // Save progress to server
-  const saveProgress = async (elapsedSeconds: number) => {
+  // Save progress to server - use ref for currentTime to avoid dependency changes
+  const saveProgress = useCallback(async (elapsedSeconds: number) => {
     if (elapsedSeconds <= 0) return;
 
     try {
@@ -79,60 +173,69 @@ export default function ProtectedVideoPlayer({
         body: JSON.stringify({
           videoId,
           studentId,
-          currentPositionSeconds: currentTime,
+          currentPositionSeconds: currentTimeRef.current,
           watchTimeElapsed: elapsedSeconds,
         }),
       });
 
       if (!response.ok) {
         const data = await response.json();
-        // Check if video was blocked
         if (response.status === 403) {
           setIsLocked(true);
           setPlayState(prev => ({ ...prev, status: 'BLOCKED' }));
-          if (videoRef.current && !videoRef.current.paused) {
-            videoRef.current.pause();
-          }
+          plyrRef.current?.pause();
         }
         throw new Error(data.error || 'Failed to save progress');
       }
 
       const data = await response.json();
-      if (data.success && data.data.playState) {
-        const newPlayState = data.data.playState;
-        // Update status if backend marked as blocked
-        if (newPlayState.status === 'BLOCKED') {
-          setIsLocked(true);
-          setPlayState(newPlayState);
-          if (videoRef.current && !videoRef.current.paused) {
-            videoRef.current.pause();
-          }
-        }
+      if (data.success && data.data.playState?.status === 'BLOCKED') {
+        setIsLocked(true);
+        setPlayState(data.data.playState);
+        plyrRef.current?.pause();
       }
     } catch (err) {
       console.error('Failed to save progress:', err);
-      // Don't set error for progress save failures to avoid disrupting playback
     }
-  };
+  }, [videoId, studentId]);
 
-  // Track play time - increment every second when playing
-  const watchTimeInterval = useRef<NodeJS.Timeout | null>(null);
-
+  // Lock video when limit reached
   useEffect(() => {
-    // Clear any existing interval
-    if (watchTimeInterval.current) {
-      clearInterval(watchTimeInterval.current);
-      watchTimeInterval.current = null;
+    if (!isUnlimitedUser && watchTimeRemaining <= 0 && effectiveDuration > 0) {
+      setIsLocked(true);
+      plyrRef.current?.pause();
+    }
+  }, [watchTimeRemaining, isUnlimitedUser, effectiveDuration]);
+
+  // Track play time - use refs to avoid dependency issues
+  const isPlayingRef = useRef(isPlaying);
+  const canPlayRef = useRef(canPlay);
+  
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+    canPlayRef.current = canPlay;
+  }, [isPlaying, canPlay]);
+
+  // Track play time - separate effect that only depends on isPlaying
+  useEffect(() => {
+    // Don't track for unlimited users
+    if (isUnlimitedUser) {
+      return;
     }
 
-    // Start tracking if playing and not unlimited user
-    if (isPlaying && !isUnlimitedUser && canPlay) {
+    if (isPlaying) {
+      // Start the interval
       watchTimeInterval.current = setInterval(() => {
+        // Check if we should still be tracking
+        if (!isPlayingRef.current || !canPlayRef.current) {
+          return;
+        }
+
         setPlayState(prev => {
-          const newTotalTime = (prev?.totalWatchTimeSeconds || 0) + 1;
+          const newTotal = (prev?.totalWatchTimeSeconds || 0) + 1;
           return {
             ...prev,
-            totalWatchTimeSeconds: newTotalTime,
+            totalWatchTimeSeconds: newTotal,
             sessionStartTime: prev?.sessionStartTime || new Date().toISOString(),
           };
         });
@@ -145,119 +248,236 @@ export default function ProtectedVideoPlayer({
           playTimeTracker.current = 0;
         }
       }, 1000);
-    } else {
-      // Save any remaining time when paused
+
+      return () => {
+        if (watchTimeInterval.current) {
+          clearInterval(watchTimeInterval.current);
+          watchTimeInterval.current = null;
+        }
+      };
+    }
+  }, [isPlaying, isUnlimitedUser]); // saveProgress is stable now, don't need it as dep
+
+  // Save remaining progress when component unmounts or video stops
+  useEffect(() => {
+    return () => {
       if (playTimeTracker.current > 0) {
         saveProgress(playTimeTracker.current);
         playTimeTracker.current = 0;
       }
-    }
-
-    return () => {
-      if (watchTimeInterval.current) {
-        clearInterval(watchTimeInterval.current);
-      }
     };
-  }, [isPlaying, isUnlimitedUser, canPlay]);
+  }, [saveProgress]);
 
-  // Set initial position from lastPositionSeconds when video loads
+  // Initialize HLS.js and Plyr
   useEffect(() => {
     const video = videoRef.current;
-    if (!video) return;
+    const container = containerRef.current;
+    if (!video || !container) return;
 
-    const handleLoadedMetadata = () => {
-      // Set duration
-      if (video.duration && !isNaN(video.duration) && video.duration !== Infinity) {
-        setVideoDuration(video.duration);
-      }
-
-      // Restore last position if available
-      if (initialPlayState?.lastPositionSeconds && initialPlayState.lastPositionSeconds > 0) {
-        video.currentTime = initialPlayState.lastPositionSeconds;
-        setCurrentTime(initialPlayState.lastPositionSeconds);
-      }
-    };
-
-    video.addEventListener('loadedmetadata', handleLoadedMetadata);
-
-    // Check if metadata already loaded
-    if (video.readyState >= 1) {
-      handleLoadedMetadata();
+    // For Bunny videos, wait for the signed URL to be fetched
+    if (bunnyGuid && !signedHlsUrl) {
+      setIsLoading(true);
+      return;
     }
 
-    return () => {
-      video.removeEventListener('loadedmetadata', handleLoadedMetadata);
-    };
-  }, [initialPlayState]);
+    // Use signed URL for Bunny, or fallback to provided hlsUrl or videoUrl
+    const videoSrc = signedHlsUrl || hlsUrl || videoUrl;
+    if (!videoSrc) {
+      setError('No video source provided');
+      setIsLoading(false);
+      return;
+    }
 
-  // Update current time and detect duration
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
+    // Check if it's an HLS stream
+    const isHls = videoSrc.includes('.m3u8');
 
-    const handleTimeUpdate = () => {
-      const newCurrentTime = video.currentTime;
-      setCurrentTime(newCurrentTime);
+    // Dynamic import of Plyr to avoid SSR issues
+    let plyrInstance: PlyrInstance | null = null;
+    
+    const initPlyr = async () => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const PlyrClass = (await import('plyr')).default || require('plyr');
       
-      // Enforce time limit strictly - pause if limit reached
-      if (!canPlay && isPlaying) {
-        video.pause();
-        setIsPlaying(false);
-        setIsLocked(true);
+      // Initialize Plyr with custom controls - this is the professional approach
+      const plyr = new PlyrClass(video, {
+        controls: [
+          'play-large',
+          'play',
+          'progress',
+          'current-time',
+          'duration',
+          'mute',
+          'volume',
+          'settings',
+          'fullscreen',
+        ],
+        settings: ['quality', 'speed'],
+        speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
+        keyboard: { focused: true, global: false },
+        tooltips: { controls: true, seek: true },
+        captions: { active: false, update: true },
+        fullscreen: {
+          enabled: true,
+          fallback: true,
+          iosNative: false,
+          // This makes Plyr fullscreen the container, not just the video!
+          container: `#video-container-${videoId}`,
+        },
+        clickToPlay: true,
+        disableContextMenu: true,
+        hideControls: true,
+        resetOnEnd: false,
+        invertTime: false,
+        toggleInvert: false,
+      });
+
+      plyrInstance = plyr;
+      plyrRef.current = plyr;
+
+      // Handle Plyr events
+      plyr.on('play', () => {
+        if (!canPlay || isLocked) {
+          plyr.pause();
+          setIsPlaying(false);
+          return;
+        }
+        setIsPlaying(true);
+      });
+
+      plyr.on('pause', () => setIsPlaying(false));
+      plyr.on('ended', () => setIsPlaying(false));
+      
+      plyr.on('timeupdate', () => {
+        const newTime = plyr.currentTime;
+        if (Math.abs(newTime - currentTimeRef.current) > 0.1) {
+          setCurrentTime(newTime);
+          currentTimeRef.current = newTime;
+        }
+        
+        if (!canPlay && isPlaying) {
+          plyr.pause();
+          setIsPlaying(false);
+          setIsLocked(true);
+        }
+      });
+
+      plyr.on('loadedmetadata', async () => {
+        const duration = plyr.duration;
+        if (duration && !isNaN(duration) && duration !== Infinity) {
+          setVideoDuration(duration);
+          
+          if (!durationSeconds || durationSeconds === 0) {
+            try {
+              await fetch(`/api/videos/${videoId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ durationSeconds: Math.round(duration) }),
+              });
+            } catch (e) {
+              console.error('Failed to update video duration:', e);
+            }
+          }
+        }
+        
+        // Restore position on initial load
+        if (initialPlayState?.lastPositionSeconds && initialPlayState.lastPositionSeconds > 0 && currentTime === 0) {
+          plyr.currentTime = initialPlayState.lastPositionSeconds;
+          setCurrentTime(initialPlayState.lastPositionSeconds);
+        }
+      });
+
+      plyr.on('enterfullscreen', () => setIsFullscreen(true));
+      plyr.on('exitfullscreen', () => setIsFullscreen(false));
+      plyr.on('ready', () => setIsLoading(false));
+
+      // Initialize HLS if needed
+      if (isHls) {
+        // Safari supports HLS natively
+        if (video.canPlayType('application/vnd.apple.mpegurl')) {
+          video.src = videoSrc;
+          setIsLoading(false);
+        } else if (Hls.isSupported()) {
+          // Use HLS.js for other browsers
+          const hls = new Hls({
+            enableWorker: true,
+            lowLatencyMode: false,
+            startLevel: -1,
+            maxBufferLength: 10,
+            maxMaxBufferLength: 30,
+            maxBufferSize: 60 * 1000 * 1000,
+            maxBufferHole: 0.1,
+            highBufferWatchdogPeriod: 1,
+            backBufferLength: 0,
+            liveSyncDurationCount: 3,
+            liveMaxLatencyDurationCount: 10,
+            manifestLoadingMaxRetry: 3,
+            levelLoadingMaxRetry: 3,
+            fragLoadingMaxRetry: 3,
+            startPosition: -1,
+            startFragPrefetch: true,
+            testBandwidth: false,
+          });
+
+          hls.loadSource(videoSrc);
+          hls.attachMedia(video);
+
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            setIsLoading(false);
+          });
+
+          hls.on(Hls.Events.ERROR, (event, data) => {
+            console.error('HLS Error:', data);
+            if (!data.fatal) return;
+            
+            if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+              if (data.response?.code === 403) {
+                setError('Error 403: El video requiere configuración de seguridad. Por favor habilita "Direct Play" en Bunny Stream → Library → Security.');
+              } else {
+                setError('Error de red al cargar el video. Verifica tu conexión.');
+              }
+            } else {
+              setError('Error al cargar el stream de video.');
+            }
+            setIsLoading(false);
+          });
+
+          hlsRef.current = hls;
+        } else {
+          setError('Your browser does not support HLS video playback');
+          setIsLoading(false);
+        }
+      } else {
+        // Regular video file
+        video.src = videoSrc;
+        setIsLoading(false);
       }
     };
 
-    const handlePlay = () => {
-      // Prevent play if limit reached or locked
-      if (!canPlay || isLocked) {
-        video.pause();
-        setIsPlaying(false);
-        return;
-      }
-      setIsPlaying(true);
-    };
+    initPlyr();
 
-    const handlePause = () => {
-      setIsPlaying(false);
-    };
-
-    video.addEventListener('timeupdate', handleTimeUpdate);
-    video.addEventListener('play', handlePlay);
-    video.addEventListener('pause', handlePause);
-    
     return () => {
-      video.removeEventListener('timeupdate', handleTimeUpdate);
-      video.removeEventListener('play', handlePlay);
-      video.removeEventListener('pause', handlePause);
+      if (plyrInstance) {
+        plyrInstance.destroy();
+      }
+      plyrRef.current = null;
+      if (hlsRef.current) {
+        hlsRef.current.destroy();
+        hlsRef.current = null;
+      }
     };
-  }, [canPlay, isPlaying, isLocked]);
+  }, [hlsUrl, videoUrl, signedHlsUrl, bunnyGuid]);
 
-  // Prevent context menu
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const preventContextMenu = (e: MouseEvent) => e.preventDefault();
-    video.addEventListener('contextmenu', preventContextMenu);
-    
-    return () => video.removeEventListener('contextmenu', preventContextMenu);
-  }, []);
-
-  // Student watermark timer
-  // Logic: Watermark appears immediately when video starts playing, stays for 5 seconds, then disappears.
-  // After that, it reappears every X minutes (watermarkIntervalMins) for 5 seconds.
-  // This prevents screen recording by periodically overlaying student info on the video.
-  // Design: Semi-transparent diagonal watermark - discreet but visible enough to identify in recordings.
+  // Watermark timer - shows periodically to prevent screen recording
   useEffect(() => {
     if (isUnlimitedUser || !studentName || !isPlaying) {
       setShowWatermark(false);
       return;
     }
 
-    const intervalMs = watermarkIntervalMins * 60 * 1000; // Convert to milliseconds
-    const showDuration = 5000; // Show for 5 seconds
+    const intervalMs = watermarkIntervalMins * 60 * 1000;
+    const showDuration = 5000;
 
-    // Show watermark immediately when video starts
+    // Show immediately when video starts
     setShowWatermark(true);
     const hideInitial = setTimeout(() => setShowWatermark(false), showDuration);
 
@@ -274,156 +494,166 @@ export default function ProtectedVideoPlayer({
     };
   }, [isPlaying, watermarkIntervalMins, studentName, isUnlimitedUser]);
 
-  const toggleFullscreen = async () => {
-    if (!containerRef.current) return;
+  // Track if player should be locked (for overlay display)
+  const showLockedOverlay = isLocked || !canPlay;
 
-    try {
-      if (!document.fullscreenElement) {
-        await containerRef.current.requestFullscreen();
-        setIsFullscreen(true);
-      } else {
-        await document.exitFullscreen();
-        setIsFullscreen(false);
+  // When locked, reset video to beginning and hide Plyr controls
+  useEffect(() => {
+    if (showLockedOverlay) {
+      // Pause and reset to beginning via Plyr
+      if (plyrRef.current) {
+        plyrRef.current.pause();
+        plyrRef.current.currentTime = 0;
       }
-    } catch (err) {
-      console.error('Fullscreen error:', err);
+      // Also reset directly on video element as backup
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.currentTime = 0;
+      }
+      setCurrentTime(0);
+      currentTimeRef.current = 0;
+      
+      // Hide Plyr controls by adding a class to the container
+      const container = containerRef.current;
+      if (container) {
+        container.classList.add('plyr-controls-hidden');
+      }
+    } else {
+      // Show controls again when unlocked
+      const container = containerRef.current;
+      if (container) {
+        container.classList.remove('plyr-controls-hidden');
+      }
     }
-  };
-
-  // Listen for fullscreen changes
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, []);
-
-  const handleRestart = async () => {
-    if (!videoRef.current) return;
-    
-    videoRef.current.currentTime = 0;
-    setCurrentTime(0);
-    setError(null);
-    
-    // Don't reset totalWatchTimeSeconds - it accumulates across restarts
-    if (videoRef.current.paused) {
-      videoRef.current.play();
-      setIsPlaying(true);
-    }
-  };
-
-  // Listen for fullscreen changes
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-    
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, []);
-
-  const formatTime = (seconds: number): string => {
-    if (!isFinite(seconds)) return 'Unlimited';
-    
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-    
-    if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
-    return `${minutes}:${secs.toString().padStart(2, '0')}`;
-  };
-
-
-  if (!canPlay) {
-    return (
-      <div className="w-full bg-gray-50 border border-gray-200 rounded-xl p-8 text-center">
-        <div className="max-w-md mx-auto">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg
-              className="h-8 w-8 text-gray-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-          </div>
-          
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            Watch Time Limit Reached
-          </h3>
-          
-          <p className="text-gray-600">
-            You've used all your available watch time for this video.
-            Please contact your teacher if you need more time.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  }, [showLockedOverlay]);
 
   return (
-    <div className="w-full bg-white rounded-xl overflow-hidden border border-gray-200">
+    <div className="w-full bg-black rounded-xl overflow-hidden border border-gray-800 relative">
+      {/* Inject CSS to hide Plyr controls when locked */}
+      <style dangerouslySetInnerHTML={{ __html: hiddenControlsStyle }} />
+      
       {error && (
-        <div className="bg-red-50 border-l-4 border-red-400 p-4">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-red-700">{error}</p>
-            </div>
+        <div className="bg-red-900/50 border-l-4 border-red-500 p-4">
+          <div className="flex items-center gap-3">
+            <svg className="h-5 w-5 text-red-400 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+            <p className="text-sm text-red-200">{error}</p>
           </div>
         </div>
       )}
 
-      <div 
-        ref={containerRef}
-        className={`relative bg-black ${isFullscreen ? 'flex items-center justify-center h-screen' : ''}`}
-      >
+      <div ref={containerRef} id={`video-container-${videoId}`} className={`relative bg-black ${isFullscreen ? 'w-screen h-screen' : ''}`}>
+        {/* Video Element - Plyr adds custom controls */}
+        <video
+          ref={videoRef}
+          className={`w-full bg-black ${isFullscreen ? 'h-full object-contain' : 'aspect-video'}`}
+          style={{ transform: 'none' }}
+          disablePictureInPicture
+          preload="auto"
+          playsInline
+        />
+
+        {/* Locked State Overlay - shown when time runs out */}
+        {showLockedOverlay && (
+          <div className="absolute inset-0 z-[10000] bg-gray-900 flex items-center justify-center">
+            {/* Solid background layer to completely cover video and controls */}
+            <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900"></div>
+            <div className="relative max-w-md mx-auto text-center p-8">
+              <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="h-10 w-10 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Límite de Tiempo Alcanzado</h3>
+              <p className="text-gray-400 text-sm">
+                Has usado todo tu tiempo disponible para este video 
+                ({formatTime(maxWatchTimeSeconds)}). Contacta a tu profesor si necesitas más tiempo.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Brand Watermark */}
-        <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-sm text-white px-3 py-1.5 rounded-lg text-xs font-semibold tracking-wide z-10 pointer-events-none shadow-lg">
+        <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm text-white px-3 py-1 rounded-lg text-xs font-bold tracking-wider z-[9999] pointer-events-none">
           AKADEMO
         </div>
 
-        {/* Student Watermark - discreet but visible for screen recording detection */}
+        {/* Time Remaining Indicator */}
+        {!isUnlimitedUser && watchTimeRemaining < Infinity && (
+          <div className={`absolute top-3 left-3 z-[9999] px-3 py-1.5 rounded-lg pointer-events-none ${
+            watchTimeRemaining < 60 ? 'bg-red-600 animate-pulse' : 
+            watchTimeRemaining < 300 ? 'bg-orange-600' : 'bg-black/70 backdrop-blur-sm'
+          }`}>
+            <span className="text-white text-sm font-mono">
+              ⏱ {formatTime(watchTimeRemaining)}
+            </span>
+          </div>
+        )}
+
+        {/* Student Watermark - appears periodically */}
         {showWatermark && studentName && (
-          <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
-            <div className="bg-black/20 backdrop-blur-sm border border-white/10 rounded-xl px-6 py-3 transform -rotate-12 shadow-lg">
-              <div className="text-white/90 text-lg font-semibold tracking-wide">{studentName}</div>
+          <div className="absolute inset-0 flex items-center justify-center z-[9999] pointer-events-none animate-fade-in">
+            <div className="bg-black/50 backdrop-blur-sm border border-white/20 rounded-xl px-6 py-3 shadow-lg">
+              <div className="text-white/80 text-lg font-semibold tracking-wide text-center">{studentName}</div>
               {studentEmail && (
-                <div className="text-white/70 text-xs font-medium mt-0.5">{studentEmail}</div>
+                <div className="text-white/60 text-xs font-medium mt-1 text-center">{studentEmail}</div>
               )}
             </div>
           </div>
         )}
 
-        {/* Video Element */}
-        <video
-          ref={videoRef}
-          src={videoUrl}
-          className="w-full aspect-video bg-black"
-          onPlay={() => setIsPlaying(true)}
-          onPause={() => setIsPlaying(false)}
-          controls
-          controlsList="nodownload"
-          disablePictureInPicture
-          preload="metadata"
-          playsInline
-          style={{ pointerEvents: isLocked ? 'none' : 'auto' }}
-        />
+        {/* Loading Indicator */}
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black z-40">
+            <div className="flex flex-col items-center gap-3">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+              <span className="text-white text-sm">Cargando video...</span>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Progress Stats Bar */}
+      {!isUnlimitedUser && (
+        <div className="bg-gray-900 px-4 py-2 flex items-center justify-between text-xs text-gray-400">
+          <div className="flex items-center gap-4">
+            <span>Posición: {formatTime(currentTime)}</span>
+            <span>Duración: {formatTime(videoDuration)}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span>Tiempo visto: {formatTime(playState?.totalWatchTimeSeconds || 0)}</span>
+            <span className="text-gray-600">|</span>
+            <span className={watchTimeRemaining < 60 ? 'text-red-400' : ''}>
+              Restante: {formatTime(watchTimeRemaining)}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Plyr Custom Styles */}
+      <style jsx global>{`
+        .plyr {
+          --plyr-color-main: #00b3ff;
+          --plyr-video-background: #000;
+          --plyr-menu-background: rgba(0,0,0,0.9);
+          --plyr-menu-color: #fff;
+        }
+        .plyr__controls {
+          z-index: 10 !important;
+        }
+        .plyr--fullscreen-fallback {
+          position: fixed !important;
+          inset: 0 !important;
+          z-index: 9998 !important;
+        }
+        .plyr:-webkit-full-screen .plyr__controls {
+          z-index: 10 !important;
+        }
+        .plyr:fullscreen .plyr__controls {
+          z-index: 10 !important;
+        }
+      `}</style>
     </div>
   );
 }

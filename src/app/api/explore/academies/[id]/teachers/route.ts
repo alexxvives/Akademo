@@ -17,7 +17,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
           u.email,
           m.status,
           (SELECT COUNT(*) FROM Class c WHERE c.teacherId = u.id AND c.academyId = ?) as classCount
-        FROM users u
+        FROM User u
         JOIN AcademyMembership m ON u.id = m.userId
         WHERE m.academyId = ? AND m.status = 'APPROVED'
         ORDER BY u.firstName

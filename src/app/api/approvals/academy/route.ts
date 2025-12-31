@@ -65,7 +65,7 @@ export async function GET(request: Request) {
           u.email as teacherEmail,
           a.name as academyName
         FROM AcademyMembership m
-        JOIN users u ON m.userId = u.id
+        JOIN User u ON m.userId = u.id
         JOIN Academy a ON m.academyId = a.id
         WHERE m.academyId IN (${placeholders}) AND m.status = 'PENDING'
         ORDER BY m.requestedAt DESC

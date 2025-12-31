@@ -21,10 +21,25 @@ interface Teacher {
 
 interface EnrolledClass {
   id: string;
+  slug?: string;
   name: string;
+  description?: string;
   academyName: string;
   videoCount: number;
+  documentCount: number;
+  lessonCount: number;
+  studentCount: number;
+  createdAt: string;
   enrollmentStatus?: 'PENDING' | 'APPROVED';
+}
+
+interface ActiveStream {
+  id: string;
+  classId: string;
+  title: string;
+  zoomLink: string;
+  className: string;
+  teacherName: string;
 }
 
 export default function StudentDashboard() {
@@ -32,6 +47,7 @@ export default function StudentDashboard() {
   const [selectedAcademy, setSelectedAcademy] = useState<Academy | null>(null);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [enrolledClasses, setEnrolledClasses] = useState<EnrolledClass[]>([]);
+  const [activeStreams, setActiveStreams] = useState<ActiveStream[]>([]);
   const [showBrowse, setShowBrowse] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -41,14 +57,16 @@ export default function StudentDashboard() {
 
   const loadData = async () => {
     try {
-      const [academiesRes, classesRes] = await Promise.all([
+      const [academiesRes, classesRes, streamsRes] = await Promise.all([
         fetch('/api/explore/academies'),
         fetch('/api/classes'),
+        fetch('/api/live/active'),
       ]);
 
-      const [academiesResult, classesResult] = await Promise.all([
+      const [academiesResult, classesResult, streamsResult] = await Promise.all([
         academiesRes.json(),
         classesRes.json(),
+        streamsRes.json(),
       ]);
 
       if (Array.isArray(academiesResult)) {
@@ -58,11 +76,21 @@ export default function StudentDashboard() {
       if (classesResult.success && Array.isArray(classesResult.data)) {
         setEnrolledClasses(classesResult.data.map((c: any) => ({
           id: c.id,
+          slug: c.slug,
           name: c.name,
+          description: c.description,
           academyName: c.academy?.name || 'Unknown',
           videoCount: c._count?.videos || 0,
+          documentCount: c._count?.documents || 0,
+          lessonCount: c._count?.lessons || 0,
+          studentCount: c._count?.enrollments || 0,
+          createdAt: c.createdAt,
           enrollmentStatus: c.enrollmentStatus || 'APPROVED',
         })));
+      }
+
+      if (streamsResult.success && Array.isArray(streamsResult.data)) {
+        setActiveStreams(streamsResult.data);
       }
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -246,11 +274,11 @@ export default function StudentDashboard() {
 
   return (
     <DashboardLayout role="STUDENT">
-      <div className="max-w-5xl mx-auto space-y-8">
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">My Classes</h1>
-            <p className="text-gray-500 text-sm mt-1">Continue learning</p>
+            <h1 className="text-3xl font-bold text-gray-900">Mis Clases</h1>
+            <p className="text-gray-500 mt-1">Continúa aprendiendo</p>
           </div>
           <button
             onClick={() => setShowBrowse(true)}
@@ -263,35 +291,82 @@ export default function StudentDashboard() {
           </button>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {enrolledClasses.map((classItem) => (
-            <Link
-              key={classItem.id}
-              href={`/dashboard/student/classes/class/${classItem.id}`}
-              className="group bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-sm transition-all p-5"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white font-semibold text-sm">
-                  {classItem.name.charAt(0)}
+        <div className="space-y-4">
+          {enrolledClasses.map((classItem) => {
+            const liveStream = activeStreams.find(s => s.classId === classItem.id);
+            return (
+              <Link
+                key={classItem.id}
+                href={`/dashboard/student/class/${classItem.slug || classItem.id}`}
+                className="block bg-white rounded-xl border-2 border-gray-200 hover:border-brand-400 hover:shadow-xl transition-all p-6 group"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="text-xl font-bold text-gray-900 group-hover:text-brand-600 transition-colors">{classItem.name}</h3>
+                      {liveStream && (
+                        <span className="flex items-center gap-1.5 text-xs bg-red-100 text-red-700 px-2.5 py-1 rounded-full font-semibold border border-red-200">
+                          <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                          EN VIVO
+                        </span>
+                      )}
+                      {classItem.enrollmentStatus === 'PENDING' && (
+                        <span className="text-xs bg-yellow-100 text-yellow-700 px-2.5 py-1 rounded-full font-semibold border border-yellow-200">
+                          Pendiente
+                        </span>
+                      )}
+                    </div>
+                    {classItem.description ? (
+                      <p className="text-sm text-gray-600 mb-4 line-clamp-2">{classItem.description}</p>
+                    ) : (
+                      <p className="text-sm text-gray-400 italic mb-4">Sin descripción</p>
+                    )}
+                    <div className="flex items-center gap-6 text-sm text-gray-500">
+                      <span className="flex items-center gap-1">
+                        <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        <span className="font-semibold text-gray-700">{classItem.studentCount}</span> Estudiante{classItem.studentCount !== 1 ? 's' : ''}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <svg className="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                        <span className="font-semibold text-gray-700">{classItem.lessonCount}</span> Lección{classItem.lessonCount !== 1 ? 'es' : ''}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        <span className="font-semibold text-gray-700">{classItem.videoCount}</span> Video{classItem.videoCount !== 1 ? 's' : ''}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span className="font-semibold text-gray-700">{classItem.documentCount}</span> Documento{classItem.documentCount !== 1 ? 's' : ''}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        Creada el {new Date(classItem.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Arrow Icon */}
+                  <div className="ml-4 flex items-center">
+                    <div className="text-gray-400 group-hover:text-brand-600 group-hover:translate-x-1 transition-all">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {classItem.enrollmentStatus === 'PENDING' && (
-                    <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full font-medium">
-                      Pending
-                    </span>
-                  )}
-                  <span className="text-xs text-gray-400 group-hover:text-blue-600 transition-colors">
-                    View →
-                  </span>
-                </div>
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
-                {classItem.name}
-              </h3>
-              <p className="text-sm text-gray-500 mb-2">{classItem.academyName}</p>
-              <p className="text-xs text-gray-400">{classItem.videoCount} videos</p>
-            </Link>
-          ))}
+              </Link>
+            );
+          })}
         </div>
       </div>
     </DashboardLayout>

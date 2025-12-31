@@ -23,9 +23,13 @@
     "@prisma/adapter-d1": "^7.0.1",
     "@prisma/client": "^5.20.0",
     "bcryptjs": "^2.4.3",
+    "hls.js": "^1.6.15",
     "next": "14.2.15",
+    "plyr": "^3.8.3",
+    "plyr-react": "^6.0.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "recharts": "^3.6.0",
     "ua-parser-js": "^1.0.38",
     "zod": "^3.23.8"
   },

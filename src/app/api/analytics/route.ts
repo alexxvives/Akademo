@@ -66,7 +66,7 @@ export async function GET(request: Request) {
              vps.sessionStartTime,
              vps.createdAt
            FROM VideoPlayState vps
-           JOIN users u ON vps.studentId = u.id
+           JOIN User u ON vps.studentId = u.id
            WHERE vps.videoId = ?
            ORDER BY vps.totalWatchTimeSeconds DESC`
         )
@@ -164,7 +164,7 @@ export async function GET(request: Request) {
              SUM(vps.totalWatchTimeSeconds) as totalWatchTime,
              MAX(vps.lastWatchedAt) as lastActivity
            FROM ClassEnrollment ce
-           JOIN users u ON ce.studentId = u.id
+           JOIN User u ON ce.studentId = u.id
            LEFT JOIN VideoPlayState vps ON vps.studentId = u.id
            LEFT JOIN Video v ON vps.videoId = v.id
            LEFT JOIN Lesson l ON v.lessonId = l.id AND l.classId = ?

@@ -1,0 +1,239 @@
+// Zoom API client for Server-to-Server OAuth
+// Docs: https://developers.zoom.us/docs/api/
+
+import { getCloudflareContext } from './cloudflare';
+
+interface ZoomConfig {
+  ZOOM_ACCOUNT_ID: string;
+  ZOOM_CLIENT_ID: string;
+  ZOOM_CLIENT_SECRET: string;
+}
+
+function getConfig(): ZoomConfig {
+  const ctx = getCloudflareContext();
+  return {
+    ZOOM_ACCOUNT_ID: ctx?.ZOOM_ACCOUNT_ID || process.env.ZOOM_ACCOUNT_ID || '',
+    ZOOM_CLIENT_ID: ctx?.ZOOM_CLIENT_ID || process.env.ZOOM_CLIENT_ID || '',
+    ZOOM_CLIENT_SECRET: ctx?.ZOOM_CLIENT_SECRET || process.env.ZOOM_CLIENT_SECRET || '',
+  };
+}
+
+// Cache for access token
+let cachedToken: { token: string; expiresAt: number } | null = null;
+
+// Get OAuth access token using Server-to-Server OAuth
+async function getAccessToken(): Promise<string> {
+  // Check if we have a valid cached token
+  if (cachedToken && cachedToken.expiresAt > Date.now()) {
+    return cachedToken.token;
+  }
+
+  const config = getConfig();
+  
+  const credentials = btoa(`${config.ZOOM_CLIENT_ID}:${config.ZOOM_CLIENT_SECRET}`);
+  
+  const response = await fetch('https://zoom.us/oauth/token', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${credentials}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: `grant_type=account_credentials&account_id=${config.ZOOM_ACCOUNT_ID}`,
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    console.error('Zoom OAuth error:', error);
+    throw new Error(`Failed to get Zoom access token: ${error}`);
+  }
+
+  const data = await response.json();
+  
+  // Cache the token (expires in ~1 hour, we cache for 50 minutes to be safe)
+  cachedToken = {
+    token: data.access_token,
+    expiresAt: Date.now() + (50 * 60 * 1000), // 50 minutes
+  };
+
+  return data.access_token;
+}
+
+export interface ZoomMeeting {
+  id: number;
+  uuid: string;
+  topic: string;
+  start_url: string;  // Host URL (to start the meeting)
+  join_url: string;   // Participant URL (to join)
+  password?: string;
+  duration: number;
+  created_at: string;
+}
+
+export interface CreateMeetingOptions {
+  topic: string;
+  duration?: number; // in minutes, default 60
+  password?: string;
+  waitingRoom?: boolean;
+}
+
+// Create a new Zoom meeting
+export async function createZoomMeeting(options: CreateMeetingOptions): Promise<ZoomMeeting> {
+  const token = await getAccessToken();
+  
+  // First, get the current user (me)
+  const userResponse = await fetch('https://api.zoom.us/v2/users/me', {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!userResponse.ok) {
+    const error = await userResponse.text();
+    console.error('Zoom get user error:', error);
+    throw new Error(`Failed to get Zoom user: ${error}`);
+  }
+
+  const user = await userResponse.json();
+  const userId = user.id;
+
+  // Create the meeting
+  const meetingResponse = await fetch(`https://api.zoom.us/v2/users/${userId}/meetings`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      topic: options.topic,
+      type: 2, // Scheduled meeting
+      duration: options.duration || 60,
+      settings: {
+        waiting_room: options.waitingRoom ?? false,
+        join_before_host: true,
+        mute_upon_entry: true,
+        auto_recording: 'cloud', // Auto-record to cloud
+      },
+    }),
+  });
+
+  if (!meetingResponse.ok) {
+    const error = await meetingResponse.text();
+    console.error('Zoom create meeting error:', error);
+    throw new Error(`Failed to create Zoom meeting: ${error}`);
+  }
+
+  return meetingResponse.json();
+}
+
+// Get meeting details
+export async function getZoomMeeting(meetingId: string | number): Promise<ZoomMeeting> {
+  const token = await getAccessToken();
+  
+  const response = await fetch(`https://api.zoom.us/v2/meetings/${meetingId}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to get Zoom meeting: ${error}`);
+  }
+
+  return response.json();
+}
+
+// Delete a meeting
+export async function deleteZoomMeeting(meetingId: string | number): Promise<void> {
+  const token = await getAccessToken();
+  
+  const response = await fetch(`https://api.zoom.us/v2/meetings/${meetingId}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok && response.status !== 404) {
+    const error = await response.text();
+    throw new Error(`Failed to delete Zoom meeting: ${error}`);
+  }
+}
+
+// End a meeting (if it's in progress)
+export async function endZoomMeeting(meetingId: string | number): Promise<void> {
+  const token = await getAccessToken();
+  
+  const response = await fetch(`https://api.zoom.us/v2/meetings/${meetingId}/status`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ action: 'end' }),
+  });
+
+  // 404 means meeting already ended or doesn't exist, which is fine
+  if (!response.ok && response.status !== 404) {
+    const error = await response.text();
+    throw new Error(`Failed to end Zoom meeting: ${error}`);
+  }
+}
+
+// Get recordings for a meeting
+export interface ZoomRecording {
+  id: string;
+  meeting_id: string;
+  recording_start: string;
+  recording_end: string;
+  file_type: string;
+  file_size: number;
+  play_url: string;
+  download_url: string;
+  status: string;
+  recording_type: string;
+}
+
+export interface ZoomRecordingsResponse {
+  uuid: string;
+  id: number;
+  host_email: string;
+  topic: string;
+  start_time: string;
+  duration: number;
+  total_size: number;
+  recording_count: number;
+  recording_files: ZoomRecording[];
+  download_access_token?: string;
+}
+
+// Get recordings for a specific meeting
+export async function getZoomMeetingRecordings(meetingId: string | number): Promise<ZoomRecordingsResponse | null> {
+  const token = await getAccessToken();
+  
+  const response = await fetch(`https://api.zoom.us/v2/meetings/${meetingId}/recordings`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (response.status === 404) {
+    return null; // No recordings yet
+  }
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to get Zoom recordings: ${error}`);
+  }
+
+  return response.json();
+}
+
+// Get download URL with access token appended
+export async function getZoomRecordingDownloadUrl(downloadUrl: string): Promise<string> {
+  const token = await getAccessToken();
+  // Append access token to download URL for authentication
+  const separator = downloadUrl.includes('?') ? '&' : '?';
+  return `${downloadUrl}${separator}access_token=${token}`;
+}
+

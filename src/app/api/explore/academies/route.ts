@@ -17,7 +17,7 @@ export async function GET(request: Request) {
           (u.firstName || ' ' || u.lastName) as ownerName,
           (SELECT COUNT(*) FROM AcademyMembership m WHERE m.academyId = a.id AND m.status = 'APPROVED') as teacherCount
         FROM Academy a
-        JOIN users u ON a.ownerId = u.id
+        JOIN User u ON a.ownerId = u.id
         ORDER BY a.createdAt DESC
       `)
       .all();

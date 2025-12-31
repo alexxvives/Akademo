@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 
@@ -20,6 +20,32 @@ interface MenuItem {
   matchPaths?: string[];
 }
 
+interface Notification {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  data: {
+    classId?: string;
+    liveStreamId?: string;
+    zoomLink?: string;
+    className?: string;
+    teacherName?: string;
+  } | null;
+  isRead: boolean;
+  createdAt: string;
+}
+
+interface ActiveStream {
+  id: string;
+  classId: string;
+  title: string;
+  zoomLink: string;
+  status: string;
+  className: string;
+  teacherName: string;
+}
+
 export default function DashboardLayout({
   children,
   role,
@@ -34,6 +60,39 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  
+  // Notification state
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  
+  // Active streams state for students
+  const [activeStreams, setActiveStreams] = useState<ActiveStream[]>([]);
+
+  const loadNotifications = useCallback(async () => {
+    try {
+      const response = await fetch('/api/notifications?unread=true');
+      const result = await response.json();
+      if (result.success && Array.isArray(result.data)) {
+        setNotifications(result.data);
+        setUnreadCount(result.data.filter((n: Notification) => !n.isRead).length);
+      }
+    } catch (error) {
+      console.error('Failed to load notifications:', error);
+    }
+  }, []);
+
+  const loadActiveStreams = useCallback(async () => {
+    try {
+      const response = await fetch('/api/live/active');
+      const result = await response.json();
+      if (result.success && Array.isArray(result.data)) {
+        setActiveStreams(result.data);
+      }
+    } catch (error) {
+      console.error('Failed to load active streams:', error);
+    }
+  }, []);
 
   useEffect(() => {
     checkAuth();
@@ -43,9 +102,22 @@ export default function DashboardLayout({
       fetch('/api/session/check', { method: 'POST' });
       // Then check every 10 seconds for faster logout detection
       const interval = setInterval(checkSession, 10000);
-      return () => clearInterval(interval);
+      
+      // Load notifications and poll for new ones
+      loadNotifications();
+      const notificationInterval = setInterval(loadNotifications, 15000); // Check every 15 seconds
+      
+      // Load active streams and poll for updates
+      loadActiveStreams();
+      const streamInterval = setInterval(loadActiveStreams, 10000); // Check every 10 seconds
+      
+      return () => {
+        clearInterval(interval);
+        clearInterval(notificationInterval);
+        clearInterval(streamInterval);
+      };
     }
-  }, [role]);
+  }, [role, loadNotifications, loadActiveStreams]);
 
   const checkAuth = async () => {
     try {
@@ -92,6 +164,43 @@ export default function DashboardLayout({
     navigator.clipboard.writeText(link);
     setLinkCopied(true);
     setTimeout(() => setLinkCopied(false), 2000);
+  };
+
+  const markNotificationAsRead = async (notificationId: string) => {
+    try {
+      await fetch('/api/notifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notificationIds: [notificationId] }),
+      });
+      setNotifications(prev => prev.map(n => 
+        n.id === notificationId ? { ...n, isRead: true } : n
+      ));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+    }
+  };
+
+  const joinLiveClass = (notification: Notification) => {
+    if (notification.data?.zoomLink) {
+      markNotificationAsRead(notification.id);
+      window.open(notification.data.zoomLink, '_blank');
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      await fetch('/api/notifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ markAll: true }),
+      });
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      setUnreadCount(0);
+    } catch (error) {
+      console.error('Failed to mark all as read:', error);
+    }
   };
 
   // Menu items by role with sections
@@ -180,6 +289,15 @@ export default function DashboardLayout({
             ),
           },
           {
+            label: 'Streams',
+            href: '/dashboard/teacher/streams',
+            icon: (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            ),
+          },
+          {
             label: 'Tareas',
             href: '/dashboard/teacher/assignments',
             icon: (
@@ -224,6 +342,7 @@ export default function DashboardLayout({
           {
             label: 'Mis Clases',
             href: '/dashboard/student/classes',
+            matchPaths: ['/dashboard/student/class'],
             icon: (
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -327,12 +446,14 @@ export default function DashboardLayout({
       >
         {/* Logo & Toggle */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200">
-          <Link href={`/dashboard/${role.toLowerCase()}`} className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-gradient-to-br from-brand-500 to-brand-600 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-sm">
-              AH
-            </div>
+          <Link href={`/dashboard/${role.toLowerCase()}`} className="flex items-center gap-2">
+            <img 
+              src="/logo/akademo_logo_B.svg" 
+              alt="Akademo" 
+              className="h-8 w-8 object-contain"
+            />
             {sidebarOpen && (
-              <span className="font-semibold text-gray-900 text-lg">Akademo</span>
+              <span className="text-xl font-bold text-gray-900">AKADEMO</span>
             )}
           </Link>
           <button
@@ -360,6 +481,10 @@ export default function DashboardLayout({
             const isActive = isDashboardRoute 
               ? pathname === item.href 
               : pathname === item.href || pathname.startsWith(item.href + '/') || matchesPath;
+            
+            // Check if this is "Mis Clases" and there are active streams
+            const hasLiveStream = role === 'STUDENT' && item.label === 'Mis Clases' && activeStreams.length > 0;
+            
             return (
               <Link
                 key={item.href}
@@ -371,13 +496,22 @@ export default function DashboardLayout({
                 }`}
                 title={!sidebarOpen ? item.label : undefined}
               >
-                <span className={isActive ? 'text-brand-600' : 'text-gray-500'}>
+                <span className={`relative ${isActive ? 'text-brand-600' : 'text-gray-500'}`}>
                   {item.icon}
+                  {hasLiveStream && (
+                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+                  )}
                 </span>
                 {sidebarOpen && (
                   <span className="text-sm">{item.label}</span>
                 )}
-                {sidebarOpen && item.badge !== undefined && (
+                {sidebarOpen && hasLiveStream && (
+                  <span className="ml-auto flex items-center gap-1">
+                    <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                    <span className="text-xs text-red-600 font-medium">EN VIVO</span>
+                  </span>
+                )}
+                {sidebarOpen && !hasLiveStream && item.badge !== undefined && (
                   <span className="ml-auto bg-brand-100 text-brand-700 text-xs font-medium px-2 py-0.5 rounded-full">
                     {item.badge}
                   </span>
@@ -424,7 +558,7 @@ export default function DashboardLayout({
                 </div>
               )}
             </div>
-            {sidebarOpen && (
+            {sidebarOpen ? (
               <button
                 onClick={handleLogout}
                 className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
@@ -433,6 +567,16 @@ export default function DashboardLayout({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
                 Cerrar Sesión
+              </button>
+            ) : (
+              <button
+                onClick={handleLogout}
+                className="mt-2 p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Cerrar Sesión"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
               </button>
             )}
           </div>
@@ -575,8 +719,88 @@ export default function DashboardLayout({
             </div>
             <span className="font-semibold text-gray-900">Akademo</span>
           </Link>
-          <div className="w-10" /> {/* Spacer for centering */}
+          {/* Mobile Notification Bell for Students */}
+          {role === 'STUDENT' ? (
+            <button
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+              </svg>
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+          ) : (
+            <div className="w-10" /> /* Spacer for centering */
+          )}
         </header>
+
+        {/* Mobile Notification Panel */}
+        {role === 'STUDENT' && showNotifications && (
+          <div className="lg:hidden fixed inset-x-0 top-16 bg-white border-b border-gray-200 shadow-lg z-40 max-h-80 overflow-y-auto">
+            <div className="p-3 border-b border-gray-100 flex items-center justify-between">
+              <span className="font-medium text-gray-900">Notificaciones</span>
+              <div className="flex items-center gap-3">
+                {unreadCount > 0 && (
+                  <button
+                    onClick={markAllAsRead}
+                    className="text-xs text-brand-600 hover:text-brand-700"
+                  >
+                    Marcar todas
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowNotifications(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            {notifications.length === 0 ? (
+              <div className="p-4 text-center text-gray-500 text-sm">
+                No hay notificaciones
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-100">
+                {notifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className={`p-3 ${!notification.isRead ? 'bg-blue-50' : ''}`}
+                  >
+                    <div className="flex items-start gap-2">
+                      {notification.type === 'live_class' && (
+                        <span className="text-red-500 animate-pulse">🔴</span>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900">
+                          {notification.title.replace('🔴 ', '')}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {notification.message}
+                        </p>
+                        {notification.type === 'live_class' && notification.data?.zoomLink && (
+                          <button
+                            onClick={() => joinLiveClass(notification)}
+                            className="mt-2 w-full bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors"
+                          >
+                            Unirse a la clase →
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Page Content */}
         <main className="flex-1 overflow-auto">

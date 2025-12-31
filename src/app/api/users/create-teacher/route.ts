@@ -30,7 +30,7 @@ export async function POST(request: Request) {
 
     // Check if email already exists
     const existing = await db
-      .prepare('SELECT id FROM users WHERE email = ?')
+      .prepare('SELECT id FROM User WHERE email = ?')
       .bind(data.email)
       .first<{ id: string }>();
 
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     const teacherId = `teacher-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     await db
       .prepare(`
-        INSERT INTO users (id, email, password, firstName, lastName, role, createdAt, updatedAt)
+        INSERT INTO User (id, email, password, firstName, lastName, role, createdAt, updatedAt)
         VALUES (?, ?, ?, ?, ?, 'TEACHER', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
       `)
       .bind(teacherId, data.email, hashedPassword, data.firstName, data.lastName)

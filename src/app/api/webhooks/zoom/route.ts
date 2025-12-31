@@ -1,0 +1,375 @@
+import { handleApiError, successResponse, errorResponse } from '@/lib/api-utils';
+import { getDB, generateId } from '@/lib/db';
+import { getZoomRecordingDownloadUrl } from '@/lib/zoom';
+import { fetchVideoFromUrl } from '@/lib/bunny-stream';
+import { getCloudflareContext } from '@/lib/cloudflare';
+import * as crypto from 'crypto';
+
+// Zoom Webhook Verification Token (set in Zoom app settings)
+function getWebhookSecret(): string {
+  const ctx = getCloudflareContext();
+  return ctx?.ZOOM_WEBHOOK_SECRET || process.env.ZOOM_WEBHOOK_SECRET || '';
+}
+
+// Verify Zoom webhook signature
+async function verifyZoomWebhook(request: Request, body: string): Promise<boolean> {
+  const secret = getWebhookSecret();
+  if (!secret) {
+    console.warn('ZOOM_WEBHOOK_SECRET not configured, skipping verification');
+    return true; // Skip verification if no secret configured
+  }
+
+  const signature = request.headers.get('x-zm-signature');
+  const timestamp = request.headers.get('x-zm-request-timestamp');
+
+  if (!signature || !timestamp) {
+    console.error('Missing Zoom webhook headers');
+    return false;
+  }
+
+  // Zoom uses HMAC-SHA256
+  const message = `v0:${timestamp}:${body}`;
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const signatureBuffer = await crypto.subtle.sign('HMAC', key, encoder.encode(message));
+  const signatureArray = new Uint8Array(signatureBuffer);
+  let hex = '';
+  for (let i = 0; i < signatureArray.length; i++) {
+    hex += signatureArray[i].toString(16).padStart(2, '0');
+  }
+  const expectedSignature = `v0=${hex}`;
+
+  return signature === expectedSignature;
+}
+
+interface ZoomRecordingFile {
+  id: string;
+  meeting_id: string;
+  file_type: string;
+  file_size: number;
+  play_url: string;
+  download_url: string;
+  recording_type: string; // 'shared_screen_with_speaker_view', 'active_speaker', etc.
+}
+
+interface ZoomWebhookPayload {
+  event: string;
+  event_ts: number;
+  payload: {
+    account_id: string;
+    object: {
+      uuid: string;
+      id: number;
+      host_id: string;
+      host_email: string;
+      topic: string;
+      start_time: string;
+      duration: number;
+      recording_files?: ZoomRecordingFile[];
+      download_token?: string;
+    };
+  };
+  download_token?: string;
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.text();
+    const payload = JSON.parse(body);
+    
+    console.log('Zoom webhook received:', payload.event);
+
+    // Handle endpoint URL validation FIRST (before signature check)
+    // Zoom validation requests don't have signature headers
+    if (payload.event === 'endpoint.url_validation') {
+      const plainToken = payload.payload?.plainToken;
+      if (plainToken) {
+        const secret = getWebhookSecret();
+        const encoder = new TextEncoder();
+        const key = await crypto.subtle.importKey(
+          'raw',
+          encoder.encode(secret),
+          { name: 'HMAC', hash: 'SHA-256' },
+          false,
+          ['sign']
+        );
+        const signatureBuffer = await crypto.subtle.sign('HMAC', key, encoder.encode(plainToken));
+        const signatureArray = new Uint8Array(signatureBuffer);
+        let encryptedToken = '';
+        for (let i = 0; i < signatureArray.length; i++) {
+          encryptedToken += signatureArray[i].toString(16).padStart(2, '0');
+        }
+        console.log('Zoom validation response:', { plainToken, encryptedToken });
+        return Response.json({
+          plainToken,
+          encryptedToken,
+        });
+      }
+    }
+
+    // For other events, verify webhook signature
+    const isValid = await verifyZoomWebhook(request, body);
+    if (!isValid) {
+      console.error('Invalid Zoom webhook signature');
+      return errorResponse('Invalid signature', 401);
+    }
+
+    // Handle recording completed event
+    if (payload.event === 'recording.completed') {
+      await handleRecordingCompleted(payload);
+    }
+
+    // Handle meeting started event - set stream to active and notify students
+    if (payload.event === 'meeting.started') {
+      await handleMeetingStarted(payload);
+    }
+
+    // Handle meeting ended event - auto-end the stream
+    if (payload.event === 'meeting.ended') {
+      await handleMeetingEnded(payload);
+    }
+
+    // Handle recording transcript completed (optional)
+    if (payload.event === 'recording.transcript_completed') {
+      console.log('Transcript completed for meeting:', payload.payload.object.id);
+    }
+
+    return Response.json(successResponse({ received: true }));
+  } catch (error) {
+    console.error('Zoom webhook error:', error);
+    return handleApiError(error);
+  }
+}
+
+async function handleRecordingCompleted(payload: ZoomWebhookPayload) {
+  const { object } = payload.payload;
+  const meetingId = String(object.id);
+  const recordings = object.recording_files || [];
+  const downloadToken = payload.download_token || object.download_token;
+
+  console.log(`Recording completed for meeting ${meetingId}:`, recordings.length, 'files');
+
+  const db = await getDB();
+
+  // Find the LiveStream associated with this Zoom meeting
+  const liveStream = await db.prepare(`
+    SELECT ls.*, c.name as className, c.teacherId
+    FROM LiveStream ls
+    JOIN Class c ON ls.classId = c.id
+    WHERE ls.zoomMeetingId = ?
+  `).bind(meetingId).first() as {
+    id: string;
+    classId: string;
+    teacherId: string;
+    title: string;
+    className: string;
+  } | null;
+
+  if (!liveStream) {
+    console.warn('No LiveStream found for Zoom meeting:', meetingId);
+    return;
+  }
+
+  // Find the best MP4 recording (prefer shared_screen_with_speaker_view or gallery_view)
+  const mp4Recordings = recordings.filter(r => r.file_type === 'MP4');
+  
+  // Priority: shared_screen_with_speaker_view > gallery_view > active_speaker > any MP4
+  const priorityOrder = ['shared_screen_with_speaker_view', 'gallery_view', 'active_speaker'];
+  let bestRecording: ZoomRecordingFile | null = null;
+  
+  for (const type of priorityOrder) {
+    bestRecording = mp4Recordings.find(r => r.recording_type === type) || null;
+    if (bestRecording) break;
+  }
+  
+  // Fallback to first MP4 if no priority match
+  if (!bestRecording && mp4Recordings.length > 0) {
+    bestRecording = mp4Recordings[0];
+  }
+
+  if (!bestRecording) {
+    console.warn('No MP4 recording found for meeting:', meetingId);
+    return;
+  }
+
+  console.log('Best recording:', bestRecording.recording_type, bestRecording.file_size);
+
+  try {
+    // Get authenticated download URL
+    let downloadUrl = bestRecording.download_url;
+    if (downloadToken) {
+      downloadUrl += `?access_token=${downloadToken}`;
+    } else {
+      downloadUrl = await getZoomRecordingDownloadUrl(bestRecording.download_url);
+    }
+
+    // Upload to Bunny Stream from URL
+    const videoTitle = `${object.topic} - ${new Date(object.start_time).toLocaleDateString('es-ES')}`;
+    
+    console.log('Uploading recording to Bunny Stream:', videoTitle);
+    
+    const bunnyVideo = await fetchVideoFromUrl(downloadUrl, videoTitle);
+    
+    console.log('Bunny video created:', bunnyVideo.guid);
+
+    // Update LiveStream with recording info
+    await db.prepare(`
+      UPDATE LiveStream 
+      SET recordingId = ?, status = 'ended', endedAt = ?
+      WHERE id = ?
+    `).bind(bunnyVideo.guid, new Date().toISOString(), liveStream.id).run();
+
+    // Create a notification for the teacher that recording is ready
+    const notificationId = generateId();
+    await db.prepare(`
+      INSERT INTO Notification (id, userId, type, title, message, data, isRead, createdAt)
+      VALUES (?, ?, 'recording_ready', ?, ?, ?, 0, ?)
+    `).bind(
+      notificationId,
+      liveStream.teacherId,
+      '📹 Grabación lista',
+      `La grabación de "${liveStream.title}" está siendo procesada en Bunny Stream.`,
+      JSON.stringify({
+        liveStreamId: liveStream.id,
+        classId: liveStream.classId,
+        bunnyGuid: bunnyVideo.guid,
+      }),
+      new Date().toISOString()
+    ).run();
+
+    console.log('Recording uploaded and notification created');
+
+  } catch (error) {
+    console.error('Failed to upload recording to Bunny:', error);
+    
+    // Update LiveStream status to indicate recording failed
+    await db.prepare(`
+      UPDATE LiveStream SET status = 'recording_failed', endedAt = ?
+      WHERE id = ?
+    `).bind(new Date().toISOString(), liveStream.id).run();
+  }
+}
+
+// Handle meeting.started event - set stream to active and notify students
+async function handleMeetingStarted(payload: ZoomWebhookPayload) {
+  const { object } = payload.payload;
+  const meetingId = String(object.id);
+  const startTime = new Date().toISOString();
+
+  console.log(`Meeting started: ${meetingId}`);
+
+  const db = await getDB();
+
+  // Find the LiveStream associated with this Zoom meeting
+  const liveStream = await db.prepare(`
+    SELECT ls.id, ls.classId, ls.title, ls.zoomLink, ls.status,
+           c.name as className, u.firstName, u.lastName
+    FROM LiveStream ls
+    JOIN Class c ON ls.classId = c.id
+    JOIN User u ON ls.teacherId = u.id
+    WHERE ls.zoomMeetingId = ? AND ls.status = 'scheduled'
+  `).bind(meetingId).first() as {
+    id: string;
+    classId: string;
+    title: string;
+    zoomLink: string;
+    status: string;
+    className: string;
+    firstName: string;
+    lastName: string;
+  } | null;
+
+  if (!liveStream) {
+    console.log('No scheduled LiveStream found for started meeting:', meetingId);
+    return;
+  }
+
+  // Update the stream status to active and set startedAt
+  await db.prepare(`
+    UPDATE LiveStream 
+    SET status = 'active', startedAt = ?
+    WHERE id = ?
+  `).bind(startTime, liveStream.id).run();
+
+  console.log(`Stream ${liveStream.id} marked as active`);
+
+  // Now notify all enrolled students
+  try {
+    const enrollments = await db.prepare(`
+      SELECT ce.studentId
+      FROM ClassEnrollment ce
+      WHERE ce.classId = ? AND ce.status = 'APPROVED'
+    `).bind(liveStream.classId).all();
+
+    const students = enrollments.results || [];
+    const teacherName = `${liveStream.firstName} ${liveStream.lastName}`;
+
+    for (const student of students as any[]) {
+      const notificationId = generateId();
+      const notificationData = JSON.stringify({
+        classId: liveStream.classId,
+        liveStreamId: liveStream.id,
+        zoomLink: liveStream.zoomLink,
+        className: liveStream.className,
+        teacherName,
+      });
+
+      await db.prepare(`
+        INSERT INTO Notification (id, userId, type, title, message, data, isRead, createdAt)
+        VALUES (?, ?, 'live_class', ?, ?, ?, 0, ?)
+      `).bind(
+        notificationId,
+        student.studentId,
+        `🔴 Clase en vivo: ${liveStream.title}`,
+        `${teacherName} ha iniciado una clase en vivo en ${liveStream.className}. ¡Únete ahora!`,
+        notificationData,
+        startTime
+      ).run();
+    }
+
+    console.log(`Notified ${students.length} students about live class`);
+  } catch (error) {
+    console.error('Error notifying students:', error);
+    // Don't throw - notifications are not critical
+  }
+}
+
+// Handle meeting.ended event - automatically end the stream when Zoom meeting ends
+async function handleMeetingEnded(payload: ZoomWebhookPayload) {
+  const { object } = payload.payload;
+  const meetingId = String(object.id);
+  const endTime = object.start_time ? new Date().toISOString() : new Date().toISOString();
+
+  console.log(`Meeting ended: ${meetingId}`);
+
+  const db = await getDB();
+
+  // Find the LiveStream associated with this Zoom meeting
+  const liveStream = await db.prepare(`
+    SELECT ls.id, ls.status, ls.title
+    FROM LiveStream ls
+    WHERE ls.zoomMeetingId = ? AND ls.status = 'active'
+  `).bind(meetingId).first() as { id: string; status: string; title: string } | null;
+
+  if (!liveStream) {
+    console.log('No active LiveStream found for ended meeting:', meetingId);
+    return;
+  }
+
+  // Update the stream status to ended
+  // Note: We set status to 'processing' because recording might still be processing
+  // The recording.completed webhook will set final status
+  await db.prepare(`
+    UPDATE LiveStream 
+    SET status = 'ended', endedAt = ?
+    WHERE id = ?
+  `).bind(endTime, liveStream.id).run();
+
+  console.log(`Stream ${liveStream.id} marked as ended`);
+}

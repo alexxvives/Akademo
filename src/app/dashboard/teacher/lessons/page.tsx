@@ -10,6 +10,7 @@ interface Lesson {
   description: string | null;
   className: string;
   classId: string;
+  classSlug?: string;
   releaseDate: string | null;
   videoCount: number;
   documentCount: number;
@@ -41,6 +42,7 @@ export default function TeacherLessons() {
                 description: lesson.description,
                 className: cls.name,
                 classId: cls.id,
+                classSlug: cls.slug,
                 releaseDate: lesson.releaseDate,
                 videoCount: lesson.videoCount || 0,
                 documentCount: lesson.documentCount || 0,
@@ -107,7 +109,7 @@ export default function TeacherLessons() {
             {lessons.map((lesson) => (
               <Link
                 key={lesson.id}
-                href={`/dashboard/teacher/class/${lesson.classId}`}
+                href={`/dashboard/teacher/class/${lesson.classSlug || lesson.classId}`}
                 className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-all hover:border-brand-300"
               >
                 <div className="flex items-start justify-between mb-3">

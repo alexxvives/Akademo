@@ -35,7 +35,7 @@ export async function GET(request: Request) {
          FROM Class c2 
          JOIN ClassEnrollment e ON c2.id = e.classId 
          WHERE c2.teacherId = u.id AND c2.academyId = m.academyId) as studentCount
-      FROM users u
+      FROM User u
       JOIN AcademyMembership m ON u.id = m.userId
       JOIN Academy a ON m.academyId = a.id
       WHERE u.role = 'TEACHER'

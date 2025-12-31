@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
-import { BarChart } from '@/components/Charts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 interface StudentProgress {
   id: string;
@@ -25,33 +25,20 @@ export default function TeacherProgress() {
 
   const loadProgress = async () => {
     try {
-      // This would need an API endpoint for student progress
-      // For now, we'll show mock data structure
-      const classesRes = await fetch('/api/classes');
-      const classesResult = await classesRes.json();
+      const response = await fetch('/api/students/progress');
+      const data = await response.json();
       
-      if (classesResult.success && classesResult.data) {
-        const progressData: StudentProgress[] = [];
-        
-        for (const cls of classesResult.data) {
-          const classRes = await fetch(`/api/classes/${cls.id}`);
-          const classData = await classRes.json();
-          
-          if (classData.success && classData.data.students) {
-            classData.data.students.forEach((student: any) => {
-              progressData.push({
-                id: student.id,
-                name: student.name,
-                email: student.email,
-                className: cls.name,
-                totalWatchTime: Math.floor(Math.random() * 600), // Mock data
-                videosWatched: Math.floor(Math.random() * 10),
-                totalVideos: classData.data.lessonCount || 5,
-                lastActive: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
-              });
-            });
-          }
-        }
+      if (data.success && data.data) {
+        const progressData: StudentProgress[] = data.data.map((student: any) => ({
+          id: student.id,
+          name: `${student.firstName} ${student.lastName}`,
+          email: student.email,
+          className: `${student.classCount} ${student.classCount === 1 ? 'clase' : 'clases'}`,
+          totalWatchTime: Math.floor((student.totalWatchTime || 0) / 60), // Convert seconds to minutes
+          videosWatched: student.lessonsCompleted || 0,
+          totalVideos: student.totalLessons || 0,
+          lastActive: student.lastActivity,
+        }));
         
         setStudents(progressData);
       }
@@ -90,9 +77,11 @@ export default function TeacherProgress() {
 
   // Prepare chart data
   const chartData = students.slice(0, 10).map(s => ({
-    label: s.name.split(' ')[0],
-    value: s.totalWatchTime,
+    name: s.name.split(' ')[0],
+    minutos: s.totalWatchTime,
   }));
+
+  const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];
 
   return (
     <DashboardLayout role="TEACHER">
@@ -105,12 +94,33 @@ export default function TeacherProgress() {
         {students.length > 0 && (
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Tiempo de Visualización (minutos)</h2>
-            <div className="h-64">
-              <BarChart 
-                data={chartData}
-                showValues={true}
-              />
-            </div>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <XAxis 
+                  dataKey="name" 
+                  angle={-45} 
+                  textAnchor="end" 
+                  height={80}
+                  tick={{ fill: '#6B7280', fontSize: 12 }}
+                />
+                <YAxis tick={{ fill: '#6B7280', fontSize: 12 }} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#fff', 
+                    border: '1px solid #E5E7EB', 
+                    borderRadius: '8px',
+                    padding: '8px 12px'
+                  }}
+                  labelStyle={{ fontWeight: 'bold', marginBottom: '4px' }}
+                />
+                <Bar dataKey="minutos" radius={[8, 8, 0, 0]}>
+                  {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         )}
 

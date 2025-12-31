@@ -3,6 +3,22 @@ export interface CloudflareEnv {
   DB: D1Database;
   STORAGE: R2Bucket;
   JWT_SECRET: string;
+  STORAGE_TYPE: string;
+  // Bunny Stream
+  BUNNY_STREAM_LIBRARY_ID: string;
+  BUNNY_STREAM_API_KEY: string;
+  BUNNY_STREAM_CDN_HOSTNAME: string;
+  BUNNY_STREAM_TOKEN_KEY?: string;
+  BUNNY_STREAM_LIVE_API_KEY?: string;
+  // Zoom
+  ZOOM_ACCOUNT_ID?: string;
+  ZOOM_CLIENT_ID?: string;
+  ZOOM_CLIENT_SECRET?: string;
+  ZOOM_WEBHOOK_SECRET?: string;
+  // Firebase
+  FIREBASE_PROJECT_ID: string;
+  FIREBASE_DATABASE_URL: string;
+  FIREBASE_CLIENT_EMAIL: string;
 }
 
 // D1 Database interface (from Cloudflare Workers types)
@@ -46,6 +62,11 @@ export interface R2Bucket {
   put(key: string, value: ReadableStream | ArrayBuffer | string | Blob, options?: R2PutOptions): Promise<R2Object>;
   delete(keys: string | string[]): Promise<void>;
   list(options?: R2ListOptions): Promise<R2Objects>;
+  createMultipartUpload(key: string, options?: R2PutOptions): Promise<R2MultipartUpload>;
+  resumeMultipartUpload(key: string, uploadId: string): R2MultipartUpload;
+  uploadPart(key: string, uploadId: string, partNumber: number, value: ReadableStream | ArrayBuffer | string | Blob): Promise<R2UploadedPart>;
+  completeMultipartUpload(key: string, uploadId: string, uploadedParts: R2UploadedPart[]): Promise<R2Object>;
+  abortMultipartUpload(key: string, uploadId: string): Promise<void>;
 }
 
 export interface R2Object {
@@ -128,6 +149,19 @@ export interface R2Range {
   offset?: number;
   length?: number;
   suffix?: number;
+}
+
+export interface R2MultipartUpload {
+  uploadId: string;
+  key: string;
+  uploadPart(partNumber: number, value: ReadableStream | ArrayBuffer | string | Blob): Promise<R2UploadedPart>;
+  abort(): Promise<void>;
+  complete(uploadedParts: R2UploadedPart[]): Promise<R2Object>;
+}
+
+export interface R2UploadedPart {
+  partNumber: number;
+  etag: string;
 }
 
 // Helper to get Cloudflare bindings in Next.js API routes
