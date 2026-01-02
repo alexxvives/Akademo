@@ -68,6 +68,9 @@ export default function DashboardLayout({
   
   // Active streams state for students
   const [activeStreams, setActiveStreams] = useState<ActiveStream[]>([]);
+  
+  // Pending requests count for teachers
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
 
   const loadNotifications = useCallback(async () => {
     try {
@@ -94,6 +97,18 @@ export default function DashboardLayout({
     }
   }, []);
 
+  const loadPendingRequestsCount = useCallback(async () => {
+    try {
+      const response = await fetch('/api/enrollments/pending');
+      const result = await response.json();
+      if (result.success && Array.isArray(result.data)) {
+        setPendingRequestsCount(result.data.length);
+      }
+    } catch (error) {
+      console.error('Failed to load pending requests count:', error);
+    }
+  }, []);
+
   useEffect(() => {
     checkAuth();
     
@@ -117,7 +132,17 @@ export default function DashboardLayout({
         clearInterval(streamInterval);
       };
     }
-  }, [role, loadNotifications, loadActiveStreams]);
+    
+    if (role === 'TEACHER') {
+      // Load pending enrollment requests and poll for updates
+      loadPendingRequestsCount();
+      const requestsInterval = setInterval(loadPendingRequestsCount, 15000); // Check every 15 seconds
+      
+      return () => {
+        clearInterval(requestsInterval);
+      };
+    }
+  }, [role, loadNotifications, loadActiveStreams, loadPendingRequestsCount]);
 
   const checkAuth = async () => {
     try {
@@ -289,6 +314,16 @@ export default function DashboardLayout({
             ),
           },
           {
+            label: 'Solicitudes',
+            href: '/dashboard/teacher/requests',
+            badge: pendingRequestsCount,
+            icon: (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+              </svg>
+            ),
+          },
+          {
             label: 'Streams',
             href: '/dashboard/teacher/streams',
             icon: (
@@ -325,16 +360,6 @@ export default function DashboardLayout({
               </svg>
             ),
           },
-          // Security
-          {
-            label: 'Reportes',
-            href: '/dashboard/teacher/reports',
-            icon: (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            ),
-          },
         ];
       case 'STUDENT':
         return [
@@ -343,6 +368,7 @@ export default function DashboardLayout({
             label: 'Mis Clases',
             href: '/dashboard/student/classes',
             matchPaths: ['/dashboard/student/class'],
+            badge: activeStreams.length > 0 ? activeStreams.length : undefined,
             icon: (
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
@@ -372,30 +398,11 @@ export default function DashboardLayout({
         return [
           // Dashboard
           {
-            label: 'Analíticas',
+            label: 'Dashboard',
             href: '/dashboard/academy',
             icon: (
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-            ),
-          },
-          {
-            label: 'Ingresos',
-            href: '/dashboard/academy/revenue',
-            icon: (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            ),
-          },
-          // User Management
-          {
-            label: 'Estudiantes',
-            href: '/dashboard/academy/students',
-            icon: (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
               </svg>
             ),
           },
@@ -408,13 +415,50 @@ export default function DashboardLayout({
               </svg>
             ),
           },
-          // Content Library
           {
-            label: 'Reportes',
-            href: '/dashboard/academy/reports',
+            label: 'Clases',
+            href: '/dashboard/academy/classes',
+            matchPaths: ['/dashboard/academy/class'],
             icon: (
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+            ),
+          },
+          {
+            label: 'Solicitudes',
+            href: '/dashboard/academy/requests',
+            badge: pendingRequestsCount,
+            icon: (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+              </svg>
+            ),
+          },
+          {
+            label: 'Streams',
+            href: '/dashboard/academy/streams',
+            icon: (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+            ),
+          },
+          {
+            label: 'Lecciones',
+            href: '/dashboard/academy/lessons',
+            icon: (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
+              </svg>
+            ),
+          },
+          {
+            label: 'Estudiantes',
+            href: '/dashboard/academy/students',
+            icon: (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
               </svg>
             ),
           },
@@ -428,8 +472,26 @@ export default function DashboardLayout({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+      <div className="dashboard-layout min-h-screen bg-[#111318] flex">
+        {/* Skeleton Sidebar */}
+        <aside className="hidden lg:flex flex-col bg-[#1a1d29] w-64">
+          <div className="h-20 flex items-center px-4">
+            <div className="w-12 h-12 bg-gray-700 rounded-xl animate-pulse" />
+          </div>
+          <nav className="flex-1 p-4 space-y-2">
+            {[1,2,3,4,5].map(i => (
+              <div key={i} className="h-12 bg-gray-800 rounded-xl animate-pulse" />
+            ))}
+          </nav>
+        </aside>
+        {/* Skeleton Content */}
+        <div className="flex-1 flex flex-col">
+          <header className="h-16 bg-gray-100 border-b" />
+          <main className="flex-1 p-8">
+            <div className="w-48 h-8 bg-gray-200 rounded animate-pulse mb-4" />
+            <div className="w-96 h-4 bg-gray-200 rounded animate-pulse" />
+          </main>
+        </div>
       </div>
     );
   }
@@ -437,43 +499,62 @@ export default function DashboardLayout({
   const roleLabel = role === 'ADMIN' ? 'Admin' : role === 'TEACHER' ? 'Teacher' : role === 'STUDENT' ? 'Student' : 'Academy';
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="dashboard-layout min-h-screen bg-gray-50 flex">
       {/* Sidebar Desktop */}
       <aside
-        className={`hidden lg:flex flex-col bg-white border-r border-gray-200 transition-all duration-300 ease-in-out ${
+        className={`hidden lg:flex flex-col bg-[#1a1d29] transition-all duration-300 ease-in-out ${
           sidebarOpen ? 'w-64' : 'w-20'
         }`}
       >
         {/* Logo & Toggle */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200">
-          <Link href={`/dashboard/${role.toLowerCase()}`} className="flex items-center gap-2">
-            <img 
-              src="/logo/akademo_logo_B.svg" 
-              alt="Akademo" 
-              className="h-8 w-8 object-contain"
-            />
+        <div className="h-20 flex items-center justify-between px-4">
+          <Link href={`/dashboard/${role.toLowerCase()}`} className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-[#b1e787] rounded-xl flex items-center justify-center shadow-lg">
+              <img 
+                src="/logo/akademo_logo_B.svg" 
+                alt="Akademo" 
+                className="h-9 w-9 object-contain"
+              />
+            </div>
             {sidebarOpen && (
-              <span className="text-xl font-bold text-gray-900">AKADEMO</span>
+              <span className="text-xl font-bold text-white">AKADEMO</span>
             )}
           </Link>
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
-            aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-          >
-            <svg
-              className={`w-5 h-5 text-gray-500 transition-transform ${!sidebarOpen ? 'rotate-180' : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          {sidebarOpen ? (
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-1.5 hover:bg-gray-800 rounded-lg transition-colors"
+              aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
+              <svg
+                className="w-5 h-5 text-gray-400 transition-transform"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+          ) : (
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="absolute top-6 -right-3 p-1.5 bg-[#1a1d29] border border-gray-700 hover:bg-gray-800 rounded-lg transition-colors shadow-lg"
+              aria-label="Expand sidebar"
+            >
+              <svg
+                className="w-4 h-4 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          )}
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-3 py-6 space-y-2 overflow-y-auto">
           {menuItems.map((item) => {
             // For dashboard routes (e.g., /dashboard/teacher), only highlight on exact match
             const isDashboardRoute = item.href === `/dashboard/${role.toLowerCase()}`;
@@ -489,21 +570,26 @@ export default function DashboardLayout({
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
+                className={`relative flex items-center gap-3 px-3 py-3 rounded-xl transition-all group ${
                   isActive
-                    ? 'bg-brand-50 text-brand-700 font-medium shadow-sm'
-                    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                    ? 'bg-gray-800/50 text-white'
+                    : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'
                 }`}
                 title={!sidebarOpen ? item.label : undefined}
               >
-                <span className={`relative ${isActive ? 'text-brand-600' : 'text-gray-500'}`}>
+                {isActive && (
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[#b1e787] rounded-r-full" />
+                )}
+                <span className={`relative flex-shrink-0 ${
+                  isActive ? 'text-[#b1e787]' : 'text-gray-400 group-hover:text-white'
+                }`}>
                   {item.icon}
                   {hasLiveStream && (
                     <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
                   )}
                 </span>
                 {sidebarOpen && (
-                  <span className="text-sm">{item.label}</span>
+                  <span className="text-sm font-medium">{item.label}</span>
                 )}
                 {sidebarOpen && hasLiveStream && (
                   <span className="ml-auto flex items-center gap-1">
@@ -511,8 +597,12 @@ export default function DashboardLayout({
                     <span className="text-xs text-red-600 font-medium">EN VIVO</span>
                   </span>
                 )}
-                {sidebarOpen && !hasLiveStream && item.badge !== undefined && (
-                  <span className="ml-auto bg-brand-100 text-brand-700 text-xs font-medium px-2 py-0.5 rounded-full">
+                {sidebarOpen && !hasLiveStream && item.badge !== undefined && item.badge > 0 && (
+                  <span className={`ml-auto text-xs font-bold px-2 py-1 rounded-full ${
+                    item.label === 'Solicitudes' 
+                      ? 'bg-red-500 text-white' 
+                      : 'bg-[#b1e787]/20 text-[#b1e787]'
+                  }`}>
                     {item.badge}
                   </span>
                 )}
@@ -521,15 +611,59 @@ export default function DashboardLayout({
           })}
         </nav>
 
+        {/* Quick Action Button - Context based on role */}
+        <div className="px-3 pb-3">
+          {/* Hide for teachers */}
+          {role !== 'TEACHER' && (
+            sidebarOpen ? (
+              <Link
+                href={
+                  role === 'ACADEMY' ? '/dashboard/academy/teachers' :
+                  role === 'STUDENT' ? '/dashboard/student/classes' :
+                  '/dashboard/admin'
+                }
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#b1e787] hover:bg-[#9dd46f] text-gray-900 rounded-xl transition-all shadow-lg font-semibold"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                <span className="text-sm">
+                  {role === 'ACADEMY' ? 'Ver Profesores' :
+                   role === 'STUDENT' ? 'Explorar Clases' :
+                   'Panel Admin'}
+                </span>
+              </Link>
+            ) : (
+              <Link
+                href={
+                  role === 'ACADEMY' ? '/dashboard/academy/teachers' :
+                  role === 'STUDENT' ? '/dashboard/student/classes' :
+                  '/dashboard/admin'
+                }
+                className="w-12 h-12 flex items-center justify-center bg-[#b1e787] hover:bg-[#9dd46f] text-gray-900 rounded-xl transition-all shadow-lg mx-auto"
+                title={
+                  role === 'ACADEMY' ? 'Ver Profesores' :
+                  role === 'STUDENT' ? 'Explorar Clases' :
+                  'Panel Admin'
+                }
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+              </Link>
+            )
+          )}
+        </div>
+
         {/* Teacher Invite Link */}
         {role === 'TEACHER' && user && sidebarOpen && (
-          <div className="px-3 py-2 border-t border-gray-100">
+          <div className="px-3 py-2 border-t border-gray-800/50">
             <button
               onClick={copyJoinLink}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
                 linkCopied 
-                  ? 'bg-green-50 text-green-700' 
-                  : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                  ? 'bg-[#b1e787]/20 text-[#b1e787]' 
+                  : 'bg-[#b1e787]/10 text-[#b1e787] hover:bg-[#b1e787]/20'
               }`}
             >
               <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -544,24 +678,24 @@ export default function DashboardLayout({
 
         {/* User Profile */}
         {user && (
-          <div className="border-t border-gray-200 p-4">
+          <div className="border-t border-gray-800/50 p-4">
             <div className={`flex items-center gap-3 ${!sidebarOpen ? 'justify-center' : ''}`}>
-              <div className="w-9 h-9 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center text-sm font-medium text-gray-700 flex-shrink-0">
+              <div className="w-10 h-10 bg-[#b1e787] rounded-xl flex items-center justify-center text-sm font-bold text-gray-900 flex-shrink-0 shadow-lg">
                 {user.firstName[0]}{user.lastName[0]}
               </div>
               {sidebarOpen && (
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
+                  <p className="text-sm font-semibold text-white truncate">
                     {user.firstName} {user.lastName}
                   </p>
-                  <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                  <p className="text-xs text-gray-400 truncate">{user.email}</p>
                 </div>
               )}
             </div>
             {sidebarOpen ? (
               <button
                 onClick={handleLogout}
-                className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-gray-800/50 rounded-xl transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -571,7 +705,7 @@ export default function DashboardLayout({
             ) : (
               <button
                 onClick={handleLogout}
-                className="mt-2 p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                className="mt-2 p-2 text-gray-400 hover:text-white hover:bg-gray-800/50 rounded-xl transition-colors"
                 title="Cerrar Sesión"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -642,8 +776,12 @@ export default function DashboardLayout({
                   {item.icon}
                 </span>
                 <span className="text-sm">{item.label}</span>
-                {item.badge !== undefined && (
-                  <span className="ml-auto bg-brand-100 text-brand-700 text-xs font-medium px-2 py-0.5 rounded-full">
+                {item.badge !== undefined && item.badge > 0 && (
+                  <span className={`ml-auto text-xs font-medium px-2 py-0.5 rounded-full ${
+                    item.label === 'Solicitudes' 
+                      ? 'bg-blue-500 text-white' 
+                      : 'bg-brand-100 text-brand-700'
+                  }`}>
                     {item.badge}
                   </span>
                 )}

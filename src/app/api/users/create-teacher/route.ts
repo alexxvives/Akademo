@@ -44,14 +44,14 @@ export async function POST(request: Request) {
     // Hash the provided password
     const hashedPassword = await hashPassword(data.password);
 
-    // Get academy ID if session is ACADEMY role
+    // Get academy ID if session is ACADEMY role (via Teacher table)
     let academyId: string | null = null;
     if (session.role === 'ACADEMY') {
-      const academy = await db
-        .prepare('SELECT id FROM Academy WHERE ownerId = ?')
+      const academyResult = await db
+        .prepare('SELECT DISTINCT academyId FROM Teacher WHERE userId = ?')
         .bind(session.id)
-        .first<{ id: string }>();
-      academyId = academy?.id || null;
+        .first<{ academyId: string }>();
+      academyId = academyResult?.academyId || null;
     }
 
     // Create teacher user
@@ -64,15 +64,15 @@ export async function POST(request: Request) {
       .bind(teacherId, data.email, hashedPassword, data.firstName, data.lastName)
       .run();
 
-    // If academy, create approved membership automatically
+    // If academy, create Teacher record to link to academy
     if (academyId) {
-      const membershipId = `mem-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const teacherRecordId = `t-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       await db
         .prepare(`
-          INSERT INTO AcademyMembership (id, userId, academyId, status, requestedAt, approvedAt, createdAt, updatedAt)
-          VALUES (?, ?, ?, 'APPROVED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+          INSERT INTO Teacher (id, userId, academyId, defaultMaxWatchTimeMultiplier, createdAt, updatedAt)
+          VALUES (?, ?, ?, 2.0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         `)
-        .bind(membershipId, teacherId, academyId)
+        .bind(teacherRecordId, teacherId, academyId)
         .run();
     }
 

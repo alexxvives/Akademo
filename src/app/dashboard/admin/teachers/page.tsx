@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import DashboardLayout from '@/components/DashboardLayout';
 
 interface Teacher {
   id: string;
@@ -56,16 +55,16 @@ export default function AdminTeachers() {
 
   if (loading) {
     return (
-      <DashboardLayout role="ADMIN">
+      <>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
         </div>
-      </DashboardLayout>
+      </>
     );
   }
 
   return (
-    <DashboardLayout role="ADMIN">
+    <>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -160,6 +159,6 @@ export default function AdminTeachers() {
           </div>
         )}
       </div>
-    </DashboardLayout>
+    </>
   );
 }

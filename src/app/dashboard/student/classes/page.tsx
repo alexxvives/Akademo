@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import DashboardLayout from '@/components/DashboardLayout';
 import Link from 'next/link';
 
 interface Academy {
@@ -12,11 +11,16 @@ interface Academy {
   teacherCount: number;
 }
 
-interface Teacher {
+interface AcademyClass {
   id: string;
   name: string;
-  email: string;
-  classCount: number;
+  description: string | null;
+  slug: string | null;
+  academyName: string;
+  teacherName: string;
+  teacherId: string;
+  teacherEmail: string;
+  studentCount: number;
 }
 
 interface EnrolledClass {
@@ -45,7 +49,7 @@ interface ActiveStream {
 export default function StudentDashboard() {
   const [academies, setAcademies] = useState<Academy[]>([]);
   const [selectedAcademy, setSelectedAcademy] = useState<Academy | null>(null);
-  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [academyClasses, setAcademyClasses] = useState<AcademyClass[]>([]);
   const [enrolledClasses, setEnrolledClasses] = useState<EnrolledClass[]>([]);
   const [activeStreams, setActiveStreams] = useState<ActiveStream[]>([]);
   const [showBrowse, setShowBrowse] = useState(false);
@@ -53,6 +57,18 @@ export default function StudentDashboard() {
 
   useEffect(() => {
     loadData();
+    // Poll for active streams every 10 seconds
+    const interval = setInterval(() => {
+      fetch('/api/live/active')
+        .then(res => res.json())
+        .then(result => {
+          if (result.success && Array.isArray(result.data)) {
+            setActiveStreams(result.data);
+          }
+        })
+        .catch(err => console.error('Failed to check streams:', err));
+    }, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   const loadData = async () => {
@@ -99,46 +115,36 @@ export default function StudentDashboard() {
     }
   };
 
-  const loadTeachers = async (academyId: string) => {
+  const loadAcademyClasses = async (academyId: string) => {
     try {
-      const response = await fetch(`/api/explore/academies/${academyId}/teachers`);
+      const response = await fetch(`/api/explore/academies/${academyId}/classes`);
       const result = await response.json();
 
-      if (Array.isArray(result)) {
-        setTeachers(result.map((t: any) => ({
-          id: t.id,
-          name: t.name,
-          email: t.email,
-          classCount: t.classCount || 0,
-        })));
+      if (result.success && Array.isArray(result.data)) {
+        setAcademyClasses(result.data);
       }
     } catch (error) {
-      console.error('Failed to load teachers:', error);
+      console.error('Failed to load classes:', error);
     }
   };
 
   const handleSelectAcademy = (academy: Academy) => {
     setSelectedAcademy(academy);
-    loadTeachers(academy.id);
+    loadAcademyClasses(academy.id);
   };
 
-  const handleRequestEnrollment = async (teacherId: string) => {
-    if (!selectedAcademy) return;
-
+  const handleRequestClass = async (classId: string) => {
     try {
       const response = await fetch('/api/requests/student', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          academyId: selectedAcademy.id,
-          teacherId,
-        }),
+        body: JSON.stringify({ classId }),
       });
 
       const result = await response.json();
 
       if (result.success) {
-        alert('Request sent to teacher!');
+        alert('¡Solicitud enviada! El profesor la revisará pronto.');
         setShowBrowse(false);
         setSelectedAcademy(null);
         loadData();
@@ -154,17 +160,17 @@ export default function StudentDashboard() {
 
   if (loading) {
     return (
-      <DashboardLayout role="STUDENT">
+      <>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="w-6 h-6 border-2 border-gray-200 border-t-blue-600 rounded-full animate-spin" />
         </div>
-      </DashboardLayout>
+      </>
     );
   }
 
   if (!hasClasses && !showBrowse) {
     return (
-      <DashboardLayout role="STUDENT">
+      <>
         <div className="max-w-2xl mx-auto mt-20">
           <div className="bg-white border-2 border-dashed border-gray-300 rounded-2xl p-12 text-center">
             <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -187,62 +193,92 @@ export default function StudentDashboard() {
             </button>
           </div>
         </div>
-      </DashboardLayout>
+      </>
     );
   }
 
   if (showBrowse) {
     if (selectedAcademy) {
       return (
-        <DashboardLayout role="STUDENT">
-          <div className="max-w-4xl mx-auto">
+        <>
+          <div className="max-w-5xl mx-auto">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">{selectedAcademy.name}</h1>
-                <p className="text-gray-600 text-sm mt-1">Select a teacher to request enrollment</p>
+                <p className="text-gray-600 text-sm mt-1">{selectedAcademy.description || 'Selecciona una clase para solicitar inscripción'}</p>
               </div>
               <button
                 onClick={() => setSelectedAcademy(null)}
                 className="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
               >
-                ← Back to Academies
+                ← Volver a Academias
               </button>
             </div>
 
             <div className="grid gap-4">
-              {teachers.map((teacher) => (
-                <div key={teacher.id} className="bg-white border border-gray-200 rounded-xl p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-1">{teacher.name}</h3>
-                      <p className="text-gray-600 text-sm mb-2">{teacher.email}</p>
-                      <p className="text-gray-500 text-sm">{teacher.classCount} classes available</p>
-                    </div>
-                    <button
-                      onClick={() => handleRequestEnrollment(teacher.id)}
-                      className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium text-sm"
-                    >
-                      Request to Join
-                    </button>
-                  </div>
+              {academyClasses.length === 0 ? (
+                <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
+                  <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                  </svg>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay clases disponibles</h3>
+                  <p className="text-gray-600">Esta academia aún no tiene clases publicadas.</p>
                 </div>
-              ))}
+              ) : (
+                academyClasses.map((classItem) => (
+                  <div key={classItem.id} className="bg-white border-2 border-gray-200 rounded-xl p-6 hover:border-gray-900 hover:shadow-lg transition-all">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-3">
+                          <h3 className="text-xl font-semibold text-gray-900">{classItem.name}</h3>
+                          <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                            {classItem.studentCount} estudiantes
+                          </span>
+                        </div>
+                        {classItem.description && (
+                          <p className="text-gray-600 text-sm mb-4">{classItem.description}</p>
+                        )}
+                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                          <div className="flex items-center gap-2">
+                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            <span className="font-medium">{classItem.teacherName}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            <span>{classItem.teacherEmail}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleRequestClass(classItem.id)}
+                        className="px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium text-sm transition-all"
+                      >
+                        Solicitar Inscripción
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
-        </DashboardLayout>
+        </>
       );
     }
 
     return (
-      <DashboardLayout role="STUDENT">
+      <>
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">Browse Academies</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Explorar Academias</h1>
             <button
               onClick={() => setShowBrowse(false)}
               className="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
             >
-              ← Back
+              ← Volver
             </button>
           </div>
 
@@ -261,24 +297,23 @@ export default function StudentDashboard() {
                     onClick={() => handleSelectAcademy(academy)}
                     className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium text-sm"
                   >
-                    View Teachers
+                    Ver Clases
                   </button>
                 </div>
               </div>
             ))}
           </div>
         </div>
-      </DashboardLayout>
+      </>
     );
   }
 
   return (
-    <DashboardLayout role="STUDENT">
+    <>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Mis Clases</h1>
-            <p className="text-gray-500 mt-1">Continúa aprendiendo</p>
           </div>
           <button
             onClick={() => setShowBrowse(true)}
@@ -369,6 +404,6 @@ export default function StudentDashboard() {
           })}
         </div>
       </div>
-    </DashboardLayout>
+    </>
   );
 }

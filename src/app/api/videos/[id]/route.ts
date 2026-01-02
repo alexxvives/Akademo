@@ -65,20 +65,15 @@ export async function PATCH(
       );
     }
 
-    // Teachers can edit if they're members of the academy (or if they own it)
+    // Teachers can edit if they own the class through Teacher table
     // Admins can edit anything
     if (session.role === 'TEACHER') {
-      const membership = await db
-        .prepare(
-          `SELECT id FROM AcademyMembership 
-           WHERE userId = ? AND academyId = ? AND status = 'APPROVED'`
-        )
-        .bind(session.id, video.academyId)
-        .first();
+      const classData = await db
+        .prepare('SELECT teacherId FROM Class WHERE id = ?')
+        .bind(video.classId)
+        .first() as any;
 
-      const isOwner = video.ownerId === session.id;
-
-      if (!membership && !isOwner) {
+      if (classData?.teacherId !== session.id) {
         return NextResponse.json(
           { success: false, message: 'You do not have access to edit this video' },
           { status: 403 }
@@ -151,20 +146,15 @@ export async function DELETE(
       );
     }
 
-    // Teachers can delete if they're members of the academy (or if they own it)
+    // Teachers can delete if they own the class through Teacher table
     // Admins can delete anything
     if (session.role === 'TEACHER') {
-      const membership = await db
-        .prepare(
-          `SELECT id FROM AcademyMembership 
-           WHERE userId = ? AND academyId = ? AND status = 'APPROVED'`
-        )
-        .bind(session.id, video.academyId)
-        .first();
+      const classData = await db
+        .prepare('SELECT teacherId FROM Class WHERE id = ?')
+        .bind(video.classId)
+        .first() as any;
 
-      const isOwner = video.ownerId === session.id;
-
-      if (!membership && !isOwner) {
+      if (classData?.teacherId !== session.id) {
         return NextResponse.json(
           { success: false, message: 'You do not have access to delete this video' },
           { status: 403 }

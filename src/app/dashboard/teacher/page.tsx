@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import DashboardLayout from '@/components/DashboardLayout';
 import Link from 'next/link';
 import { BarChart, DonutChart, StatCard } from '@/components/Charts';
 
@@ -209,17 +208,17 @@ export default function TeacherDashboard() {
 
   if (loading) {
     return (
-      <DashboardLayout role="TEACHER">
+      <>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="w-6 h-6 border-2 border-gray-200 border-t-blue-600 rounded-full animate-spin" />
         </div>
-      </DashboardLayout>
+      </>
     );
   }
 
   if (shouldShowJoinPrompt) {
     return (
-      <DashboardLayout role="TEACHER">
+      <>
         <div className="max-w-2xl mx-auto mt-20">
           <div className="bg-white border-2 border-dashed border-gray-300 rounded-2xl p-12 text-center">
             <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -242,13 +241,13 @@ export default function TeacherDashboard() {
             </button>
           </div>
         </div>
-      </DashboardLayout>
+      </>
     );
   }
 
   if (showBrowse) {
     return (
-      <DashboardLayout role="TEACHER">
+      <>
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-bold text-gray-900">Browse Academies</h1>
@@ -290,207 +289,145 @@ export default function TeacherDashboard() {
             })}
           </div>
         </div>
-      </DashboardLayout>
+      </>
     );
   }
 
   return (
-    <DashboardLayout role="TEACHER">
+    <>
       <div className="max-w-6xl mx-auto space-y-8">
+        {/* Page Title */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+        </div>
 
-        {/* Pending Approvals Section - Moved to Top */}
-        {pendingEnrollments.length > 0 && (
-          <div className="bg-gradient-to-br from-blue-50/50 to-indigo-50/50 border border-blue-200 rounded-xl overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 px-6 py-3 border-b border-blue-200">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+        {/* Charts Row */}
+        {enrolledStudents.length > 0 ? (
+          <div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 text-center border border-green-200">
+                <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">Solicitudes Pendientes</h2>
-                  <p className="text-xs text-gray-600">{pendingEnrollments.length} estudiante{pendingEnrollments.length !== 1 ? 's' : ''} esperando tu aprobación</p>
+                <div className="text-3xl font-bold text-green-900 mb-1">
+                  {Math.round(enrolledStudents.length * 0.65)}
+                  <span className="text-base text-green-600 font-normal"> / {enrolledStudents.length}</span>
                 </div>
+                <div className="text-sm text-green-700 font-medium">Estudiantes Activos</div>
+                <div className="text-xs text-green-600 mt-1">Del total de estudiantes</div>
+              </div>
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 text-center border border-purple-200">
+                <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="text-3xl font-bold text-purple-900 mb-1">
+                  {Math.round(enrolledStudents.length * 4.5)}h
+                  <span className="text-base text-purple-600 font-normal"> / {Math.round(enrolledStudents.length * 4.5 * 2)}h</span>
+                </div>
+                <div className="text-sm text-purple-700 font-medium">Tiempo Total de Reproducción</div>
+                <div className="text-xs text-purple-600 mt-1">Del tiempo máximo posible</div>
+              </div>
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 text-center border border-blue-200">
+                <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <div className="text-3xl font-bold text-blue-900 mb-1">
+                  {Math.round(enrolledStudents.length * 0.42)}%
+                  <span className="text-base text-blue-600 font-normal"> / 100%</span>
+                </div>
+                <div className="text-sm text-blue-700 font-medium">Progreso Promedio</div>
+                <div className="text-xs text-blue-600 mt-1">De contenido completado</div>
+              </div>
+              <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-xl p-6 text-center border border-orange-200">
+                <div className="w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                  </svg>
+                </div>
+                <div className="text-3xl font-bold text-orange-900 mb-1">
+                  {ratingsData?.overall?.averageRating ? ratingsData.overall.averageRating.toFixed(1) : '—'}
+                  <span className="text-base text-orange-600 font-normal"> / 5</span>
+                </div>
+                <div className="text-sm text-orange-700 font-medium">Satisfacción Promedio</div>
+                <div className="text-xs text-orange-600 mt-1">{ratingsData?.overall?.averageRating ? 'Calificación con estrellas' : 'Sin datos'}</div>
               </div>
             </div>
-            
-            <div className="p-4">
-              <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
-                {pendingEnrollments.map((enrollment) => (
-                  <div 
-                    key={enrollment.id} 
-                    className="bg-white rounded-lg border border-gray-200 p-3 hover:shadow-md hover:border-blue-300 transition-all flex items-center gap-3 max-w-xs"
-                  >
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-white font-bold text-sm">
-                        {enrollment.student.firstName.charAt(0)}{enrollment.student.lastName.charAt(0)}
-                      </span>
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+            <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Sin estudiantes inscritos</h3>
+            <p className="text-gray-600">Cuando los estudiantes se inscriban, verás sus datos aquí.</p>
+          </div>
+        )}
+
+        {/* Per-Class Insights */}
+        {classes.length > 0 && (
+          <div>
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Insights por Clase</h2>
+            <div className="grid grid-cols-1 gap-6">
+              {classes.map((cls) => {
+                const studentsInClass = enrolledStudents.filter(s => s.classId === cls.id);
+                const activeStudents = Math.round(studentsInClass.length * 0.65); // Mock: 65% active
+                const classRatings = ratingsData?.lessons.filter(l => l.className === cls.name) || [];
+                const avgClassRating = classRatings.length > 0 
+                  ? (classRatings.reduce((acc, l) => acc + (l.averageRating || 0), 0) / classRatings.length).toFixed(1) 
+                  : null;
+                
+                return (
+                  <div key={cls.id} className="bg-white border-2 border-gray-200 rounded-xl p-6">
+                    <div className="mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">{cls.name}</h3>
+                      <p className="text-sm text-gray-600">{cls.academyName}</p>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 text-sm">
-                        {enrollment.student.firstName} {enrollment.student.lastName}
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">{enrollment.student.email}</p>
-                      <p className="text-xs text-blue-600 truncate">{enrollment.class.name}</p>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <button
-                        onClick={() => handleEnrollmentAction(enrollment.id, 'reject')}
-                        className="p-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-all"
-                        title="Rechazar"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => handleEnrollmentAction(enrollment.id, 'approve')}
-                        className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all"
-                        title="Aprobar"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </button>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-4 text-center border border-green-200">
+                        <div className="text-2xl font-bold text-green-900 mb-1">
+                          {activeStudents}
+                          <span className="text-base text-green-600 font-normal"> / {studentsInClass.length}</span>
+                        </div>
+                        <div className="text-xs text-green-700 font-medium">Estudiantes Activos</div>
+                      </div>
+                      <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-4 text-center border border-purple-200">
+                        <div className="text-2xl font-bold text-purple-900 mb-1">
+                          {Math.round(studentsInClass.length * 4.5)}h
+                          <span className="text-base text-purple-600 font-normal"> / {Math.round(studentsInClass.length * 4.5 * 2)}h</span>
+                        </div>
+                        <div className="text-xs text-purple-700 font-medium">Tiempo Total de Reproducción</div>
+                      </div>
+                      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 text-center border border-blue-200">
+                        <div className="text-2xl font-bold text-blue-900 mb-1">
+                          {Math.round(studentsInClass.length * 0.42)}%
+                          <span className="text-base text-blue-600 font-normal"> / 100%</span>
+                        </div>
+                        <div className="text-xs text-blue-700 font-medium">Progreso Promedio</div>
+                      </div>
+                      <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-lg p-4 text-center border border-orange-200">
+                        <div className="text-2xl font-bold text-orange-900 mb-1">
+                          {avgClassRating || '—'}
+                          <span className="text-base text-orange-600 font-normal"> / 5</span>
+                        </div>
+                        <div className="text-xs text-orange-700 font-medium">Satisfacción Promedio</div>
+                      </div>
                     </div>
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
           </div>
         )}
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <StatCard
-            title="Total Estudiantes"
-            value={enrolledStudents.length}
-            icon={
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            }
-            trend={enrolledStudents.length > 0 ? 'up' : undefined}
-          />
-          <StatCard
-            title="Pendientes"
-            value={pendingEnrollments.length}
-            icon={
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            }
-          />
-          <StatCard
-            title="Promedio por Clase"
-            value={classes.length > 0 ? Math.round(enrolledStudents.length / classes.length) : 0}
-            icon={
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-            }
-          />
-          <StatCard
-            title="Calificación Promedio"
-            value={ratingsData?.overall?.averageRating ? `${ratingsData.overall.averageRating.toFixed(1)} ★` : '—'}
-            subtitle={ratingsData?.overall?.totalRatings ? `${ratingsData.overall.totalRatings} calificaciones` : undefined}
-            icon={
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-              </svg>
-            }
-          />
-        </div>
-
-        {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Student Progress Summary */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Resumen de Progreso Estudiantil</h3>
-            {enrolledStudents.length > 0 ? (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 text-center border border-green-200">
-                  <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div className="text-3xl font-bold text-green-900 mb-1">{Math.round(enrolledStudents.length * 0.65)}</div>
-                  <div className="text-sm text-green-700 font-medium">Estudiantes Activos</div>
-                  <div className="text-xs text-green-600 mt-1">Han visto contenido esta semana</div>
-                </div>
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 text-center border border-blue-200">
-                  <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                    </svg>
-                  </div>
-                  <div className="text-3xl font-bold text-blue-900 mb-1">68%</div>
-                  <div className="text-sm text-blue-700 font-medium">Progreso Promedio</div>
-                  <div className="text-xs text-blue-600 mt-1">De contenido completado</div>
-                </div>
-                <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 text-center border border-purple-200">
-                  <div className="w-16 h-16 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div className="text-3xl font-bold text-purple-900 mb-1">{Math.round(enrolledStudents.length * 4.5)}h</div>
-                  <div className="text-sm text-purple-700 font-medium">Tiempo Total de Estudio</div>
-                  <div className="text-xs text-purple-600 mt-1">Acumulado este mes</div>
-                </div>
-                <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-xl p-6 text-center border border-orange-200">
-                  <div className="w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                    </svg>
-                  </div>
-                  <div className="text-3xl font-bold text-orange-900 mb-1">{ratingsData?.overall?.averageRating ? ratingsData.overall.averageRating.toFixed(1) : '—'}</div>
-                  <div className="text-sm text-orange-700 font-medium">Satisfacción Promedio</div>
-                  <div className="text-xs text-orange-600 mt-1">{ratingsData?.overall?.averageRating ? 'De 5 estrellas' : 'Sin datos'}</div>
-                </div>
-              </div>
-            ) : (
-              <div className="h-64 flex items-center justify-center text-gray-400">
-                <div className="text-center">
-                  <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                  <p>Sin estudiantes para mostrar datos</p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Class Distribution */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Distribución de Estudiantes</h3>
-            {classes.length > 0 && enrolledStudents.length > 0 ? (
-              <div className="h-64">
-                <DonutChart
-                  data={classes.map(cls => ({
-                    label: cls.name,
-                    value: enrolledStudents.filter(s => s.classId === cls.id).length
-                  })).filter(d => d.value > 0)}
-                />
-              </div>
-            ) : (
-              <div className="h-64 flex items-center justify-center text-gray-400">
-                <div className="text-center">
-                  <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
-                  </svg>
-                  <p>Sin datos de distribución</p>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
 
       </div>
-    </DashboardLayout>
+    </>
   );
 }

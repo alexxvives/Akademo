@@ -16,10 +16,10 @@ export async function POST(request: NextRequest) {
 
     // Verify the stream exists and belongs to a class the teacher owns
     const stream = await db.prepare(`
-      SELECT cl.id, cl.classId, cl.title, cl.startedAt, cl.endedAt, c.teacherId
-      FROM ClassLive cl
-      JOIN Class c ON c.id = cl.classId
-      WHERE cl.id = ? AND c.teacherId = ?
+      SELECT ls.id, ls.classId, ls.title, ls.startedAt, ls.endedAt, c.teacherId
+      FROM LiveStream ls
+      JOIN Class c ON c.id = ls.classId
+      WHERE ls.id = ? AND c.teacherId = ?
     `).bind(streamId, user.id).first() as any;
 
     if (!stream) {
@@ -86,12 +86,12 @@ export async function POST(request: NextRequest) {
 
     // Update the stream with the recording reference
     await db.prepare(`
-      UPDATE ClassLive SET recordingId = ? WHERE id = ?
+      UPDATE LiveStream SET recordingId = ? WHERE id = ?
     `).bind(lessonId, streamId).run();
 
     // Notify students about the new recording
     const enrollments = await db.prepare(`
-      SELECT studentId FROM ClassEnrollment WHERE classId = ? AND status = 'APPROVED'
+      SELECT userId FROM ClassEnrollment WHERE classId = ? AND status = 'APPROVED'
     `).bind(stream.classId).all() as any;
 
     if (enrollments.results?.length > 0) {

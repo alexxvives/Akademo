@@ -1,10 +1,8 @@
 'use client';
 
-import DashboardLayout from '@/components/DashboardLayout';
-
 export default function StudentAssignments() {
   return (
-    <DashboardLayout role="STUDENT">
+    <>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Tareas</h1>
@@ -29,6 +27,6 @@ export default function StudentAssignments() {
           </div>
         </div>
       </div>
-    </DashboardLayout>
+    </>
   );
 }

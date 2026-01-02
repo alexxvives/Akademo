@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import DashboardLayout from '@/components/DashboardLayout';
 import Link from 'next/link';
 
 interface Stream {
@@ -16,16 +15,18 @@ interface Stream {
   endedAt: string | null;
   zoomMeetingId: string | null;
   recordingId: string | null;
+  participantCount?: number | null;
+  participantsFetchedAt?: string | null;
 }
 
 export default function StreamsPage() {
   const [streams, setStreams] = useState<Stream[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'active' | 'ended'>('all');
   const [uploadingStreamId, setUploadingStreamId] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
   const [editingTitleValue, setEditingTitleValue] = useState<string>('');
+  const [fetchingParticipants, setFetchingParticipants] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -43,6 +44,27 @@ export default function StreamsPage() {
       console.error('Error loading streams:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchParticipants = async (streamId: string) => {
+    try {
+      setFetchingParticipants(streamId);
+      const response = await fetch(`/api/zoom/participants?streamId=${streamId}`);
+      const result = await response.json();
+      
+      if (!response.ok) {
+        alert(result.error || 'Error al obtener participantes');
+        return;
+      }
+      
+      alert(`Participantes obtenidos: ${result.data.participantCount}`);
+      await loadStreams();
+    } catch (error) {
+      console.error('Error fetching participants:', error);
+      alert('Error al obtener participantes de Zoom');
+    } finally {
+      setFetchingParticipants(null);
     }
   };
 
@@ -227,15 +249,15 @@ export default function StreamsPage() {
     }
   };
 
-  const filteredStreams = streams.filter(stream => {
-    if (filter === 'all') return true;
-    if (filter === 'active') return stream.status === 'active' || stream.status === 'scheduled';
-    if (filter === 'ended') return stream.status === 'ended' || stream.status === 'recording_failed';
-    return true;
-  });
-
   const activeCount = streams.filter(s => s.status === 'active' || s.status === 'scheduled').length;
   const endedCount = streams.filter(s => s.status === 'ended' || s.status === 'recording_failed').length;
+  
+  // Calculate average participants per stream
+  const streamsWithParticipants = streams.filter(s => s.participantCount != null);
+  const avgParticipants = streamsWithParticipants.length > 0
+    ? Math.round(streamsWithParticipants.reduce((acc, s) => acc + (s.participantCount || 0), 0) / streamsWithParticipants.length)
+    : 0;
+  
   const totalDurationMs = streams.reduce((acc, stream) => {
     if (!stream.startedAt && !stream.createdAt) return acc;
     const start = stream.startedAt || stream.createdAt;
@@ -246,8 +268,7 @@ export default function StreamsPage() {
   const totalMinutes = Math.floor((totalDurationMs % (1000 * 60 * 60)) / (1000 * 60));
 
   return (
-    <DashboardLayout role="TEACHER">
-      <div className="space-y-6">
+    <div className="space-y-6">
         {/* Header */}
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Historial de Streams</h1>
@@ -258,14 +279,14 @@ export default function StreamsPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{activeCount}</p>
-                <p className="text-sm text-gray-500">En vivo ahora</p>
+                <p className="text-2xl font-bold text-gray-900">{avgParticipants}</p>
+                <p className="text-sm text-gray-500">Participantes promedio</p>
               </div>
             </div>
           </div>
@@ -299,57 +320,19 @@ export default function StreamsPage() {
           </div>
         </div>
 
-        {/* Filter Tabs */}
-        <div className="flex gap-2">
-          <button
-            onClick={() => setFilter('all')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              filter === 'all'
-                ? 'bg-gray-900 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            Todos ({streams.length})
-          </button>
-          <button
-            onClick={() => setFilter('active')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              filter === 'active'
-                ? 'bg-red-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            En Vivo ({activeCount})
-          </button>
-          <button
-            onClick={() => setFilter('ended')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              filter === 'ended'
-                ? 'bg-gray-900 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            Finalizados ({endedCount})
-          </button>
-        </div>
-
         {/* Streams List */}
         {loading ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 flex items-center justify-center">
             <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
           </div>
-        ) : filteredStreams.length === 0 ? (
+        ) : streams.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
             <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
             <h3 className="text-lg font-medium text-gray-900 mb-1">No hay streams</h3>
             <p className="text-gray-500">
-              {filter === 'active' 
-                ? 'No tienes ningún stream activo en este momento'
-                : filter === 'ended'
-                ? 'No tienes streams anteriores'
-                : 'Inicia un stream desde una de tus clases'}
+              Inicia un stream desde una de tus clases
             </p>
           </div>
         ) : (
@@ -367,6 +350,9 @@ export default function StreamsPage() {
                     Estado
                   </th>
                   <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Participantes
+                  </th>
+                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Inicio
                   </th>
                   <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -378,7 +364,7 @@ export default function StreamsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {filteredStreams.map((stream) => (
+                {streams.map((stream) => (
                   <tr key={stream.id} className="hover:bg-gray-50 transition-colors">
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-3">
@@ -446,6 +432,22 @@ export default function StreamsPage() {
                     <td className="py-4 px-4">
                       {getStatusBadge(stream.status)}
                     </td>
+                    <td className="py-4 px-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-600 font-medium">
+                          {stream.participantCount != null ? stream.participantCount : '—'}
+                        </span>
+                        {stream.status === 'ended' && stream.zoomMeetingId && !stream.participantsFetchedAt && (
+                          <button
+                            onClick={() => fetchParticipants(stream.id)}
+                            disabled={fetchingParticipants === stream.id}
+                            className="px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded border border-blue-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          >
+                            {fetchingParticipants === stream.id ? '...' : 'Obtener'}
+                          </button>
+                        )}
+                      </div>
+                    </td>
                     <td className="py-4 px-4 text-sm text-gray-600">
                       {formatDate(stream.startedAt || stream.createdAt)}
                     </td>
@@ -505,6 +507,5 @@ export default function StreamsPage() {
           onChange={handleFileSelect}
         />
       </div>
-    </DashboardLayout>
   );
 }

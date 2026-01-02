@@ -50,13 +50,17 @@ export async function POST(request: Request) {
 
     // Verify teacher has access to this class
     if (session.role === 'TEACHER') {
-      const classData = await classQueries.findWithAcademyAndCounts(classId) as any;
+      const db = await getDB();
+      const classData = await db
+        .prepare('SELECT teacherId FROM Class WHERE id = ?')
+        .bind(classId)
+        .first() as any;
+      
       if (!classData) {
         return errorResponse('Class not found', 404);
       }
       
-      const membership = await membershipQueries.findByUserAndAcademy(session.id, classData.academyId);
-      if (!membership || (membership as any).status !== 'APPROVED') {
+      if (classData.teacherId !== session.id) {
         return errorResponse('Not authorized to add lessons to this class', 403);
       }
     }

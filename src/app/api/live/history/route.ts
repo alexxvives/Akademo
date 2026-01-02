@@ -21,7 +21,9 @@ export async function GET(request: Request) {
         ls.startedAt,
         ls.endedAt,
         ls.zoomMeetingId,
-        ls.recordingId
+        ls.recordingId,
+        ls.participantCount,
+        ls.participantsFetchedAt
       FROM LiveStream ls
       JOIN Class c ON ls.classId = c.id
       WHERE ls.teacherId = ?

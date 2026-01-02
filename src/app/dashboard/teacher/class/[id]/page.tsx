@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import DashboardLayout from '@/components/DashboardLayout';
 import Link from 'next/link';
 import ProtectedVideoPlayer from '@/components/ProtectedVideoPlayer';
 import { multipartUpload } from '@/lib/multipart-upload';
@@ -303,7 +302,7 @@ export default function TeacherClassPage() {
     try {
       // Generate default title with timestamp
       const now = new Date();
-      const defaultTitle = `Stream ${now.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} ${now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`;
+      const defaultTitle = `Stream ${now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} ${now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
       
       const res = await fetch('/api/live', {
         method: 'POST',
@@ -620,28 +619,40 @@ export default function TeacherClassPage() {
   };
 
   const handleEditLesson = async (lesson: Lesson) => {
-    // Load lesson details
-    const detail = await loadLessonDetail(lesson.id);
-    if (!detail) return;
-    
-    // Populate form with existing data
-    const releaseDatetime = new Date(detail.releaseDate);
-    const timeString = releaseDatetime.toTimeString().slice(0, 5); // HH:MM format
-    
-    setLessonFormData({
-      title: detail.title,
-      description: detail.description || '',
-      externalUrl: detail.externalUrl || '',
-      releaseDate: detail.releaseDate.split('T')[0],
-      releaseTime: timeString,
-      publishImmediately: false, // When editing, show scheduling options
-      maxWatchTimeMultiplier: detail.maxWatchTimeMultiplier,
-      watermarkIntervalMins: detail.watermarkIntervalMins,
-      videos: [],
-      documents: [],
-    });
-    setEditingLessonId(lesson.id);
-    setShowLessonForm(true);
+    try {
+      // Load lesson details WITHOUT setting selectedLesson to avoid navigation
+      const res = await fetch(`/api/lessons/${lesson.id}`);
+      const result = await res.json();
+      
+      if (!result.success || !result.data) {
+        alert('Error loading lesson details');
+        return;
+      }
+      
+      const detail = result.data;
+      
+      // Populate form with existing data
+      const releaseDatetime = new Date(detail.releaseDate);
+      const timeString = releaseDatetime.toTimeString().slice(0, 5); // HH:MM format
+      
+      setLessonFormData({
+        title: detail.title,
+        description: detail.description || '',
+        externalUrl: detail.externalUrl || '',
+        releaseDate: detail.releaseDate.split('T')[0],
+        releaseTime: timeString,
+        publishImmediately: false, // When editing, show scheduling options
+        maxWatchTimeMultiplier: detail.maxWatchTimeMultiplier,
+        watermarkIntervalMins: detail.watermarkIntervalMins,
+        videos: [],
+        documents: [],
+      });
+      setEditingLessonId(lesson.id);
+      setShowLessonForm(true);
+    } catch (e) {
+      console.error('Error loading lesson for edit:', e);
+      alert('Error loading lesson details');
+    }
   };
 
   const handleUpdateLesson = async (e: React.FormEvent) => {
@@ -720,29 +731,29 @@ export default function TeacherClassPage() {
 
   if (loading) {
     return (
-      <DashboardLayout role="TEACHER">
+      <>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="w-6 h-6 border-2 border-gray-200 border-t-blue-600 rounded-full animate-spin" />
         </div>
-      </DashboardLayout>
+      </>
     );
   }
 
   if (!classData) {
     return (
-      <DashboardLayout role="TEACHER">
+      <>
         <div className="max-w-6xl mx-auto text-center py-12">
           <p className="text-gray-500">Class not found</p>
           <Link href="/dashboard/teacher" className="text-blue-600 hover:text-blue-700 text-sm font-medium mt-2 inline-block">
             ← Back to Dashboard
           </Link>
         </div>
-      </DashboardLayout>
+      </>
     );
   }
 
   return (
-    <DashboardLayout role="TEACHER">
+    <>
       <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
         {/* Header - Only show when no lesson is selected */}
         {!selectedLesson && (
@@ -1022,20 +1033,56 @@ export default function TeacherClassPage() {
                     >
                       Entrar como Host
                     </a>
-                    {liveClasses[0].status === 'active' && (
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(liveClasses[0].zoomLink);
-                          alert('Link copiado');
-                        }}
-                        className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
-                        title="Copiar link para estudiantes"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
-                      </button>
-                    )}
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(liveClasses[0].zoomLink);
+                        alert('Link copiado al portapapeles');
+                      }}
+                      className="px-3 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors flex items-center gap-2"
+                      title="Copiar link para estudiantes"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      <span className="text-sm font-medium">Copiar Link</span>
+                    </button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          console.log('Sending notification with data:', {
+                            classId: classData?.id,
+                            liveStreamId: liveClasses[0].id,
+                            message: `Clase en vivo: ${liveClasses[0].title}`
+                          });
+                          const res = await fetch('/api/notifications', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              classId: classData?.id,
+                              liveStreamId: liveClasses[0].id,
+                              message: `Clase en vivo: ${liveClasses[0].title}`,
+                            }),
+                          });
+                          const result = await res.json();
+                          console.log('Notification response:', result);
+                          if (res.ok) {
+                            alert(result.data?.message || 'Estudiantes notificados');
+                          } else {
+                            alert(`Error: ${result.error || 'No se pudo enviar notificaciones'}`);
+                          }
+                        } catch (error) {
+                          console.error('Error notifying students:', error);
+                          alert('Error al enviar notificaciones');
+                        }
+                      }}
+                      className="px-3 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors flex items-center gap-2"
+                      title="Notificar a estudiantes"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                      </svg>
+                      <span className="text-sm font-medium">Notificar</span>
+                    </button>
                     <button
                       onClick={() => deleteLiveClass(liveClasses[0].id)}
                       className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
@@ -1353,7 +1400,16 @@ export default function TeacherClassPage() {
                     return (
                       <div
                         key={lesson.id}
-                        onClick={() => !lesson.isUploading && !lesson.isTranscoding && selectLesson(lesson)}
+                        onClick={(e) => {
+                          // Check if click is on action buttons container
+                          const target = e.target as HTMLElement;
+                          if (target.closest('[data-action-buttons]')) {
+                            return; // Don't navigate if clicking action buttons area
+                          }
+                          if (!lesson.isUploading && !lesson.isTranscoding) {
+                            selectLesson(lesson);
+                          }
+                        }}
                         className={`bg-white rounded-lg border overflow-hidden transition-all duration-200 group ${
                           lesson.isUploading || lesson.isTranscoding
                             ? 'border-blue-300 cursor-default'
@@ -1394,12 +1450,19 @@ export default function TeacherClassPage() {
                           {/* Title and Actions */}
                           <div className="flex items-start justify-between mb-3">
                             <h3 className="font-semibold text-gray-900 group-hover:text-brand-600 transition-colors flex-1 pr-2">{lesson.title}</h3>
-                            <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center gap-1 flex-shrink-0" data-action-buttons onClick={(e) => e.stopPropagation()}>
                               {!isReleased(lesson.releaseDate) && !lesson.isUploading && !lesson.isTranscoding && (
                                 <span className="px-2 py-0.5 bg-amber-50 text-amber-600 text-xs font-medium rounded border border-amber-200 mr-1">Programada</span>
                               )}
                               <button
-                                onClick={(e) => { e.stopPropagation(); !lesson.isUploading && !lesson.isTranscoding && handleEditLesson(lesson); }}
+                                onClick={(e) => { 
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  e.nativeEvent.stopImmediatePropagation();
+                                  if (!lesson.isUploading && !lesson.isTranscoding) {
+                                    handleEditLesson(lesson);
+                                  }
+                                }}
                                 disabled={lesson.isUploading || lesson.isTranscoding === 1}
                                 className={`p-1 rounded transition-colors ${
                                   lesson.isUploading || lesson.isTranscoding
@@ -1413,7 +1476,13 @@ export default function TeacherClassPage() {
                                 </svg>
                               </button>
                               <button
-                                onClick={(e) => { e.stopPropagation(); !lesson.isUploading && !lesson.isTranscoding && handleDeleteLesson(lesson.id); }}
+                                onClick={(e) => { 
+                                  e.preventDefault();
+                                  e.stopPropagation(); 
+                                  if (!lesson.isUploading && !lesson.isTranscoding && window.confirm('¿Eliminar esta lección?')) {
+                                    handleDeleteLesson(lesson.id);
+                                  }
+                                }}
                                 disabled={lesson.isUploading || lesson.isTranscoding === 1}
                                 className={`p-1 rounded transition-colors ${
                                   lesson.isUploading || lesson.isTranscoding
@@ -1509,6 +1578,6 @@ export default function TeacherClassPage() {
           </>
         )}
       </div>
-    </DashboardLayout>
+    </>
   );
 }

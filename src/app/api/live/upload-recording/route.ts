@@ -20,10 +20,10 @@ export async function POST(request: NextRequest) {
 
     // Verify the stream exists and belongs to a class the teacher owns
     const stream = await db.prepare(`
-      SELECT cl.id, cl.classId, cl.title, c.teacherId
-      FROM ClassLive cl
-      JOIN Class c ON c.id = cl.classId
-      WHERE cl.id = ? AND c.teacherId = ?
+      SELECT ls.id, ls.classId, ls.title, c.teacherId
+      FROM LiveStream ls
+      JOIN Class c ON c.id = ls.classId
+      WHERE ls.id = ? AND c.teacherId = ?
     `).bind(streamId, user.id).first();
 
     if (!stream) {

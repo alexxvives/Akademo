@@ -22,46 +22,36 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  ownedAcademies     Academy[]            @relation("AcademyOwner")
-  academyMemberships AcademyMembership[]
-  classEnrollments   ClassEnrollment[]
+  teacherProfile     Teacher?             // If user is a teacher
+  classEnrollments   ClassEnrollment[]    // If user is a student
   videoPlayStates    VideoPlayState[]
   deviceSessions     DeviceSession[]
   uploadsCreated     Upload[]             @relation("UploadCreator")
 }
 
 model Academy {
-  id          String         @id @default(cuid())
-  name        String
-  description String?
-  ownerId     String
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-
-  // Settings for defaults (nullable = use platform defaults)
-  defaultMaxWatchTimeMultiplier Float? @default(2.0)
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  owner       User                @relation("AcademyOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  memberships AcademyMembership[]
-  classes     Class[]
+  teachers Teacher[]
+  classes  Class[]
 }
 
-model AcademyMembership {
-  id         String           @id @default(cuid())
-  userId     String
-  academyId  String
-  status     String @default("PENDING") // "PENDING" | "APPROVED" | "REJECTED"
-  requestedAt DateTime        @default(now())
-  approvedAt DateTime?
-  createdAt  DateTime         @default(now())
-  updatedAt  DateTime         @updatedAt
+model Teacher {
+  id                            String   @id @default(cuid())
+  userId                        String   @unique
+  academyId                     String
+  defaultMaxWatchTimeMultiplier Float    @default(2.0)
+  createdAt                     DateTime @default(now())
+  updatedAt                     DateTime @updatedAt
 
   // Relations
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   academy Academy @relation(fields: [academyId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, academyId])
+  classes Class[]
 }
 
 model Class {
@@ -70,14 +60,13 @@ model Class {
   slug        String?  @unique
   description String?
   academyId   String
+  teacherId   String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // Settings (nullable = inherit from academy)
-  defaultMaxWatchTimeMultiplier Float? @default(2.0)
-
   // Relations
   academy     Academy           @relation(fields: [academyId], references: [id], onDelete: Cascade)
+  teacher     Teacher?          @relation(fields: [teacherId], references: [userId], onDelete: SetNull)
   enrollments ClassEnrollment[]
   lessons     Lesson[]
 }
@@ -85,7 +74,7 @@ model Class {
 model ClassEnrollment {
   id         String   @id @default(cuid())
   classId    String
-  studentId  String
+  userId     String
   status     String   @default("PENDING") // "PENDING" | "APPROVED" | "REJECTED"
   enrolledAt DateTime @default(now())
   approvedAt DateTime?
@@ -93,10 +82,10 @@ model ClassEnrollment {
   updatedAt  DateTime @updatedAt
 
   // Relations
-  class   Class @relation(fields: [classId], references: [id], onDelete: Cascade)
-  student User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  class Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([classId, studentId])
+  @@unique([classId, userId])
 }
 
 model Lesson {

@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import DashboardLayout from '@/components/DashboardLayout';
 import Link from 'next/link';
 
 interface StudentProgress {
@@ -80,7 +79,7 @@ export default function StudentProgressPage() {
   };
 
   return (
-    <DashboardLayout role="TEACHER">
+    <>
       <div className="space-y-6">
         {/* Header */}
         <div>
@@ -235,6 +234,6 @@ export default function StudentProgressPage() {
           </div>
         )}
       </div>
-    </DashboardLayout>
+    </>
   );
 }

@@ -38,17 +38,12 @@ export async function GET(request: Request) {
 
       // Check if teacher has access
       if (session.role === 'TEACHER') {
-        const membership = await db
-          .prepare(
-            `SELECT id FROM AcademyMembership 
-             WHERE userId = ? AND academyId = ? AND status = 'APPROVED'`
-          )
-          .bind(session.id, video.academyId)
-          .first();
+        const classData = await db
+          .prepare('SELECT teacherId FROM Class WHERE id = ?')
+          .bind(video.classId)
+          .first() as any;
 
-        const isOwner = video.ownerId === session.id;
-
-        if (!membership && !isOwner) {
+        if (classData?.teacherId !== session.id) {
           return errorResponse('You do not have access to this video', 403);
         }
       }
@@ -117,17 +112,12 @@ export async function GET(request: Request) {
 
       // Check if teacher has access
       if (session.role === 'TEACHER') {
-        const membership = await db
-          .prepare(
-            `SELECT id FROM AcademyMembership 
-             WHERE userId = ? AND academyId = ? AND status = 'APPROVED'`
-          )
-          .bind(session.id, classData.academyId)
-          .first();
+        const teacherCheck = await db
+          .prepare('SELECT teacherId FROM Class WHERE id = ?')
+          .bind(classId)
+          .first() as any;
 
-        const isOwner = classData.ownerId === session.id;
-
-        if (!membership && !isOwner) {
+        if (teacherCheck?.teacherId !== session.id) {
           return errorResponse('You do not have access to this class', 403);
         }
       }

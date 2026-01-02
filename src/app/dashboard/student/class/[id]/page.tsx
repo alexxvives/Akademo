@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import DashboardLayout from '@/components/DashboardLayout';
 import ProtectedVideoPlayer from '@/components/ProtectedVideoPlayer';
 
 interface Video {
@@ -101,7 +100,10 @@ export default function ClassPage() {
       }
     };
 
-    const interval = setInterval(checkStream, 10000); // Check every 10 seconds
+    // Check immediately on load
+    checkStream();
+    // Then check every 10 seconds
+    const interval = setInterval(checkStream, 10000);
     return () => clearInterval(interval);
   }, [classId]);
 
@@ -261,19 +263,19 @@ export default function ClassPage() {
 
   if (loading) {
     return (
-      <DashboardLayout role="STUDENT">
+      <>
         <div className="max-w-6xl mx-auto px-4 py-12">
           <div className="flex items-center justify-center">
             <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
             <span className="ml-3 text-gray-600">Loading class...</span>
           </div>
         </div>
-      </DashboardLayout>
+      </>
     );
   }
 
   return (
-    <DashboardLayout role="STUDENT">
+    <>
       <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
         {/* Live Stream Banner */}
         {activeStream && (
@@ -581,6 +583,6 @@ export default function ClassPage() {
           </div>
         )}
       </div>
-    </DashboardLayout>
+    </>
   );
 }

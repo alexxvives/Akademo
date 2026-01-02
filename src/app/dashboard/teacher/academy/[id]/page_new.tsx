@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import DashboardLayout from '@/components/DashboardLayout';
 import Link from 'next/link';
 
 interface Academy {
@@ -121,20 +120,20 @@ export default function AcademyManagePage() {
 
   if (loading) {
     return (
-      <DashboardLayout role="TEACHER">
+      <>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
             <p className="text-gray-600">Loading academy...</p>
           </div>
         </div>
-      </DashboardLayout>
+      </>
     );
   }
 
   if (!academy) {
     return (
-      <DashboardLayout role="TEACHER">
+      <>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -152,7 +151,7 @@ export default function AcademyManagePage() {
             </Link>
           </div>
         </div>
-      </DashboardLayout>
+      </>
     );
   }
 
@@ -160,7 +159,7 @@ export default function AcademyManagePage() {
   const approvedMemberships = academy.memberships.filter((m) => m.status === 'APPROVED');
 
   return (
-    <DashboardLayout role="TEACHER">
+    <>
       <div className="space-y-8">
         {/* Academy Header */}
         <div className="bg-gradient-to-r from-indigo-600 to-purple-700 rounded-2xl shadow-xl p-8 text-white">
@@ -456,6 +455,6 @@ export default function AcademyManagePage() {
           </div>
         )}
       </div>
-    </DashboardLayout>
+    </>
   );
 }

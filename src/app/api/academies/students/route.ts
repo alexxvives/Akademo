@@ -7,15 +7,15 @@ export async function GET(request: Request) {
     const session = await requireRole(['ACADEMY', 'ADMIN']);
     const db = await getDB();
 
-    // Get all academies owned by this user
+    // Get all academies where this user is associated via Teacher table
     let academyIds: string[] = [];
     
     if (session.role === 'ACADEMY') {
       const academies = await db
-        .prepare('SELECT id FROM Academy WHERE ownerId = ?')
+        .prepare('SELECT DISTINCT academyId FROM Teacher WHERE userId = ?')
         .bind(session.id)
         .all();
-      academyIds = (academies.results || []).map((a: any) => a.id);
+      academyIds = (academies.results || []).map((a: any) => a.academyId);
     }
 
     if (academyIds.length === 0 && session.role !== 'ADMIN') {
@@ -31,9 +31,9 @@ export async function GET(request: Request) {
         (SELECT COUNT(DISTINCT e2.classId) 
          FROM ClassEnrollment e2 
          JOIN Class c2 ON e2.classId = c2.id 
-         WHERE e2.studentId = u.id ${session.role === 'ACADEMY' && academyIds.length > 0 ? 'AND c2.academyId IN (' + academyIds.map(() => '?').join(',') + ')' : ''}) as classCount
+         WHERE e2.userId = u.id ${session.role === 'ACADEMY' && academyIds.length > 0 ? 'AND c2.academyId IN (' + academyIds.map(() => '?').join(',') + ')' : ''}) as classCount
       FROM User u
-      JOIN ClassEnrollment e ON u.id = e.studentId
+      JOIN ClassEnrollment e ON u.id = e.userId
       JOIN Class c ON e.classId = c.id
       WHERE u.role = 'STUDENT'
     `;

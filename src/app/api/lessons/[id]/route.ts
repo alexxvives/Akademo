@@ -1,4 +1,4 @@
-import { lessonQueries, membershipQueries, enrollmentQueries, playStateQueries } from '@/lib/db';
+import { lessonQueries, enrollmentQueries, playStateQueries, getDB } from '@/lib/db';
 import { requireRole } from '@/lib/auth';
 import { handleApiError, successResponse, errorResponse } from '@/lib/api-utils';
 
@@ -35,8 +35,13 @@ export async function GET(
       );
       lesson.videos = videosWithPlayState;
     } else if (session.role === 'TEACHER') {
-      const membership = await membershipQueries.findByUserAndAcademy(session.id, lesson.class.academyId);
-      if (!membership || (membership as any).status !== 'APPROVED') {
+      const db = await getDB();
+      const classData = await db
+        .prepare('SELECT teacherId FROM Class WHERE id = ?')
+        .bind(lesson.class.id)
+        .first() as any;
+      
+      if (classData?.teacherId !== session.id) {
         return errorResponse('Not authorized to view this lesson', 403);
       }
     }
@@ -64,8 +69,13 @@ export async function PATCH(
 
     // Check authorization
     if (session.role === 'TEACHER') {
-      const membership = await membershipQueries.findByUserAndAcademy(session.id, lesson.class.academyId);
-      if (!membership || (membership as any).status !== 'APPROVED') {
+      const db = await getDB();
+      const classData = await db
+        .prepare('SELECT teacherId FROM Class WHERE id = ?')
+        .bind(lesson.class.id)
+        .first() as any;
+      
+      if (classData?.teacherId !== session.id) {
         return errorResponse('Not authorized to edit this lesson', 403);
       }
     }
@@ -100,8 +110,13 @@ export async function DELETE(
 
     // Check authorization
     if (session.role === 'TEACHER') {
-      const membership = await membershipQueries.findByUserAndAcademy(session.id, lesson.class.academyId);
-      if (!membership || (membership as any).status !== 'APPROVED') {
+      const db = await getDB();
+      const classData = await db
+        .prepare('SELECT teacherId FROM Class WHERE id = ?')
+        .bind(lesson.class.id)
+        .first() as any;
+      
+      if (classData?.teacherId !== session.id) {
         return errorResponse('Not authorized to delete this lesson', 403);
       }
     }

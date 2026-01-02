@@ -7,15 +7,15 @@ export async function GET(request: Request) {
     const session = await requireRole(['ACADEMY', 'ADMIN']);
     const db = await getDB();
 
-    // Get all academies owned by this user
+    // Get all academies owned by this user (academies where user is a teacher)
     let academyIds: string[] = [];
     
     if (session.role === 'ACADEMY') {
       const academies = await db
-        .prepare('SELECT id FROM Academy WHERE ownerId = ?')
+        .prepare('SELECT DISTINCT academyId FROM Teacher WHERE userId = ?')
         .bind(session.id)
         .all();
-      academyIds = (academies.results || []).map((a: any) => a.id);
+      academyIds = (academies.results || []).map((a: any) => a.academyId);
     }
 
     if (academyIds.length === 0 && session.role !== 'ADMIN') {
@@ -28,16 +28,18 @@ export async function GET(request: Request) {
         u.id,
         u.email,
         (u.firstName || ' ' || u.lastName) as name,
-        m.academyId,
+        t.academyId,
         a.name as academyName,
-        (SELECT COUNT(*) FROM Class c WHERE c.teacherId = u.id AND c.academyId = m.academyId) as classCount,
-        (SELECT COUNT(DISTINCT e.studentId) 
+        t.defaultMaxWatchTimeMultiplier,
+        t.createdAt,
+        (SELECT COUNT(*) FROM Class c WHERE c.teacherId = u.id) as classCount,
+        (SELECT COUNT(DISTINCT e.userId) 
          FROM Class c2 
          JOIN ClassEnrollment e ON c2.id = e.classId 
-         WHERE c2.teacherId = u.id AND c2.academyId = m.academyId) as studentCount
+         WHERE c2.teacherId = u.id) as studentCount
       FROM User u
-      JOIN AcademyMembership m ON u.id = m.userId
-      JOIN Academy a ON m.academyId = a.id
+      JOIN Teacher t ON u.id = t.userId
+      JOIN Academy a ON t.academyId = a.id
       WHERE u.role = 'TEACHER'
     `;
 
@@ -45,7 +47,7 @@ export async function GET(request: Request) {
     
     if (session.role === 'ACADEMY' && academyIds.length > 0) {
       const placeholders = academyIds.map(() => '?').join(',');
-      query += ` AND m.academyId IN (${placeholders})`;
+      query += ` AND t.academyId IN (${placeholders})`;
       params = academyIds;
     }
 

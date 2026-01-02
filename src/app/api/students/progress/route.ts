@@ -8,7 +8,7 @@ export async function GET(request: Request) {
     const db = await getDB();
 
     // Get all students enrolled in teacher's classes
-    // Use the same logic as findByTeacher: classes where teacher has academy membership
+    // Query classes where teacher is assigned (Class.teacherId = session.id)
     const studentsData = await db.prepare(`
       SELECT 
         u.id,
@@ -31,10 +31,8 @@ export async function GET(request: Request) {
         ), 0) AS REAL) as averageProgress,
         MAX(vps.lastWatchedAt) as lastActivity
       FROM User u
-      INNER JOIN ClassEnrollment ce ON u.id = ce.studentId AND ce.status = 'APPROVED'
-      INNER JOIN Class c ON ce.classId = c.id
-      INNER JOIN Academy a ON c.academyId = a.id
-      INNER JOIN AcademyMembership am ON a.id = am.academyId AND am.userId = ? AND am.status = 'APPROVED'
+      INNER JOIN ClassEnrollment ce ON u.id = ce.userId AND ce.status = 'APPROVED'
+      INNER JOIN Class c ON ce.classId = c.id AND c.teacherId = ?
       LEFT JOIN Lesson l ON c.id = l.classId
       LEFT JOIN Video v ON l.id = v.lessonId
       LEFT JOIN VideoPlayState vps ON v.id = vps.videoId AND vps.studentId = u.id

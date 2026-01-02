@@ -52,7 +52,7 @@ export async function GET(request: Request) {
       return errorResponse('Class ID required');
     }
 
-    // Teachers can view enrollments from classes in their academy
+    // Teachers can view enrollments from their own classes
     if (session.role === 'TEACHER') {
       const classRecord = await classQueries.findWithAcademyAndCounts(classId) as any;
       
@@ -60,15 +60,9 @@ export async function GET(request: Request) {
         return errorResponse('Class not found', 404);
       }
 
-      // Verify teacher is member of the class's academy
-      const db = await (await import('@/lib/db')).getDB();
-      const membership = await db
-        .prepare('SELECT id FROM AcademyMembership WHERE userId = ? AND academyId = ?')
-        .bind(session.id, classRecord.academyId)
-        .first();
-
-      if (!membership) {
-        return errorResponse('Forbidden', 403);
+      // Check if this teacher owns the class
+      if (classRecord.teacherId !== session.id) {
+        return errorResponse(`Teacher ${session.id} does not own class ${classId} (owned by ${classRecord.teacherId})`, 403);
       }
     }
 

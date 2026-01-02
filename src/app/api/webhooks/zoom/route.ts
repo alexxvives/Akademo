@@ -372,4 +372,33 @@ async function handleMeetingEnded(payload: ZoomWebhookPayload) {
   `).bind(endTime, liveStream.id).run();
 
   console.log(`Stream ${liveStream.id} marked as ended`);
+
+  // Schedule participant fetch after 10 minutes (using Cloudflare Workers Durable Objects or external service)
+  // For now, we'll use a simple approach: trigger the participant fetch API after 10 minutes
+  // In production, you'd use Cloudflare Workers Cron Triggers or Durable Objects
+  try {
+    // Get the current request URL to construct the API endpoint
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://akademo-edu.com';
+    
+    // Schedule a delayed fetch (this is a simplified approach)
+    // In production, use Cloudflare Workers Cron Triggers or Queue
+    setTimeout(async () => {
+      try {
+        console.log(`Fetching participants for stream ${liveStream.id} after 10 minutes`);
+        await fetch(`${baseUrl}/api/zoom/participants`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            streamId: liveStream.id,
+            cronSecret: process.env.CRON_SECRET || 'your-secret-here',
+          }),
+        });
+      } catch (error) {
+        console.error('Failed to fetch participants:', error);
+      }
+    }, 10 * 60 * 1000); // 10 minutes
+  } catch (error) {
+    console.error('Failed to schedule participant fetch:', error);
+  }
 }
+

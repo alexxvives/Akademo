@@ -1,37 +1,45 @@
-import { classQueries, academyQueries } from '@/lib/db';
+import { classQueries, teacherQueries } from '@/lib/db';
 import { requireRole } from '@/lib/auth';
 import { handleApiError, successResponse, errorResponse } from '@/lib/api-utils';
 import { z } from 'zod';
+import { getDB } from '@/lib/db';
 
 const createClassSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
   academyId: z.string(),
-  defaultMaxWatchTimeMultiplier: z.number().optional(),
 });
 
 export async function POST(request: Request) {
   try {
-    const session = await requireRole(['TEACHER', 'ADMIN']);
+    // Only ACADEMY role can create classes (teachers cannot)
+    const session = await requireRole(['ACADEMY', 'ADMIN']);
     const body = await request.json();
     const data = createClassSchema.parse(body);
 
-    // Verify academy ownership (unless admin)
-    if (session.role !== 'ADMIN') {
-      const academy = await academyQueries.findById(data.academyId) as any;
+    // For ACADEMY role, verify they own this academy via Teacher table
+    if (session.role === 'ACADEMY') {
+      const db = await getDB();
+      const ownsAcademy = await db
+        .prepare('SELECT 1 FROM Teacher WHERE userId = ? AND academyId = ?')
+        .bind(session.id, data.academyId)
+        .first();
 
-      if (!academy || academy.ownerId !== session.id) {
-        return errorResponse('Forbidden', 403);
+      if (!ownsAcademy) {
+        return errorResponse('You do not own this academy', 403);
       }
     }
 
+    // teacherId must be provided by the academy
     const classRecord = await classQueries.create({
       name: data.name,
       description: data.description,
       academyId: data.academyId,
+      teacherId: body.teacherId || null, // Academy must specify the teacher
     });
 
-    const academy = await academyQueries.findById(data.academyId);
+    const db = await getDB();
+    const academy = await db.prepare('SELECT * FROM Academy WHERE id = ?').bind(data.academyId).first();
     return Response.json(successResponse({ ...classRecord, academy }), { status: 201 });
   } catch (error) {
     return handleApiError(error);

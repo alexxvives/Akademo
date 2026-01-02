@@ -52,8 +52,7 @@ export async function POST(request: Request) {
         .prepare(`
           SELECT c.id FROM Class c
           JOIN Academy a ON c.academyId = a.id
-          JOIN AcademyMembership m ON a.id = m.academyId
-          WHERE c.id = ? AND m.userId = ? AND m.status = 'APPROVED'
+          WHERE c.id = ? AND a.ownerId = ?
         `)
         .bind(data.classId, session.id)
         .first<{ id: string }>();
@@ -62,7 +61,7 @@ export async function POST(request: Request) {
         const enrollmentId = `enroll-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         await db
           .prepare(`
-            INSERT INTO ClassEnrollment (id, classId, studentId, status, requestedAt, approvedAt, enrolledAt, createdAt, updatedAt)
+            INSERT INTO ClassEnrollment (id, classId, userId, status, requestedAt, approvedAt, enrolledAt, createdAt, updatedAt)
             VALUES (?, ?, ?, 'APPROVED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
           `)
           .bind(enrollmentId, data.classId, studentId)

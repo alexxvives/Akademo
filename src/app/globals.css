@@ -16,6 +16,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Dashboard dark background - prevents white flash during navigation */
+body:has(.dashboard-layout) {
+  background: #111318;
+}
+
 /* Smooth scrolling */
 html {
   scroll-behavior: smooth;

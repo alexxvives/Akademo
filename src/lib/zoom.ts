@@ -237,3 +237,86 @@ export async function getZoomRecordingDownloadUrl(downloadUrl: string): Promise<
   return `${downloadUrl}${separator}access_token=${token}`;
 }
 
+// Extract Zoom meeting ID from various URL formats
+// Examples:
+//   https://zoom.us/j/1234567890
+//   https://us05web.zoom.us/j/1234567890?pwd=abc123
+//   https://zoom.us/wc/join/1234567890
+export function extractZoomMeetingId(url: string): string | null {
+  if (!url) return null;
+  
+  try {
+    // Try regex patterns for different Zoom URL formats
+    const patterns = [
+      /zoom\.us\/j\/(\d+)/i,           // https://zoom.us/j/1234567890
+      /zoom\.us\/wc\/join\/(\d+)/i,    // https://zoom.us/wc/join/1234567890
+      /\/j\/(\d+)/i,                   // Any subdomain: us05web.zoom.us/j/1234567890
+    ];
+    
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match && match[1]) {
+        return match[1];
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error extracting Zoom meeting ID:', error);
+    return null;
+  }
+}
+
+// Get past meeting participant list
+export interface ZoomParticipant {
+  id: string;
+  user_id?: string;
+  name: string;
+  user_email?: string;
+  join_time: string;
+  leave_time: string;
+  duration: number; // in seconds
+}
+
+export interface ZoomParticipantsResponse {
+  page_count: number;
+  page_size: number;
+  total_records: number;
+  next_page_token?: string;
+  participants: ZoomParticipant[];
+}
+
+// Get participants for a past meeting
+export async function getZoomMeetingParticipants(meetingId: string | number): Promise<ZoomParticipantsResponse | null> {
+  const token = await getAccessToken();
+  
+  const response = await fetch(`https://api.zoom.us/v2/past_meetings/${meetingId}/participants?page_size=300`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (response.status === 404) {
+    return null; // Meeting not found or no participant data
+  }
+
+  if (!response.ok) {
+    const error = await response.text();
+    let errorMessage = `Failed to get Zoom participants: ${error}`;
+    
+    // Check for free account limitation
+    try {
+      const errorData = JSON.parse(error);
+      if (errorData.code === 200 && errorData.message?.includes('Only available for Paid')) {
+        errorMessage = 'El seguimiento de participantes requiere una cuenta Zoom de pago. Esta función no está disponible en cuentas gratuitas.';
+      }
+    } catch (e) {
+      // Not JSON, use original error
+    }
+    
+    throw new Error(errorMessage);
+  }
+
+  return response.json();
+}
+

@@ -1,4 +1,4 @@
-import { enrollmentQueries, membershipQueries, classQueries } from '@/lib/db';
+import { enrollmentQueries, classQueries, getDB } from '@/lib/db';
 import { requireRole } from '@/lib/auth';
 import { handleApiError, successResponse, errorResponse } from '@/lib/api-utils';
 
@@ -42,8 +42,13 @@ export async function POST(request: Request) {
         return errorResponse('Class not found', 404);
       }
       
-      const membership = await membershipQueries.findByUserAndAcademy(session.id, classData.academyId);
-      if (!membership || (membership as any).status !== 'APPROVED') {
+      const db = await getDB();
+      const teacherCheck = await db
+        .prepare('SELECT teacherId FROM Class WHERE id = ?')
+        .bind(enrollment.classId)
+        .first() as any;
+      
+      if (teacherCheck?.teacherId !== session.id) {
         return errorResponse('Not authorized to manage this class', 403);
       }
     }

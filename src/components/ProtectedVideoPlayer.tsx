@@ -14,42 +14,71 @@ const hiddenControlsStyle = `
     pointer-events: none !important;
   }
   
-  /* Fix for vertical videos in fullscreen - no zoom, no crop, just contain */
+  /* CRITICAL: Force vertical videos to display without any zoom or crop in fullscreen */
+  /* Target ALL possible fullscreen states and video elements */
   .plyr--fullscreen video,
   .plyr--fullscreen-fallback video,
   .plyr:fullscreen video,
   .plyr:-webkit-full-screen video,
   .plyr:-moz-full-screen video,
-  .plyr:-ms-fullscreen video {
+  .plyr:-ms-fullscreen video,
+  [id^="video-container"] video,
+  .plyr video {
     object-fit: contain !important;
+    transform: none !important;
+    -webkit-transform: none !important;
+  }
+  
+  /* Override Plyr's default video wrapper sizing which can cause zoom */
+  .plyr--fullscreen .plyr__video-wrapper,
+  .plyr--fullscreen-fallback .plyr__video-wrapper,
+  .plyr:fullscreen .plyr__video-wrapper {
     width: 100% !important;
     height: 100% !important;
-    max-width: 100% !important;
-    max-height: 100% !important;
+    padding-bottom: 0 !important;
+    position: relative !important;
+  }
+  
+  /* Ensure the video inside wrapper also respects contain */
+  .plyr--fullscreen .plyr__video-wrapper video,
+  .plyr--fullscreen-fallback .plyr__video-wrapper video {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
     transform: none !important;
   }
   
-  /* Ensure the container also doesn't apply any transforms */
+  /* Container fullscreen state */
   .plyr--fullscreen,
-  .plyr--fullscreen-fallback,
-  .plyr:fullscreen,
-  .plyr:-webkit-full-screen,
-  .plyr:-moz-full-screen,
-  .plyr:-ms-fullscreen {
+  .plyr--fullscreen-fallback {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     background: black !important;
   }
   
-  /* Video container in fullscreen */
-  .plyr--fullscreen .plyr__video-wrapper,
-  .plyr--fullscreen-fallback .plyr__video-wrapper {
+  /* When the container itself is fullscreened (our custom fullscreen) */
+  [id^="video-container"]:fullscreen,
+  [id^="video-container"]:-webkit-full-screen,
+  [id^="video-container"]:-moz-full-screen {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    width: 100% !important;
-    height: 100% !important;
+    background: black !important;
+  }
+  
+  [id^="video-container"]:fullscreen video,
+  [id^="video-container"]:-webkit-full-screen video,
+  [id^="video-container"]:-moz-full-screen video {
+    object-fit: contain !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    width: auto !important;
+    height: auto !important;
+    transform: none !important;
   }
 `;
 

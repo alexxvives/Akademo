@@ -15,11 +15,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
           u.id,
           (u.firstName || ' ' || u.lastName) as name,
           u.email,
-          m.status,
           (SELECT COUNT(*) FROM Class c WHERE c.teacherId = u.id AND c.academyId = ?) as classCount
         FROM User u
-        JOIN AcademyMembership m ON u.id = m.userId
-        WHERE m.academyId = ? AND m.status = 'APPROVED'
+        JOIN Teacher t ON u.id = t.userId
+        WHERE t.academyId = ?
         ORDER BY u.firstName
       `)
       .bind(academyId, academyId)

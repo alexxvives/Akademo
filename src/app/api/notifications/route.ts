@@ -2,6 +2,57 @@ import { requireRole } from '@/lib/auth';
 import { handleApiError, successResponse, errorResponse } from '@/lib/api-utils';
 import { getDB, generateId } from '@/lib/db';
 
+// Create notification - notify students about live stream
+export async function POST(request: Request) {
+  try {
+    const session = await requireRole(['TEACHER', 'ADMIN']);
+    const { classId, liveStreamId, message } = await request.json();
+
+    if (!classId || !liveStreamId || !message) {
+      return errorResponse('classId, liveStreamId, and message are required');
+    }
+
+    const db = await getDB();
+
+    // Get all enrolled students in this class
+    const enrollments = await db.prepare(`
+      SELECT userId FROM ClassEnrollment 
+      WHERE classId = ? AND status = 'APPROVED'
+    `).bind(classId).all();
+
+    if (!enrollments.results || enrollments.results.length === 0) {
+      return Response.json(successResponse({ notified: 0, message: 'No students enrolled' }));
+    }
+
+    // Create notifications for each student
+    const notificationPromises = enrollments.results.map((enrollment: any) => {
+      const notificationId = generateId();
+      return db.prepare(`
+        INSERT INTO Notification (id, userId, type, title, message, data, isRead, createdAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        notificationId,
+        enrollment.userId,
+        'LIVE_STREAM',
+        'Clase en Vivo',
+        message,
+        JSON.stringify({ classId, liveStreamId }),
+        0,
+        new Date().toISOString()
+      ).run();
+    });
+
+    await Promise.all(notificationPromises);
+
+    return Response.json(successResponse({ 
+      notified: enrollments.results.length,
+      message: `${enrollments.results.length} estudiantes notificados`
+    }));
+  } catch (error) {
+    return handleApiError(error);
+  }
+}
+
 // Get notifications for the current user
 export async function GET(request: Request) {
   try {

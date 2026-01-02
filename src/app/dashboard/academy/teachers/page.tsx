@@ -1,13 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import DashboardLayout from '@/components/DashboardLayout';
 
 interface Teacher {
   id: string;
   name: string;
   email: string;
-  status: string;
   classCount: number;
   studentCount: number;
   createdAt: string;
@@ -16,6 +14,7 @@ interface Teacher {
 export default function AcademyTeachers() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => {
     loadTeachers();
@@ -24,10 +23,8 @@ export default function AcademyTeachers() {
   const loadTeachers = async () => {
     try {
       const res = await fetch('/api/academies/teachers');
-      const result = await res.json();
-      if (result.success) {
-        setTeachers(result.data || []);
-      }
+      const data = await res.json();
+      setTeachers(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error loading teachers:', error);
     } finally {
@@ -35,18 +32,23 @@ export default function AcademyTeachers() {
     }
   };
 
+  const copyJoinLink = (teacherId: string, teacherName: string) => {
+    const link = `${window.location.origin}/join/${teacherId}`;
+    navigator.clipboard.writeText(link);
+    setCopiedId(teacherId);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
   if (loading) {
     return (
-      <DashboardLayout role="ACADEMY">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
-        </div>
-      </DashboardLayout>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
+      </div>
     );
   }
 
   return (
-    <DashboardLayout role="ACADEMY">
+    <>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -80,9 +82,6 @@ export default function AcademyTeachers() {
                     Profesor
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Estado
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Clases
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -90,6 +89,9 @@ export default function AcademyTeachers() {
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Unido
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Link de Inscripción
                   </th>
                 </tr>
               </thead>
@@ -110,17 +112,6 @@ export default function AcademyTeachers() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        teacher.status === 'approved' 
-                          ? 'bg-green-100 text-green-800'
-                          : teacher.status === 'pending'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {teacher.status === 'approved' ? 'Aprobado' : teacher.status === 'pending' ? 'Pendiente' : teacher.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm text-gray-900">{teacher.classCount || 0}</span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -131,6 +122,36 @@ export default function AcademyTeachers() {
                         {new Date(teacher.createdAt).toLocaleDateString('es')}
                       </span>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <button
+                        onClick={() => copyJoinLink(teacher.id, teacher.name)}
+                        className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                          copiedId === teacher.id
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                        }`}
+                        title={`Link para unirse a las clases de ${teacher.name}`}
+                      >
+                        {copiedId === teacher.id ? (
+                          <>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            Copiado!
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                            Copiar Link
+                          </>
+                        )}
+                      </button>
+                      <div className="text-xs text-gray-500 mt-1">
+                        Para clases de {teacher.name}
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -138,6 +159,6 @@ export default function AcademyTeachers() {
           </div>
         )}
       </div>
-    </DashboardLayout>
+    </>
   );
 }

@@ -83,7 +83,13 @@ export const academyQueries = {
 
   async findByOwner(ownerId: string) {
     const db = await getDB();
-    const result = await db.prepare('SELECT * FROM Academy WHERE ownerId = ? ORDER BY createdAt DESC').bind(ownerId).all();
+    // Find academies where the user is a teacher
+    const result = await db.prepare(`
+      SELECT DISTINCT a.* FROM Academy a
+      JOIN Teacher t ON t.academyId = a.id
+      WHERE t.userId = ?
+      ORDER BY a.createdAt DESC
+    `).bind(ownerId).all();
     return result.results || [];
   },
 
@@ -93,39 +99,44 @@ export const academyQueries = {
     return result.results || [];
   },
 
-  async create(data: { name: string; description?: string; ownerId: string }) {
+  async create(data: { name: string; description?: string; ownerId?: string }) {
     const db = await getDB();
     const id = generateId();
     const now = new Date().toISOString();
     await db.prepare(`
-      INSERT INTO Academy (id, name, description, ownerId, defaultMaxWatchTimeMultiplier, createdAt, updatedAt)
-      VALUES (?, ?, ?, ?, 2.0, ?, ?)
-    `).bind(id, data.name, data.description || null, data.ownerId, now, now).run();
-    return { id, ...data, createdAt: now, updatedAt: now };
+      INSERT INTO Academy (id, name, createdAt, updatedAt)
+      VALUES (?, ?, ?, ?)
+    `).bind(id, data.name, now, now).run();
+    return { id, name: data.name, createdAt: now, updatedAt: now };
   },
 
   async findWithOwner(id: string) {
     const db = await getDB();
     const academy = await db.prepare('SELECT * FROM Academy WHERE id = ?').bind(id).first() as any;
     if (!academy) return null;
-    const owner = await db.prepare('SELECT id, email, firstName, lastName FROM User WHERE id = ?').bind(academy.ownerId).first();
-    return { ...academy, owner };
+    // Find first teacher as "owner" for backwards compatibility
+    const teacher = await db.prepare(`
+      SELECT u.id, u.email, u.firstName, u.lastName 
+      FROM Teacher t 
+      JOIN User u ON t.userId = u.id 
+      WHERE t.academyId = ? 
+      LIMIT 1
+    `).bind(id).first();
+    return { ...academy, owner: teacher };
   },
 
   async findAllWithCounts() {
     const db = await getDB();
     const academies = await db.prepare(`
-      SELECT a.*, u.email as ownerEmail, u.firstName as ownerFirstName, u.lastName as ownerLastName,
-        (SELECT COUNT(*) FROM AcademyMembership WHERE academyId = a.id) as membershipCount,
+      SELECT a.*,
+        (SELECT COUNT(*) FROM Teacher WHERE academyId = a.id) as teacherCount,
         (SELECT COUNT(*) FROM Class WHERE academyId = a.id) as classCount
       FROM Academy a
-      JOIN User u ON a.ownerId = u.id
       ORDER BY a.createdAt DESC
     `).all();
     return (academies.results || []).map((a: any) => ({
       ...a,
-      owner: { email: a.ownerEmail, firstName: a.ownerFirstName, lastName: a.ownerLastName },
-      _count: { memberships: a.membershipCount, classes: a.classCount }
+      _count: { teachers: a.teacherCount, classes: a.classCount }
     }));
   },
 };
@@ -143,14 +154,14 @@ export const classQueries = {
     return result.results || [];
   },
 
-  async create(data: { name: string; description?: string; academyId: string }) {
+  async create(data: { name: string; description?: string; academyId: string; teacherId?: string }) {
     const db = await getDB();
     const id = generateId();
     const now = new Date().toISOString();
     await db.prepare(`
-      INSERT INTO Class (id, name, description, academyId, defaultMaxWatchTimeMultiplier, createdAt, updatedAt)
-      VALUES (?, ?, ?, ?, 2.0, ?, ?)
-    `).bind(id, data.name, data.description || null, data.academyId, now, now).run();
+      INSERT INTO Class (id, name, description, academyId, teacherId, createdAt, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).bind(id, data.name, data.description || null, data.academyId, data.teacherId || null, now, now).run();
     return { id, ...data, createdAt: now, updatedAt: now };
   },
 
@@ -188,7 +199,7 @@ export const classQueries = {
       FROM Class c
       JOIN Academy a ON c.academyId = a.id
       JOIN ClassEnrollment ce ON c.id = ce.classId
-      WHERE ce.studentId = ?
+      WHERE ce.userId = ?
       ORDER BY c.createdAt DESC
     `).bind(studentId).all();
     
@@ -209,8 +220,8 @@ export const classQueries = {
         (SELECT COUNT(*) FROM Document d JOIN Lesson l ON d.lessonId = l.id WHERE l.classId = c.id) as documentCount
       FROM Class c
       JOIN Academy a ON c.academyId = a.id
-      JOIN AcademyMembership m ON a.id = m.academyId
-      WHERE m.userId = ?
+      JOIN Teacher t ON t.academyId = a.id
+      WHERE t.userId = ?
     `;
     const params: any[] = [teacherId];
     
@@ -238,6 +249,7 @@ export const classQueries = {
 
   async findByAcademyOwner(ownerId: string) {
     const db = await getDB();
+    // Find classes in academies where user is a teacher
     const result = await db.prepare(`
       SELECT c.*, a.name as academyName,
         (SELECT COUNT(*) FROM ClassEnrollment WHERE classId = c.id AND status = 'APPROVED') as studentCount,
@@ -246,7 +258,8 @@ export const classQueries = {
         (SELECT COUNT(*) FROM Document d JOIN Lesson l ON d.lessonId = l.id WHERE l.classId = c.id) as documentCount
       FROM Class c
       JOIN Academy a ON c.academyId = a.id
-      WHERE a.ownerId = ?
+      JOIN Teacher t ON t.academyId = a.id
+      WHERE t.userId = ?
       ORDER BY c.createdAt DESC
     `).bind(ownerId).all();
     
@@ -261,68 +274,95 @@ export const classQueries = {
   },
 };
 
-// Membership queries
-export const membershipQueries = {
+// Teacher queries
+export const teacherQueries = {
   async findByUserAndAcademy(userId: string, academyId: string) {
     const db = await getDB();
-    return db.prepare('SELECT * FROM AcademyMembership WHERE userId = ? AND academyId = ?').bind(userId, academyId).first();
+    return db.prepare('SELECT * FROM Teacher WHERE userId = ? AND academyId = ?').bind(userId, academyId).first();
   },
 
-  async create(data: { userId: string; academyId: string; status?: string }) {
+  async create(data: { userId: string; academyId: string; defaultMaxWatchTimeMultiplier?: number }) {
     const db = await getDB();
     const id = generateId();
     const now = new Date().toISOString();
     await db.prepare(`
-      INSERT INTO AcademyMembership (id, userId, academyId, status, requestedAt, createdAt, updatedAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).bind(id, data.userId, data.academyId, data.status || 'PENDING', now, now, now).run();
-    return { id, ...data, status: data.status || 'PENDING', createdAt: now };
+      INSERT INTO Teacher (id, userId, academyId, defaultMaxWatchTimeMultiplier, createdAt, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).bind(id, data.userId, data.academyId, data.defaultMaxWatchTimeMultiplier || 2.0, now, now).run();
+    return { id, ...data, defaultMaxWatchTimeMultiplier: data.defaultMaxWatchTimeMultiplier || 2.0, createdAt: now };
   },
 
   async findByAcademyWithUser(academyId: string) {
     const db = await getDB();
     const result = await db.prepare(`
-      SELECT m.*, u.email, u.firstName, u.lastName
-      FROM AcademyMembership m
-      JOIN User u ON m.userId = u.id
-      WHERE m.academyId = ?
-      ORDER BY m.createdAt DESC
+      SELECT t.*, u.email, u.firstName, u.lastName
+      FROM Teacher t
+      JOIN User u ON t.userId = u.id
+      WHERE t.academyId = ?
+      ORDER BY u.firstName, u.lastName
     `).bind(academyId).all();
     
-    return (result.results || []).map((m: any) => ({
-      ...m,
-      user: { id: m.userId, email: m.email, firstName: m.firstName, lastName: m.lastName }
+    return (result.results || []).map((t: any) => ({
+      ...t,
+      user: { id: t.userId, email: t.email, firstName: t.firstName, lastName: t.lastName }
     }));
-  },
-
-  async updateStatus(id: string, status: string) {
-    const db = await getDB();
-    const now = new Date().toISOString();
-    const approvedAt = status === 'APPROVED' ? now : null;
-    await db.prepare(`
-      UPDATE AcademyMembership SET status = ?, approvedAt = ?, updatedAt = ? WHERE id = ?
-    `).bind(status, approvedAt, now, id).run();
   },
 
   async findById(id: string) {
     const db = await getDB();
-    return db.prepare('SELECT * FROM AcademyMembership WHERE id = ?').bind(id).first();
+    return db.prepare('SELECT * FROM Teacher WHERE id = ?').bind(id).first();
   },
 
   async findByUser(userId: string) {
     const db = await getDB();
     const result = await db.prepare(`
-      SELECT m.*, a.name as academyName
-      FROM AcademyMembership m
-      JOIN Academy a ON m.academyId = a.id
-      WHERE m.userId = ?
-      ORDER BY m.createdAt DESC
+      SELECT t.*, a.name as academyName
+      FROM Teacher t
+      JOIN Academy a ON t.academyId = a.id
+      WHERE t.userId = ?
     `).bind(userId).all();
     
-    return (result.results || []).map((m: any) => ({
-      ...m,
-      academy: { id: m.academyId, name: m.academyName }
+    return (result.results || []).map((t: any) => ({
+      ...t,
+      academy: { id: t.academyId, name: t.academyName }
     }));
+  },
+
+  async updateMultiplier(id: string, multiplier: number) {
+    const db = await getDB();
+    const now = new Date().toISOString();
+    await db.prepare(`
+      UPDATE Teacher SET defaultMaxWatchTimeMultiplier = ?, updatedAt = ? WHERE id = ?
+    `).bind(multiplier, now, id).run();
+  },
+};
+
+// Membership queries (DEPRECATED - kept for backwards compatibility, redirects to teacher queries)
+export const membershipQueries = {
+  async findByUserAndAcademy(userId: string, academyId: string) {
+    return teacherQueries.findByUserAndAcademy(userId, academyId);
+  },
+
+  async create(data: { userId: string; academyId: string; status?: string }) {
+    // Ignore status, teachers are directly added
+    return teacherQueries.create(data);
+  },
+
+  async findByAcademyWithUser(academyId: string) {
+    return teacherQueries.findByAcademyWithUser(academyId);
+  },
+
+  async updateStatus(id: string, status: string) {
+    // No-op: teachers don't have status anymore
+    return;
+  },
+
+  async findById(id: string) {
+    return teacherQueries.findById(id);
+  },
+
+  async findByUser(userId: string) {
+    return teacherQueries.findByUser(userId);
   },
 };
 
@@ -330,12 +370,12 @@ export const membershipQueries = {
 export const enrollmentQueries = {
   async findByClassAndStudent(classId: string, studentId: string) {
     const db = await getDB();
-    return db.prepare('SELECT * FROM ClassEnrollment WHERE classId = ? AND studentId = ?').bind(classId, studentId).first();
+    return db.prepare('SELECT * FROM ClassEnrollment WHERE classId = ? AND userId = ?').bind(classId, studentId).first();
   },
 
   async findApprovedByClassAndStudent(classId: string, studentId: string) {
     const db = await getDB();
-    return db.prepare("SELECT * FROM ClassEnrollment WHERE classId = ? AND studentId = ? AND status = 'APPROVED'").bind(classId, studentId).first();
+    return db.prepare("SELECT * FROM ClassEnrollment WHERE classId = ? AND userId = ? AND status = 'APPROVED'").bind(classId, studentId).first();
   },
 
   async create(data: { classId: string; studentId: string; status?: string }) {
@@ -345,7 +385,7 @@ export const enrollmentQueries = {
     const status = data.status || 'PENDING';
     const approvedAt = status === 'APPROVED' ? now : null;
     await db.prepare(`
-      INSERT INTO ClassEnrollment (id, classId, studentId, status, enrolledAt, approvedAt, createdAt, updatedAt)
+      INSERT INTO ClassEnrollment (id, classId, userId, status, enrolledAt, approvedAt, createdAt, updatedAt)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(id, data.classId, data.studentId, status, now, approvedAt, now, now).run();
     return { id, ...data, status, enrolledAt: now, approvedAt };
@@ -356,7 +396,7 @@ export const enrollmentQueries = {
     let query = `
       SELECT e.*, u.email, u.firstName, u.lastName
       FROM ClassEnrollment e
-      JOIN User u ON e.studentId = u.id
+      JOIN User u ON e.userId = u.id
       WHERE e.classId = ?
     `;
     const params: any[] = [classId];
@@ -371,7 +411,7 @@ export const enrollmentQueries = {
     
     return (result.results || []).map((e: any) => ({
       ...e,
-      student: { id: e.studentId, email: e.email, firstName: e.firstName, lastName: e.lastName }
+      student: { id: e.userId, email: e.email, firstName: e.firstName, lastName: e.lastName }
     }));
   },
 
@@ -380,17 +420,17 @@ export const enrollmentQueries = {
     const result = await db.prepare(`
       SELECT e.*, u.email, u.firstName, u.lastName, c.name as className, c.id as classId
       FROM ClassEnrollment e
-      JOIN User u ON e.studentId = u.id
+      JOIN User u ON e.userId = u.id
       JOIN Class c ON e.classId = c.id
       JOIN Academy a ON c.academyId = a.id
-      JOIN AcademyMembership m ON a.id = m.academyId
-      WHERE m.userId = ? AND m.status = 'APPROVED' AND e.status = 'PENDING'
+      JOIN Teacher t ON t.academyId = a.id
+      WHERE t.userId = ? AND e.status = 'PENDING'
       ORDER BY e.enrolledAt DESC
     `).bind(teacherId).all();
     
     return (result.results || []).map((e: any) => ({
       ...e,
-      student: { id: e.studentId, email: e.email, firstName: e.firstName, lastName: e.lastName },
+      student: { id: e.userId, email: e.email, firstName: e.firstName, lastName: e.lastName },
       class: { id: e.classId, name: e.className }
     }));
   },
@@ -411,7 +451,7 @@ export const enrollmentQueries = {
 
   async delete(classId: string, studentId: string) {
     const db = await getDB();
-    await db.prepare('DELETE FROM ClassEnrollment WHERE classId = ? AND studentId = ?').bind(classId, studentId).run();
+    await db.prepare('DELETE FROM ClassEnrollment WHERE classId = ? AND userId = ?').bind(classId, studentId).run();
   },
 };
 
@@ -473,7 +513,7 @@ export const videoQueries = {
     return db.prepare(`
       SELECT v.*, u.fileName, u.fileSize, u.mimeType, u.storagePath, u.storageType, u.bunnyGuid, u.bunnyStatus,
         l.classId, l.maxWatchTimeMultiplier as lessonMultiplier, l.watermarkIntervalMins,
-        c.name as className, c.academyId, a.ownerId as academyOwnerId
+        c.name as className, c.academyId
       FROM Video v
       JOIN Upload u ON v.uploadId = u.id
       LEFT JOIN Lesson l ON v.lessonId = l.id
@@ -607,7 +647,7 @@ export const lessonQueries = {
   async findWithContent(id: string) {
     const db = await getDB();
     const lesson = await db.prepare(`
-      SELECT l.*, c.name as className, c.academyId, a.ownerId as academyOwnerId
+      SELECT l.*, c.name as className, c.academyId
       FROM Lesson l
       JOIN Class c ON l.classId = c.id
       JOIN Academy a ON c.academyId = a.id
@@ -642,8 +682,7 @@ export const lessonQueries = {
       documents: (documents.results || []).map((d: any) => ({
         ...d,
         upload: { fileName: d.fileName, fileSize: d.fileSize, mimeType: d.mimeType, storagePath: d.storagePath }
-      })),
-      academyOwnerId: lesson.academyOwnerId
+      }))
     };
   },
 
