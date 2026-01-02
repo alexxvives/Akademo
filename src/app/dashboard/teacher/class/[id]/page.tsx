@@ -1400,7 +1400,7 @@ export default function TeacherClassPage() {
                   <p className="text-gray-500 text-sm">Crea tu primera lección para comenzar</p>
                 </div>
               ) : (
-                <div className="grid sm:grid-cols-2 gap-6">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {lessons.map((lesson) => {
                     const videoCount = lesson.videoCount || 0;
                     const docCount = lesson.documentCount || 0;
@@ -1424,7 +1424,7 @@ export default function TeacherClassPage() {
                             : 'border-gray-200 hover:border-gray-400 hover:shadow-lg cursor-pointer'
                         }`}
                       >
-                        <div className="p-6">
+                        <div className="p-6 flex flex-col h-full">
                           {/* Uploading Progress */}
                           {lesson.isUploading && (
                             <div className="mb-3 bg-blue-50 rounded-lg p-3 border border-blue-200">
@@ -1534,7 +1534,7 @@ export default function TeacherClassPage() {
                           </div>
                           
                           {/* Release Date - Bottom */}
-                          <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-2 text-sm text-gray-500">
+                          <div className="mt-auto pt-4 border-t border-gray-100 flex items-center gap-2 text-sm text-gray-500">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
@@ -1551,7 +1551,7 @@ export default function TeacherClassPage() {
 
             {/* Students - Compact */}
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Estudiantes ({classData.enrollments.length})</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Estudiantes</h2>
               {classData.enrollments.length === 0 ? (
                 <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
                   <p className="text-gray-500 text-sm">No hay estudiantes inscritos</p>
@@ -1559,7 +1559,7 @@ export default function TeacherClassPage() {
               ) : (
                 <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
                   {classData.enrollments.map(e => (
-                    <div key={e.id} className="p-4 hover:bg-gray-50 transition-colors flex items-center justify-between">
+                    <div key={e.id} className="p-3 hover:bg-gray-50 transition-colors flex items-center justify-between">
                       <div className="flex items-center gap-3 flex-1 min-w-0">
                         <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                           {e.student.firstName[0]}{e.student.lastName[0]}
