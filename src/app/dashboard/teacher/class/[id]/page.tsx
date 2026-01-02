@@ -758,7 +758,7 @@ export default function TeacherClassPage() {
         {/* Clean Minimalist Header - Focus on Lessons */}
         {!selectedLesson && (
           <>
-            <div className="bg-white border-b border-gray-100 pb-6 mb-8">
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-8">
               <Link
                 href="/dashboard/teacher/classes"
                 className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 text-sm mb-4 transition-colors"
@@ -1409,7 +1409,7 @@ export default function TeacherClassPage() {
                   <p className="text-gray-500 text-sm">Crea tu primera lección para comenzar</p>
                 </div>
               ) : (
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid sm:grid-cols-2 gap-6">
                   {lessons.map((lesson) => {
                     const videoCount = lesson.videoCount || 0;
                     const docCount = lesson.documentCount || 0;
@@ -1427,13 +1427,13 @@ export default function TeacherClassPage() {
                             selectLesson(lesson);
                           }
                         }}
-                        className={`bg-white rounded-lg border overflow-hidden transition-all duration-200 group ${
+                        className={`bg-white rounded-xl border overflow-hidden transition-all duration-200 group shadow-sm ${
                           lesson.isUploading || lesson.isTranscoding
                             ? 'border-blue-300 cursor-default'
-                            : 'border-gray-200 hover:border-brand-400 hover:shadow-md cursor-pointer'
+                            : 'border-gray-200 hover:border-gray-400 hover:shadow-lg cursor-pointer'
                         }`}
                       >
-                        <div className="p-4">
+                        <div className="p-6">
                           {/* Uploading Progress */}
                           {lesson.isUploading && (
                             <div className="mb-3 bg-blue-50 rounded-lg p-3 border border-blue-200">
@@ -1465,8 +1465,8 @@ export default function TeacherClassPage() {
                           )}
                           
                           {/* Title and Actions */}
-                          <div className="flex items-start justify-between mb-3">
-                            <h3 className="font-semibold text-gray-900 group-hover:text-brand-600 transition-colors flex-1 pr-2">{lesson.title}</h3>
+                          <div className="flex items-start justify-between mb-4">
+                            <h3 className="font-bold text-lg text-gray-900 group-hover:text-gray-600 transition-colors flex-1 pr-2">{lesson.title}</h3>
                             <div className="flex items-center gap-1 flex-shrink-0" data-action-buttons onClick={(e) => e.stopPropagation()}>
                               {!isReleased(lesson.releaseDate) && !lesson.isUploading && !lesson.isTranscoding && (
                                 <span className="px-2 py-0.5 bg-amber-50 text-amber-600 text-xs font-medium rounded border border-amber-200 mr-1">Programada</span>
@@ -1515,31 +1515,40 @@ export default function TeacherClassPage() {
                             </div>
                           </div>
                           
-                          {/* Counts - Clean Minimal Style */}
-                          <div className="flex items-center gap-4 text-xs text-gray-600">
+                          {/* Description (if exists) */}
+                          {lesson.description && (
+                            <p className="text-sm text-gray-600 mb-4 line-clamp-2">{lesson.description}</p>
+                          )}
+                          
+                          {/* Counts - Enhanced Style */}
+                          <div className="flex items-center gap-4 text-sm">
                             {videoCount > 0 && (
-                              <span className="flex items-center gap-1">
-                                <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                              <div className="flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-lg">
+                                <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                                   <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" />
                                 </svg>
-                                <span className="font-medium text-gray-900">{videoCount}</span> video{videoCount !== 1 ? 's' : ''}
-                              </span>
+                                <span className="font-semibold text-blue-900">{videoCount}</span>
+                                <span className="text-blue-700">video{videoCount !== 1 ? 's' : ''}</span>
+                              </div>
                             )}
                             {docCount > 0 && (
-                              <span className="flex items-center gap-1">
-                                <svg className="w-4 h-4 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
+                              <div className="flex items-center gap-2 bg-purple-50 px-3 py-1.5 rounded-lg">
+                                <svg className="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
                                   <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                                 </svg>
-                                <span className="font-medium text-gray-900">{docCount}</span> doc{docCount !== 1 ? 's' : ''}
-                              </span>
+                                <span className="font-semibold text-purple-900">{docCount}</span>
+                                <span className="text-purple-700">doc{docCount !== 1 ? 's' : ''}</span>
+                              </div>
                             )}
-                            {/* Release Date - Inline */}
-                            <span className="flex items-center gap-1 ml-auto">
-                              <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                              </svg>
-                              <span className="text-gray-500">{new Date(lesson.releaseDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
-                            </span>
+                          </div>
+                          
+                          {/* Release Date - Bottom */}
+                          <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-2 text-sm text-gray-500">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span className="font-medium">Lanzamiento:</span>
+                            <span>{new Date(lesson.releaseDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                           </div>
                         </div>
                       </div>
@@ -1549,42 +1558,38 @@ export default function TeacherClassPage() {
               )}
             </div>
 
-            {/* Students */}
+            {/* Students - Compact */}
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Students ({classData.enrollments.length})</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Estudiantes ({classData.enrollments.length})</h2>
               {classData.enrollments.length === 0 ? (
                 <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-                  <p className="text-gray-500 text-sm">No students enrolled yet</p>
+                  <p className="text-gray-500 text-sm">No hay estudiantes inscritos</p>
                 </div>
               ) : (
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
                   {classData.enrollments.map(e => (
-                    <div key={e.id} className="bg-white rounded-2xl border border-gray-200 p-5 hover:shadow-lg hover:border-blue-200 transition-all duration-300">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl flex items-center justify-center text-white font-bold text-base shadow-md">
-                            {e.student.firstName[0]}{e.student.lastName[0]}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-gray-900 text-base">{e.student.firstName} {e.student.lastName}</p>
-                            <p className="text-xs text-gray-500">{e.student.email}</p>
-                          </div>
+                    <div key={e.id} className="p-4 hover:bg-gray-50 transition-colors flex items-center justify-between">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                          {e.student.firstName[0]}{e.student.lastName[0]}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-gray-900">{e.student.firstName} {e.student.lastName}</p>
+                          <p className="text-xs text-gray-500 truncate">{e.student.email}</p>
                         </div>
                       </div>
                       
-                      {/* Stats Row */}
-                      <div className="flex items-center gap-3 text-xs pt-3 border-t border-gray-100">
-                        <div className="flex items-center gap-1.5 text-gray-600">
-                          <svg className="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <span className="font-medium">Activo</span>
+                      {/* Inline Status */}
+                      <div className="flex items-center gap-4 text-xs text-gray-600 ml-4">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <span>Activo</span>
                         </div>
-                        <div className="flex items-center gap-1.5 text-gray-600">
-                          <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="flex items-center gap-1.5">
+                          <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
-                          <span className="font-medium">{new Date(e.enrolledAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
+                          <span>{new Date(e.enrolledAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
                         </div>
                       </div>
                     </div>
