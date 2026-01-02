@@ -26,7 +26,6 @@ export default function StreamsPage() {
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
   const [editingTitleValue, setEditingTitleValue] = useState<string>('');
-  const [fetchingParticipants, setFetchingParticipants] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -44,27 +43,6 @@ export default function StreamsPage() {
       console.error('Error loading streams:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchParticipants = async (streamId: string) => {
-    try {
-      setFetchingParticipants(streamId);
-      const response = await fetch(`/api/zoom/participants?streamId=${streamId}`);
-      const result = await response.json();
-      
-      if (!response.ok) {
-        alert(result.error || 'Error al obtener participantes');
-        return;
-      }
-      
-      alert(`Participantes obtenidos: ${result.data.participantCount}`);
-      await loadStreams();
-    } catch (error) {
-      console.error('Error fetching participants:', error);
-      alert('Error al obtener participantes de Zoom');
-    } finally {
-      setFetchingParticipants(null);
     }
   };
 
@@ -434,17 +412,16 @@ export default function StreamsPage() {
                     </td>
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600 font-medium">
-                          {stream.participantCount != null ? stream.participantCount : '—'}
-                        </span>
-                        {stream.status === 'ended' && stream.zoomMeetingId && !stream.participantsFetchedAt && (
-                          <button
-                            onClick={() => fetchParticipants(stream.id)}
-                            disabled={fetchingParticipants === stream.id}
-                            className="px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded border border-blue-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                          >
-                            {fetchingParticipants === stream.id ? '...' : 'Obtener'}
-                          </button>
+                        {stream.participantCount != null ? (
+                          <span className="text-sm text-gray-600 font-medium">
+                            {stream.participantCount}
+                          </span>
+                        ) : stream.participantsFetchedAt ? (
+                          <span className="text-sm text-gray-400">0</span>
+                        ) : stream.status === 'ended' ? (
+                          <span className="text-xs text-gray-400 italic">Procesando...</span>
+                        ) : (
+                          <span className="text-sm text-gray-400">—</span>
                         )}
                       </div>
                     </td>

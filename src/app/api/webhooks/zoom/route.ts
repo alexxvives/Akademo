@@ -1,6 +1,6 @@
 import { handleApiError, successResponse, errorResponse } from '@/lib/api-utils';
 import { getDB, generateId } from '@/lib/db';
-import { getZoomRecordingDownloadUrl } from '@/lib/zoom';
+import { getZoomRecordingDownloadUrl, getZoomMeetingParticipants } from '@/lib/zoom';
 import { fetchVideoFromUrl } from '@/lib/bunny-stream';
 import { getCloudflareContext } from '@/lib/cloudflare';
 import * as crypto from 'crypto';
@@ -244,6 +244,32 @@ async function handleRecordingCompleted(payload: ZoomWebhookPayload) {
     ).run();
 
     console.log('Recording uploaded and notification created');
+
+    // Automatically fetch participant count after recording is processed
+    try {
+      console.log('Fetching participants for meeting:', meetingId);
+      const participantsData = await getZoomMeetingParticipants(meetingId);
+      
+      if (participantsData && participantsData.participants.length > 0) {
+        await db.prepare(`
+          UPDATE LiveStream 
+          SET participantCount = ?, participantsFetchedAt = ?, participantsData = ?
+          WHERE id = ?
+        `).bind(
+          participantsData.total_records,
+          new Date().toISOString(),
+          JSON.stringify(participantsData.participants),
+          liveStream.id
+        ).run();
+        
+        console.log(`Stored ${participantsData.total_records} participants for stream ${liveStream.id}`);
+      } else {
+        console.log('No participants data available yet for meeting:', meetingId);
+      }
+    } catch (participantError) {
+      console.error('Failed to fetch participants (non-critical):', participantError);
+      // Don't fail the whole webhook if participant fetching fails
+    }
 
   } catch (error) {
     console.error('Failed to upload recording to Bunny:', error);
