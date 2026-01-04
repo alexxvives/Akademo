@@ -57,7 +57,6 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   
@@ -501,56 +500,16 @@ export default function DashboardLayout({
   return (
     <div className="dashboard-layout min-h-screen bg-gray-50 flex">
       {/* Sidebar Desktop */}
-      <aside
-        className={`hidden lg:flex flex-col bg-[#1a1d29] transition-all duration-300 ease-in-out ${
-          sidebarOpen ? 'w-64' : 'w-20'
-        }`}
-      >
-        {/* Logo & Toggle */}
-        <div className="h-20 flex items-center justify-between px-4">
-          <Link href={`/dashboard/${role.toLowerCase()}`} className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-[#b1e787] rounded-xl flex items-center justify-center shadow-lg">
-              <img 
-                src="/logo/akademo_logo_B.svg" 
-                alt="Akademo" 
-                className="h-9 w-9 object-contain"
-              />
-            </div>
-            {sidebarOpen && (
-              <span className="text-xl font-bold text-white">AKADEMO</span>
-            )}
+      <aside className="hidden lg:flex flex-col bg-[#1a1d29] w-64">
+        {/* Logo */}
+        <div className="h-20 flex items-center justify-center px-4">
+          <Link href={`/dashboard/${role.toLowerCase()}`}>
+            <img 
+              src="/logo/AKADEMO_logo.svg" 
+              alt="Akademo" 
+              className="h-8 w-auto object-contain"
+            />
           </Link>
-          {sidebarOpen ? (
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="p-1.5 hover:bg-gray-800 rounded-lg transition-colors"
-              aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-            >
-              <svg
-                className="w-5 h-5 text-gray-400 transition-transform"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-          ) : (
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="absolute top-6 -right-3 p-1.5 bg-[#1a1d29] border border-gray-700 hover:bg-gray-800 rounded-lg transition-colors shadow-lg"
-              aria-label="Expand sidebar"
-            >
-              <svg
-                className="w-4 h-4 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          )}
         </div>
 
         {/* Navigation */}
@@ -575,7 +534,6 @@ export default function DashboardLayout({
                     ? 'bg-gray-800/50 text-white'
                     : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'
                 }`}
-                title={!sidebarOpen ? item.label : undefined}
               >
                 {isActive && (
                   <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[#b1e787] rounded-r-full" />
@@ -588,16 +546,14 @@ export default function DashboardLayout({
                     <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
                   )}
                 </span>
-                {sidebarOpen && (
-                  <span className="text-sm font-medium">{item.label}</span>
-                )}
-                {sidebarOpen && hasLiveStream && (
+                <span className="text-sm font-medium">{item.label}</span>
+                {hasLiveStream && (
                   <span className="ml-auto flex items-center gap-1">
                     <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
                     <span className="text-xs text-red-600 font-medium">EN VIVO</span>
                   </span>
                 )}
-                {sidebarOpen && !hasLiveStream && item.badge !== undefined && item.badge > 0 && (
+                {!hasLiveStream && item.badge !== undefined && item.badge > 0 && (
                   <span className={`ml-auto text-xs font-bold px-2 py-1 rounded-full ${
                     item.label === 'Solicitudes' 
                       ? 'bg-red-500 text-white' 
@@ -615,48 +571,28 @@ export default function DashboardLayout({
         <div className="px-3 pb-3">
           {/* Hide for teachers */}
           {role !== 'TEACHER' && (
-            sidebarOpen ? (
-              <Link
-                href={
-                  role === 'ACADEMY' ? '/dashboard/academy/teachers' :
-                  role === 'STUDENT' ? '/dashboard/student/classes' :
-                  '/dashboard/admin'
-                }
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#b1e787] hover:bg-[#9dd46f] text-gray-900 rounded-xl transition-all shadow-lg font-semibold"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                <span className="text-sm">
-                  {role === 'ACADEMY' ? 'Ver Profesores' :
-                   role === 'STUDENT' ? 'Explorar Clases' :
-                   'Panel Admin'}
-                </span>
-              </Link>
-            ) : (
-              <Link
-                href={
-                  role === 'ACADEMY' ? '/dashboard/academy/teachers' :
-                  role === 'STUDENT' ? '/dashboard/student/classes' :
-                  '/dashboard/admin'
-                }
-                className="w-12 h-12 flex items-center justify-center bg-[#b1e787] hover:bg-[#9dd46f] text-gray-900 rounded-xl transition-all shadow-lg mx-auto"
-                title={
-                  role === 'ACADEMY' ? 'Ver Profesores' :
-                  role === 'STUDENT' ? 'Explorar Clases' :
-                  'Panel Admin'
-                }
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-              </Link>
-            )
+            <Link
+              href={
+                role === 'ACADEMY' ? '/dashboard/academy/teachers' :
+                role === 'STUDENT' ? '/dashboard/student/classes' :
+                '/dashboard/admin'
+              }
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#b1e787] hover:bg-[#9dd46f] text-gray-900 rounded-xl transition-all shadow-lg font-semibold"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              <span className="text-sm">
+                {role === 'ACADEMY' ? 'Ver Profesores' :
+                 role === 'STUDENT' ? 'Explorar Clases' :
+                 'Panel Admin'}
+              </span>
+            </Link>
           )}
         </div>
 
         {/* Teacher Invite Link */}
-        {role === 'TEACHER' && user && sidebarOpen && (
+        {role === 'TEACHER' && user && (
           <div className="px-3 py-2 border-t border-gray-800/50">
             <button
               onClick={copyJoinLink}
@@ -679,40 +615,42 @@ export default function DashboardLayout({
         {/* User Profile */}
         {user && (
           <div className="border-t border-gray-800/50 p-4">
-            <div className={`flex items-center gap-3 ${!sidebarOpen ? 'justify-center' : ''}`}>
+            <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-[#b1e787] rounded-xl flex items-center justify-center text-sm font-bold text-gray-900 flex-shrink-0 shadow-lg">
                 {user.firstName[0]}{user.lastName[0]}
               </div>
-              {sidebarOpen && (
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-white truncate">
-                    {user.firstName} {user.lastName}
-                  </p>
-                  <p className="text-xs text-gray-400 truncate">{user.email}</p>
-                </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-white truncate">
+                  {user.firstName} {user.lastName}
+                </p>
+                <p className="text-xs text-gray-400 truncate">{user.email}</p>
+              </div>
+              {role === 'STUDENT' && (
+                <button
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  className="relative p-2 hover:bg-gray-800/50 rounded-lg transition-colors"
+                  title="Notificaciones"
+                >
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center px-1 font-medium">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </button>
               )}
             </div>
-            {sidebarOpen ? (
-              <button
-                onClick={handleLogout}
-                className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-gray-800/50 rounded-xl transition-colors"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                Cerrar Sesión
-              </button>
-            ) : (
-              <button
-                onClick={handleLogout}
-                className="mt-2 p-2 text-gray-400 hover:text-white hover:bg-gray-800/50 rounded-xl transition-colors"
-                title="Cerrar Sesión"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-              </button>
-            )}
+            <button
+              onClick={handleLogout}
+              className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-gray-800/50 rounded-xl transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Cerrar Sesión
+            </button>
           </div>
         )}
       </aside>
@@ -840,46 +778,9 @@ export default function DashboardLayout({
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Header (Mobile) */}
-        <header className="lg:hidden sticky top-0 z-30 h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4">
-          <button
-            onClick={() => setMobileMenuOpen(true)}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            aria-label="Open menu"
-          >
-            <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-          <Link href={`/dashboard/${role.toLowerCase()}`} className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-brand-500 to-brand-600 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-sm">
-              AH
-            </div>
-            <span className="font-semibold text-gray-900">Akademo</span>
-          </Link>
-          {/* Mobile Notification Bell for Students */}
-          {role === 'STUDENT' ? (
-            <button
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-              {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                  {unreadCount}
-                </span>
-              )}
-            </button>
-          ) : (
-            <div className="w-10" /> /* Spacer for centering */
-          )}
-        </header>
-
-        {/* Mobile Notification Panel */}
+        {/* Notification Panel */}
         {role === 'STUDENT' && showNotifications && (
-          <div className="lg:hidden fixed inset-x-0 top-16 bg-white border-b border-gray-200 shadow-lg z-40 max-h-80 overflow-y-auto">
+          <div className="fixed inset-x-0 lg:right-0 lg:left-auto lg:w-96 top-4 bg-white border border-gray-200 lg:rounded-lg shadow-xl z-40 max-h-96 overflow-y-auto lg:m-4">
             <div className="p-3 border-b border-gray-100 flex items-center justify-between">
               <span className="font-medium text-gray-900">Notificaciones</span>
               <div className="flex items-center gap-3">
@@ -941,8 +842,8 @@ export default function DashboardLayout({
         )}
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <main className="flex-1 overflow-auto bg-gray-100">
+          <div className="py-12 pl-20 pr-20">
             {children}
           </div>
         </main>

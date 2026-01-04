@@ -6,6 +6,13 @@ import Link from 'next/link';
 import ProtectedVideoPlayer from '@/components/ProtectedVideoPlayer';
 import { multipartUpload } from '@/lib/multipart-upload';
 import { uploadToBunny } from '@/lib/bunny-upload';
+import { getBunnyThumbnailUrl } from '@/lib/bunny-stream';
+
+// Import components
+import ClassHeader from './components/ClassHeader';
+import PendingEnrollments from './components/PendingEnrollments';
+import LessonsList from './components/LessonsList';
+import StudentsList from './components/StudentsList';
 
 interface Lesson {
   id: string;
@@ -18,6 +25,7 @@ interface Lesson {
   documentCount: number;
   studentsWatching?: number;
   avgProgress?: number;
+  firstVideoBunnyGuid?: string;
   isTranscoding?: number;
   isUploading?: boolean;
   uploadProgress?: number;
@@ -44,6 +52,7 @@ interface ClassData {
     id: string;
     student: { id: string; firstName: string; lastName: string; email: string };
     enrolledAt: string;
+    status: string;
   }>;
 }
 
@@ -753,150 +762,33 @@ export default function TeacherClassPage() {
   }
 
   return (
-    <>
-      <div className="space-y-6">
-        {/* Clean Minimalist Header - Focus on Lessons */}
-        {!selectedLesson && (
-          <>
-            {/* Title and Actions */}
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex-1">
-                <h1 className="text-4xl font-bold text-gray-900 mb-2">{classData.name}</h1>
-                {classData.description && (
-                  <p className="text-gray-600 text-lg max-w-3xl">{classData.description}</p>
-                )}
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => { router.push(`/dashboard/teacher/class/${classId}?action=create`); }}
-                  className="px-5 py-2.5 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-all"
-                >
-                  + Nueva Lección
-                </button>
-                <button
-                  onClick={createLiveClass}
-                  disabled={creatingStream}
-                  className="px-5 py-2.5 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all"
-                >
-                  {creatingStream ? (
-                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                  ) : (
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-                    </span>
-                  )}
-                  {creatingStream ? 'Creando...' : '🔴 Stream'}
-                </button>
-              </div>
-            </div>
-
-            {/* Floating Stats Container */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-6">
-              <div className="flex items-center gap-6 text-sm">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-gray-900">{lessons.length}</span>
-                  <span className="text-gray-600">lecciones</span>
-                </div>
-                <div className="h-4 w-px bg-gray-200"></div>
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-gray-900">{classData.enrollments.filter((e: any) => e.status === 'approved').length}</span>
-                  <span className="text-gray-600">estudiantes</span>
-                </div>
-                {pendingEnrollments.length > 0 && (
-                  <>
-                    <div className="h-4 w-px bg-gray-200"></div>
-                    <button
-                      onClick={() => setShowPendingRequests(!showPendingRequests)}
-                      className="flex items-center gap-2 text-red-600 hover:text-red-700 transition-colors"
-                    >
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-600 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
-                      </span>
-                      <span className="font-semibold">{pendingEnrollments.length}</span>
-                      <span>solicitud{pendingEnrollments.length !== 1 ? 'es' : ''}</span>
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
+    <div className="space-y-6">
+      {/* Clean Minimalist Header - Focus on Lessons */}
+      {!selectedLesson && (
+        <>
+          <ClassHeader 
+              classData={classData}
+              classId={classId}
+              lessonsCount={lessons.length}
+              pendingCount={pendingEnrollments.length}
+              creatingStream={creatingStream}
+              showPendingRequests={showPendingRequests}
+              onCreateLesson={() => { router.push(`/dashboard/teacher/class/${classId}?action=create`); }}
+              onCreateStream={createLiveClass}
+              onTogglePendingRequests={() => setShowPendingRequests(!showPendingRequests)}
+            />
           </>
         )}
 
-        {/* Pending Enrollment Requests - Keep original */}
-        {pendingEnrollments.length > 0 && showPendingRequests && !selectedLesson && (
-          <div className="bg-gradient-to-br from-blue-50/50 to-indigo-50/50 border border-blue-200 rounded-xl overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 px-6 py-3 border-b border-blue-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900">Solicitudes Pendientes</h2>
-                    <p className="text-xs text-gray-600">{pendingEnrollments.length} estudiante{pendingEnrollments.length !== 1 ? 's' : ''} esperando tu aprobación</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setShowPendingRequests(false)}
-                  className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
-                >
-                  <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-            
-            <div className="p-4">
-              <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
-                {pendingEnrollments.map((enrollment) => (
-                  <div 
-                    key={enrollment.id} 
-                    className="bg-white rounded-lg border border-gray-200 p-3 hover:shadow-md hover:border-blue-300 transition-all flex items-center gap-3"
-                  >
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-white font-bold text-sm">
-                        {enrollment.student.firstName.charAt(0)}{enrollment.student.lastName.charAt(0)}
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 text-sm">
-                        {enrollment.student.firstName} {enrollment.student.lastName}
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">{enrollment.student.email}</p>
-                      <p className="text-xs text-gray-400">
-                        Solicitado {new Date(enrollment.enrolledAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <button
-                        onClick={() => handleEnrollmentAction(enrollment.id, 'reject')}
-                        className="p-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-all"
-                        title="Rechazar"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => handleEnrollmentAction(enrollment.id, 'approve')}
-                        className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all"
-                        title="Aprobar"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+        {/* Pending Enrollment Requests - Component */}
+        {!selectedLesson && (
+          <PendingEnrollments 
+            pendingEnrollments={pendingEnrollments}
+            showPendingRequests={showPendingRequests}
+            onApprove={(id) => handleEnrollmentAction(id, 'approve')}
+            onReject={(id) => handleEnrollmentAction(id, 'reject')}
+            onClose={() => setShowPendingRequests(false)}
+          />
         )}
 
         {/* Selected Lesson View */}
@@ -1104,11 +996,6 @@ export default function TeacherClassPage() {
                 </div>
               </div>
             )}
-
-            {/* Lessons Header */}
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">Lecciones ({lessons.length})</h2>
-            </div>
 
             {/* Lesson Form Modal */}
             {showLessonForm && (
@@ -1387,210 +1274,22 @@ export default function TeacherClassPage() {
               </div>
             )}
 
-            {/* Lecciones */}
-            <div>
-              {lessons.length === 0 ? (
-                <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-                    </svg>
-                  </div>
-                  <h3 className="text-base font-semibold text-gray-900 mb-1">Aún no hay lecciones</h3>
-                  <p className="text-gray-500 text-sm">Crea tu primera lección para comenzar</p>
-                </div>
-              ) : (
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {lessons.map((lesson) => {
-                    const videoCount = lesson.videoCount || 0;
-                    const docCount = lesson.documentCount || 0;
-                    
-                    return (
-                      <div
-                        key={lesson.id}
-                        onClick={(e) => {
-                          // Check if click is on action buttons container
-                          const target = e.target as HTMLElement;
-                          if (target.closest('[data-action-buttons]')) {
-                            return; // Don't navigate if clicking action buttons area
-                          }
-                          if (!lesson.isUploading && !lesson.isTranscoding) {
-                            selectLesson(lesson);
-                          }
-                        }}
-                        className={`bg-white rounded-xl border overflow-hidden transition-all duration-200 group shadow-sm ${
-                          lesson.isUploading || lesson.isTranscoding
-                            ? 'border-blue-300 cursor-default'
-                            : 'border-gray-200 hover:border-gray-400 hover:shadow-lg cursor-pointer'
-                        }`}
-                      >
-                        <div className="p-6 flex flex-col h-full">
-                          {/* Uploading Progress */}
-                          {lesson.isUploading && (
-                            <div className="mb-3 bg-blue-50 rounded-lg p-3 border border-blue-200">
-                              <div className="flex items-center justify-between text-sm text-blue-700 mb-2">
-                                <span className="font-medium flex items-center gap-2">
-                                  <span className="w-4 h-4 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />
-                                  Subiendo archivos...
-                                </span>
-                                <span className="font-bold">{Math.round(lesson.uploadProgress || 0)}%</span>
-                              </div>
-                              <div className="h-1.5 bg-blue-100 rounded-full overflow-hidden">
-                                <div 
-                                  className="h-full bg-blue-600 transition-all"
-                                  style={{ width: `${lesson.uploadProgress || 0}%` }}
-                                />
-                              </div>
-                            </div>
-                          )}
-                          
-                          {/* Transcoding Status */}
-                          {lesson.isTranscoding === 1 && !lesson.isUploading && (
-                            <div className="mb-3 bg-purple-50 rounded-lg p-3 border border-purple-200 text-center">
-                              <span className="text-sm font-medium text-purple-700 flex items-center justify-center gap-2">
-                                <span className="w-4 h-4 border-2 border-purple-600/30 border-t-purple-600 rounded-full animate-spin" />
-                                Transcodificando video...
-                              </span>
-                              <p className="text-xs text-purple-600 mt-1">Esto puede tomar varios minutos</p>
-                            </div>
-                          )}
-                          
-                          {/* Title and Actions */}
-                          <div className="flex items-start justify-between mb-4">
-                            <h3 
-                              className="font-bold text-lg text-gray-900 group-hover:text-gray-600 transition-colors flex-1 pr-2"
-                              title={lesson.description || undefined}
-                            >
-                              {lesson.title}
-                            </h3>
-                            <div className="flex items-center gap-1 flex-shrink-0" data-action-buttons onClick={(e) => e.stopPropagation()}>
-                              {!isReleased(lesson.releaseDate) && !lesson.isUploading && !lesson.isTranscoding && (
-                                <span className="px-2 py-0.5 bg-amber-50 text-amber-600 text-xs font-medium rounded border border-amber-200 mr-1">Programada</span>
-                              )}
-                              <button
-                                onClick={(e) => { 
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  e.nativeEvent.stopImmediatePropagation();
-                                  if (!lesson.isUploading && !lesson.isTranscoding) {
-                                    handleEditLesson(lesson);
-                                  }
-                                }}
-                                disabled={lesson.isUploading || lesson.isTranscoding === 1}
-                                className={`p-1 rounded transition-colors ${
-                                  lesson.isUploading || lesson.isTranscoding
-                                    ? 'text-gray-300 cursor-not-allowed' 
-                                    : 'text-gray-400 hover:text-brand-600'
-                                }`}
-                                title="Editar"
-                              >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                </svg>
-                              </button>
-                              <button
-                                onClick={(e) => { 
-                                  e.preventDefault();
-                                  e.stopPropagation(); 
-                                  if (!lesson.isUploading && !lesson.isTranscoding && window.confirm('¿Eliminar esta lección?')) {
-                                    handleDeleteLesson(lesson.id);
-                                  }
-                                }}
-                                disabled={lesson.isUploading || lesson.isTranscoding === 1}
-                                className={`p-1 rounded transition-colors ${
-                                  lesson.isUploading || lesson.isTranscoding
-                                    ? 'text-gray-300 cursor-not-allowed' 
-                                    : 'text-gray-400 hover:text-red-600'
-                                }`}
-                                title="Eliminar"
-                              >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                              </button>
-                            </div>
-                          </div>
-                          
-                          {/* Counts - Enhanced Style */}
-                          <div className="flex items-center gap-4 text-sm">
-                            {videoCount > 0 && (
-                              <div className="flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-lg">
-                                <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                                  <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" />
-                                </svg>
-                                <span className="font-semibold text-blue-900">{videoCount}</span>
-                                <span className="text-blue-700">video{videoCount !== 1 ? 's' : ''}</span>
-                              </div>
-                            )}
-                            {docCount > 0 && (
-                              <div className="flex items-center gap-2 bg-purple-50 px-3 py-1.5 rounded-lg">
-                                <svg className="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                                </svg>
-                                <span className="font-semibold text-purple-900">{docCount}</span>
-                                <span className="text-purple-700">doc{docCount !== 1 ? 's' : ''}</span>
-                              </div>
-                            )}
-                          </div>
-                          
-                          {/* Release Date - Bottom */}
-                          <div className="mt-auto pt-4 border-t border-gray-100 flex items-center gap-2 text-sm text-gray-500">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            <span className="font-medium">Lanzamiento:</span>
-                            <span>{new Date(lesson.releaseDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+            {/* Lecciones - Component */}
+            {!selectedLesson && (
+              <LessonsList 
+                lessons={lessons}
+                onSelectLesson={selectLesson}
+                onEditLesson={handleEditLesson}
+                onDeleteLesson={handleDeleteLesson}
+              />
+            )}
 
-            {/* Students - Compact */}
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Estudiantes</h2>
-              {classData.enrollments.length === 0 ? (
-                <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-                  <p className="text-gray-500 text-sm">No hay estudiantes inscritos</p>
-                </div>
-              ) : (
-                <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100">
-                  {classData.enrollments.map(e => (
-                    <div key={e.id} className="p-3 hover:bg-gray-50 transition-colors flex items-center justify-between">
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                          {e.student.firstName[0]}{e.student.lastName[0]}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-gray-900">{e.student.firstName} {e.student.lastName}</p>
-                          <p className="text-xs text-gray-500 truncate">{e.student.email}</p>
-                        </div>
-                      </div>
-                      
-                      {/* Inline Status */}
-                      <div className="flex items-center gap-4 text-xs text-gray-600 ml-4">
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                          <span>Activo</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                          <span>{new Date(e.enrolledAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            {/* Students - Component */}
+            {!selectedLesson && (
+              <StudentsList enrollments={classData.enrollments} />
+            )}
           </>
         )}
-      </div>
-    </>
+    </div>
   );
 }

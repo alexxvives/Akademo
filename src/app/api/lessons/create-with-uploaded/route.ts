@@ -81,7 +81,6 @@ export async function POST(request: Request) {
       
       const videoRecord = await videoQueries.create({
         title: video.title || video.fileName,
-        description: video.description || undefined,
         lessonId: lesson.id,
         uploadId: upload.id,
         durationSeconds: video.durationSeconds || undefined,
@@ -102,7 +101,6 @@ export async function POST(request: Request) {
       
       const documentRecord = await documentQueries.create({
         title: doc.title || doc.fileName,
-        description: doc.description || undefined,
         lessonId: lesson.id,
         uploadId: upload.id,
       });

@@ -104,7 +104,6 @@ export async function POST(request: Request) {
       
       const video = await videoQueries.create({
         title: videoTitles[i] || file.name,
-        description: videoDescriptions[i] || undefined,
         lessonId: lesson.id,
         uploadId: upload.id,
         durationSeconds: parseFloat(videoDurations[i]) || undefined,
@@ -139,7 +138,6 @@ export async function POST(request: Request) {
       
       const document = await documentQueries.create({
         title: documentTitles[i] || file.name,
-        description: documentDescriptions[i] || undefined,
         lessonId: lesson.id,
         uploadId: upload.id,
       });

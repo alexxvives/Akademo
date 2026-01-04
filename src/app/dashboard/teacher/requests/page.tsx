@@ -99,7 +99,7 @@ export default function TeacherRequestsPage() {
 
   return (
     <>
-      <div className="max-w-6xl mx-auto">
+      <div>
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Solicitudes de Inscripción</h1>
           <p className="text-gray-600 text-sm mt-1">Revisa y aprueba las solicitudes de estudiantes</p>

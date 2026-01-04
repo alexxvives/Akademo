@@ -38,7 +38,6 @@ export async function POST(request: Request) {
     // Create document record
     const document = await documentQueries.create({
       title,
-      description: description || undefined,
       lessonId,
       uploadId: upload.id,
     });

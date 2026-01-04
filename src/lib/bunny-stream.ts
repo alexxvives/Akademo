@@ -211,7 +211,13 @@ export function getBunnyStreamUrl(videoGuid: string): string {
 export function getBunnyThumbnailUrl(videoGuid: string, thumbnailFileName?: string): string {
   const config = getConfig();
   const thumb = thumbnailFileName || 'thumbnail.jpg';
-  return `https://${config.BUNNY_STREAM_CDN_HOSTNAME}/${videoGuid}/${thumb}`;
+  const hostname = config.BUNNY_STREAM_CDN_HOSTNAME || 'vz-bb8d111e-8eb.b-cdn.net'; // Fallback to known hostname
+  
+  if (!hostname || hostname === '') {
+    console.warn('BUNNY_STREAM_CDN_HOSTNAME is not configured, using fallback');
+  }
+  
+  return `https://${hostname}/${videoGuid}/${thumb}`;
 }
 
 // Video status helpers

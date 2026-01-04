@@ -497,14 +497,14 @@ export const videoQueries = {
     }));
   },
 
-  async create(data: { title: string; description?: string; lessonId: string; uploadId: string; durationSeconds?: number }) {
+  async create(data: { title: string; lessonId: string; uploadId: string; durationSeconds?: number }) {
     const db = await getDB();
     const id = generateId();
     const now = new Date().toISOString();
     await db.prepare(`
-      INSERT INTO Video (id, title, description, lessonId, uploadId, durationSeconds, createdAt, updatedAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(id, data.title, data.description || null, data.lessonId, data.uploadId, data.durationSeconds || null, now, now).run();
+      INSERT INTO Video (id, title, lessonId, uploadId, durationSeconds, createdAt, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).bind(id, data.title, data.lessonId, data.uploadId, data.durationSeconds || null, now, now).run();
     return { id, ...data, createdAt: now, updatedAt: now };
   },
 
@@ -593,14 +593,14 @@ export const documentQueries = {
     }));
   },
 
-  async create(data: { title: string; description?: string; lessonId: string; uploadId: string }) {
+  async create(data: { title: string; lessonId: string; uploadId: string }) {
     const db = await getDB();
     const id = generateId();
     const now = new Date().toISOString();
     await db.prepare(`
-      INSERT INTO Document (id, title, description, lessonId, uploadId, createdAt, updatedAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).bind(id, data.title, data.description || null, data.lessonId, data.uploadId, now, now).run();
+      INSERT INTO Document (id, title, lessonId, uploadId, createdAt, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).bind(id, data.title, data.lessonId, data.uploadId, now, now).run();
     return { id, ...data, createdAt: now, updatedAt: now };
   },
 };
@@ -634,6 +634,9 @@ export const lessonQueries = {
           WHEN EXISTS(SELECT 1 FROM Video v2 JOIN Upload u ON v2.uploadId = u.id 
                       WHERE v2.lessonId = l.id AND u.storageType = 'bunny' AND (u.bunnyStatus IS NULL OR u.bunnyStatus < 4))
           THEN 1 ELSE 0 END) as isTranscoding,
+        (SELECT u.bunnyGuid FROM Video v3 JOIN Upload u ON v3.uploadId = u.id 
+         WHERE v3.lessonId = l.id AND u.bunnyGuid IS NOT NULL 
+         ORDER BY v3.createdAt ASC LIMIT 1) as firstVideoBunnyGuid,
         (SELECT AVG(rating) FROM LessonRating WHERE lessonId = l.id) as avgRating,
         (SELECT COUNT(*) FROM LessonRating WHERE lessonId = l.id) as ratingCount
       FROM Lesson l

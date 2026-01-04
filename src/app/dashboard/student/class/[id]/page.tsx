@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import ProtectedVideoPlayer from '@/components/ProtectedVideoPlayer';
+import { getBunnyThumbnailUrl } from '@/lib/bunny-stream';
 
 interface Video {
   id: string;
@@ -264,7 +265,7 @@ export default function ClassPage() {
   if (loading) {
     return (
       <>
-        <div className="max-w-6xl mx-auto px-4 py-12">
+        <div className="max-w-6xl mx-auto px-4 py-4">
           <div className="flex items-center justify-center">
             <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
             <span className="ml-3 text-gray-600">Loading class...</span>
@@ -276,7 +277,37 @@ export default function ClassPage() {
 
   return (
     <>
-      <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
+      <div className="space-y-6">
+        {/* Header - Same style as teacher */}
+        {!selectedLesson && classData && (
+          <>
+            {/* Title */}
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex-1">
+                <h1 className="text-4xl font-bold text-gray-900 mb-2">{classData.name}</h1>
+                {classData.description && (
+                  <p className="text-gray-600 text-lg max-w-3xl">{classData.description}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Stats Cards */}
+            <div className="flex items-center gap-4 mb-6">
+              <div className="bg-white rounded-xl border border-gray-200 px-5 py-3 flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-gray-900">{lessons.length}</p>
+                  <p className="text-xs text-gray-500">Lecciones</p>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
         {/* Live Stream Banner */}
         {activeStream && (
           <div className="bg-gradient-to-r from-red-500 to-red-600 rounded-xl p-6 shadow-lg">
@@ -354,30 +385,33 @@ export default function ClassPage() {
               )}
               
               {/* Star Rating */}
-              <div className="mt-4 flex items-center gap-3">
-                <span className="text-sm text-gray-600">Califica esta lección:</span>
-                <div className="flex gap-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      onClick={() => submitRating(star)}
-                      onMouseEnter={() => setRatingHover(star)}
-                      onMouseLeave={() => setRatingHover(0)}
-                      className="text-2xl transition-colors focus:outline-none"
-                    >
-                      <span className={
-                        (ratingHover ? star <= ratingHover : star <= (lessonRating || 0))
-                          ? 'text-yellow-400'
-                          : 'text-gray-300'
-                      }>
-                        ★
-                      </span>
-                    </button>
-                  ))}
+              <div className="mt-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-600">Califica esta lección:</span>
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        onClick={() => submitRating(star)}
+                        onMouseEnter={() => setRatingHover(star)}
+                        onMouseLeave={() => setRatingHover(0)}
+                        className="text-2xl transition-colors focus:outline-none"
+                      >
+                        <span className={
+                          (ratingHover ? star <= ratingHover : star <= (lessonRating || 0))
+                            ? 'text-yellow-400'
+                            : 'text-gray-300'
+                        }>
+                          ★
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                  {lessonRating && (
+                    <span className="text-sm text-gray-500">Tu calificación: {lessonRating}/5</span>
+                  )}
                 </div>
-                {lessonRating && (
-                  <span className="text-sm text-gray-500">Tu calificación: {lessonRating}/5</span>
-                )}
+                <p className="text-xs text-gray-500 mt-1 ml-1">Tu calificación es anónima y no será vista por el profesor</p>
               </div>
             </div>
             
@@ -405,7 +439,7 @@ export default function ClassPage() {
 
                 {/* Video Player */}
                 {selectedVideo && (
-                  <div className="rounded-lg overflow-hidden">
+                  <div className="rounded-lg overflow-hidden max-w-4xl mx-auto">
                     <ProtectedVideoPlayer
                       videoUrl={selectedVideo.upload?.storageType === 'bunny' ? '' : `/api/video/stream/${selectedVideo.id}`}
                       videoId={selectedVideo.id}
@@ -474,25 +508,23 @@ export default function ClassPage() {
         {/* Lessons Grid - When no lesson is selected */}
         {!selectedLesson && (
           <div>
-            <button
-              onClick={() => router.push('/dashboard/student/classes')}
-              className="text-sm text-gray-500 hover:text-gray-900 mb-4 inline-block md:hidden"
-            >
-              ← Volver a clases
-            </button>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Lecciones</h2>
+            {/* Lessons Header */}
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Lecciones</h2>
+            </div>
             
             {lessons.length === 0 ? (
-              <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+              <div className="bg-white rounded-xl border border-gray-200 p-12 text-center mt-4">
                 <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                   </svg>
                 </div>
-                <p className="text-gray-600">Aún no hay lecciones disponibles en esta clase.</p>
+                <h3 className="text-base font-semibold text-gray-900 mb-1">Aún no hay lecciones</h3>
+                <p className="text-gray-500 text-sm">El profesor aún no ha creado lecciones para esta clase.</p>
               </div>
             ) : (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
                 {lessons.map((lesson) => {
                   const isReleased = new Date(lesson.releaseDate) <= new Date();
                   const videoCount = lesson.videos?.length || 0;
@@ -513,67 +545,117 @@ export default function ClassPage() {
                   const overallProgress = totalMax > 0 ? Math.min(100, (totalWatched / totalMax) * 100) : 0;
                   const remainingMinutes = totalMax > 0 ? Math.ceil((totalMax - totalWatched) / 60) : 0;
                   
+                  // Get first video thumbnail if available
+                  const firstVideo = lesson.videos?.[0];
+                  let thumbnailUrl = null;
+                  if (firstVideo?.upload?.bunnyGuid) {
+                    try {
+                      thumbnailUrl = getBunnyThumbnailUrl(firstVideo.upload.bunnyGuid);
+                      // Validate the URL has a proper hostname
+                      if (!thumbnailUrl.includes('b-cdn.net')) {
+                        console.warn('Invalid thumbnail URL generated:', thumbnailUrl);
+                        thumbnailUrl = null;
+                      }
+                    } catch (e) {
+                      console.error('Error generating thumbnail URL:', e);
+                      thumbnailUrl = null;
+                    }
+                  }
+                  
                   return (
                     <div
                       key={lesson.id}
-                      onClick={() => selectLesson(lesson)}
-                      className={`bg-white rounded-lg border overflow-hidden transition-all duration-200 group ${
+                      onClick={() => isReleased && selectLesson(lesson)}
+                      className={`bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl overflow-hidden transition-all duration-300 group border border-gray-200 shadow-sm ${
                         isReleased
-                          ? 'border-gray-200 hover:border-brand-400 hover:shadow-md cursor-pointer'
-                          : 'border-gray-200 opacity-50 cursor-not-allowed'
+                          ? 'hover:border-brand-400 hover:shadow-lg hover:shadow-brand-500/10 cursor-pointer hover:scale-[1.02]'
+                          : 'opacity-60 cursor-not-allowed'
                       }`}
                     >
-                      <div className="p-4">
-                        {/* Title and Status */}
-                        <div className="flex items-start justify-between mb-3">
-                          <h3 className="font-semibold text-gray-900 group-hover:text-brand-600 transition-colors flex-1 pr-2">{lesson.title}</h3>
-                          {!isReleased && (
-                            <span className="px-2 py-0.5 bg-amber-50 text-amber-600 text-xs font-medium rounded border border-amber-200">Programada</span>
-                          )}
+                      <div className="p-5 flex flex-col h-full relative">
+                        {/* Release Date - Top Right */}
+                        <div className="absolute top-3 right-3 flex items-center gap-1.5 text-xs text-gray-600 bg-white/90 px-2.5 py-1.5 rounded-lg backdrop-blur-sm border border-gray-200 z-10 shadow-sm">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          <span className="text-gray-700 font-medium">{new Date(lesson.releaseDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                         </div>
                         
-                        {/* Progress Bar - Minimalist */}
-                        {videoCount > 0 && totalMax > 0 && isReleased && (
-                          <div className="mb-3">
-                            <div className="flex items-center justify-between text-xs text-gray-500 mb-1.5">
-                              <span>{Math.round(overallProgress)}%</span>
-                              <span>{remainingMinutes}min restante{remainingMinutes !== 1 ? 's' : ''}</span>
+                        {/* Status Badge */}
+                        {!isReleased && (
+                          <span className="absolute top-14 right-3 px-2 py-1 bg-amber-100 text-amber-700 text-[10px] font-bold rounded border border-amber-200 z-10 shadow-sm">PRÓXIMAMENTE</span>
+                        )}
+                        
+                        {/* Title */}
+                        <h3 
+                          className="font-bold text-lg text-gray-900 group-hover:text-brand-600 transition-colors mb-3 line-clamp-2 pr-32"
+                          title={lesson.description || undefined}
+                        >
+                          {lesson.title}
+                        </h3>
+                        
+                        {/* Video Thumbnail */}
+                        {thumbnailUrl && videoCount > 0 ? (
+                          <div className="relative w-full h-40 bg-gray-200 rounded-lg overflow-hidden mb-3">
+                            <img 
+                              src={thumbnailUrl} 
+                              alt={lesson.title}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                // Hide image on error and show placeholder
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                            {/* Play overlay */}
+                            <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                              <div className="w-14 h-14 rounded-full bg-white group-hover:bg-brand-500 group-hover:scale-110 transition-all flex items-center justify-center shadow-lg">
+                                <svg className="w-6 h-6 text-gray-900 group-hover:text-white ml-1 transition-colors" fill="currentColor" viewBox="0 0 20 20">
+                                  <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                                </svg>
+                              </div>
                             </div>
-                            <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
+                            
+                            {/* Content Icons - Overlaid on bottom of thumbnail */}
+                            <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 to-transparent flex items-center gap-2">
+                              {videoCount > 0 && (
+                                <div className="flex items-center gap-1.5 bg-blue-500/90 px-2.5 py-1 rounded-lg border border-blue-400/50">
+                                  <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                                  </svg>
+                                  <span className="text-white font-bold text-xs">{videoCount}</span>
+                                </div>
+                              )}
+                              {docCount > 0 && (
+                                <div className="flex items-center gap-1.5 bg-purple-500/90 px-2.5 py-1 rounded-lg border border-purple-400/50">
+                                  <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                                  </svg>
+                                  <span className="text-white font-bold text-xs">{docCount}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ) : null}
+                        
+                        {/* Progress Bar with Stars and % */}
+                        {videoCount > 0 && totalMax > 0 && isReleased && (
+                          <div className="mb-4 bg-white rounded-lg p-3 border border-gray-200 shadow-sm">
+                            <div className="flex items-center justify-between text-sm mb-2">
+                              <div className="flex items-center gap-1">
+                                <span className="text-yellow-500 text-base">{'★'.repeat(Math.round(overallProgress / 20))}</span>
+                                <span className="text-gray-300 text-base">{'★'.repeat(5 - Math.round(overallProgress / 20))}</span>
+                              </div>
+                              <span className="text-gray-900 font-bold text-sm">{Math.round(overallProgress)}% ({remainingMinutes}min restantes)</span>
+                            </div>
+                            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                               <div 
-                                className="h-full bg-brand-500 rounded-full transition-all"
+                                className="h-full bg-gradient-to-r from-brand-500 to-brand-400 rounded-full transition-all duration-500"
                                 style={{ width: `${overallProgress}%` }}
                               />
                             </div>
                           </div>
                         )}
-                        
-                        {/* Counts - Clean Minimal Style */}
-                        <div className="flex items-center gap-4 text-xs text-gray-600">
-                          {videoCount > 0 && (
-                            <span className="flex items-center gap-1">
-                              <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" />
-                              </svg>
-                              <span className="font-medium text-gray-900">{videoCount}</span> video{videoCount !== 1 ? 's' : ''}
-                            </span>
-                          )}
-                          {docCount > 0 && (
-                            <span className="flex items-center gap-1">
-                              <svg className="w-4 h-4 text-purple-500" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                              </svg>
-                              <span className="font-medium text-gray-900">{docCount}</span> doc{docCount !== 1 ? 's' : ''}
-                            </span>
-                          )}
-                          {/* Release Date - Inline */}
-                          <span className="flex items-center gap-1 ml-auto">
-                            <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            <span className="text-gray-500">{new Date(lesson.releaseDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
-                          </span>
-                        </div>
+
                       </div>
                     </div>
                   );

@@ -116,15 +116,6 @@ export default function TeacherClasses() {
                       </span>
                     </div>
                   </div>
-                      
-                      {/* Action Icons */}
-                      <div className="ml-4 flex items-center gap-2">
-                        <div className="text-gray-400 group-hover:text-brand-600 group-hover:translate-x-1 transition-all">
-                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                          </svg>
-                        </div>
-                  </div>
                 </div>
               </Link>
             ))}

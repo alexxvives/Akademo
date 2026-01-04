@@ -23,7 +23,7 @@ export async function GET(request: Request) {
       JOIN Class c ON ls.classId = c.id
       JOIN User u ON ls.teacherId = u.id
       JOIN ClassEnrollment ce ON ce.classId = c.id
-      WHERE ce.studentId = ? 
+      WHERE ce.userId = ? 
         AND ce.status = 'APPROVED'
         AND ls.status = 'active'
       ORDER BY ls.createdAt DESC

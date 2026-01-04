@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     const hasAccess = await db.prepare(`
       SELECT 1 FROM Lesson l
       JOIN ClassEnrollment ce ON ce.classId = l.classId
-      WHERE l.id = ? AND ce.studentId = ? AND ce.status = 'APPROVED'
+      WHERE l.id = ? AND ce.userId = ? AND ce.status = 'APPROVED'
     `).bind(lessonId, session.id).first();
 
     if (!hasAccess) {

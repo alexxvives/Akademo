@@ -12,7 +12,7 @@ export async function GET(
     const db = await getDB();
     const academyId = params.id;
 
-    // Get all classes from this academy with teacher information
+    // Get all classes from this academy with teacher information and current user's enrollment status
     const classes = await db
       .prepare(`
         SELECT 
@@ -24,14 +24,15 @@ export async function GET(
           (u.firstName || ' ' || u.lastName) as teacherName,
           u.id as teacherId,
           u.email as teacherEmail,
-          (SELECT COUNT(*) FROM Enrollment e WHERE e.classId = c.id AND e.status = 'APPROVED') as studentCount
+          (SELECT COUNT(*) FROM ClassEnrollment ce WHERE ce.classId = c.id AND ce.status = 'APPROVED') as studentCount,
+          (SELECT ce2.status FROM ClassEnrollment ce2 WHERE ce2.classId = c.id AND ce2.userId = ?) as enrollmentStatus
         FROM Class c
         JOIN Academy a ON c.academyId = a.id
         JOIN User u ON c.teacherId = u.id
         WHERE c.academyId = ?
         ORDER BY c.createdAt DESC
       `)
-      .bind(academyId)
+      .bind(session.id, academyId)
       .all();
 
     return Response.json({ success: true, data: classes.results || [] });

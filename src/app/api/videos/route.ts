@@ -45,7 +45,6 @@ export async function POST(request: Request) {
     // Create video record
     const video = await videoQueries.create({
       title,
-      description: description || undefined,
       lessonId,
       uploadId: upload.id,
       durationSeconds: durationSeconds ? parseFloat(durationSeconds) : undefined,

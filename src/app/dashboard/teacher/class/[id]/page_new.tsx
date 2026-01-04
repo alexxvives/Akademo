@@ -221,355 +221,160 @@ export default function TeacherClassPage() {
 
   // Main class view
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-gradient-to-br from-brand-500 to-brand-600 rounded-xl p-8 text-white shadow-xl">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-            <Link href="/dashboard/teacher/classes" className="inline-flex items-center gap-2 text-white/80 hover:text-white font-medium text-sm mb-3 transition-colors">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Todas las clases
-            </Link>
-            <h1 className="text-3xl font-bold mb-2">{classData.name}</h1>
-            {classData.description && (
-              <p className="text-white/90 text-lg">{classData.description}</p>
-            )}
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="flex flex-wrap gap-4 mt-6">
-          <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-lg">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-            </svg>
-            <span className="font-semibold">{classData.enrollments.filter(e => e.status === 'approved').length}</span>
-            <span className="text-white/80">Estudiantes</span>
-          </div>
-          <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-lg">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
-            <span className="font-semibold">{lessons.length}</span>
-            <span className="text-white/80">Lecciones</span>
-          </div>
-          {pendingEnrollments.length > 0 && (
-            <div className="flex items-center gap-2 bg-orange-500/30 backdrop-blur-sm px-4 py-2 rounded-lg border border-orange-300/50">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-              </span>
-              <span className="font-semibold">{pendingEnrollments.length}</span>
-              <span className="text-white/90">Solicitud{pendingEnrollments.length !== 1 ? 'es' : ''} pendiente{pendingEnrollments.length !== 1 ? 's' : ''}</span>
-            </div>
-          )}
-        </div>
+    <div className="h-full bg-gray-100 p-6">
+      {/* Dashboard Title */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-gray-900">{classData.name}</h1>
       </div>
 
-      {/* Tabs */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="border-b border-gray-200">
-          <nav className="flex gap-1 p-2">
+      {/* Dashboard Grid Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Lessons Section */}
+        <div className="bg-white rounded-lg p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Lecciones</h2>
             <button
-              onClick={() => setActiveTab('lessons')}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all ${
-                activeTab === 'lessons'
-                  ? 'bg-brand-500 text-white shadow-md'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
+              onClick={() => router.push(`/dashboard/teacher/class/${classData.slug || classData.id}?action=create`)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-brand-500 text-white rounded-md hover:bg-brand-600 transition-colors text-sm font-medium"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              Lecciones
-              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                activeTab === 'lessons' ? 'bg-white/20' : 'bg-gray-200 text-gray-700'
-              }`}>
-                {lessons.length}
-              </span>
+              Nueva
             </button>
-            <button
-              onClick={() => setActiveTab('students')}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all ${
-                activeTab === 'students'
-                  ? 'bg-brand-500 text-white shadow-md'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-              Estudiantes
-              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                activeTab === 'students' ? 'bg-white/20' : 'bg-gray-200 text-gray-700'
-              }`}>
-                {classData.enrollments.filter(e => e.status === 'approved').length}
-              </span>
-              {pendingEnrollments.length > 0 && (
-                <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-orange-500 text-white">
-                  {pendingEnrollments.length}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab('live')}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all ${
-                activeTab === 'live'
-                  ? 'bg-brand-500 text-white shadow-md'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-              En Vivo
-              {liveClasses.some(lc => lc.status === 'active') && (
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                </span>
-              )}
-            </button>
-          </nav>
-        </div>
-
-        {/* Tab Content */}
-        <div className="p-6">
-          {/* Lessons Tab */}
-          {activeTab === 'lessons' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-900">Contenido de la Clase</h2>
-                <button
-                  onClick={() => router.push(`/dashboard/teacher/class/${classData.slug || classData.id}?action=create`)}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors font-medium"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  Nueva Lección
-                </button>
-              </div>
+          </div>
+          
+          <div className="space-y-3 max-h-[600px] overflow-y-auto">
 
               {lessons.length === 0 ? (
-                <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
-                  <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay lecciones aún</h3>
-                  <p className="text-gray-500 mb-6">Crea tu primera lección para comenzar a compartir contenido con tus estudiantes.</p>
-                  <button
-                    onClick={() => router.push(`/dashboard/teacher/class/${classData.slug || classData.id}?action=create`)}
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors font-medium"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    Crear Primera Lección
-                  </button>
+                <div className="text-center py-8">
+                  <p className="text-sm text-gray-500">No hay lecciones aún</p>
                 </div>
               ) : (
-                <div className="grid gap-4">
-                  {lessons.map((lesson) => (
-                    <button
-                      key={lesson.id}
-                      onClick={() => {/* handle lesson click */}}
-                      className="text-left bg-white border-2 border-gray-200 hover:border-brand-400 hover:shadow-lg rounded-xl p-5 transition-all group"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-bold text-gray-900 group-hover:text-brand-600 transition-colors mb-2">
-                            {lesson.title}
-                          </h3>
-                          {lesson.description && (
-                            <p className="text-sm text-gray-600 mb-3 line-clamp-2">{lesson.description}</p>
-                          )}
-                          <div className="flex flex-wrap gap-3 text-sm">
-                            <span className="inline-flex items-center gap-1.5 text-gray-600">
-                              <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                              </svg>
-                              <span className="font-medium">{lesson.videoCount}</span> video{lesson.videoCount !== 1 ? 's' : ''}
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 text-gray-600">
-                              <svg className="w-4 h-4 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                              </svg>
-                              <span className="font-medium">{lesson.documentCount}</span> documento{lesson.documentCount !== 1 ? 's' : ''}
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 text-gray-600">
-                              <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                              </svg>
-                              {new Date(lesson.releaseDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
-                            </span>
+                lessons.map((lesson) => {
+                    const totalStudents = classData.enrollments.filter(e => e.status === 'approved').length;
+                    const studentsWatched = lesson.studentsWatching || Math.round(totalStudents * 0.6); // Mock: 60% watched
+                    const avgRating = lesson.avgProgress ? (lesson.avgProgress / 20).toFixed(1) : '0.0'; // Mock rating
+                    const progressPercent = totalStudents > 0 ? Math.round((studentsWatched / totalStudents) * 100) : 0;
+                    return (
+                      <div
+                        key={lesson.id}
+                        onClick={() => {/* handle lesson click */}}
+                        className="border border-gray-200 hover:border-brand-400 hover:shadow-md rounded-lg p-4 transition-all cursor-pointer"
+                      >
+                        <h3 className="font-semibold text-gray-900 mb-2 text-sm">
+                          {lesson.title}
+                        </h3>
+                        
+                        {/* Compact Progress Bar */}
+                        <div className="mb-2">
+                          <div className="flex items-center justify-between text-xs mb-1">
+                            <span className="text-gray-500">Progreso</span>
+                            <span className="text-gray-700 font-medium">{studentsWatched}/{totalStudents}</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-1.5">
+                            <div 
+                              className="bg-brand-500 h-1.5 rounded-full" 
+                              style={{ width: `${progressPercent}%` }}
+                            ></div>
                           </div>
                         </div>
-                        <svg className="w-6 h-6 text-gray-400 group-hover:text-brand-600 group-hover:translate-x-1 transition-all flex-shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
 
-          {/* Students Tab */}
-          {activeTab === 'students' && (
-            <div className="space-y-6">
-              {/* Pending Requests */}
-              {pendingEnrollments.length > 0 && (
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-4">Solicitudes Pendientes</h2>
-                  <div className="grid gap-3">
-                    {pendingEnrollments.map((enrollment) => (
-                      <div key={enrollment.id} className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-center gap-4">
-                        <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center flex-shrink-0">
-                          <span className="text-white font-bold">
+                        {/* Compact Star Rating */}
+                        <div className="flex items-center gap-1.5 text-xs">
+                          <div className="flex items-center gap-0.5">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <svg 
+                                key={star}
+                                className={`w-3 h-3 ${
+                                  star <= parseFloat(avgRating) ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                                }`}
+                                fill="none" 
+                                stroke="currentColor" 
+                                viewBox="0 0 24 24"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                              </svg>
+                            ))}
+                          </div>
+                          <span className="text-gray-600">{avgRating}</span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+          </div>
+        </div>
+
+        {/* Students Section */}
+        <div className="bg-white rounded-lg p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Estudiantes</h2>
+          
+          <div className="space-y-4 max-h-[600px] overflow-y-auto">
+            {/* Pending Requests */}
+            {pendingEnrollments.length > 0 && (
+              <div>
+                <h3 className="text-sm font-medium text-gray-700 mb-2">Pendientes ({pendingEnrollments.length})</h3>
+                <div className="space-y-2">
+                  {pendingEnrollments.map((enrollment) => (
+                    <div key={enrollment.id} className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center flex-shrink-0">
+                          <span className="text-white font-bold text-xs">
                             {enrollment.student.firstName.charAt(0)}{enrollment.student.lastName.charAt(0)}
                           </span>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-gray-900">
+                          <p className="font-medium text-gray-900 text-sm truncate">
                             {enrollment.student.firstName} {enrollment.student.lastName}
                           </p>
-                          <p className="text-sm text-gray-600 truncate">{enrollment.student.email}</p>
-                        </div>
-                        <div className="flex gap-2 flex-shrink-0">
-                          <button className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-white transition-colors font-medium">
-                            Rechazar
-                          </button>
-                          <button className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors font-medium">
-                            Aprobar
-                          </button>
+                          <p className="text-xs text-gray-600 truncate">{enrollment.student.email}</p>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Enrolled Students */}
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Estudiantes Inscritos</h2>
-                {classData.enrollments.filter(e => e.status === 'approved').length === 0 ? (
-                  <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
-                    <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                      </svg>
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay estudiantes inscritos</h3>
-                    <p className="text-gray-500">Los estudiantes aparecerán aquí una vez se inscriban en tu clase.</p>
-                  </div>
-                ) : (
-                  <div className="grid gap-3">
-                    {classData.enrollments.filter(e => e.status === 'approved').map((enrollment) => (
-                      <div key={enrollment.id} className="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4 hover:shadow-md hover:border-brand-300 transition-all">
-                        <div className="w-12 h-12 bg-gradient-to-br from-brand-500 to-brand-600 rounded-full flex items-center justify-center flex-shrink-0">
-                          <span className="text-white font-bold">
-                            {enrollment.student.firstName.charAt(0)}{enrollment.student.lastName.charAt(0)}
-                          </span>
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-900">
-                            {enrollment.student.firstName} {enrollment.student.lastName}
-                          </p>
-                          <p className="text-sm text-gray-600">{enrollment.student.email}</p>
-                        </div>
-                        <span className="text-sm text-gray-500">
-                          Desde {new Date(enrollment.enrolledAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Live Tab */}
-          {activeTab === 'live' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-900">Clases en Vivo</h2>
-                <button
-                  onClick={() => {/* create stream */}}
-                  disabled={creatingStream}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {creatingStream ? (
-                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                  ) : (
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-                    </span>
-                  )}
-                  {creatingStream ? 'Creando...' : 'Iniciar Stream'}
-                </button>
-              </div>
-
-              {liveClasses.length === 0 ? (
-                <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
-                  <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay streams programados</h3>
-                  <p className="text-gray-500 mb-6">Inicia una clase en vivo para conectar con tus estudiantes en tiempo real.</p>
-                  <button
-                    onClick={() => {/* create stream */}}
-                    disabled={creatingStream}
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium disabled:opacity-50"
-                  >
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-                    </span>
-                    Iniciar Stream Ahora
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {liveClasses.map((liveClass) => (
-                    <div key={liveClass.id} className={`rounded-xl p-5 ${
-                      liveClass.status === 'active' ? 'bg-red-500' : 'bg-yellow-500'
-                    } text-white`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <span className="relative flex h-3 w-3">
-                            {liveClass.status === 'active' && (
-                              <>
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
-                              </>
-                            )}
-                          </span>
-                          <div>
-                            <p className="font-bold text-lg">{liveClass.title}</p>
-                            <p className="text-white/90 text-sm">
-                              {liveClass.status === 'active' ? 'En vivo ahora' : 'Programado'}
-                            </p>
-                          </div>
-                        </div>
-                        <button className="px-4 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg font-medium transition-colors">
-                          Ver Detalles
+                      <div className="flex gap-2">
+                        <button className="flex-1 px-2 py-1.5 bg-orange-500 text-white rounded text-xs font-medium hover:bg-orange-600">
+                          Aprobar
+                        </button>
+                        <button className="flex-1 px-2 py-1.5 border border-gray-300 rounded text-xs font-medium text-gray-700 hover:bg-gray-50">
+                          Rechazar
                         </button>
                       </div>
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Enrolled Students */}
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 mb-2">
+                Inscritos ({classData.enrollments.filter(e => e.status === 'approved').length})
+              </h3>
+              {classData.enrollments.filter(e => e.status === 'approved').length === 0 ? (
+                <p className="text-sm text-gray-500 text-center py-8">No hay estudiantes inscritos</p>
+              ) : (
+                <div className="space-y-2">
+                  {classData.enrollments.filter(e => e.status === 'approved').map((enrollment) => (
+                    <div key={enrollment.id} className="border border-gray-200 rounded-lg p-3 hover:shadow-sm hover:border-brand-300 transition-all">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-gradient-to-br from-brand-500 to-brand-600 rounded-full flex items-center justify-center flex-shrink-0">
+                          <span className="text-white font-bold text-xs">
+                            {enrollment.student.firstName.charAt(0)}{enrollment.student.lastName.charAt(0)}
+                          </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-900 text-sm truncate">
+                            {enrollment.student.firstName} {enrollment.student.lastName}
+                          </p>
+                          <p className="text-xs text-gray-600 truncate">{enrollment.student.email}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>
