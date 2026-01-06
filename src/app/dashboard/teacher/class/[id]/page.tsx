@@ -157,28 +157,20 @@ export default function TeacherClassPage() {
   useEffect(() => {
     if (lessons.length === 0) return;
 
-    console.log('[Teacher URL Params] Processing - lessonParam:', lessonParam, 'watchVideoId:', watchVideoId);
-
     if (lessonParam) {
       loadLessonDetail(lessonParam).then(lesson => {
         if (lesson) {
-          console.log('[Teacher URL Params] Loaded lesson:', lesson.title, 'with', lesson.videos.length, 'videos');
           if (watchVideoId) {
             const video = lesson.videos.find((v: any) => v.id === watchVideoId);
             if (video) {
-              console.log('[Teacher URL Params] Setting selected video from URL:', video.title, 'ID:', video.id);
               setSelectedVideo(video);
-            } else {
-              console.warn('[Teacher URL Params] Video not found in lesson:', watchVideoId);
             }
           } else if (lesson.videos.length > 0) {
-            console.log('[Teacher URL Params] Auto-selecting first video:', lesson.videos[0].title);
             setSelectedVideo(lesson.videos[0]);
           }
         }
       });
     } else {
-      console.log('[Teacher URL Params] No lesson selected');
       setSelectedLesson(null);
       setSelectedVideo(null);
     }
@@ -198,9 +190,10 @@ export default function TeacherClassPage() {
       const response = await fetch('/api/live/history');
       const result = await response.json();
       if (result.success) {
-        // Filter streams that have recordings and belong to this class
+        // Filter streams that don't have valid lesson recordings yet and belong to this class
+        // validRecordingId is NULL if lesson doesn't exist or recordingId is NULL
         const recordingsForClass = result.data.filter((s: any) => 
-          s.recordingId && s.classId === classId && s.status === 'ended'
+          !s.validRecordingId && s.classId === classId && s.status === 'ended'
         );
         setAvailableStreamRecordings(recordingsForClass);
       }
@@ -570,7 +563,8 @@ export default function TeacherClassPage() {
           await loadData(); // Reload all data including lessons
           alert('¡Lección creada desde grabación de stream exitosamente!');
         } else {
-          alert(`Error: ${result.error}`);
+          console.error('[Create Lesson Error]', result);
+          alert(`Error: ${result.error || 'Unknown error'}`);
         }
       } catch (error) {
         console.error('Error creating lesson from stream:', error);
@@ -876,7 +870,7 @@ export default function TeacherClassPage() {
 
         {/* Selected Lesson View */}
         {selectedLesson && currentUser && (
-          <div className="space-y-0">
+          <div className="space-y-6">
             <div>
               <button onClick={goBackToLessons} className="text-sm text-gray-500 hover:text-gray-900 mb-2">
                 ← Volver a lecciones
@@ -1187,7 +1181,7 @@ export default function TeacherClassPage() {
                     
                     <div className="grid md:grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1.5">Multiplicador <span className="text-xs font-normal text-gray-500">(Los estudiantes pueden ver esto × duración del video)</span></label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1.5">Multiplicador <span className="text-xs font-normal text-gray-500">(El video podrá verse durante X veces su duración)</span></label>
                         <input type="number" min="1" max="10" step="0.5" value={lessonFormData.maxWatchTimeMultiplier} onChange={e => setLessonFormData({ ...lessonFormData, maxWatchTimeMultiplier: parseFloat(e.target.value) })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"/>
                       </div>
                       <div>
@@ -1241,25 +1235,28 @@ export default function TeacherClassPage() {
                         )}
                       </div>
                       
-                      {/* Stream Recording Selection - Side by side */}
-                      {availableStreamRecordings.length > 0 && (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1.5">O utiliza una grabación de stream</label>
-                          <select 
-                            value={lessonFormData.selectedStreamRecording}
-                            onChange={e => setLessonFormData({ ...lessonFormData, selectedStreamRecording: e.target.value })}
-                            className="w-full h-[38px] px-3 py-2 pr-10 border border-gray-200 rounded-lg text-sm bg-white appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20fill%3D%27none%27%20viewBox%3D%270%200%2020%2020%27%3E%3Cpath%20stroke%3D%27%236b7280%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%20stroke-width%3D%271.5%27%20d%3D%27M6%208l4%204%204-4%27%2F%3E%3C%2Fsvg%3E')] bg-[length:1.5em] bg-[right_0.5rem_center] bg-no-repeat"
-                            style={{ paddingRight: '2.5rem' }}
-                          >
-                            <option value="">-- Selecciona una grabación --</option>
-                            {availableStreamRecordings.map(recording => (
-                              <option key={recording.id} value={recording.id}>
-                                {recording.title} ({new Date(recording.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })})
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
+                      {/* Stream Recording Selection - Always visible */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1.5">O utiliza una grabación de stream</label>
+                        <select 
+                          value={lessonFormData.selectedStreamRecording}
+                          onChange={e => setLessonFormData({ ...lessonFormData, selectedStreamRecording: e.target.value })}
+                          className="w-full h-[38px] px-3 py-2 pr-10 border border-gray-200 rounded-lg text-sm bg-white appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20fill%3D%27none%27%20viewBox%3D%270%200%2020%2020%27%3E%3Cpath%20stroke%3D%27%236b7280%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%20stroke-width%3D%271.5%27%20d%3D%27M6%208l4%204%204-4%27%2F%3E%3C%2Fsvg%3E')] bg-[length:1.5em] bg-[right_0.5rem_center] bg-no-repeat"
+                          style={{ paddingRight: '2.5rem' }}
+                          disabled={availableStreamRecordings.length === 0}
+                        >
+                          <option value="">
+                            {availableStreamRecordings.length === 0 
+                              ? '-- No hay grabaciones disponibles --' 
+                              : '-- Selecciona una grabación --'}
+                          </option>
+                          {availableStreamRecordings.map(recording => (
+                            <option key={recording.id} value={recording.id}>
+                              {recording.title} ({new Date(recording.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                     
                     <div>

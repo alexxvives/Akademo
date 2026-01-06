@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import Hls from 'hls.js';
 import 'plyr/dist/plyr.css';
 
-// CSS to hide Plyr controls when video is locked + fullscreen fixes for vertical videos
+// CSS to hide Plyr controls when video is locked
 const hiddenControlsStyle = `
   .plyr-controls-hidden .plyr__controls,
   .plyr-controls-hidden .plyr__control--overlaid {
@@ -12,71 +12,6 @@ const hiddenControlsStyle = `
     opacity: 0 !important;
     visibility: hidden !important;
     pointer-events: none !important;
-  }
-  
-  /* CRITICAL: Force vertical videos to display without any zoom or crop in fullscreen */
-  /* Target ALL possible fullscreen states and video elements */
-  .plyr--fullscreen video,
-  .plyr--fullscreen-fallback video,
-  .plyr:fullscreen video,
-  .plyr:-webkit-full-screen video,
-  .plyr:-moz-full-screen video,
-  .plyr:-ms-fullscreen video,
-  [id^="video-container"] video,
-  .plyr video {
-    object-fit: contain !important;
-  }
-  
-  /* Override Plyr's default video wrapper sizing which can cause zoom */
-  .plyr--fullscreen .plyr__video-wrapper,
-  .plyr--fullscreen-fallback .plyr__video-wrapper,
-  .plyr:fullscreen .plyr__video-wrapper {
-    width: 100% !important;
-    height: 100% !important;
-    padding-bottom: 0 !important;
-    position: relative !important;
-  }
-  
-  /* Ensure the video inside wrapper also respects contain */
-  .plyr--fullscreen .plyr__video-wrapper video,
-  .plyr--fullscreen-fallback .plyr__video-wrapper video {
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: contain !important;
-    transform: none !important;
-  }
-  
-  /* Container fullscreen state */
-  .plyr--fullscreen,
-  .plyr--fullscreen-fallback {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    background: black !important;
-  }
-  
-  /* When the container itself is fullscreened (our custom fullscreen) */
-  [id^="video-container"]:fullscreen,
-  [id^="video-container"]:-webkit-full-screen,
-  [id^="video-container"]:-moz-full-screen {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    background: black !important;
-  }
-  
-  [id^="video-container"]:fullscreen video,
-  [id^="video-container"]:-webkit-full-screen video,
-  [id^="video-container"]:-moz-full-screen video {
-    object-fit: contain !important;
-    max-width: 100% !important;
-    max-height: 100% !important;
-    width: auto !important;
-    height: auto !important;
-    transform: none !important;
   }
 `;
 
@@ -331,7 +266,7 @@ export default function ProtectedVideoPlayer({
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const PlyrClass = (await import('plyr')).default || require('plyr');
       
-      // Initialize Plyr with custom controls - this is the professional approach
+      // Initialize Plyr with custom controls and ratio
       const plyr = new PlyrClass(video, {
         controls: [
           'play-large',
@@ -349,12 +284,11 @@ export default function ProtectedVideoPlayer({
         keyboard: { focused: true, global: false },
         tooltips: { controls: true, seek: true },
         captions: { active: false, update: true },
+        ratio: '16:9', // Force 16:9 aspect ratio for consistent dimensions
         fullscreen: {
           enabled: true,
           fallback: true,
           iosNative: false,
-          // This makes Plyr fullscreen the container, not just the video!
-          container: `#video-container-${videoId}`,
         },
         clickToPlay: true,
         disableContextMenu: true,
@@ -582,12 +516,11 @@ export default function ProtectedVideoPlayer({
         </div>
       )}
 
-      <div ref={containerRef} id={`video-container-${videoId}`} className={`relative bg-black ${isFullscreen ? 'w-screen h-screen' : ''}`}>
+      <div ref={containerRef} id={`video-container-${videoId}`} className="relative bg-black">
         {/* Video Element - Plyr adds custom controls */}
         <video
           ref={videoRef}
-          className={`w-full bg-black ${isFullscreen ? 'h-full object-contain' : 'aspect-video'}`}
-          style={{ transform: 'none' }}
+          className="w-full bg-black"
           disablePictureInPicture
           preload="auto"
           playsInline
@@ -618,18 +551,6 @@ export default function ProtectedVideoPlayer({
           AKADEMO
         </div>
 
-        {/* Time Remaining Indicator */}
-        {!isUnlimitedUser && watchTimeRemaining < Infinity && (
-          <div className={`absolute top-3 left-3 z-[9999] px-3 py-1.5 rounded-lg pointer-events-none ${
-            watchTimeRemaining < 60 ? 'bg-red-600 animate-pulse' : 
-            watchTimeRemaining < 300 ? 'bg-orange-600' : 'bg-black/70 backdrop-blur-sm'
-          }`}>
-            <span className="text-white text-sm font-mono">
-              ⏱ {formatTime(watchTimeRemaining)}
-            </span>
-          </div>
-        )}
-
         {/* Student Watermark - appears periodically */}
         {showWatermark && studentName && (
           <div className="absolute inset-0 flex items-center justify-center z-[9999] pointer-events-none animate-fade-in">
@@ -642,9 +563,9 @@ export default function ProtectedVideoPlayer({
           </div>
         )}
 
-        {/* Loading Indicator */}
+        {/* Loading Indicator - Full video size */}
         {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black z-40">
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-900 z-40">
             <div className="flex flex-col items-center gap-3">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
               <span className="text-white text-sm">Cargando video...</span>

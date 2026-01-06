@@ -235,7 +235,7 @@ function HomePageContent() {
               {/* Logo - Left */}
               <div className="flex items-center gap-2">
                 <img 
-                  src={isScrolled ? '/logo/akademo_logo_B.svg' : '/logo/akademo_logo_W.svg'} 
+                  src="/logo/AKADEMO_logo_OTHER.svg"
                   alt="AKADEMO" 
                   className="h-7 sm:h-9 w-auto transition-all"
                 />

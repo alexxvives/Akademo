@@ -5,9 +5,13 @@ import { enrollmentQueries, classQueries } from '@/lib/db';
 // POST: Student requests to join a class
 export async function POST(request: Request) {
   try {
+    console.log('[Student Request] Starting enrollment request');
     const session = await requireRole(['STUDENT']);
+    console.log('[Student Request] Session validated:', { userId: session.id, role: session.role });
+    
     const body = await request.json();
     const { classId } = body;
+    console.log('[Student Request] Received classId:', classId);
 
     if (!classId) {
       return errorResponse('Class ID is required');
@@ -31,17 +35,20 @@ export async function POST(request: Request) {
     }
 
     // Create enrollment request with PENDING status
+    console.log('[Student Request] Creating enrollment:', { classId, studentId: session.id });
     const enrollment = await enrollmentQueries.create({
       classId,
       studentId: session.id,
       status: 'PENDING',
     });
+    console.log('[Student Request] Enrollment created successfully:', enrollment);
 
     return Response.json(successResponse({
       message: 'Solicitud enviada correctamente',
       enrollment,
     }), { status: 201 });
   } catch (error) {
+    console.error('[Student Request] Error occurred:', error);
     return handleApiError(error);
   }
 }

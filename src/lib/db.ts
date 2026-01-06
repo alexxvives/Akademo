@@ -621,15 +621,16 @@ export const lessonQueries = {
         (SELECT COUNT(DISTINCT vps.studentId) FROM VideoPlayState vps 
          JOIN Video v ON vps.videoId = v.id 
          WHERE v.lessonId = l.id) as studentsWatching,
-        (SELECT AVG(
-          CASE 
-            WHEN v.durationSeconds > 0 AND l.maxWatchTimeMultiplier > 0 
-            THEN MIN(100.0, (vps.totalWatchTimeSeconds * 100.0) / (v.durationSeconds * l.maxWatchTimeMultiplier))
-            ELSE 0 
-          END
-        ) FROM VideoPlayState vps
-         JOIN Video v ON vps.videoId = v.id
-         WHERE v.lessonId = l.id AND vps.totalWatchTimeSeconds > 0) as avgProgress,
+        (SELECT COUNT(*) FROM ClassEnrollment 
+         WHERE classId = l.classId AND status = 'APPROVED') as totalStudentsInClass,
+        (SELECT CASE 
+          WHEN (SELECT COUNT(*) FROM ClassEnrollment WHERE classId = l.classId AND status = 'APPROVED') > 0
+          THEN (CAST((SELECT COUNT(DISTINCT vps.studentId) FROM VideoPlayState vps 
+                JOIN Video v ON vps.videoId = v.id 
+                WHERE v.lessonId = l.id) AS FLOAT) * 100.0) / 
+               (SELECT COUNT(*) FROM ClassEnrollment WHERE classId = l.classId AND status = 'APPROVED')
+          ELSE 0 
+         END) as avgProgress,
         (SELECT CASE 
           WHEN EXISTS(SELECT 1 FROM Video v2 JOIN Upload u ON v2.uploadId = u.id 
                       WHERE v2.lessonId = l.id AND u.storageType = 'bunny' AND (u.bunnyStatus IS NULL OR u.bunnyStatus < 4))
@@ -689,7 +690,7 @@ export const lessonQueries = {
     };
   },
 
-  async create(data: { title: string; description?: string; classId: string; releaseDate?: string; maxWatchTimeMultiplier?: number; watermarkIntervalMins?: number }) {
+  async create(data: { title: string; description?: string | null; classId: string; releaseDate?: string; maxWatchTimeMultiplier?: number; watermarkIntervalMins?: number }) {
     const db = await getDB();
     const id = generateId();
     const now = new Date().toISOString();
@@ -697,7 +698,7 @@ export const lessonQueries = {
     await db.prepare(`
       INSERT INTO Lesson (id, title, description, classId, releaseDate, maxWatchTimeMultiplier, watermarkIntervalMins, createdAt, updatedAt)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(id, data.title, data.description || null, data.classId, releaseDate, data.maxWatchTimeMultiplier || 2.0, data.watermarkIntervalMins || 5, now, now).run();
+    `).bind(id, data.title, data.description !== undefined ? data.description : null, data.classId, releaseDate, data.maxWatchTimeMultiplier || 2.0, data.watermarkIntervalMins || 5, now, now).run();
     return { id, ...data, releaseDate, createdAt: now, updatedAt: now };
   },
 

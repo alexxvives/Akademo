@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     // Create the lesson
     const lesson = await lessonQueries.create({
       title: title || new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }),
-      description: description || undefined,
+      description: description || null,
       classId,
       releaseDate: releaseDate || new Date().toISOString(),
       maxWatchTimeMultiplier,
@@ -83,7 +83,7 @@ export async function POST(request: Request) {
         title: video.title || video.fileName,
         lessonId: lesson.id,
         uploadId: upload.id,
-        durationSeconds: video.durationSeconds || undefined,
+        durationSeconds: video.durationSeconds || null,
       });
       
       createdVideos.push({ ...videoRecord, upload });

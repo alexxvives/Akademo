@@ -157,10 +157,35 @@ export async function POST(request: Request) {
 
 export async function GET(request: Request) {
   try {
-    const session = await requireRole(['ADMIN', 'TEACHER', 'STUDENT']);
+    const session = await requireRole(['ADMIN', 'TEACHER', 'STUDENT', 'ACADEMY']);
     const { searchParams } = new URL(request.url);
     const classId = searchParams.get('classId');
     const checkTranscoding = searchParams.get('checkTranscoding') === 'true';
+
+    // Academy role: get all lessons from all classes in their academy
+    if (session.role === 'ACADEMY' && !classId) {
+      const db = await getDB();
+      const lessons = await db.prepare(`
+        SELECT 
+          l.id,
+          l.title,
+          l.description,
+          l.classId,
+          c.name as className,
+          c.teacherId,
+          u.firstName || ' ' || u.lastName as teacherName,
+          l.releaseDate,
+          l.createdAt
+        FROM Lesson l
+        JOIN Class c ON l.classId = c.id
+        JOIN Teacher t ON c.academyId = t.academyId
+        JOIN User u ON c.teacherId = u.id
+        WHERE t.userId = ?
+        ORDER BY l.createdAt DESC
+      `).bind(session.id).all();
+      
+      return Response.json({ success: true, data: lessons.results || [] });
+    }
 
     if (!classId) {
       return errorResponse('Class ID required');

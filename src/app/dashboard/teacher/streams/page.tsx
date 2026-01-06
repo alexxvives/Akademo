@@ -28,6 +28,7 @@ export default function StreamsPage() {
   const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
   const [editingTitleValue, setEditingTitleValue] = useState<string>('');
   const [fetchingParticipantsId, setFetchingParticipantsId] = useState<string | null>(null);
+  const [fetchingRecordingId, setFetchingRecordingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -128,6 +129,33 @@ export default function StreamsPage() {
       alert('Error al obtener participantes');
     } finally {
       setFetchingParticipantsId(null);
+    }
+  };
+
+  const handleFetchRecording = async (streamId: string) => {
+    if (!confirm('¿Obtener grabación de Zoom para este stream?')) return;
+    
+    setFetchingRecordingId(streamId);
+    try {
+      const response = await fetch('/api/zoom/recording', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ streamId }),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        loadStreams();
+        alert(result.data.message || 'Grabación obtenida exitosamente');
+      } else {
+        alert(`Error: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error fetching recording:', error);
+      alert('Error al obtener grabación');
+    } finally {
+      setFetchingRecordingId(null);
     }
   };
 
@@ -384,6 +412,9 @@ export default function StreamsPage() {
                   <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Grabación
                   </th>
+                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Lección
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -450,23 +481,7 @@ export default function StreamsPage() {
                         ) : stream.participantsFetchedAt ? (
                           <span className="text-sm text-gray-400">0</span>
                         ) : stream.status === 'ended' ? (
-                          fetchingParticipantsId === stream.id ? (
-                            <div className="flex items-center gap-2">
-                              <span className="w-4 h-4 border-2 border-brand-600/30 border-t-brand-600 rounded-full animate-spin" />
-                              <span className="text-xs text-gray-400">Obteniendo...</span>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => handleFetchParticipants(stream.id)}
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-brand-600 bg-brand-50 rounded-lg hover:bg-brand-100 transition-colors"
-                              title="Obtener participantes de Zoom"
-                            >
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                              </svg>
-                              Obtener
-                            </button>
-                          )
+                          <span className="text-xs text-gray-500">Procesando...</span>
                         ) : (
                           <span className="text-sm text-gray-400">—</span>
                         )}
@@ -493,26 +508,32 @@ export default function StreamsPage() {
                         </span>
                       ) : stream.status === 'active' || stream.status === 'scheduled' ? (
                         <span className="text-gray-400 text-sm">En progreso</span>
-                      ) : uploadingStreamId === stream.id ? (
-                        <div className="flex items-center gap-2">
-                          <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-brand-500 transition-all duration-300"
-                              style={{ width: `${uploadProgress}%` }}
-                            />
-                          </div>
-                          <span className="text-xs text-gray-500">{uploadProgress}%</span>
-                        </div>
-                      ) : (
+                      ) : stream.status === 'ended' && stream.zoomMeetingId ? (
                         <button
-                          onClick={() => handleUploadClick(stream.id)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-brand-600 bg-brand-50 rounded-lg hover:bg-brand-100 transition-colors"
+                          onClick={() => handleFetchRecording(stream.id)}
+                          disabled={fetchingRecordingId === stream.id}
+                          className="text-brand-600 hover:text-brand-700 text-xs font-medium disabled:opacity-50"
+                        >
+                          {fetchingRecordingId === stream.id ? 'Obteniendo...' : 'Obtener'}
+                        </button>
+                      ) : (
+                        <span className="text-xs text-gray-500">No disponible</span>
+                      )}
+                    </td>
+                    <td className="py-4 px-4">
+                      {(stream as any).validRecordingId ? (
+                        <Link
+                          href={`/dashboard/teacher/class/${stream.classSlug || stream.classId}?lesson=${(stream as any).validRecordingId}`}
+                          className="inline-flex items-center gap-1 text-brand-600 hover:text-brand-700 text-sm font-medium transition-colors"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                           </svg>
-                          Subir Grabación
-                        </button>
+                          Ver lección
+                        </Link>
+                      ) : (
+                        <span className="text-gray-400 text-sm">—</span>
                       )}
                     </td>
                   </tr>

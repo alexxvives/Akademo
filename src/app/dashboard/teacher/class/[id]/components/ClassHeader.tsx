@@ -34,21 +34,21 @@ export default function ClassHeader({
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <div className="flex items-center gap-4 flex-wrap mb-2">
-            <h1 className="text-4xl font-bold text-gray-900">{classData.name}</h1>
+            <h1 className="text-2xl font-semibold text-gray-900">{classData.name}</h1>
             {/* Stats moved inline with title as requested */}
             <div className="flex items-center gap-3 text-sm">
-              <div className="px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-1.5">
+              <div className="px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-1.5">
                 <span className="font-semibold text-blue-900">{lessonsCount}</span>
                 <span className="text-blue-700">lecciones</span>
               </div>
-              <div className="px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg flex items-center gap-1.5">
+              <div className="px-2.5 py-1 bg-green-50 border border-green-200 rounded-lg flex items-center gap-1.5">
                 <span className="font-semibold text-green-900">{approvedCount}</span>
                 <span className="text-green-700">estudiantes</span>
               </div>
               {pendingCount > 0 && (
                 <button
                   onClick={onTogglePendingRequests}
-                  className="px-3 py-1.5 bg-red-50 border border-red-200 rounded-lg flex items-center gap-1.5 hover:bg-red-100 transition-colors"
+                  className="px-2.5 py-1 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-1.5 hover:bg-yellow-100 transition-colors"
                 >
                   <span className="font-semibold text-red-900">{pendingCount}</span>
                   <span className="text-red-700">solicitud{pendingCount !== 1 ? 'es' : ''}</span>

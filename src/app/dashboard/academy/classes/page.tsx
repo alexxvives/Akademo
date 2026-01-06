@@ -142,8 +142,8 @@ export default function AcademyClassesPage() {
 
   return (
     <>
-      <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">Clases</h1>
             <p className="text-gray-600 text-sm mt-1">Gestiona todas las clases de tu academia</p>
