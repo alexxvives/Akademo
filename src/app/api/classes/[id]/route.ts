@@ -52,7 +52,7 @@ export async function GET(
       // Academy owners can only access classes in their academies
       const db = await (await import('@/lib/db')).getDB();
       const ownsAcademy = await db
-        .prepare('SELECT 1 FROM Teacher WHERE userId = ? AND academyId = ?')
+        .prepare('SELECT 1 FROM Academy WHERE ownerId = ? AND id = ?')
         .bind(session.id, classData.academyId)
         .first();
 
@@ -131,10 +131,10 @@ export async function PUT(
       return errorResponse('Class not found', 404);
     }
 
-    // Verify the academy owns this class (via Teacher table)
+    // Verify the academy owns this class
     if (session.role === 'ACADEMY') {
       const ownsAcademy = await db
-        .prepare('SELECT 1 FROM Teacher WHERE userId = ? AND academyId = ?')
+        .prepare('SELECT 1 FROM Academy WHERE ownerId = ? AND id = ?')
         .bind(session.id, classData.academyId)
         .first();
 

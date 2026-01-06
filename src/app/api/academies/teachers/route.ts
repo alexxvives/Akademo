@@ -7,15 +7,15 @@ export async function GET(request: Request) {
     const session = await requireRole(['ACADEMY', 'ADMIN']);
     const db = await getDB();
 
-    // Get all academies owned by this user (academies where user is a teacher)
+    // Get all academies owned by this user
     let academyIds: string[] = [];
     
     if (session.role === 'ACADEMY') {
       const academies = await db
-        .prepare('SELECT DISTINCT academyId FROM Teacher WHERE userId = ?')
+        .prepare('SELECT id FROM Academy WHERE ownerId = ?')
         .bind(session.id)
         .all();
-      academyIds = (academies.results || []).map((a: any) => a.academyId);
+      academyIds = (academies.results || []).map((a: any) => a.id);
     }
 
     if (academyIds.length === 0 && session.role !== 'ADMIN') {

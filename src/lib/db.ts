@@ -83,12 +83,11 @@ export const academyQueries = {
 
   async findByOwner(ownerId: string) {
     const db = await getDB();
-    // Find academies where the user is a teacher
+    // Find academies where the user is the owner
     const result = await db.prepare(`
-      SELECT DISTINCT a.* FROM Academy a
-      JOIN Teacher t ON t.academyId = a.id
-      WHERE t.userId = ?
-      ORDER BY a.createdAt DESC
+      SELECT * FROM Academy
+      WHERE ownerId = ?
+      ORDER BY createdAt DESC
     `).bind(ownerId).all();
     return result.results || [];
   },
@@ -114,15 +113,13 @@ export const academyQueries = {
     const db = await getDB();
     const academy = await db.prepare('SELECT * FROM Academy WHERE id = ?').bind(id).first() as any;
     if (!academy) return null;
-    // Find first teacher as "owner" for backwards compatibility
-    const teacher = await db.prepare(`
-      SELECT u.id, u.email, u.firstName, u.lastName 
-      FROM Teacher t 
-      JOIN User u ON t.userId = u.id 
-      WHERE t.academyId = ? 
-      LIMIT 1
-    `).bind(id).first();
-    return { ...academy, owner: teacher };
+    // Get the academy owner from the ownerId field
+    const owner = academy.ownerId ? await db.prepare(`
+      SELECT id, email, firstName, lastName 
+      FROM User 
+      WHERE id = ?
+    `).bind(academy.ownerId).first() : null;
+    return { ...academy, owner };
   },
 
   async findAllWithCounts() {

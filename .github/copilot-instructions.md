@@ -150,19 +150,59 @@ return errorResponse(`Teacher ${session.id} not found in academy ${classRecord.a
 - Session.id = User.id (base64 encoded in cookie)
 - Roles: ADMIN, ACADEMY, TEACHER, STUDENT
 
-**Permissions Model**:
-- Teachers can access classes in their academy (Teacher.academyId = Class.academyId)
-- Academy owner check: Academy.ownerId = session.id
-- Enrollments visible to: class teacher, student enrolled, admins
+**Permissions Model - CRITICAL**:
+
+1. **ACADEMY role** (Academy Owners):
+   - Identified by: `Academy.ownerId = session.id`
+   - Query pattern: `SELECT * FROM Academy WHERE ownerId = ?`
+   - NEVER use Teacher table for ACADEMY role users!
+   - Can manage all classes, teachers, students in their academy
+
+2. **TEACHER role** (Teachers):
+   - Identified by: `Teacher.userId = session.id`
+   - Query pattern: `SELECT * FROM Class WHERE teacherId = ?`
+   - Teacher table links teachers to academies they work in
+   - Can only manage classes they are assigned to
+
+3. **STUDENT role** (Students):
+   - Identified by: `ClassEnrollment.userId = session.id`
+   - Query pattern: `SELECT * FROM ClassEnrollment WHERE userId = ? AND status = 'APPROVED'`
+   - Can only access classes they are enrolled in
+
+**Common Permission Query Mistakes**:
+```typescript
+// ❌ WRONG - Academy owners are NOT in Teacher table
+const teacher = await db.prepare('SELECT * FROM Teacher WHERE userId = ?').bind(session.id);
+
+// ✅ CORRECT - Check Academy.ownerId for ACADEMY role
+if (session.role === 'ACADEMY') {
+  const academy = await db.prepare('SELECT * FROM Academy WHERE ownerId = ?').bind(session.id);
+}
+```
 
 **Live Streaming**:
 - Bunny Stream for video hosting
-- Firebase Realtime Database for chat and viewer presence (NOT for participant counting)
-- LiveStream table for recording metadata
-- Zoom integration for actual participant counts (fetched via Zoom API after meeting ends)
-- **IMPORTANT**: Participant tracking uses Zoom's "meeting:read:list_past_participants:admin" scope
-- Zoom webhooks trigger after meeting ends, but setTimeout doesn't work in Cloudflare Workers
-- Manual "Obtener" button in UI triggers `/api/zoom/participants` to fetch from Zoom API
+- Firebase Realtime Database for chat and viewer presence
+- LiveStream table stores Zoom meeting details
+- `recordingId` field stores Bunny GUID (set by Zoom webhook)
+- Zoom webhook automatically handles recordings and participant counts
+- No manual "Obtener" button needed - everything is automatic
+
+## Database Quick Reference
+
+**14 Tables**: User, Academy, Teacher, Class, ClassEnrollment, Lesson, Video, Document, Upload, LiveStream, LessonRating, VideoPlayState, Notification, DeviceSession
+
+**Key Relationships**:
+- `Academy.ownerId` → User.id (ACADEMY role) - WHO OWNS the academy
+- `Teacher.userId` → User.id (TEACHER role) - Teachers WORKING in an academy
+- `Class.teacherId` → User.id - Teacher ASSIGNED to a class
+- `ClassEnrollment.userId` → User.id (STUDENT role) - Student enrolled in class
+- `Upload.bunnyGuid` → Bunny Stream video GUID (for videos)
+
+**Table Does NOT Exist**:
+- ~~AcademyMembership~~ - Replaced by Teacher table
+- ~~PlatformSettings~~ - Removed
+- ~~BillingConfig~~ - Removed
 
 ## General Best Practices
 

@@ -1,219 +1,360 @@
 # AKADEMO Database Schema
 
 ## Overview
-Database: **Cloudflare D1** (SQLite-based)
-Purpose: Academy management platform with video protection and multi-tenant architecture
+- **Database**: Cloudflare D1 (SQLite-based)
+- **ID**: `65c2951c-acf6-4c1d-8810-4c3d6be18767`
+- **Name**: `akademo-db`
+- **Last Updated**: January 2026
 
 ---
 
-## Core Tables (Essential - Keep)
+## Core Tables (14 tables)
 
 ### 1. **User**
-- **Purpose**: Stores all users (admins, academy owners, teachers, students)
-- **Status**: ✅ KEEP - Core table
-- **Columns**:
-  - `id` - Unique user identifier
-  - `email` - Login email (unique)
-  - `password` - Bcrypt hashed password
-  - `firstName`, `lastName` - User name
-  - `role` - ADMIN | ACADEMY | TEACHER | STUDENT
-  - `createdAt`, `updatedAt` - Timestamps
+Central user table for all roles.
+
+| Column | Type | Nullable | Default | Notes |
+|--------|------|----------|---------|-------|
+| id | TEXT | NO | - | PK |
+| email | TEXT | NO | - | UNIQUE |
+| password | TEXT | NO | - | Bcrypt hashed |
+| firstName | TEXT | NO | - | |
+| lastName | TEXT | NO | - | |
+| role | TEXT | NO | 'STUDENT' | ADMIN, ACADEMY, TEACHER, STUDENT |
+| createdAt | TEXT | NO | datetime('now') | |
+| updatedAt | TEXT | NO | datetime('now') | |
+
+**Roles:**
+- `ADMIN` - Platform administrator
+- `ACADEMY` - Academy owner (can create academies, manage classes)
+- `TEACHER` - Works within an academy (assigned to classes)
+- `STUDENT` - Enrolls in classes
+
+---
 
 ### 2. **Academy**
-- **Purpose**: Represents individual academy institutions
-- **Status**: ✅ KEEP - Core table
-- **Columns**:
-  - `id` - Academy identifier
-  - `name`, `description` - Academy details
-  - `ownerId` - References User (ACADEMY role)
-  - `defaultMaxWatchTimeMultiplier` - Video watch time limit
-  - `createdAt`, `updatedAt` - Timestamps
+Educational institutions.
 
-### 3. **AcademyMembership**
-- **Purpose**: Links teachers to academies (with approval workflow)
-- **Status**: ✅ KEEP - Required for teacher-academy relationships
-- **Columns**:
-  - `id` - Membership identifier
-  - `userId` - References User (teacher)
-  - `academyId` - References Academy
-  - `status` - PENDING | APPROVED | REJECTED
-  - `requestedAt`, `approvedAt` - Approval timestamps
-  - `createdAt`, `updatedAt` - Timestamps
-- **Note**: Does NOT have a `role` column (role is determined by User.role)
+| Column | Type | Nullable | Default | Notes |
+|--------|------|----------|---------|-------|
+| id | TEXT | YES | - | PK |
+| name | TEXT | NO | - | |
+| createdAt | TEXT | NO | - | |
+| updatedAt | TEXT | NO | - | |
+| description | TEXT | YES | - | |
+| ownerId | TEXT | YES | - | FK → User.id (ACADEMY role) |
+
+**Important**: `ownerId` links to a user with role=ACADEMY. This is how we identify who owns an academy.
+
+---
+
+### 3. **Teacher**
+Links teachers (TEACHER role users) to academies they work in.
+
+| Column | Type | Nullable | Default | Notes |
+|--------|------|----------|---------|-------|
+| id | TEXT | YES | - | PK |
+| userId | TEXT | NO | - | FK → User.id (TEACHER role) |
+| academyId | TEXT | NO | - | FK → Academy.id |
+| defaultMaxWatchTimeMultiplier | REAL | YES | 2.0 | |
+| createdAt | TEXT | NO | - | |
+| updatedAt | TEXT | NO | - | |
+
+**Important**: This table is for TEACHER role users only. Academy owners are identified via `Academy.ownerId`, NOT via this table.
+
+---
 
 ### 4. **Class**
-- **Purpose**: Courses/classes within an academy
-- **Status**: ✅ KEEP - Core table
-- **Columns**:
-  - `id` - Class identifier
-  - `name`, `description` - Class details
-  - `academyId` - References Academy
-  - `defaultMaxWatchTimeMultiplier` - Override for video limits
-  - `createdAt`, `updatedAt` - Timestamps
+Courses within an academy.
+
+| Column | Type | Nullable | Default | Notes |
+|--------|------|----------|---------|-------|
+| id | TEXT | YES | - | PK |
+| name | TEXT | NO | - | |
+| slug | TEXT | YES | - | UNIQUE, URL-friendly |
+| description | TEXT | YES | - | |
+| academyId | TEXT | NO | - | FK → Academy.id |
+| teacherId | TEXT | YES | - | FK → User.id (the assigned teacher) |
+| createdAt | TEXT | NO | - | |
+| updatedAt | TEXT | NO | - | |
+
+---
 
 ### 5. **ClassEnrollment**
-- **Purpose**: Links students to classes (with approval workflow)
-- **Status**: ✅ KEEP - Required for student-class relationships
-- **Columns**:
-  - `id` - Enrollment identifier
-  - `classId` - References Class
-  - `studentId` - References User (student)
-  - `status` - PENDING | APPROVED | REJECTED
-  - `requestedAt`, `approvedAt` - Approval timestamps
-  - `enrolledAt` - When student joined
-  - `createdAt`, `updatedAt` - Timestamps
+Student enrollment in classes.
 
-### 6. **Upload**
-- **Purpose**: Metadata for files stored in R2 (videos, documents)
-- **Status**: ✅ KEEP - Essential for content storage
-- **Columns**:
-  - `id` - Upload identifier
-  - `fileName`, `fileSize`, `mimeType` - File metadata
-  - `storagePath` - R2 object key (always R2 storage)
-  - `uploadedById` - References User
-  - `createdAt` - Timestamp
-- **Note**: Removed `storageType` column (always 'r2')
+| Column | Type | Nullable | Default | Notes |
+|--------|------|----------|---------|-------|
+| id | TEXT | YES | - | PK |
+| classId | TEXT | NO | - | FK → Class.id |
+| userId | TEXT | NO | - | FK → User.id (student) |
+| status | TEXT | YES | 'PENDING' | PENDING, APPROVED, REJECTED |
+| enrolledAt | TEXT | NO | - | When enrollment was requested |
+| approvedAt | TEXT | YES | - | When approved |
+| createdAt | TEXT | NO | - | |
+| updatedAt | TEXT | NO | - | |
+
+**UNIQUE constraint**: (classId, userId)
+
+---
+
+### 6. **Lesson**
+Content units within a class.
+
+| Column | Type | Nullable | Default | Notes |
+|--------|------|----------|---------|-------|
+| id | TEXT | NO | - | PK |
+| title | TEXT | NO | - | |
+| description | TEXT | YES | - | |
+| classId | TEXT | NO | - | FK → Class.id |
+| maxWatchTimeMultiplier | REAL | NO | 2.0 | Watch time limit |
+| watermarkIntervalMins | INTEGER | NO | 5 | Watermark frequency |
+| createdAt | TEXT | NO | datetime('now') | |
+| updatedAt | TEXT | NO | datetime('now') | |
+| releaseDate | TEXT | YES | CURRENT_TIMESTAMP | When lesson becomes available |
+
+---
 
 ### 7. **Video**
-- **Purpose**: Video content in lessons
-- **Status**: ✅ KEEP - Core feature
-- **Columns**:
-  - `id` - Video identifier
-  - `title`, `description` - Video details (now used in upload form)
-  - `lessonId` - References Lesson
-  - `uploadId` - References Upload (one-to-one)
-  - `durationSeconds` - Video length
-  - `createdAt`, `updatedAt` - Timestamps
-- **Note**: Removed `maxWatchTimeMultiplier` (now only at Lesson level)
+Video content linked to lessons.
+
+| Column | Type | Nullable | Default | Notes |
+|--------|------|----------|---------|-------|
+| id | TEXT | NO | - | PK |
+| title | TEXT | NO | - | |
+| lessonId | TEXT | NO | - | FK → Lesson.id |
+| uploadId | TEXT | NO | - | FK → Upload.id |
+| durationSeconds | INTEGER | YES | - | Video length |
+| createdAt | TEXT | NO | datetime('now') | |
+| updatedAt | TEXT | NO | datetime('now') | |
+
+---
 
 ### 8. **Document**
-- **Purpose**: Document files in lessons (PDFs, etc.)
-- **Status**: ✅ KEEP - Core feature
-- **Columns**:
-  - `id` - Document identifier
-  - `title`, `description` - Document details
-  - `lessonId` - References Lesson
-  - `uploadId` - References Upload (one-to-one)
-  - `createdAt`, `updatedAt` - Timestamps
+Document files linked to lessons.
+
+| Column | Type | Nullable | Default | Notes |
+|--------|------|----------|---------|-------|
+| id | TEXT | NO | - | PK |
+| title | TEXT | NO | - | |
+| lessonId | TEXT | NO | - | FK → Lesson.id |
+| uploadId | TEXT | NO | - | FK → Upload.id |
+| createdAt | TEXT | NO | datetime('now') | |
+| updatedAt | TEXT | NO | datetime('now') | |
 
 ---
 
-## Anti-Piracy Tables (Essential - Keep)
+### 9. **Upload**
+Generic file storage metadata (for R2 or Bunny Stream).
 
-### 9. **VideoPlayState**
-- **Purpose**: Tracks student video viewing progress and watch time
-- **Status**: ✅ KEEP - Critical for anti-piracy and watch limits
-- **Columns**:
-  - `id` - State identifier
-  - `videoId` - References Video
-  - `studentId` - References User
-  - `totalWatchTimeSeconds` - Cumulative watch time
-  - `lastPositionSeconds` - Resume position
-  - `sessionStartTime` - Current session start
-  - `lastWatchedAt` - Last activity
-  - `createdAt`, `updatedAt` - Timestamps
-- **Use**: Prevents students from exceeding watch time limits (e.g., 2x video duration)
+| Column | Type | Nullable | Default | Notes |
+|--------|------|----------|---------|-------|
+| id | TEXT | NO | - | PK |
+| fileName | TEXT | NO | - | Original filename |
+| fileSize | INTEGER | NO | - | Size in bytes |
+| mimeType | TEXT | NO | - | MIME type |
+| storagePath | TEXT | NO | - | R2 key or Bunny path |
+| uploadedById | TEXT | NO | - | FK → User.id |
+| createdAt | TEXT | NO | datetime('now') | |
+| bunnyGuid | TEXT | YES | - | Bunny Stream video GUID |
+| bunnyStatus | INTEGER | YES | NULL | 0-5 Bunny transcoding status |
+| storageType | TEXT | YES | 'r2' | 'r2' or 'bunny' |
 
-### 10. **DeviceSession**
-- **Purpose**: Tracks active devices per user (single-session enforcement)
-- **Status**: ✅ KEEP - Critical for preventing account sharing
-- **Columns**:
-  - `id` - Session identifier
-  - `userId` - References User
-  - `deviceFingerprint` - Unique device ID
-  - `userAgent`, `browser`, `os` - Device info
-  - `ipHash` - Hashed IP for anomaly detection
-  - `isActive` - Whether session is active (1/0)
-  - `lastActiveAt` - Last ping time
-  - `createdAt` - Session creation
-- **Use**: Only ONE active session per student at a time
+**Bunny Status Codes**: 0=Queued, 1=Processing, 2=Encoding, 3=Finished, 4=Resolution finished, 5=Failed
 
 ---
 
-## Configuration Tables (Keep But Optional)
+### 10. **LiveStream**
+Zoom live class sessions.
 
-### 11. **PlatformSettings**
-- **Purpose**: Global platform configuration
-- **Status**: ⚠️ KEEP - Useful but could be environment variables
-- **Columns**:
-  - `id` - Always 'platform_settings'
-  - `defaultMaxWatchTimeMultiplier` - Default 2.0 (200% of video length)
-  - `createdAt`, `updatedAt` - Timestamps
-- **Recommendation**: Keep for now, can move to config file later
-
-### 12. **BillingConfig**
-- **Purpose**: Stripe billing configuration per academy
-- **Status**: ⚠️ OPTIONAL - Not currently implemented
-- **Columns**:
-  - `id` - Config identifier
-  - `academyId` - References Academy
-  - `stripeCustomerId`, `stripeSubscriptionId`, `stripePriceId` - Stripe IDs
-  - `pricePerStudentPerMonth` - Pricing
-  - `createdAt`, `updatedAt` - Timestamps
-- **Recommendation**: Keep for future billing feature, but not critical now
-
----
-
-## Database Cleanup Recommendations
-
-### ✅ Keep All Tables
-All tables are currently being used or planned for essential features. No cleanup needed.
-
-### 🔧 Required Fixes Applied
-1. **Fixed**: Removed non-existent `role` column from AcademyMembership INSERT query
-   - File: `src/app/api/requests/teacher/route.ts`
-   - Issue: Tried to insert `role='TEACHER'` but column doesn't exist
-   - Solution: Role is already stored in User table, no need to duplicate
-
-### 📊 Table Usage Summary
-- **Active Users**: 12 tables in use
-- **Critical for Core Features**: 10 tables (User through Document)
-- **Critical for Anti-Piracy**: 2 tables (VideoPlayState, DeviceSession)
-- **Optional/Future**: 2 tables (PlatformSettings, BillingConfig)
-
-### 🎯 Performance Indexes
-All necessary indexes are in place for:
-- User lookups by email
-- Academy ownership queries
-- Membership and enrollment queries
-- Video and class associations
-- Session tracking
+| Column | Type | Nullable | Default | Notes |
+|--------|------|----------|---------|-------|
+| id | TEXT | YES | - | PK |
+| classId | TEXT | NO | - | FK → Class.id |
+| teacherId | TEXT | NO | - | FK → User.id |
+| roomName | TEXT | NO | - | Display name |
+| roomUrl | TEXT | NO | - | Zoom join URL |
+| status | TEXT | NO | 'PENDING' | PENDING, LIVE, ENDED |
+| title | TEXT | YES | - | Stream title |
+| startedAt | DATETIME | YES | - | When stream started |
+| endedAt | DATETIME | YES | - | When stream ended |
+| recordingId | TEXT | YES | - | Bunny video GUID for recording |
+| createdAt | DATETIME | NO | CURRENT_TIMESTAMP | |
+| zoomLink | TEXT | YES | - | Zoom join URL |
+| zoomMeetingId | TEXT | YES | - | Zoom meeting ID |
+| zoomStartUrl | TEXT | YES | - | Zoom host start URL |
+| participantCount | INTEGER | YES | - | Number of participants |
+| participantsFetchedAt | TEXT | YES | - | When participants were fetched |
+| participantsData | TEXT | YES | - | JSON participant details |
 
 ---
 
-## Data Flow Example
+### 11. **LessonRating**
+Student ratings for lessons.
 
-1. **Academy Owner** creates Academy
-2. **Teacher** requests to join Academy → AcademyMembership (PENDING)
-3. **Academy Owner** approves → AcademyMembership (APPROVED)
-4. **Teacher** creates Class in Academy
-5. **Student** requests to enroll → ClassEnrollment (PENDING)
-6. **Teacher** approves → ClassEnrollment (APPROVED)
-7. **Teacher** uploads Video → Upload + Video records
-8. **Student** watches Video → VideoPlayState tracks time
-9. **System** enforces single device → DeviceSession management
-
----
-
-## Migration Status
-- ✅ 0001_initial.sql - All tables created
-- ✅ 0002_approval_system.sql - Added status columns
-- ✅ 0003_seed_users.sql - Test users and academies
-- ✅ 0006_cleanup_schema.sql - Removed PlatformSettings, BillingConfig, Upload.storageType
-
-**Database is clean and properly structured.**
+| Column | Type | Nullable | Default | Notes |
+|--------|------|----------|---------|-------|
+| id | TEXT | YES | - | PK |
+| lessonId | TEXT | NO | - | FK → Lesson.id |
+| studentId | TEXT | NO | - | FK → User.id |
+| rating | INTEGER | NO | - | 1-5 stars |
+| createdAt | TEXT | NO | datetime('now') | |
+| updatedAt | TEXT | NO | datetime('now') | |
 
 ---
 
-## Schema Cleanup Notes (Dec 2025)
+### 12. **VideoPlayState**
+Tracks student video watching progress (anti-piracy).
 
-**Removed:**
-- ❌ **PlatformSettings** table - Redundant (defaults set at Academy/Class/Lesson levels)
-- ❌ **BillingConfig** table - Not implemented yet, removed for clarity
-- ❌ **Upload.storageType** column - Always 'r2', no longer needed
+| Column | Type | Nullable | Default | Notes |
+|--------|------|----------|---------|-------|
+| id | TEXT | NO | - | PK |
+| videoId | TEXT | NO | - | FK → Video.id |
+| studentId | TEXT | NO | - | FK → User.id |
+| totalWatchTimeSeconds | REAL | NO | 0 | Cumulative watch time |
+| lastPositionSeconds | REAL | NO | 0 | Resume position |
+| sessionStartTime | TEXT | YES | - | Current session start |
+| lastWatchedAt | TEXT | YES | - | Last activity |
+| createdAt | TEXT | NO | datetime('now') | |
+| updatedAt | TEXT | NO | datetime('now') | |
+| status | TEXT | NO | 'ACTIVE' | ACTIVE, COMPLETED, BLOCKED |
 
-**Schema Logic - Why This Structure?**
-- **Upload** = Generic file storage metadata (reusable)
-- **Video/Document** = Content-type specific data + title/description
-- **Lesson** = Groups videos & documents with settings (maxWatchTimeMultiplier, watermarkIntervalMins)
-- **Class** → **Lesson** → **Video/Document** → **Upload** = Clean hierarchy
+---
+
+### 13. **Notification**
+User notifications.
+
+| Column | Type | Nullable | Default | Notes |
+|--------|------|----------|---------|-------|
+| id | TEXT | YES | - | PK |
+| userId | TEXT | NO | - | FK → User.id |
+| type | TEXT | NO | 'live_class' | Notification type |
+| title | TEXT | NO | - | |
+| message | TEXT | YES | - | |
+| data | TEXT | YES | - | JSON extra data |
+| isRead | INTEGER | NO | 0 | 0=unread, 1=read |
+| createdAt | TEXT | NO | - | |
+
+---
+
+### 14. **DeviceSession**
+Active device sessions (single-session enforcement).
+
+| Column | Type | Nullable | Default | Notes |
+|--------|------|----------|---------|-------|
+| id | TEXT | NO | - | PK |
+| userId | TEXT | NO | - | FK → User.id |
+| deviceFingerprint | TEXT | NO | - | Unique device ID |
+| userAgent | TEXT | YES | - | Browser UA |
+| ipHash | TEXT | YES | - | Hashed IP |
+| browser | TEXT | YES | - | Browser name |
+| os | TEXT | YES | - | OS name |
+| isActive | INTEGER | NO | 1 | 0=inactive, 1=active |
+| lastActiveAt | TEXT | NO | datetime('now') | Last ping |
+| createdAt | TEXT | NO | datetime('now') | |
+
+---
+
+## Entity Relationships
+
+```
+User (id)
+├── role = 'ACADEMY' → Academy.ownerId
+├── role = 'TEACHER' → Teacher.userId → Academy.id
+├── role = 'STUDENT' → ClassEnrollment.userId → Class.id
+│
+Academy (id)
+├── ownerId → User.id (ACADEMY role)
+├── Teacher.academyId (teachers working here)
+└── Class.academyId (classes in this academy)
+│
+Class (id)
+├── academyId → Academy.id
+├── teacherId → User.id (assigned teacher)
+├── ClassEnrollment.classId (enrolled students)
+├── Lesson.classId (content)
+└── LiveStream.classId (live sessions)
+│
+Lesson (id)
+├── classId → Class.id
+├── Video.lessonId (videos)
+├── Document.lessonId (documents)
+└── LessonRating.lessonId (ratings)
+│
+Video (id)
+├── lessonId → Lesson.id
+├── uploadId → Upload.id
+└── VideoPlayState.videoId (watch tracking)
+│
+Upload (id)
+├── uploadedById → User.id
+├── Video.uploadId or Document.uploadId
+└── bunnyGuid (for Bunny Stream videos)
+```
+
+---
+
+## Important Query Patterns
+
+### For ACADEMY role users:
+```sql
+-- Get academies owned by user
+SELECT * FROM Academy WHERE ownerId = ?
+
+-- Get all classes in owned academies
+SELECT c.* FROM Class c
+JOIN Academy a ON c.academyId = a.id
+WHERE a.ownerId = ?
+
+-- Get all lessons in owned academies
+SELECT l.* FROM Lesson l
+JOIN Class c ON l.classId = c.id
+JOIN Academy a ON c.academyId = a.id
+WHERE a.ownerId = ?
+```
+
+### For TEACHER role users:
+```sql
+-- Get academies teacher works in
+SELECT a.* FROM Academy a
+JOIN Teacher t ON t.academyId = a.id
+WHERE t.userId = ?
+
+-- Get classes assigned to teacher
+SELECT * FROM Class WHERE teacherId = ?
+```
+
+### For STUDENT role users:
+```sql
+-- Get enrolled classes
+SELECT c.* FROM Class c
+JOIN ClassEnrollment e ON e.classId = c.id
+WHERE e.userId = ? AND e.status = 'APPROVED'
+```
+
+---
+
+## Deleted Tables (Historical)
+
+- ❌ **AcademyMembership** - Replaced by Teacher table
+- ❌ **PlatformSettings** - Moved to environment variables
+- ❌ **BillingConfig** - Not implemented
+
+---
+
+## Notes
+
+1. **ACADEMY vs TEACHER Role**:
+   - ACADEMY users own academies (`Academy.ownerId`)
+   - TEACHER users work in academies (`Teacher.userId` + `Teacher.academyId`)
+   - Never use Teacher table to identify academy owners!
+
+2. **Video Storage**:
+   - Videos stored in Bunny Stream (`Upload.storageType = 'bunny'`)
+   - Documents stored in R2 (`Upload.storageType = 'r2'`)
+   - `Upload.bunnyGuid` contains Bunny video GUID when applicable
+
+3. **Zoom Integration**:
+   - LiveStream stores Zoom meeting details
+   - `recordingId` stores Bunny GUID for recordings (set by webhook)
+   - `participantCount` fetched from Zoom API after meeting ends

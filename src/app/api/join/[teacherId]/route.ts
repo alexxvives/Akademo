@@ -1,4 +1,4 @@
-import { userQueries, classQueries, membershipQueries } from '@/lib/db';
+import { userQueries, classQueries } from '@/lib/db';
 import { handleApiError, successResponse, errorResponse } from '@/lib/api-utils';
 
 export async function GET(

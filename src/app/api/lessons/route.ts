@@ -1,4 +1,4 @@
-import { lessonQueries, videoQueries, documentQueries, uploadQueries, membershipQueries, classQueries, getDB } from '@/lib/db';
+import { lessonQueries, videoQueries, documentQueries, uploadQueries, classQueries, getDB } from '@/lib/db';
 import { requireRole } from '@/lib/auth';
 import { getStorageAdapter } from '@/lib/storage';
 import { handleApiError, successResponse, errorResponse } from '@/lib/api-utils';
