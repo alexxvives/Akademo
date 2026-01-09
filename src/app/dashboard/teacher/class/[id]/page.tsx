@@ -1,6 +1,7 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import { apiClient } from '@/lib/api-client';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import ProtectedVideoPlayer from '@/components/ProtectedVideoPlayer';
@@ -187,7 +188,7 @@ export default function TeacherClassPage() {
 
   const loadAvailableStreamRecordings = async () => {
     try {
-      const response = await fetch('/api/live/history');
+      const response = await apiClient('/live/history');
       const result = await response.json();
       if (result.success) {
         // Filter streams that don't have valid lesson recordings yet and belong to this class
@@ -274,7 +275,7 @@ export default function TeacherClassPage() {
 
   const loadUser = async () => {
     try {
-      const res = await fetch('/api/auth/me');
+      const res = await apiClient('/auth/me');
       const result = await res.json();
       if (result.success) setCurrentUser(result.data);
     } catch (e) {
@@ -337,7 +338,7 @@ export default function TeacherClassPage() {
       // Generate default title
       const defaultTitle = 'Stream iniciado';
       
-      const res = await fetch('/api/live', {
+      const res = await apiClient('/live', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -533,7 +534,7 @@ export default function TeacherClassPage() {
     // Check if using stream recording
     if (lessonFormData.selectedStreamRecording) {
       try {
-        const response = await fetch('/api/live/create-lesson', {
+        const response = await apiClient('/live/create-lesson', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -561,7 +562,6 @@ export default function TeacherClassPage() {
             selectedStreamRecording: '',
           });
           await loadData(); // Reload all data including lessons
-          alert('¡Lección creada desde grabación de stream exitosamente!');
         } else {
           console.error('[Create Lesson Error]', result);
           alert(`Error: ${result.error || 'Unknown error'}`);
@@ -621,7 +621,7 @@ export default function TeacherClassPage() {
       const { videos, documents } = await uploadFilesWithMultipart(tempLessonId, abortController);
       
       // Create lesson with uploaded file references
-      const res = await fetch('/api/lessons/create-with-uploaded', {
+      const res = await apiClient('/lessons/create-with-uploaded', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -790,7 +790,7 @@ export default function TeacherClassPage() {
 
   const handleEnrollmentAction = async (enrollmentId: string, action: 'approve' | 'reject') => {
     try {
-      const res = await fetch('/api/enrollments/pending', {
+      const res = await apiClient('/enrollments/pending', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enrollmentId, action }),
@@ -1030,7 +1030,7 @@ export default function TeacherClassPage() {
                             liveStreamId: liveClasses[0].id,
                             message: `Clase en vivo: ${liveClasses[0].title}`
                           });
-                          const res = await fetch('/api/notifications', {
+                          const res = await apiClient('/notifications', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
+import { apiClient } from '@/lib/api-client';
 
 interface Stream {
   id: string;
@@ -37,7 +38,7 @@ export default function StreamsPage() {
 
   const loadAcademyName = async () => {
     try {
-      const response = await fetch('/api/requests/teacher');
+      const response = await apiClient('/requests/teacher');
       const result = await response.json();
       if (Array.isArray(result) && result.length > 0) {
         setAcademyName(result[0].academyName);
@@ -49,7 +50,7 @@ export default function StreamsPage() {
 
   const loadStreams = async () => {
     try {
-      const response = await fetch('/api/live/history');
+      const response = await apiClient('/live/history');
       const result = await response.json();
       if (result.success) {
         setStreams(result.data);
@@ -115,7 +116,7 @@ export default function StreamsPage() {
     
     setCreatingLessonId(streamId);
     try {
-      const response = await fetch('/api/live/create-lesson', {
+      const response = await apiClient('/live/create-lesson', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ streamId }),
@@ -147,7 +148,7 @@ export default function StreamsPage() {
 
     try {
       // Step 1: Get upload URL
-      const response = await fetch('/api/live/upload-recording', {
+      const response = await apiClient('/live/upload-recording', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -181,7 +182,7 @@ export default function StreamsPage() {
       setUploadProgress(70);
 
       // Step 3: Create lesson from recording
-      const createLessonResponse = await fetch('/api/live/create-lesson', {
+      const createLessonResponse = await apiClient('/live/create-lesson', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

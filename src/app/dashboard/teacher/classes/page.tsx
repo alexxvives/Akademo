@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { apiClient } from '@/lib/api-client';
 
 interface Class {
   id: string;
@@ -27,8 +28,8 @@ export default function TeacherClasses() {
   const loadClasses = async () => {
     try {
       const [classesRes, membershipRes] = await Promise.all([
-        fetch('/api/classes'),
-        fetch('/api/requests/teacher')
+        apiClient('/classes'),
+        apiClient('/requests/teacher')
       ]);
       
       const classesResult = await classesRes.json();

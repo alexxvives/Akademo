@@ -42,16 +42,26 @@ export async function getSession(): Promise<SessionUser | null> {
   const cookieStore = await cookies();
   const sessionId = cookieStore.get(SESSION_COOKIE_NAME)?.value;
 
+  console.log('[getSession] Cookie name:', SESSION_COOKIE_NAME);
+  console.log('[getSession] Session ID found:', sessionId ? 'Yes' : 'No');
+
   if (!sessionId) {
+    console.log('[getSession] No session cookie found');
     return null;
   }
 
   // Simple session: decode base64 userId
   try {
     const userId = Buffer.from(sessionId, 'base64').toString('utf-8');
+    console.log('[getSession] Decoded userId:', userId);
+    
     const user = await userQueries.findById(userId) as any;
+    console.log('[getSession] User found:', user ? 'Yes' : 'No');
 
-    if (!user) return null;
+    if (!user) {
+      console.log('[getSession] User not found in database');
+      return null;
+    }
     
     return {
       id: user.id,
@@ -60,7 +70,8 @@ export async function getSession(): Promise<SessionUser | null> {
       lastName: user.lastName,
       role: user.role as UserRole,
     };
-  } catch {
+  } catch (error) {
+    console.error('[getSession] Error decoding session:', error);
     return null;
   }
 }

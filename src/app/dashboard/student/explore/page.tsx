@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { apiClient } from '@/lib/api-client';
 
 interface Academy {
   id: string;
@@ -21,7 +22,7 @@ export default function ExploreAcademiesPage() {
 
   const loadAcademies = async () => {
     try {
-      const response = await fetch('/api/explore/academies');
+      const response = await apiClient('/explore/academies');
       const result = await response.json();
 
       if (result.success && Array.isArray(result.data)) {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { apiClient } from '@/lib/api-client';
 
 interface Lesson {
   id: string;
@@ -26,14 +27,14 @@ export default function StudentLessons() {
   const loadLessons = async () => {
     try {
       // Get enrolled classes first
-      const classesRes = await fetch('/api/classes');
+      const classesRes = await apiClient('/classes');
       const classesResult = await classesRes.json();
       
       if (classesResult.success && classesResult.data) {
         // Aggregate lessons from all classes
         const allLessons: Lesson[] = [];
         for (const cls of classesResult.data) {
-          const classRes = await fetch(`/api/classes/${cls.id}`);
+          const classRes = await apiClient(`/classes/${cls.id}`);
           const classData = await classRes.json();
           if (classData.success && classData.data.lessons) {
             classData.data.lessons.forEach((lesson: any) => {

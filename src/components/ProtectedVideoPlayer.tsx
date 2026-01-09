@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import Hls from 'hls.js';
 import 'plyr/dist/plyr.css';
+import { apiClient } from '@/lib/api-client';
 
 // CSS to hide Plyr controls when video is locked
 const hiddenControlsStyle = `
@@ -156,7 +157,7 @@ export default function ProtectedVideoPlayer({
     if (elapsedSeconds <= 0) return;
 
     try {
-      const response = await fetch('/api/video/progress', {
+      const response = await apiClient('/video/progress', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

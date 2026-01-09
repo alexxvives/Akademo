@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import ProtectedVideoPlayer from '@/components/ProtectedVideoPlayer';
+import DocumentSigningModal from '@/components/DocumentSigningModal';
 import { getBunnyThumbnailUrl } from '@/lib/bunny-stream';
+import { apiClient } from '@/lib/api-client';
 
 interface Video {
   id: string;
@@ -78,6 +80,8 @@ export default function ClassPage() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [enrollmentStatus, setEnrollmentStatus] = useState<'PENDING' | 'APPROVED'>('APPROVED');
+  const [documentSigned, setDocumentSigned] = useState(false);
+  const [showSigningModal, setShowSigningModal] = useState(false);
   const [lessonRating, setLessonRating] = useState<number | null>(null);
   const [ratingHover, setRatingHover] = useState<number>(0);
   const [activeStream, setActiveStream] = useState<ActiveStream | null>(null);
@@ -91,7 +95,7 @@ export default function ClassPage() {
   useEffect(() => {
     const checkStream = async () => {
       try {
-        const res = await fetch('/api/live/active');
+        const res = await apiClient('/live/active');
         const result = await res.json();
         if (result.success && Array.isArray(result.data)) {
           const stream = result.data.find((s: ActiveStream) => s.classId === classId);
@@ -166,14 +170,15 @@ export default function ClassPage() {
       console.log('[Student Class] Class loaded:', classResult.data.name, 'ID:', classResult.data.id);
       setClassData(classResult.data);
       setEnrollmentStatus(classResult.data.enrollmentStatus || 'APPROVED');
+      setDocumentSigned(classResult.data.documentSigned === true);
 
       // Use the resolved class ID for subsequent requests
       const resolvedClassId = classResult.data.id;
 
       const [userRes, lessonsRes, streamsRes] = await Promise.all([
-        fetch('/api/auth/me'),
+        apiClient('/auth/me'),
         fetch(`/api/lessons?classId=${resolvedClassId}`),
-        fetch('/api/live/active'),
+        apiClient('/live/active'),
       ]);
 
       const [userResult, lessonsResult, streamsResult] = await Promise.all([
@@ -218,6 +223,12 @@ export default function ClassPage() {
     const isReleased = new Date(lesson.releaseDate) <= new Date();
     if (!isReleased) return;
     
+    // Block content access if document not signed
+    if (!documentSigned) {
+      setShowSigningModal(true);
+      return;
+    }
+    
     // Block content access if enrollment is pending
     if (enrollmentStatus === 'PENDING') {
       setShowPendingWarning(true);
@@ -249,6 +260,28 @@ export default function ClassPage() {
     await loadData();
   };
 
+  const handleSignDocument = async () => {
+    try {
+      const res = await apiClient('/enrollments/sign-document', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ classId }),
+      });
+
+      const result = await res.json();
+
+      if (result.success) {
+        setDocumentSigned(true);
+        setShowSigningModal(false);
+        alert('¡Documento firmado exitosamente! Ya puedes acceder al contenido una vez que el profesor apruebe tu inscripción.');
+      } else {
+        throw new Error(result.error || 'Failed to sign document');
+      }
+    } catch (error: any) {
+      throw error;
+    }
+  };
+
   const selectVideoInLesson = (video: Video) => {
     if (!selectedLesson) return;
     
@@ -272,7 +305,7 @@ export default function ClassPage() {
   const submitRating = async (rating: number) => {
     if (!selectedLesson) return;
     try {
-      const res = await fetch('/api/lessons/rating', {
+      const res = await apiClient('/lessons/rating', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lessonId: selectedLesson.id, rating }),
@@ -742,6 +775,15 @@ export default function ClassPage() {
           </div>
         )}
       </div>
+
+      {/* Document Signing Modal */}
+      <DocumentSigningModal
+        isOpen={showSigningModal}
+        onClose={() => setShowSigningModal(false)}
+        onSign={handleSignDocument}
+        classId={classId}
+        className={classData?.name || ''}
+      />
     </>
   );
 }

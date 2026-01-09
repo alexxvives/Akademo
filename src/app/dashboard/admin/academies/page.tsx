@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { apiClient } from '@/lib/api-client';
 
 interface Academy {
   id: string;
@@ -24,7 +25,7 @@ export default function AdminAcademies() {
 
   const loadAcademies = async () => {
     try {
-      const res = await fetch('/api/academies');
+      const res = await apiClient('/academies');
       const result = await res.json();
       if (result.success) {
         setAcademies(result.data || []);

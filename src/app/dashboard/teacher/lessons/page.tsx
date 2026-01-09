@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { apiClient } from '@/lib/api-client';
 
 interface Lesson {
   id: string;
@@ -27,7 +28,7 @@ export default function TeacherLessons() {
 
   const loadAcademyName = async () => {
     try {
-      const res = await fetch('/api/requests/teacher');
+      const res = await apiClient('/requests/teacher');
       const result = await res.json();
       if (result.success && Array.isArray(result.data) && result.data.length > 0) {
         setAcademyName(result.data[0].academyName || '');
@@ -39,13 +40,13 @@ export default function TeacherLessons() {
 
   const loadLessons = async () => {
     try {
-      const classesRes = await fetch('/api/classes');
+      const classesRes = await apiClient('/classes');
       const classesResult = await classesRes.json();
       
       if (classesResult.success && classesResult.data) {
         const allLessons: Lesson[] = [];
         for (const cls of classesResult.data) {
-          const classRes = await fetch(`/api/classes/${cls.id}`);
+          const classRes = await apiClient(`/classes/${cls.id}`);
           const classData = await classRes.json();
           if (classData.success && classData.data.lessons) {
             classData.data.lessons.forEach((lesson: any) => {

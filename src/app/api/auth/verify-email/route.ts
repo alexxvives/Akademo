@@ -14,6 +14,15 @@ const verificationCodes = new Map<string, { code: string; expires: number }>();
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    console.log('[Verify Email] Received body:', body);
+    
+    try {
+      const data = verifyEmailSchema.parse(body);
+    } catch (validationError: any) {
+      console.error('[Verify Email] Validation error:', validationError);
+      return errorResponse(`Invalid request: ${validationError.errors?.[0]?.message || 'email and code are required'}`, 400);
+    }
+    
     const data = verifyEmailSchema.parse(body);
 
     // Check if code exists

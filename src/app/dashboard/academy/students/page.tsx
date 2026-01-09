@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { apiClient } from '@/lib/api-client';
 
 interface Student {
   id: string;
@@ -23,7 +24,7 @@ export default function AcademyStudents() {
 
   const loadStudents = async () => {
     try {
-      const res = await fetch('/api/academies/students');
+      const res = await apiClient('/academies/students');
       const result = await res.json();
       if (result.success) {
         setStudents(result.data || []);

@@ -1,4 +1,6 @@
 // Chunked multipart upload utility for large files
+import { apiClient } from '@/lib/api-client';
+
 const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB chunks
 const MAX_CONCURRENT_UPLOADS = 4; // Upload 4 chunks in parallel
 
@@ -22,7 +24,7 @@ export async function multipartUpload({
   signal,
 }: MultipartUploadOptions): Promise<string> {
   // Step 1: Initialize multipart upload
-  const initRes = await fetch('/api/storage/multipart/init', {
+  const initRes = await apiClient('/storage/multipart/init', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -97,7 +99,7 @@ export async function multipartUpload({
     }
 
     // Step 4: Complete multipart upload
-    const completeRes = await fetch('/api/storage/multipart/complete', {
+    const completeRes = await apiClient('/storage/multipart/complete', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -116,7 +118,7 @@ export async function multipartUpload({
   } catch (error) {
     // Abort multipart upload on error
     try {
-      await fetch('/api/storage/multipart/abort', {
+      await apiClient('/storage/multipart/abort', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key, uploadId }),

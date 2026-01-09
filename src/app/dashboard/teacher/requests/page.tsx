@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { apiClient } from '@/lib/api-client';
 
 interface PendingEnrollment {
   id: string;
@@ -24,7 +25,7 @@ export default function TeacherRequestsPage() {
 
   const loadAcademyName = async () => {
     try {
-      const response = await fetch('/api/requests/teacher');
+      const response = await apiClient('/requests/teacher');
       const result = await response.json();
       if (Array.isArray(result) && result.length > 0) {
         setAcademyName(result[0].academyName);
@@ -36,7 +37,7 @@ export default function TeacherRequestsPage() {
 
   const loadPendingEnrollments = async () => {
     try {
-      const response = await fetch('/api/enrollments/pending');
+      const response = await apiClient('/enrollments/pending');
       const result = await response.json();
       if (result.success) {
         // Map nested API response to flat structure
@@ -60,7 +61,7 @@ export default function TeacherRequestsPage() {
   const handleApprove = async (enrollmentId: string) => {
     setProcessingIds(prev => new Set(prev).add(enrollmentId));
     try {
-      const response = await fetch('/api/enrollments/pending', {
+      const response = await apiClient('/enrollments/pending', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enrollmentId, action: 'APPROVE' }),
@@ -87,7 +88,7 @@ export default function TeacherRequestsPage() {
   const handleReject = async (enrollmentId: string) => {
     setProcessingIds(prev => new Set(prev).add(enrollmentId));
     try {
-      const response = await fetch('/api/enrollments/pending', {
+      const response = await apiClient('/enrollments/pending', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enrollmentId, action: 'REJECT' }),

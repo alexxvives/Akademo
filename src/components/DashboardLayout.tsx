@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { apiClient } from '@/lib/api-client';
 
 interface User {
   id: string;
@@ -73,7 +74,7 @@ export default function DashboardLayout({
 
   const loadNotifications = useCallback(async () => {
     try {
-      const response = await fetch('/api/notifications?unread=true');
+      const response = await apiClient('/notifications?unread=true');
       const result = await response.json();
       if (result.success && Array.isArray(result.data)) {
         setNotifications(result.data);
@@ -86,7 +87,7 @@ export default function DashboardLayout({
 
   const loadActiveStreams = useCallback(async () => {
     try {
-      const response = await fetch('/api/live/active');
+      const response = await apiClient('/live/active');
       const result = await response.json();
       if (result.success && Array.isArray(result.data)) {
         setActiveStreams(result.data);
@@ -98,7 +99,7 @@ export default function DashboardLayout({
 
   const loadPendingRequestsCount = useCallback(async () => {
     try {
-      const response = await fetch('/api/enrollments/pending');
+      const response = await apiClient('/enrollments/pending');
       const result = await response.json();
       if (result.success && Array.isArray(result.data)) {
         setPendingRequestsCount(result.data.length);
@@ -113,7 +114,7 @@ export default function DashboardLayout({
     
     if (role === 'STUDENT') {
       // Create initial device session
-      fetch('/api/session/check', { method: 'POST' });
+      apiClient('/session/check', { method: 'POST' });
       // Then check every 10 seconds for faster logout detection
       const interval = setInterval(checkSession, 10000);
       
@@ -145,7 +146,7 @@ export default function DashboardLayout({
 
   const checkAuth = async () => {
     try {
-      const response = await fetch('/api/auth/me');
+      const response = await apiClient('/auth/me');
       const result = await response.json();
 
       if (result.success && result.data.role === role) {
@@ -162,7 +163,7 @@ export default function DashboardLayout({
 
   const checkSession = async () => {
     try {
-      const response = await fetch('/api/session/check');
+      const response = await apiClient('/session/check');
       const result = await response.json();
 
       if (!result.success || !result.data.valid) {
@@ -178,7 +179,7 @@ export default function DashboardLayout({
   };
 
   const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    await apiClient('/auth/logout', { method: 'POST' });
     router.push('/');
   };
 
@@ -192,7 +193,7 @@ export default function DashboardLayout({
 
   const markNotificationAsRead = async (notificationId: string) => {
     try {
-      await fetch('/api/notifications', {
+      await apiClient('/notifications', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ notificationIds: [notificationId] }),
@@ -215,7 +216,7 @@ export default function DashboardLayout({
 
   const markAllAsRead = async () => {
     try {
-      await fetch('/api/notifications', {
+      await apiClient('/notifications', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ markAll: true }),
@@ -575,7 +576,7 @@ export default function DashboardLayout({
             <Link
               href={
                 role === 'ACADEMY' ? '/dashboard/academy/teachers' :
-                role === 'STUDENT' ? '/dashboard/student/explore' :
+                role === 'STUDENT' ? '/dashboard/student/enrolled-academies/classes' :
                 '/dashboard/admin'
               }
               className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#b1e787] hover:bg-[#9dd46f] text-gray-900 rounded-xl transition-all shadow-lg font-semibold"

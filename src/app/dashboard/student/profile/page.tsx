@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { apiClient } from '@/lib/api-client';
 
 interface User {
   id: string;
@@ -27,7 +28,7 @@ export default function StudentProfile() {
 
   const loadProfile = async () => {
     try {
-      const res = await fetch('/api/auth/me');
+      const res = await apiClient('/auth/me');
       const result = await res.json();
       if (result.success) {
         setUser(result.data);

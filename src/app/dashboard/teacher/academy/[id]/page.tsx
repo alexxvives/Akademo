@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { apiClient } from '@/lib/api-client';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 
@@ -80,7 +81,7 @@ export default function AcademyManagePage() {
   const handleCreateClass = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch('/api/classes', {
+      const response = await apiClient('/classes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...classFormData, academyId }),

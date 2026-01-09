@@ -1,4 +1,5 @@
 // Bunny Stream upload utility for client-side video uploads
+import { apiClient } from '@/lib/api-client';
 
 export interface BunnyUploadProgress {
   loaded: number;
@@ -25,7 +26,7 @@ export async function uploadToBunny({
   signal,
 }: BunnyUploadOptions): Promise<BunnyUploadResult> {
   // Step 1: Create video entry in Bunny Stream
-  const createRes = await fetch('/api/bunny/video/create', {
+  const createRes = await apiClient('/bunny/video/create', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

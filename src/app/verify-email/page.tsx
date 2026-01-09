@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { apiClient } from '@/lib/api-client';
 
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
@@ -40,7 +41,7 @@ function VerifyEmailContent() {
     setError(null);
 
     try {
-      const response = await fetch('/api/auth/verify-email', {
+      const response = await apiClient('/auth/verify-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, code: verificationCode }),
@@ -50,7 +51,7 @@ function VerifyEmailContent() {
       if (result.success) {
         // If we have registration data, complete the registration
         if (registrationData) {
-          const regResponse = await fetch('/api/auth/register', {
+          const regResponse = await apiClient('/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(registrationData),
@@ -89,7 +90,7 @@ function VerifyEmailContent() {
     setError(null);
 
     try {
-      const response = await fetch('/api/auth/send-verification', {
+      const response = await apiClient('/auth/send-verification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),

@@ -1,4 +1,4 @@
-import { requireRole } from '@/lib/auth';
+import { requireAuth } from '@/lib/auth';
 import { handleApiError, successResponse, errorResponse } from '@/lib/api-utils';
 import { enrollmentQueries, classQueries } from '@/lib/db';
 
@@ -6,7 +6,13 @@ import { enrollmentQueries, classQueries } from '@/lib/db';
 export async function POST(request: Request) {
   try {
     console.log('[Student Request] Starting enrollment request');
-    const session = await requireRole(['STUDENT']);
+    const session = await requireAuth();
+    
+    // Only students can request enrollment
+    if (session.role !== 'STUDENT') {
+      return errorResponse('Only students can request class enrollment', 403);
+    }
+    
     console.log('[Student Request] Session validated:', { userId: session.id, role: session.role });
     
     const body = await request.json();
@@ -56,7 +62,12 @@ export async function POST(request: Request) {
 // GET: Get student's enrollment requests
 export async function GET(request: Request) {
   try {
-    const session = await requireRole(['STUDENT']);
+    const session = await requireAuth();
+    
+    // Only students can view their enrollment requests
+    if (session.role !== 'STUDENT') {
+      return errorResponse('Only students can view enrollment requests', 403);
+    }
     
     const { getDB } = await import('@/lib/db');
     const db = await getDB();
@@ -66,7 +77,7 @@ export async function GET(request: Request) {
       FROM ClassEnrollment e
       JOIN Class c ON e.classId = c.id
       JOIN Academy a ON c.academyId = a.id
-      WHERE e.studentId = ?
+      WHERE e.userId = ?
       ORDER BY e.createdAt DESC
     `).bind(session.id).all();
 

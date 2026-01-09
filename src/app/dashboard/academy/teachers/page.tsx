@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { apiClient } from '@/lib/api-client';
 
 interface Teacher {
   id: string;
@@ -22,7 +23,7 @@ export default function AcademyTeachers() {
 
   const loadTeachers = async () => {
     try {
-      const res = await fetch('/api/academies/teachers');
+      const res = await apiClient('/academies/teachers');
       const data = await res.json();
       setTeachers(Array.isArray(data) ? data : []);
     } catch (error) {

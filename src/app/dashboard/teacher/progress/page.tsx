@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { apiClient } from '@/lib/api-client';
 
 interface StudentProgress {
   id: string;
@@ -26,7 +27,7 @@ export default function TeacherProgress() {
 
   const loadAcademyName = async () => {
     try {
-      const res = await fetch('/api/requests/teacher');
+      const res = await apiClient('/requests/teacher');
       const result = await res.json();
       if (result.success && Array.isArray(result.data) && result.data.length > 0) {
         setAcademyName(result.data[0].academyName || '');
@@ -38,7 +39,7 @@ export default function TeacherProgress() {
 
   const loadProgress = async () => {
     try {
-      const response = await fetch('/api/students/progress');
+      const response = await apiClient('/students/progress');
       const data = await response.json();
       
       if (data.success && data.data) {

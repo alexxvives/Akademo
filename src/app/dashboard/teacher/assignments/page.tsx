@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { apiClient } from '@/lib/api-client';
 
 export default function TeacherAssignments() {
   const [academyName, setAcademyName] = useState<string>('');
@@ -11,7 +12,7 @@ export default function TeacherAssignments() {
 
   const loadAcademyName = async () => {
     try {
-      const res = await fetch('/api/requests/teacher');
+      const res = await apiClient('/requests/teacher');
       const result = await res.json();
       if (result.success && Array.isArray(result.data) && result.data.length > 0) {
         setAcademyName(result.data[0].academyName || '');

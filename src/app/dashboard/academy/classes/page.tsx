@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { apiClient } from '@/lib/api-client';
 
 interface Teacher {
   id: string;
@@ -41,8 +42,8 @@ export default function AcademyClassesPage() {
   const loadData = async () => {
     try {
       const [classesRes, teachersRes] = await Promise.all([
-        fetch('/api/academies/classes'),
-        fetch('/api/academies/teachers')
+        apiClient('/academies/classes'),
+        apiClient('/academies/teachers')
       ]);
       
       if (classesRes.ok) {
@@ -73,7 +74,7 @@ export default function AcademyClassesPage() {
     setSaving(true);
 
     try {
-      const res = await fetch('/api/academies/classes', {
+      const res = await apiClient('/academies/classes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { apiClient } from '@/lib/api-client';
 
 interface Stream {
   id: string;
@@ -34,7 +35,7 @@ export default function AcademyStreamsPage() {
 
   const loadStreams = async () => {
     try {
-      const response = await fetch('/api/live/history');
+      const response = await apiClient('/live/history');
       const result = await response.json();
       if (result.success) {
         setStreams(result.data);

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import { apiClient } from '@/lib/api-client';
 
 interface Academy {
   id: string;
@@ -40,8 +41,8 @@ export default function AcademyClassesPage() {
   const loadData = async () => {
     try {
       const [academiesRes, classesRes] = await Promise.all([
-        fetch('/api/explore/academies'),
-        fetch(`/api/explore/academies/${academyId}/classes`),
+        apiClient('/explore/academies'),
+        apiClient(`/explore/academies/${academyId}/classes`),
       ]);
 
       const [academiesResult, classesResult] = await Promise.all([
@@ -67,7 +68,7 @@ export default function AcademyClassesPage() {
   const handleRequestClass = async (classId: string) => {
     setRequesting(classId);
     try {
-      const response = await fetch('/api/requests/student', {
+      const response = await apiClient('/requests/student', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ classId }),

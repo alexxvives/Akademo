@@ -69,8 +69,9 @@ export async function GET(
         return errorResponse('Forbidden - not enrolled in this class', 403);
       }
       
-      // Add enrollment status to class data for frontend
+      // Add enrollment status and document signing status to class data for frontend
       classData.enrollmentStatus = enrollment.status;
+      classData.documentSigned = enrollment.documentSigned === 1;
     }
     // Admins can access all classes
 

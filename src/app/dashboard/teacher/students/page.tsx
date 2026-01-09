@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { apiClient } from '@/lib/api-client';
 
 interface StudentProgress {
   id: string;
@@ -28,7 +29,7 @@ export default function StudentProgressPage() {
 
   const loadAcademyName = async () => {
     try {
-      const response = await fetch('/api/requests/teacher');
+      const response = await apiClient('/requests/teacher');
       const result = await response.json();
       if (Array.isArray(result) && result.length > 0) {
         setAcademyName(result[0].academyName);
@@ -40,7 +41,7 @@ export default function StudentProgressPage() {
 
   const loadStudentProgress = async () => {
     try {
-      const response = await fetch('/api/students/progress');
+      const response = await apiClient('/students/progress');
       const result = await response.json();
       if (result.success) {
         setStudents(result.data);

@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { apiClient } from '@/lib/api-client';
 
 interface Stats {
   totalTeachers: number;
@@ -32,11 +33,11 @@ export default function AcademyDashboard() {
       setLoading(true);
       
       const [teachersRes, classesRes, studentsRes, lessonsRes, academyRes] = await Promise.all([
-        fetch('/api/academies/teachers'),
-        fetch('/api/academies/classes'),
-        fetch('/api/academies/students'),
-        fetch('/api/lessons'),
-        fetch('/api/academies')
+        apiClient('/academies/teachers'),
+        apiClient('/academies/classes'),
+        apiClient('/academies/students'),
+        apiClient('/lessons'),
+        apiClient('/academies')
       ]);
       
       const teachers = teachersRes.ok ? await teachersRes.json() : [];

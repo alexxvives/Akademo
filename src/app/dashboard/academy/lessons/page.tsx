@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { apiClient } from '@/lib/api-client';
 
 interface Lesson {
   id: string;
@@ -28,7 +29,7 @@ export default function AcademyLessonsPage() {
 
   const loadLessons = async () => {
     try {
-      const response = await fetch('/api/lessons');
+      const response = await apiClient('/lessons');
       const result = await response.json();
       if (result.success) {
         setLessons(result.data);

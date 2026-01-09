@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { apiClient } from '@/lib/api-client';
 
 interface AuthModalProps {
   mode: 'login' | 'register';
@@ -27,16 +28,15 @@ export default function AuthModal({ mode, onClose }: AuthModalProps) {
     setError('');
 
     try {
-      const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
+      const endpoint = isLogin ? '/auth/login' : '/auth/register';
       const payload = isLogin
         ? { email: formData.email, password: formData.password }
         : formData;
 
-      const response = await fetch(endpoint, {
+      const response = await apiClient(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
-        credentials: 'include',
       });
 
       const result = await response.json();

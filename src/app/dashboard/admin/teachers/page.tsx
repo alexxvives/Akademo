@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { apiClient } from '@/lib/api-client';
 
 interface Teacher {
   id: string;
@@ -24,7 +25,7 @@ export default function AdminTeachers() {
 
   const loadTeachers = async () => {
     try {
-      const res = await fetch('/api/analytics');
+      const res = await apiClient('/analytics');
       const result = await res.json();
       if (result.success && result.data.users) {
         const teacherList = result.data.users

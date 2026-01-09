@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { BarChart, DonutChart, StatCard } from '@/components/Charts';
+import { apiClient } from '@/lib/api-client';
 
 interface Academy {
   id: string;
@@ -89,11 +90,11 @@ export default function TeacherDashboard() {
   const loadData = async () => {
     try {
       const [membershipsRes, academiesRes, classesRes, pendingRes, ratingsRes] = await Promise.all([
-        fetch('/api/requests/teacher'),
-        fetch('/api/explore/academies'),
-        fetch('/api/classes'),
-        fetch('/api/enrollments/pending'),
-        fetch('/api/ratings'),
+        apiClient('/requests/teacher'),
+        apiClient('/explore/academies'),
+        apiClient('/classes'),
+        apiClient('/enrollments/pending'),
+        apiClient('/ratings'),
       ]);
 
       const [membershipsResult, academiesResult, classesResult, pendingResult, ratingsResult] = await Promise.all([
@@ -159,7 +160,7 @@ export default function TeacherDashboard() {
 
   const handleRequestMembership = async (academyId: string) => {
     try {
-      const response = await fetch('/api/requests/teacher', {
+      const response = await apiClient('/requests/teacher', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ academyId }),
@@ -181,7 +182,7 @@ export default function TeacherDashboard() {
 
   const handleEnrollmentAction = async (enrollmentId: string, action: 'approve' | 'reject') => {
     try {
-      const response = await fetch('/api/enrollments/pending', {
+      const response = await apiClient('/enrollments/pending', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enrollmentId, action }),

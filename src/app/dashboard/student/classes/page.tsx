@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { apiClient } from '@/lib/api-client';
 
 interface EnrolledClass {
   id: string;
@@ -36,7 +37,7 @@ export default function StudentClassesPage() {
     loadData();
     // Poll for active streams every 10 seconds
     const interval = setInterval(() => {
-      fetch('/api/live/active')
+      apiClient('/live/active')
         .then(res => res.json())
         .then(result => {
           if (result.success && Array.isArray(result.data)) {
@@ -51,8 +52,8 @@ export default function StudentClassesPage() {
   const loadData = async () => {
     try {
       const [classesRes, streamsRes] = await Promise.all([
-        fetch('/api/classes'),
-        fetch('/api/live/active'),
+        apiClient('/classes'),
+        apiClient('/live/active'),
       ]);
 
       const [classesResult, streamsResult] = await Promise.all([
@@ -135,7 +136,7 @@ export default function StudentClassesPage() {
           {academyName && <p className="text-sm text-gray-500 mt-1">{academyName}</p>}
         </div>
         <Link
-          href="/dashboard/student/explore"
+          href="/dashboard/student/enrolled-academies/classes"
           className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium text-sm"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { BarChart, DonutChart, StatCard } from '@/components/Charts';
+import { apiClient } from '@/lib/api-client';
 
 interface Academy {
   id: string;
@@ -28,7 +29,7 @@ export default function AdminDashboard() {
 
   const loadData = async () => {
     try {
-      const response = await fetch('/api/academies');
+      const response = await apiClient('/academies');
       const result = await response.json();
 
       if (result.success) {

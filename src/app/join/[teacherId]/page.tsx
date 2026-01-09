@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { apiClient } from '@/lib/api-client';
 
 interface Teacher {
   id: string;
@@ -60,7 +61,7 @@ export default function JoinPage() {
 
   const checkAuth = async () => {
     try {
-      const response = await fetch('/api/auth/me');
+      const response = await apiClient('/auth/me');
       const result = await response.json();
       if (result.success && result.data) {
         setIsLoggedIn(true);
@@ -94,7 +95,7 @@ export default function JoinPage() {
     setAuthError(null);
 
     try {
-      const response = await fetch('/api/auth/send-verification', {
+      const response = await apiClient('/auth/send-verification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.email }),
@@ -125,7 +126,7 @@ export default function JoinPage() {
     setAuthError(null);
 
     try {
-      const response = await fetch('/api/auth/verify-email', {
+      const response = await apiClient('/auth/verify-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.email, code: verificationCode }),
@@ -147,7 +148,7 @@ export default function JoinPage() {
 
   const completeRegistration = async () => {
     try {
-      const response = await fetch('/api/auth/register', {
+      const response = await apiClient('/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...formData, role: 'STUDENT' }),
@@ -175,7 +176,7 @@ export default function JoinPage() {
     try {
       if (showLogin) {
         // Login
-        const response = await fetch('/api/auth/login', {
+        const response = await apiClient('/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: formData.email, password: formData.password }),
@@ -207,7 +208,7 @@ export default function JoinPage() {
     setAuthError(null);
 
     try {
-      const response = await fetch('/api/requests/student', {
+      const response = await apiClient('/requests/student', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ classId: selectedClassId }),
