@@ -1,0 +1,38 @@
+name = "akademo-api"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[observability]
+enabled = true
+
+# D1 Database
+[[d1_databases]]
+binding = "DB"
+database_name = "akademo-db"
+database_id = "65c2951c-acf6-4c1d-8810-4c3d6be18767"
+
+# R2 Storage
+[[r2_buckets]]
+binding = "STORAGE"
+bucket_name = "akademo-storage"
+
+# Environment Variables
+[vars]
+STORAGE_TYPE = "r2"
+BUNNY_STREAM_LIBRARY_ID = "571240"
+BUNNY_STREAM_CDN_HOSTNAME = "vz-bb8d111e-8eb.b-cdn.net"
+FRONTEND_URL = "https://akademo-edu.com"
+
+# Secrets (configured via: wrangler secret put NAME)
+# Bunny Stream (for video hosting)
+# BUNNY_STREAM_API_KEY - Configured
+# BUNNY_STREAM_TOKEN_KEY - Configured
+
+# Zoom (for live streaming)
+# ZOOM_ACCOUNT_ID - Configured
+# ZOOM_CLIENT_ID - Configured
+# ZOOM_CLIENT_SECRET - Configured
+# ZOOM_WEBHOOK_SECRET - Configured
+
+# Email verification
+# RESEND_API_KEY - Configured
