@@ -1,0 +1,174 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  @keyframes slide-in-right {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+  
+  .animate-slide-in-right {
+    animation: slide-in-right 0.3s ease-out;
+  }
+}
+
+:root {
+  --background: #ffffff;
+  --foreground: #0a0a0a;
+  --brand: #3b82f6;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Dashboard dark background - prevents white flash during navigation */
+body:has(.dashboard-layout) {
+  background: #111318;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Custom Date/Time Picker Styling */
+.date-time-picker::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 4px;
+  transition: all 0.2s ease;
+}
+
+.date-time-picker::-webkit-calendar-picker-indicator:hover {
+  background-color: #e5e7eb;
+}
+
+.date-time-picker::-webkit-datetime-edit {
+  padding: 0;
+}
+
+.date-time-picker::-webkit-datetime-edit-fields-wrapper {
+  padding: 0;
+}
+
+.date-time-picker::-webkit-datetime-edit-text {
+  color: #6b7280;
+  padding: 0 2px;
+}
+
+.date-time-picker::-webkit-datetime-edit-month-field,
+.date-time-picker::-webkit-datetime-edit-day-field,
+.date-time-picker::-webkit-datetime-edit-year-field,
+.date-time-picker::-webkit-datetime-edit-hour-field,
+.date-time-picker::-webkit-datetime-edit-minute-field,
+.date-time-picker::-webkit-datetime-edit-ampm-field {
+  padding: 2px 4px;
+  border-radius: 4px;
+  color: #111827;
+  font-weight: 500;
+}
+
+.date-time-picker::-webkit-datetime-edit-month-field:hover,
+.date-time-picker::-webkit-datetime-edit-day-field:hover,
+.date-time-picker::-webkit-datetime-edit-year-field:hover,
+.date-time-picker::-webkit-datetime-edit-hour-field:hover,
+.date-time-picker::-webkit-datetime-edit-minute-field:hover,
+.date-time-picker::-webkit-datetime-edit-ampm-field:hover {
+  background-color: #dbeafe;
+}
+
+.date-time-picker::-webkit-datetime-edit-month-field:focus,
+.date-time-picker::-webkit-datetime-edit-day-field:focus,
+.date-time-picker::-webkit-datetime-edit-year-field:focus,
+.date-time-picker::-webkit-datetime-edit-hour-field:focus,
+.date-time-picker::-webkit-datetime-edit-minute-field:focus,
+.date-time-picker::-webkit-datetime-edit-ampm-field:focus {
+  background-color: #3b82f6;
+  color: white;
+  outline: none;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Animated checkmark and fade-in for success messages */
+@keyframes checkmark {
+  0% {
+    transform: scale(0) rotate(-45deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2) rotate(0deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scale-in {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-checkmark {
+  animation: checkmark 0.4s ease-in-out;
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
