@@ -1,46 +1,46 @@
-# Academy Hive
+# AKADEMO
 
-A secure learning platform where academies manage classes, teachers, students, and **highly protected video lessons**.
+A modern learning management platform for academies, teachers, and students with live streaming, video lessons, and comprehensive class management.
 
 ## 🎯 Overview
 
-Academy Hive is a complete learning management system (LMS) built with security and content protection as the top priority. It features:
+AKADEMO is a complete learning management system (LMS) deployed on Cloudflare's global network. It features:
 
-- 🔒 **Strong Access Control** - Role-based permissions (Admin, Teacher, Student)
-- 🎥 **Protected Videos** - Dynamic watermarking, play limits, seek restrictions
-- 🚫 **Anti-Sharing** - Single active session per student with device fingerprinting
-- 📊 **Progress Tracking** - Resume playback, view analytics
-- 🏢 **Multi-Academy** - Platform supports unlimited academies
+- 🏫 **Multi-Academy Platform** - Unlimited academies with owner management
+- 👨‍🏫 **Teacher Management** - Teachers work within academies, manage classes
+- 🎥 **Live Streaming** - Integrated Zoom meetings with automatic recording
+- 📹 **Video Hosting** - Bunny Stream CDN for fast, reliable video delivery
+- 📊 **Analytics** - Track student progress, class performance, and engagement
+- 🔒 **Role-Based Access** - ADMIN, ACADEMY, TEACHER, STUDENT roles
 
-## ⚡ Quick Start
+## 🚀 Deployment Info
 
-### Installation (5 minutes)
+**Production URLs:**
+- Frontend: https://akademo-edu.com
+- API Worker: https://akademo-api.alexxvives.workers.dev
 
+**Architecture:**
+- Frontend: Next.js 14 on Cloudflare Pages
+- Backend: Hono API on Cloudflare Workers
+- Database: Cloudflare D1 (SQLite)
+- Storage: Cloudflare R2 + Bunny Stream
+- Live Streaming: Zoom API integration
+- Email: Resend API for verification
+
+**Development:**
 ```bash
-# 1. Install dependencies
-npm install
-
-# 2. Set up database (update .env with your DATABASE_URL)
-npx prisma migrate dev --name init
-
-# 3. Seed demo data
-npx prisma db seed
-
-# 4. Start dev server
+# Frontend
 npm run dev
 
-# 5. Open http://localhost:3000
+# API Worker (in workers/akademo-api/)
+cd workers/akademo-api
+npm run dev
 ```
 
-**Demo Accounts:**
-- Admin: `admin@academyhive.com` / `admin123`
-- Teacher: `teacher@example.com` / `teacher123`
-- Student: `student@example.com` / `student123`
-
-**💡 New to the project?** Authentication uses modal popups - click "Login" or "Get Started" on the homepage!
-
-👉 **Detailed guide:** See [INSTALL.md](./INSTALL.md)  
-👉 **Recent updates:** See [UPDATE_INSTRUCTIONS.md](./UPDATE_INSTRUCTIONS.md)
+**Documentation:**
+- [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) - Complete database schema
+- [DEPLOYMENT_CACHE_FIX.md](./DEPLOYMENT_CACHE_FIX.md) - Deployment best practices
+- [workers/akademo-api/README.md](./workers/akademo-api/README.md) - API documentation
 
 ## 🔐 Security Features
 
@@ -72,112 +72,152 @@ All viewing progress saved server-side. Students resume from last position with 
 ## 🏗️ Architecture
 
 ### Tech Stack
-- **Framework:** Next.js 14 (App Router)
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS
-- **Database:** PostgreSQL + Prisma ORM
-- **Auth:** Custom session-based (HTTP-only cookies)
-- **Storage:** Local (dev) / Cloudflare R2 (production)
-- **Deployment:** Cloudflare Pages/Workers ready
+- **Frontend:** Next.js 14.2.15 (App Router) + TypeScript + Tailwind CSS
+- **Backend:** Hono 4.0.0 on Cloudflare Workers
+- **Database:** Cloudflare D1 (SQLite) - `akademo-db`
+- **Storage:** Cloudflare R2 (`akademo-storage`) + Bunny Stream (Library 571240)
+- **Live Streaming:** Zoom API (Server-to-Server OAuth)
+- **Email:** Resend API for verification
+- **Deployment:** Cloudflare Pages + Workers
 
 ### Project Structure
 ```
-akademo/
-├── prisma/              # Database schema and migrations
+AKADEMO/
+├── workers/
+│   └── akademo-api/         # Backend API Worker
+│       ├── src/
+│       │   ├── routes/      # 17 API route groups
+│       │   ├── lib/         # Auth, DB, Storage utilities
+│       │   ├── index.ts     # Hono app entry
+│       │   └── types.ts     # TypeScript definitions
+│       ├── wrangler.toml    # Worker config
+│       └── package.json
 ├── src/
 │   ├── app/
-│   │   ├── api/        # Backend API routes
-│   │   ├── dashboard/  # Admin, Teacher, Student dashboards
-│   │   ├── login/      # Authentication pages
-│   │   └── page.tsx    # Landing page
-│   ├── components/     # React components
-│   ├── lib/           # Utilities and helpers
-│   └── middleware.ts  # Route protection
-├── .env               # Environment variables
+│   │   ├── dashboard/       # Admin, Teacher, Student UIs
+│   │   ├── join/           # Student enrollment
+│   │   ├── verify-email/   # Email verification
+│   │   └── page.tsx        # Landing page
+│   ├── components/         # React components
+│   ├── lib/               # Frontend utilities
+│   └── middleware.ts      # Auth middleware
+├── migrations/            # D1 database migrations
+├── wrangler.toml         # Frontend Pages config
 └── Documentation files
 ```
 
 ## 🎓 User Roles
 
-### Admin
-- View all platform statistics and analytics
+### ADMIN
+- Platform administrator with full access
+- View all platform analytics
 - Monitor all academies, teachers, and students
-- Set global default settings for video protection
 - Platform-wide oversight
 
-### Teacher
-- **Instant Start**: Academy automatically created on signup - no approval needed!
-- Create and manage classes
-- Upload videos and documents immediately
-- Configure video protection settings (play limits, seek-back)
-- Approve student membership requests
-- Enroll students in classes
-- View student progress and analytics
+### ACADEMY
+- Academy owner (identified by `Academy.ownerId`)
+- Create and manage their academy
+- Add teachers to academy (via Teacher table)
+- Create classes and assign teachers
+- Approve student enrollments
+- View academy-wide analytics
+- Manage academy settings
 
-### Student
-- Browse all available teachers and their academies
-- Request to join academies (teacher approval required)
-- Access enrolled classes after approval
-- Watch protected video lessons with watermarking
+### TEACHER
+- Works within an academy (`Teacher.academyId`)
+- Assigned to specific classes (`Class.teacherId`)
+- Create lessons (videos, documents, live streams)
+- Manage class enrollments
+- View student progress for their classes
+- Host live Zoom classes
+
+### STUDENT
+- Browse available classes
+- Request enrollment in classes
+- Access enrolled class content after approval
+- Watch video lessons
+- Join live streams
 - Track personal progress
-- View plays remaining per video
 
-## 🎥 Video Protection in Action
+## 🎥 Video Features
 
-When a student watches a video:
+### Video Hosting
+- **Bunny Stream CDN** - Global video delivery network
+- **Automatic Encoding** - Multi-quality adaptive streaming
+- **Direct Upload** - Teachers upload directly to Bunny Stream
+- **Secure Playback** - Token-based authentication
 
-1. **Session Check** - Validates active session, logs out other devices if needed
-2. **Enrollment Check** - Verifies student is enrolled in the class
-3. **Play State Load** - Retrieves progress, plays used, furthest point
-4. **Stream Begins** - Video served securely (no direct URL)
-5. **Watermark Appears** - Student name + email overlay at random positions
-6. **Progress Tracking** - Position saved every 5 seconds
-7. **Seek Enforcement** - Server validates all seek attempts
-8. **Play Count** - Increments when reaching 90%+ completion
+### Live Streaming
+- **Zoom Integration** - Automatic meeting creation
+- **Cloud Recording** - Recordings automatically uploaded to Bunny Stream
+- **Participant Tracking** - Automatic attendance tracking
+- **Lesson Creation** - Convert recordings to video lessons
 
-## 📊 Database Models
+### Progress Tracking
+- **Resume Playback** - Students continue where they left off
+- **Watch History** - Track video completion
+- **Analytics** - View watching patterns and engagement
 
-### Core Models
-- **User** - All platform users with role-based access
-- **Academy** - Learning institutions with approval workflow
-- **AcademyMembership** - User-academy relationships
-- **Class** - Courses within academies
-- **ClassEnrollment** - Student enrollment tracking
-- **Video** - Protected video content
-- **VideoPlayState** - Per-student progress and play tracking
-- **DeviceSession** - Active session enforcement
-- **Upload** - File metadata and storage paths
-- **Document** - PDF and document files
-- **PlatformSettings** - Global configuration
-- **BillingConfig** - Future payment integration
+## 📊 Database (Cloudflare D1)
+
+**14 Tables** - See [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) for complete details
+
+### Core Tables
+- **User** - All users (ADMIN, ACADEMY, TEACHER, STUDENT roles)
+- **Academy** - Educational institutions (linked to User via `ownerId`)
+- **Teacher** - Teachers working in academies (`userId` + `academyId`)
+- **Class** - Courses within academies (assigned to `teacherId`)
+- **ClassEnrollment** - Student enrollments with approval status
+- **Lesson** - Class lessons with release dates
+- **Video** - Bunny Stream hosted videos (`bunnyGuid`)
+- **Document** - PDF/document files in R2 storage
+- **LiveStream** - Zoom meetings with recording metadata
+- **VideoPlayState** - Student watch progress
+- **LessonRating** - Student lesson ratings
+- **Upload** - File upload metadata
+- **Notification** - User notifications
+- **DeviceSession** - Session management
+
+**Deprecated:** `AcademyMembership` table removed - replaced by Teacher table
 
 ## 🚀 Deployment
 
-### Recommended: Cloudflare Pages + Workers
+### Frontend (Cloudflare Pages)
 
+**Always use clean build for visible changes:**
 ```bash
-# 1. Set up production database (Neon, Supabase, etc.)
-# 2. Configure R2 for video storage
-# 3. Set environment variables
-# 4. Build and deploy
-
-npm run build
-npx wrangler pages deploy .next
+Remove-Item -Recurse -Force .next, .open-next -ErrorAction SilentlyContinue
+npx @opennextjs/cloudflare build
+npx wrangler deploy
 ```
 
-### Environment Variables (Production)
-```env
-DATABASE_URL=postgresql://...
-SESSION_SECRET=<generate-secure-random-key>
-STORAGE_TYPE=r2
-R2_ACCOUNT_ID=...
-R2_ACCESS_KEY_ID=...
-R2_SECRET_ACCESS_KEY=...
-R2_BUCKET_NAME=...
-NEXT_PUBLIC_APP_URL=https://your-domain.com
+See [DEPLOYMENT_CACHE_FIX.md](./DEPLOYMENT_CACHE_FIX.md) for details.
+
+### API Worker
+```bash
+cd workers/akademo-api
+npm run deploy
 ```
 
-See [SETUP.md](./SETUP.md) for detailed deployment instructions.
+### Database Migrations
+```bash
+# Apply migrations to production D1
+npx wrangler d1 migrations apply akademo-db --remote
+
+# Test locally
+npx wrangler d1 migrations apply akademo-db --local
+```
+
+### Secrets Configuration
+See [workers/akademo-api/README.md](./workers/akademo-api/README.md) for required secrets:
+- Bunny Stream API keys
+- Zoom OAuth credentials
+- Resend API key
+
+### Environment Variables
+Configured in `wrangler.toml` files:
+- Frontend: Root `wrangler.toml`
+- API: `workers/akademo-api/wrangler.toml`
 
 ## 🔧 Configuration
 
@@ -204,129 +244,140 @@ Video Specific (optional override)
 
 ## 🛠️ Development Commands
 
+### Frontend
 ```bash
-# Start development server
-npm run dev
-
-# Build for production
-npm run build
-
-# View database in GUI
-npx prisma studio
-
-# Run migrations
-npx prisma migrate dev
-
-# Reset database (WARNING: deletes data)
-npx prisma migrate reset
-
-# Seed demo data
-npx prisma db seed
-
-# Generate Prisma client
-npx prisma generate
+npm run dev          # Start Next.js dev server
+npm run build        # Build for production
+npm run deploy       # Deploy to Cloudflare Pages
 ```
 
-## 📁 API Endpoints
+### API Worker
+```bash
+cd workers/akademo-api
+npm run dev          # Start local worker
+npm run deploy       # Deploy to Cloudflare Workers
+npm run tail         # View production logs
+```
 
-### Authentication
-- `POST /api/auth/register` - Create account
-- `POST /api/auth/login` - Sign in
-- `POST /api/auth/logout` - Sign out
-- `GET /api/auth/me` - Get current user
+### Database (D1)
+```bash
+# Execute SQL queries
+npx wrangler d1 execute akademo-db --remote --command "SELECT * FROM User LIMIT 5"
 
-### Academies & Classes
-- `GET/POST /api/academies` - List/create academies
-- `PATCH /api/academies/[id]` - Update academy status
-- `GET/POST /api/classes` - List/create classes
-- `GET/POST /api/enrollments` - Manage enrollments
+# Apply migrations
+npx wrangler d1 migrations apply akademo-db --remote
 
-### Videos
-- `GET/POST /api/videos` - List/upload videos
-- `GET /api/video/stream/[id]` - Stream video (protected)
-- `GET/POST /api/video/progress` - Track watch progress
+# Check table structure
+npx wrangler d1 execute akademo-db --remote --command "PRAGMA table_info(User)"
+```
 
-### Membership & Sessions
-- `GET/POST /api/memberships` - Academy join requests
-- `PATCH /api/memberships/[id]` - Approve/reject
-- `GET/POST /api/session/check` - Validate active session
+### Secrets Management
+```bash
+# Add secret to worker
+echo "secret-value" | npx wrangler secret put SECRET_NAME
 
-Full API documentation in [SETUP.md](./SETUP.md)
+# List configured secrets
+npx wrangler secret list
+```
+
+## 📁 API Documentation
+
+**Base URL:** https://akademo-api.alexxvives.workers.dev
+
+**17 Route Groups** with 64+ endpoints:
+
+- `/auth` - Authentication & email verification
+- `/academies` - Academy management
+- `/classes` - Class CRUD operations
+- `/enrollments` - Student enrollment management
+- `/teachers` - Teacher management (DEPRECATED: use `/users`)
+- `/lessons` - Lesson creation and management
+- `/videos` - Video metadata and progress
+- `/documents` - Document management
+- `/live` - Live streaming with Zoom
+- `/bunny` - Bunny Stream integration
+- `/storage` - R2 file operations
+- `/webhooks` - Zoom webhook handlers
+- `/notifications` - User notifications
+- `/analytics` - Platform analytics
+- `/explore` - Public academy/class browsing
+- `/approvals` - Enrollment approvals
+- `/requests` - Join requests
+- `/users` - User management
+
+**Full API Documentation:** [workers/akademo-api/README.md](./workers/akademo-api/README.md)
 
 ## 🧪 Testing
 
-### Test All Roles
+### Check Production Status
 ```bash
-# After seeding, use these accounts:
-Admin:   admin@academyhive.com / admin123
-Teacher: teacher@example.com / teacher123
-Student: student@example.com / student123
+# API Worker health check
+curl https://akademo-api.alexxvives.workers.dev/
+
+# Should return:
+# {"status":"ok","service":"akademo-api","version":"3.0","routes":17}
 ```
 
-### Test Video Protection
-1. Login as teacher, upload an MP4 video
-2. Set maxPlays to 1 (for quick testing)
-3. Login as student, watch video to completion
-4. Try watching again - should be blocked
-
-### Test Session Enforcement
-1. Login as student in Chrome
-2. Login as same student in Firefox
-3. Chrome session should be terminated
+### Test Accounts
+See database for current test accounts:
+```bash
+npx wrangler d1 execute akademo-db --remote --command "SELECT email, role FROM User"
+```
 
 ## 🐛 Troubleshooting
 
-### Database Connection Issues
-```bash
-# Test database connection
-npx prisma db pull
+### Changes Not Appearing After Deploy
+**Solution:** Always use clean build command (see [DEPLOYMENT_CACHE_FIX.md](./DEPLOYMENT_CACHE_FIX.md))
 
-# Check DATABASE_URL in .env
-# Ensure PostgreSQL is running
+### API Worker Errors
+```bash
+# View real-time logs
+npx wrangler tail
+
+# Check worker status
+npx wrangler deployments list
 ```
 
-### Module Not Found Errors
+### Database Issues
 ```bash
-# Reinstall dependencies
-rm -rf node_modules package-lock.json
-npm install
+# Test D1 connection
+npx wrangler d1 execute akademo-db --remote --command "SELECT 1"
 
-# Regenerate Prisma client
-npx prisma generate
+# View table structure
+npx wrangler d1 execute akademo-db --remote --command "PRAGMA table_info(TableName)"
+
+# Check bindings
+npx wrangler whoami
 ```
 
-### Video Won't Play
-- Verify file is in `./uploads/videos/`
-- Check student is enrolled in class
-- Ensure video is MP4 format
-- Check browser console for errors
+### Video Upload Fails
+- Check Bunny Stream API key is configured
+- Verify `BUNNY_STREAM_LIBRARY_ID` is correct (571240)
+- Check worker logs for upload errors
 
-See [INSTALL.md](./INSTALL.md) for more troubleshooting tips.
+## ✨ Features
 
-## 📈 What's Included
+✅ **Deployed & Production Ready** - Live at akademo-edu.com  
+✅ **Separate API Worker** - Scalable backend on Cloudflare Workers  
+✅ **Cloudflare D1 Database** - SQLite-based, globally distributed  
+✅ **Bunny Stream CDN** - Fast global video delivery  
+✅ **Zoom Integration** - Automated live streaming with recording  
+✅ **Email Verification** - Resend API integration  
+✅ **Role-Based Access** - 4 roles with granular permissions  
+✅ **Progress Tracking** - Resume video playback  
+✅ **Live Analytics** - Real-time platform metrics  
+✅ **Document Management** - PDF uploads to R2 storage  
+✅ **Notification System** - In-app notifications  
+✅ **Responsive UI** - Tailwind CSS, mobile-friendly  
+✅ **Clean Architecture** - Separated concerns, documented  
 
-✅ Complete authentication system with role-based access  
-✅ Custom video player with watermarking and restrictions  
-✅ Device fingerprinting and session enforcement  
-✅ Progress tracking and resume functionality  
-✅ Academy and class management workflows  
-✅ Student enrollment and approval systems  
-✅ Secure video streaming with access control  
-✅ Admin dashboard for platform oversight  
-✅ Teacher dashboard for content management  
-✅ Student dashboard for learning  
-✅ Comprehensive documentation  
-✅ Demo data for immediate testing  
-✅ Production-ready architecture  
-✅ Cloudflare deployment support  
+## 📚 Documentation Index
 
-## 🚀 Next Steps
-
-1. ✅ **Install** - Follow [INSTALL.md](./INSTALL.md)
-2. ✅ **Explore** - Read [GETTING_STARTED.md](./GETTING_STARTED.md)
-3. ✅ **Test** - Try all features with demo accounts
-4. ✅ **Customize** - Update branding and styling
-5. ✅ **Deploy** - Follow [SETUP.md](./SETUP.md) for production
+- **[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)** - Complete D1 schema (14 tables)
+- **[DEPLOYMENT_CACHE_FIX.md](./DEPLOYMENT_CACHE_FIX.md)** - Deployment best practices
+- **[workers/akademo-api/README.md](./workers/akademo-api/README.md)** - API documentation
+- **[ZOOM_PARTICIPANT_TRACKING.md](./ZOOM_PARTICIPANT_TRACKING.md)** - Zoom attendance tracking
+- **[ZOOM_SCOPE_FIX.md](./ZOOM_SCOPE_FIX.md)** - Zoom OAuth configuration
 
 ## 📄 License
 
@@ -334,5 +385,5 @@ Proprietary - All Rights Reserved
 
 ---
 
-**Built with ❤️ for Academy Hive**  
-Secure, scalable learning platform with advanced video protection.
+**AKADEMO** - Modern Learning Management Platform  
+Built with Next.js, Hono, Cloudflare, Bunny Stream, and Zoom
