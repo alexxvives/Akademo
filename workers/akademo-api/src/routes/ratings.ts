@@ -62,10 +62,30 @@ ratings.get('/', async (c) => {
 
     console.log('[Ratings] Recent ratings count:', recent.results?.length || 0);
 
+    // Get per-lesson ratings aggregated
+    const lessonRatings = await c.env.DB.prepare(`
+        SELECT 
+          l.id as lessonId,
+          l.title as lessonTitle,
+          c.name as className,
+          COALESCE(AVG(lr.rating), 0) as averageRating,
+          COUNT(lr.id) as ratingCount
+        FROM Class c
+        JOIN Lesson l ON l.classId = c.id
+        LEFT JOIN LessonRating lr ON lr.lessonId = l.id
+        ${whereClause}
+        GROUP BY l.id, l.title, c.name
+        HAVING COUNT(lr.id) > 0
+        ORDER BY c.name, l.title
+    `).bind(...queryParams).all();
+
     return c.json(successResponse({
-        average: Number(stats?.averageRating) || 0,
-        total: Number(stats?.totalRatings) || 0,
-        ratedLessons: Number(stats?.ratedLessons) || 0,
+        overall: {
+            averageRating: Number(stats?.averageRating) || 0,
+            totalRatings: Number(stats?.totalRatings) || 0,
+            ratedLessons: Number(stats?.ratedLessons) || 0,
+        },
+        lessons: lessonRatings.results || [],
         recent: recent.results || []
     }));
 
