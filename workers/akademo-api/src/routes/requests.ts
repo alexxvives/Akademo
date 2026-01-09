@@ -68,6 +68,34 @@ requests.post('/student', async (c) => {
   }
 });
 
+// GET /requests/teacher - Get teacher's academy memberships
+requests.get('/teacher', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    
+    // Allow ACADEMY to view this too? No, mainly TEACHER role. 
+    // But sometimes ACADEMY role users act as teachers? 
+    // For now strictly TEACHER role as per frontend.
+    
+    const result = await c.env.DB.prepare(`
+      SELECT 
+        t.*,
+        a.name as academyName,
+        a.description as academyDescription,
+        a.ownerId as academyOwnerId
+      FROM Teacher t
+      JOIN Academy a ON t.academyId = a.id
+      WHERE t.userId = ?
+      ORDER BY t.createdAt DESC
+    `).bind(session.id).all();
+
+    return c.json(successResponse(result.results || []));
+  } catch (error: any) {
+    console.error('[Teacher Requests] Error:', error);
+    return c.json(errorResponse(error.message), 500);
+  }
+});
+
 // POST /requests/teacher - Teacher requests to join an academy
 requests.post('/teacher', async (c) => {
   try {

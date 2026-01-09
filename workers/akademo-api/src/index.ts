@@ -13,6 +13,7 @@ import approvalRoutes from './routes/approvals';
 import userRoutes from './routes/users';
 import documentRoutes from './routes/documents';
 import notificationRoutes from './routes/notifications';
+import ratingRoutes from './routes/ratings';
 import analyticsRoutes from './routes/analytics';
 import liveRoutes from './routes/live';
 import bunnyRoutes from './routes/bunny';
@@ -28,7 +29,8 @@ app.use('*', cors({
   origin: ['https://akademo-edu.com', 'https://akademo.alexxvives.workers.dev', 'http://localhost:3000'],
   credentials: true,
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization'],
+  allowHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+  exposeHeaders: ['Set-Cookie'],
 }));
 
 // Health check
@@ -54,6 +56,7 @@ app.route('/approvals', approvalRoutes);
 app.route('/users', userRoutes);
 app.route('/documents', documentRoutes);
 app.route('/notifications', notificationRoutes);
+app.route('/ratings', ratingRoutes);
 app.route('/analytics', analyticsRoutes);
 
 // Routes - Phase 2: Advanced Features

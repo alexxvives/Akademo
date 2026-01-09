@@ -1,4 +1,4 @@
-import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { Bindings } from '../types';
 
 export interface D1Database {
   prepare(query: string): D1PreparedStatement;
@@ -26,17 +26,6 @@ export interface D1ExecResult {
   duration: number;
 }
 
-// Get D1 database from Cloudflare context
-export async function getDB(): Promise<D1Database> {
-  const ctx = await getCloudflareContext();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const env = ctx?.env as any;
-  if (!env?.DB) {
-    throw new Error('D1 Database not available');
-  }
-  return env.DB as D1Database;
-}
-
 // Helper to generate CUID-like IDs
 export function generateId(): string {
   const timestamp = Date.now().toString(36);
@@ -46,24 +35,21 @@ export function generateId(): string {
 
 // User queries
 export const userQueries = {
-  async findByEmail(email: string) {
-    const db = await getDB();
+  async findByEmail(db: D1Database, email: string) {
     return db.prepare('SELECT * FROM User WHERE email = ?').bind(email).first();
   },
 
-  async findById(id: string) {
-    const db = await getDB();
+  async findById(db: D1Database, id: string) {
     return db.prepare('SELECT * FROM User WHERE id = ?').bind(id).first();
   },
 
-  async create(data: {
+  async create(db: D1Database, data: {
     email: string;
     password: string;
     firstName: string;
     lastName: string;
     role: string;
   }) {
-    const db = await getDB();
     const id = generateId();
     const now = new Date().toISOString();
     await db.prepare(`
@@ -76,13 +62,11 @@ export const userQueries = {
 
 // Academy queries
 export const academyQueries = {
-  async findById(id: string) {
-    const db = await getDB();
+  async findById(db: D1Database, id: string) {
     return db.prepare('SELECT * FROM Academy WHERE id = ?').bind(id).first();
   },
 
-  async findByOwner(ownerId: string) {
-    const db = await getDB();
+  async findByOwner(db: D1Database, ownerId: string) {
     // Find academies where the user is the owner
     const result = await db.prepare(`
       SELECT * FROM Academy
@@ -92,8 +76,7 @@ export const academyQueries = {
     return result.results || [];
   },
 
-  async findAll() {
-    const db = await getDB();
+  async findAll(db: D1Database) {
     const result = await db.prepare('SELECT * FROM Academy ORDER BY createdAt DESC').all();
     return result.results || [];
   },

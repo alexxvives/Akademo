@@ -1,6 +1,8 @@
+import { Context } from 'hono';
+import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import bcrypt from 'bcryptjs';
-import { cookies } from 'next/headers';
-import { userQueries } from './db';
+import { userQueries, D1Database } from './db';
+import { Bindings } from '../types';
 
 type UserRole = 'ADMIN' | 'ACADEMY' | 'TEACHER' | 'STUDENT';
 
@@ -23,46 +25,65 @@ export async function verifyPassword(password: string, hashedPassword: string): 
   return bcrypt.compare(password, hashedPassword);
 }
 
-export async function createSession(userId: string): Promise<string> {
+export async function createSession(c: Context<{ Bindings: Bindings }>, userId: string): Promise<string> {
   const sessionId = btoa(userId);
-  const cookieStore = await cookies();
-  
-  cookieStore.set(SESSION_COOKIE_NAME, sessionId, {
+  setCookie(c, SESSION_COOKIE_NAME, sessionId, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: true,
+    sameSite: 'Lax',
     maxAge: SESSION_MAX_AGE,
     path: '/',
+    domain: '.akademo-edu.com',
   });
-
   return sessionId;
 }
 
-export async function getSession(): Promise<SessionUser | null> {
-  const cookieStore = await cookies();
-  const sessionId = cookieStore.get(SESSION_COOKIE_NAME)?.value;
+export async function deleteSession(c: Context<{ Bindings: Bindings }>): Promise<void> {
+  deleteCookie(c, SESSION_COOKIE_NAME, {
+      path: '/',
+      domain: '.akademo-edu.com',
+  });
+}
 
-  console.log('[getSession] Cookie name:', SESSION_COOKIE_NAME);
-  console.log('[getSession] Session ID found:', sessionId ? 'Yes' : 'No');
+export async function getSession(c: Context<{ Bindings: Bindings }>): Promise<SessionUser | null> {
+  let sessionId = getCookie(c, SESSION_COOKIE_NAME);
+  
+  console.log('[getSession] Cookie value:', sessionId || 'NOT FOUND');
+  console.log('[getSession] All cookies:', c.req.header('Cookie'));
+
+  // Also check Authorization header (Bearer token) for cross-domain support
+  const authHeader = c.req.header('Authorization');
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    sessionId = authHeader.split(' ')[1];
+    console.log('[getSession] Using Bearer token');
+  }
 
   if (!sessionId) {
-    console.log('[getSession] No session cookie found');
+    console.log('[getSession] No session ID found');
     return null;
   }
 
-  // Simple session: decode base64 userId
   try {
-    const userId = atob(sessionId);
-    console.log('[getSession] Decoded userId:', userId);
+    let userId: string;
+    try {
+        // Decode base64 session ID to get user ID
+        userId = atob(sessionId);
+        console.log('[getSession] Decoded userId:', userId);
+    } catch (e) {
+        console.error('[getSession] Failed to decode session ID:', e);
+        return null;
+    }
     
-    const user = await userQueries.findById(userId) as any;
-    console.log('[getSession] User found:', user ? 'Yes' : 'No');
+    // Use the D1 database from bindings
+    const db = c.env.DB as unknown as D1Database;
+    const user = await userQueries.findById(db, userId) as any;
 
     if (!user) {
-      console.log('[getSession] User not found in database');
+      console.log('[getSession] User not found in database for userId:', userId);
       return null;
     }
     
+    console.log('[getSession] User found:', user.email, 'Role:', user.role);
     return {
       id: user.id,
       email: user.email,
@@ -71,28 +92,21 @@ export async function getSession(): Promise<SessionUser | null> {
       role: user.role as UserRole,
     };
   } catch (error) {
-    console.error('[getSession] Error decoding session:', error);
+    console.error('[getSession] Error:', error);
     return null;
   }
 }
 
-export async function deleteSession(): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.delete(SESSION_COOKIE_NAME);
-}
-
-
-
-export async function requireAuth(): Promise<SessionUser> {
-  const session = await getSession();
+export async function requireAuth(c: Context<{ Bindings: Bindings }>): Promise<SessionUser> {
+  const session = await getSession(c);
   if (!session) {
     throw new Error('Unauthorized');
   }
   return session;
 }
 
-export async function requireRole(allowedRoles: UserRole[]): Promise<SessionUser> {
-  const session = await requireAuth();
+export async function requireRole(c: Context<{ Bindings: Bindings }>, allowedRoles: UserRole[]): Promise<SessionUser> {
+  const session = await requireAuth(c);
   if (!allowedRoles.includes(session.role)) {
     throw new Error('Forbidden');
   }

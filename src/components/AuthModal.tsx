@@ -42,6 +42,11 @@ export default function AuthModal({ mode, onClose }: AuthModalProps) {
       const result = await response.json();
 
       if (result.success) {
+        // Save token for cross-domain auth if present
+        if (result.data?.token) {
+          localStorage.setItem('auth_token', result.data.token);
+        }
+
         onClose();
         
         // Redirect based on role from API response

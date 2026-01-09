@@ -227,3 +227,12 @@ if (session.role === 'ACADEMY') {
 ---
 
 **Remember**: The goal is to write code that works correctly the first time through careful verification, not to iterate quickly through broken implementations. Slow down, test thoroughly, deploy confidently.
+
+## Development Standards
+
+### Quality Assurance
+- **State-of-the-Art Solutions**: Always implement robust, best-practice solutions using modern frameworks/libraries. Avoid temporary patches or dirty hacks.
+- **Root Cause Analysis**: Identify and fix the underlying issue rather than masking symptoms.
+- **Mandatory Verification**: You must TEST all API calls and verify they work as expected before marking a task as complete. 
+- **Error Handling**: Implement proper error handling that returns appropriate HTTP status codes (401 for Auth, 403 for Permissions, 404 for Not Found) instead of generic 500 errors.
+

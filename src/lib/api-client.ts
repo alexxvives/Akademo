@@ -24,12 +24,19 @@ export async function apiClient(
   const { skipCredentials, ...fetchOptions } = options;
   
   const url = `${API_BASE_URL}${path}`;
+
+  // Get token from local storage if available (Client-side)
+  let token = '';
+  if (typeof window !== 'undefined') {
+      token = localStorage.getItem('auth_token') || '';
+  }
   
   const response = await fetch(url, {
     ...fetchOptions,
     credentials: skipCredentials ? 'omit' : 'include', // Include cookies for auth
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       ...fetchOptions.headers,
     },
   });

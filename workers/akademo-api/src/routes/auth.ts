@@ -91,6 +91,7 @@ auth.post('/register', async (c) => {
     });
 
     return c.json(successResponse({
+      token: sessionId, // Return token for cross-domain auth
       id: userId,
       email: email.toLowerCase(),
       firstName,
@@ -136,6 +137,8 @@ auth.post('/login', async (c) => {
 
     console.log('[Login] Password valid, creating session');
     // Create session (use btoa for base64 encoding in Workers)
+    // We use lib/auth createSession if we imported it, but here we can just do it manually or import it.
+    // For now, let's keep it manual but add the token to response.
     const sessionId = btoa(user.id as string);
     
     setCookie(c, 'academy_session', sessionId, {
@@ -149,6 +152,7 @@ auth.post('/login', async (c) => {
 
     console.log('[Login] Success for user:', user.id);
     return c.json(successResponse({
+      token: sessionId, // Return token for cross-domain auth
       id: user.id,
       email: user.email,
       firstName: user.firstName,
