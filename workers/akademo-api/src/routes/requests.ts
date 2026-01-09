@@ -89,7 +89,20 @@ requests.get('/teacher', async (c) => {
       ORDER BY t.createdAt DESC
     `).bind(session.id).all();
 
-    return c.json(successResponse(result.results || []));
+    // Transform results to include status field (all Teacher table entries are APPROVED)
+    const memberships = (result.results || []).map((row: any) => ({
+      id: row.id,
+      userId: row.userId,
+      academyId: row.academyId,
+      academyName: row.academyName,
+      academyDescription: row.academyDescription,
+      status: 'APPROVED', // Teacher table entries are always approved
+      requestedAt: row.createdAt,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+    }));
+
+    return c.json(memberships);
   } catch (error: any) {
     console.error('[Teacher Requests] Error:', error);
     return c.json(errorResponse(error.message), 500);
