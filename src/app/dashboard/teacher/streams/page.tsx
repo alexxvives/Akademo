@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
+import ConfirmModal from '@/components/ConfirmModal';
 
 interface Stream {
   id: string;
@@ -15,9 +16,12 @@ interface Stream {
   startedAt: string | null;
   endedAt: string | null;
   zoomMeetingId: string | null;
+  zoomStartUrl?: string; // Teacher host url
+  zoomLink?: string; // Student join url
   recordingId: string | null;
   participantCount?: number | null;
   participantsFetchedAt?: string | null;
+  bunnyStatus?: number | null; // Bunny video processing status
 }
 
 export default function StreamsPage() {
@@ -29,12 +33,52 @@ export default function StreamsPage() {
   const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
   const [editingTitleValue, setEditingTitleValue] = useState<string>('');
   const [creatingLessonId, setCreatingLessonId] = useState<string | null>(null);
+  const [deletingStreamId, setDeletingStreamId] = useState<string | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{ isOpen: boolean; streamId: string; streamTitle: string }>({ isOpen: false, streamId: '', streamTitle: '' });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadStreams();
     loadAcademyName();
+    
+    // Poll for stream status updates and recording availability every 10 seconds
+    const pollInterval = setInterval(() => {
+      loadStreams();
+      checkRecordingAvailability();
+    }, 10000);
+    
+    return () => clearInterval(pollInterval);
   }, []);
+
+  const checkRecordingAvailability = async () => {
+    // Find streams that ended but don't have a recordingId yet
+    const endedWithoutRecording = streams.filter(
+      s => s.status === 'ended' && !s.recordingId && s.zoomMeetingId
+    );
+
+    if (endedWithoutRecording.length === 0) return;
+
+    try {
+      // Check Bunny for each stream's recording
+      const checks = endedWithoutRecording.map(async (stream) => {
+        const response = await apiClient(`/live/${stream.id}/check-recording`);
+        const result = await response.json();
+        
+        if (result.success && result.recordingId) {
+          // Update the stream with the recordingId
+          setStreams(prev => prev.map(s => 
+            s.id === stream.id 
+              ? { ...s, recordingId: result.recordingId, bunnyStatus: result.bunnyStatus }
+              : s
+          ));
+        }
+      });
+
+      await Promise.all(checks);
+    } catch (error) {
+      console.error('Error checking recording availability:', error);
+    }
+  };
 
   const loadAcademyName = async () => {
     try {
@@ -53,7 +97,8 @@ export default function StreamsPage() {
       const response = await apiClient('/live/history');
       const result = await response.json();
       if (result.success) {
-        setStreams(result.data);
+        // Show ALL streams including scheduled/waiting ones
+        setStreams(result.data || []);
       }
     } catch (error) {
       console.error('Error loading streams:', error);
@@ -82,7 +127,7 @@ export default function StreamsPage() {
     setEditingTitleId(null);
 
     try {
-      const response = await fetch(`/api/live/${streamId}`, {
+      const response = await apiClient(`/live/${streamId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: editingTitleValue.trim() }),
@@ -134,6 +179,54 @@ export default function StreamsPage() {
       alert('Error al crear lección');
     } finally {
       setCreatingLessonId(null);
+    }
+  };
+
+  const openDeleteConfirmation = (streamId: string, streamTitle: string) => {
+    setConfirmModal({ isOpen: true, streamId, streamTitle });
+  };
+
+  const handleDeleteStream = async () => {
+    const { streamId, streamTitle } = confirmModal;
+    setConfirmModal({ isOpen: false, streamId: '', streamTitle: '' });
+    setDeletingStreamId(streamId);
+    try {
+      const response = await apiClient(`/live/${streamId}`, {
+        method: 'DELETE',
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // Remove from local state immediately
+        setStreams(streams.filter(s => s.id !== streamId));
+      } else {
+        alert(`Error: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error deleting stream:', error);
+      alert('Error al eliminar stream');
+    } finally {
+      setDeletingStreamId(null);
+    }
+  };
+
+  const syncRecording = async (streamId: string) => {
+    try {
+      if (!confirm('¿Buscar grabación en Zoom y sincronizar? Esto puede tardar unos segundos.')) return;
+      
+      const res = await apiClient(`/live/${streamId}/check-recording`, { method: 'POST' });
+      const result = await res.json();
+      
+      if (result.success) {
+        alert('✅ Grabación encontrada y sincronizada. Puede tardar unos minutos en procesarse en CDN.');
+        loadStreams(); // Refresh list
+      } else {
+        alert(`⚠️ ${result.error || 'No se encontró grabación'}`);
+      }
+    } catch (e: any) {
+      console.error(e);
+      alert('Error de conexión');
     }
   };
 
@@ -396,9 +489,25 @@ export default function StreamsPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {streams.map((stream) => (
-                  <tr key={stream.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={stream.id} className="hover:bg-gray-50 transition-colors group">
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-3">
+                        {/* Delete button on the left */}
+                        <button
+                          onClick={() => openDeleteConfirmation(stream.id, stream.title)}
+                          disabled={deletingStreamId === stream.id}
+                          className="flex-shrink-0 p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                          title="Eliminar stream"
+                        >
+                          {deletingStreamId === stream.id ? (
+                            <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          )}
+                        </button>
+                        
                         {stream.status === 'active' && (
                           <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
                         )}
@@ -420,20 +529,48 @@ export default function StreamsPage() {
                             className="px-2 py-1 border border-blue-500 rounded text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                           />
                         ) : (
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-gray-900">{stream.title}</span>
-                            <button
-                              onClick={() => {
-                                setEditingTitleId(stream.id);
-                                setEditingTitleValue(stream.title);
-                              }}
-                              className="text-gray-400 hover:text-gray-600 transition-colors"
-                              title="Editar título"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                              </svg>
-                            </button>
+                          <div className="flex flex-col gap-1 w-full">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-gray-900">{stream.title}</span>
+                              <button
+                                onClick={() => {
+                                  setEditingTitleId(stream.id);
+                                  setEditingTitleValue(stream.title);
+                                }}
+                                className="text-gray-400 hover:text-gray-600 transition-colors"
+                                title="Editar título"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                              </button>
+                            </div>
+                            {/* Action Buttons for Scheduled/Active Streams */}
+                            {(stream.status === 'scheduled' || stream.status === 'active') && stream.zoomStartUrl && (
+                              <div className="flex gap-2 mt-1">
+                                <a
+                                  href={stream.zoomStartUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs bg-red-100 hover:bg-red-200 text-red-700 px-2 py-1 rounded inline-flex items-center gap-1 transition-colors"
+                                >
+                                  <span>🎥</span> Unirse como Anfitrión
+                                </a>
+                                {stream.zoomLink && (
+                                  <button
+                                    onClick={() => {
+                                      if (stream.zoomLink) {
+                                        navigator.clipboard.writeText(stream.zoomLink);
+                                        alert('Link de estudiante copiado');
+                                      }
+                                    }}
+                                    className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded inline-flex items-center gap-1 transition-colors"
+                                  >
+                                    <span>🔗</span> Copiar Link
+                                  </button>
+                                )}
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -451,14 +588,10 @@ export default function StreamsPage() {
                     </td>
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-2">
-                        {stream.participantCount != null ? (
+                        {stream.participantCount != null && stream.participantCount > 0 ? (
                           <span className="text-sm text-gray-600 font-medium">
                             {stream.participantCount}
                           </span>
-                        ) : stream.participantsFetchedAt ? (
-                          <span className="text-sm text-gray-400">0</span>
-                        ) : stream.status === 'ended' ? (
-                          <span className="text-xs text-gray-500">Procesando...</span>
                         ) : (
                           <span className="text-sm text-gray-400">—</span>
                         )}
@@ -472,7 +605,9 @@ export default function StreamsPage() {
                         <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        {formatDuration(stream.startedAt || stream.createdAt, stream.endedAt)}
+                        {stream.status === 'active' && !stream.endedAt 
+                          ? '—' 
+                          : formatDuration(stream.startedAt || stream.createdAt, stream.endedAt)}
                       </span>
                     </td>
                     <td className="py-4 px-4">
@@ -483,19 +618,26 @@ export default function StreamsPage() {
                           </svg>
                           Disponible
                         </span>
-                      ) : stream.status === 'active' || stream.status === 'scheduled' ? (
-                        <span className="text-gray-400 text-sm">En progreso</span>
-                      ) : stream.status === 'ended' ? (
-                        <span className="text-xs text-gray-500">Procesando...</span>
+                      ) : (stream.status === 'ended' || stream.status === 'active') ? (
+                        <button
+                          onClick={() => syncRecording(stream.id)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded text-xs font-semibold transition-colors group/btn"
+                          title="Buscar grabación en Zoom manualmente"
+                        >
+                          <svg className="w-3.5 h-3.5 group-hover/btn:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          Sync
+                        </button>
                       ) : (
-                        <span className="text-xs text-gray-500">No disponible</span>
+                        <span className="text-gray-400 text-sm">—</span>
                       )}
                     </td>
                     <td className="py-4 px-4">
                       {(stream as any).validRecordingId ? (
                         <Link
                           href={`/dashboard/teacher/class/${stream.classSlug || stream.classId}?lesson=${(stream as any).validRecordingId}`}
-                          className="inline-flex items-center gap-1 text-brand-600 hover:text-brand-700 text-sm font-medium transition-colors"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 text-blue-600 hover:text-blue-700 border-2 border-blue-200 hover:border-blue-300 rounded-lg text-xs font-semibold transition-all"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -504,13 +646,15 @@ export default function StreamsPage() {
                           Ver lección
                         </Link>
                       ) : stream.recordingId ? (
-                        <button
-                          onClick={() => handleCreateLesson(stream.id)}
-                          disabled={creatingLessonId === stream.id}
-                          className="text-brand-600 hover:text-brand-700 text-xs font-medium disabled:opacity-50"
+                        <Link
+                          href={`/dashboard/teacher/class/${stream.classSlug || stream.classId}?action=create-lesson&recordingId=${stream.recordingId}&streamTitle=${encodeURIComponent(stream.title)}`}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 text-blue-600 hover:text-blue-700 border-2 border-blue-200 hover:border-blue-300 rounded-lg text-xs font-semibold transition-all"
                         >
-                          {creatingLessonId === stream.id ? 'Creando...' : 'Crear Lección'}
-                        </button>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          Crear Lección
+                        </Link>
                       ) : (
                         <span className="text-gray-400 text-sm">—</span>
                       )}
@@ -530,6 +674,18 @@ export default function StreamsPage() {
           accept="video/*"
           className="hidden"
           onChange={handleFileSelect}
+        />
+
+        {/* Confirmation Modal */}
+        <ConfirmModal
+          isOpen={confirmModal.isOpen}
+          title="Eliminar Stream"
+          message={`¿Estás seguro que deseas eliminar el stream "${confirmModal.streamTitle}"? Esta acción también eliminará la grabación de Bunny y no se puede deshacer.`}
+          confirmText="Eliminar"
+          cancelText="Cancelar"
+          type="danger"
+          onConfirm={handleDeleteStream}
+          onCancel={() => setConfirmModal({ isOpen: false, streamId: '', streamTitle: '' })}
         />
       </div>
   );

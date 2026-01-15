@@ -15,10 +15,6 @@ export interface CloudflareEnv {
   ZOOM_CLIENT_ID?: string;
   ZOOM_CLIENT_SECRET?: string;
   ZOOM_WEBHOOK_SECRET?: string;
-  // Firebase
-  FIREBASE_PROJECT_ID: string;
-  FIREBASE_DATABASE_URL: string;
-  FIREBASE_CLIENT_EMAIL: string;
 }
 
 // D1 Database interface (from Cloudflare Workers types)

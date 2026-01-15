@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
+import DocumentSigningModal from '@/components/DocumentSigningModal';
 
 interface EnrolledClass {
   id: string;
@@ -16,6 +19,7 @@ interface EnrolledClass {
   studentCount: number;
   createdAt: string;
   enrollmentStatus?: 'PENDING' | 'APPROVED';
+  documentSigned: number;
 }
 
 interface ActiveStream {
@@ -28,10 +32,12 @@ interface ActiveStream {
 }
 
 export default function StudentClassesPage() {
+  const router = useRouter();
   const [enrolledClasses, setEnrolledClasses] = useState<EnrolledClass[]>([]);
   const [activeStreams, setActiveStreams] = useState<ActiveStream[]>([]);
   const [academyName, setAcademyName] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [signingClass, setSigningClass] = useState<EnrolledClass | null>(null);
 
   useEffect(() => {
     loadData();
@@ -67,13 +73,14 @@ export default function StudentClassesPage() {
           slug: c.slug,
           name: c.name,
           description: c.description,
-          academyName: c.academy?.name || 'Unknown',
-          videoCount: c._count?.videos || 0,
-          documentCount: c._count?.documents || 0,
-          lessonCount: c._count?.lessons || 0,
-          studentCount: c._count?.enrollments || 0,
+          academyName: c.academyName || 'Academia',
+          videoCount: c.videoCount || 0,
+          documentCount: c.documentCount || 0,
+          lessonCount: c.lessonCount || 0,
+          studentCount: c.studentCount || 0,
           createdAt: c.createdAt,
           enrollmentStatus: c.enrollmentStatus || 'APPROVED',
+          documentSigned: c.documentSigned ?? 0,
         }));
         setEnrolledClasses(classes);
         if (classes.length > 0) {
@@ -88,6 +95,39 @@ export default function StudentClassesPage() {
       console.error('Failed to load data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleClassClick = (classItem: EnrolledClass, e: React.MouseEvent) => {
+    // If document not signed, show modal instead of navigating
+    if (!classItem.documentSigned) {
+      e.preventDefault();
+      setSigningClass(classItem);
+    }
+  };
+
+  const handleSign = async () => {
+    if (!signingClass) return;
+
+    const res = await apiClient('/enrollments/sign-document', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ classId: signingClass.id }),
+    });
+    const result = await res.json();
+
+    if (result.success) {
+      // Update local state to reflect signed document
+      setEnrolledClasses(prev =>
+        prev.map(c =>
+          c.id === signingClass.id ? { ...c, documentSigned: 1 } : c
+        )
+      );
+      setSigningClass(null);
+      // Navigate to the class
+      router.push(`/dashboard/student/class/${signingClass.slug || signingClass.id}`);
+    } else {
+      throw new Error(result.error || 'Failed to sign document');
     }
   };
 
@@ -149,25 +189,59 @@ export default function StudentClassesPage() {
       <div className="space-y-4">
         {enrolledClasses.map((classItem) => {
           const liveStream = activeStreams.find(s => s.classId === classItem.id);
+          const needsSignature = !classItem.documentSigned;
+          
           return (
-            <Link
+            <div
               key={classItem.id}
-              href={`/dashboard/student/class/${classItem.slug || classItem.id}`}
-              className="block bg-white rounded-xl border-2 border-gray-200 hover:border-brand-400 hover:shadow-xl transition-all p-6 group"
+              onClick={(e) => {
+                if (needsSignature) {
+                  handleClassClick(classItem, e);
+                } else {
+                  router.push(`/dashboard/student/class/${classItem.slug || classItem.id}`);
+                }
+              }}
+              className="block bg-white rounded-xl border-2 border-gray-200 hover:border-brand-400 hover:shadow-xl transition-all p-6 group cursor-pointer"
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
+                    {liveStream && (
+                      <span className="w-3 h-3 bg-red-500 rounded-full animate-pulse flex-shrink-0" />
+                    )}
                     <h3 className="text-xl font-bold text-gray-900 group-hover:text-brand-600 transition-colors">{classItem.name}</h3>
+                    {/* Shield Icon - Shows broken shield if unsigned, verified shield if signed */}
+                    {needsSignature ? (
+                      <div className="relative group/shield">
+                        <Image 
+                          src="/icons/shield-broken.svg" 
+                          alt="Firma requerida" 
+                          width={28} 
+                          height={28}
+                          className="drop-shadow-sm"
+                        />
+                        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover/shield:opacity-100 transition-opacity z-10">
+                          Firma requerida
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="relative group/shield-signed">
+                        <Image 
+                          src="/icons/shield-verified.svg" 
+                          alt="Documentos firmados" 
+                          width={28} 
+                          height={28}
+                          className="drop-shadow-sm"
+                        />
+                        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover/shield-signed:opacity-100 transition-opacity z-10">
+                          Documento firmado
+                        </div>
+                      </div>
+                    )}
                     {liveStream && (
                       <span className="flex items-center gap-1.5 text-xs bg-red-100 text-red-700 px-2.5 py-1 rounded-full font-semibold border border-red-200">
                         <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
                         EN VIVO
-                      </span>
-                    )}
-                    {classItem.enrollmentStatus === 'PENDING' && (
-                      <span className="text-xs bg-yellow-100 text-yellow-700 px-2.5 py-1 rounded-full font-semibold border border-yellow-200">
-                        Pendiente
                       </span>
                     )}
                   </div>
@@ -219,10 +293,19 @@ export default function StudentClassesPage() {
                   </div>
                 </div>
               </div>
-            </Link>
+            </div>
           );
         })}
       </div>
+
+      {/* Document Signing Modal */}
+      <DocumentSigningModal
+        isOpen={!!signingClass}
+        onClose={() => setSigningClass(null)}
+        onSign={handleSign}
+        classId={signingClass?.id || ''}
+        className={signingClass?.name || ''}
+      />
     </div>
   );
 }

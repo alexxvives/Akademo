@@ -61,8 +61,8 @@ export default function LessonsList({
           <p className="text-gray-500 text-sm">Crea tu primera lección para comenzar</p>
         </div>
       ) : (
-        <div className="max-h-[600px] overflow-y-auto pr-2">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="max-h-[600px] overflow-y-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-2">
           {lessons.map((lesson) => {
             const videoCount = lesson.videoCount || 0;
             const docCount = lesson.documentCount || 0;
@@ -133,24 +133,28 @@ export default function LessonsList({
 
                   {/* Thumbnail with play button overlay and content badges */}
                   <div className="relative" style={{ height: '160px' }}>
-                    {lesson.isUploading || lesson.isTranscoding ? (
-                      <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex flex-col items-center justify-center">
-                        <svg className="w-12 h-12 text-gray-400 mb-2 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                        </svg>
-                        <span className="text-xs text-gray-400">
-                          {lesson.isUploading ? 'Subiendo...' : 'Procesando...'}
-                        </span>
-                      </div>
-                    ) : (lesson.firstVideoBunnyGuid || lesson.firstVideoUpload?.bunnyGuid) ? (
+                    {(lesson.firstVideoBunnyGuid || lesson.firstVideoUpload?.bunnyGuid) ? (
                       <>
                         <img
                           src={getBunnyThumbnailUrl(lesson.firstVideoBunnyGuid || lesson.firstVideoUpload?.bunnyGuid || '')}
                           alt={lesson.title}
-                          className="w-full h-full object-cover"
+                          className={`w-full h-full object-cover ${lesson.isUploading || lesson.isTranscoding ? 'opacity-50' : ''}`}
                         />
-                        {/* Date Badge - Top Right - Always show */}
-                        <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5 text-xs bg-gray-100/90 text-gray-600 px-2.5 py-1.5 rounded-lg backdrop-blur-sm border border-gray-300/50 shadow-lg">
+                        {/* Transcoding/Uploading Overlay */}
+                        {(lesson.isUploading || lesson.isTranscoding) && (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60">
+                            <div className="w-8 h-8 border-3 border-purple-400/30 border-t-purple-400 rounded-full animate-spin mb-2" />
+                            <span className="text-sm font-medium text-white">
+                              {lesson.isUploading ? 'Subiendo...' : 'Transcodificando...'}
+                            </span>
+                          </div>
+                        )}
+                        {/* Date Badge - Top Right - Color changes based on release status */}
+                        <div className={`absolute top-2 right-2 z-10 flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg backdrop-blur-sm shadow-lg ${
+                          isReleased(lesson.releaseDate)
+                            ? 'bg-gray-100/90 text-gray-600 border border-gray-300/50'
+                            : 'bg-red-500/90 text-white border border-red-400/50'
+                        }`}>
                           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
@@ -158,14 +162,16 @@ export default function LessonsList({
                             {lesson.releaseDate ? formatDate(lesson.releaseDate) : 'Sin fecha'}
                           </span>
                         </div>
-                        {/* Play Button Overlay */}
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
-                          <div className="w-16 h-16 bg-white/90 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
-                            <svg className="w-8 h-8 text-brand-600 ml-1" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                            </svg>
+                        {/* Play Button Overlay - Only show when not uploading/transcoding */}
+                        {!lesson.isUploading && !lesson.isTranscoding && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
+                            <div className="w-16 h-16 bg-white/90 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
+                              <svg className="w-8 h-8 text-gray-900 ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                              </svg>
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </>
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
@@ -199,47 +205,54 @@ export default function LessonsList({
                   </div>
 
                   {/* Card Body */}
-                  <div className="p-4">
-                    {/* Student Engagement Progress with Stars and Percentage */}
-                    {!lesson.isUploading && !lesson.isTranscoding && lesson.studentsWatching !== undefined && (
-                      <>
-                        <div className="flex items-center justify-between text-sm mb-2">
-                          <div className="flex items-center gap-1">
-                            <span className="text-yellow-500 text-base">
-                              {'★'.repeat(Math.round((lesson.avgRating || 0)))}
-                            </span>
-                            <span className="text-gray-300 text-base">
-                              {'★'.repeat(5 - Math.round((lesson.avgRating || 0)))}
-                            </span>
-                            {lesson.ratingCount !== undefined && lesson.ratingCount > 0 && (
-                              <span className="text-xs text-gray-500 ml-1">({lesson.ratingCount})</span>
-                            )}
+                  <div className="p-4 space-y-3">
+                    {/* Star Rating and Completion Stats */}
+                    {!lesson.isUploading && !lesson.isTranscoding && (
+                      <div className="space-y-2">
+                        {/* Star Rating */}
+                        {lesson.ratingCount !== undefined && lesson.ratingCount > 0 && (
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-0.5">
+                              {[1, 2, 3, 4, 5].map(star => (
+                                <svg key={star} className={`w-4 h-4 ${star <= Math.round(lesson.avgRating || 0) ? 'text-yellow-400' : 'text-gray-300'}`} fill="currentColor" viewBox="0 0 20 20">
+                                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                </svg>
+                              ))}
+                            </div>
+                            <span className="text-sm font-semibold text-gray-700">{(lesson.avgRating || 0).toFixed(1)}</span>
+                            <span className="text-xs text-gray-500">({lesson.ratingCount})</span>
                           </div>
-                          <span 
-                            className="text-gray-900 font-bold text-sm cursor-help" 
-                            title="Porcentaje de estudiantes que han accedido a la lección"
-                          >
-                            {Math.round(lesson.avgProgress || 0)}% ({lesson.studentsWatching || 0}/{(lesson as any).totalStudentsInClass || 0})
-                          </span>
-                        </div>
-                        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full transition-all"
-                            style={{ 
-                              width: `${lesson.avgProgress || 0}%`,
-                              background: (lesson.avgProgress || 0) >= 75
-                                ? 'linear-gradient(to right, #15803d, #166534)' // dark green
-                                : (lesson.avgProgress || 0) >= 50
-                                ? 'linear-gradient(to right, #22c55e, #15803d)' // green to dark green
-                                : (lesson.avgProgress || 0) >= 25
-                                ? 'linear-gradient(to right, #eab308, #22c55e)' // yellow to green
-                                : (lesson.avgProgress || 0) >= 10
-                                ? 'linear-gradient(to right, #ef4444, #eab308)' // red to yellow
-                                : 'linear-gradient(to right, #dc2626, #ef4444)' // dark red to red
-                            }}
-                          />
-                        </div>
-                      </>
+                        )}
+                        
+                        {/* Completion Bar */}
+                        {lesson.studentsWatching !== undefined && (
+                          <div>
+                            <div className="flex items-center justify-between text-xs mb-1.5">
+                              <span className="text-gray-600 font-medium">Estudiantes que accedieron</span>
+                              <span className="text-gray-900 font-bold">
+                                {lesson.studentsWatching || 0}/{(lesson as any).totalStudentsInClass || 0}
+                              </span>
+                            </div>
+                            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full transition-all"
+                                style={{ 
+                                  width: `${lesson.avgProgress || 0}%`,
+                                  background: (lesson.avgProgress || 0) >= 75
+                                    ? 'linear-gradient(to right, #15803d, #166534)'
+                                    : (lesson.avgProgress || 0) >= 50
+                                    ? 'linear-gradient(to right, #22c55e, #15803d)'
+                                    : (lesson.avgProgress || 0) >= 25
+                                    ? 'linear-gradient(to right, #eab308, #22c55e)'
+                                    : (lesson.avgProgress || 0) >= 10
+                                    ? 'linear-gradient(to right, #ef4444, #eab308)'
+                                    : 'linear-gradient(to right, #dc2626, #ef4444)'
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     )}
 
                     {/* Uploading Progress */}
@@ -258,17 +271,6 @@ export default function LessonsList({
                             style={{ width: `${lesson.uploadProgress || 0}%` }}
                           />
                         </div>
-                      </div>
-                    )}
-                  
-                    {/* Transcoding Status */}
-                    {lesson.isTranscoding === 1 && !lesson.isUploading && (
-                      <div className="bg-purple-50 rounded-lg p-3 border border-purple-200 text-center">
-                        <span className="text-sm font-medium text-purple-700 flex items-center justify-center gap-2">
-                          <span className="w-4 h-4 border-2 border-purple-600/30 border-t-purple-600 rounded-full animate-spin" />
-                          Transcodificando video...
-                        </span>
-                        <p className="text-xs text-purple-600 mt-1">Esto puede tomar varios minutos</p>
                       </div>
                     )}
                   </div>

@@ -114,7 +114,7 @@ export default function DashboardLayout({
     
     if (role === 'STUDENT') {
       // Create initial device session
-      apiClient('/session/check', { method: 'POST' });
+      apiClient('/auth/session/check', { method: 'POST' });
       // Then check every 10 seconds for faster logout detection
       const interval = setInterval(checkSession, 10000);
       
@@ -163,11 +163,13 @@ export default function DashboardLayout({
 
   const checkSession = async () => {
     try {
-      const response = await apiClient('/session/check');
+      const response = await apiClient('/auth/session/check', { method: 'POST' });
       const result = await response.json();
 
-      if (!result.success || !result.data.valid) {
-        if (result.data.message) {
+      // Session check returns the session object with id, role, etc.
+      // If success is true and data has an id, the session is valid
+      if (!result.success || !result.data?.id) {
+        if (result.data?.message) {
           alert(result.data.message);
         }
         handleLogout();
@@ -320,6 +322,15 @@ export default function DashboardLayout({
             icon: (
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+              </svg>
+            ),
+          },
+          {
+            label: 'Feedback',
+            href: '/dashboard/teacher/feedback',
+            icon: (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
               </svg>
             ),
           },
@@ -544,21 +555,15 @@ export default function DashboardLayout({
                   isActive ? 'text-[#b1e787]' : 'text-gray-400 group-hover:text-white'
                 }`}>
                   {item.icon}
-                  {hasLiveStream && (
-                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-                  )}
                 </span>
                 <span className="text-sm font-medium">{item.label}</span>
                 {hasLiveStream && (
-                  <span className="ml-auto flex items-center gap-1">
-                    <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                    <span className="text-xs text-red-600 font-medium">EN VIVO</span>
-                  </span>
+                  <span className="ml-auto w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
                 )}
                 {!hasLiveStream && item.badge !== undefined && item.badge > 0 && (
                   <span className={`ml-auto text-xs font-bold px-2 py-1 rounded-full ${
                     item.label === 'Solicitudes' 
-                      ? 'bg-red-500 text-white' 
+                      ? 'bg-accent-300 text-gray-900' 
                       : 'bg-[#b1e787]/20 text-[#b1e787]'
                   }`}>
                     {item.badge}
@@ -687,6 +692,10 @@ export default function DashboardLayout({
             const isActive = isDashboardRoute 
               ? pathname === item.href 
               : pathname === item.href || pathname.startsWith(item.href + '/');
+            
+            // Check if this is "Mis Clases" and there are active streams
+            const hasLiveStream = role === 'STUDENT' && item.label === 'Mis Clases' && activeStreams.length > 0;
+            
             return (
               <Link
                 key={item.href}
@@ -702,7 +711,10 @@ export default function DashboardLayout({
                   {item.icon}
                 </span>
                 <span className="text-sm">{item.label}</span>
-                {item.badge !== undefined && item.badge > 0 && (
+                {hasLiveStream && (
+                  <span className="ml-auto w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
+                )}
+                {!hasLiveStream && item.badge !== undefined && item.badge > 0 && (
                   <span className={`ml-auto text-xs font-medium px-2 py-0.5 rounded-full ${
                     item.label === 'Solicitudes' 
                       ? 'bg-blue-500 text-white' 

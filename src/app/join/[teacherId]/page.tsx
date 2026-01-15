@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
+import { PasswordInput } from '@/components/ui';
 
 interface Teacher {
   id: string;
@@ -43,10 +44,13 @@ export default function JoinPage() {
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   
-  // Email verification state
-  const [verificationStep, setVerificationStep] = useState<'form' | 'verify' | 'complete'>('form');
-  const [verificationCode, setVerificationCode] = useState('');
-  const [verificationSent, setVerificationSent] = useState(false);
+  // Email verification state - inline
+  const [showVerification, setShowVerification] = useState(false);
+  const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '']);
+  const [verificationError, setVerificationError] = useState(false);
+  const [verificationSuccess, setVerificationSuccess] = useState(false);
+  const [verifyingCode, setVerifyingCode] = useState(false);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   
   // Selected class
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
@@ -55,7 +59,7 @@ export default function JoinPage() {
   useEffect(() => {
     if (teacherId) {
       loadTeacherData();
-      checkAuth();
+      // Don't check auth - this is a public registration page
     }
   }, [teacherId]);
 
@@ -74,7 +78,8 @@ export default function JoinPage() {
 
   const loadTeacherData = async () => {
     try {
-      const response = await fetch(`/api/join/${teacherId}`);
+      // Use the worker API directly instead of Next.js API route
+      const response = await apiClient(`/auth/join/${teacherId}`);
       const result = await response.json();
       
       if (result.success) {
@@ -95,6 +100,21 @@ export default function JoinPage() {
     setAuthError(null);
 
     try {
+      // First check if email already exists
+      const checkResponse = await apiClient('/auth/check-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email }),
+      });
+      const checkResult = await checkResponse.json();
+
+      if (checkResult.data?.exists) {
+        setAuthError('Este email ya está registrado. Inicia sesión en su lugar.');
+        setAuthLoading(false);
+        return;
+      }
+
+      // Email doesn't exist, proceed with verification
       const response = await apiClient('/auth/send-verification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -103,10 +123,11 @@ export default function JoinPage() {
       const result = await response.json();
 
       if (result.success) {
-        // Redirect to dedicated verification page with registration data
-        const returnUrl = `/join/${teacherId}`;
-        const registrationData = { ...formData, role: 'STUDENT' };
-        router.push(`/verify-email?email=${encodeURIComponent(formData.email)}&returnUrl=${encodeURIComponent(returnUrl)}&regData=${encodeURIComponent(JSON.stringify(registrationData))}`);
+        setShowVerification(true);
+        setVerificationCode(['', '', '', '', '', '']);
+        setVerificationError(false);
+        // Focus first input
+        setTimeout(() => inputRefs.current[0]?.focus(), 100);
         // For testing: show code in console
         if (result.data.code) {
           console.log('Verification code:', result.data.code);
@@ -121,50 +142,98 @@ export default function JoinPage() {
     }
   };
 
-  const verifyCode = async () => {
-    setAuthLoading(true);
-    setAuthError(null);
-
-    try {
-      const response = await apiClient('/auth/verify-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: formData.email, code: verificationCode }),
-      });
-      const result = await response.json();
-
-      if (result.success) {
-        // Now register the user
-        await completeRegistration();
-      } else {
-        setAuthError(result.error || 'Código inválido');
-      }
-    } catch (e) {
-      setAuthError('Error de conexión');
-    } finally {
-      setAuthLoading(false);
+  const handleCodeChange = (index: number, value: string) => {
+    // Only allow digits
+    const digit = value.replace(/\D/g, '').slice(-1);
+    
+    const newCode = [...verificationCode];
+    newCode[index] = digit;
+    setVerificationCode(newCode);
+    setVerificationError(false);
+    
+    // Auto-focus next input
+    if (digit && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+    
+    // Auto-submit when all 6 digits are entered
+    const fullCode = newCode.join('');
+    if (fullCode.length === 6) {
+      verifyCodeAndRegister(fullCode);
     }
   };
 
-  const completeRegistration = async () => {
+  const handleCodeKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !verificationCode[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleCodePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (pastedData.length === 6) {
+      const newCode = pastedData.split('');
+      setVerificationCode(newCode);
+      verifyCodeAndRegister(pastedData);
+    }
+  };
+
+  const verifyCodeAndRegister = async (code: string) => {
+    setVerifyingCode(true);
+    setVerificationError(false);
+
     try {
-      const response = await apiClient('/auth/register', {
+      // Verify email code
+      const verifyResponse = await apiClient('/auth/verify-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email, code }),
+      });
+      const verifyResult = await verifyResponse.json();
+
+      if (!verifyResult.success) {
+        // Show error animation
+        setVerificationError(true);
+        setVerificationCode(['', '', '', '', '', '']);
+        setTimeout(() => inputRefs.current[0]?.focus(), 100);
+        setVerifyingCode(false);
+        return;
+      }
+
+      // Success - register the user
+      setVerificationSuccess(true);
+      
+      const regResponse = await apiClient('/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...formData, role: 'STUDENT' }),
       });
-      const result = await response.json();
+      const regResult = await regResponse.json();
 
-      if (result.success) {
-        setIsLoggedIn(true);
-        setCurrentUser(result.data.user);
-        setVerificationStep('complete');
-        await checkAuth();
+      if (regResult.success) {
+        // Store auth token for API requests
+        if (regResult.data.token) {
+          localStorage.setItem('auth_token', regResult.data.token);
+        }
+        
+        // Auto-login happened, redirect to class selection
+        setTimeout(() => {
+          setIsLoggedIn(true);
+          setCurrentUser(regResult.data);
+          setShowVerification(false);
+          setVerificationSuccess(false);
+        }, 500);
       } else {
-        setAuthError(result.error || 'Error al registrarse');
+        setAuthError(regResult.error || 'Error al registrarse');
+        setVerificationSuccess(false);
+        setShowVerification(false);
       }
     } catch (e) {
-      setAuthError('Error de conexión');
+      setVerificationError(true);
+      setVerificationCode(['', '', '', '', '', '']);
+    } finally {
+      setVerifyingCode(false);
     }
   };
 
@@ -184,8 +253,13 @@ export default function JoinPage() {
         const result = await response.json();
         
         if (result.success) {
+          // Store auth token for API requests
+          if (result.data.token) {
+            localStorage.setItem('auth_token', result.data.token);
+          }
+          
           setIsLoggedIn(true);
-          setCurrentUser(result.data.user);
+          setCurrentUser(result.data);
         } else {
           setAuthError(result.error || 'Credenciales incorrectas');
         }
@@ -216,7 +290,8 @@ export default function JoinPage() {
       const result = await response.json();
       
       if (result.success) {
-        setRequestSent(true);
+        // Redirect directly to dashboard
+        router.push('/dashboard/student');
       } else {
         setAuthError(result.error || 'Error al solicitar acceso');
       }
@@ -273,9 +348,15 @@ export default function JoinPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-2xl mx-auto">
-        {/* Header */}
+        {/* Header with Logo */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">AKADEMO</h1>
+          <div className="flex justify-center mb-4">
+            <img 
+              src="/logo/AKADEMO_logo_OTHER2.svg" 
+              alt="AKADEMO" 
+              className="h-12 w-auto"
+            />
+          </div>
           <p className="text-gray-600">Únete a las clases de</p>
           {teacher && (
             <p className="text-xl font-semibold text-gray-900 mt-1">
@@ -287,89 +368,150 @@ export default function JoinPage() {
         {!isLoggedIn ? (
           /* Auth Form */
           <div className="bg-white rounded-2xl shadow-lg p-8">
-            {verificationStep === 'form' ? (
-              <>
-                <div className="flex mb-6">
-                  <button
-                    onClick={() => setShowLogin(true)}
-                    className={`flex-1 py-2 text-center font-medium border-b-2 transition-colors ${
-                      showLogin ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500'
-                    }`}
-                  >
-                    Iniciar Sesión
-                  </button>
-                  <button
-                    onClick={() => setShowLogin(false)}
-                    className={`flex-1 py-2 text-center font-medium border-b-2 transition-colors ${
-                      !showLogin ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500'
-                    }`}
-                  >
-                    Registrarse
-                  </button>
-                </div>
+            <>
+              <div className="flex mb-6">
+                <button
+                  onClick={() => { setShowLogin(true); setShowVerification(false); }}
+                  className={`flex-1 py-2 text-center font-medium border-b-2 transition-colors ${
+                    showLogin ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500'
+                  }`}
+                >
+                  Iniciar Sesión
+                </button>
+                <button
+                  onClick={() => { setShowLogin(false); setShowVerification(false); }}
+                  className={`flex-1 py-2 text-center font-medium border-b-2 transition-colors ${
+                    !showLogin ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500'
+                  }`}
+                >
+                  Registrarse
+                </button>
+              </div>
 
-                {authError && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-600 text-sm rounded-lg">
-                    {authError}
+              {authError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-600 text-sm rounded-lg">
+                  {authError}
+                </div>
+              )}
+
+              <form onSubmit={handleAuth} className="space-y-4">
+                {!showLogin && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                      <input
+                        type="text"
+                        required={!showLogin}
+                        value={formData.firstName}
+                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                        autoComplete="given-name"
+                        disabled={showVerification}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-500"
+                        placeholder="Juan"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Apellido</label>
+                      <input
+                        type="text"
+                        required={!showLogin}
+                        value={formData.lastName}
+                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                        autoComplete="family-name"
+                        disabled={showVerification}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-500"
+                        placeholder="García"
+                      />
+                    </div>
                   </div>
                 )}
-
-                <form onSubmit={handleAuth} className="space-y-4">
-                  {!showLogin && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
-                        <input
-                          type="text"
-                          required={!showLogin}
-                          value={formData.firstName}
-                          onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                          autoComplete="given-name"
-                          className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
-                          placeholder="Juan"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Apellido</label>
-                        <input
-                          type="text"
-                          required={!showLogin}
-                          value={formData.lastName}
-                          onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                          autoComplete="family-name"
-                          className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
-                          placeholder="García"
-                        />
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <div className="relative">
                     <input
                       type="email"
                       required
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       autoComplete="email"
-                      className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
+                      disabled={showVerification}
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-500 ${
+                        showVerification ? 'pr-[220px] border-gray-200' : 'border-gray-200'
+                      }`}
                       placeholder="tu@email.com"
                     />
+                    
+                    {/* Inline Verification Code Input */}
+                    {showVerification && !showLogin && (
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                        <div className={`flex gap-0.5 p-1 rounded-lg transition-all ${
+                          verificationError ? 'animate-shake bg-red-50' : 
+                          verificationSuccess ? 'bg-green-50' : 'bg-gray-50'
+                        }`}>
+                          {verificationCode.map((digit, index) => (
+                            <input
+                              key={index}
+                              ref={(el) => { inputRefs.current[index] = el; }}
+                              type="text"
+                              inputMode="numeric"
+                              maxLength={1}
+                              value={digit}
+                              onChange={(e) => handleCodeChange(index, e.target.value)}
+                              onKeyDown={(e) => handleCodeKeyDown(index, e)}
+                              onPaste={index === 0 ? handleCodePaste : undefined}
+                              disabled={verifyingCode || verificationSuccess}
+                              className={`w-7 h-8 text-center text-sm font-bold border rounded transition-all focus:outline-none focus:ring-1 ${
+                                verificationError 
+                                  ? 'border-red-400 bg-red-50 text-red-600 focus:ring-red-400' 
+                                  : verificationSuccess 
+                                    ? 'border-green-400 bg-green-50 text-green-600' 
+                                    : 'border-gray-300 focus:ring-gray-900 focus:border-gray-900'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        {verifyingCode && (
+                          <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin"></div>
+                        )}
+                        {verificationSuccess && (
+                          <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                    )}
                   </div>
                   
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
-                    <input
-                      type="password"
-                      required
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      autoComplete={showLogin ? "current-password" : "new-password"}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
-                      placeholder="••••••••"
-                    />
-                  </div>
-                  
+                  {/* Verification hint text */}
+                  {showVerification && !showLogin && (
+                    <div className="mt-2 flex items-center justify-between">
+                      <p className="text-xs text-gray-500">
+                        Código enviado a {formData.email}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => { setShowVerification(false); setVerificationCode(['', '', '', '', '', '']); }}
+                        className="text-xs text-gray-500 hover:text-gray-700 underline"
+                      >
+                        Cambiar email
+                      </button>
+                    </div>
+                  )}
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+                  <PasswordInput
+                    required
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-500"
+                    placeholder="••••••••"
+                  />
+                </div>
+                
+                {!showVerification && (
                   <button
                     type="submit"
                     disabled={authLoading}
@@ -377,82 +519,25 @@ export default function JoinPage() {
                   >
                     {authLoading ? 'Cargando...' : showLogin ? 'Iniciar Sesión' : 'Continuar'}
                   </button>
-                </form>
-              </>
-            ) : verificationStep === 'verify' ? (
-              <>
-                <div className="text-center mb-6">
-                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Verifica tu email</h2>
-                  <p className="text-gray-600 text-sm">
-                    Hemos enviado un código de 6 dígitos a<br />
-                    <strong>{formData.email}</strong>
-                  </p>
-                </div>
-
-                {authError && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-600 text-sm rounded-lg">
-                    {authError}
-                  </div>
                 )}
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2 text-center">
-                      Ingresa el código de verificación
-                    </label>
-                    <input
-                      type="text"
-                      maxLength={6}
-                      value={verificationCode}
-                      onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
-                      className="w-full px-4 py-3 text-center text-2xl font-bold border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 tracking-widest"
-                      placeholder="000000"
-                      autoComplete="off"
-                    />
-                  </div>
-
+                
+                {showVerification && !showLogin && (
                   <button
-                    onClick={verifyCode}
-                    disabled={authLoading || verificationCode.length !== 6}
-                    className="w-full py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {authLoading ? 'Verificando...' : 'Verificar y Crear Cuenta'}
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setVerificationStep('form');
-                      setVerificationCode('');
-                      setAuthError(null);
-                    }}
-                    className="w-full py-2 text-sm text-gray-600 hover:text-gray-900"
-                  >
-                    Cambiar email
-                  </button>
-
-                  <button
+                    type="button"
                     onClick={sendVerificationCode}
                     disabled={authLoading}
-                    className="w-full py-2 text-sm text-blue-600 hover:text-blue-800 font-medium disabled:opacity-50"
+                    className="w-full py-2 text-sm text-gray-600 hover:text-gray-900 font-medium disabled:opacity-50"
                   >
-                    Reenviar código
+                    {authLoading ? 'Enviando...' : 'Reenviar código'}
                   </button>
-                </div>
-              </>
-            ) : null}
+                )}
+              </form>
+            </>
           </div>
         ) : (
           /* Class Selection */
           <div className="bg-white rounded-2xl shadow-lg p-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Selecciona una clase</h2>
-            <p className="text-gray-600 mb-6">
-              Hola {currentUser?.firstName}, selecciona la clase a la que quieres unirte:
-            </p>
+            <h2 className="text-xl font-bold text-gray-900 mb-6">Selecciona una clase</h2>
 
             {authError && (
               <div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-600 text-sm rounded-lg">

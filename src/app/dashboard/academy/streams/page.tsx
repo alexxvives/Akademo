@@ -61,7 +61,7 @@ export default function AcademyStreamsPage() {
     setEditingTitleId(null);
 
     try {
-      const response = await fetch(`/api/live/${streamId}`, {
+      const response = await apiClient(`/live/${streamId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: editingTitleValue.trim() }),
@@ -326,10 +326,10 @@ export default function AcademyStreamsPage() {
                           <span className="text-sm text-gray-600 font-medium">
                             {stream.participantCount}
                           </span>
-                        ) : stream.participantsFetchedAt ? (
-                          <span className="text-sm text-gray-400">0</span>
                         ) : stream.status === 'ended' ? (
-                          <span className="text-xs text-gray-500">Procesando...</span>
+                          <span className="text-sm text-gray-400 italic">No disponible</span>
+                        ) : stream.status === 'active' ? (
+                          <span className="text-sm text-blue-500">En vivo...</span>
                         ) : (
                           <span className="text-sm text-gray-400">—</span>
                         )}
@@ -355,9 +355,9 @@ export default function AcademyStreamsPage() {
                           Disponible
                         </span>
                       ) : stream.status === 'active' || stream.status === 'scheduled' ? (
-                        <span className="text-gray-400 text-sm">En progreso</span>
+                        <span className="text-gray-400 text-sm">—</span>
                       ) : (
-                        <span className="text-xs text-gray-500">Procesando...</span>
+                        <span className="text-xs text-gray-400">No disponible</span>
                       )}
                     </td>
                   </tr>

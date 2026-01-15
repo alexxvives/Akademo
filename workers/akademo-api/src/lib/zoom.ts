@@ -1,36 +1,28 @@
 // Zoom API client for Server-to-Server OAuth
 // Docs: https://developers.zoom.us/docs/api/
 
-import { getCloudflareContext } from './cloudflare';
-
-interface ZoomConfig {
+export interface ZoomConfig {
   ZOOM_ACCOUNT_ID: string;
   ZOOM_CLIENT_ID: string;
   ZOOM_CLIENT_SECRET: string;
 }
 
-function getConfig(): ZoomConfig {
-  const ctx = getCloudflareContext();
-  return {
-    ZOOM_ACCOUNT_ID: ctx?.ZOOM_ACCOUNT_ID || process.env.ZOOM_ACCOUNT_ID || '',
-    ZOOM_CLIENT_ID: ctx?.ZOOM_CLIENT_ID || process.env.ZOOM_CLIENT_ID || '',
-    ZOOM_CLIENT_SECRET: ctx?.ZOOM_CLIENT_SECRET || process.env.ZOOM_CLIENT_SECRET || '',
-  };
-}
-
-// Cache for access token
+// Cache for access token (per-request, not truly persistent in Workers)
 let cachedToken: { token: string; expiresAt: number } | null = null;
 
 // Get OAuth access token using Server-to-Server OAuth
-async function getAccessToken(): Promise<string> {
+export async function getAccessToken(config?: ZoomConfig): Promise<string> {
   // Check if we have a valid cached token
   if (cachedToken && cachedToken.expiresAt > Date.now()) {
     console.log('[Zoom] Using cached access token');
     return cachedToken.token;
   }
 
+  if (!config) {
+    throw new Error('Zoom configuration required to fetch access token');
+  }
+
   console.log('[Zoom] Fetching new access token...');
-  const config = getConfig();
   
   const credentials = btoa(`${config.ZOOM_CLIENT_ID}:${config.ZOOM_CLIENT_SECRET}`);
   
@@ -77,12 +69,13 @@ export interface CreateMeetingOptions {
   duration?: number; // in minutes, default 60
   password?: string;
   waitingRoom?: boolean;
+  config: ZoomConfig; // Required: pass env config
 }
 
 // Create a new Zoom meeting
 export async function createZoomMeeting(options: CreateMeetingOptions): Promise<ZoomMeeting> {
   console.log('[Zoom] Creating meeting with topic:', options.topic);
-  const token = await getAccessToken();
+  const token = await getAccessToken(options.config);
   
   // First, get the current user (me)
   console.log('[Zoom] Fetching user info...');
@@ -244,8 +237,8 @@ export async function getZoomMeetingRecordings(meetingId: string | number): Prom
 }
 
 // Get download URL with access token appended
-export async function getZoomRecordingDownloadUrl(downloadUrl: string): Promise<string> {
-  const token = await getAccessToken();
+export async function getZoomRecordingDownloadUrl(downloadUrl: string, config?: ZoomConfig): Promise<string> {
+  const token = await getAccessToken(config);
   // Append access token to download URL for authentication
   const separator = downloadUrl.includes('?') ? '&' : '?';
   return `${downloadUrl}${separator}access_token=${token}`;
@@ -351,6 +344,32 @@ export async function getZoomMeetingParticipants(meetingId: string | number): Pr
   console.log('[Zoom] Total records:', data.total_records);
   console.log('[Zoom] Participants count:', data.participants?.length || 0);
   
+  return data;
+}
+
+// Get meeting recordings
+export async function getZoomRecording(meetingId: string, config: ZoomConfig): Promise<any> {
+  const token = await getAccessToken(config);
+  
+  // Use past_meetings endpoint to find the uuid if needed, or query recordings directly
+  console.log(`[Zoom] Fetching recordings for meeting ${meetingId}...`);
+  
+  const response = await fetch(`https://api.zoom.us/v2/meetings/${meetingId}/recordings`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    console.error('[Zoom] Failed to get recordings:', error);
+    // If 404, it might mean no recording exists yet
+    if (response.status === 404) return null;
+    throw new Error(`Failed to get Zoom recordings: ${error}`);
+  }
+
+  const data = await response.json();
+  console.log('[Zoom] ✓ Recordings fetched successfully');
   return data;
 }
 

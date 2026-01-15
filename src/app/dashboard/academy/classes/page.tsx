@@ -102,8 +102,8 @@ export default function AcademyClassesPage() {
     setSaving(true);
 
     try {
-      const res = await fetch(`/api/classes/${editingClass.id}`, {
-        method: 'PUT',
+      const res = await apiClient(`/classes/${editingClass.id}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });

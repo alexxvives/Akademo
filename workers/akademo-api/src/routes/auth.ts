@@ -7,9 +7,6 @@ import { successResponse, errorResponse } from '../lib/utils';
 
 const auth = new Hono<{ Bindings: Bindings }>();
 
-// Verification codes storage (in production, use KV or Durable Objects)
-const verificationCodes = new Map<string, { code: string; expires: number }>();
-
 // GET /auth/me
 auth.get('/me', async (c) => {
   console.log('[Auth Me] Request received');
@@ -23,6 +20,22 @@ auth.get('/me', async (c) => {
   }
 
   console.log('[Auth Me] Returning session for user:', session.id);
+  return c.json(successResponse(session));
+});
+
+// POST /auth/session/check - Check if session is valid
+auth.post('/session/check', async (c) => {
+  console.log('[Session Check] Request received');
+  
+  const session = await getSession(c);
+  console.log('[Session Check] Session result:', session ? 'Found' : 'Not found');
+
+  if (!session) {
+    console.log('[Session Check] Returning 401 - no session');
+    return c.json(errorResponse('Not authenticated'), 401);
+  }
+
+  console.log('[Session Check] Returning session for user:', session.id);
   return c.json(successResponse(session));
 });
 
@@ -180,6 +193,30 @@ auth.post('/logout', async (c) => {
   return c.json(successResponse({ message: 'Logged out successfully' }));
 });
 
+// POST /auth/check-email - Check if email exists
+auth.post('/check-email', async (c) => {
+  try {
+    const { email } = await c.req.json();
+
+    if (!email) {
+      return c.json(errorResponse('Email is required'), 400);
+    }
+
+    // Check if email exists
+    const existingUser = await c.env.DB
+      .prepare('SELECT id FROM User WHERE email = ?')
+      .bind(email.toLowerCase())
+      .first();
+
+    return c.json(successResponse({
+      exists: !!existingUser,
+    }));
+  } catch (error: any) {
+    console.error('[Check Email] Error:', error);
+    return c.json(errorResponse(error.message || 'Failed to check email'), 500);
+  }
+});
+
 // POST /auth/send-verification
 auth.post('/send-verification', async (c) => {
   try {
@@ -189,12 +226,25 @@ auth.post('/send-verification', async (c) => {
       return c.json(errorResponse('Email is required'), 400);
     }
 
+    // Check if email already registered
+    const existingUser = await c.env.DB
+      .prepare('SELECT id FROM User WHERE email = ?')
+      .bind(email.toLowerCase())
+      .first();
+
+    if (existingUser) {
+      return c.json(errorResponse('Email already registered'), 400);
+    }
+
     // Generate 6-digit code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expires = Date.now() + 10 * 60 * 1000; // 10 minutes
 
-    // Store code
-    verificationCodes.set(email.toLowerCase(), { code, expires });
+    // Store code in database
+    await c.env.DB
+      .prepare('INSERT OR REPLACE INTO VerificationCode (email, code, expiresAt) VALUES (?, ?, ?)')
+      .bind(email.toLowerCase(), code, new Date(expires).toISOString())
+      .run();
 
     // Send email via Resend API
     const resendApiKey = c.env.RESEND_API_KEY;
@@ -208,7 +258,7 @@ auth.post('/send-verification', async (c) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            from: 'AKADEMO <onboarding@resend.dev>', // Change to verified domain in production
+            from: 'AKADEMO <onboarding@akademo-edu.com>',
             to: [email],
             subject: 'Tu código de verificación - AKADEMO',
             html: `
@@ -238,7 +288,7 @@ auth.post('/send-verification', async (c) => {
 
     return c.json(successResponse({
       message: 'Verification code sent',
-      ...(process.env.NODE_ENV !== 'production' && { code }), // Include code in dev mode only
+      // Note: In production, remove this - code should only be sent via email
     }));
   } catch (error: any) {
     console.error('[Send Verification] Error:', error);
@@ -262,25 +312,32 @@ auth.post('/verify-email', async (c) => {
     }
 
     // Check if code exists
-    const stored = verificationCodes.get(email.toLowerCase());
+    const stored = await c.env.DB
+      .prepare('SELECT code, expiresAt FROM VerificationCode WHERE email = ?')
+      .bind(email.toLowerCase())
+      .first() as { code: string; expiresAt: string } | null;
 
     if (!stored) {
+      console.log('[Verify Email] No code found for:', email);
       return c.json(errorResponse('No verification code found. Please request a new one.'), 400);
     }
 
     // Check if expired
-    if (Date.now() > stored.expires) {
-      verificationCodes.delete(email.toLowerCase());
+    if (Date.now() > new Date(stored.expiresAt).getTime()) {
+      await c.env.DB.prepare('DELETE FROM VerificationCode WHERE email = ?').bind(email.toLowerCase()).run();
+      console.log('[Verify Email] Code expired for:', email);
       return c.json(errorResponse('Verification code expired. Please request a new one.'), 400);
     }
 
     // Check if code matches
+    console.log('[Verify Email] Comparing codes:', { received: code, stored: stored.code });
     if (stored.code !== code) {
+      console.log('[Verify Email] Code mismatch for:', email);
       return c.json(errorResponse('Invalid verification code'), 400);
     }
 
     // Code is valid - remove it
-    verificationCodes.delete(email.toLowerCase());
+    await c.env.DB.prepare('DELETE FROM VerificationCode WHERE email = ?').bind(email.toLowerCase()).run();
 
     return c.json(successResponse({
       message: 'Email verified successfully',
@@ -289,6 +346,71 @@ auth.post('/verify-email', async (c) => {
   } catch (error: any) {
     console.error('[Verify Email] Error:', error);
     return c.json(errorResponse(error.message || 'Verification failed'), 500);
+  }
+});
+
+// GET /auth/join/:teacherId - Get teacher info and classes for student enrollment
+// This is a public endpoint (no auth required) for the student join flow
+auth.get('/join/:teacherId', async (c) => {
+  try {
+    const teacherId = c.req.param('teacherId');
+
+    // teacherId can be either a User.id (e.g., "teacher1") or a Teacher.id
+    // First, try to find by User.id directly (most common case)
+    let teacherUser = await c.env.DB.prepare(`
+      SELECT id, firstName, lastName, email
+      FROM User
+      WHERE id = ? AND role = 'TEACHER'
+    `).bind(teacherId).first() as { id: string; firstName: string; lastName: string; email: string } | null;
+
+    // If not found as TEACHER, check if it's a Teacher table id
+    if (!teacherUser) {
+      const teacherRecord = await c.env.DB.prepare(`
+        SELECT u.id, u.firstName, u.lastName, u.email
+        FROM Teacher t
+        JOIN User u ON t.userId = u.id
+        WHERE t.id = ?
+      `).bind(teacherId).first() as { id: string; firstName: string; lastName: string; email: string } | null;
+      
+      if (teacherRecord) {
+        teacherUser = teacherRecord;
+      }
+    }
+
+    // Also check for academy owners who might be teachers
+    if (!teacherUser) {
+      teacherUser = await c.env.DB.prepare(`
+        SELECT id, firstName, lastName, email
+        FROM User
+        WHERE id = ? AND role = 'ACADEMY'
+      `).bind(teacherId).first() as { id: string; firstName: string; lastName: string; email: string } | null;
+    }
+
+    if (!teacherUser) {
+      return c.json(errorResponse('No se encontró el profesor'), 404);
+    }
+
+    // Get all classes taught by this teacher (by User.id)
+    const classesResult = await c.env.DB.prepare(`
+      SELECT c.id, c.name, c.description, a.name as academyName
+      FROM Class c
+      JOIN Academy a ON c.academyId = a.id
+      WHERE c.teacherId = ?
+      ORDER BY c.name
+    `).bind(teacherUser.id).all();
+
+    return c.json(successResponse({
+      teacher: {
+        id: teacherUser.id,
+        firstName: teacherUser.firstName,
+        lastName: teacherUser.lastName,
+        email: teacherUser.email
+      },
+      classes: classesResult.results || []
+    }));
+  } catch (error: any) {
+    console.error('[Join API] Error:', error);
+    return c.json(errorResponse(error.message || 'Error al cargar los datos del profesor'), 500);
   }
 });
 

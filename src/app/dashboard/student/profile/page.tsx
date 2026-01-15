@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
+import { PasswordInput } from '@/components/ui';
 
 interface User {
   id: string;
@@ -200,8 +201,7 @@ export default function StudentProfile() {
             <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña Actual</label>
-                <input
-                  type="password"
+                <PasswordInput
                   value={passwordData.currentPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
@@ -210,8 +210,7 @@ export default function StudentProfile() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nueva Contraseña</label>
-                <input
-                  type="password"
+                <PasswordInput
                   value={passwordData.newPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
@@ -220,8 +219,7 @@ export default function StudentProfile() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Confirmar Nueva Contraseña</label>
-                <input
-                  type="password"
+                <PasswordInput
                   value={passwordData.confirmPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"

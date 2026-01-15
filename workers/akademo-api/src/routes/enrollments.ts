@@ -230,4 +230,64 @@ enrollments.get('/pending', async (c) => {
   }
 });
 
+// PUT /enrollments/pending - Approve/Reject pending enrollment
+enrollments.put('/pending', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    const { enrollmentId, action } = await c.req.json();
+
+    if (!enrollmentId || !['APPROVE', 'REJECT'].includes(action)) {
+      return c.json(errorResponse('enrollmentId and valid action (APPROVE/REJECT) required'), 400);
+    }
+
+    // Get enrollment details including class owner
+    const enrollment = await c.env.DB
+      .prepare(`
+        SELECT e.*, c.teacherId, a.ownerId
+        FROM ClassEnrollment e
+        JOIN Class c ON e.classId = c.id
+        JOIN Academy a ON c.academyId = a.id
+        WHERE e.id = ?
+      `)
+      .bind(enrollmentId)
+      .first();
+
+    if (!enrollment) {
+      return c.json(errorResponse('Enrollment not found'), 404);
+    }
+
+    // Check permissions
+    if (session.role === 'ACADEMY') {
+      if (enrollment.ownerId !== session.id) {
+         return c.json(errorResponse('Not authorized'), 403);
+      }
+    } else if (session.role === 'TEACHER') {
+      if (enrollment.teacherId !== session.id) {
+         return c.json(errorResponse('Not authorized'), 403);
+      }
+    } else {
+       return c.json(errorResponse('Not authorized'), 403);
+    }
+
+    if (action === 'APPROVE') {
+      await c.env.DB
+        .prepare("UPDATE ClassEnrollment SET status = 'APPROVED', updatedAt = datetime('now') WHERE id = ?")
+        .bind(enrollmentId)
+        .run();
+    } else {
+       // REJECT
+       await c.env.DB
+        .prepare("UPDATE ClassEnrollment SET status = 'REJECTED', updatedAt = datetime('now') WHERE id = ?")
+        .bind(enrollmentId)
+        .run();
+    }
+
+    return c.json(successResponse({ message: `Enrollment ${action.toLowerCase()}d successfully` }));
+
+  } catch (error: any) {
+    console.error('[Update Enrollment] Error:', error);
+    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+  }
+});
+
 export default enrollments;

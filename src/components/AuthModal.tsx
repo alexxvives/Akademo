@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { PasswordInput } from './ui';
 import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
 
@@ -144,8 +145,7 @@ export default function AuthModal({ mode, onClose }: AuthModalProps) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
-            <input
-              type="password"
+            <PasswordInput
               required
               minLength={8}
               value={formData.password}

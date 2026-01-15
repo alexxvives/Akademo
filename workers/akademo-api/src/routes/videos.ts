@@ -9,38 +9,127 @@ const videos = new Hono<{ Bindings: Bindings }>();
 videos.post('/progress', async (c) => {
   try {
     const session = await requireAuth(c);
-    const { videoId, currentTime, durationSeconds, completed } = await c.req.json();
+    const { videoId, studentId, currentPositionSeconds, watchTimeElapsed } = await c.req.json();
 
     if (session.role !== 'STUDENT') {
       return c.json(errorResponse('Only students can track progress'), 403);
     }
 
-    if (!videoId || currentTime === undefined) {
-      return c.json(errorResponse('videoId and currentTime required'), 400);
+    if (!videoId || watchTimeElapsed === undefined) {
+      return c.json(errorResponse('videoId and watchTimeElapsed required'), 400);
+    }
+
+    // Get video details to check duration and max watch time
+    const video = await c.env.DB
+      .prepare(`
+        SELECT v.durationSeconds, l.maxWatchTimeMultiplier, l.classId
+        FROM Video v
+        JOIN Lesson l ON v.lessonId = l.id
+        WHERE v.id = ?
+      `)
+      .bind(videoId)
+      .first();
+
+    if (!video) {
+      return c.json(errorResponse('Video not found'), 404);
+    }
+
+    // Verify student is enrolled
+    const enrollment = await c.env.DB
+      .prepare('SELECT * FROM ClassEnrollment WHERE userId = ? AND classId = ? AND status = ?')
+      .bind(session.id, video.classId, 'APPROVED')
+      .first();
+
+    if (!enrollment) {
+      return c.json(errorResponse('Not enrolled in this class'), 403);
     }
 
     // Check if play state exists
     const existing = await c.env.DB
-      .prepare('SELECT id FROM VideoPlayState WHERE videoId = ? AND studentId = ?')
+      .prepare('SELECT * FROM VideoPlayState WHERE videoId = ? AND studentId = ?')
       .bind(videoId, session.id)
-      .first();
+      .first() as any;
+
+    const maxWatchTime = (video.durationSeconds || 0) * (video.maxWatchTimeMultiplier || 2);
+    const now = new Date().toISOString();
 
     if (existing) {
+      // Calculate new total watch time
+      const newTotalWatchTime = (existing.totalWatchTimeSeconds || 0) + watchTimeElapsed;
+      
+      // Check if exceeding max watch time
+      const status = newTotalWatchTime >= maxWatchTime ? 'BLOCKED' : (existing.status || 'ACTIVE');
+
       // Update existing
       await c.env.DB
-        .prepare('UPDATE VideoPlayState SET currentTime = ?, lastWatched = ?, completed = ? WHERE id = ?')
-        .bind(currentTime, new Date().toISOString(), completed ? 1 : 0, existing.id)
+        .prepare(`
+          UPDATE VideoPlayState 
+          SET totalWatchTimeSeconds = ?,
+              lastPositionSeconds = ?,
+              lastWatchedAt = ?,
+              updatedAt = ?,
+              status = ?
+          WHERE id = ?
+        `)
+        .bind(
+          newTotalWatchTime,
+          currentPositionSeconds || 0,
+          now,
+          now,
+          status,
+          existing.id
+        )
         .run();
-    } else {
-      // Create new
-      const playStateId = crypto.randomUUID();
-      await c.env.DB
-        .prepare('INSERT INTO VideoPlayState (id, videoId, studentId, currentTime, lastWatched, completed) VALUES (?, ?, ?, ?, ?, ?)')
-        .bind(playStateId, videoId, session.id, currentTime, new Date().toISOString(), completed ? 1 : 0)
-        .run();
-    }
 
-    return c.json(successResponse({ message: 'Progress saved' }));
+      const updatedPlayState = {
+        totalWatchTimeSeconds: newTotalWatchTime,
+        lastPositionSeconds: currentPositionSeconds || 0,
+        sessionStartTime: existing.sessionStartTime,
+        status
+      };
+
+      return c.json(successResponse({
+        message: 'Progress saved',
+        playState: updatedPlayState
+      }));
+    } else {
+      // Create new play state
+      const playStateId = crypto.randomUUID();
+      const status = watchTimeElapsed >= maxWatchTime ? 'BLOCKED' : 'ACTIVE';
+
+      await c.env.DB
+        .prepare(`
+          INSERT INTO VideoPlayState (
+            id, videoId, studentId, totalWatchTimeSeconds, lastPositionSeconds,
+            sessionStartTime, lastWatchedAt, createdAt, updatedAt, status
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `)
+        .bind(
+          playStateId,
+          videoId,
+          session.id,
+          watchTimeElapsed,
+          currentPositionSeconds || 0,
+          now,
+          now,
+          now,
+          now,
+          status
+        )
+        .run();
+
+      const newPlayState = {
+        totalWatchTimeSeconds: watchTimeElapsed,
+        lastPositionSeconds: currentPositionSeconds || 0,
+        sessionStartTime: now,
+        status
+      };
+
+      return c.json(successResponse({
+        message: 'Progress saved',
+        playState: newPlayState
+      }));
+    }
   } catch (error: any) {
     console.error('[Video Progress] Error:', error);
     return c.json(errorResponse(error.message || 'Internal server error'), 500);

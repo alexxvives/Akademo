@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, API_BASE_URL } from '@/lib/api-client';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import ProtectedVideoPlayer from '@/components/ProtectedVideoPlayer';
+import { PageLoader } from '@/components/ui';
+import { useAuth } from '@/hooks/useAuth';
 import { multipartUpload } from '@/lib/multipart-upload';
 import { uploadToBunny } from '@/lib/bunny-upload';
 import { getBunnyThumbnailUrl } from '@/lib/bunny-stream';
@@ -13,20 +15,34 @@ import { getBunnyThumbnailUrl } from '@/lib/bunny-stream';
 import ClassHeader from './components/ClassHeader';
 import PendingEnrollments from './components/PendingEnrollments';
 import LessonsList from './components/LessonsList';
+import TopicsLessonsList from './components/TopicsLessonsList';
 import StudentsList from './components/StudentsList';
+
+interface Topic {
+  id: string;
+  name: string;
+  classId: string;
+  orderIndex: number;
+  lessonCount: number;
+}
 
 interface Lesson {
   id: string;
   title: string;
   description: string | null;
   releaseDate: string;
+  topicId: string | null;
+  topicName?: string;
   maxWatchTimeMultiplier: number;
   watermarkIntervalMins: number;
   videoCount: number;
   documentCount: number;
   studentsWatching?: number;
   avgProgress?: number;
+  avgRating?: number;
+  ratingCount?: number;
   firstVideoBunnyGuid?: string;
+  firstVideoUpload?: { bunnyGuid?: string };
   isTranscoding?: number;
   isUploading?: boolean;
   uploadProgress?: number;
@@ -65,17 +81,29 @@ export default function TeacherClassPage() {
   const lessonParam = searchParams.get('lesson');
   const watchVideoId = searchParams.get('watch');
   const actionParam = searchParams.get('action');
+  
+  // Use cached auth hook instead of fetching /auth/me manually
+  const { user: currentUser } = useAuth();
 
   const [classData, setClassData] = useState<ClassData | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [topics, setTopics] = useState<Topic[]>([]);
   const [selectedLesson, setSelectedLesson] = useState<LessonDetail | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<any>(null);
-  const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [lessonFeedback, setLessonFeedback] = useState<Array<{ id: string; rating: number; comment: string; studentName: string; createdAt: string }>>([]);
 
   // Form states
   const [showLessonForm, setShowLessonForm] = useState(false);
   const [editingLessonId, setEditingLessonId] = useState<string | null>(null);
+  const [editingLessonMedia, setEditingLessonMedia] = useState<{
+    videos: Array<{ id: string; title: string; durationSeconds: number | null; bunnyGuid?: string }>;
+    documents: Array<{ id: string; title: string; fileName: string; storagePath: string }>;
+  } | null>(null);
+  const [showStreamNameModal, setShowStreamNameModal] = useState(false);
+  const [streamNameInput, setStreamNameInput] = useState('');
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [reschedulingLesson, setReschedulingLesson] = useState<Lesson | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadSpeed, setUploadSpeed] = useState(0); // bytes per second
@@ -92,6 +120,7 @@ export default function TeacherClassPage() {
     publishImmediately: true,
     maxWatchTimeMultiplier: 2.0,
     watermarkIntervalMins: 5,
+    topicId: '' as string,
     videos: [] as { file: File; title: string; description: string; duration: number }[],
     documents: [] as { file: File; title: string; description: string }[],
     selectedStreamRecording: '' as string,
@@ -118,7 +147,6 @@ export default function TeacherClassPage() {
   useEffect(() => {
     if (classId) {
       loadData();
-      loadUser();
       loadLiveClasses();
     }
   }, [classId]);
@@ -126,14 +154,15 @@ export default function TeacherClassPage() {
   // Poll for transcoding status updates
   useEffect(() => {
     const hasTranscoding = lessons.some(l => l.isTranscoding === 1);
-    if (!hasTranscoding) return;
+    if (!hasTranscoding || !classData?.id) return;
 
     const interval = setInterval(async () => {
       try {
         // Use checkTranscoding=true to update Bunny status before returning lessons
-        const lessonsRes = await fetch(`/api/lessons?classId=${classId}&checkTranscoding=true`);
+        // Use classData.id (actual UUID) instead of classId from URL (could be slug)
+        const lessonsRes = await apiClient(`/lessons?classId=${classData.id}&checkTranscoding=true`);
         const lessonsResult = await lessonsRes.json();
-        if (lessonsResult.success) {
+        if (lessonsResult.success && lessonsResult.data) {
           // Preserve local upload state when updating from server
           setLessons(prev => {
             const newLessons = lessonsResult.data.map((serverLesson: Lesson) => {
@@ -152,7 +181,7 @@ export default function TeacherClassPage() {
     }, 10000); // Check every 10 seconds
 
     return () => clearInterval(interval);
-  }, [lessons, classId]);
+  }, [lessons, classData?.id]);
 
   // Handle URL params for lesson/video selection
   useEffect(() => {
@@ -188,14 +217,29 @@ export default function TeacherClassPage() {
 
   const loadAvailableStreamRecordings = async () => {
     try {
-      const response = await apiClient('/live/history');
+      const response = await apiClient(`/live/history?t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache'
+        }
+      });
       const result = await response.json();
-      if (result.success) {
-        // Filter streams that don't have valid lesson recordings yet and belong to this class
-        // validRecordingId is NULL if lesson doesn't exist or recordingId is NULL
-        const recordingsForClass = result.data.filter((s: any) => 
-          !s.validRecordingId && s.classId === classId && s.status === 'ended'
-        );
+      console.log('[Debug] History response:', result);
+      console.log('[Debug] Current Class ID:', classId);
+      
+      if (result.success && result.data) {
+        // Filter streams that:
+        // 1. Belong to this class
+        // 2. Have ended status OR have a valid recording ID (even if status is weird)
+        const recordingsForClass = result.data.filter((s: any) => {
+          // Check both classId and classSlug
+          const matchClass = s.classId === classId || s.classSlug === classId;
+          const hasRecording = (s.status === 'ended' || (s.recordingId && s.recordingId.length > 5));
+          console.log(`[Debug] Stream ${s.id}: ClassMatch=${matchClass} (${s.classId} vs ${classId}), HasRec=${hasRecording}, Status=${s.status}, RecId=${s.recordingId}`);
+          return matchClass && hasRecording;
+        });
+        console.log('[Debug] Filtered recordings:', recordingsForClass);
         setAvailableStreamRecordings(recordingsForClass);
       }
     } catch (error) {
@@ -273,20 +317,23 @@ export default function TeacherClassPage() {
     return () => document.removeEventListener('click', handleClick, true);
   }, [uploading]);
 
-  const loadUser = async () => {
+  const loadLessonFeedback = async (lessonId: string) => {
     try {
-      const res = await apiClient('/auth/me');
+      const res = await apiClient(`/lessons/${lessonId}/ratings`);
       const result = await res.json();
-      if (result.success) setCurrentUser(result.data);
-    } catch (e) {
-      console.error(e);
+      if (result.success && result.data) {
+        setLessonFeedback(result.data);
+      }
+    } catch (error) {
+      console.error('Error loading lesson feedback:', error);
+      setLessonFeedback([]);
     }
   };
 
   const loadData = async () => {
     try {
       // First, fetch class data to get the actual ID (in case classId is a slug)
-      const classRes = await fetch(`/api/classes/${classId}`);
+      const classRes = await apiClient(`/classes/${classId}`);
       const classResult = await classRes.json();
       
       if (!classResult.success) {
@@ -296,21 +343,24 @@ export default function TeacherClassPage() {
       setClassData(classResult.data);
       const actualClassId = classResult.data.id;
       
-      // Now fetch lessons and pending enrollments using the actual class ID
-      const [lessonsRes, pendingRes] = await Promise.all([
-        fetch(`/api/lessons?classId=${actualClassId}`),
-        fetch(`/api/enrollments/pending`)
+      // Now fetch lessons, topics, and pending enrollments using the actual class ID
+      const [lessonsRes, topicsRes, pendingRes] = await Promise.all([
+        apiClient(`/lessons?classId=${actualClassId}`),
+        apiClient(`/topics?classId=${actualClassId}`),
+        apiClient('/enrollments/pending')
       ]);
       
-      const [lessonsResult, pendingResult] = await Promise.all([
+      const [lessonsResult, topicsResult, pendingResult] = await Promise.all([
         lessonsRes.json(),
+        topicsRes.json(),
         pendingRes.json()
       ]);
       
-      if (lessonsResult.success) setLessons(lessonsResult.data);
+      if (lessonsResult.success) setLessons(lessonsResult.data || []);
+      if (topicsResult.success) setTopics(topicsResult.data || []);
       if (pendingResult.success) {
         // Filter to only show enrollments for this class
-        const classPending = pendingResult.data.filter((e: any) => e.classId === actualClassId);
+        const classPending = (pendingResult.data || []).filter((e: any) => e.classId === actualClassId);
         setPendingEnrollments(classPending);
       }
     } catch (e) {
@@ -322,7 +372,7 @@ export default function TeacherClassPage() {
 
   const loadLiveClasses = async () => {
     try {
-      const res = await fetch(`/api/live?classId=${classId}`);
+      const res = await apiClient(`/live?classId=${classId}`);
       const result = await res.json();
       if (result.success) {
         setLiveClasses(result.data);
@@ -333,23 +383,39 @@ export default function TeacherClassPage() {
   };
 
   const createLiveClass = async () => {
+    if (!classData) {
+      alert('Error: Datos de clase no cargados');
+      return;
+    }
+    
+    // Show custom modal for stream title
+    const defaultTitle = `Clase ${new Date().toLocaleString('es-ES', { day: 'numeric', month: 'short' })}`;
+    setStreamNameInput(defaultTitle);
+    setShowStreamNameModal(true);
+  };
+
+  const confirmCreateStream = async () => {
+    const streamTitle = streamNameInput.trim();
+    if (!streamTitle || !classData) {
+      return; // Empty string or no class data
+    }
+    
+    setShowStreamNameModal(false);
     setCreatingStream(true);
     try {
-      // Generate default title
-      const defaultTitle = 'Stream iniciado';
-      
+      // Use classData.id (actual UUID) instead of classId from URL (could be slug)
       const res = await apiClient('/live', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          classId,
-          title: defaultTitle,
+          classId: classData.id,
+          title: streamTitle.trim(),
         }),
       });
       const result = await res.json();
       if (result.success) {
         setLiveClasses(prev => [result.data, ...prev]);
-        setShowStreamModal(false);
+        setShowStreamNameModal(false);
       } else {
         console.error('Live class creation error:', result);
         alert(`Error: ${result.error || 'No se pudo crear la reunión de Zoom'}`);
@@ -366,7 +432,7 @@ export default function TeacherClassPage() {
     if (!confirm('¿Eliminar esta clase en vivo? También se eliminará la reunión de Zoom.')) return;
     
     try {
-      const res = await fetch(`/api/live?id=${classLiveId}`, { method: 'DELETE' });
+      const res = await apiClient(`/live/${classLiveId}`, { method: 'DELETE' });
       const result = await res.json();
       if (result.success) {
         setLiveClasses(prev => prev.filter(s => s.id !== classLiveId));
@@ -378,10 +444,11 @@ export default function TeacherClassPage() {
 
   const loadLessonDetail = async (lessonId: string): Promise<LessonDetail | null> => {
     try {
-      const res = await fetch(`/api/lessons/${lessonId}`);
+      const res = await apiClient(`/lessons/${lessonId}`);
       const result = await res.json();
       if (result.success) {
         setSelectedLesson(result.data);
+        loadLessonFeedback(lessonId);
         return result.data;
       }
     } catch (e) {
@@ -557,6 +624,7 @@ export default function TeacherClassPage() {
             publishImmediately: true,
             maxWatchTimeMultiplier: 2.0,
             watermarkIntervalMins: 5,
+            topicId: '',
             videos: [],
             documents: [],
             selectedStreamRecording: '',
@@ -599,6 +667,7 @@ export default function TeacherClassPage() {
       title: lessonFormData.title || new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }),
       description: lessonFormData.description,
       releaseDate: releaseTimestamp,
+      topicId: lessonFormData.topicId || null,
       maxWatchTimeMultiplier: lessonFormData.maxWatchTimeMultiplier,
       watermarkIntervalMins: lessonFormData.watermarkIntervalMins,
       videoCount: lessonFormData.videos.length,
@@ -625,10 +694,11 @@ export default function TeacherClassPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          classId,
+          classId: classData?.id, // Use actual UUID, not slug from URL
           title: lessonFormData.title || new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }),
           description: lessonFormData.description,
           releaseDate: releaseTimestamp,
+          topicId: lessonFormData.topicId || null,
           maxWatchTimeMultiplier: lessonFormData.maxWatchTimeMultiplier,
           watermarkIntervalMins: lessonFormData.watermarkIntervalMins,
           videos,
@@ -647,9 +717,13 @@ export default function TeacherClassPage() {
         setLessonFormData({
           title: '', description: '', externalUrl: '', releaseDate: new Date().toISOString().split('T')[0],
           releaseTime: '00:00', publishImmediately: true,
-          maxWatchTimeMultiplier: 2.0, watermarkIntervalMins: 5, videos: [], documents: [], selectedStreamRecording: ''
+          maxWatchTimeMultiplier: 2.0, watermarkIntervalMins: 5, topicId: '', videos: [], documents: [], selectedStreamRecording: ''
         });
         setUploadProgress(0);
+        
+        // Show success message
+        alert('✅ Lección creada exitosamente');
+        await loadData();
       } else {
         // Remove temp lesson on error
         setLessons(prev => prev.filter(l => l.id !== tempLessonId));
@@ -672,12 +746,65 @@ export default function TeacherClassPage() {
   const handleDeleteLesson = async (lessonId: string) => {
     if (!confirm('Delete this lesson? All videos and documents will be deleted.')) return;
     try {
-      const res = await fetch(`/api/lessons/${lessonId}`, { method: 'DELETE' });
+      const res = await apiClient(`/lessons/${lessonId}`, { method: 'DELETE' });
       const result = await res.json();
       if (result.success) loadData();
       else alert(result.error || 'Failed to delete');
     } catch (e) {
       alert('Error occurred');
+    }
+  };
+
+  const handleLessonMove = async (lessonId: string, topicId: string | null) => {
+    try {
+      const res = await apiClient(`/lessons/${lessonId}/move`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topicId }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        // Update local state immediately for faster UI
+        setLessons(prev => prev.map(l => 
+          l.id === lessonId ? { ...l, topicId } : l
+        ));
+      } else {
+        alert(result.error || 'Failed to move lesson');
+      }
+    } catch (e) {
+      console.error('Error moving lesson:', e);
+      alert('Error moving lesson');
+    }
+  };
+
+  const handleRescheduleLesson = (lesson: Lesson) => {
+    setReschedulingLesson(lesson);
+    setShowRescheduleModal(true);
+  };
+
+  const handleRescheduleSubmit = async (newDate: string, newTime: string) => {
+    if (!reschedulingLesson) return;
+    
+    try {
+      const releaseDateTime = `${newDate}T${newTime}:00`;
+      const res = await apiClient(`/lessons/${reschedulingLesson.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          releaseDate: new Date(releaseDateTime).toISOString(),
+        }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setShowRescheduleModal(false);
+        setReschedulingLesson(null);
+        loadData();
+      } else {
+        alert(result.error || 'Failed to reschedule lesson');
+      }
+    } catch (e) {
+      console.error('Error rescheduling lesson:', e);
+      alert('Error rescheduling lesson');
     }
   };
 
@@ -705,10 +832,50 @@ export default function TeacherClassPage() {
     }));
   };
 
+  const handleDeleteVideo = async (videoId: string) => {
+    if (!confirm('¿Estás seguro de eliminar este video?')) return;
+    try {
+      const res = await apiClient(`/lessons/video/${videoId}`, { method: 'DELETE' });
+      const result = await res.json();
+      if (result.success) {
+        setEditingLessonMedia(prev => prev ? ({
+          ...prev,
+          videos: prev.videos.filter(v => v.id !== videoId)
+        }) : null);
+        // Refresh data in background
+        loadData();
+      } else {
+        alert(result.error || 'Error al eliminar video');
+      }
+    } catch (e) {
+      alert('Error de conexión');
+    }
+  };
+
+  const handleDeleteDocument = async (documentId: string) => {
+    if (!confirm('¿Estás seguro de eliminar este documento?')) return;
+    try {
+      const res = await apiClient(`/lessons/document/${documentId}`, { method: 'DELETE' });
+      const result = await res.json();
+      if (result.success) {
+        setEditingLessonMedia(prev => prev ? ({
+          ...prev,
+          documents: prev.documents.filter(d => d.id !== documentId)
+        }) : null);
+        // Refresh data in background
+        loadData();
+      } else {
+        alert(result.error || 'Error al eliminar documento');
+      }
+    } catch (e) {
+      alert('Error de conexión');
+    }
+  };
+
   const handleEditLesson = async (lesson: Lesson) => {
     try {
       // Load lesson details WITHOUT setting selectedLesson to avoid navigation
-      const res = await fetch(`/api/lessons/${lesson.id}`);
+      const res = await apiClient(`/lessons/${lesson.id}`);
       const result = await res.json();
       
       if (!result.success || !result.data) {
@@ -718,19 +885,33 @@ export default function TeacherClassPage() {
       
       const detail = result.data;
       
-      // Populate form with existing data
-      const releaseDatetime = new Date(detail.releaseDate);
-      const timeString = releaseDatetime.toTimeString().slice(0, 5); // HH:MM format
+      // Store current media for display in edit modal
+      setEditingLessonMedia({
+        videos: (detail.videos || []).map((v: any) => ({
+          id: v.id,
+          title: v.title || 'Video',
+          durationSeconds: v.durationSeconds,
+          bunnyGuid: v.upload?.bunnyGuid,
+        })),
+        documents: (detail.documents || []).map((d: any) => ({
+          id: d.id,
+          title: d.title || d.upload?.fileName || 'Document',
+          fileName: d.upload?.fileName || 'Unknown',
+          storagePath: d.upload?.storagePath || '',
+        })),
+      });
       
+      // Populate form with existing data (no release date for editing)
       setLessonFormData({
         title: detail.title,
         description: detail.description || '',
         externalUrl: detail.externalUrl || '',
         releaseDate: detail.releaseDate.split('T')[0],
-        releaseTime: timeString,
-        publishImmediately: false, // When editing, show scheduling options
+        releaseTime: '00:00',
+        publishImmediately: true, // Not used in edit mode
         maxWatchTimeMultiplier: detail.maxWatchTimeMultiplier,
         watermarkIntervalMins: detail.watermarkIntervalMins,
+        topicId: detail.topicId || '',
         videos: [],
         documents: [],
         selectedStreamRecording: '',
@@ -748,30 +929,80 @@ export default function TeacherClassPage() {
     if (!editingLessonId) return;
     
     try {
-      const res = await fetch(`/api/lessons/${editingLessonId}`, {
+      // First, update the lesson metadata
+      const res = await apiClient(`/lessons/${editingLessonId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: lessonFormData.title,
           description: lessonFormData.description,
-          releaseDate: new Date(lessonFormData.releaseDate).toISOString(),
           maxWatchTimeMultiplier: lessonFormData.maxWatchTimeMultiplier,
           watermarkIntervalMins: lessonFormData.watermarkIntervalMins,
+          topicId: lessonFormData.topicId || null,
         }),
       });
       const result = await res.json();
-      if (result.success) {
-        setLessonFormData({
-          title: '', description: '', externalUrl: '', releaseDate: new Date().toISOString().split('T')[0],
-          releaseTime: '00:00', publishImmediately: true,
-          maxWatchTimeMultiplier: 2.0, watermarkIntervalMins: 5, videos: [], documents: [], selectedStreamRecording: ''
-        });
-        setEditingLessonId(null);
-        setShowLessonForm(false);
-        loadData();
-      } else {
+      
+      if (!result.success) {
         alert(result.error || 'Failed to update lesson');
+        return;
       }
+      
+      // If there are new files to upload, handle them
+      if (lessonFormData.videos.length > 0 || lessonFormData.documents.length > 0 || lessonFormData.selectedStreamRecording) {
+        setUploading(true);
+        const abortController = new AbortController();
+        
+        try {
+          // Handle Stream Recording if selected
+          if (lessonFormData.selectedStreamRecording) {
+            const streamRes = await apiClient(`/lessons/${editingLessonId}/add-stream`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ streamId: lessonFormData.selectedStreamRecording }),
+            });
+            const streamResult = await streamRes.json();
+            if (!streamResult.success) {
+              console.error('Failed to add stream:', streamResult.error);
+              alert(`Error al añadir grabación de stream: ${streamResult.error}`);
+            }
+          }
+
+          if (lessonFormData.videos.length > 0 || lessonFormData.documents.length > 0) {
+            const { videos, documents } = await uploadFilesWithMultipart(editingLessonId, abortController);
+            
+            // Add new files to the lesson
+            if (videos.length > 0 || documents.length > 0) {
+              const addRes = await apiClient(`/lessons/${editingLessonId}/add-files`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ videos, documents }),
+              });
+              const addResult = await addRes.json();
+              if (!addResult.success) {
+                console.error('Failed to add files:', addResult.error);
+              }
+            }
+          }
+        } catch (uploadError) {
+          console.error('Upload error:', uploadError);
+          alert('Error al subir archivos adicionales');
+        } finally {
+          setUploading(false);
+          setUploadProgress(0);
+        }
+      }
+      
+      // Reset form and close modal
+      setLessonFormData({
+        title: '', description: '', externalUrl: '', releaseDate: new Date().toISOString().split('T')[0],
+        releaseTime: '00:00', publishImmediately: true,
+        maxWatchTimeMultiplier: 2.0, watermarkIntervalMins: 5, topicId: '', videos: [], documents: [], selectedStreamRecording: ''
+      });
+      setEditingLessonId(null);
+      setEditingLessonMedia(null);
+      setShowLessonForm(false);
+      loadData();
     } catch (e) {
       console.error(e);
       alert('Error updating lesson');
@@ -818,13 +1049,7 @@ export default function TeacherClassPage() {
   const isReleased = (d: string) => new Date(d) <= new Date();
 
   if (loading) {
-    return (
-      <>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="w-6 h-6 border-2 border-gray-200 border-t-blue-600 rounded-full animate-spin" />
-        </div>
-      </>
-    );
+    return <PageLoader label="Cargando clase..." />;
   }
 
   if (!classData) {
@@ -876,98 +1101,173 @@ export default function TeacherClassPage() {
                 ← Volver a lecciones
               </button>
               <h2 className="text-xl font-semibold text-gray-900">{selectedLesson.title}</h2>
-              {selectedLesson.description && <p className="text-gray-600 mt-1">{selectedLesson.description}</p>}
+              {selectedLesson.description ? (
+                <p className="text-gray-600 mt-1">{selectedLesson.description}</p>
+              ) : (
+                <p className="text-gray-400 italic mt-1">Sin descripción</p>
+              )}
             </div>
 
-            {/* Video Tabs */}
-            {selectedLesson.videos.length > 1 && (
-              <div className="flex gap-2 flex-wrap">
-                {selectedLesson.videos.map((video, index) => (
-                  <button
-                    key={video.id}
-                    onClick={() => selectVideoInLesson(video)}
-                    className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                      selectedVideo?.id === video.id
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    Video {index + 1}
-                  </button>
-                ))}
+            {/* Video Player and Documents Side by Side */}
+            <div className="flex gap-6 items-start">
+              {/* Video Player - Left Side */}
+              <div className="flex-1 min-w-0 max-w-3xl">
+                <h3 className="font-semibold text-gray-900 mb-3 text-lg text-center">VIDEOS</h3>
+                {selectedVideo && (
+                  <div className="relative bg-white rounded-xl border border-gray-200 overflow-hidden">
+                    {/* Watermark overlay - hidden in fullscreen */}
+                    <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 bg-black/60 backdrop-blur-sm text-white text-xs px-3 py-1.5 rounded-full flex items-center gap-3 pointer-events-none">
+                      <span>Multiplicador: {selectedLesson.maxWatchTimeMultiplier}x</span>
+                      <span className="w-px h-3 bg-white/40"></span>
+                      <span>Marca de agua: cada {selectedLesson.watermarkIntervalMins} min</span>
+                    </div>
+                    <ProtectedVideoPlayer
+                      key={selectedVideo.id}
+                      videoUrl={selectedVideo.upload?.storageType === 'bunny' ? '' : `/api/video/stream/${selectedVideo.id}`}
+                      videoId={selectedVideo.id}
+                      studentId={currentUser.id}
+                      maxWatchTimeMultiplier={selectedLesson.maxWatchTimeMultiplier}
+                      durationSeconds={selectedVideo.durationSeconds || 0}
+                      initialPlayState={{ totalWatchTimeSeconds: 0, sessionStartTime: null }}
+                      userRole="TEACHER"
+                      bunnyGuid={selectedVideo.upload?.storageType === 'bunny' ? selectedVideo.upload?.bunnyGuid : undefined}
+                    />
+                  </div>
+                )}
+
+                {/* No videos */}
+                {selectedLesson.videos.length === 0 && (
+                  <div className="bg-gray-50 rounded-xl border border-gray-200 p-8 text-center">
+                    <p className="text-gray-600">No videos in this lesson.</p>
+                  </div>
+                )}
+
+                {/* Video Switcher Buttons - Centered Below Videos */}
+                {selectedLesson.videos.length > 1 && (
+                  <div className="flex gap-2 flex-wrap justify-center mt-4">
+                    {selectedLesson.videos.map((video, index) => (
+                      <button
+                        key={video.id}
+                        onClick={() => selectVideoInLesson(video)}
+                        className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                          selectedVideo?.id === video.id
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
+                      >
+                        Video {index + 1}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
 
-            {/* Video Info */}
-            <div className="flex justify-center gap-6 text-sm text-gray-600 -mt-4 mb-2">
-              <span>Multiplicador: {selectedLesson.maxWatchTimeMultiplier}x</span>
-              <span>Marca de agua: cada {selectedLesson.watermarkIntervalMins} min</span>
-            </div>
-
-            {/* Video Player */}
-            {selectedVideo && (
-              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden -mt-2">
-                <ProtectedVideoPlayer
-                  key={selectedVideo.id}
-                  videoUrl={selectedVideo.upload?.storageType === 'bunny' ? '' : `/api/video/stream/${selectedVideo.id}`}
-                  videoId={selectedVideo.id}
-                  studentId={currentUser.id}
-                  maxWatchTimeMultiplier={selectedLesson.maxWatchTimeMultiplier}
-                  durationSeconds={selectedVideo.durationSeconds || 0}
-                  initialPlayState={{ totalWatchTimeSeconds: 0, sessionStartTime: null }}
-                  userRole="TEACHER"
-                  bunnyGuid={selectedVideo.upload?.storageType === 'bunny' ? selectedVideo.upload?.bunnyGuid : undefined}
-                />
-              </div>
-            )}
-
-            {/* No videos */}
-            {selectedLesson.videos.length === 0 && (
-              <div className="bg-gray-50 rounded-xl border border-gray-200 p-8 text-center">
-                <p className="text-gray-600">No videos in this lesson.</p>
-              </div>
-            )}
-
-            {/* Documents */}
-            {selectedLesson.documents.length > 0 && (
-              <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <h3 className="font-medium text-gray-900 mb-4">Documentos ({selectedLesson.documents.length})</h3>
-                <div className="space-y-3">
-                  {selectedLesson.documents.map((doc) => (
-                    <a
-                      key={doc.id}
-                      href={`/api/storage/serve/${encodeURIComponent(doc.upload.storagePath)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-between p-3 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+              {/* Documents - Right Side (Full remaining width) */}
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-gray-900 mb-3 text-lg text-center">DOCUMENTOS</h3>
+                {selectedLesson.documents.length > 0 ? (
+                  <div className="space-y-2">
+                    {selectedLesson.documents
+                      .filter(doc => doc.upload?.storagePath)
+                      .map((doc) => (
+                      <a
+                        key={doc.id}
+                        href={`${API_BASE_URL}/storage/serve/${doc.upload!.storagePath.split('/').map(encodeURIComponent).join('/')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 p-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors group"
+                      >
+                        <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
                           <svg className="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd"/>
                           </svg>
                         </div>
-                        <div>
-                          <p className="font-medium text-gray-900 group-hover:text-blue-600">{doc.title}</p>
-                          {doc.description && <p className="text-xs text-gray-500">{doc.description}</p>}
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-sm text-gray-900 group-hover:text-emerald-600 truncate">{doc.title}</p>
                         </div>
-                      </div>
-                      <svg className="w-5 h-5 text-gray-400 group-hover:text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                    </a>
-                  ))}
-                </div>
+                        <svg className="w-4 h-4 text-gray-400 group-hover:text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-400 italic text-sm text-center">No documentos</p>
+                )}
               </div>
-            )}
+            </div>
+
+            {/* Feedback Section - Full Width Below */}
+            <div className="pt-6">
+              <h3 className="font-semibold text-gray-900 mb-3 text-lg text-center">FEEDBACK</h3>
+              <div className="bg-emerald-50/50 backdrop-blur-md rounded-xl border border-emerald-100 p-6 animate-in slide-in-from-top-2 shadow-sm">
+                <div>
+                {lessonFeedback.filter(f => f.comment && f.comment.trim().length > 0).length > 0 ? (
+                  <div className="space-y-4">
+                    {lessonFeedback.filter(f => f.comment && f.comment.trim().length > 0).map(feedback => {
+                      // Calculate partial star fill (0.25 increments)
+                      const fullStars = Math.floor(feedback.rating);
+                      const remainder = feedback.rating - fullStars;
+                      const partialFill = remainder >= 0.875 ? 1 : remainder >= 0.625 ? 0.75 : remainder >= 0.375 ? 0.5 : remainder >= 0.125 ? 0.25 : 0;
+                      
+                      return (
+                        <div key={feedback.id} className="bg-white/60 border border-emerald-100 rounded-lg p-4 hover:border-emerald-300 transition-all">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-0.5">
+                                {[1, 2, 3, 4, 5].map(starIndex => {
+                                  let fillPercentage = 0;
+                                  if (starIndex <= fullStars) {
+                                    fillPercentage = 100;
+                                  } else if (starIndex === fullStars + 1) {
+                                    fillPercentage = partialFill * 100;
+                                  }
+                                  
+                                  return (
+                                    <div key={starIndex} className="relative w-5 h-5">
+                                      {/* Background star (gray) */}
+                                      <svg className="absolute inset-0 w-5 h-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                      </svg>
+                                      {/* Filled star (yellow) with clip-path */}
+                                      {fillPercentage > 0 && (
+                                        <svg className="absolute inset-0 w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20" style={{ clipPath: `inset(0 ${100 - fillPercentage}% 0 0)` }}>
+                                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                        </svg>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                              <span className="text-xs text-gray-500">{new Date(feedback.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                            </div>
+                          </div>
+                          {feedback.comment && (
+                            <p className="text-sm text-gray-700 leading-relaxed">{feedback.comment}</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-gray-500">
+                    <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                    <p className="text-sm font-medium">No hay comentarios para esta lección</p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
+        </div>
         )}
 
         {/* Main View - No Lesson Selected */}
         {!selectedLesson && (
           <>
-            {/* Active/Scheduled Stream Banner */}
-            {liveClasses.length > 0 && (
+            {/* Active/Scheduled Stream Banner - Shows scheduled, active, and ended streams */}
+            {liveClasses.length > 0 && liveClasses[0].status !== 'recording_failed' && (
               <div className="rounded-xl p-4 bg-gray-100 border-2 border-gray-200 shadow-sm">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -1075,14 +1375,14 @@ export default function TeacherClassPage() {
 
             {/* Lesson Form Modal */}
             {showLessonForm && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 !m-0 p-0">
                 <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
                   <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center flex-shrink-0">
                     <h3 className="text-xl font-semibold text-gray-900">
                       {editingLessonId ? 'Editar Lección' : 'Crear Nueva Lección'}
                     </h3>
                     <button 
-                      onClick={() => { setShowLessonForm(false); setEditingLessonId(null); router.push(`/dashboard/teacher/class/${classId}`); }}
+                      onClick={() => { setShowLessonForm(false); setEditingLessonId(null); setEditingLessonMedia(null); router.push(`/dashboard/teacher/class/${classId}`); }}
                       className="text-gray-400 hover:text-gray-600 transition-colors"
                     >
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1092,7 +1392,7 @@ export default function TeacherClassPage() {
                   </div>
                   
                   <form onSubmit={editingLessonId ? handleUpdateLesson : handleLessonCreate} className="p-6 space-y-4 overflow-y-auto flex-1">
-                    {/* Title + Publish Options Row */}
+                    {/* Title and Topic side by side in edit mode, Title with Publish options in create mode */}
                     <div className="grid md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">Título</label>
@@ -1104,47 +1404,65 @@ export default function TeacherClassPage() {
                           placeholder="Título de la lección"
                         />
                       </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Publicación</label>
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setLessonFormData({ ...lessonFormData, publishImmediately: true })}
-                            className={`flex-1 px-3 py-2.5 rounded-xl border-2 text-sm font-medium transition-all ${
-                              lessonFormData.publishImmediately 
-                                ? 'border-brand-500 bg-brand-50 text-brand-700' 
-                                : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
-                            }`}
+                      {/* Topic Selector - show in edit mode, Publish options in create mode */}
+                      {editingLessonId ? (
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">Tema (opcional)</label>
+                          <select
+                            value={lessonFormData.topicId}
+                            onChange={e => setLessonFormData({ ...lessonFormData, topicId: e.target.value })}
+                            className="w-full h-[38px] px-3 py-2 pr-10 border border-gray-200 rounded-lg text-sm bg-white appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20fill%3D%27none%27%20viewBox%3D%270%200%2020%2020%27%3E%3Cpath%20stroke%3D%27%236b7280%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%20stroke-width%3D%271.5%27%20d%3D%27M6%208l4%204%204-4%27%2F%3E%3C%2Fsvg%3E')] bg-[length:1.5em] bg-[right_0.5rem_center] bg-no-repeat"
                           >
-                            <div className="flex items-center justify-center gap-1.5">
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                              </svg>
-                              Ahora
-                            </div>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setLessonFormData({ ...lessonFormData, publishImmediately: false })}
-                            className={`flex-1 px-3 py-2.5 rounded-xl border-2 text-sm font-medium transition-all ${
-                              !lessonFormData.publishImmediately 
-                                ? 'border-brand-500 bg-brand-50 text-brand-700' 
-                                : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
-                            }`}
-                          >
-                            <div className="flex items-center justify-center gap-1.5">
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                              </svg>
-                              Programar
-                            </div>
-                          </button>
+                            <option value="">Sin tema</option>
+                            {topics.map(topic => (
+                              <option key={topic.id} value={topic.id}>{topic.name}</option>
+                            ))}
+                          </select>
                         </div>
-                      </div>
+                      ) : (
+                      /* Publish options - Only for CREATE mode */
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">Publicación</label>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setLessonFormData({ ...lessonFormData, publishImmediately: true })}
+                              className={`flex-1 px-3 py-2.5 rounded-xl border-2 text-sm font-medium transition-all ${
+                                lessonFormData.publishImmediately 
+                                  ? 'border-brand-500 bg-brand-50 text-brand-700' 
+                                  : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                              }`}
+                            >
+                              <div className="flex items-center justify-center gap-1.5">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                </svg>
+                                Ahora
+                              </div>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setLessonFormData({ ...lessonFormData, publishImmediately: false })}
+                              className={`flex-1 px-3 py-2.5 rounded-xl border-2 text-sm font-medium transition-all ${
+                                !lessonFormData.publishImmediately 
+                                  ? 'border-brand-500 bg-brand-50 text-brand-700' 
+                                  : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                              }`}
+                            >
+                              <div className="flex items-center justify-center gap-1.5">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                Programar
+                              </div>
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     
-                    {/* Date/Time inputs - only show when scheduling */}
-                    {!lessonFormData.publishImmediately && (
+                    {/* Date/Time inputs - only show when scheduling (CREATE mode only) */}
+                    {!editingLessonId && !lessonFormData.publishImmediately && (
                       <div className="grid md:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">Fecha</label>
@@ -1179,13 +1497,30 @@ export default function TeacherClassPage() {
                       />
                     </div>
                     
+                    {/* Topic Selector - only show in create mode (edit mode has it in the first row) */}
+                    {!editingLessonId && (
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Tema (opcional)</label>
+                        <select
+                          value={lessonFormData.topicId}
+                          onChange={e => setLessonFormData({ ...lessonFormData, topicId: e.target.value })}
+                          className="w-full h-[38px] px-3 py-2 pr-10 border border-gray-200 rounded-lg text-sm bg-white appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20fill%3D%27none%27%20viewBox%3D%270%200%2020%2020%27%3E%3Cpath%20stroke%3D%27%236b7280%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%20stroke-width%3D%271.5%27%20d%3D%27M6%208l4%204%204-4%27%2F%3E%3C%2Fsvg%3E')] bg-[length:1.5em] bg-[right_0.5rem_center] bg-no-repeat"
+                        >
+                          <option value="">Sin tema</option>
+                          {topics.map(topic => (
+                            <option key={topic.id} value={topic.id}>{topic.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                    
                     <div className="grid md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1.5">Multiplicador <span className="text-xs font-normal text-gray-500">(El video podrá verse durante X veces su duración)</span></label>
                         <input type="number" min="1" max="10" step="0.5" value={lessonFormData.maxWatchTimeMultiplier} onChange={e => setLessonFormData({ ...lessonFormData, maxWatchTimeMultiplier: parseFloat(e.target.value) })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"/>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1.5">Marca de agua <span className="text-xs font-normal text-gray-500">(Cada cuánto tiempo aparece)</span></label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1.5">Marca de agua <span className="text-xs font-normal text-gray-500">(Cada cuántos minutos aparece)</span></label>
                         <input type="number" min="1" max="60" value={lessonFormData.watermarkIntervalMins} onChange={e => setLessonFormData({ ...lessonFormData, watermarkIntervalMins: parseInt(e.target.value) })} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"/>
                       </div>
                     </div>
@@ -1200,25 +1535,20 @@ export default function TeacherClassPage() {
                           accept="video/mp4" 
                           multiple 
                           onChange={e => { if (e.target.files) Array.from(e.target.files).forEach(addVideoToForm); e.target.value = ''; }} 
-                          className="w-full h-[38px] px-3 py-2 pr-10 border border-gray-200 rounded-lg text-sm bg-white appearance-none"
+                          className="w-full h-[38px] px-3 py-2 pr-10 border border-gray-200 rounded-lg text-sm bg-white appearance-none mb-1"
                         />
                         {lessonFormData.videos.length > 0 && (
                           <div className="mt-2 space-y-2">
                             {lessonFormData.videos.map((v, i) => (
                               <div key={i} className="relative p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                {/* Green checkmark animation */}
                                 <div className="absolute top-1/2 -translate-y-1/2 left-2 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center animate-[scale-in_0.3s_ease-out]">
                                   <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                                   </svg>
                                 </div>
-                                
-                                {/* Filename */}
                                 <div className="pl-8 pr-6">
                                   <span className="text-sm text-gray-700 font-medium">{v.file.name}</span>
                                 </div>
-                                
-                                {/* Remove button top-right */}
                                 <button 
                                   type="button" 
                                   onClick={() => setLessonFormData({ ...lessonFormData, videos: lessonFormData.videos.filter((_, j) => j !== i) })} 
@@ -1235,7 +1565,7 @@ export default function TeacherClassPage() {
                         )}
                       </div>
                       
-                      {/* Stream Recording Selection - Always visible */}
+                      {/* Stream Recording Selection */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1.5">O utiliza una grabación de stream</label>
                         <select 
@@ -1266,19 +1596,14 @@ export default function TeacherClassPage() {
                         <div className="mt-2 space-y-2">
                           {lessonFormData.documents.map((d, i) => (
                             <div key={i} className="relative p-3 bg-red-50 border border-red-200 rounded-lg">
-                              {/* Green checkmark animation */}
                               <div className="absolute top-1/2 -translate-y-1/2 left-2 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center animate-[scale-in_0.3s_ease-out]">
                                 <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                                 </svg>
                               </div>
-                              
-                              {/* Filename */}
                               <div className="pl-8 pr-6">
                                 <span className="text-sm text-gray-700 font-medium">{d.file.name}</span>
                               </div>
-                              
-                              {/* Remove button top-right */}
                               <button 
                                 type="button" 
                                 onClick={() => setLessonFormData({ ...lessonFormData, documents: lessonFormData.documents.filter((_, j) => j !== i) })} 
@@ -1295,6 +1620,176 @@ export default function TeacherClassPage() {
                       )}
                     </div>
                       </>
+                    )}
+                    
+                    {/* EDIT MODE: Show current media and allow adding more */}
+                    {editingLessonId && editingLessonMedia && (
+                      <div className="space-y-4">
+                        {/* Current Videos Section */}
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Videos actuales ({editingLessonMedia.videos.length})
+                          </label>
+                          {editingLessonMedia.videos.length > 0 ? (
+                            <div className="space-y-2">
+                              {editingLessonMedia.videos.map((v, i) => (
+                                <div key={v.id} className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                  <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                      <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                                    </svg>
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-gray-900 truncate">{v.title || `Video ${i + 1}`}</p>
+                                    {v.durationSeconds && (
+                                      <p className="text-xs text-gray-500">
+                                        {Math.floor(v.durationSeconds / 60)}:{(v.durationSeconds % 60).toString().padStart(2, '0')}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteVideo(v.id)}
+                                    className="text-xs text-red-600 bg-red-100 hover:bg-red-200 px-2 py-1 rounded transition-colors"
+                                  >
+                                    Eliminar
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-gray-500 italic">No hay videos en esta lección</p>
+                          )}
+                        </div>
+                        
+                        {/* Current Documents Section */}
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Documentos actuales ({editingLessonMedia.documents.length})
+                          </label>
+                          {editingLessonMedia.documents.length > 0 ? (
+                            <div className="space-y-2">
+                              {editingLessonMedia.documents.map((d, i) => (
+                                <div key={d.id} className="flex items-center gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                  <div className="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                                    </svg>
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-gray-900 truncate">{d.title || d.fileName}</p>
+                                    <p className="text-xs text-gray-500 truncate">{d.fileName}</p>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteDocument(d.id)}
+                                    className="text-xs text-red-600 bg-red-100 hover:bg-red-200 px-2 py-1 rounded transition-colors"
+                                  >
+                                    Eliminar
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-gray-500 italic">No hay documentos en esta lección</p>
+                          )}
+                        </div>
+                        
+                        {/* Add More Files Section */}
+                        <div className="pt-4 border-t border-gray-200">
+                          <label className="block text-sm font-semibold text-gray-700 mb-3">Agregar más archivos</label>
+                          <div className="grid md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1.5">Nuevos videos</label>
+                              <input 
+                                type="file" 
+                                accept="video/mp4" 
+                                multiple 
+                                onChange={e => { if (e.target.files) Array.from(e.target.files).forEach(addVideoToForm); e.target.value = ''; }} 
+                                className="w-full h-[38px] px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white"
+                              />
+                              {lessonFormData.videos.length > 0 && (
+                                <div className="mt-2 space-y-2">
+                                  {lessonFormData.videos.map((v, i) => (
+                                    <div key={i} className="relative p-2 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
+                                      <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
+                                        </svg>
+                                      </div>
+                                      <span className="text-xs text-gray-700 truncate flex-1">{v.file.name}</span>
+                                      <button 
+                                        type="button" 
+                                        onClick={() => setLessonFormData({ ...lessonFormData, videos: lessonFormData.videos.filter((_, j) => j !== i) })} 
+                                        className="w-5 h-5 flex items-center justify-center text-red-500 hover:text-red-700 rounded"
+                                      >
+                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1.5">Nuevos documentos (PDF)</label>
+                              <input 
+                                type="file" 
+                                accept=".pdf" 
+                                multiple 
+                                onChange={e => { if (e.target.files) Array.from(e.target.files).forEach(addDocumentToForm); e.target.value = ''; }} 
+                                className="w-full h-[38px] px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white"
+                              />
+                              {lessonFormData.documents.length > 0 && (
+                                <div className="mt-2 space-y-2">
+                                  {lessonFormData.documents.map((d, i) => (
+                                    <div key={i} className="relative p-2 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
+                                      <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+                                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
+                                        </svg>
+                                      </div>
+                                      <span className="text-xs text-gray-700 truncate flex-1">{d.file.name}</span>
+                                      <button 
+                                        type="button" 
+                                        onClick={() => setLessonFormData({ ...lessonFormData, documents: lessonFormData.documents.filter((_, j) => j !== i) })} 
+                                        className="w-5 h-5 flex items-center justify-center text-red-500 hover:text-red-700 rounded"
+                                      >
+                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="mt-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-1.5">O utiliza una grabación de stream</label>
+                            <select 
+                              value={lessonFormData.selectedStreamRecording}
+                              onChange={e => setLessonFormData({ ...lessonFormData, selectedStreamRecording: e.target.value })}
+                              className="w-full h-[38px] px-3 py-2 pr-10 border border-gray-200 rounded-lg text-sm bg-white appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20fill%3D%27none%27%20viewBox%3D%270%200%2020%2020%27%3E%3Cpath%20stroke%3D%27%236b7280%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%20stroke-width%3D%271.5%27%20d%3D%27M6%208l4%204%204-4%27%2F%3E%3C%2Fsvg%3E')] bg-[length:1.5em] bg-[right_0.5rem_center] bg-no-repeat"
+                              style={{ paddingRight: '2.5rem' }}
+                              disabled={availableStreamRecordings.length === 0}
+                            >
+                              <option value="">
+                                {availableStreamRecordings.length === 0 
+                                  ? '-- No hay grabaciones disponibles --' 
+                                  : '-- Selecciona una grabación --'}
+                              </option>
+                              {availableStreamRecordings.map(recording => (
+                                <option key={recording.id} value={recording.id}>
+                                  {recording.title} ({new Date(recording.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      </div>
                     )}
                     
                     {/* Upload Progress Bar */}
@@ -1330,11 +1825,11 @@ export default function TeacherClassPage() {
                       </div>
                     )}
 
-                    <div className="flex gap-3 pt-4 border-t border-gray-200">
-                      <button type="submit" disabled={uploading} className="px-6 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium text-sm disabled:opacity-50">
+                    <div className="flex gap-3">
+                      <button type="submit" className="px-6 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium text-sm">
                         {uploading ? 'Creando...' : editingLessonId ? 'Actualizar Lección' : 'Crear Lección'}
                       </button>
-                      <button type="button" onClick={() => { setShowLessonForm(false); setEditingLessonId(null); }} className="px-6 py-2.5 text-gray-600 hover:text-gray-900 font-medium text-sm">
+                      <button type="button" onClick={() => { setShowLessonForm(false); setEditingLessonId(null); setEditingLessonMedia(null); }} className="px-6 py-2.5 text-gray-600 hover:text-gray-900 font-medium text-sm">
                         Cancelar
                       </button>
                     </div>
@@ -1372,12 +1867,72 @@ export default function TeacherClassPage() {
 
             {/* Lecciones - Component */}
             {!selectedLesson && (
-              <LessonsList 
+              <TopicsLessonsList 
                 lessons={lessons}
+                topics={topics}
+                classId={classData?.id || ''}
+                totalStudents={classData.enrollments.filter(e => e.status === 'APPROVED').length}
                 onSelectLesson={selectLesson}
                 onEditLesson={handleEditLesson}
                 onDeleteLesson={handleDeleteLesson}
+                onRescheduleLesson={handleRescheduleLesson}
+                onTopicsChange={loadData}
+                onLessonMove={handleLessonMove}
               />
+            )}
+
+            {/* Reschedule Modal */}
+            {showRescheduleModal && reschedulingLesson && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-2xl max-w-md w-full p-6">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4">Reprogramar Lección</h3>
+                  
+                  <form onSubmit={(e) => {
+                    e.preventDefault();
+                    const form = e.target as HTMLFormElement;
+                    const date = (form.elements.namedItem('rescheduleDate') as HTMLInputElement).value;
+                    const time = (form.elements.namedItem('rescheduleTime') as HTMLInputElement).value;
+                    handleRescheduleSubmit(date, time);
+                  }}>
+                    <div className="grid grid-cols-2 gap-4 mb-6">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Nueva Fecha</label>
+                        <input 
+                          type="date" 
+                          name="rescheduleDate"
+                          defaultValue={reschedulingLesson.releaseDate.split('T')[0]}
+                          min={new Date().toISOString().split('T')[0]}
+                          className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Nueva Hora</label>
+                        <input 
+                          type="time"
+                          name="rescheduleTime"
+                          defaultValue={new Date(reschedulingLesson.releaseDate).toTimeString().slice(0, 5)}
+                          className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                          required
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-3">
+                      <button type="submit" className="flex-1 px-6 py-2.5 bg-accent-300 text-gray-900 rounded-lg hover:bg-accent-400 font-medium text-sm">
+                        Reprogramar
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => { setShowRescheduleModal(false); setReschedulingLesson(null); }}
+                        className="px-6 py-2.5 border-2 border-gray-900 text-gray-900 hover:bg-gray-50 rounded-lg font-medium text-sm"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
             )}
 
             {/* Students - Component */}
@@ -1385,6 +1940,51 @@ export default function TeacherClassPage() {
               <StudentsList enrollments={classData.enrollments} />
             )}
           </>
+        )}
+
+        {/* Custom Stream Name Modal */}
+        {showStreamNameModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">Nombre del Stream</h3>
+              
+              <input
+                type="text"
+                value={streamNameInput}
+                onChange={(e) => setStreamNameInput(e.target.value)}
+                placeholder="Ingrese el nombre del stream"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-100 mb-4"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    confirmCreateStream();
+                  } else if (e.key === 'Escape') {
+                    setShowStreamNameModal(false);
+                    setStreamNameInput('');
+                  }
+                }}
+              />
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={confirmCreateStream}
+                  disabled={!streamNameInput.trim()}
+                  className="flex-1 px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Crear Stream
+                </button>
+                <button
+                  onClick={() => {
+                    setShowStreamNameModal(false);
+                    setStreamNameInput('');
+                  }}
+                  className="px-6 py-2.5 border-2 border-gray-900 text-gray-900 hover:bg-gray-50 rounded-lg font-medium text-sm"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
         )}
     </div>
   );

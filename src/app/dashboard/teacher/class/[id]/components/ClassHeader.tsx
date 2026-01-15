@@ -26,7 +26,7 @@ export default function ClassHeader({
   onCreateStream,
   onTogglePendingRequests,
 }: ClassHeaderProps) {
-  const approvedCount = classData.enrollments.filter((e) => e.status === 'APPROVED').length;
+  const approvedCount = (classData.enrollments || []).filter((e) => e.status === 'APPROVED').length;
 
   return (
     <>
@@ -46,13 +46,12 @@ export default function ClassHeader({
                 <span className="text-green-700">estudiantes</span>
               </div>
               {pendingCount > 0 && (
-                <button
-                  onClick={onTogglePendingRequests}
-                  className="px-2.5 py-1 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-1.5 hover:bg-yellow-100 transition-colors"
+                <div
+                  className="px-2.5 py-1 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-1.5"
                 >
                   <span className="font-semibold text-red-900">{pendingCount}</span>
                   <span className="text-red-700">solicitud{pendingCount !== 1 ? 'es' : ''}</span>
-                </button>
+                </div>
               )}
             </div>
           </div>

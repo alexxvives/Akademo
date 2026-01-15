@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import Hls from 'hls.js';
 import 'plyr/dist/plyr.css';
 import { apiClient } from '@/lib/api-client';
@@ -75,6 +76,17 @@ export default function ProtectedVideoPlayer({
   const [signedHlsUrl, setSignedHlsUrl] = useState<string | null>(null);
   const [playbackRate, setPlaybackRate] = useState(1);
   const [transcodingStatus, setTranscodingStatus] = useState<string | null>(null);
+  const [plyrContainer, setPlyrContainer] = useState<HTMLElement | null>(null);
+  const watermarkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+
+
+  // Update play state when video changes (only re-run on videoId change to avoid excessive updates)
+  useEffect(() => {
+    console.log('[VideoPlayer] Updating playState from props:', initialPlayState);
+    setPlayState(initialPlayState);
+    setIsLocked(initialPlayState?.status === 'BLOCKED');
+  }, [videoId]); // Only re-run when video changes, not when playState object reference changes
 
   // Fetch signed URL for Bunny videos
   useEffect(() => {
@@ -87,20 +99,20 @@ export default function ProtectedVideoPlayer({
     async function fetchSignedUrl() {
       try {
         // First check transcoding status
-        const statusResponse = await fetch(`/api/bunny/video/${bunnyGuid}/status`);
+        const statusResponse = await apiClient(`/bunny/video/${bunnyGuid}/status`);
         if (statusResponse.ok) {
           const statusData = await statusResponse.json();
-          if (statusData.status === 'finished') {
+          if (statusData.success && statusData.data?.status === 4) {
             setTranscodingStatus('finished');
-          } else if (statusData.status === 'processing') {
+          } else if (statusData.success && statusData.data?.status === 3) {
             setTranscodingStatus('processing');
             setIsLoading(false);
             // Poll for status updates every 5 seconds
             const pollInterval = setInterval(async () => {
-              const pollResponse = await fetch(`/api/bunny/video/${bunnyGuid}/status`);
+              const pollResponse = await apiClient(`/bunny/video/${bunnyGuid}/status`);
               if (pollResponse.ok) {
                 const pollData = await pollResponse.json();
-                if (pollData.status === 'finished') {
+                if (pollData.success && pollData.data?.status === 4) {
                   setTranscodingStatus('finished');
                   clearInterval(pollInterval);
                   window.location.reload(); // Reload to load the video
@@ -111,12 +123,12 @@ export default function ProtectedVideoPlayer({
           }
         }
 
-        const response = await fetch(`/api/bunny/video/${bunnyGuid}/stream`);
+        const response = await apiClient(`/bunny/video/${bunnyGuid}/stream`);
         const data = await response.json();
         console.log('Stream API response:', data);
         
-        if (data.success && data.data?.hlsUrl) {
-          setSignedHlsUrl(data.data.hlsUrl);
+        if (data.success && data.data?.streamUrl) {
+          setSignedHlsUrl(data.data.streamUrl);
         } else if (data.data?.error) {
           // Token key not configured or error, use direct URL as fallback
           console.warn('Signed URL not available:', data.data.error);
@@ -144,6 +156,13 @@ export default function ProtectedVideoPlayer({
   const watchTimeRemaining = isUnlimitedUser ? Infinity : Math.max(0, maxWatchTimeSeconds - (playState?.totalWatchTimeSeconds || 0));
   const canPlay = !isLocked && (isUnlimitedUser || effectiveDuration === 0 || watchTimeRemaining > 0);
 
+  const triggerWatermark = useCallback(() => {
+    if (isUnlimitedUser || !studentName) return;
+    setShowWatermark(true);
+    if (watermarkTimeoutRef.current) clearTimeout(watermarkTimeoutRef.current);
+    watermarkTimeoutRef.current = setTimeout(() => setShowWatermark(false), 5000);
+  }, [isUnlimitedUser, studentName]);
+
   // Format time display
   const formatTime = useCallback((seconds: number): string => {
     if (!isFinite(seconds)) return '∞';
@@ -157,7 +176,14 @@ export default function ProtectedVideoPlayer({
     if (elapsedSeconds <= 0) return;
 
     try {
-      const response = await apiClient('/video/progress', {
+      console.log('[VideoPlayer] Saving progress:', {
+        videoId,
+        studentId,
+        watchTimeElapsed: elapsedSeconds,
+        currentPosition: currentTimeRef.current
+      });
+
+      const response = await apiClient('/videos/progress', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -170,6 +196,7 @@ export default function ProtectedVideoPlayer({
 
       if (!response.ok) {
         const data = await response.json();
+        console.error('[VideoPlayer] Progress save failed:', data);
         if (response.status === 403) {
           setIsLocked(true);
           setPlayState(prev => ({ ...prev, status: 'BLOCKED' }));
@@ -179,13 +206,20 @@ export default function ProtectedVideoPlayer({
       }
 
       const data = await response.json();
-      if (data.success && data.data.playState?.status === 'BLOCKED') {
-        setIsLocked(true);
+      console.log('[VideoPlayer] Progress saved successfully:', data);
+      
+      if (data.success && data.data?.playState) {
+        // Update local playState with server response
         setPlayState(data.data.playState);
-        plyrRef.current?.pause();
+        
+        if (data.data.playState.status === 'BLOCKED') {
+          console.log('[VideoPlayer] Video blocked due to watch time limit');
+          setIsLocked(true);
+          plyrRef.current?.pause();
+        }
       }
     } catch (err) {
-      console.error('Failed to save progress:', err);
+      console.error('[VideoPlayer] Failed to save progress:', err);
     }
   }, [videoId, studentId]);
 
@@ -361,6 +395,16 @@ export default function ProtectedVideoPlayer({
         setPlaybackRate(rate);
       });
 
+      // Show watermark on seek/interaction
+      plyr.on('seeking', triggerWatermark);
+      plyr.on('seeked', triggerWatermark);
+      plyr.on('controlshidden', () => { /* Optional: maybe hide watermark? No, keep logic simple */ });
+
+      // Save Plyr container for Portal rendering
+      setPlyrContainer(plyr.elements.container);
+
+
+
       plyr.on('loadedmetadata', async () => {
         const duration = plyr.duration;
         if (duration && !isNaN(duration) && duration !== Infinity) {
@@ -368,7 +412,7 @@ export default function ProtectedVideoPlayer({
           
           if (!durationSeconds || durationSeconds === 0) {
             try {
-              await fetch(`/api/videos/${videoId}`, {
+              await apiClient(`/videos/${videoId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ durationSeconds: Math.round(duration) }),
@@ -465,7 +509,7 @@ export default function ProtectedVideoPlayer({
         hlsRef.current = null;
       }
     };
-  }, [hlsUrl, videoUrl, signedHlsUrl, bunnyGuid]);
+  }, [hlsUrl, videoUrl, signedHlsUrl, bunnyGuid, triggerWatermark]);
 
   // Watermark timer - shows periodically to prevent screen recording
   useEffect(() => {
@@ -475,24 +519,24 @@ export default function ProtectedVideoPlayer({
     }
 
     const intervalMs = watermarkIntervalMins * 60 * 1000;
-    const showDuration = 5000;
 
     // Show immediately when video starts
-    setShowWatermark(true);
-    const hideInitial = setTimeout(() => setShowWatermark(false), showDuration);
+    triggerWatermark();
 
     // Then show at intervals
     const intervalId = setInterval(() => {
-      setShowWatermark(true);
-      setTimeout(() => setShowWatermark(false), showDuration);
+      triggerWatermark();
     }, intervalMs);
 
     return () => {
-      clearTimeout(hideInitial);
+      // Clear interval and timeout
       clearInterval(intervalId);
+      if (watermarkTimeoutRef.current) {
+        clearTimeout(watermarkTimeoutRef.current);
+      }
       setShowWatermark(false);
     };
-  }, [isPlaying, watermarkIntervalMins, studentName, isUnlimitedUser]);
+  }, [isPlaying, watermarkIntervalMins, studentName, isUnlimitedUser, triggerWatermark]);
 
   // Track if player should be locked (for overlay display)
   const showLockedOverlay = isLocked || !canPlay;
@@ -578,16 +622,30 @@ export default function ProtectedVideoPlayer({
           AKADEMO
         </div>
 
-        {/* Student Watermark - appears periodically */}
+        {/* Student Watermark - appears periodically or on interaction */}
         {showWatermark && studentName && (
-          <div className="absolute inset-0 flex items-center justify-center z-[9999] pointer-events-none animate-fade-in">
-            <div className="bg-black/50 backdrop-blur-sm border border-white/20 rounded-xl px-6 py-3 shadow-lg">
-              <div className="text-white/80 text-lg font-semibold tracking-wide text-center">{studentName}</div>
-              {studentEmail && (
-                <div className="text-white/60 text-xs font-medium mt-1 text-center">{studentEmail}</div>
-              )}
-            </div>
-          </div>
+          plyrContainer 
+            ? createPortal(
+                <div className="absolute inset-0 flex items-center justify-center z-[20] pointer-events-none animate-fade-in">
+                  <div className="bg-black/50 backdrop-blur-sm border border-white/20 rounded-xl px-6 py-3 shadow-lg">
+                    <div className="text-white/80 text-lg font-semibold tracking-wide text-center">{studentName}</div>
+                    {studentEmail && (
+                      <div className="text-white/60 text-xs font-medium mt-1 text-center">{studentEmail}</div>
+                    )}
+                  </div>
+                </div>,
+                plyrContainer
+              )
+            : (
+                <div className="absolute inset-0 flex items-center justify-center z-[9999] pointer-events-none animate-fade-in">
+                  <div className="bg-black/50 backdrop-blur-sm border border-white/20 rounded-xl px-6 py-3 shadow-lg">
+                    <div className="text-white/80 text-lg font-semibold tracking-wide text-center">{studentName}</div>
+                    {studentEmail && (
+                      <div className="text-white/60 text-xs font-medium mt-1 text-center">{studentEmail}</div>
+                    )}
+                  </div>
+                </div>
+              )
         )}
 
         {/* Loading/Transcoding Indicator - Full video size */}
@@ -603,7 +661,7 @@ export default function ProtectedVideoPlayer({
         {/* Transcoding Status Indicator */}
         {transcodingStatus === 'processing' && (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-900 z-40">
-            <div className="flex flex-col items-center gap-4 max-w-md px-6">
+            <div className="flex flex-col items-center gap-4 max-w-md px-6" style={{ minHeight: '400px' }}>
               <div className="relative">
                 <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent"></div>
                 <div className="absolute inset-0 flex items-center justify-center">

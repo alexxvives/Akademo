@@ -12,7 +12,7 @@ interface StudentsListProps {
 }
 
 export default function StudentsList({ enrollments }: StudentsListProps) {
-  const approvedEnrollments = enrollments.filter(e => e.status === 'APPROVED');
+  const approvedEnrollments = (enrollments || []).filter(e => e.status === 'APPROVED');
 
   return (
     <div>

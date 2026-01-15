@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { Bindings } from '../types';
-import { requireAuth } from '../lib/auth';
+import { requireAuth, getSession } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 
 const bunny = new Hono<{ Bindings: Bindings }>();
@@ -61,10 +61,16 @@ bunny.post('/video/create', async (c) => {
 // PUT /bunny/video/upload - Proxy upload to Bunny
 bunny.put('/video/upload', async (c) => {
   try {
-    const session = await requireAuth(c);
+    // Manual session check with better error handling
+    const session = await getSession(c);
+    if (!session) {
+      console.error('[Bunny Upload] No session found - cookies may not be sent');
+      console.error('[Bunny Upload] Cookie header:', c.req.header('Cookie'));
+      return c.json(errorResponse('Unauthorized - no session cookie'), 401);
+    }
 
     if (!['ADMIN', 'TEACHER'].includes(session.role)) {
-      return c.json(errorResponse('Not authorized'), 403);
+      return c.json(errorResponse(`Not authorized - role ${session.role} not allowed`), 403);
     }
 
     const { videoGuid } = c.req.query();
@@ -76,7 +82,24 @@ bunny.put('/video/upload', async (c) => {
     const apiKey = c.env.BUNNY_STREAM_API_KEY;
     const libraryId = c.env.BUNNY_STREAM_LIBRARY_ID;
 
+    console.log('[Bunny Upload] Starting upload for videoGuid:', videoGuid);
+
+    // Read body as ArrayBuffer to avoid stream consumption issues
+    let bodyBuffer: ArrayBuffer;
+    try {
+      bodyBuffer = await c.req.arrayBuffer();
+      console.log('[Bunny Upload] Body size:', bodyBuffer.byteLength, 'bytes');
+    } catch (bodyError: any) {
+      console.error('[Bunny Upload] Failed to read body:', bodyError);
+      return c.json(errorResponse(`Failed to read upload body: ${bodyError.message}`), 400);
+    }
+
+    if (bodyBuffer.byteLength === 0) {
+      return c.json(errorResponse('No file data received'), 400);
+    }
+
     // Forward upload to Bunny
+    console.log('[Bunny Upload] Forwarding to Bunny API...');
     const response = await fetch(
       `https://video.bunnycdn.com/library/${libraryId}/videos/${videoGuid}`,
       {
@@ -85,15 +108,23 @@ bunny.put('/video/upload', async (c) => {
           'Content-Type': 'application/octet-stream',
           'AccessKey': apiKey,
         },
-        body: c.req.raw.body,
+        body: bodyBuffer,
       }
     );
 
     if (!response.ok) {
       const error = await response.text();
+      console.error('[Bunny Upload] Bunny API error:', error, 'Status:', response.status);
+      
+      // Check for specific Bunny errors
+      if (error.includes('No resume URL') || error.includes('not found')) {
+        return c.json(errorResponse(`Video ${videoGuid} not found in Bunny Stream. It may have been deleted or expired.`), 404);
+      }
+      
       return c.json(errorResponse(`Upload failed: ${error}`), response.status);
     }
 
+    console.log('[Bunny Upload] Upload successful for videoGuid:', videoGuid);
     return c.json(successResponse({ videoGuid }));
   } catch (error: any) {
     console.error('[Bunny Upload] Error:', error);

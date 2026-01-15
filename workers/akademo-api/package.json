@@ -9,13 +9,15 @@
     "tail": "wrangler tail"
   },
   "dependencies": {
-    "hono": "^4.0.0",
-    "bcryptjs": "^2.4.3"
+    "@akademo/types": "*",
+    "bcryptjs": "^2.4.3",
+    "hono": "^4.0.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241127.0",
     "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^20.19.25",
     "typescript": "^5.3.3",
-    "wrangler": "^3.95.0"
+    "wrangler": "^4.58.0"
   }
 }

@@ -77,18 +77,12 @@ export default function EnrolledAcademiesClassesPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="w-full">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Unirse a Más Clases</h1>
           <p className="text-gray-600 text-sm mt-1">Clases disponibles en las academias donde ya estás inscrito</p>
         </div>
-        <Link
-          href="/dashboard/student/classes"
-          className="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
-        >
-          ← Mis Clases
-        </Link>
       </div>
 
       {classes.length === 0 ? (
@@ -134,31 +128,20 @@ export default function EnrolledAcademiesClassesPage() {
               <div className="grid gap-4">
                 {academyClasses.map((classItem) => (
                   <div key={classItem.id} className="bg-white border-2 border-gray-200 rounded-xl p-6 hover:border-gray-300 transition-all">
-                    <div className="flex items-start justify-between">
+                    <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-3">
                           <h3 className="text-xl font-semibold text-gray-900">{classItem.name}</h3>
-                          <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
-                            {classItem.studentCount} estudiantes
+                          <span className="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full flex items-center gap-1">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            {classItem.teacherName}
                           </span>
                         </div>
                         {classItem.description && (
                           <p className="text-gray-600 text-sm mb-4">{classItem.description}</p>
                         )}
-                        <div className="flex items-center gap-4 text-sm text-gray-600">
-                          <div className="flex items-center gap-2">
-                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                            <span className="font-medium">{classItem.teacherName}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                            </svg>
-                            <span>{classItem.teacherEmail}</span>
-                          </div>
-                        </div>
                       </div>
                       {classItem.enrollmentStatus === 'APPROVED' ? (
                         <span className="px-6 py-3 bg-green-100 text-green-700 rounded-lg font-medium text-sm border border-green-200">

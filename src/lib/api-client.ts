@@ -5,7 +5,7 @@
  * Automatically includes credentials (cookies) and handles JSON responses.
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://akademo-api.alexxvives.workers.dev';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://akademo-api.alexxvives.workers.dev';
 
 export interface ApiClientOptions extends RequestInit {
   skipCredentials?: boolean;

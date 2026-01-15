@@ -12,11 +12,14 @@ interface BunnyEnv {
 
 function getConfig(): BunnyEnv {
   const ctx = getCloudflareContext();
+  if (!ctx) {
+    throw new Error('Cloudflare context not available');
+  }
   return {
-    BUNNY_STREAM_LIBRARY_ID: ctx?.BUNNY_STREAM_LIBRARY_ID || process.env.BUNNY_STREAM_LIBRARY_ID || '',
-    BUNNY_STREAM_API_KEY: ctx?.BUNNY_STREAM_API_KEY || process.env.BUNNY_STREAM_API_KEY || '',
-    BUNNY_STREAM_CDN_HOSTNAME: ctx?.BUNNY_STREAM_CDN_HOSTNAME || process.env.BUNNY_STREAM_CDN_HOSTNAME || '',
-    BUNNY_STREAM_TOKEN_KEY: ctx?.BUNNY_STREAM_TOKEN_KEY || process.env.BUNNY_STREAM_TOKEN_KEY || '',
+    BUNNY_STREAM_LIBRARY_ID: ctx.BUNNY_STREAM_LIBRARY_ID || '',
+    BUNNY_STREAM_API_KEY: ctx.BUNNY_STREAM_API_KEY || '',
+    BUNNY_STREAM_CDN_HOSTNAME: ctx.BUNNY_STREAM_CDN_HOSTNAME || '',
+    BUNNY_STREAM_TOKEN_KEY: ctx.BUNNY_STREAM_TOKEN_KEY || '',
   };
 }
 
@@ -268,7 +271,7 @@ export async function createBunnyLiveStream(name: string): Promise<BunnyLiveStre
   const ctx = getCloudflareContext();
   
   // Use live-specific API key if available
-  const liveApiKey = ctx?.BUNNY_STREAM_LIVE_API_KEY || process.env.BUNNY_STREAM_LIVE_API_KEY || config.BUNNY_STREAM_API_KEY;
+  const liveApiKey = ctx?.BUNNY_STREAM_LIVE_API_KEY || config.BUNNY_STREAM_API_KEY;
   
   console.log('Creating live stream with library:', config.BUNNY_STREAM_LIBRARY_ID);
   

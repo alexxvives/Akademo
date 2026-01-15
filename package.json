@@ -2,21 +2,30 @@
   "name": "akademo",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "packages/*",
+    "workers/*"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:types": "cd packages/types && npm run build",
     "start": "next start",
     "lint": "next lint",
     "pages:build": "npx @opennextjs/cloudflare build",
     "preview": "npx @opennextjs/cloudflare preview",
     "deploy": "npx @opennextjs/cloudflare deploy",
+    "deploy:api": "cd workers/akademo-api && npx wrangler deploy",
+    "deploy:all": "npm run deploy && npm run deploy:api",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv",
     "db:migrate": "wrangler d1 migrations apply akademo-db --remote",
     "db:migrate:local": "wrangler d1 migrations apply akademo-db --local"
   },
   "dependencies": {
+    "@akademo/types": "*",
     "@opennextjs/cloudflare": "^1.14.0",
     "bcryptjs": "^2.4.3",
+    "date-fns": "^4.1.0",
     "hls.js": "^1.6.15",
     "next": "14.2.15",
     "plyr": "^3.8.3",
@@ -38,6 +47,7 @@
     "eslint-config-next": "14.2.15",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4.58.0"
   }
 }

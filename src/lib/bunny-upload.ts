@@ -44,12 +44,31 @@ export async function uploadToBunny({
   const { data } = await createRes.json();
   const { videoGuid } = data;
 
+  if (!videoGuid) {
+    throw new Error('Failed to create video: No videoGuid returned from server');
+  }
+
+  console.log('[Bunny Upload] Video created with GUID:', videoGuid);
+
+  // Get API URL for upload
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://akademo-api.alexxvives.workers.dev';
+
   // Step 2: Upload video content through our proxy
   // We use XMLHttpRequest for progress tracking
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     
-    xhr.open('PUT', `/api/bunny/video/upload?videoGuid=${videoGuid}`);
+    xhr.open('PUT', `${apiUrl}/bunny/video/upload?videoGuid=${videoGuid}`);
+    // Include credentials for session auth (cookies)
+    xhr.withCredentials = true;
+    // Set content type for binary upload
+    xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+    
+    // Also include Authorization header for cross-domain auth (cookies don't work cross-domain)
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    }
     
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable && onProgress) {
@@ -68,7 +87,21 @@ export async function uploadToBunny({
           title,
         });
       } else {
-        reject(new Error(`Upload failed with status ${xhr.status}`));
+        // Parse error response
+        let errorMessage = `Upload failed with status ${xhr.status}`;
+        try {
+          const errorData = JSON.parse(xhr.responseText);
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch {
+          // If response isn't JSON, use raw text
+          errorMessage = xhr.responseText || errorMessage;
+        }
+        console.error('[Bunny Upload] Error:', {
+          status: xhr.status,
+          response: xhr.responseText,
+          videoGuid,
+        });
+        reject(new Error(errorMessage));
       }
     };
 

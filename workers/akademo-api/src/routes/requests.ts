@@ -9,12 +9,14 @@ const requests = new Hono<{ Bindings: Bindings }>();
 requests.post('/student', async (c) => {
   try {
     const session = await requireAuth(c);
+    console.log('[Student Request] Session:', { id: session.id, role: session.role });
 
     if (session.role !== 'STUDENT') {
       return c.json(errorResponse('Only students can request to join classes'), 403);
     }
 
     const { classId } = await c.req.json();
+    console.log('[Student Request] ClassId:', classId);
 
     if (!classId) {
       return c.json(errorResponse('classId is required'), 400);
@@ -27,6 +29,7 @@ requests.post('/student', async (c) => {
       .first();
 
     if (!classRecord) {
+      console.error('[Student Request] Class not found:', classId);
       return c.json(errorResponse('Class not found'), 404);
     }
 
@@ -35,6 +38,8 @@ requests.post('/student', async (c) => {
       .prepare('SELECT * FROM ClassEnrollment WHERE userId = ? AND classId = ?')
       .bind(session.id, classId)
       .first();
+
+    console.log('[Student Request] Existing enrollment:', existing);
 
     if (existing) {
       if (existing.status === 'APPROVED') {
@@ -53,9 +58,10 @@ requests.post('/student', async (c) => {
 
     // Create enrollment request
     const enrollmentId = crypto.randomUUID();
+    const now = new Date().toISOString();
     await c.env.DB
-      .prepare('INSERT INTO ClassEnrollment (id, classId, userId, status, documentSigned) VALUES (?, ?, ?, ?, ?)')
-      .bind(enrollmentId, classId, session.id, 'PENDING', 0)
+      .prepare('INSERT INTO ClassEnrollment (id, classId, userId, status, documentSigned, enrolledAt, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+      .bind(enrollmentId, classId, session.id, 'PENDING', 0, now, now, now)
       .run();
 
     return c.json(successResponse({ 
@@ -64,6 +70,10 @@ requests.post('/student', async (c) => {
     }));
   } catch (error: any) {
     console.error('[Student Request] Error:', error);
+    // Return proper status code for auth errors
+    if (error.message === 'Unauthorized') {
+      return c.json(errorResponse('Please login to request access to classes'), 401);
+    }
     return c.json(errorResponse(error.message || 'Internal server error'), 500);
   }
 });

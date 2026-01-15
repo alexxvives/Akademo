@@ -1,10 +1,17 @@
 import { Context } from 'hono';
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import bcrypt from 'bcryptjs';
-import { userQueries, D1Database } from './db';
 import { Bindings } from '../types';
 
 type UserRole = 'ADMIN' | 'ACADEMY' | 'TEACHER' | 'STUDENT';
+
+interface UserRow {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+}
 
 const SESSION_COOKIE_NAME = 'academy_session';
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
@@ -74,9 +81,10 @@ export async function getSession(c: Context<{ Bindings: Bindings }>): Promise<Se
         return null;
     }
     
-    // Use the D1 database from bindings
-    const db = c.env.DB as unknown as D1Database;
-    const user = await userQueries.findById(db, userId) as any;
+    // Query user directly from D1 database
+    const user = await c.env.DB.prepare('SELECT id, email, firstName, lastName, role FROM User WHERE id = ?')
+      .bind(userId)
+      .first<UserRow>();
 
     if (!user) {
       console.log('[getSession] User not found in database for userId:', userId);

@@ -9,6 +9,7 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://akademo-edu.com'),
   title: "AKADEMO - Plataforma de Aprendizaje Seguro",
   description: "Gestiona clases, profesores, estudiantes y lecciones de video protegidas",
   icons: {

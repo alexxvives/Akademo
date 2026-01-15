@@ -1,4 +1,6 @@
 // Type definitions for Cloudflare bindings
+import { AsyncLocalStorage } from 'node:async_hooks';
+
 export interface CloudflareEnv {
   DB: D1Database;
   STORAGE: R2Bucket;
@@ -15,10 +17,6 @@ export interface CloudflareEnv {
   ZOOM_CLIENT_ID?: string;
   ZOOM_CLIENT_SECRET?: string;
   ZOOM_WEBHOOK_SECRET?: string;
-  // Firebase
-  FIREBASE_PROJECT_ID: string;
-  FIREBASE_DATABASE_URL: string;
-  FIREBASE_CLIENT_EMAIL: string;
 }
 
 // D1 Database interface (from Cloudflare Workers types)
@@ -164,14 +162,21 @@ export interface R2UploadedPart {
   etag: string;
 }
 
-// Helper to get Cloudflare bindings in Next.js API routes
+// AsyncLocalStorage for passing env context through the request lifecycle
+const envStorage = new AsyncLocalStorage<CloudflareEnv>();
+
+/**
+ * Run a function with the Cloudflare env available via getCloudflareContext()
+ * Usage in middleware: runWithEnv(c.env, () => next())
+ */
+export function runWithEnv<T>(env: CloudflareEnv, fn: () => T): T {
+  return envStorage.run(env, fn);
+}
+
+/**
+ * Get the current Cloudflare environment bindings.
+ * Only works within a request that was wrapped with runWithEnv().
+ */
 export function getCloudflareContext(): CloudflareEnv | null {
-  // In Cloudflare Workers, the env is available via @opennextjs/cloudflare
-  try {
-    const { getCloudflareContext: getCtx } = require('@opennextjs/cloudflare');
-    const ctx = getCtx();
-    return ctx?.env as CloudflareEnv;
-  } catch {
-    return null;
-  }
+  return envStorage.getStore() || null;
 }

@@ -13,24 +13,48 @@ function VerifyEmailContent() {
   const [verificationCode, setVerificationCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
   const [registrationData, setRegistrationData] = useState<any>(null);
+  const [returnUrl, setReturnUrl] = useState<string | null>(null);
+
+  // Extract teacherId from returnUrl (e.g., /join/teacher1 -> teacher1)
+  const getJoinUrl = () => {
+    if (returnUrl && returnUrl.startsWith('/join/')) {
+      return returnUrl;
+    }
+    return '/';
+  };
 
   useEffect(() => {
     const emailParam = searchParams.get('email');
-    const regDataParam = searchParams.get('regData');
+    const returnUrlParam = searchParams.get('returnUrl');
     
     if (emailParam) {
       setEmail(decodeURIComponent(emailParam));
     } else {
       setError('No se encontró el email. Por favor, vuelve a solicitar la verificación.');
     }
+    
+    if (returnUrlParam) {
+      setReturnUrl(decodeURIComponent(returnUrlParam));
+    }
 
-    if (regDataParam) {
+    // Get registration data from sessionStorage (secure - not in URL)
+    const storedRegData = sessionStorage.getItem('pendingRegistration');
+    if (storedRegData) {
       try {
-        setRegistrationData(JSON.parse(decodeURIComponent(regDataParam)));
+        setRegistrationData(JSON.parse(storedRegData));
       } catch (e) {
-        // No registration data, that's okay
+        // Invalid stored data
+      }
+    } else {
+      // Fallback: check URL params for backwards compatibility (deprecated)
+      const regDataParam = searchParams.get('regData');
+      if (regDataParam) {
+        try {
+          setRegistrationData(JSON.parse(decodeURIComponent(regDataParam)));
+        } catch (e) {
+          // No registration data
+        }
       }
     }
   }, [searchParams]);
@@ -49,7 +73,7 @@ function VerifyEmailContent() {
       const result = await response.json();
 
       if (result.success) {
-        // If we have registration data, complete the registration
+        // If we have registration data, complete the registration and auto-login
         if (registrationData) {
           const regResponse = await apiClient('/auth/register', {
             method: 'POST',
@@ -63,18 +87,22 @@ function VerifyEmailContent() {
             setLoading(false);
             return;
           }
+
+          // Clear the stored registration data
+          sessionStorage.removeItem('pendingRegistration');
+
+          // The register endpoint already logs the user in (sets cookie)
+          // So the user is now authenticated
         }
 
-        setSuccess(true);
-        // Redirect to the return URL if provided, otherwise to login
+        // Redirect immediately to the return URL or student dashboard
         const returnUrl = searchParams.get('returnUrl');
-        setTimeout(() => {
-          if (returnUrl) {
-            router.push(decodeURIComponent(returnUrl));
-          } else {
-            router.push('/?modal=login');
-          }
-        }, 2000);
+        if (returnUrl) {
+          router.push(decodeURIComponent(returnUrl));
+        } else {
+          // User is already logged in after registration, go to dashboard
+          router.push('/dashboard/student');
+        }
       } else {
         setError(result.error || 'Código de verificación inválido');
       }
@@ -113,26 +141,6 @@ function VerifyEmailContent() {
     }
   };
 
-  if (success) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center px-4">
-        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
-          <div className="mb-6">
-            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">¡Email verificado!</h1>
-          <p className="text-gray-600 mb-6">
-            Tu email ha sido verificado correctamente. Serás redirigido en breve...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center px-4">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
@@ -153,7 +161,29 @@ function VerifyEmailContent() {
 
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-600">{error}</p>
+            <div className="flex items-start gap-3">
+              <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div className="flex-1">
+                <p className="text-sm text-red-600 font-medium mb-2">{error}</p>
+                {error.toLowerCase().includes('email') && !error.includes('código') && (
+                  <div className="mt-3 p-3 bg-white border border-red-200 rounded-lg">
+                    <p className="text-xs text-gray-700 font-semibold mb-2">¿Tu email rebotó o es incorrecto?</p>
+                    <p className="text-xs text-gray-600 mb-3">Si no puedes recibir emails en esta dirección, puedes regresar y usar un email diferente.</p>
+                    <Link 
+                      href={getJoinUrl()}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-red-700 hover:text-red-800 underline"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      Actualizar dirección de email
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
 
@@ -199,10 +229,10 @@ function VerifyEmailContent() {
 
         <div className="mt-8 pt-6 border-t border-gray-200 text-center">
           <Link 
-            href="/"
+            href={getJoinUrl()}
             className="text-sm text-gray-600 hover:text-gray-900"
           >
-            ← Volver al inicio
+            ← Cambiar dirección de email
           </Link>
         </div>
       </div>

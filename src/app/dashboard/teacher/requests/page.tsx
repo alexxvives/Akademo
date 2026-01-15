@@ -139,15 +139,15 @@ export default function TeacherRequestsPage() {
               <div key={enrollment.id} className="bg-white border-2 border-gray-200 rounded-xl p-4 hover:border-gray-300 transition-all">
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-10 h-10 bg-accent-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <svg className="w-5 h-5 text-accent-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
                     </div>
                     <div className="flex items-center gap-8">
-                      <div>
-                        <h3 className="text-base font-semibold text-gray-900">{enrollment.studentName}</h3>
-                        <p className="text-sm text-gray-600">{enrollment.studentEmail}</p>
+                      <div className="w-64">
+                        <h3 className="text-base font-semibold text-gray-900 truncate">{enrollment.studentName}</h3>
+                        <p className="text-sm text-gray-600 truncate">{enrollment.studentEmail}</p>
                       </div>
                       <div className="border-l border-gray-200 pl-8">
                         <div className="flex items-center gap-2 text-sm mb-0.5">
@@ -179,7 +179,7 @@ export default function TeacherRequestsPage() {
                     <button
                       onClick={() => handleApprove(enrollment.id)}
                       disabled={processingIds.has(enrollment.id)}
-                      className="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-5 py-2.5 bg-accent-300 text-gray-900 border-2 border-accent-300 rounded-lg hover:bg-accent-400 hover:border-accent-400 font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {processingIds.has(enrollment.id) ? 'Procesando...' : 'Aprobar'}
                     </button>

@@ -9,6 +9,7 @@ interface Lesson {
   title: string;
   description: string | null;
   classId: string;
+  classSlug?: string | null;
   className: string;
   teacherName: string;
   teacherId: string;
@@ -85,7 +86,7 @@ export default function AcademyLessonsPage() {
             <select
               value={filterTeacher}
               onChange={(e) => setFilterTeacher(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full h-[38px] px-3 py-2 pr-10 border border-gray-200 rounded-lg text-sm bg-white appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20fill%3D%27none%27%20viewBox%3D%270%200%2020%2020%27%3E%3Cpath%20stroke%3D%27%236b7280%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%20stroke-width%3D%271.5%27%20d%3D%27M6%208l4%204%204-4%27%2F%3E%3C%2Fsvg%3E')] bg-[length:1.5em] bg-[right_0.5rem_center] bg-no-repeat"
             >
               <option value="all">Todos los profesores</option>
               {uniqueTeachers.map((teacher: any) => (
@@ -119,7 +120,7 @@ export default function AcademyLessonsPage() {
             {filteredLessons.map((lesson) => (
               <Link
                 key={lesson.id}
-                href={`/dashboard/teacher/class/${lesson.classId}`}
+                href={`/dashboard/teacher/class/${lesson.classSlug || lesson.classId}`}
                 className="block bg-white rounded-xl border-2 border-gray-200 hover:border-blue-400 hover:shadow-lg transition-all p-5 group"
               >
                 <div className="flex items-start justify-between mb-3">

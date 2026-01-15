@@ -1,5 +1,5 @@
 // Chunked multipart upload utility for large files
-import { apiClient } from '@/lib/api-client';
+import { apiClient, API_BASE_URL } from '@/lib/api-client';
 
 const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB chunks
 const MAX_CONCURRENT_UPLOADS = 4; // Upload 4 chunks in parallel
@@ -66,12 +66,19 @@ export async function multipartUpload({
       const batchPromises = batch.map(async (chunk) => {
         const blob = file.slice(chunk.start, chunk.end);
         
+        // Get token from local storage if available
+        const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : '';
+
         const uploadRes = await fetch(
-          `/api/storage/multipart/upload-part?key=${encodeURIComponent(key)}&uploadId=${encodeURIComponent(uploadId)}&partNumber=${chunk.partNumber}`,
+          `${API_BASE_URL}/storage/multipart/upload-part?key=${encodeURIComponent(key)}&uploadId=${encodeURIComponent(uploadId)}&partNumber=${chunk.partNumber}`,
           {
             method: 'PUT',
             body: blob,
             signal,
+            credentials: 'include',
+            headers: {
+              ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            }
           }
         );
 
