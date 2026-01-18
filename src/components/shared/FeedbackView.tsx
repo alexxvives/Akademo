@@ -53,7 +53,6 @@ export function FeedbackView({
   showClassFilter = true,
 }: FeedbackViewProps) {
   const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set());
-  const [expandedLessons, setExpandedLessons] = useState<Set<string>>(new Set());
 
   const toggleTopic = (topicId: string) => {
     setExpandedTopics(prev => {
@@ -62,18 +61,6 @@ export function FeedbackView({
         newSet.delete(topicId);
       } else {
         newSet.add(topicId);
-      }
-      return newSet;
-    });
-  };
-
-  const toggleLesson = (lessonId: string) => {
-    setExpandedLessons(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(lessonId)) {
-        newSet.delete(lessonId);
-      } else {
-        newSet.add(lessonId);
       }
       return newSet;
     });
@@ -131,18 +118,25 @@ export function FeedbackView({
       {/* Class Filter (only if enabled) */}
       {showClassFilter && classes.length > 1 && onClassFilterChange && (
         <div className="flex justify-end">
-          <select
-            value={selectedClass}
-            onChange={(e) => onClassFilterChange(e.target.value)}
-            className="appearance-none w-full sm:w-48 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-          >
-            <option value="all">Todas las clases</option>
-            {classes.map((cls) => (
-              <option key={cls.id} value={cls.id}>
-                {cls.name}
-              </option>
-            ))}
-          </select>
+          <div className="relative w-full sm:w-48">
+            <select
+              value={selectedClass}
+              onChange={(e) => onClassFilterChange(e.target.value)}
+              className="appearance-none w-full pl-3 pr-10 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+            >
+              <option value="all">Todas las clases</option>
+              {classes.map((cls) => (
+                <option key={cls.id} value={cls.id}>
+                  {cls.name}
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+              <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
         </div>
       )}
 
@@ -199,59 +193,36 @@ export function FeedbackView({
                   </button>
 
                   {expandedTopics.has(topic.id) && (
-                    <div className="bg-gray-50 divide-y divide-gray-200">
-                      {topic.lessons.map((lesson) => (
-                        <div key={lesson.id}>
-                          <button
-                            onClick={() => toggleLesson(lesson.id)}
-                            className="w-full px-10 py-3 flex items-center justify-between hover:bg-gray-100 transition-colors"
-                          >
-                            <div className="flex items-center gap-3">
-                              <svg
-                                className={`w-4 h-4 text-gray-400 transition-transform ${expandedLessons.has(lesson.id) ? 'rotate-90' : ''}`}
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                              </svg>
-                              <span className="font-medium text-gray-900">{lesson.title}</span>
-                            </div>
-                            <div className="flex items-center gap-4">
-                              <div className="flex items-center gap-2">
-                                <span className="font-bold text-gray-900">{lesson.averageRating.toFixed(1)}</span>
-                                {renderStars(Math.round(lesson.averageRating))}
+                    <div className="bg-gray-50 px-6 py-4">
+                      {topic.lessons.flatMap(lesson => lesson.ratings).length === 0 ? (
+                        <p className="text-sm text-gray-500 italic text-center py-4">Sin comentarios en este tema</p>
+                      ) : (
+                        <div className="space-y-3">
+                          {topic.lessons.flatMap(lesson => 
+                            lesson.ratings.map(rating => ({
+                              ...rating,
+                              lessonTitle: lesson.title,
+                              lessonRating: lesson.averageRating
+                            }))
+                          ).map((rating) => (
+                            <div key={rating.id} className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex items-center gap-3 flex-wrap">
+                                  <span className="font-medium text-gray-900">{rating.studentName}</span>
+                                  <span className="text-sm text-gray-500">• {rating.lessonTitle}</span>
+                                  {renderStars(rating.rating)}
+                                </div>
+                                <span className="text-xs text-gray-500 whitespace-nowrap ml-2">
+                                  {format(new Date(rating.createdAt), 'dd MMM yyyy', { locale: es })}
+                                </span>
                               </div>
-                              <span className="text-sm text-gray-500">{lesson.totalRatings}</span>
-                            </div>
-                          </button>
-
-                          {expandedLessons.has(lesson.id) && (
-                            <div className="px-14 py-4 bg-white space-y-3">
-                              {lesson.ratings.length === 0 ? (
-                                <p className="text-sm text-gray-500 italic">Sin comentarios</p>
-                              ) : (
-                                lesson.ratings.map((rating) => (
-                                  <div key={rating.id} className="bg-gray-50 rounded-lg p-4">
-                                    <div className="flex items-start justify-between mb-2">
-                                      <div className="flex items-center gap-3">
-                                        <span className="font-medium text-gray-900">{rating.studentName}</span>
-                                        {renderStars(rating.rating)}
-                                      </div>
-                                      <span className="text-xs text-gray-500">
-                                        {format(new Date(rating.createdAt), 'dd MMM yyyy', { locale: es })}
-                                      </span>
-                                    </div>
-                                    {rating.comment && (
-                                      <p className="text-sm text-gray-700 mt-2">{rating.comment}</p>
-                                    )}
-                                  </div>
-                                ))
+                              {rating.comment && (
+                                <p className="text-sm text-gray-700 mt-2">{rating.comment}</p>
                               )}
                             </div>
-                          )}
+                          ))}
                         </div>
-                      ))}
+                      )}
                     </div>
                   )}
                 </div>

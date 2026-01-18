@@ -286,7 +286,7 @@ export default function AcademyDashboard() {
             </div>
 
             {/* Student Summary - TOP RIGHT */}
-            <div className="bg-white rounded-lg p-6 border border-gray-100">
+            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
               <h3 className="text-sm font-semibold text-gray-900 mb-4">Estudiantes</h3>
               <div className="space-y-6">
                 <div className="text-center">
@@ -323,7 +323,7 @@ export default function AcademyDashboard() {
             </div>
 
             {/* Star Ratings Distribution - BOTTOM LEFT (Bar Chart) */}
-            <div className="bg-white rounded-lg p-6">
+            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
               <h3 className="text-sm font-semibold text-gray-900 mb-4">Valoraciones</h3>
               {ratingsData && ratingsData.overall.totalRatings > 0 ? (
                 <>
@@ -348,7 +348,7 @@ export default function AcademyDashboard() {
             </div>
 
             {/* Student Status - BOTTOM RIGHT (Pie Chart) */}
-            <div className="bg-white rounded-lg p-6">
+            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
               <h3 className="text-sm font-semibold text-gray-900 mb-4">Actividad</h3>
               <div className="h-64 flex items-center justify-center">
                 <DonutChart

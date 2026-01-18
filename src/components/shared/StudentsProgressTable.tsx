@@ -107,11 +107,11 @@ export function StudentsProgressTable({
             />
           </div>
           {showClassFilter && uniqueClasses.length > 0 && (
-            <div className="w-full md:w-64">
+            <div className="w-full md:w-64 relative">
               <select
                 value={selectedClass}
                 onChange={(e) => onClassFilterChange(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 appearance-none bg-white"
               >
                 <option value="all">Todas las clases</option>
                 {uniqueClasses.map((className) => (
@@ -120,6 +120,11 @@ export function StudentsProgressTable({
                   </option>
                 ))}
               </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </div>
           )}
         </div>
