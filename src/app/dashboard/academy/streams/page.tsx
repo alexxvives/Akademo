@@ -275,7 +275,7 @@ export default function AcademyStreamsPage() {
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
             <table className="w-full">
               <thead className="bg-gray-50/50 border-b border-gray-200">
                 <tr>

@@ -399,8 +399,8 @@ export default function TeacherDashboard() {
             </div>
 
             {/* Student Summary - TOP RIGHT (moved from left) */}
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-              <h3 className="text-sm font-semibold text-gray-900 mb-4">Estudiantes</h3>
+            <div className="bg-white rounded-lg p-6 border border-gray-100 shadow-sm">
+              <h3 className="text-lg font-bold text-gray-900 mb-6 text-center">ESTUDIANTES</h3>
               <div className="space-y-6">
                 <div className="text-center">
                   <AnimatedNumber value={enrolledStudents.length} className="text-5xl font-bold text-gray-900 mb-2" />
@@ -436,8 +436,8 @@ export default function TeacherDashboard() {
             </div>
 
             {/* Star Ratings Distribution - BOTTOM LEFT (Bar Chart) */}
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-              <h3 className="text-sm font-semibold text-gray-900 mb-4">Valoraciones</h3>
+            <div className="bg-white rounded-lg p-6 border border-gray-100 shadow-sm">
+              <h3 className="text-lg font-bold text-gray-900 mb-6 text-center">VALORACIONES</h3>
               {ratingsData && ratingsData.overall.totalRatings > 0 ? (
                 <>
                   <BarChart
@@ -461,10 +461,11 @@ export default function TeacherDashboard() {
             </div>
 
             {/* Student Status - BOTTOM RIGHT (Pie Chart) */}
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-              <h3 className="text-sm font-semibold text-gray-900 mb-4">Actividad</h3>
-              <div className="h-64 flex items-center justify-center">
+            <div className="bg-white rounded-lg p-6 border border-gray-100 shadow-sm">
+              <h3 className="text-lg font-bold text-gray-900 mb-6 text-center">ACTIVIDAD</h3>
+              <div className="h-80 flex items-center justify-center">
                 <DonutChart
+                  size={250}
                   data={[
                     { label: 'Activos', value: Math.round(enrolledStudents.length * 0.65), color: '#22c55e' },
                     { label: 'Inactivos', value: Math.round(enrolledStudents.length * 0.35), color: '#ef4444' },
