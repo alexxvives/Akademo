@@ -46,13 +46,15 @@ ratings.get('/teacher', async (c) => {
           t.id as topicId, t.name as topicName,
           c.id as classId, c.name as className,
           a.name as academyName,
-          u.firstName as studentFirstName, u.lastName as studentLastName
+          u.firstName as studentFirstName, u.lastName as studentLastName,
+          tu.firstName as teacherFirstName, tu.lastName as teacherLastName
         FROM LessonRating r
         JOIN Lesson l ON r.lessonId = l.id
         LEFT JOIN Topic t ON l.topicId = t.id
         JOIN Class c ON l.classId = c.id
         JOIN Academy a ON c.academyId = a.id
         JOIN User u ON r.studentId = u.id
+        LEFT JOIN User tu ON c.teacherId = tu.id
         WHERE a.ownerId = ?
         ORDER BY c.name, t.name, l.title, r.createdAt DESC
       `;
@@ -76,6 +78,9 @@ ratings.get('/teacher', async (c) => {
           id: classId,
           name: r.className,
           academyName: r.academyName,
+          teacherName: r.teacherFirstName && r.teacherLastName 
+            ? `${r.teacherFirstName} ${r.teacherLastName}`
+            : undefined,
           totalRatings: 0,
           sumRatings: 0,
           averageRating: 0,

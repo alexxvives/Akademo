@@ -4,18 +4,32 @@ import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { FeedbackView, type ClassFeedback } from '@/components/shared';
 
-export default function TeacherFeedbackPage() {
+export default function AcademyFeedbackPage() {
   const [loading, setLoading] = useState(true);
   const [classes, setClasses] = useState<ClassFeedback[]>([]);
+  const [academyName, setAcademyName] = useState<string>('');
 
   useEffect(() => {
     loadFeedback();
+    loadAcademyName();
   }, []);
+
+  const loadAcademyName = async () => {
+    try {
+      const res = await apiClient('/academies');
+      const result = await res.json();
+      if (result.success && Array.isArray(result.data) && result.data.length > 0) {
+        setAcademyName(result.data[0].name);
+      }
+    } catch (error) {
+      console.error('Failed to load academy name:', error);
+    }
+  };
 
   const loadFeedback = async () => {
     try {
-      // Load all classes first
-      const classesRes = await apiClient('/classes');
+      // Load all academy classes first
+      const classesRes = await apiClient('/academies/classes');
       const classesData = await classesRes.json();
       
       // Load ratings
@@ -39,7 +53,7 @@ export default function TeacherFeedbackPage() {
             allClasses.push({
               id: cls.id,
               name: cls.name,
-              academyName: cls.academy?.name,
+              teacherName: cls.teacherName || `${cls.teacherFirstName || ''} ${cls.teacherLastName || ''}`.trim(),
               totalRatings: 0,
               averageRating: 0,
               topics: []
@@ -60,9 +74,7 @@ export default function TeacherFeedbackPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-gray-900">Feedback de Estudiantes</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          {classes.length > 0 && classes[0].academyName ? classes[0].academyName : 'Akademo'}
-        </p>
+        {academyName && <p className="text-sm text-gray-500 mt-1">{academyName}</p>}
       </div>
 
       <FeedbackView

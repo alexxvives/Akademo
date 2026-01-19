@@ -92,10 +92,23 @@ export default function AcademyClassesPage() {
     setSaving(true);
 
     try {
-      const res = await apiClient('/academies/classes', {
+      // Get academy ID first
+      const academiesRes = await apiClient('/academies');
+      const academiesResult = await academiesRes.json();
+      
+      if (!academiesResult.success || !academiesResult.data || academiesResult.data.length === 0) {
+        throw new Error('No academy found');
+      }
+      
+      const academyId = academiesResult.data[0].id;
+      
+      const res = await apiClient('/classes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          academyId
+        })
       });
 
       const data = await res.json();
@@ -211,7 +224,7 @@ export default function AcademyClassesPage() {
             {classes.map((cls) => (
               <Link
                 key={cls.id}
-                href={`/dashboard/teacher/class/${cls.slug || cls.id}`}
+                href={`/dashboard/academy/class/${cls.slug || cls.id}`}
                 className="block bg-white rounded-xl border-2 border-gray-200 hover:border-brand-400 hover:shadow-xl transition-all p-6 group"
               >
                 <div className="flex items-start justify-between">

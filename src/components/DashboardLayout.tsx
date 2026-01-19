@@ -87,6 +87,9 @@ export default function DashboardLayout({
   
   // Pending requests count for teachers
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
+  
+  // Academy state for academy join link
+  const [academyId, setAcademyId] = useState<string | null>(null);
 
   // Refs for animated icons
   const logoutIconRef = useRef<any>(null);
@@ -129,6 +132,18 @@ export default function DashboardLayout({
     }
   }, []);
 
+  const loadAcademy = useCallback(async () => {
+    try {
+      const response = await apiClient('/academies');
+      const result = await response.json();
+      if (result.success && Array.isArray(result.data) && result.data.length > 0) {
+        setAcademyId(result.data[0].id);
+      }
+    } catch (error) {
+      console.error('Failed to load academy:', error);
+    }
+  }, []);
+
   useEffect(() => {
     checkAuth();
     
@@ -162,15 +177,35 @@ export default function DashboardLayout({
         clearInterval(requestsInterval);
       };
     }
-  }, [role, loadNotifications, loadActiveStreams, loadPendingRequestsCount]);
+    
+    if (role === 'ACADEMY') {
+      // Load academy data for join link
+      loadAcademy();
+    }
+  }, [role, loadNotifications, loadActiveStreams, loadPendingRequestsCount, loadAcademy]);
 
   const checkAuth = async () => {
     try {
       const response = await apiClient('/auth/me');
       const result = await response.json();
 
-      if (result.success && result.data.role === role) {
-        setUser(result.data);
+      if (result.success && result.data) {
+        const userRole = result.data.role;
+        
+        // Allow access if:
+        // 1. User role matches the expected role
+        // 2. ACADEMY role can access TEACHER routes (they own the academy)
+        // 3. ADMIN can access any route
+        const hasAccess = 
+          userRole === role || 
+          (userRole === 'ACADEMY' && role === 'TEACHER') ||
+          userRole === 'ADMIN';
+        
+        if (hasAccess) {
+          setUser(result.data);
+        } else {
+          router.push('/?modal=login');
+        }
       } else {
         router.push('/?modal=login');
       }
@@ -208,6 +243,14 @@ export default function DashboardLayout({
   const copyJoinLink = () => {
     if (!user) return;
     const link = `${window.location.origin}/join/${user.id}`;
+    navigator.clipboard.writeText(link);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
+  };
+
+  const copyAcademyJoinLink = () => {
+    if (!academyId) return;
+    const link = `${window.location.origin}/join/academy/${academyId}`;
     navigator.clipboard.writeText(link);
     setLinkCopied(true);
     setTimeout(() => setLinkCopied(false), 2000);
@@ -419,6 +462,11 @@ export default function DashboardLayout({
             iconType: 'userPlus',
           },
           {
+            label: 'Feedback',
+            href: '/dashboard/academy/feedback',
+            iconType: 'message',
+          },
+          {
             label: 'Streams',
             href: '/dashboard/academy/streams',
             iconType: 'clap',
@@ -579,11 +627,10 @@ export default function DashboardLayout({
 
         {/* Quick Action Button - Context based on role */}
         <div className="px-3 pb-3">
-          {/* Hide for teachers */}
-          {role !== 'TEACHER' && (
+          {/* Hide for teachers and academy */}
+          {role !== 'TEACHER' && role !== 'ACADEMY' && (
             <Link
               href={
-                role === 'ACADEMY' ? '/dashboard/academy/teachers' :
                 role === 'STUDENT' ? '/dashboard/student/enrolled-academies/classes' :
                 '/dashboard/admin'
               }
@@ -593,13 +640,32 @@ export default function DashboardLayout({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
               <span className="text-sm">
-                {role === 'ACADEMY' ? 'Ver Profesores' :
-                 role === 'STUDENT' ? 'Explorar Clases' :
-                 'Panel Admin'}
+                {role === 'STUDENT' ? 'Explorar Clases' : 'Panel Admin'}
               </span>
             </Link>
           )}
         </div>
+
+        {/* Academy Invite Link */}
+        {role === 'ACADEMY' && academyId && (
+          <div className="px-3 py-2 border-t border-gray-800/50">
+            <button
+              onClick={copyAcademyJoinLink}
+              onMouseEnter={() => linkIconRef.current?.startAnimation()}
+              onMouseLeave={() => linkIconRef.current?.stopAnimation()}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
+                linkCopied 
+                  ? 'bg-[#b1e787]/20 text-[#b1e787]' 
+                  : 'bg-[#b1e787]/10 text-[#b1e787] hover:bg-[#b1e787]/20'
+              }`}
+            >
+              <LinkIcon ref={linkIconRef} size={20} className="flex-shrink-0" />
+              <span className="text-sm font-medium truncate">
+                {linkCopied ? '¡Enlace copiado!' : 'Copiar enlace de invitación'}
+              </span>
+            </button>
+          </div>
+        )}
 
         {/* Teacher Invite Link */}
         {role === 'TEACHER' && user && (

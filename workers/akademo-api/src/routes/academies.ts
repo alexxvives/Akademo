@@ -180,6 +180,79 @@ academies.get('/students', async (c) => {
   }
 });
 
+// POST /academies/teachers - Create a new teacher
+// IMPORTANT: This must come BEFORE /:id route to avoid being captured as an ID
+academies.post('/teachers', async (c) => {
+  try {
+    const session = await requireAuth(c);
+
+    if (session.role !== 'ACADEMY') {
+      return c.json(errorResponse('Only academy owners can create teachers'), 403);
+    }
+
+    const { email, firstName, lastName, password } = await c.req.json();
+
+    if (!email || !firstName || !lastName || !password) {
+      return c.json(errorResponse('Missing required fields'), 400);
+    }
+
+    if (password.length < 6) {
+      return c.json(errorResponse('Password must be at least 6 characters'), 400);
+    }
+
+    // Get academy ID
+    const academyResult = await c.env.DB.prepare(
+      'SELECT id FROM Academy WHERE ownerId = ?'
+    ).bind(session.id).first<{ id: string }>();
+    
+    if (!academyResult) {
+      return c.json(errorResponse('Academy not found'), 404);
+    }
+
+    const academyId = academyResult.id;
+
+    // Check if email already exists
+    const existingUser = await c.env.DB.prepare(
+      'SELECT id FROM User WHERE email = ?'
+    ).bind(email).first();
+
+    if (existingUser) {
+      return c.json(errorResponse('Email already registered'), 400);
+    }
+
+    // Hash password using Crypto API
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const passwordHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+    // Create user
+    const userId = crypto.randomUUID();
+    await c.env.DB.prepare(
+      `INSERT INTO User (id, email, firstName, lastName, passwordHash, role, createdAt)
+       VALUES (?, ?, ?, ?, ?, 'TEACHER', datetime('now'))`
+    ).bind(userId, email, firstName, lastName, passwordHash).run();
+
+    // Create teacher record linking to academy
+    await c.env.DB.prepare(
+      `INSERT INTO Teacher (id, userId, academyId, createdAt)
+       VALUES (?, ?, ?, datetime('now'))`
+    ).bind(crypto.randomUUID(), userId, academyId).run();
+
+    return c.json(successResponse({ 
+      id: userId, 
+      email, 
+      firstName, 
+      lastName,
+      message: 'Teacher created successfully'
+    }));
+  } catch (error: any) {
+    console.error('[Create Teacher] Error:', error);
+    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+  }
+});
+
 // GET /academies/teachers - Get all teachers
 // IMPORTANT: This must come BEFORE /:id route to avoid being captured as an ID
 academies.get('/teachers', async (c) => {
@@ -287,11 +360,19 @@ academies.get('/classes', async (c) => {
           a.name as academyName,
           u.firstName as teacherFirstName,
           u.lastName as teacherLastName,
-          COUNT(DISTINCT ce.id) as studentCount
+          COUNT(DISTINCT ce.id) as studentCount,
+          COUNT(DISTINCT l.id) as lessonCount,
+          COUNT(DISTINCT v.id) as videoCount,
+          COUNT(DISTINCT d.id) as documentCount,
+          ROUND(AVG(lr.rating), 1) as avgRating
         FROM Class c
         JOIN Academy a ON c.academyId = a.id
         LEFT JOIN User u ON c.teacherId = u.id
         LEFT JOIN ClassEnrollment ce ON c.id = ce.classId AND ce.status = 'APPROVED'
+        LEFT JOIN Lesson l ON c.id = l.classId
+        LEFT JOIN Video v ON l.id = v.lessonId
+        LEFT JOIN Document d ON l.id = d.lessonId
+        LEFT JOIN LessonRating lr ON l.id = lr.lessonId
         GROUP BY c.id
         ORDER BY c.createdAt DESC
       `;
@@ -302,11 +383,19 @@ academies.get('/classes', async (c) => {
           a.name as academyName,
           u.firstName as teacherFirstName,
           u.lastName as teacherLastName,
-          COUNT(DISTINCT ce.id) as studentCount
+          COUNT(DISTINCT ce.id) as studentCount,
+          COUNT(DISTINCT l.id) as lessonCount,
+          COUNT(DISTINCT v.id) as videoCount,
+          COUNT(DISTINCT d.id) as documentCount,
+          ROUND(AVG(lr.rating), 1) as avgRating
         FROM Class c
         JOIN Academy a ON c.academyId = a.id
         LEFT JOIN User u ON c.teacherId = u.id
         LEFT JOIN ClassEnrollment ce ON c.id = ce.classId AND ce.status = 'APPROVED'
+        LEFT JOIN Lesson l ON c.id = l.classId
+        LEFT JOIN Video v ON l.id = v.lessonId
+        LEFT JOIN Document d ON l.id = d.lessonId
+        LEFT JOIN LessonRating lr ON l.id = lr.lessonId
         WHERE a.ownerId = ?
         GROUP BY c.id
         ORDER BY c.createdAt DESC

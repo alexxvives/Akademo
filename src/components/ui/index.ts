@@ -3,6 +3,7 @@ export { ErrorBoundary } from './ErrorBoundary';
 export { LoadingSpinner } from './LoadingSpinner';
 export { PageLoader } from './PageLoader';
 export { EmptyState } from './EmptyState';
+export { LottieLoader } from './LottieLoader';
 export { default as PasswordInput } from './PasswordInput';
 export { ChartNoAxesColumnIncreasingIcon } from './ChartNoAxesColumnIncreasingIcon';
 export { BookTextIcon } from './BookTextIcon';

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
 import ConfirmModal from '@/components/ConfirmModal';
@@ -24,9 +24,16 @@ interface Stream {
   bunnyStatus?: number | null; // Bunny video processing status
 }
 
+interface Class {
+  id: string;
+  name: string;
+}
+
 export default function StreamsPage() {
   const [streams, setStreams] = useState<Stream[]>([]);
+  const [classes, setClasses] = useState<Class[]>([]);
   const [academyName, setAcademyName] = useState<string>('');
+  const [selectedClass, setSelectedClass] = useState('all');
   const [loading, setLoading] = useState(true);
   const [uploadingStreamId, setUploadingStreamId] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
@@ -40,6 +47,7 @@ export default function StreamsPage() {
   useEffect(() => {
     loadStreams();
     loadAcademyName();
+    loadClasses();
     
     // Poll for stream status updates and recording availability every 10 seconds
     const pollInterval = setInterval(() => {
@@ -89,6 +97,18 @@ export default function StreamsPage() {
       }
     } catch (error) {
       console.error('Error loading academy name:', error);
+    }
+  };
+
+  const loadClasses = async () => {
+    try {
+      const response = await apiClient('/classes');
+      const result = await response.json();
+      if (result.success && Array.isArray(result.data)) {
+        setClasses(result.data);
+      }
+    } catch (error) {
+      console.error('Error loading classes:', error);
     }
   };
 
@@ -372,13 +392,19 @@ export default function StreamsPage() {
   const activeCount = streams.filter(s => s.status === 'active' || s.status === 'scheduled').length;
   const endedCount = streams.filter(s => s.status === 'ended' || s.status === 'recording_failed').length;
   
+  // Filter streams by selected class
+  const filteredStreams = useMemo(() => {
+    if (selectedClass === 'all') return streams;
+    return streams.filter(s => s.classId === selectedClass);
+  }, [streams, selectedClass]);
+  
   // Calculate average participants per stream
-  const streamsWithParticipants = streams.filter(s => s.participantCount != null);
+  const streamsWithParticipants = filteredStreams.filter(s => s.participantCount != null);
   const avgParticipants = streamsWithParticipants.length > 0
     ? Math.round(streamsWithParticipants.reduce((acc, s) => acc + (s.participantCount || 0), 0) / streamsWithParticipants.length)
     : 0;
   
-  const totalDurationMs = streams.reduce((acc, stream) => {
+  const totalDurationMs = filteredStreams.reduce((acc, stream) => {
     if (!stream.startedAt && !stream.createdAt) return acc;
     const start = stream.startedAt || stream.createdAt;
     const end = stream.endedAt || (stream.status === 'active' ? new Date().toISOString() : stream.createdAt);
@@ -389,10 +415,33 @@ export default function StreamsPage() {
 
   return (
     <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Historial de Streams</h1>
-          {academyName && <p className="text-sm text-gray-500 mt-1">{academyName}</p>}
+        {/* Header with Class Filter */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">Historial de Streams</h1>
+            {academyName && <p className="text-sm text-gray-500 mt-1">{academyName}</p>}
+          </div>
+          
+          {/* Class Filter */}
+          {classes.length > 0 && (
+            <div className='relative'>
+              <select
+                value={selectedClass}
+                onChange={(e) => setSelectedClass(e.target.value)}
+                className='appearance-none w-full md:w-56 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent'
+              >
+                <option value='all'>Todas las clases</option>
+                {classes.map((cls) => (
+                  <option key={cls.id} value={cls.id}>{cls.name}</option>
+                ))}
+              </select>
+              <div className='pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500'>
+                <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                  <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 9l-7 7-7-7' />
+                </svg>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Streams List */}
@@ -400,19 +449,9 @@ export default function StreamsPage() {
           <div className="bg-white rounded-xl border border-gray-200 p-12 flex items-center justify-center">
             <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
           </div>
-        ) : streams.length === 0 ? (
-          <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-            <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
-            <h3 className="text-lg font-medium text-gray-900 mb-1">No hay streams</h3>
-            <p className="text-gray-500">
-              Inicia un stream desde una de tus clases
-            </p>
-          </div>
         ) : (
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="max-h-[600px] overflow-y-auto">
+            <div className="max-h-[750px] overflow-y-auto">
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
                   <tr>
@@ -443,7 +482,18 @@ export default function StreamsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {streams.map((stream) => (
+                {filteredStreams.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-12 text-center">
+                      <svg className="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      <p className="text-sm font-medium text-gray-900">No hay streams</p>
+                      <p className="text-xs text-gray-500 mt-1">Inicia un stream desde una de tus clases</p>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredStreams.map((stream) => (
                   <tr key={stream.id} className="hover:bg-gray-50 transition-colors group">
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-3">
@@ -580,7 +630,8 @@ export default function StreamsPage() {
                       )}
                     </td>
                   </tr>
-                ))}
+                ))
+                )}
               </tbody>
             </table>
             </div>

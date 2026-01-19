@@ -29,6 +29,7 @@
     "date-fns": "^4.1.0",
     "framer-motion": "^12.26.2",
     "hls.js": "^1.6.15",
+    "lottie-react": "^2.4.1",
     "next": "14.2.15",
     "plyr": "^3.8.3",
     "plyr-react": "^6.0.0",

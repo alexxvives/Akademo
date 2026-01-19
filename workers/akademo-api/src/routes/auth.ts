@@ -505,4 +505,53 @@ auth.get('/join/:teacherId', async (c) => {
   }
 });
 
+// GET /auth/join/academy/:academyId - Get academy info and classes for student enrollment
+// This is a public endpoint (no auth required) for the academy join flow
+auth.get('/join/academy/:academyId', async (c) => {
+  try {
+    const academyId = c.req.param('academyId');
+
+    // Get academy details
+    const academy = await c.env.DB.prepare(`
+      SELECT a.id, a.name, a.description, u.firstName as ownerFirstName, u.lastName as ownerLastName
+      FROM Academy a
+      JOIN User u ON a.ownerId = u.id
+      WHERE a.id = ?
+    `).bind(academyId).first() as { 
+      id: string; 
+      name: string; 
+      description: string | null;
+      ownerFirstName: string;
+      ownerLastName: string;
+    } | null;
+
+    if (!academy) {
+      return c.json(errorResponse('No se encontró la academia'), 404);
+    }
+
+    // Get all classes in this academy with teacher names
+    const classesResult = await c.env.DB.prepare(`
+      SELECT c.id, c.name, c.description, u.firstName || ' ' || u.lastName as teacherName
+      FROM Class c
+      JOIN User u ON c.teacherId = u.id
+      WHERE c.academyId = ?
+      ORDER BY c.name
+    `).bind(academyId).all();
+
+    return c.json(successResponse({
+      academy: {
+        id: academy.id,
+        name: academy.name,
+        description: academy.description,
+        ownerFirstName: academy.ownerFirstName,
+        ownerLastName: academy.ownerLastName
+      },
+      classes: classesResult.results || []
+    }));
+  } catch (error: any) {
+    console.error('[Academy Join API] Error:', error);
+    return c.json(errorResponse(error.message || 'Error al cargar los datos de la academia'), 500);
+  }
+});
+
 export default auth;

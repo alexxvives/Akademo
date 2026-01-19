@@ -265,17 +265,9 @@ export default function AcademyStreamsPage() {
           <div className="w-8 h-8 border-4 border-gray-300 border-t-gray-900 rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Cargando streams...</p>
         </div>
-      ) : filteredStreams.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-          <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-          </svg>
-          <h3 className="text-lg font-medium text-gray-900 mb-1">No hay streams</h3>
-          <p className="text-gray-500">Los profesores pueden crear streams desde sus clases</p>
-        </div>
       ) : (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-          <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+          <div className="overflow-x-auto max-h-[750px] overflow-y-auto">
             <table className="w-full">
               <thead className="bg-gray-50/50 border-b border-gray-200">
                 <tr>
@@ -306,7 +298,18 @@ export default function AcademyStreamsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filteredStreams.map((stream) => (
+                {filteredStreams.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-12 text-center">
+                      <svg className="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      <p className="text-sm font-medium text-gray-900">No hay streams</p>
+                      <p className="text-xs text-gray-500 mt-1">Los profesores pueden crear streams desde sus clases</p>
+                    </td>
+                  </tr>
+                ) : (
+                  filteredStreams.map((stream) => (
                   <tr key={stream.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="py-4 px-4">
                       <div className="flex items-center gap-2">
@@ -420,7 +423,8 @@ export default function AcademyStreamsPage() {
                       )}
                     </td>
                   </tr>
-                ))}
+                  ))
+                )}
               </tbody>
             </table>
           </div>

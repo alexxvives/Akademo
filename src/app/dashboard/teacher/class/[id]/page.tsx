@@ -84,7 +84,7 @@ export default function TeacherClassPage() {
   const actionParam = searchParams.get('action');
   
   // Use cached auth hook instead of fetching /auth/me manually
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, isAcademy } = useAuth();
 
   const [classData, setClassData] = useState<ClassData | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);

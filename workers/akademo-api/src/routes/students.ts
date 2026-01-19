@@ -57,6 +57,11 @@ students.get('/progress', async (c) => {
            JOIN ClassEnrollment e2 ON e2.classId = c2.id 
            WHERE e2.userId = u.id AND e2.status = 'APPROVED' 
            LIMIT 1) as className,
+          (SELECT ut.firstName || ' ' || ut.lastName FROM Class c2 
+           JOIN User ut ON c2.teacherId = ut.id
+           JOIN ClassEnrollment e2 ON e2.classId = c2.id 
+           WHERE e2.userId = u.id AND e2.status = 'APPROVED' 
+           LIMIT 1) as teacherName,
           COUNT(DISTINCT c.id) as classCount,
           COUNT(DISTINCT vps.videoId) as lessonsCompleted,
           COUNT(DISTINCT l.id) as totalLessons,

@@ -32,6 +32,7 @@ export interface ClassFeedback {
   id: string;
   name: string;
   academyName?: string;
+  teacherName?: string;
   totalRatings: number;
   averageRating: number;
   topics: Topic[];
@@ -147,7 +148,12 @@ export function FeedbackView({
             <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900">{classItem.name}</h3>
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-xl font-bold text-gray-900">{classItem.name}</h3>
+                    {classItem.teacherName && (
+                      <span className="text-sm text-gray-500">• {classItem.teacherName}</span>
+                    )}
+                  </div>
                   {classItem.academyName && (
                     <p className="text-sm text-gray-500 mt-1">{classItem.academyName}</p>
                   )}
