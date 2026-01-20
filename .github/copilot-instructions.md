@@ -1,616 +1,461 @@
 # GitHub Copilot Instructions for AKADEMO Project
 
-## 🚨 CRITICAL: DEPLOYMENT PROTOCOL 🚨
+**Last Updated**: January 19, 2026  
+**Architecture**: Two-worker system (Frontend + API)  
+**Stack**: Next.js 14, Cloudflare Workers, D1, Hono, TypeScript
 
-**MANDATORY**: After making ANY code changes (API, UI, components, etc.), you MUST deploy:
+---
 
+## 🧩 RULES OF ENGAGEMENT (2026 SOTA)
+
+### Rule #1: Search Before You Act
+**MANDATORY**: Before ANY code change, verify current state:
 ```powershell
-Remove-Item -Recurse -Force .next, .open-next -ErrorAction SilentlyContinue; npx @opennextjs/cloudflare build; npx wrangler deploy
+# Check database schema
+npx wrangler d1 execute akademo-db --remote --command "PRAGMA table_info(TableName)"
+
+# Check component size (must be <250 lines)
+(Get-Content path/to/file.tsx).Count
+
+# Search for existing implementations
+grep_search or semantic_search to find patterns
 ```
 
-**WHY THIS IS CRITICAL**:
-- Changes are NOT visible until deployed
-- Next.js and Cloudflare use aggressive caching
-- `npm run deploy` reuses cached builds - changes won't appear
-- **ALWAYS** use the clean build command above
-- **NEVER** skip deployment or say "changes are ready" without deploying
+### Rule #2: Follow Standard Operating Procedures (SOPs)
 
-### 🛑 DEPLOYMENT ERROR PREVENTION
+| SOP | Purpose | Command |
+|-----|---------|---------|
+| **SOP-01** | Clean deployment | `Remove-Item -Recurse -Force .next, .open-next -ErrorAction SilentlyContinue; npx @opennextjs/cloudflare build; npx wrangler deploy` |
+| **SOP-02** | API worker deploy | `cd workers/akademo-api; npx wrangler deploy` |
+| **SOP-03** | Test DB query | `npx wrangler d1 execute akademo-db --remote --command "SQL"` |
+| **SOP-04** | Check worker logs | `npx wrangler tail akademo --format pretty` |
 
-**Common Error**: `[ERROR] The entry-point file at ".open-next\worker.js" was not found.`
+### Rule #3: The 250-Line Law
+- **HARD LIMIT**: No component/file > 250 lines
+- **ENFORCEMENT**: If a file exceeds 250 lines during editing, STOP and refactor
+- **ACTION**: Extract into `/components/[feature]/` or `/hooks/`
 
-**Root Cause**: This error occurs when:
-1. Next.js build fails (TypeScript errors, syntax errors, import issues)
-2. OpenNext build doesn't complete (build cache corruption)
-3. Wrangler deploy runs anyway because the command chain continues
+### Rule #4: The Schema-First Protocol
+Before writing API code:
+1. Run SOP-03 to verify table schema matches expectations
+2. If schema doesn't exist or is wrong → Create migration file FIRST
+3. Never assume data exists → Test queries before deploying
 
-**Prevention Strategy**:
-- **ALWAYS check build output** - if you see "Failed to compile", STOP and fix errors
-- **NEVER ignore TypeScript errors** - fix them before deploying
-- Clean build directories first: `Remove-Item -Recurse -Force .next, .open-next -ErrorAction SilentlyContinue`
-- If error persists after fixing code, clear node_modules: `Remove-Item -Recurse -Force node_modules; npm install`
+### Rule #5: The Two-Worker Discipline
+**Frontend** (`akademo`): `src/app/`, `src/components/`, `src/hooks/`  
+**API** (`akademo-api`): `workers/akademo-api/src/`
 
-**Troubleshooting Steps**:
-1. Check if `.open-next/worker.js` exists after build
-2. Review build logs for compilation errors
-3. Verify all imports are correct (no missing files)
-4. Ensure TypeScript types are valid
-5. Clear caches and rebuild from scratch
+**Deploy Rule**:
+- API changes → Deploy API worker FIRST (SOP-02), then frontend (SOP-01)
+- Frontend only → Deploy frontend only (SOP-01)
+- Never deploy frontend alone if API routes changed
 
-## 🏗️ TWO-WORKER ARCHITECTURE - CRITICAL!
+---
 
-**AKADEMO uses TWO separate Cloudflare Workers:**
+## 🚫 FORBIDDEN PATTERNS (Negative Constraints)
 
-### 1. Frontend Worker: `akademo`
-- **Location**: Root directory (`./`)
-- **Purpose**: Next.js frontend (UI pages, components)
-- **Deploy Command**:
-  ```powershell
-  Remove-Item -Recurse -Force .next, .open-next -ErrorAction SilentlyContinue
-  npx @opennextjs/cloudflare build
-  npx wrangler deploy
-  ```
+### Absolutely NEVER Do These:
+
+❌ **Use `any` type** → Always define explicit interfaces  
+❌ **Deploy without clean build** → Always use SOP-01  
+❌ **Ignore TypeScript errors** → Fix before deploying  
+❌ **Create files >250 lines** → Refactor immediately  
+❌ **Use `localStorage` for sessions** → Use `academy_session` cookie  
+❌ **Hardcode environment variables** → Use `c.env.VAR` (Hono) or `process.env` (Next.js)  
+❌ **Return generic errors** → Include specific values: `errorResponse(\`User ${id} not found\`, 404)`  
+❌ **Assume database data exists** → Always test queries first (SOP-03)  
+❌ **Use index as React key** → Use stable IDs: `key={item.id}`  
+❌ **Chain async operations in loops** → Use `Promise.all()` or batch queries  
+❌ **Forget null safety** → Use `(data || []).filter()` pattern  
+❌ **Create duplicate endpoints** → Check existing routes with grep_search  
+❌ **Use Teacher table for ACADEMY role** → ACADEMY = `Academy.ownerId`, TEACHER = `Teacher.userId`  
+❌ **Skip deployment after code changes** → ALWAYS deploy (SOP-01 or SOP-02)  
+❌ **Use `npm run deploy`** → Reuses cache, changes won't appear. Use SOP-01.
+
+---
+
+## 🏗️ TWO-WORKER ARCHITECTURE
+
+### Frontend Worker: `akademo`
 - **URL**: https://akademo.alexxvives.workers.dev
-- **When to Deploy**: UI changes, component updates, frontend fixes, page modifications
+- **Location**: Root directory (`./`)
+- **Contains**: Next.js app (UI, pages, components)
+- **Deploy**: SOP-01
 
-### 2. Backend API Worker: `akademo-api`
-- **Location**: `workers/akademo-api/`
-- **Purpose**: Hono API backend (all /auth, /live, /classes, /lessons, etc. endpoints)
-- **Deploy Command**:
-  ```powershell
-  cd workers/akademo-api
-  npx wrangler deploy
-  ```
+### Backend API Worker: `akademo-api`
 - **URL**: https://akademo-api.alexxvives.workers.dev
-- **When to Deploy**: API changes, database queries, auth logic, permissions, stream creation, ANY route changes
+- **Location**: `workers/akademo-api/`
+- **Contains**: Hono API (all routes: /auth, /live, /classes, etc.)
+- **Deploy**: SOP-02
 
-### ⚠️ DEPLOYMENT CHECKLIST
+### Deployment Sequence
+```powershell
+# API changes → Deploy API first
+cd workers/akademo-api; npx wrangler deploy
 
-**For API Changes** (routes, database, permissions):
-1. Deploy API worker **FIRST**: `cd workers/akademo-api; npx wrangler deploy`
-2. Then deploy frontend if needed (see above)
-
-**For Frontend Changes** (UI, components):
-1. Deploy frontend worker only (see above)
-
-**For Both API + Frontend Changes**:
-1. Deploy API worker **FIRST**
-2. Then deploy frontend worker
-
-### 📁 File Path → Worker Mapping
-
-| File Path | Deploy Worker |
-|-----------|---------------|
-| `src/app/` → Frontend | `akademo` |
-| `src/components/` → Frontend | `akademo` |
-| `src/hooks/` → Frontend | `akademo` |
-| `workers/akademo-api/src/` → **API** | **`akademo-api`** |
-| `workers/akademo-api/src/routes/` → **API** | **`akademo-api`** |
-
-**Remember**: Frontend calls `https://akademo-api.alexxvives.workers.dev` for ALL API requests. If you only deploy frontend, API changes won't be live!
-
-## Critical Development Workflow
-
-### API Development & Debugging Protocol
-
-**MANDATORY**: When fixing or creating API endpoints, you MUST follow this testing protocol before claiming success:
-
-1. **Test Database Queries First**
-   ```bash
-   npx wrangler d1 execute akademo-db --remote --command "YOUR_SQL_QUERY"
-   ```
-   - Run the EXACT SQL query that your code will execute
-   - Verify the query returns expected data
-   - Check that all referenced columns exist in the schema
-
-2. **Verify Database Schema Matches Code**
-   ```bash
-   npx wrangler d1 execute akademo-db --remote --command "PRAGMA table_info(TableName)"
-   ```
-   - Confirm all columns referenced in code actually exist
-   - Check data types match expectations
-   - Verify foreign key relationships
-
-3. **Test Data Existence**
-   ```bash
-   npx wrangler d1 execute akademo-db --remote --command "SELECT * FROM Table WHERE condition LIMIT 5"
-   ```
-   - Verify test data exists for your queries
-   - Check that relationships (JOINs) will succeed
-   - Confirm no NULL values where NOT NULL expected
-
-4. **Deploy Only After Verification**
-   - Only run `npm run deploy` AFTER all queries tested successfully
-   - **ALWAYS force clean build before deploying**: `Remove-Item -Recurse -Force .next, .open-next -ErrorAction SilentlyContinue; npx @opennextjs/cloudflare build; npx wrangler deploy`
-   - Never use `npm run deploy` alone - it reuses cached builds and changes won't appear
-   - Never say "it should work now" - say "I tested X, Y, Z and confirmed they work"
-   - If tests fail, fix the root cause before deploying
-
-5. **Post-Deployment Verification**
-   - Check browser console for actual error messages
-   - Use detailed error responses that show what failed
-   - Return helpful debugging info: `errorResponse(\`User ${userId} not found in academy ${academyId}\`, 403)`
-
-### Common Anti-Patterns to AVOID
-
-❌ **DON'T**: Deploy without testing queries
-❌ **DON'T**: Assume database schema matches code expectations
-❌ **DON'T**: Return generic error messages like "Forbidden" or "Bad Request"
-❌ **DON'T**: Add console.log and hope it appears (Cloudflare Workers don't show console.log easily)
-❌ **DON'T**: Make multiple sequential fixes without verification between each
-❌ **DON'T**: Use placeholder values or mock data in queries - use real production data
-
-✅ **DO**: Test every SQL query before deploying
-✅ **DO**: Verify schema with PRAGMA commands
-✅ **DO**: Return detailed error messages with actual values
-✅ **DO**: Check production database state, not assumptions
-✅ **DO**: Verify data relationships exist before coding JOINs
-✅ **DO**: Use incremental, verified fixes rather than "shotgun debugging"
-✅ **DO**: Add debug console.log statements when investigating errors to identify root causes
-✅ **DO**: Always use null safety with optional chaining or default values for array methods (`.filter()`, `.map()`, etc.)
-
-### Debugging Best Practices
-
-**When encountering runtime errors:**
-1. Add console.log statements with descriptive prefixes like `[ComponentName]`
-2. Log the actual values before the error occurs (e.g., `console.log('[loadData] classResult:', classResult)`)
-3. Check if optional properties are undefined before using array methods
-4. Verify API responses match expected interface shapes
-
-**Null Safety Patterns:**
-```typescript
-// ❌ BAD - Will crash if data is undefined
-const filtered = result.data.filter(x => x.active);
-
-// ✅ GOOD - Safe with default empty array
-const filtered = (result.data || []).filter(x => x.active);
-
-// ✅ BETTER - Check both success and data
-if (result.success && result.data) {
-  const filtered = result.data.filter(x => x.active);
-}
+# Then deploy frontend (if UI also changed)
+cd ..; Remove-Item -Recurse -Force .next, .open-next -ErrorAction SilentlyContinue; npx @opennextjs/cloudflare build; npx wrangler deploy
 ```
 
-### Build & Cache Management
+---
 
-**Cache Issues**: Next.js and Cloudflare use aggressive caching. When changes aren't visible:
+## 🛠️ ENVIRONMENT VARIABLES & CONFIGURATION
 
-1. **Force Clean Build**
-   ```bash
-   Remove-Item -Recurse -Force .next, .open-next
-   npm run deploy
-   ```
+### Frontend (Next.js)
+```typescript
+// ✅ CORRECT - Public variables in Next.js
+const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
-2. **Understanding Cache Layers**
-   - `.next/` - Next.js build cache (content-hash based)
-   - `.open-next/` - OpenNext worker bundle
-   - Cloudflare CDN - Edge cache (respects content hashes)
-   - Browser cache - Can show stale JS bundles
+// ❌ FORBIDDEN - Exposing secrets
+const apiKey = process.env.BUNNY_API_KEY; // Never in frontend!
+```
 
-3. **When to Clear Cache**
-   - Code changes not appearing after deploy
-   - Seeing old error messages after fixes
-   - API responses look correct but UI shows old data
+### Backend (Hono)
+```typescript
+// ✅ CORRECT - Access via context
+app.get('/example', async (c) => {
+  const apiKey = c.env.BUNNY_STREAM_API_KEY;
+  return c.json({ success: true });
+});
 
-### Database Schema Conventions
+// ❌ FORBIDDEN - process.env doesn't work in Workers
+const key = process.env.BUNNY_API_KEY;
+```
 
-**Column Naming**:
-- Use `userId` NOT `studentId` - unified user reference
-- ClassEnrollment has `userId` column linking to User
-- Teacher table has `userId` column (not separate student/teacher ID)
+### Setting Secrets
+```powershell
+# Cloudflare Workers secrets
+npx wrangler secret put SECRET_NAME
+```
 
-**Table Naming**:
-- Singular names: `User`, `Academy`, `Class`, `ClassEnrollment`
-- NOT plural: ~~`Users`~~, ~~`Enrollments`~~
+---
 
-**Deprecated Tables**:
-- ❌ `AcademyMembership` - replaced by `Teacher` table
-- Use `Teacher` table with `userId` and `academyId` columns
+## 🗄️ DATABASE & MIGRATIONS PROTOCOL
 
-**Required Columns**:
-- `Academy` MUST have: `ownerId`, `description`
-- `ClassEnrollment` MUST have: `userId` (not studentId), `status`
-- `Teacher` MUST have: `userId`, `academyId`
+### Migration Creation (Schema Changes)
+**When**: Anytime you add/remove/modify table columns
 
-## Project Structure (State-of-the-Art)
+**Steps**:
+1. Create new migration file: `migrations/XXXX_descriptive_name.sql`
+2. Increment number (check last migration number)
+3. Write UP migration (CREATE/ALTER statements)
+4. Test locally: `npx wrangler d1 execute akademo-db --local --file=migrations/XXXX_file.sql`
+5. Apply remote: `npx wrangler d1 execute akademo-db --remote --file=migrations/XXXX_file.sql`
+6. Commit migration file to git
 
-The codebase follows a feature-based organization with shared infrastructure:
+**Example**:
+```sql
+-- migrations/0017_add_user_preferences.sql
+ALTER TABLE User ADD COLUMN preferences TEXT DEFAULT '{}';
+```
+
+### Database Conventions
+
+**Table Names**: Singular (✅ `User`, `Academy`, `Class` | ❌ `Users`, `Academies`)
+
+**Column Names**:
+- ✅ `userId` (unified user reference)
+- ❌ `studentId` or `teacherId` (use `userId` with role check)
+
+**Key Relationships**:
+- `Academy.ownerId` → User.id (ACADEMY role - WHO OWNS)
+- `Teacher.userId` → User.id (TEACHER role - WHO WORKS IN academy)
+- `Class.teacherId` → User.id (Teacher ASSIGNED to class)
+- `ClassEnrollment.userId` → User.id (STUDENT role)
+
+**Deprecated**:
+- ❌ `AcademyMembership` table - Replaced by `Teacher`
+
+---
+
+## 📂 PROJECT STRUCTURE (State-of-the-Art)
 
 ```
 src/
-├── app/                          # Next.js App Router pages
+├── app/                          # Next.js App Router (<200 lines per page)
 │   ├── layout.tsx               # Root layout
-│   ├── page.tsx                 # Landing page
-│   └── dashboard/               # Protected dashboard routes
-│       ├── admin/               # Admin role pages
-│       ├── academy/             # Academy owner pages
-│       ├── teacher/             # Teacher pages
-│       │   ├── layout.tsx       # Wraps with ErrorBoundary + DashboardLayout
-│       │   ├── page.tsx         # Dashboard home
-│       │   └── class/[id]/      # Dynamic class page
-│       │       ├── page.tsx     # Main page component
-│       │       └── components/  # Page-specific components
-│       └── student/             # Student pages
+│   ├── page.tsx                 # Landing page (orchestrator only)
+│   └── dashboard/               # Protected routes
+│       ├── [role]/              # Role-based dashboards
+│       └── [role]/[feature]/    # Feature pages
 │
-├── components/                   # Shared components
-│   ├── ui/                      # Reusable UI primitives
-│   │   ├── index.ts             # Barrel export
-│   │   ├── ErrorBoundary.tsx    # Error boundary wrapper
-│   │   ├── LoadingSpinner.tsx   # Spinner with sizes
-│   │   ├── PageLoader.tsx       # Full page loading state
-│   │   └── EmptyState.tsx       # Empty state with action
-│   ├── DashboardLayout.tsx      # Main dashboard shell
-│   ├── ProtectedVideoPlayer.tsx # Video player with DRM
-│   └── ...
+├── components/                   # Feature-based organization
+│   ├── ui/                      # Primitives (<100 lines each)
+│   │   ├── Button.tsx
+│   │   ├── Modal.tsx
+│   │   └── ErrorBoundary.tsx
+│   ├── layout/                  # Dashboard infrastructure
+│   │   ├── DashboardLayout.tsx  # Main orchestrator (<150 lines)
+│   │   ├── Sidebar.tsx
+│   │   ├── NotificationPanel.tsx
+│   │   └── UserMenu.tsx
+│   ├── auth/                    # Authentication forms
+│   │   ├── LoginForm.tsx
+│   │   ├── RegisterForm.tsx
+│   │   └── ForgotPasswordForm.tsx
+│   ├── video/                   # Video player components
+│   │   ├── ProtectedPlayer.tsx
+│   │   ├── WatermarkOverlay.tsx
+│   │   └── ProgressTracker.tsx
+│   ├── charts/                  # Data visualization
+│   │   ├── BarChart.tsx
+│   │   ├── LineChart.tsx
+│   │   └── PieChart.tsx
+│   └── landing/                 # Homepage sections
+│       ├── Hero.tsx
+│       ├── Features.tsx
+│       └── Pricing.tsx
 │
-├── hooks/                        # Custom React hooks
-│   ├── index.ts                 # Barrel export
+├── hooks/                        # Custom React hooks (<80 lines)
 │   ├── useAuth.ts               # Cached auth state
 │   ├── useClass.ts              # Class data fetching
-│   ├── useLessons.ts            # Lessons with polling
-│   └── useNotifications.ts      # Notifications with polling
+│   └── useLessons.ts            # Lessons with polling
 │
 ├── types/                        # TypeScript definitions
-│   ├── index.ts                 # Barrel export
 │   ├── api.ts                   # API response types
 │   └── models.ts                # Domain entity types
 │
-└── lib/                          # Utilities and clients
-    ├── api-client.ts            # Fetch wrapper for Hono API
+└── lib/                          # Utilities (<150 lines)
+    ├── api-client.ts            # Fetch wrapper
     ├── bunny-stream.ts          # Bunny CDN helpers
-    ├── bunny-upload.ts          # Video upload to Bunny
-    └── multipart-upload.ts      # Document upload to R2
+    └── multipart-upload.ts      # R2 upload helpers
 ```
 
-### File Naming Conventions
+---
 
-| Type | Convention | Example |
-|------|------------|---------|
-| Components | PascalCase | `ErrorBoundary.tsx` |
-| Hooks | camelCase with `use` prefix | `useAuth.ts` |
-| Types | camelCase with descriptive name | `api.ts`, `models.ts` |
-| Utilities | camelCase | `api-client.ts` |
-| Page routes | `page.tsx` in folder | `app/dashboard/teacher/page.tsx` |
+## 💻 DEVELOPMENT STANDARDS
 
-### Import Order Convention
+### API Development
 
-```tsx
-// 1. React imports
-import { useState, useEffect, useMemo, useCallback } from 'react';
-
-// 2. Next.js imports
-import { useRouter, useParams } from 'next/navigation';
-import Link from 'next/link';
-
-// 3. Third-party libraries
-import { format } from 'date-fns';
-
-// 4. Types (with 'type' keyword)
-import type { Lesson, Video, User } from '@/types';
-
-// 5. Hooks
-import { useAuth, useLessons } from '@/hooks';
-
-// 6. Components
-import { PageLoader, EmptyState } from '@/components/ui';
-
-// 7. Utilities
-import { apiClient } from '@/lib/api-client';
-
-// 8. Page-specific components (relative imports)
-import ClassHeader from './components/ClassHeader';
-```
-
-### Error Loop Prevention
-
-**When stuck in error loop**:
-1. Stop making code changes
-2. Test current database state with wrangler d1
-3. Verify what data actually exists
-4. Test the exact query your code will run
-5. Only then make ONE targeted fix
-6. Verify that fix before continuing
-
-**Red Flags**:
-- Making > 3 deploys without verification
-- Seeing same error after "fix"
-- Assuming data exists without checking
-- Not reading actual error responses
-
-### Testing Checklist for API Fixes
-
-Before deploying any API fix, complete this checklist:
-
-- [ ] SQL query tested with wrangler d1 execute
-- [ ] Query returns expected data
-- [ ] All columns referenced in query exist in schema
-- [ ] Required foreign key relationships exist
-- [ ] Test data exists for development/testing
-- [ ] Error messages include specific values for debugging
-- [ ] No assumptions made about data - verified actual state
-
-### Response Standards
-
-**API Error Responses Must Include**:
-- Specific values that caused the error
-- What was expected vs what was found
-- Enough context to debug without checking code
-
-**Example**:
+**Response Format** (REQUIRED):
 ```typescript
-// ❌ Bad
-return errorResponse('Forbidden', 403);
-
-// ✅ Good
-return errorResponse(`Teacher ${session.id} not found in academy ${classRecord.academyId}`, 403);
-```
-
-### Project-Specific Context
-
-**Authentication**:
-- Session stored in `academy_session` cookie
-- Session.id = User.id (base64 encoded in cookie)
-- Roles: ADMIN, ACADEMY, TEACHER, STUDENT
-
-**Permissions Model - CRITICAL**:
-
-1. **ACADEMY role** (Academy Owners):
-   - Identified by: `Academy.ownerId = session.id`
-   - Query pattern: `SELECT * FROM Academy WHERE ownerId = ?`
-   - NEVER use Teacher table for ACADEMY role users!
-   - Can manage all classes, teachers, students in their academy
-
-2. **TEACHER role** (Teachers):
-   - Identified by: `Teacher.userId = session.id`
-   - Query pattern: `SELECT * FROM Class WHERE teacherId = ?`
-   - Teacher table links teachers to academies they work in
-   - Can only manage classes they are assigned to
-
-3. **STUDENT role** (Students):
-   - Identified by: `ClassEnrollment.userId = session.id`
-   - Query pattern: `SELECT * FROM ClassEnrollment WHERE userId = ? AND status = 'APPROVED'`
-   - Can only access classes they are enrolled in
-
-**Common Permission Query Mistakes**:
-```typescript
-// ❌ WRONG - Academy owners are NOT in Teacher table
-const teacher = await db.prepare('SELECT * FROM Teacher WHERE userId = ?').bind(session.id);
-
-// ✅ CORRECT - Check Academy.ownerId for ACADEMY role
-if (session.role === 'ACADEMY') {
-  const academy = await db.prepare('SELECT * FROM Academy WHERE ownerId = ?').bind(session.id);
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
 }
+
+// ✅ CORRECT
+return c.json({ success: true, data: user });
+return errorResponse(`User ${id} not found`, 404);
+
+// ❌ FORBIDDEN
+return c.json({ user }); // Inconsistent format
+return c.json({ error: 'Not found' }, 404); // No success field
 ```
 
-**Live Streaming**:
-- Bunny Stream for video hosting
-- Firebase Realtime Database for chat and viewer presence
-- LiveStream table stores Zoom meeting details
-- `recordingId` field stores Bunny GUID (set by Zoom webhook)
-- Zoom webhook automatically handles recordings and participant counts
-- No manual "Obtener" button needed - everything is automatic
+**Error Handling** (REQUIRED):
+```typescript
+// ✅ CORRECT - Specific error with context
+return errorResponse(`Teacher ${session.id} not found in academy ${academyId}`, 403);
 
-## Database Quick Reference
+// ❌ FORBIDDEN - Generic error
+return errorResponse('Forbidden', 403);
+```
 
-**14 Tables**: User, Academy, Teacher, Class, ClassEnrollment, Lesson, Video, Document, Upload, LiveStream, LessonRating, VideoPlayState, Notification, DeviceSession
+**Database Queries**:
+```typescript
+// ✅ CORRECT - Prepared statements with bindings
+const user = await db.prepare('SELECT * FROM User WHERE id = ?').bind(userId).first();
 
-**Key Relationships**:
-- `Academy.ownerId` → User.id (ACADEMY role) - WHO OWNS the academy
-- `Teacher.userId` → User.id (TEACHER role) - Teachers WORKING in an academy
-- `Class.teacherId` → User.id - Teacher ASSIGNED to a class
-- `ClassEnrollment.userId` → User.id (STUDENT role) - Student enrolled in class
-- `Upload.bunnyGuid` → Bunny Stream video GUID (for videos)
+// ❌ FORBIDDEN - SQL injection risk
+const user = await db.prepare(`SELECT * FROM User WHERE id = '${userId}'`).first();
+```
 
-**Table Does NOT Exist**:
-- ~~AcademyMembership~~ - Replaced by Teacher table
-- ~~PlatformSettings~~ - Removed
-- ~~BillingConfig~~ - Removed
+**Permission Checks**:
+```typescript
+// ✅ CORRECT - Role-specific queries
+if (session.role === 'ACADEMY') {
+  const academy = await db.prepare('SELECT * FROM Academy WHERE ownerId = ?').bind(session.id).first();
+}
+if (session.role === 'TEACHER') {
+  const teacher = await db.prepare('SELECT * FROM Teacher WHERE userId = ?').bind(session.id).first();
+}
 
-## General Best Practices
-
-### Code Quality
-- Prefer TypeScript strict mode
-- Use proper error handling with try/catch
-- Return typed responses: `ApiResponse<T>`
-- Validate all user inputs
-
-### Performance
-- Minimize database queries in loops
-- Use prepared statements with bound parameters
-- Cache expensive computations appropriately
-- Avoid N+1 query patterns
-
-### Security
-- Never expose sensitive keys in responses
-- Validate permissions before data access
-- Use parameterized queries (prevent SQL injection)
-- Hash passwords with bcrypt (never plain text)
-
----
-
-## React & Frontend Best Practices (State-of-the-Art Standards)
-
-### ❌ Anti-Patterns to AVOID
-
-1. **Giant Components (>300 lines)**
-   - NEVER create components over 300 lines
-   - Split into smaller, focused components
-   - Extract reusable logic into custom hooks
-
-2. **No `any` Types**
-   - NEVER use `: any` - define proper interfaces
-   - All API responses should have typed interfaces
-   - All handler functions should have explicit parameter and return types
-
-3. **No Duplicate Data Fetching**
-   - NEVER call the same API endpoint in multiple components independently
-   - Use shared hooks or React Query for data caching
-   - The `/auth/me` endpoint should only be called ONCE and cached
-
-4. **No N+1 Query Patterns**
-   ```tsx
-   // ❌ BAD - Makes N+1 API calls
-   const lessons = await getLessons();
-   const detailed = await Promise.all(lessons.map(l => getLesson(l.id)));
-   
-   // ✅ GOOD - Single API call with includes
-   const lessons = await getLessonsWithDetails(classId);
-   ```
-
-5. **No Index Keys in Lists**
-   ```tsx
-   // ❌ BAD
-   {items.map((item, index) => <Item key={index} />)}
-   
-   // ✅ GOOD
-   {items.map(item => <Item key={item.id} />)}
-   ```
-
-6. **No Race Conditions in useEffect**
-   - Don't have multiple useEffects that depend on each other's data
-   - Use a single data loading hook with proper state management
-   - Consider abort controllers for cleanup
-
-### ✅ Required Patterns
-
-1. **Error Boundaries**
-   - All dashboard layouts MUST wrap content in ErrorBoundary
-   - Provide meaningful fallback UI for errors
-
-2. **Loading States**
-   - Use Suspense boundaries with skeleton loaders
-   - Create reusable `<LoadingSpinner />` and `<PageLoader />` components
-   - Never leave users with blank screens
-
-3. **Custom Hooks Directory**
-   - Create `src/hooks/` folder for reusable hooks
-   - Required hooks: `useAuth`, `useClass`, `useLessons`, `useNotifications`
-   - All data fetching logic should be in hooks, not components
-
-4. **Component Organization**
-   ```
-   src/
-   ├── components/
-   │   ├── ui/           # Reusable UI primitives
-   │   ├── forms/        # Form components
-   │   └── layout/       # Layout components
-   ├── hooks/            # Custom hooks
-   │   ├── useAuth.ts
-   │   ├── useClass.ts
-   │   └── useLessons.ts
-   ├── types/            # TypeScript interfaces
-   │   ├── api.ts        # API response types
-   │   └── models.ts     # Domain model types
-   └── lib/              # Utilities
-   ```
-
-5. **Performance Optimization**
-   ```tsx
-   // Memoize expensive computations
-   const filteredLessons = useMemo(() => 
-     lessons.filter(l => l.status === 'active'),
-     [lessons]
-   );
-   
-   // Memoize callbacks passed to children
-   const handleSubmit = useCallback((data) => {
-     // ...
-   }, [dependencies]);
-   ```
-
-6. **Proper TypeScript**
-   ```tsx
-   // Define interfaces for all API responses
-   interface LessonResponse {
-     id: string;
-     title: string;
-     videos: Video[];
-     documents: Document[];
-   }
-   
-   // Type all async functions
-   const loadLessons = async (classId: string): Promise<void> => {
-     const res = await apiClient<ApiResponse<Lesson[]>>(`/lessons?classId=${classId}`);
-     // ...
-   };
-   ```
-
-7. **API Client with Types**
-   ```tsx
-   // Extend apiClient to support generics
-   async function apiClient<T>(path: string, options?: RequestInit): Promise<T> {
-     const res = await fetch(/* ... */);
-     return res.json() as Promise<T>;
-   }
-   ```
-
-### Component Size Guidelines
-
-| Component Type | Max Lines | Example |
-|---------------|-----------|---------|
-| Page Component | 150 lines | Orchestrates layout, delegates to child components |
-| Feature Component | 200 lines | Self-contained feature like LessonForm |
-| UI Component | 100 lines | Buttons, Cards, Modals |
-| Custom Hook | 80 lines | Single-responsibility data/logic hook |
-
-### Required Imports Structure
-
-```tsx
-// 1. React imports
-import { useState, useEffect, useMemo, useCallback } from 'react';
-
-// 2. Next.js imports
-import { useRouter, useParams } from 'next/navigation';
-import Link from 'next/link';
-
-// 3. Third-party imports
-import { format } from 'date-fns';
-
-// 4. Local imports (types first)
-import type { Lesson, Video, User } from '@/types';
-import { useAuth } from '@/hooks/useAuth';
-import { useLessons } from '@/hooks/useLessons';
-import { apiClient } from '@/lib/api-client';
-import { Button } from '@/components/ui/Button';
+// ❌ FORBIDDEN - Using Teacher table for ACADEMY role
+const teacher = await db.prepare('SELECT * FROM Teacher WHERE userId = ?').bind(session.id).first();
+// ACADEMY users are NOT in Teacher table!
 ```
 
 ---
 
-## Improvement Roadmap (Priority Order)
+### Frontend Development
 
-### Phase 1: Critical Fixes
-- [ ] Add ErrorBoundary components to all layouts
-- [ ] Create `src/hooks/useAuth.ts` to cache auth state
-- [ ] Create `src/types/api.ts` and `src/types/models.ts`
-- [ ] Replace all `: any` with proper types
+**Component Size Limits**:
+| Type | Max Lines | Example |
+|------|-----------|---------|
+| Page Component | 150 | Orchestrates layout |
+| Feature Component | 200 | Self-contained feature |
+| UI Primitive | 100 | Button, Modal |
+| Custom Hook | 80 | Data fetching |
 
-### Phase 2: Performance
-- [ ] Implement React Query or SWR for data caching
-- [ ] Split `teacher/class/[id]/page.tsx` (1392 lines) into 5-6 components
-- [ ] Split `student/class/[id]/page.tsx` (789 lines) into 4-5 components
-- [ ] Fix N+1 queries in API endpoints
+**TypeScript Requirements**:
+```typescript
+// ✅ CORRECT - Explicit types
+interface LessonResponse {
+  id: string;
+  title: string;
+  videos: Video[];
+}
 
-### Phase 3: Code Quality
-- [ ] Create `src/components/ui/` for reusable components
-- [ ] Create shared loading/error state components
-- [ ] Add proper loading skeletons to all pages
-- [ ] Consolidate polling intervals into unified system
+const loadLessons = async (classId: string): Promise<void> => {
+  const res = await apiClient<ApiResponse<Lesson[]>>(`/lessons?classId=${classId}`);
+};
 
-### Phase 4: Developer Experience
-- [ ] Add ESLint rules to enforce component size limits
-- [ ] Add ESLint rule to disallow `any` type
-- [ ] Create component templates for consistency
-- [ ] Add Storybook for UI component documentation
+// ❌ FORBIDDEN - any type
+const loadLessons = async (classId: any): Promise<any> => {
+  const res = await fetch(`/lessons?classId=${classId}`);
+};
+```
+
+**Null Safety**:
+```typescript
+// ✅ CORRECT
+const filtered = (result.data || []).filter(x => x.active);
+
+if (result.success && result.data) {
+  const filtered = result.data.filter(x => x.active);
+}
+
+// ❌ FORBIDDEN - Will crash if undefined
+const filtered = result.data.filter(x => x.active);
+```
+
+**React Keys**:
+```typescript
+// ✅ CORRECT
+{items.map(item => <Item key={item.id} data={item} />)}
+
+// ❌ FORBIDDEN
+{items.map((item, index) => <Item key={index} data={item} />)}
+```
+
+**Performance Optimization**:
+```typescript
+// ✅ CORRECT - Memoize expensive computations
+const filteredLessons = useMemo(() => 
+  lessons.filter(l => l.status === 'active'),
+  [lessons]
+);
+
+// ✅ CORRECT - Memoize callbacks
+const handleSubmit = useCallback((data) => {
+  // ...
+}, [dependencies]);
+
+// ❌ FORBIDDEN - Recreating on every render
+const filteredLessons = lessons.filter(l => l.status === 'active');
+const handleSubmit = (data) => { /* ... */ };
+```
 
 ---
 
-**Remember**: The goal is to write code that works correctly the first time through careful verification, not to iterate quickly through broken implementations. Slow down, test thoroughly, deploy confidently.
+## 🐛 TROUBLESHOOTING PROTOCOL
 
-## Development Standards
+### Common Error: `.open-next/worker.js not found`
 
-### Quality Assurance
-- **State-of-the-Art Solutions**: Always implement robust, best-practice solutions using modern frameworks/libraries. Avoid temporary patches or dirty hacks.
-- **Root Cause Analysis**: Identify and fix the underlying issue rather than masking symptoms.
-- **Mandatory Verification**: You must TEST all API calls and verify they work as expected before marking a task as complete. 
-- **Error Handling**: Implement proper error handling that returns appropriate HTTP status codes (401 for Auth, 403 for Permissions, 404 for Not Found) instead of generic 500 errors.
+**Cause**: Build failed but deployment continued (command chaining)
 
+**Prevention**:
+1. Always check build output for "Failed to compile"
+2. Fix TypeScript errors BEFORE deploying
+3. Use SOP-01 (clears cache first)
+
+**Fix**:
+```powershell
+# Clear caches
+Remove-Item -Recurse -Force .next, .open-next, node_modules
+
+# Reinstall and rebuild
+npm install
+npx @opennextjs/cloudflare build
+npx wrangler deploy
+```
+
+---
+
+### D1 Timeout Error
+
+**Cause**: Operation exceeds 30-second D1 timeout (usually video uploads)
+
+**Solution**: Two-step upload workflow
+1. Upload videos FIRST: `/api/bunny/video/upload`
+2. Create lesson with video GUIDs: `/api/lessons/create-with-uploaded`
+
+**See**: [docs/troubleshooting.md](docs/troubleshooting.md)
+
+---
+
+### Cache Issues (Changes don't appear)
+
+**Symptoms**: Code changes work locally but not in production
+
+**Solution**: Force clean build (SOP-01)
+```powershell
+Remove-Item -Recurse -Force .next, .open-next -ErrorAction SilentlyContinue
+npx @opennextjs/cloudflare build
+npx wrangler deploy
+```
+
+**Post-deployment**: Force browser refresh (`Ctrl+Shift+R`)
+
+---
+
+## 📚 QUICK REFERENCE
+
+### Key Documentation
+- [PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md) - Complete technical reference
+- [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) - Database structure
+- [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) - Two-worker architecture
+- [docs/troubleshooting.md](docs/troubleshooting.md) - Common issues
+- [docs/zoom-integration.md](docs/zoom-integration.md) - Zoom API & webhooks
+- [docs/AGGRESSIVE_CLEANUP_REPORT.md](docs/AGGRESSIVE_CLEANUP_REPORT.md) - Refactoring roadmap
+
+### Database Tables (14 total)
+`User`, `Academy`, `Teacher`, `Class`, `ClassEnrollment`, `Lesson`, `Video`, `Document`, `Upload`, `LiveStream`, `LessonRating`, `VideoPlayState`, `Notification`, `DeviceSession`
+
+### Authentication
+- **Session Cookie**: `academy_session` (base64 encoded User.id)
+- **Roles**: ADMIN, ACADEMY, TEACHER, STUDENT
+- **Permissions**: Role-based (see Permission Checks section)
+
+### Live Streaming Stack
+- **Video Platform**: Bunny Stream (CDN + transcoding)
+- **Meeting Platform**: Zoom (API + webhooks)
+- **Chat/Presence**: Firebase Realtime Database
+- **Recording Flow**: Zoom → Webhook → Bunny Stream → Database
+
+---
+
+## 🎯 WORKFLOW CHECKLIST
+
+### Before Every Code Change
+- [ ] Run SOP-03 to verify database schema
+- [ ] Check component size (must be <250 lines)
+- [ ] Search for existing patterns with grep/semantic search
+- [ ] Review FORBIDDEN PATTERNS section
+
+### Before Every Deployment
+- [ ] TypeScript errors fixed
+- [ ] All imports valid (no missing files)
+- [ ] SOP-01 used for clean build
+- [ ] API deployed FIRST if API changed (SOP-02)
+
+### After Every Deployment
+- [ ] Check browser console for errors
+- [ ] Force refresh browser (`Ctrl+Shift+R`)
+- [ ] Verify changes are visible
+- [ ] Check SOP-04 logs if issues
+
+### When Creating New Features
+- [ ] Migration file created if schema changes
+- [ ] Component size stays under 250 lines
+- [ ] Feature folder created if needed (`components/[feature]/`)
+- [ ] Types defined in `types/` folder
+- [ ] Tests written (if test suite exists)
+
+---
+
+**Version**: 2.0 (2026 SOTA Edition)  
+**Optimization**: Token-efficient SOPs, negative constraints, search-first protocol  
+**Maintainer**: AKADEMO Development Team
