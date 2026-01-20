@@ -2,11 +2,13 @@
 
 import { useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense } from 'react';
-import Link from 'next/link';
 import AuthModal from '@/components/AuthModal';
+import { Navbar } from '@/components/landing/Navbar';
+import { Hero } from '@/components/landing/Hero';
+import { Footer } from '@/components/landing/Footer';
+import { translations, type Language } from '@/lib/translations';
 
-// Translations
-const translations = {
+const deprecatedTranslations = {
   es: {
     // Nav
     login: 'Iniciar Sesión',
@@ -179,8 +181,6 @@ const translations = {
   }
 };
 
-type Language = 'es' | 'en';
-
 function HomePageContent() {
   const searchParams = useSearchParams();
   const [showModal, setShowModal] = useState(false);
@@ -227,8 +227,7 @@ function HomePageContent() {
     <div className="min-h-screen bg-white">
       {showModal && <AuthModal mode={modalMode} onClose={closeModal} />}
 
-      {/* Glass Header with Scroll Detection */}
-      <header className="fixed top-0 left-0 right-0 z-40 transition-all">
+      <Navbar t={t} isScrolled={isScrolled} lang={lang} onLangChange={setLang} onOpenModal={openModal} />
         <div className="mx-3 sm:mx-6 mt-3 sm:mt-4">
           <div className="max-w-6xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-lg bg-white/10 border border-white/20">
             <div className="flex justify-between items-center relative">
@@ -301,11 +300,7 @@ function HomePageContent() {
               className="w-5 h-5 sm:w-6 sm:h-6"
             />
           </button>
-        </div>
-      </header>
-
-      {/* Hero with Background */}
-      <section 
+      <Hero t={t} isScrolled={isScrolled} onOpenModal={openModal} /> 
         className="relative min-h-screen flex items-center justify-center px-4 sm:px-6"
         style={{
           backgroundImage: 'url(/hero-bg_mobile.webp)',
