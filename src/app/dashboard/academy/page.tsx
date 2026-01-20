@@ -50,6 +50,7 @@ interface RatingsData {
     lessonId: string;
     lessonTitle: string;
     className: string;
+    classId: string;
     averageRating: number | null;
     ratingCount: number;
   }>;
@@ -329,11 +330,11 @@ export default function AcademyDashboard() {
                 <>
                   <BarChart
                     data={[
-                      { label: '1★', value: ratingsData.lessons.filter(l => l.averageRating && l.averageRating >= 1 && l.averageRating < 1.5).length, color: '#ef4444' },
-                      { label: '2★', value: ratingsData.lessons.filter(l => l.averageRating && l.averageRating >= 1.5 && l.averageRating < 2.5).length, color: '#f97316' },
-                      { label: '3★', value: ratingsData.lessons.filter(l => l.averageRating && l.averageRating >= 2.5 && l.averageRating < 3.5).length, color: '#a3e635' },
-                      { label: '4★', value: ratingsData.lessons.filter(l => l.averageRating && l.averageRating >= 3.5 && l.averageRating < 4.5).length, color: '#84cc16' },
-                      { label: '5★', value: ratingsData.lessons.filter(l => l.averageRating && l.averageRating >= 4.5).length, color: '#22c55e' },
+                      { label: '1★', value: ratingsData.lessons.filter(l => (selectedClass === 'all' || l.classId === selectedClass) && l.averageRating && l.averageRating >= 1 && l.averageRating < 1.5).length, color: '#ef4444' },
+                      { label: '2★', value: ratingsData.lessons.filter(l => (selectedClass === 'all' || l.classId === selectedClass) && l.averageRating && l.averageRating >= 1.5 && l.averageRating < 2.5).length, color: '#f97316' },
+                      { label: '3★', value: ratingsData.lessons.filter(l => (selectedClass === 'all' || l.classId === selectedClass) && l.averageRating && l.averageRating >= 2.5 && l.averageRating < 3.5).length, color: '#a3e635' },
+                      { label: '4★', value: ratingsData.lessons.filter(l => (selectedClass === 'all' || l.classId === selectedClass) && l.averageRating && l.averageRating >= 3.5 && l.averageRating < 4.5).length, color: '#84cc16' },
+                      { label: '5★', value: ratingsData.lessons.filter(l => (selectedClass === 'all' || l.classId === selectedClass) && l.averageRating && l.averageRating >= 4.5).length, color: '#22c55e' },
                     ]}
                   />
                 </>

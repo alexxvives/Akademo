@@ -160,11 +160,14 @@ enrollments.get('/pending', async (c) => {
           u.email as student_email,
           c.name as class_name,
           c.id as class_id,
+          c.teacherId,
+          teacher.firstName || ' ' || teacher.lastName as teacherName,
           a.name as academyName
         FROM ClassEnrollment e
         JOIN User u ON e.userId = u.id
         JOIN Class c ON e.classId = c.id
         JOIN Academy a ON c.academyId = a.id
+        LEFT JOIN User teacher ON c.teacherId = teacher.id
         WHERE a.ownerId = ? AND e.status = 'PENDING'
         ORDER BY e.createdAt DESC
       `;
@@ -186,11 +189,14 @@ enrollments.get('/pending', async (c) => {
           u.email as student_email,
           c.name as class_name,
           c.id as class_id,
+          c.teacherId,
+          teacher.firstName || ' ' || teacher.lastName as teacherName,
           a.name as academyName
         FROM ClassEnrollment e
         JOIN User u ON e.userId = u.id
         JOIN Class c ON e.classId = c.id
         JOIN Academy a ON c.academyId = a.id
+        LEFT JOIN User teacher ON c.teacherId = teacher.id
         WHERE c.teacherId = ? AND e.status = 'PENDING'
         ORDER BY e.createdAt DESC
       `;
@@ -219,6 +225,8 @@ enrollments.get('/pending', async (c) => {
       class: {
         id: row.class_id,
         name: row.class_name,
+        teacherId: row.teacherId,
+        teacherName: row.teacherName,
       },
       academyName: row.academyName,
     }));

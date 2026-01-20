@@ -39,7 +39,7 @@ live.post('/', async (c) => {
   try {
     const session = await requireAuth(c);
 
-    if (!['ADMIN', 'TEACHER'].includes(session.role)) {
+    if (!['ADMIN', 'TEACHER', 'ACADEMY'].includes(session.role)) {
       return c.json(errorResponse('Not authorized'), 403);
     }
 
@@ -49,14 +49,35 @@ live.post('/', async (c) => {
       return c.json(errorResponse('classId and title required'), 400);
     }
 
-    // Get class info
+    // Get class info with academy and teacher details
     const classInfo = await c.env.DB
-      .prepare('SELECT c.name, u.firstName, u.lastName FROM Class c JOIN User u ON c.teacherId = u.id WHERE c.id = ?')
+      .prepare(`
+        SELECT c.name, c.teacherId, c.academyId, 
+               u.firstName, u.lastName,
+               a.ownerId as academyOwnerId
+        FROM Class c 
+        JOIN User u ON c.teacherId = u.id 
+        JOIN Academy a ON c.academyId = a.id
+        WHERE c.id = ?
+      `)
       .bind(classId)
-      .first();
+      .first() as any;
 
     if (!classInfo) {
       return c.json(errorResponse('Class not found'), 404);
+    }
+
+    // Verify permissions
+    if (session.role === 'TEACHER') {
+      // Teacher must own the class
+      if (classInfo.teacherId !== session.id) {
+        return c.json(errorResponse('Not authorized to create stream for this class'), 403);
+      }
+    } else if (session.role === 'ACADEMY') {
+      // Academy owner must own the academy
+      if (classInfo.academyOwnerId !== session.id) {
+        return c.json(errorResponse('Not authorized to create stream for this class'), 403);
+      }
     }
 
     // Create Zoom meeting
@@ -91,7 +112,7 @@ live.post('/', async (c) => {
       .bind(
         streamId, 
         classId, 
-        session.id, 
+        classInfo.teacherId,  // Use the class's actual teacherId, not session.id
         title, 
         'scheduled', 
         zoomMeeting.join_url,
@@ -458,7 +479,7 @@ live.delete('/:id', async (c) => {
     const session = await requireAuth(c);
     const streamId = c.req.param('id');
 
-    if (!['ADMIN', 'TEACHER'].includes(session.role)) {
+    if (!['ADMIN', 'TEACHER', 'ACADEMY'].includes(session.role)) {
       return c.json(errorResponse('Not authorized'), 403);
     }
 
@@ -474,6 +495,23 @@ live.delete('/:id', async (c) => {
 
     if (session.role === 'TEACHER' && stream.teacherId !== session.id) {
       return c.json(errorResponse('Not authorized'), 403);
+    }
+
+    if (session.role === 'ACADEMY') {
+      // Check if academy owns the class
+      const classInfo = await c.env.DB
+        .prepare('SELECT academyId FROM Class WHERE id = ?')
+        .bind(stream.classId)
+        .first();
+      
+      const academy = await c.env.DB
+        .prepare('SELECT id FROM Academy WHERE ownerId = ?')
+        .bind(session.id)
+        .first();
+
+      if (!classInfo || !academy || classInfo.academyId !== academy.id) {
+        return c.json(errorResponse('Not authorized'), 403);
+      }
     }
 
     // If there is a recording, try to delete it from Bunny

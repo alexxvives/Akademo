@@ -104,7 +104,7 @@ export default function AcademyJoinPage() {
     setAuthError(null);
 
     try {
-      const response = await apiClient('/auth/verification/send', {
+      const response = await apiClient('/auth/send-verification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.email }),
@@ -149,12 +149,22 @@ export default function AcademyJoinPage() {
     }
   };
 
+  const handleCodePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (pastedData.length === 6) {
+      const newCode = pastedData.split('');
+      setVerificationCode(newCode);
+      verifyCode(pastedData);
+    }
+  };
+
   const verifyCode = async (code: string) => {
     setVerifyingCode(true);
     setVerificationError(false);
 
     try {
-      const verifyResponse = await apiClient('/auth/verification/verify', {
+      const verifyResponse = await apiClient('/auth/verify-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.email, code }),
@@ -311,76 +321,6 @@ export default function AcademyJoinPage() {
           )}
         </div>
 
-        {/* Email Verification Modal */}
-        {showVerification && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-xl p-8 max-w-md w-full">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2 text-center">
-                Verifica tu correo
-              </h3>
-              <p className="text-gray-600 text-center mb-6">
-                Ingresa el código de 6 dígitos que enviamos a <strong>{formData.email}</strong>
-              </p>
-              
-              <div className="flex justify-center gap-2 mb-6">
-                {verificationCode.map((digit, index) => (
-                  <input
-                    key={index}
-                    ref={el => { inputRefs.current[index] = el; }}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={digit}
-                    onChange={e => handleCodeChange(index, e.target.value)}
-                    onKeyDown={e => handleKeyDown(index, e)}
-                    disabled={verifyingCode || verificationSuccess}
-                    className={`w-12 h-14 text-center text-2xl font-bold rounded-lg border-2 transition-all
-                      ${verificationError 
-                        ? 'border-red-500 bg-red-50' 
-                        : verificationSuccess
-                        ? 'border-green-500 bg-green-50'
-                        : 'border-gray-300 bg-white'
-                      }
-                      ${verifyingCode || verificationSuccess ? 'opacity-50' : ''}
-                      text-gray-900 focus:outline-none focus:border-blue-500`}
-                    autoFocus={index === 0}
-                  />
-                ))}
-              </div>
-
-              {verificationError && (
-                <p className="text-red-600 text-sm text-center mb-4">
-                  Código incorrecto. Inténtalo de nuevo.
-                </p>
-              )}
-
-              {verificationSuccess && (
-                <p className="text-green-600 text-sm text-center mb-4">
-                  ✓ Código verificado. Creando tu cuenta...
-                </p>
-              )}
-
-              {verifyingCode && !verificationSuccess && !verificationError && (
-                <p className="text-gray-600 text-sm text-center mb-4">
-                  Verificando código...
-                </p>
-              )}
-
-              <button
-                onClick={() => {
-                  setShowVerification(false);
-                  setVerificationCode(['', '', '', '', '', '']);
-                  setVerificationError(false);
-                }}
-                disabled={verifyingCode || verificationSuccess}
-                className="w-full py-3 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-xl transition-colors disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        )}
-
         {!isLoggedIn ? (
           /* Auth Form */
           <div className="bg-white rounded-2xl shadow-lg p-8">
@@ -447,13 +387,72 @@ export default function AcademyJoinPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Correo Electrónico
                   </label>
-                  <input
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={e => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-gray-900"
-                  />
+                  <div className="relative">
+                    <input
+                      type="email"
+                      required
+                      value={formData.email}
+                      onChange={e => setFormData({ ...formData, email: e.target.value })}
+                      disabled={showVerification || verifyingCode || verificationSuccess}
+                      className={`w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-500 transition-all ${
+                        showVerification ? 'pr-[220px]' : ''
+                      }`}
+                    />
+                    {showVerification && !showLogin && (
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                        <div className={`flex items-center gap-0.5 px-2 py-1 rounded transition-all ${
+                          verificationError ? 'animate-shake bg-red-50' : 
+                          verificationSuccess ? 'bg-green-50' : 'bg-gray-50'
+                        }`}>
+                          {verificationCode.map((digit, index) => (
+                            <input
+                              key={index}
+                              ref={(el) => { inputRefs.current[index] = el; }}
+                              type="text"
+                              inputMode="numeric"
+                              maxLength={1}
+                              value={digit}
+                              onChange={(e) => handleCodeChange(index, e.target.value)}
+                              onKeyDown={(e) => handleKeyDown(index, e)}
+                              onPaste={index === 0 ? handleCodePaste : undefined}
+                              disabled={verifyingCode || verificationSuccess}
+                              className={`w-7 h-8 text-center text-sm font-bold border rounded transition-all focus:outline-none focus:ring-1 ${
+                                verificationError 
+                                  ? 'border-red-400 bg-red-50 text-red-600 focus:ring-red-400' 
+                                  : verificationSuccess 
+                                    ? 'border-green-400 bg-green-50 text-green-600' 
+                                    : 'border-gray-300 focus:ring-gray-900 focus:border-gray-900'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        {verifyingCode && (
+                          <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin"></div>
+                        )}
+                        {verificationSuccess && (
+                          <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Verification hint text */}
+                  {showVerification && !showLogin && (
+                    <div className="mt-2 flex items-center justify-between">
+                      <p className="text-xs text-gray-500">
+                        Código enviado a {formData.email}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => { setShowVerification(false); setVerificationCode(['', '', '', '', '', '']); }}
+                        className="text-xs text-gray-500 hover:text-gray-700 underline"
+                      >
+                        Cambiar email
+                      </button>
+                    </div>
+                  )}
                 </div>
                 
                 <div>

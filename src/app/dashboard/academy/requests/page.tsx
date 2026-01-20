@@ -27,18 +27,29 @@ export default function AcademyRequestsPage() {
     try {
       const response = await apiClient('/enrollments/pending');
       const result = await response.json();
+      console.log('[Academy Requests] Full API response:', JSON.stringify(result, null, 2));
       if (result.success) {
         // Map nested API response to flat structure with teacher info
-        const mapped = result.data.map((e: any) => ({
-          id: e.id,
-          studentName: `${e.student.firstName} ${e.student.lastName}`,
-          studentEmail: e.student.email,
-          className: e.class.name,
-          classId: e.class.id,
-          teacherName: e.class.teacherName || 'Sin profesor',
-          teacherId: e.class.teacherId || '',
-          createdAt: e.enrolledAt || e.createdAt,
-        }));
+        const mapped = result.data.map((e: any) => {
+          console.log('[Academy Requests] Processing enrollment:', {
+            enrollmentId: e.id,
+            className: e.class.name,
+            teacherId: e.class.teacherId,
+            teacherName: e.class.teacherName,
+            rawClass: e.class
+          });
+          return {
+            id: e.id,
+            studentName: `${e.student.firstName} ${e.student.lastName}`,
+            studentEmail: e.student.email,
+            className: e.class.name,
+            classId: e.class.id,
+            teacherName: e.class.teacherName || 'Sin profesor asignado',
+            teacherId: e.class.teacherId || '',
+            createdAt: e.enrolledAt || e.createdAt,
+          };
+        });
+        console.log('[Academy Requests] Final mapped enrollments:', mapped);
         setPendingEnrollments(mapped);
       }
     } catch (error) {

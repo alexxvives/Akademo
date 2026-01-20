@@ -14,7 +14,7 @@ export default function FacturasPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          priceId: 'price_1Sr91MGnG2OZ2dGGhbQBN5yI', // Your Stripe Price ID (create one in Stripe Dashboard)
+          priceId: 'price_1Sr94eGnG2OZ2dGGTyFRHtAs', // Your Stripe Price ID (create one in Stripe Dashboard)
           successUrl: `${window.location.origin}/dashboard/academy/facturas?success=true`,
           cancelUrl: `${window.location.origin}/dashboard/academy/facturas?canceled=true`,
         }),
@@ -57,7 +57,7 @@ export default function FacturasPage() {
         <div className="bg-gray-50 rounded-lg p-6 mb-6 text-center">
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Plan Mensual</h3>
           <p className="text-3xl font-bold text-gray-900 mb-4">
-            $29.99<span className="text-base font-normal text-gray-600">/mes</span>
+            $9.99<span className="text-base font-normal text-gray-600">/mes</span>
           </p>
           <ul className="space-y-2 text-gray-600 mb-6 text-left inline-block">
             <li className="flex items-center gap-2">

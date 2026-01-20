@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { BarChart, DonutChart, StatCard } from '@/components/Charts';
 import { apiClient } from '@/lib/api-client';
@@ -69,6 +69,7 @@ interface RatingsData {
     lessonId: string;
     lessonTitle: string;
     className: string;
+    classId: string;
     averageRating: number | null;
     ratingCount: number;
   }>;
@@ -92,6 +93,7 @@ export default function TeacherDashboard() {
   const [loading, setLoading] = useState(true);
   const [rejectedCount, setRejectedCount] = useState(0);
   const [streamStats, setStreamStats] = useState({ total: 0, avgParticipants: 0, thisMonth: 0, totalHours: 0 });
+  const [selectedClass, setSelectedClass] = useState('all');
 
   useEffect(() => {
     loadData();
@@ -239,6 +241,11 @@ export default function TeacherDashboard() {
   const approvedMemberships = memberships.filter(m => m.status === 'APPROVED');
   const hasAcademy = approvedMemberships.length > 0;
 
+  const filteredStudents = useMemo(() => {
+    if (selectedClass === 'all') return enrolledStudents;
+    return enrolledStudents.filter(s => s.classId === selectedClass);
+  }, [enrolledStudents, selectedClass]);
+
   // Don't show "Join Academy" screen if teacher already has an approved membership
   // or if they're currently browsing academies
   const shouldShowJoinPrompt = !hasAcademy && !showBrowse && memberships.length === 0;
@@ -333,18 +340,39 @@ export default function TeacherDashboard() {
   return (
     <>
       <div className="w-full space-y-6">
-        {/* Minimalist Page Header */}
-        <div className="flex items-center justify-between border-b border-gray-100">
+        {/* Page Header with Class Filter */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">Panel de Control</h1>
             {hasAcademy && academyName && (
               <p className="text-sm text-gray-500 mt-1">{academyName}</p>
             )}
           </div>
+          
+          {/* Class Filter */}
+          {classes.length > 0 && (
+            <div className='relative'>
+              <select
+                value={selectedClass}
+                onChange={(e) => setSelectedClass(e.target.value)}
+                className='appearance-none w-full md:w-56 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent'
+              >
+                <option value='all'>Todas las clases</option>
+                {classes.map((cls) => (
+                  <option key={cls.id} value={cls.id}>{cls.name}</option>
+                ))}
+              </select>
+              <div className='pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500'>
+                <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                  <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 9l-7 7-7-7' />
+                </svg>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Visual Analytics Grid */}
-        {enrolledStudents.length > 0 ? (
+        {filteredStudents.length > 0 ? (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Engagement Metrics - TOP LEFT (moved from right) */}
             <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full">
@@ -363,8 +391,8 @@ export default function TeacherDashboard() {
                   <div className="flex justify-between mb-2">
                     <span className="text-sm text-gray-600">Asistencia Promedio (Streams)</span>
                     <span className="text-sm font-semibold text-gray-900">
-                      {streamStats.total > 0 && enrolledStudents.length > 0
-                        ? Math.round((streamStats.avgParticipants / enrolledStudents.length) * 100)
+                      {streamStats.total > 0 && filteredStudents.length > 0
+                        ? Math.round((streamStats.avgParticipants / filteredStudents.length) * 100)
                         : 0}%
                     </span>
                   </div>
@@ -372,8 +400,8 @@ export default function TeacherDashboard() {
                     <div 
                       className="bg-purple-500 h-2 rounded-full" 
                       style={{ 
-                        width: `${streamStats.total > 0 && enrolledStudents.length > 0
-                          ? Math.round((streamStats.avgParticipants / enrolledStudents.length) * 100)
+                        width: `${streamStats.total > 0 && filteredStudents.length > 0
+                          ? Math.round((streamStats.avgParticipants / filteredStudents.length) * 100)
                           : 0}%`, 
                         animation: 'slideIn 1s ease-out 0.1s backwards' 
                       }} 
@@ -391,7 +419,7 @@ export default function TeacherDashboard() {
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">Tiempo de visualización total</span>
                     <span className="text-sm font-semibold text-gray-900">
-                      {Math.round(enrolledStudents.length * 4.5)}h
+                      {Math.round(filteredStudents.length * 4.5)}h
                     </span>
                   </div>
                 </div>
@@ -403,12 +431,12 @@ export default function TeacherDashboard() {
               <h3 className="text-lg font-semibold text-gray-900 mb-6">Estudiantes</h3>
               <div className="space-y-6">
                 <div className="text-center">
-                  <AnimatedNumber value={enrolledStudents.length} className="text-5xl font-bold text-gray-900 mb-2" />
-                  <div className="text-sm text-gray-500">estudiantes totales</div>
+                  <AnimatedNumber value={filteredStudents.length} className="text-5xl font-bold text-gray-900 mb-2" />
+                  <div className="text-sm text-gray-500">estudiantes {selectedClass === 'all' ? 'totales' : 'en esta clase'}</div>
                 </div>
                 <div className="flex justify-between gap-4 pt-4 border-t border-gray-100">
                   <div className="flex-1 text-center group/accepted relative cursor-help">
-                    <AnimatedNumber value={enrolledStudents.length} className="text-2xl font-bold text-green-600" />
+                    <AnimatedNumber value={filteredStudents.length} className="text-2xl font-bold text-green-600" />
                     <div className="text-xs text-gray-500">aceptados</div>
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800 text-slate-200 text-xs rounded-lg shadow-xl border border-slate-700 opacity-0 invisible group-hover/accepted:opacity-100 group-hover/accepted:visible transition-all duration-200 whitespace-nowrap z-20">
                       <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-2 h-2 bg-slate-800 border-b border-r border-slate-700 rotate-45"></div>
@@ -442,11 +470,11 @@ export default function TeacherDashboard() {
                 <>
                   <BarChart
                     data={[
-                      { label: '1★', value: ratingsData.lessons.filter(l => l.averageRating && l.averageRating >= 1 && l.averageRating < 1.5).length, color: '#ef4444' },
-                      { label: '2★', value: ratingsData.lessons.filter(l => l.averageRating && l.averageRating >= 1.5 && l.averageRating < 2.5).length, color: '#f97316' },
-                      { label: '3★', value: ratingsData.lessons.filter(l => l.averageRating && l.averageRating >= 2.5 && l.averageRating < 3.5).length, color: '#a3e635' },
-                      { label: '4★', value: ratingsData.lessons.filter(l => l.averageRating && l.averageRating >= 3.5 && l.averageRating < 4.5).length, color: '#84cc16' },
-                      { label: '5★', value: ratingsData.lessons.filter(l => l.averageRating && l.averageRating >= 4.5).length, color: '#22c55e' },
+                      { label: '1★', value: ratingsData.lessons.filter(l => (selectedClass === 'all' || l.classId === selectedClass) && l.averageRating && l.averageRating >= 1 && l.averageRating < 1.5).length, color: '#ef4444' },
+                      { label: '2★', value: ratingsData.lessons.filter(l => (selectedClass === 'all' || l.classId === selectedClass) && l.averageRating && l.averageRating >= 1.5 && l.averageRating < 2.5).length, color: '#f97316' },
+                      { label: '3★', value: ratingsData.lessons.filter(l => (selectedClass === 'all' || l.classId === selectedClass) && l.averageRating && l.averageRating >= 2.5 && l.averageRating < 3.5).length, color: '#a3e635' },
+                      { label: '4★', value: ratingsData.lessons.filter(l => (selectedClass === 'all' || l.classId === selectedClass) && l.averageRating && l.averageRating >= 3.5 && l.averageRating < 4.5).length, color: '#84cc16' },
+                      { label: '5★', value: ratingsData.lessons.filter(l => (selectedClass === 'all' || l.classId === selectedClass) && l.averageRating && l.averageRating >= 4.5).length, color: '#22c55e' },
                     ]}
                   />
                 </>
@@ -467,8 +495,8 @@ export default function TeacherDashboard() {
                 <DonutChart
                   size={250}
                   data={[
-                    { label: 'Activos', value: Math.round(enrolledStudents.length * 0.65), color: '#22c55e' },
-                    { label: 'Inactivos', value: Math.round(enrolledStudents.length * 0.35), color: '#ef4444' },
+                    { label: 'Activos', value: Math.round(filteredStudents.length * 0.65), color: '#22c55e' },
+                    { label: 'Inactivos', value: Math.round(filteredStudents.length * 0.35), color: '#ef4444' },
                   ]}
                 />
               </div>

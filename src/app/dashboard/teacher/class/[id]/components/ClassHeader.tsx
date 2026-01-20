@@ -42,25 +42,6 @@ export default function ClassHeader({
         <div className="flex-1">
           <div className="flex items-center gap-4 flex-wrap mb-2">
             <h1 className="text-2xl font-semibold text-gray-900">{classData.name}</h1>
-            {/* Stats moved inline with title as requested */}
-            <div className="flex items-center gap-3 text-sm">
-              <div className="px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-1.5">
-                <span className="font-semibold text-blue-900">{lessonsCount}</span>
-                <span className="text-blue-700">lecciones</span>
-              </div>
-              <div className="px-2.5 py-1 bg-green-50 border border-green-200 rounded-lg flex items-center gap-1.5">
-                <span className="font-semibold text-green-900">{approvedCount}</span>
-                <span className="text-green-700">estudiantes</span>
-              </div>
-              {pendingCount > 0 && (
-                <div
-                  className="px-2.5 py-1 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center gap-1.5"
-                >
-                  <span className="font-semibold text-red-900">{pendingCount}</span>
-                  <span className="text-red-700">solicitud{pendingCount !== 1 ? 'es' : ''}</span>
-                </div>
-              )}
-            </div>
           </div>
           {classData.description && (
             <p className="text-gray-600 text-lg max-w-3xl">{classData.description}</p>

@@ -1,10 +1,10 @@
 # GitHub Copilot Instructions for AKADEMO Project
 
-## 🚨 CRITICAL: ALWAYS DEPLOY CHANGES 🚨
+## 🚨 CRITICAL: DEPLOYMENT PROTOCOL 🚨
 
 **MANDATORY**: After making ANY code changes (API, UI, components, etc.), you MUST deploy:
 
-```bash
+```powershell
 Remove-Item -Recurse -Force .next, .open-next -ErrorAction SilentlyContinue; npx @opennextjs/cloudflare build; npx wrangler deploy
 ```
 
@@ -14,6 +14,80 @@ Remove-Item -Recurse -Force .next, .open-next -ErrorAction SilentlyContinue; npx
 - `npm run deploy` reuses cached builds - changes won't appear
 - **ALWAYS** use the clean build command above
 - **NEVER** skip deployment or say "changes are ready" without deploying
+
+### 🛑 DEPLOYMENT ERROR PREVENTION
+
+**Common Error**: `[ERROR] The entry-point file at ".open-next\worker.js" was not found.`
+
+**Root Cause**: This error occurs when:
+1. Next.js build fails (TypeScript errors, syntax errors, import issues)
+2. OpenNext build doesn't complete (build cache corruption)
+3. Wrangler deploy runs anyway because the command chain continues
+
+**Prevention Strategy**:
+- **ALWAYS check build output** - if you see "Failed to compile", STOP and fix errors
+- **NEVER ignore TypeScript errors** - fix them before deploying
+- Clean build directories first: `Remove-Item -Recurse -Force .next, .open-next -ErrorAction SilentlyContinue`
+- If error persists after fixing code, clear node_modules: `Remove-Item -Recurse -Force node_modules; npm install`
+
+**Troubleshooting Steps**:
+1. Check if `.open-next/worker.js` exists after build
+2. Review build logs for compilation errors
+3. Verify all imports are correct (no missing files)
+4. Ensure TypeScript types are valid
+5. Clear caches and rebuild from scratch
+
+## 🏗️ TWO-WORKER ARCHITECTURE - CRITICAL!
+
+**AKADEMO uses TWO separate Cloudflare Workers:**
+
+### 1. Frontend Worker: `akademo`
+- **Location**: Root directory (`./`)
+- **Purpose**: Next.js frontend (UI pages, components)
+- **Deploy Command**:
+  ```powershell
+  Remove-Item -Recurse -Force .next, .open-next -ErrorAction SilentlyContinue
+  npx @opennextjs/cloudflare build
+  npx wrangler deploy
+  ```
+- **URL**: https://akademo.alexxvives.workers.dev
+- **When to Deploy**: UI changes, component updates, frontend fixes, page modifications
+
+### 2. Backend API Worker: `akademo-api`
+- **Location**: `workers/akademo-api/`
+- **Purpose**: Hono API backend (all /auth, /live, /classes, /lessons, etc. endpoints)
+- **Deploy Command**:
+  ```powershell
+  cd workers/akademo-api
+  npx wrangler deploy
+  ```
+- **URL**: https://akademo-api.alexxvives.workers.dev
+- **When to Deploy**: API changes, database queries, auth logic, permissions, stream creation, ANY route changes
+
+### ⚠️ DEPLOYMENT CHECKLIST
+
+**For API Changes** (routes, database, permissions):
+1. Deploy API worker **FIRST**: `cd workers/akademo-api; npx wrangler deploy`
+2. Then deploy frontend if needed (see above)
+
+**For Frontend Changes** (UI, components):
+1. Deploy frontend worker only (see above)
+
+**For Both API + Frontend Changes**:
+1. Deploy API worker **FIRST**
+2. Then deploy frontend worker
+
+### 📁 File Path → Worker Mapping
+
+| File Path | Deploy Worker |
+|-----------|---------------|
+| `src/app/` → Frontend | `akademo` |
+| `src/components/` → Frontend | `akademo` |
+| `src/hooks/` → Frontend | `akademo` |
+| `workers/akademo-api/src/` → **API** | **`akademo-api`** |
+| `workers/akademo-api/src/routes/` → **API** | **`akademo-api`** |
+
+**Remember**: Frontend calls `https://akademo-api.alexxvives.workers.dev` for ALL API requests. If you only deploy frontend, API changes won't be live!
 
 ## Critical Development Workflow
 

@@ -19,8 +19,53 @@ auth.get('/me', async (c) => {
     return c.json(errorResponse('Not authenticated'), 401);
   }
 
+  // Check if user has monoacademy access
+  let monoacademy = false;
+  let linkedUserId = null;
+  
+  if (session.role === 'ACADEMY') {
+    // Check if academy has monoacademy flag
+    const academy = await c.env.DB
+      .prepare('SELECT monoacademy FROM Academy WHERE ownerId = ?')
+      .bind(session.id)
+      .first();
+    
+    if (academy?.monoacademy === 1) {
+      monoacademy = true;
+      // Find linked teacher user by email pattern
+      const teacherEmail = `${session.email.split('@')[0]}+teacher@${session.email.split('@')[1]}`;
+      const teacherUser = await c.env.DB
+        .prepare('SELECT id FROM User WHERE email = ?')
+        .bind(teacherEmail)
+        .first();
+      linkedUserId = teacherUser?.id || null;
+    }
+  } else if (session.role === 'TEACHER') {
+    // Check if teacher has monoacademy flag
+    const teacher = await c.env.DB
+      .prepare('SELECT monoacademy, academyId FROM Teacher WHERE userId = ?')
+      .bind(session.id)
+      .first();
+    
+    if (teacher?.monoacademy === 1) {
+      monoacademy = true;
+      // Find linked academy owner by deriving their email
+      const teacherEmail = session.email;
+      const academyEmail = teacherEmail.replace('+teacher@', '@');
+      const academyUser = await c.env.DB
+        .prepare('SELECT id FROM User WHERE email = ? AND role = ?')
+        .bind(academyEmail, 'ACADEMY')
+        .first();
+      linkedUserId = academyUser?.id || null;
+    }
+  }
+
   console.log('[Auth Me] Returning session for user:', session.id);
-  return c.json(successResponse(session));
+  return c.json(successResponse({
+    ...session,
+    monoacademy,
+    linkedUserId,
+  }));
 });
 
 // POST /auth/session/check - Check if session is valid
@@ -48,6 +93,7 @@ auth.post('/register', async (c) => {
       firstName, 
       lastName,
       academyName,    // For ACADEMY role (instead of firstName/lastName)
+      monoacademy = false, // For ACADEMY role - owner is also the only teacher
       role = 'STUDENT',
       academyId,      // For STUDENT and TEACHER
       classId,        // For STUDENT
@@ -111,16 +157,38 @@ auth.post('/register', async (c) => {
     if (role === 'ACADEMY') {
       // Academy owner - create academy with PENDING status
       const newAcademyId = crypto.randomUUID();
+      const monoacademyFlag = monoacademy ? 1 : 0;
       await c.env.DB
-        .prepare('INSERT INTO Academy (id, name, description, ownerId, status) VALUES (?, ?, ?, ?, ?)')
+        .prepare('INSERT INTO Academy (id, name, description, ownerId, status, monoacademy) VALUES (?, ?, ?, ?, ?, ?)')
         .bind(
           newAcademyId,
           academyName,
           `Welcome to ${academyName}`,
           userId,
-          'PENDING'
+          'PENDING',
+          monoacademyFlag
         )
         .run();
+
+      // If monoacademy, create a teacher account for the owner
+      if (monoacademy) {
+        // Create a derived email for the teacher account (not signable independently)
+        const teacherUserId = crypto.randomUUID();
+        const teacherEmail = `${email.split('@')[0]}+teacher@${email.split('@')[1]}`;
+        
+        // Create teacher User account (same password, role TEACHER)
+        await c.env.DB
+          .prepare('INSERT INTO User (id, email, password, firstName, lastName, role) VALUES (?, ?, ?, ?, ?, ?)')
+          .bind(teacherUserId, teacherEmail.toLowerCase(), hashedPassword, userFirstName, userLastName, 'TEACHER')
+          .run();
+        
+        // Create Teacher record linking to academy
+        const teacherId = crypto.randomUUID();
+        await c.env.DB
+          .prepare('INSERT INTO Teacher (id, userId, academyId, status, monoacademy) VALUES (?, ?, ?, ?, ?)')
+          .bind(teacherId, teacherUserId, newAcademyId, 'APPROVED', monoacademyFlag)
+          .run();
+      }
 
       // Send notification email to admins
       const resendApiKey = c.env.RESEND_API_KEY;
@@ -551,6 +619,97 @@ auth.get('/join/academy/:academyId', async (c) => {
   } catch (error: any) {
     console.error('[Academy Join API] Error:', error);
     return c.json(errorResponse(error.message || 'Error al cargar los datos de la academia'), 500);
+  }
+});
+
+// POST /auth/switch-role - Switch between ACADEMY and TEACHER roles (monoacademy only)
+auth.post('/switch-role', async (c) => {
+  try {
+    const session = await getSession(c);
+    if (!session) {
+      return c.json(errorResponse('Not authenticated'), 401);
+    }
+
+    // Only ACADEMY and TEACHER roles can switch
+    if (session.role !== 'ACADEMY' && session.role !== 'TEACHER') {
+      return c.json(errorResponse('Role switching not available for your account'), 403);
+    }
+
+    let linkedUserId = null;
+
+    if (session.role === 'ACADEMY') {
+      // Check if academy has monoacademy flag
+      const academy = await c.env.DB
+        .prepare('SELECT monoacademy FROM Academy WHERE ownerId = ?')
+        .bind(session.id)
+        .first();
+      
+      if (academy?.monoacademy !== 1) {
+        return c.json(errorResponse('Role switching not enabled for your academy'), 403);
+      }
+
+      // Find linked teacher user
+      const teacherEmail = `${session.email.split('@')[0]}+teacher@${session.email.split('@')[1]}`;
+      const teacherUser = await c.env.DB
+        .prepare('SELECT id FROM User WHERE email = ?')
+        .bind(teacherEmail)
+        .first();
+      
+      if (!teacherUser) {
+        return c.json(errorResponse('Teacher account not found'), 404);
+      }
+      
+      linkedUserId = teacherUser.id;
+    } else if (session.role === 'TEACHER') {
+      // Check if teacher has monoacademy flag
+      const teacher = await c.env.DB
+        .prepare('SELECT monoacademy FROM Teacher WHERE userId = ?')
+        .bind(session.id)
+        .first();
+      
+      if (teacher?.monoacademy !== 1) {
+        return c.json(errorResponse('Role switching not enabled for your account'), 403);
+      }
+
+      // Find linked academy owner
+      const teacherEmail = session.email;
+      const academyEmail = teacherEmail.replace('+teacher@', '@');
+      const academyUser = await c.env.DB
+        .prepare('SELECT id FROM User WHERE email = ? AND role = ?')
+        .bind(academyEmail, 'ACADEMY')
+        .first();
+      
+      if (!academyUser) {
+        return c.json(errorResponse('Academy account not found'), 404);
+      }
+      
+      linkedUserId = academyUser.id;
+    }
+
+    // Create new session for the linked user
+    const sessionId = btoa(linkedUserId);
+    setCookie(c, 'academy_session', sessionId, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'Lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/',
+      domain: '.akademo-edu.com',
+    });
+
+    // Get the new user's info
+    const newUser = await c.env.DB
+      .prepare('SELECT id, email, firstName, lastName, role FROM User WHERE id = ?')
+      .bind(linkedUserId)
+      .first();
+
+    return c.json(successResponse({
+      token: sessionId,
+      user: newUser,
+    }));
+  } catch (error: any) {
+    console.error('[Switch Role] Error:', error);
+    return c.json(errorResponse(error.message || 'Failed to switch role'), 500);
   }
 });
 

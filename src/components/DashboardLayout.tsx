@@ -26,6 +26,8 @@ interface User {
   firstName: string;
   lastName: string;
   role: string;
+  monoacademy?: boolean;
+  linkedUserId?: string | null;
 }
 
 interface MenuItem {
@@ -238,6 +240,23 @@ export default function DashboardLayout({
   const handleLogout = async () => {
     await apiClient('/auth/logout', { method: 'POST' });
     router.push('/');
+  };
+
+  const handleSwitchRole = async () => {
+    try {
+      const response = await apiClient('/auth/switch-role', { method: 'POST' });
+      const result = await response.json();
+      
+      if (result.success && result.data?.user) {
+        const newRole = result.data.user.role.toLowerCase();
+        window.location.href = `/dashboard/${newRole}`;
+      } else {
+        alert(result.error || 'Failed to switch role');
+      }
+    } catch (error) {
+      console.error('Failed to switch role:', error);
+      alert('An error occurred while switching roles');
+    }
   };
 
   const copyJoinLink = () => {
@@ -697,6 +716,23 @@ export default function DashboardLayout({
           </div>
         )}
 
+        {/* Role Switcher (MonoAcademy) */}
+        {user?.monoacademy && (role === 'ACADEMY' || role === 'TEACHER') && (
+          <div className="px-3 py-2 border-t border-gray-800/50">
+            <button
+              onClick={handleSwitchRole}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-all"
+            >
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+              </svg>
+              <span className="text-sm font-medium">
+                {role === 'ACADEMY' ? 'Cambiar a Profesor' : 'Cambiar a Academia'}
+              </span>
+            </button>
+          </div>
+        )}
+
         {/* User Profile */}
         {user && (
           <div className="border-t border-gray-800/50 p-4">
@@ -830,6 +866,21 @@ export default function DashboardLayout({
         {/* Mobile User Profile */}
         {user && (
           <div className="absolute bottom-0 left-0 right-0 border-t border-gray-200 p-4 bg-white">
+            {/* Role Switcher (MonoAcademy) */}
+            {user.monoacademy && (role === 'ACADEMY' || role === 'TEACHER') && (
+              <button
+                onClick={handleSwitchRole}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 transition-all mb-3"
+              >
+                <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                </svg>
+                <span className="text-sm font-medium">
+                  {role === 'ACADEMY' ? 'Cambiar a Profesor' : 'Cambiar a Academia'}
+                </span>
+              </button>
+            )}
+
             <div className="flex items-center gap-3 mb-3">
               <div className="w-9 h-9 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center text-sm font-medium text-gray-700">
                 {user.firstName[0]}{user.lastName[0]}
