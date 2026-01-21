@@ -86,23 +86,23 @@ export default function AdminStudents() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filteredStudents.map((student) => (
+                {students.map((student) => (
                   <tr key={student.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="w-10 h-10 bg-brand-100 rounded-full flex items-center justify-center">
                           <span className="text-brand-600 font-medium">
-                            {student.name.charAt(0).toUpperCase()}
+                            {student.firstName.charAt(0).toUpperCase()}
                           </span>
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{student.name}</div>
+                          <div className="text-sm font-medium text-gray-900">{student.firstName} {student.lastName}</div>
                           <div className="text-sm text-gray-500">{student.email}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-900">{student.academyName || '-'}</span>
+                      <span className="text-sm text-gray-900">{student.academyNames || '-'}</span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm text-gray-900">{student.classCount}</span>
