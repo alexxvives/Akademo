@@ -96,11 +96,11 @@ export default function AdminTeachers() {
                       <div className="flex items-center">
                         <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
                           <span className="text-purple-600 font-medium">
-                            {teacher.name.charAt(0).toUpperCase()}
+                            {teacher.firstName.charAt(0).toUpperCase()}
                           </span>
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{teacher.name}</div>
+                          <div className="text-sm font-medium text-gray-900">{teacher.firstName} {teacher.lastName}</div>
                           <div className="text-sm text-gray-500">{teacher.email}</div>
                         </div>
                       </div>
