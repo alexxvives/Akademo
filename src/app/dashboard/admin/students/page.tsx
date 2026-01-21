@@ -1,4 +1,5 @@
 'use client';
+// Force rebuild - removed filteredStudents bug fix
 
 import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
