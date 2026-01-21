@@ -9,18 +9,20 @@
 
 ### Deployment Commands
 ```powershell
+# AUTOMATIC DEPLOYMENT via GitHub Actions:
+# Just push to main branch - both workers auto-deploy!
+
+# Manual deployment (if needed):
 # API Worker (from root)
 cd workers/akademo-api
 npx wrangler deploy --config wrangler.toml
 cd ../..
 
-# Frontend (from root)
-Remove-Item -Recurse -Force .next, .open-next -ErrorAction SilentlyContinue
+# Frontend Worker (from root)
 npx @opennextjs/cloudflare build
 npx wrangler deploy
 
-# Deploy Order: ALWAYS deploy API first if API changed, then frontend
-# IMPORTANT: Always deploy after making changes - we're not working locally!
+# Deploy Order: API first if both changed, then frontend
 ```
 
 ### Database Commands
