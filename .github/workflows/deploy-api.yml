@@ -1,0 +1,53 @@
+name: Deploy API Worker
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'workers/akademo-api/**'
+      - '.github/workflows/deploy-api.yml'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  deploy:
+    name: Deploy to Cloudflare Workers
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'workers/akademo-api/package-lock.json'
+      
+      - name: Install dependencies
+        working-directory: workers/akademo-api
+        run: npm ci
+      
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: 'workers/akademo-api'
+          command: deploy --config wrangler.toml
+          secrets: |
+            BUNNY_STREAM_API_KEY
+            BUNNY_STREAM_TOKEN_KEY
+            ZOOM_ACCOUNT_ID
+            ZOOM_CLIENT_ID
+            ZOOM_CLIENT_SECRET
+            ZOOM_WEBHOOK_SECRET
+            RESEND_API_KEY
+        env:
+          BUNNY_STREAM_API_KEY: ${{ secrets.BUNNY_STREAM_API_KEY }}
+          BUNNY_STREAM_TOKEN_KEY: ${{ secrets.BUNNY_STREAM_TOKEN_KEY }}
+          ZOOM_ACCOUNT_ID: ${{ secrets.ZOOM_ACCOUNT_ID }}
+          ZOOM_CLIENT_ID: ${{ secrets.ZOOM_CLIENT_ID }}
+          ZOOM_CLIENT_SECRET: ${{ secrets.ZOOM_CLIENT_SECRET }}
+          ZOOM_WEBHOOK_SECRET: ${{ secrets.ZOOM_WEBHOOK_SECRET }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
