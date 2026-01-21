@@ -23,6 +23,8 @@ interface EnrolledStudent {
   email: string;
   classId: string;
   className: string;
+  lessonsCompleted?: number;
+  totalLessons?: number;
 }
 
 interface PendingEnrollment {
@@ -79,22 +81,24 @@ export default function AcademyDashboard() {
 
   const loadData = async () => {
     try {
-      const [academiesRes, classesRes, pendingRes, ratingsRes, rejectedRes, streamsRes] = await Promise.all([
+      const [academiesRes, classesRes, pendingRes, ratingsRes, rejectedRes, streamsRes, progressRes] = await Promise.all([
         apiClient('/academies'),
         apiClient('/academies/classes'),
         apiClient('/enrollments/pending'),
         apiClient('/ratings'),
         apiClient('/enrollments/rejected'),
         apiClient('/live/history'),
+        apiClient('/students/progress'), // Load student progress data
       ]);
 
-      const [academiesResult, classesResult, pendingResult, ratingsResult, rejectedResult, streamsResult] = await Promise.all([
+      const [academiesResult, classesResult, pendingResult, ratingsResult, rejectedResult, streamsResult, progressResult] = await Promise.all([
         academiesRes.json(),
         classesRes.json(),
         pendingRes.json(),
         ratingsRes.json(),
         rejectedRes.json(),
         streamsRes.json(),
+        progressRes.json(),
       ]);
 
       if (academiesResult.success && Array.isArray(academiesResult.data) && academiesResult.data.length > 0) {
@@ -134,26 +138,64 @@ export default function AcademyDashboard() {
         const classList = classesResult.data;
         setClasses(classList);
         
-        const allStudents: EnrolledStudent[] = [];
-        for (const cls of classList) {
-          try {
-            const enrollRes = await apiClient(`/enrollments?classId=${cls.id}`);
-            const enrollData = await enrollRes.json();
-            if (enrollData.success && Array.isArray(enrollData.data)) {
-              const studentsInClass = enrollData.data.map((e: any) => ({
-                id: e.student.id,
-                name: `${e.student.firstName} ${e.student.lastName}`,
-                email: e.student.email,
-                classId: cls.id,
-                className: cls.name,
-              }));
-              allStudents.push(...studentsInClass);
+        // Use progress data instead of loading enrollments separately
+        if (progressResult.success && Array.isArray(progressResult.data)) {
+          // Create a map of student ID to classes they're enrolled in
+          const allStudents: EnrolledStudent[] = [];
+          
+          for (const student of progressResult.data) {
+            // Need to get actual classId from enrollments
+            // The progress API doesn't return individual classIds properly
+            try {
+              // Find which classes this student is in
+              for (const cls of classList) {
+                const enrollRes = await apiClient(`/enrollments?classId=${cls.id}`);
+                const enrollData = await enrollRes.json();
+                if (enrollData.success && Array.isArray(enrollData.data)) {
+                  const studentInClass = enrollData.data.find((e: any) => e.student.id === student.id);
+                  if (studentInClass) {
+                    allStudents.push({
+                      id: student.id,
+                      name: `${student.firstName} ${student.lastName}`,
+                      email: student.email,
+                      classId: cls.id, // Correct classId
+                      className: cls.name,
+                      lessonsCompleted: student.lessonsCompleted || 0,
+                      totalLessons: student.totalLessons || 0,
+                    });
+                  }
+                }
+              }
+            } catch (err) {
+              console.error(`Failed to map student ${student.id}:`, err);
             }
-          } catch (err) {
-            console.error(`Failed to load students for class ${cls.id}:`, err);
           }
+          setEnrolledStudents(allStudents);
+        } else {
+          // Fallback to old method if progress API fails
+          const allStudents: EnrolledStudent[] = [];
+          for (const cls of classList) {
+            try {
+              const enrollRes = await apiClient(`/enrollments?classId=${cls.id}`);
+              const enrollData = await enrollRes.json();
+              if (enrollData.success && Array.isArray(enrollData.data)) {
+                const studentsInClass = enrollData.data.map((e: any) => ({
+                  id: e.student.id,
+                  name: `${e.student.firstName} ${e.student.lastName}`,
+                  email: e.student.email,
+                  classId: cls.id,
+                  className: cls.name,
+                  lessonsCompleted: 0,
+                  totalLessons: 0,
+                }));
+                allStudents.push(...studentsInClass);
+              }
+            } catch (err) {
+              console.error(`Failed to load students for class ${cls.id}:`, err);
+            }
+          }
+          setEnrolledStudents(allStudents);
         }
-        setEnrolledStudents(allStudents);
       }
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -186,6 +228,21 @@ export default function AcademyDashboard() {
     if (selectedClass === 'all') return enrolledStudents;
     return enrolledStudents.filter(s => s.classId === selectedClass);
   }, [enrolledStudents, selectedClass]);
+
+  // Calculate average lesson progress for filtered students
+  const avgLessonProgress = useMemo(() => {
+    if (filteredStudents.length === 0) return 0;
+    
+    const studentsWithLessons = filteredStudents.filter(s => s.totalLessons && s.totalLessons > 0);
+    if (studentsWithLessons.length === 0) return 0;
+    
+    const totalProgress = studentsWithLessons.reduce((sum, s) => {
+      const progress = (s.lessonsCompleted || 0) / (s.totalLessons || 1);
+      return sum + progress;
+    }, 0);
+    
+    return Math.round((totalProgress / studentsWithLessons.length) * 100);
+  }, [filteredStudents]);
 
   if (loading) {
     return (
@@ -232,19 +289,19 @@ export default function AcademyDashboard() {
         </div>
 
         {/* Visual Analytics Grid */}
-        {filteredStudents.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Engagement Metrics - TOP LEFT */}
-            <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">Participación</h3>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Engagement Metrics - TOP LEFT */}
+          <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full">
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">Participación</h3>
+            {filteredStudents.length > 0 ? (
               <div className="space-y-4">
                 <div>
                   <div className="flex justify-between mb-2">
                     <span className="text-sm text-gray-600">Progreso Promedio (Lecciones)</span>
-                    <span className="text-sm font-semibold text-gray-900">42%</span>
+                    <span className="text-sm font-semibold text-gray-900">{avgLessonProgress}%</span>
                   </div>
                   <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: '42%', animation: 'slideIn 1s ease-out' }} />
+                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${avgLessonProgress}%`, animation: 'slideIn 1s ease-out' }} />
                   </div>
                 </div>
                 <div>
@@ -284,11 +341,21 @@ export default function AcademyDashboard() {
                   </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-40 text-gray-400">
+                <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <p className="text-sm font-medium">Sin datos de participación</p>
+                <p className="text-xs text-gray-400 mt-1">Espera a que los estudiantes se inscriban</p>
+              </div>
+            )}
+          </div>
 
-            {/* Student Summary - TOP RIGHT */}
-            <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">Estudiantes</h3>
+          {/* Student Summary - TOP RIGHT */}
+          <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full">
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">Estudiantes</h3>
+            {filteredStudents.length > 0 || pendingEnrollments.length > 0 || rejectedCount > 0 ? (
               <div className="space-y-6">
                 <div className="text-center">
                   <AnimatedNumber value={filteredStudents.length} className="text-5xl font-bold text-gray-900 mb-2" />
@@ -321,36 +388,47 @@ export default function AcademyDashboard() {
                   </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-40 text-gray-400">
+                <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                <p className="text-sm font-medium">Sin estudiantes</p>
+                <p className="text-xs text-gray-400 mt-1">Cuando los estudiantes se inscriban aparecerán aquí</p>
+              </div>
+            )}
+          </div>
 
-            {/* Star Ratings Distribution - BOTTOM LEFT (Bar Chart) */}
-            <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">Valoraciones</h3>
-              {ratingsData && ratingsData.overall.totalRatings > 0 ? (
-                <>
-                  <BarChart
-                    data={[
-                      { label: '1★', value: ratingsData.lessons.filter(l => (selectedClass === 'all' || l.classId === selectedClass) && l.averageRating && l.averageRating >= 1 && l.averageRating < 1.5).length, color: '#ef4444' },
-                      { label: '2★', value: ratingsData.lessons.filter(l => (selectedClass === 'all' || l.classId === selectedClass) && l.averageRating && l.averageRating >= 1.5 && l.averageRating < 2.5).length, color: '#f97316' },
-                      { label: '3★', value: ratingsData.lessons.filter(l => (selectedClass === 'all' || l.classId === selectedClass) && l.averageRating && l.averageRating >= 2.5 && l.averageRating < 3.5).length, color: '#a3e635' },
-                      { label: '4★', value: ratingsData.lessons.filter(l => (selectedClass === 'all' || l.classId === selectedClass) && l.averageRating && l.averageRating >= 3.5 && l.averageRating < 4.5).length, color: '#84cc16' },
-                      { label: '5★', value: ratingsData.lessons.filter(l => (selectedClass === 'all' || l.classId === selectedClass) && l.averageRating && l.averageRating >= 4.5).length, color: '#22c55e' },
-                    ]}
-                  />
-                </>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-40 text-gray-400">
-                  <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                  </svg>
-                  <p className="text-sm">Sin valoraciones aún</p>
-                </div>
-              )}
-            </div>
+          {/* Star Ratings Distribution - BOTTOM LEFT (Bar Chart) */}
+          <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full">
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">Valoraciones</h3>
+            {ratingsData && ratingsData.overall.totalRatings > 0 ? (
+              <>
+                <BarChart
+                  data={[
+                    { label: '1★', value: ratingsData.lessons.filter(l => (selectedClass === 'all' || l.classId === selectedClass) && l.averageRating && l.averageRating >= 1 && l.averageRating < 1.5).length, color: '#ef4444' },
+                    { label: '2★', value: ratingsData.lessons.filter(l => (selectedClass === 'all' || l.classId === selectedClass) && l.averageRating && l.averageRating >= 1.5 && l.averageRating < 2.5).length, color: '#f97316' },
+                    { label: '3★', value: ratingsData.lessons.filter(l => (selectedClass === 'all' || l.classId === selectedClass) && l.averageRating && l.averageRating >= 2.5 && l.averageRating < 3.5).length, color: '#a3e635' },
+                    { label: '4★', value: ratingsData.lessons.filter(l => (selectedClass === 'all' || l.classId === selectedClass) && l.averageRating && l.averageRating >= 3.5 && l.averageRating < 4.5).length, color: '#84cc16' },
+                    { label: '5★', value: ratingsData.lessons.filter(l => (selectedClass === 'all' || l.classId === selectedClass) && l.averageRating && l.averageRating >= 4.5).length, color: '#22c55e' },
+                  ]}
+                />
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-40 text-gray-400">
+                <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                </svg>
+                <p className="text-sm font-medium">Sin valoraciones</p>
+                <p className="text-xs text-gray-400 mt-1">Las valoraciones de los estudiantes aparecerán aquí</p>
+              </div>
+            )}
+          </div>
 
-            {/* Student Status - BOTTOM RIGHT (Pie Chart) */}
-            <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">Actividad</h3>
+          {/* Student Status - BOTTOM RIGHT (Pie Chart) */}
+          <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full">
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">Actividad</h3>
+            {filteredStudents.length > 0 ? (
               <div className="h-64 flex items-center justify-center">
                 <DonutChart
                   data={[
@@ -359,19 +437,17 @@ export default function AcademyDashboard() {
                   ]}
                 />
               </div>
-            </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+                <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <p className="text-sm font-medium">Sin datos de actividad</p>
+                <p className="text-xs text-gray-400 mt-1">La actividad de los estudiantes se mostrará aquí</p>
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="bg-white rounded-lg border border-gray-100 p-12 text-center">
-            <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
-              <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            </div>
-            <h3 className="text-sm font-medium text-gray-900 mb-1">Sin estudiantes inscritos</h3>
-            <p className="text-xs text-gray-500">Cuando los estudiantes se inscriban, verás sus datos aquí</p>
-          </div>
-        )}
+        </div>
       </div>
     </>
   );

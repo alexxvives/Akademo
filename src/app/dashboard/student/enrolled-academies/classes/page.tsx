@@ -81,7 +81,11 @@ export default function EnrolledAcademiesClassesPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Unirse a Más Clases</h1>
-          <p className="text-gray-600 text-sm mt-1">Clases disponibles en las academias donde ya estás inscrito</p>
+          <p className="text-gray-600 text-sm mt-1">
+            {classes.length > 0 
+              ? `${classes[0].academyName}${classes.some(c => c.academyName !== classes[0].academyName) ? ' y más' : ''}` 
+              : 'Clases disponibles en las academias donde ya estás inscrito'}
+          </p>
         </div>
       </div>
 
@@ -119,17 +123,17 @@ export default function EnrolledAcademiesClassesPage() {
             }, {} as Record<string, AcademyClass[]>)
           ).map(([academyName, academyClasses]) => (
             <div key={academyName}>
-              <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-                {academyName}
-              </h2>
               <div className="grid gap-4">
                 {academyClasses.map((classItem) => (
                   <div key={classItem.id} className="bg-white border-2 border-gray-200 rounded-xl p-6 hover:border-gray-300 transition-all">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          </svg>
+                          <span className="text-sm text-gray-500">{academyName}</span>
+                        </div>
                         <div className="flex items-center gap-3 mb-3">
                           <h3 className="text-xl font-semibold text-gray-900">{classItem.name}</h3>
                           <span className="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full flex items-center gap-1">

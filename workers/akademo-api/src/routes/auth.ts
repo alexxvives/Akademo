@@ -32,11 +32,10 @@ auth.get('/me', async (c) => {
     
     if (academy?.monoacademy === 1) {
       monoacademy = true;
-      // Find linked teacher user by email pattern
-      const teacherEmail = `${session.email.split('@')[0]}+teacher@${session.email.split('@')[1]}`;
+      // Find linked teacher user (same email, different role)
       const teacherUser = await c.env.DB
-        .prepare('SELECT id FROM User WHERE email = ?')
-        .bind(teacherEmail)
+        .prepare('SELECT id FROM User WHERE email = ? AND role = ?')
+        .bind(session.email, 'TEACHER')
         .first();
       linkedUserId = teacherUser?.id || null;
     }
@@ -49,12 +48,10 @@ auth.get('/me', async (c) => {
     
     if (teacher?.monoacademy === 1) {
       monoacademy = true;
-      // Find linked academy owner by deriving their email
-      const teacherEmail = session.email;
-      const academyEmail = teacherEmail.replace('+teacher@', '@');
+      // Find linked academy owner (same email, different role)
       const academyUser = await c.env.DB
         .prepare('SELECT id FROM User WHERE email = ? AND role = ?')
-        .bind(academyEmail, 'ACADEMY')
+        .bind(session.email, 'ACADEMY')
         .first();
       linkedUserId = academyUser?.id || null;
     }
@@ -158,15 +155,18 @@ auth.post('/register', async (c) => {
       // Academy owner - create academy with PENDING status
       const newAcademyId = crypto.randomUUID();
       const monoacademyFlag = monoacademy ? 1 : 0;
+      const now = new Date().toISOString();
       await c.env.DB
-        .prepare('INSERT INTO Academy (id, name, description, ownerId, status, monoacademy) VALUES (?, ?, ?, ?, ?, ?)')
+        .prepare('INSERT INTO Academy (id, name, description, ownerId, status, monoacademy, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
         .bind(
           newAcademyId,
           academyName,
           `Welcome to ${academyName}`,
           userId,
-          'PENDING',
-          monoacademyFlag
+          'APPROVED', // Auto-approve academies - payment is the only barrier
+          monoacademyFlag,
+          now,
+          now
         )
         .run();
 
@@ -185,47 +185,18 @@ auth.post('/register', async (c) => {
         // Create Teacher record linking to academy
         const teacherId = crypto.randomUUID();
         await c.env.DB
-          .prepare('INSERT INTO Teacher (id, userId, academyId, status, monoacademy) VALUES (?, ?, ?, ?, ?)')
-          .bind(teacherId, teacherUserId, newAcademyId, 'APPROVED', monoacademyFlag)
+          .prepare('INSERT INTO Teacher (id, userId, academyId, status, monoacademy, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?)')
+          .bind(teacherId, teacherUserId, newAcademyId, 'APPROVED', monoacademyFlag, now, now)
           .run();
-      }
-
-      // Send notification email to admins
-      const resendApiKey = c.env.RESEND_API_KEY;
-      if (resendApiKey) {
-        try {
-          await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${resendApiKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              from: 'AKADEMO <onboarding@akademo-edu.com>',
-              to: ['alex@akademo-edu.com', 'david@akademo-edu.com'],
-              subject: `New Academy Owner Signup: ${academyName}`,
-              html: `
-                <div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;\">
-                  <h2 style=\"color: #2563eb;\">New Academy Owner Approval Required</h2>
-                  <p><strong>${academyName}</strong> has signed up as an Academy.</p>
-                  <p><strong>Email:</strong> ${email}</p>
-                  <p><strong>Academy Name:</strong> ${academyName}</p>
-                  <p>Please review and approve/reject this academy in the admin dashboard.</p>
-                </div>
-              `,
-            }),
-          });
-        } catch (emailError) {
-          console.error('[Register] Failed to send admin notification:', emailError);
-        }
       }
 
     } else if (role === 'TEACHER') {
       // Teacher - link to academy with PENDING status
       const teacherId = crypto.randomUUID();
+      const now = new Date().toISOString();
       await c.env.DB
-        .prepare('INSERT INTO Teacher (id, userId, academyId, status) VALUES (?, ?, ?, ?)')
-        .bind(teacherId, userId, academyId, 'PENDING')
+        .prepare('INSERT INTO Teacher (id, userId, academyId, status, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)')
+        .bind(teacherId, userId, academyId, 'PENDING', now, now)
         .run();
 
       // Enroll teacher in selected classes with PENDING status (awaiting academy approval)
@@ -648,11 +619,10 @@ auth.post('/switch-role', async (c) => {
         return c.json(errorResponse('Role switching not enabled for your academy'), 403);
       }
 
-      // Find linked teacher user
-      const teacherEmail = `${session.email.split('@')[0]}+teacher@${session.email.split('@')[1]}`;
+      // Find linked teacher user (same email, different role)
       const teacherUser = await c.env.DB
-        .prepare('SELECT id FROM User WHERE email = ?')
-        .bind(teacherEmail)
+        .prepare('SELECT id FROM User WHERE email = ? AND role = ?')
+        .bind(session.email, 'TEACHER')
         .first();
       
       if (!teacherUser) {
@@ -671,12 +641,10 @@ auth.post('/switch-role', async (c) => {
         return c.json(errorResponse('Role switching not enabled for your account'), 403);
       }
 
-      // Find linked academy owner
-      const teacherEmail = session.email;
-      const academyEmail = teacherEmail.replace('+teacher@', '@');
+      // Find linked academy owner (same email, different role)
       const academyUser = await c.env.DB
         .prepare('SELECT id FROM User WHERE email = ? AND role = ?')
-        .bind(academyEmail, 'ACADEMY')
+        .bind(session.email, 'ACADEMY')
         .first();
       
       if (!academyUser) {

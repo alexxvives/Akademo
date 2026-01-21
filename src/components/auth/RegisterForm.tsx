@@ -1,0 +1,222 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { RoleSelector } from './RoleSelector';
+import { AcademyFields } from './AcademyFields';
+import { StudentTeacherFields } from './StudentTeacherFields';
+import { EmailPasswordSection } from './EmailPasswordSection';
+import { useRegistrationData } from '@/hooks/useRegistrationData';
+import { apiClient } from '@/lib/api-client';
+
+interface RegisterFormProps {
+  onSuccess: (role: string) => void;
+  onSwitchToLogin: () => void;
+  onClose: () => void;
+}
+
+export function RegisterForm({ onSuccess, onSwitchToLogin, onClose }: RegisterFormProps) {
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    firstName: '',
+    lastName: '',
+    role: 'STUDENT',
+    academyId: '',
+    classId: '',
+    classIds: [] as string[],
+    academyName: '',
+    monoacademy: false,
+  });
+  
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [errorShake, setErrorShake] = useState(false);
+  const [showVerification, setShowVerification] = useState(false);
+  const [verificationSuccess, setVerificationSuccess] = useState(false);
+
+  const {
+    academies,
+    classes,
+    loadingAcademies,
+    loadingClasses,
+  } = useRegistrationData(formData.role, formData.academyId);
+
+  useEffect(() => {
+    if (error) {
+      setErrorShake(true);
+      setTimeout(() => setErrorShake(false), 500);
+    }
+  }, [error]);
+
+  const sendVerificationCode = async () => {
+    try {
+      const res = await apiClient('/auth/send-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to send verification code');
+      }
+    } catch (err: any) {
+      throw err;
+    }
+  };
+
+  const proceedWithRegistration = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const payload = {
+        email: formData.email,
+        password: formData.password,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        role: formData.role,
+        academyId: formData.academyId,
+        classId: formData.classId,
+        classIds: formData.classIds,
+        academyName: formData.academyName,
+        monoacademy: formData.monoacademy,
+      };
+
+      const response = await apiClient('/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        if (result.data?.token) {
+          localStorage.setItem('auth_token', result.data.token);
+        }
+
+        onClose();
+        
+        if (result.data?.role) {
+          const role = result.data.role.toLowerCase();
+          window.location.href = `/dashboard/${role}`;
+          onSuccess(role);
+        } else {
+          console.error('Registration response:', result);
+          setError('Failed to load user data. Please try again.');
+        }
+      } else {
+        setError(result.error || 'Registration failed');
+      }
+    } catch (err) {
+      setError('An error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      if (formData.role === 'STUDENT' && !showVerification && !verificationSuccess) {
+        try {
+          await sendVerificationCode();
+          setShowVerification(true);
+        } catch (err: any) {
+          setError(err.message || 'Failed to send verification code');
+        }
+        setLoading(false);
+        return;
+      }
+
+      if (formData.role === 'STUDENT' && !verificationSuccess) {
+        setError('Please verify your email first');
+        setLoading(false);
+        return;
+      }
+
+      await proceedWithRegistration();
+    } catch (err) {
+      setError('An error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRoleChange = (newRole: string) => {
+    setFormData({ ...formData, role: newRole, academyId: '', classId: '', classIds: [], academyName: '' });
+  };
+
+  return (
+    <div>
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-gray-900">Crear cuenta</h2>
+        <p className="text-gray-600 text-sm mt-1">Únete a AKADEMO hoy</p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <RoleSelector role={formData.role} onChange={handleRoleChange} />
+
+        {formData.role === 'ACADEMY' ? (
+          <AcademyFields 
+            academyName={formData.academyName}
+            monoacademy={formData.monoacademy}
+            onAcademyNameChange={(name) => setFormData({ ...formData, academyName: name })}
+            onMonoacademyChange={(value) => setFormData({ ...formData, monoacademy: value })}
+          />
+        ) : (
+          <StudentTeacherFields 
+            role={formData.role as 'STUDENT' | 'TEACHER'}
+            firstName={formData.firstName}
+            lastName={formData.lastName}
+            academyId={formData.academyId}
+            classId={formData.classId}
+            classIds={formData.classIds}
+            academies={academies}
+            classes={classes}
+            loadingAcademies={loadingAcademies}
+            loadingClasses={loadingClasses}
+            onFirstNameChange={(name) => setFormData({ ...formData, firstName: name })}
+            onLastNameChange={(name) => setFormData({ ...formData, lastName: name })}
+            onAcademyChange={(id) => setFormData({ ...formData, academyId: id, classId: '', classIds: [] })}
+            onClassChange={(id) => setFormData({ ...formData, classId: id })}
+            onClassIdsChange={(ids) => setFormData({ ...formData, classIds: ids })}
+          />
+        )}
+
+        <EmailPasswordSection 
+          email={formData.email}
+          password={formData.password}
+          role={formData.role}
+          showVerification={showVerification}
+          verificationSuccess={verificationSuccess}
+          loading={loading}
+          error={error}
+          errorShake={errorShake}
+          onEmailChange={(email) => setFormData({ ...formData, email })}
+          onPasswordChange={(password) => setFormData({ ...formData, password })}
+          onVerified={() => {
+            setVerificationSuccess(true);
+            proceedWithRegistration();
+          }}
+          onChangeEmail={() => {
+            setShowVerification(false);
+            setVerificationSuccess(false);
+          }}
+        />
+      </form>
+
+      <div className="mt-6 text-center">
+        <p className="text-sm text-gray-600">
+          Already have an account?
+          <button onClick={onSwitchToLogin} className="ml-1 text-brand-600 hover:text-brand-700 font-medium">
+            Sign In
+          </button>
+        </p>
+      </div>
+    </div>
+  );
+}

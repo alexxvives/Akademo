@@ -17,12 +17,13 @@ import {
 } from '@/components/ui';
 import { UsersIcon } from '@/components/ui/UsersIcon';
 import { BotMessageSquareIcon } from '@/components/ui/BotMessageSquareIcon';
+import { HandCoinsIcon } from '@/components/ui/HandCoinsIcon';
 
 interface MenuItem {
   label: string;
   href: string;
   icon?: JSX.Element;
-  iconType?: 'chart' | 'book' | 'userPlus' | 'message' | 'clap' | 'fileText' | 'clipboard' | 'activity' | 'users' | 'botMessage';
+  iconType?: 'chart' | 'book' | 'userPlus' | 'message' | 'clap' | 'fileText' | 'clipboard' | 'activity' | 'users' | 'botMessage' | 'handCoins';
   badge?: number;
   matchPaths?: string[];
 }
@@ -91,6 +92,8 @@ export function Sidebar({
       return <UsersIcon ref={iconRef} size={20} />;
     } else if (iconType === 'botMessage') {
       return <BotMessageSquareIcon ref={iconRef} size={20} />;
+    } else if (iconType === 'handCoins') {
+      return <HandCoinsIcon ref={iconRef} size={20} />;
     } else if (item.icon) {
       return item.icon;
     }
@@ -125,6 +128,18 @@ export function Sidebar({
           const hasLiveStream = role === 'STUDENT' && item.label === 'Mis Clases' && activeStreams.length > 0;
           const iconRef = iconRefs.current[item.href];
 
+          const handleMouseEnter = () => {
+            if (iconRef?.current?.startAnimation) {
+              iconRef.current.startAnimation();
+            }
+          };
+
+          const handleMouseLeave = () => {
+            if (iconRef?.current?.stopAnimation) {
+              iconRef.current.stopAnimation();
+            }
+          };
+
           return (
             <Link
               key={item.href}
@@ -134,16 +149,8 @@ export function Sidebar({
                   ? 'bg-gray-800/50 text-white'
                   : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'
               }`}
-              onMouseEnter={() => {
-                if (iconRef.current?.startAnimation) {
-                  iconRef.current.startAnimation();
-                }
-              }}
-              onMouseLeave={() => {
-                if (iconRef.current?.stopAnimation) {
-                  iconRef.current.stopAnimation();
-                }
-              }}
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
             >
               {isActive && (
                 <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[#b1e787] rounded-r-full" />
@@ -191,6 +198,23 @@ export function Sidebar({
         )}
       </div>
 
+      {/* Role Switcher (MonoAcademy) - Moved to top */}
+      {user?.monoacademy && (role === 'ACADEMY' || role === 'TEACHER') && (
+        <div className="px-3 py-2 border-t border-gray-800/50">
+          <button
+            onClick={onSwitchRole}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-all"
+          >
+            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+            </svg>
+            <span className="text-sm font-medium">
+              {role === 'ACADEMY' ? 'Cambiar a Profesor' : 'Cambiar a Academia'}
+            </span>
+          </button>
+        </div>
+      )}
+
       {/* Academy Invite Link */}
       {role === 'ACADEMY' && academyId && (
         <div className="px-3 py-2 border-t border-gray-800/50">
@@ -228,23 +252,6 @@ export function Sidebar({
             <LinkIcon ref={linkIconRef} size={20} className="flex-shrink-0" />
             <span className="text-sm font-medium truncate">
               {linkCopied ? '¡Enlace copiado!' : 'Copiar enlace de invitación'}
-            </span>
-          </button>
-        </div>
-      )}
-
-      {/* Role Switcher (MonoAcademy) */}
-      {user?.monoacademy && (role === 'ACADEMY' || role === 'TEACHER') && (
-        <div className="px-3 py-2 border-t border-gray-800/50">
-          <button
-            onClick={onSwitchRole}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-all"
-          >
-            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-            </svg>
-            <span className="text-sm font-medium">
-              {role === 'ACADEMY' ? 'Cambiar a Profesor' : 'Cambiar a Academia'}
             </span>
           </button>
         </div>

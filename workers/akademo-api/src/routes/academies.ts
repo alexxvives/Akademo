@@ -109,9 +109,10 @@ academies.post('/', async (c) => {
     }
 
     const academyId = crypto.randomUUID();
+    const now = new Date().toISOString();
     await c.env.DB
-      .prepare('INSERT INTO Academy (id, name, description, ownerId) VALUES (?, ?, ?, ?)')
-      .bind(academyId, name, description || null, session.id)
+      .prepare('INSERT INTO Academy (id, name, description, ownerId, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)')
+      .bind(academyId, name, description || null, session.id, now, now)
       .run();
 
     const academy = await c.env.DB
@@ -190,11 +191,16 @@ academies.post('/teachers', async (c) => {
       return c.json(errorResponse('Only academy owners can create teachers'), 403);
     }
 
-    const { email, firstName, lastName, password } = await c.req.json();
+    const { email, fullName, password } = await c.req.json();
 
-    if (!email || !firstName || !lastName || !password) {
-      return c.json(errorResponse('Missing required fields'), 400);
+    if (!email || !fullName || !password) {
+      return c.json(errorResponse('Email, nombre completo y contraseña son requeridos'), 400);
     }
+
+    // Split fullName into firstName and lastName
+    const nameParts = fullName.trim().split(/\s+/);
+    const firstName = nameParts[0];
+    const lastName = nameParts.slice(1).join(' ') || nameParts[0]; // Use firstName as lastName if only one name provided
 
     if (password.length < 6) {
       return c.json(errorResponse('Password must be at least 6 characters'), 400);
@@ -230,14 +236,14 @@ academies.post('/teachers', async (c) => {
     // Create user
     const userId = crypto.randomUUID();
     await c.env.DB.prepare(
-      `INSERT INTO User (id, email, firstName, lastName, passwordHash, role, createdAt)
+      `INSERT INTO User (id, email, firstName, lastName, password, role, createdAt)
        VALUES (?, ?, ?, ?, ?, 'TEACHER', datetime('now'))`
     ).bind(userId, email, firstName, lastName, passwordHash).run();
 
     // Create teacher record linking to academy
     await c.env.DB.prepare(
-      `INSERT INTO Teacher (id, userId, academyId, createdAt)
-       VALUES (?, ?, ?, datetime('now'))`
+      `INSERT INTO Teacher (id, userId, academyId, createdAt, updatedAt)
+       VALUES (?, ?, ?, datetime('now'), datetime('now'))`
     ).bind(crypto.randomUUID(), userId, academyId).run();
 
     return c.json(successResponse({ 

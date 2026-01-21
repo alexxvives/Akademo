@@ -263,6 +263,7 @@ ratings.get('/', async (c) => {
         SELECT 
           l.id as lessonId,
           l.title as lessonTitle,
+          c.id as classId,
           c.name as className,
           COALESCE(AVG(lr.rating), 0) as averageRating,
           COUNT(lr.id) as ratingCount
@@ -270,7 +271,7 @@ ratings.get('/', async (c) => {
         JOIN Lesson l ON l.classId = c.id
         LEFT JOIN LessonRating lr ON lr.lessonId = l.id
         ${whereClause}
-        GROUP BY l.id, l.title, c.name
+        GROUP BY l.id, l.title, c.id, c.name
         HAVING COUNT(lr.id) > 0
         ORDER BY c.name, l.title
     `).bind(...queryParams).all();

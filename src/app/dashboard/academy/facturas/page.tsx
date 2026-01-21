@@ -1,45 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-
 export default function FacturasPage() {
-  const [loading, setLoading] = useState(false);
-
-  const handleCheckout = async () => {
-    setLoading(true);
-    try {
-      console.log('[Stripe] Creating checkout session...');
-      // Call our API to create a Stripe checkout session
-      const response = await fetch('/api/stripe/create-checkout-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          priceId: 'price_1Sr94eGnG2OZ2dGGTyFRHtAs', // Your Stripe Price ID (create one in Stripe Dashboard)
-          successUrl: `${window.location.origin}/dashboard/academy/facturas?success=true`,
-          cancelUrl: `${window.location.origin}/dashboard/academy/facturas?canceled=true`,
-        }),
-      });
-
-      console.log('[Stripe] Response status:', response.status);
-      const data = await response.json();
-      console.log('[Stripe] Response data:', data);
-      
-      if (data.url) {
-        console.log('[Stripe] Redirecting to checkout...');
-        // Redirect to Stripe Checkout
-        window.location.href = data.url;
-      } else if (data.error) {
-        console.error('[Stripe] API Error:', data.error);
-        alert(`Error: ${data.error}`);
-      } else {
-        alert('Error: No se recibió URL de pago');
-      }
-    } catch (error) {
-      console.error('[Stripe] Exception:', error);
-      alert('Error al crear la sesión de pago');
-    } finally {
-      setLoading(false);
-    }
+  const handleCheckout = () => {
+    // Redirect directly to Stripe payment link
+    window.location.href = 'https://buy.stripe.com/test_7sYcN55YBghq2MP5YD9bO00';
   };
 
   return (
@@ -89,10 +53,9 @@ export default function FacturasPage() {
 
         <button
           onClick={handleCheckout}
-          disabled={loading}
-          className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
         >
-          {loading ? 'Cargando...' : 'Proceder al Pago'}
+          Proceder al Pago
         </button>
 
         <p className="text-sm text-gray-500 mt-4 text-center">

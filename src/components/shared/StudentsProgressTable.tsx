@@ -68,12 +68,16 @@ export function StudentsProgressTable({
   const chartData = useMemo(() => {
     return filteredStudents
       .slice(0, 10)
-      .map(student => {
+      .map((student, index) => {
         const parts = student.name.split(' ');
         const firstName = parts[0];
         const lastName = parts.slice(1).join(' ');
+        // Create unique display name by adding index if duplicate firstNames exist
+        const displayName = `${firstName}_${index}`;
         return {
-          name: firstName,
+          id: student.id,
+          name: displayName, // Unique identifier for X-axis
+          displayFirstName: firstName, // For display
           lastName: lastName,
           fullName: student.name,
           minutes: student.totalWatchTime,
@@ -121,22 +125,26 @@ export function StudentsProgressTable({
               <XAxis 
                 dataKey="name" 
                 stroke="#6b7280"
-                tick={({ x, y, payload }) => (
-                  <text x={x} y={y} textAnchor="middle" fill="#6b7280">
-                    <tspan x={x} dy="0.71em" fontSize="12">{payload.value}</tspan>
-                    <tspan x={x} dy="1.2em" fontSize="11">{chartData.find(d => d.name === payload.value)?.lastName}</tspan>
-                  </text>
-                )}
+                tick={({ x, y, payload }) => {
+                  const dataPoint = chartData.find(d => d.name === payload.value);
+                  return (
+                    <text x={x} y={y} textAnchor="middle" fill="#6b7280">
+                      <tspan x={x} dy="0.71em" fontSize="12">{dataPoint?.displayFirstName}</tspan>
+                      <tspan x={x} dy="1.2em" fontSize="11">{dataPoint?.lastName}</tspan>
+                    </text>
+                  );
+                }}
                 height={50}
               />
               <YAxis stroke="#6b7280" />
               <Tooltip
                 content={({ payload }) => {
                   if (payload && payload[0]) {
+                    const data = payload[0].payload;
                     return (
                       <div className="bg-white p-3 rounded-lg shadow-lg border border-gray-200">
-                        <p className="font-medium text-gray-900">{payload[0].payload.fullName}</p>
-                        <p className="text-sm text-gray-600">{formatTime(payload[0].value as number)}</p>
+                        <p className="font-medium text-gray-900">{data.fullName}</p>
+                        <p className="text-sm text-gray-600">{formatTime(data.minutes)}</p>
                       </div>
                     );
                   }
@@ -144,8 +152,8 @@ export function StudentsProgressTable({
                 }}
               />
               <Bar dataKey="minutes" radius={[8, 8, 0, 0]}>
-                {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill="#6366f1" />
+                {chartData.map((entry) => (
+                  <Cell key={`cell-${entry.id}`} fill="#6366f1" />
                 ))}
               </Bar>
             </BarChart>

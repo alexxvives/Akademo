@@ -1,200 +1,30 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
-import Link from 'next/link';
-import { BarChart, DonutChart, StatCard } from '@/components/Charts';
+import { useState, useMemo } from 'react';
 import { apiClient } from '@/lib/api-client';
-import { useAnimatedNumber } from '@/hooks';
-
-interface Academy {
-  id: string;
-  name: string;
-  description: string | null;
-}
-
-interface Membership {
-  id: string;
-  status: string;
-  academyName: string;
-  academyDescription: string | null;
-  requestedAt: string;
-}
-
-interface Class {
-  id: string;
-  name: string;
-  slug?: string | null;
-  description: string | null;
-  academyName: string;
-  enrollmentCount: number;
-  students?: Student[];
-}
-
-interface Student {
-  id: string;
-  name: string;
-  email: string;
-}
-
-interface EnrolledStudent {
-  id: string;
-  name: string;
-  email: string;
-  classId: string;
-  className: string;
-}
-
-interface PendingEnrollment {
-  id: string;
-  student: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
-  class: {
-    id: string;
-    name: string;
-  };
-  enrolledAt: string;
-}
-
-interface RatingsData {
-  overall: {
-    averageRating: number | null;
-    totalRatings: number;
-    ratedLessons: number;
-  };
-  lessons: Array<{
-    lessonId: string;
-    lessonTitle: string;
-    className: string;
-    classId: string;
-    averageRating: number | null;
-    ratingCount: number;
-  }>;
-}
-
-// Animated Number Component
-function AnimatedNumber({ value, className }: { value: number; className?: string }) {
-  const animatedValue = useAnimatedNumber(value);
-  return <div className={className}>{animatedValue}</div>;
-}
+import { useTeacherDashboard } from '@/hooks/useTeacherDashboard';
+import { TeacherDashboardHeader } from './components/TeacherDashboardHeader';
+import { JoinAcademyPrompt } from './components/JoinAcademyPrompt';
+import { BrowseAcademies } from './components/BrowseAcademies';
+import { DashboardChartsGrid } from './components/DashboardChartsGrid';
 
 export default function TeacherDashboard() {
-  const [memberships, setMemberships] = useState<Membership[]>([]);
-  const [availableAcademies, setAvailableAcademies] = useState<Academy[]>([]);
-  const [classes, setClasses] = useState<Class[]>([]);
-  const [enrolledStudents, setEnrolledStudents] = useState<EnrolledStudent[]>([]);
-  const [pendingEnrollments, setPendingEnrollments] = useState<PendingEnrollment[]>([]);
-  const [ratingsData, setRatingsData] = useState<RatingsData | null>(null);
-  const [academyName, setAcademyName] = useState<string>('');
+  const {
+    memberships,
+    availableAcademies,
+    classes,
+    enrolledStudents,
+    pendingEnrollments,
+    ratingsData,
+    academyName,
+    loading,
+    rejectedCount,
+    streamStats,
+    loadData,
+  } = useTeacherDashboard();
+
   const [showBrowse, setShowBrowse] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [rejectedCount, setRejectedCount] = useState(0);
-  const [streamStats, setStreamStats] = useState({ total: 0, avgParticipants: 0, thisMonth: 0, totalHours: 0 });
   const [selectedClass, setSelectedClass] = useState('all');
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    try {
-      const [membershipsRes, academiesRes, classesRes, pendingRes, ratingsRes, rejectedRes, streamsRes] = await Promise.all([
-        apiClient('/requests/teacher'),
-        apiClient('/explore/academies'),
-        apiClient('/classes'),
-        apiClient('/enrollments/pending'),
-        apiClient('/ratings'),
-        apiClient('/enrollments/rejected'),
-        apiClient('/live/history'),
-      ]);
-
-      const [membershipsResult, academiesResult, classesResult, pendingResult, ratingsResult, rejectedResult, streamsResult] = await Promise.all([
-        membershipsRes.json(),
-        academiesRes.json(),
-        classesRes.json(),
-        pendingRes.json(),
-        ratingsRes.json(),
-        rejectedRes.json(),
-        streamsRes.json(),
-      ]);
-
-      if (rejectedResult.success && rejectedResult.data) {
-        setRejectedCount(rejectedResult.data.count || 0);
-      }
-
-      // Calculate stream statistics
-      if (streamsResult.success && Array.isArray(streamsResult.data)) {
-        const streams = streamsResult.data;
-        const now = new Date();
-        const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-        const thisMonthStreams = streams.filter((s: any) => new Date(s.createdAt) >= thisMonthStart);
-        
-        const totalParticipants = streams.reduce((sum: number, s: any) => sum + (s.participantCount || 0), 0);
-        const totalDuration = streams.reduce((sum: number, s: any) => sum + (s.durationMinutes || 0), 0);
-        
-        setStreamStats({
-          total: streams.length,
-          avgParticipants: streams.length > 0 ? Math.round(totalParticipants / streams.length) : 0,
-          thisMonth: thisMonthStreams.length,
-          totalHours: Math.round(totalDuration / 60),
-        });
-      }
-
-      if (Array.isArray(membershipsResult)) {
-        setMemberships(membershipsResult);
-        // Set academy name from first membership
-        if (membershipsResult.length > 0) {
-          setAcademyName(membershipsResult[0].academyName);
-        }
-      }
-      
-      if (Array.isArray(academiesResult)) {
-        setAvailableAcademies(academiesResult);
-      }
-
-      if (pendingResult.success && Array.isArray(pendingResult.data)) {
-        setPendingEnrollments(pendingResult.data);
-      }
-
-      if (ratingsResult.success) {
-        setRatingsData(ratingsResult.data);
-      }
-
-      if (classesResult.success && Array.isArray(classesResult.data)) {
-        const classList = classesResult.data;
-        setClasses(classList);
-        
-        // Fetch students for all classes
-        const allStudents: EnrolledStudent[] = [];
-        for (const cls of classList) {
-          try {
-            const enrollRes = await apiClient(`/enrollments?classId=${cls.id}`);
-            const enrollData = await enrollRes.json();
-            if (enrollData.success && Array.isArray(enrollData.data)) {
-              const studentsInClass = enrollData.data.map((e: any) => ({
-                id: e.student.id,
-                name: `${e.student.firstName} ${e.student.lastName}`,
-                email: e.student.email,
-                classId: cls.id,
-                className: cls.name,
-              }));
-              allStudents.push(...studentsInClass);
-            }
-          } catch (err) {
-            console.error(`Failed to load students for class ${cls.id}:`, err);
-          }
-        }
-        setEnrolledStudents(allStudents);
-      }
-    } catch (error) {
-      console.error('Failed to load data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleRequestMembership = async (academyId: string) => {
     try {
@@ -218,26 +48,6 @@ export default function TeacherDashboard() {
     }
   };
 
-  const handleEnrollmentAction = async (enrollmentId: string, action: 'approve' | 'reject') => {
-    try {
-      const response = await apiClient('/enrollments/pending', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enrollmentId, action }),
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        loadData();
-      } else {
-        alert(result.error || 'Failed to process request');
-      }
-    } catch (error) {
-      alert('An error occurred');
-    }
-  };
-
   const approvedMemberships = memberships.filter(m => m.status === 'APPROVED');
   const hasAcademy = approvedMemberships.length > 0;
 
@@ -246,278 +56,49 @@ export default function TeacherDashboard() {
     return enrolledStudents.filter(s => s.classId === selectedClass);
   }, [enrolledStudents, selectedClass]);
 
-  // Don't show "Join Academy" screen if teacher already has an approved membership
-  // or if they're currently browsing academies
   const shouldShowJoinPrompt = !hasAcademy && !showBrowse && memberships.length === 0;
 
   if (loading) {
     return (
-      <>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="w-6 h-6 border-2 border-gray-200 border-t-blue-600 rounded-full animate-spin" />
-        </div>
-      </>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="w-6 h-6 border-2 border-gray-200 border-t-blue-600 rounded-full animate-spin" />
+      </div>
     );
   }
 
   if (shouldShowJoinPrompt) {
-    return (
-      <>
-        <div className="max-w-2xl mx-auto mt-20">
-          <div className="bg-white border-2 border-dashed border-gray-300 rounded-2xl p-12 text-center">
-            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">Join an Academy First</h2>
-            <p className="text-gray-600 mb-8">
-              You need to be part of an academy before you can create classes and manage students.
-            </p>
-            <button
-              onClick={() => setShowBrowse(true)}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 font-medium transition-all"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              Browse Academies
-            </button>
-          </div>
-        </div>
-      </>
-    );
+    return <JoinAcademyPrompt onBrowse={() => setShowBrowse(true)} />;
   }
 
   if (showBrowse) {
     return (
-      <>
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">Browse Academies</h1>
-            <button
-              onClick={() => setShowBrowse(false)}
-              className="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
-            >
-              ← Back
-            </button>
-          </div>
-
-          <div className="grid gap-4">
-            {availableAcademies.map((academy: any) => {
-              const alreadyRequested = memberships.some(m => m.academyName === academy.name);
-              return (
-                <div key={academy.id} className="bg-white border border-gray-200 rounded-xl p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">{academy.name}</h3>
-                      {academy.description && (
-                        <p className="text-gray-600 text-sm">{academy.description}</p>
-                      )}
-                    </div>
-                    {!alreadyRequested ? (
-                      <button
-                        onClick={() => handleRequestMembership(academy.id)}
-                        className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium text-sm"
-                      >
-                        Request to Join
-                      </button>
-                    ) : (
-                      <span className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium">
-                        {memberships.find(m => m.academyName === academy.name)?.status === 'APPROVED' ? 'Member' : 'Pending'}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </>
+      <BrowseAcademies
+        academies={availableAcademies}
+        memberships={memberships}
+        onBack={() => setShowBrowse(false)}
+        onRequest={handleRequestMembership}
+      />
     );
   }
 
   return (
-    <>
-      <div className="w-full space-y-6">
-        {/* Page Header with Class Filter */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Panel de Control</h1>
-            {hasAcademy && academyName && (
-              <p className="text-sm text-gray-500 mt-1">{academyName}</p>
-            )}
-          </div>
-          
-          {/* Class Filter */}
-          {classes.length > 0 && (
-            <div className='relative'>
-              <select
-                value={selectedClass}
-                onChange={(e) => setSelectedClass(e.target.value)}
-                className='appearance-none w-full md:w-56 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent'
-              >
-                <option value='all'>Todas las clases</option>
-                {classes.map((cls) => (
-                  <option key={cls.id} value={cls.id}>{cls.name}</option>
-                ))}
-              </select>
-              <div className='pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500'>
-                <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                  <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 9l-7 7-7-7' />
-                </svg>
-              </div>
-            </div>
-          )}
-        </div>
+    <div className="w-full space-y-6">
+      <TeacherDashboardHeader
+        academyName={academyName}
+        hasAcademy={hasAcademy}
+        classes={classes}
+        selectedClass={selectedClass}
+        onClassChange={setSelectedClass}
+      />
 
-        {/* Visual Analytics Grid */}
-        {filteredStudents.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Engagement Metrics - TOP LEFT (moved from right) */}
-            <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">Participación</h3>
-              <div className="space-y-4">
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-sm text-gray-600">Progreso Promedio (Lecciones)</span>
-                    <span className="text-sm font-semibold text-gray-900">42%</span>
-                  </div>
-                  <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: '42%', animation: 'slideIn 1s ease-out' }} />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-sm text-gray-600">Asistencia Promedio (Streams)</span>
-                    <span className="text-sm font-semibold text-gray-900">
-                      {streamStats.total > 0 && filteredStudents.length > 0
-                        ? Math.round((streamStats.avgParticipants / filteredStudents.length) * 100)
-                        : 0}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                    <div 
-                      className="bg-purple-500 h-2 rounded-full" 
-                      style={{ 
-                        width: `${streamStats.total > 0 && filteredStudents.length > 0
-                          ? Math.round((streamStats.avgParticipants / filteredStudents.length) * 100)
-                          : 0}%`, 
-                        animation: 'slideIn 1s ease-out 0.1s backwards' 
-                      }} 
-                    />
-                  </div>
-                </div>
-                <style jsx>{`
-                  @keyframes slideIn {
-                    from {
-                      width: 0;
-                    }
-                  }
-                `}</style>
-                <div className="pt-3 border-t border-gray-100">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Tiempo de visualización total</span>
-                    <span className="text-sm font-semibold text-gray-900">
-                      {Math.round(filteredStudents.length * 4.5)}h
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Student Summary - TOP RIGHT (moved from left) */}
-            <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">Estudiantes</h3>
-              <div className="space-y-6">
-                <div className="text-center">
-                  <AnimatedNumber value={filteredStudents.length} className="text-5xl font-bold text-gray-900 mb-2" />
-                  <div className="text-sm text-gray-500">estudiantes {selectedClass === 'all' ? 'totales' : 'en esta clase'}</div>
-                </div>
-                <div className="flex justify-between gap-4 pt-4 border-t border-gray-100">
-                  <div className="flex-1 text-center group/accepted relative cursor-help">
-                    <AnimatedNumber value={filteredStudents.length} className="text-2xl font-bold text-green-600" />
-                    <div className="text-xs text-gray-500">aceptados</div>
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800 text-slate-200 text-xs rounded-lg shadow-xl border border-slate-700 opacity-0 invisible group-hover/accepted:opacity-100 group-hover/accepted:visible transition-all duration-200 whitespace-nowrap z-20">
-                      <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-2 h-2 bg-slate-800 border-b border-r border-slate-700 rotate-45"></div>
-                      Estudiantes aprobados
-                    </div>
-                  </div>
-                  <div className="flex-1 text-center group/pending relative cursor-help">
-                    <AnimatedNumber value={pendingEnrollments.length} className="text-2xl font-bold text-amber-600" />
-                    <div className="text-xs text-gray-500">pendientes</div>
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800 text-slate-200 text-xs rounded-lg shadow-xl border border-slate-700 opacity-0 invisible group-hover/pending:opacity-100 group-hover/pending:visible transition-all duration-200 whitespace-nowrap z-20">
-                      <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-2 h-2 bg-slate-800 border-b border-r border-slate-700 rotate-45"></div>
-                      Esperando aprobación
-                    </div>
-                  </div>
-                  <div className="flex-1 text-center group/rejected relative cursor-help">
-                    <AnimatedNumber value={rejectedCount} className="text-2xl font-bold text-red-600" />
-                    <div className="text-xs text-gray-500">rechazados</div>
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800 text-slate-200 text-xs rounded-lg shadow-xl border border-slate-700 opacity-0 invisible group-hover/rejected:opacity-100 group-hover/rejected:visible transition-all duration-200 whitespace-nowrap z-20">
-                      <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-2 h-2 bg-slate-800 border-b border-r border-slate-700 rotate-45"></div>
-                      Solicitudes denegadas
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Star Ratings Distribution - BOTTOM LEFT (Bar Chart) */}
-            <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">Valoraciones</h3>
-              {ratingsData && ratingsData.overall.totalRatings > 0 ? (
-                <>
-                  <BarChart
-                    data={[
-                      { label: '1★', value: ratingsData.lessons.filter(l => (selectedClass === 'all' || l.classId === selectedClass) && l.averageRating && l.averageRating >= 1 && l.averageRating < 1.5).length, color: '#ef4444' },
-                      { label: '2★', value: ratingsData.lessons.filter(l => (selectedClass === 'all' || l.classId === selectedClass) && l.averageRating && l.averageRating >= 1.5 && l.averageRating < 2.5).length, color: '#f97316' },
-                      { label: '3★', value: ratingsData.lessons.filter(l => (selectedClass === 'all' || l.classId === selectedClass) && l.averageRating && l.averageRating >= 2.5 && l.averageRating < 3.5).length, color: '#a3e635' },
-                      { label: '4★', value: ratingsData.lessons.filter(l => (selectedClass === 'all' || l.classId === selectedClass) && l.averageRating && l.averageRating >= 3.5 && l.averageRating < 4.5).length, color: '#84cc16' },
-                      { label: '5★', value: ratingsData.lessons.filter(l => (selectedClass === 'all' || l.classId === selectedClass) && l.averageRating && l.averageRating >= 4.5).length, color: '#22c55e' },
-                    ]}
-                  />
-                </>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-40 text-gray-400">
-                  <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                  </svg>
-                  <p className="text-sm">Sin valoraciones aún</p>
-                </div>
-              )}
-            </div>
-
-            {/* Student Status - BOTTOM RIGHT (Pie Chart) */}
-            <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">Actividad</h3>
-              <div className="h-64 flex items-center justify-center">
-                <DonutChart
-                  size={250}
-                  data={[
-                    { label: 'Activos', value: Math.round(filteredStudents.length * 0.65), color: '#22c55e' },
-                    { label: 'Inactivos', value: Math.round(filteredStudents.length * 0.35), color: '#ef4444' },
-                  ]}
-                />
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="bg-white rounded-lg border border-gray-100 p-12 text-center">
-            <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
-              <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            </div>
-            <h3 className="text-sm font-medium text-gray-900 mb-1">Sin estudiantes inscritos</h3>
-            <p className="text-xs text-gray-500">Cuando los estudiantes se inscriban, verás sus datos aquí</p>
-          </div>
-        )}
-
-
-
-
-      </div>
-    </>
+      <DashboardChartsGrid
+        filteredStudents={filteredStudents}
+        pendingEnrollments={pendingEnrollments}
+        rejectedCount={rejectedCount}
+        streamStats={streamStats}
+        ratingsData={ratingsData}
+        selectedClass={selectedClass}
+      />
+    </div>
   );
 }

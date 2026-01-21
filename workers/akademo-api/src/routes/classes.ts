@@ -108,7 +108,7 @@ classes.post('/', async (c) => {
     const session = await requireAuth(c);
     const body = await c.req.json();
 
-    const { name, description, academyId, teacherId } = body;
+    const { name, description, academyId, teacherId, whatsappGroupLink } = body;
 
     if (!name || !academyId) {
       return c.json(errorResponse('Name and academyId are required'), 400);
@@ -159,8 +159,8 @@ classes.post('/', async (c) => {
     const now = new Date().toISOString();
 
     await c.env.DB.prepare(`
-      INSERT INTO Class (id, name, slug, description, academyId, teacherId, createdAt, updatedAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO Class (id, name, slug, description, academyId, teacherId, whatsappGroupLink, createdAt, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       classId,
       name,
@@ -168,6 +168,7 @@ classes.post('/', async (c) => {
       description || null,
       academyId,
       teacherId || session.id, // Default to creator if no teacher specified
+      whatsappGroupLink || null,
       now,
       now
     ).run();
@@ -345,6 +346,10 @@ classes.patch('/:id', async (c) => {
     if (body.slug !== undefined) {
       updates.push('slug = ?');
       params.push(body.slug);
+    }
+    if (body.whatsappGroupLink !== undefined) {
+      updates.push('whatsappGroupLink = ?');
+      params.push(body.whatsappGroupLink);
     }
 
     if (updates.length === 0) {
