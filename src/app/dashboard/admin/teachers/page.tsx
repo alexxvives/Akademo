@@ -1,4 +1,5 @@
 'use client';
+// Force rebuild - removed search/filteredTeachers
 
 import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
@@ -35,11 +36,6 @@ export default function AdminTeachers() {
       setLoading(false);
     }
   };
-
-  const filteredTeachers = teachers.filter(t => 
-    t.name.toLowerCase().includes(search.toLowerCase()) ||
-    t.email.toLowerCase().includes(search.toLowerCase())
-  );
 
   if (loading) {
     return (
@@ -94,7 +90,7 @@ export default function AdminTeachers() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {filteredTeachers.map((teacher) => (
+                {teachers.map((teacher) => (
                   <tr key={teacher.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
