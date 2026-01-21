@@ -9,17 +9,18 @@
 
 ### Deployment Commands
 ```powershell
+# API Worker (from root)
+cd workers/akademo-api
+npx wrangler deploy --config wrangler.toml
+cd ../..
+
 # Frontend (from root)
 Remove-Item -Recurse -Force .next, .open-next -ErrorAction SilentlyContinue
 npx @opennextjs/cloudflare build
 npx wrangler deploy
 
-# API (from root)
-cd workers/akademo-api
-npx wrangler deploy
-cd ../..
-
-# Deploy Order: API first if API changed, then frontend
+# Deploy Order: ALWAYS deploy API first if API changed, then frontend
+# IMPORTANT: Always deploy after making changes - we're not working locally!
 ```
 
 ### Database Commands
@@ -27,8 +28,8 @@ cd ../..
 # Query remote D1
 npx wrangler d1 execute akademo-db --remote --command "SELECT * FROM User LIMIT 10"
 
-# Run migration
-npx wrangler d1 execute akademo-db --remote --file=migrations/0017_example.sql
+# Run specific migration file (safer than applying all)
+npx wrangler d1 execute akademo-db --remote --file=migrations/0019_example.sql
 
 # Check schema
 npx wrangler d1 execute akademo-db --remote --command "SELECT sql FROM sqlite_master WHERE type='table' AND name='User'"
@@ -42,6 +43,12 @@ npx wrangler tail akademo --format pretty
 ---
 
 ## ⚡ CORE RULES
+
+### 0. ALWAYS DEPLOY AFTER CHANGES
+**CRITICAL**: We are NOT working locally - changes only work after deployment!
+- Changed API code? → Deploy API worker immediately
+- Changed frontend code? → Clean build + deploy frontend immediately
+- Test deployment success before telling user "it works"
 
 ### 1. Search Before You Code
 Always verify current state before changes:

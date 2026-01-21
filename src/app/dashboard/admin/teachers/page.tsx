@@ -5,10 +5,10 @@ import { apiClient } from '@/lib/api-client';
 
 interface Teacher {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
-  status: string;
-  academyName: string | null;
+  academyName?: string;
   classCount: number;
   studentCount: number;
   createdAt: string;
@@ -17,7 +17,6 @@ interface Teacher {
 export default function AdminTeachers() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
 
   useEffect(() => {
     loadTeachers();
@@ -25,22 +24,10 @@ export default function AdminTeachers() {
 
   const loadTeachers = async () => {
     try {
-      const res = await apiClient('/analytics');
+      const res = await apiClient('/admin/teachers');
       const result = await res.json();
-      if (result.success && result.data.users) {
-        const teacherList = result.data.users
-          .filter((u: any) => u.role === 'TEACHER')
-          .map((u: any) => ({
-            id: u.id,
-            name: u.name,
-            email: u.email,
-            status: u.status || 'active',
-            academyName: u.academyName || null,
-            classCount: u.classCount || 0,
-            studentCount: u.studentCount || 0,
-            createdAt: u.createdAt,
-          }));
-        setTeachers(teacherList);
+      if (result.success) {
+        setTeachers(result.data || []);
       }
     } catch (error) {
       console.error('Error loading teachers:', error);
@@ -69,25 +56,8 @@ export default function AdminTeachers() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Profesores</h1>
-            <p className="text-gray-500 mt-1">Todos los profesores de la plataforma</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <svg className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="text"
-                placeholder="Buscar..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-              />
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-500 bg-white px-4 py-2 rounded-lg border border-gray-200">
-              <span className="font-medium">{teachers.length}</span> total
-            </div>
+            <h1 className="text-2xl font-semibold text-gray-900">Profesores</h1>
+            <p className="text-sm text-gray-500 mt-1">AKADEMO PLATFORM</p>
           </div>
         </div>
 

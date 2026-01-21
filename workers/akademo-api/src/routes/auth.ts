@@ -620,13 +620,55 @@ auth.post('/switch-role', async (c) => {
       }
 
       // Find linked teacher user (same email, different role)
-      const teacherUser = await c.env.DB
+      let teacherUser = await c.env.DB
         .prepare('SELECT id FROM User WHERE email = ? AND role = ?')
         .bind(session.email, 'TEACHER')
         .first();
       
+      // If teacher user doesn't exist, create it now (for existing monoacademies)
       if (!teacherUser) {
-        return c.json(errorResponse('Teacher account not found'), 404);
+        console.log('[Switch Role] Creating missing teacher account for monoacademy:', session.email);
+        
+        const teacherUserId = crypto.randomUUID();
+        const now = new Date().toISOString();
+        
+        // Get academy info for the Teacher record
+        const academyInfo = await c.env.DB
+          .prepare('SELECT id FROM Academy WHERE ownerId = ?')
+          .bind(session.id)
+          .first();
+        
+        if (!academyInfo) {
+          return c.json(errorResponse('Academy not found'), 404);
+        }
+        
+        // Create teacher User account (same password hash as academy)
+        const academyUser = await c.env.DB
+          .prepare('SELECT password FROM User WHERE id = ?')
+          .bind(session.id)
+          .first();
+        
+        await c.env.DB
+          .prepare('INSERT INTO User (id, email, password, firstName, lastName, role, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+          .bind(teacherUserId, session.email.toLowerCase(), academyUser.password, session.firstName, session.lastName, 'TEACHER', now, now)
+          .run();
+        
+        // Create Teacher record linking to academy
+        const teacherId = crypto.randomUUID();
+        await c.env.DB
+          .prepare('INSERT INTO Teacher (id, userId, academyId, status, monoacademy, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?)')
+          .bind(teacherId, teacherUserId, academyInfo.id, 'APPROVED', 1, now, now)
+          .run();
+        
+        // Fetch the newly created teacher user
+        teacherUser = await c.env.DB
+          .prepare('SELECT id FROM User WHERE id = ?')
+          .bind(teacherUserId)
+          .first();
+      }
+      
+      if (!teacherUser) {
+        return c.json(errorResponse('Teacher account creation failed'), 500);
       }
       
       linkedUserId = teacherUser.id;

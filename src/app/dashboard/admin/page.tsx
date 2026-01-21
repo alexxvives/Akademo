@@ -7,15 +7,13 @@ import { apiClient } from '@/lib/api-client';
 interface Academy {
   id: string;
   name: string;
-  owner: {
-    email: string;
-    firstName: string;
-    lastName: string;
-  };
-  _count: {
-    memberships: number;
-    classes: number;
-  };
+  ownerName: string;
+  ownerEmail: string;
+  status: string;
+  paymentStatus?: string;
+  teacherCount: number;
+  studentCount: number;
+  classCount: number;
   createdAt: string;
 }
 
@@ -29,11 +27,11 @@ export default function AdminDashboard() {
 
   const loadData = async () => {
     try {
-      const response = await apiClient('/academies');
+      const response = await apiClient('/admin/academies');
       const result = await response.json();
 
       if (result.success) {
-        setAcademies(result.data);
+        setAcademies(result.data || []);
       }
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -52,8 +50,9 @@ export default function AdminDashboard() {
     );
   }
 
-  const totalStudents = academies.reduce((sum, a) => sum + a._count.memberships, 0);
-  const totalClasses = academies.reduce((sum, a) => sum + a._count.classes, 0);
+  const totalStudents = academies.reduce((sum, a) => sum + (a.studentCount || 0), 0);
+  const totalClasses = academies.reduce((sum, a) => sum + (a.classCount || 0), 0);
+  const totalTeachers = academies.reduce((sum, a) => sum + (a.teacherCount || 0), 0);
 
   // Calculate growth (mock data for demo)
   const growth = {
@@ -64,9 +63,9 @@ export default function AdminDashboard() {
   };
 
   // Prepare chart data
-  const academyData = academies.slice(0, 6).map((a, i) => ({
+  const academyData = academies.slice(0, 6).map((a) => ({
     label: a.name.length > 15 ? a.name.substring(0, 15) + '...' : a.name,
-    value: a._count.memberships + a._count.classes,
+    value: (a.studentCount || 0) + (a.classCount || 0),
   }));
 
   const distributionData = [
@@ -80,8 +79,8 @@ export default function AdminDashboard() {
       <div className="space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Panel de Administración</h1>
-          <p className="text-sm text-gray-500 mt-1">AKADEMO Platform</p>
+          <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
+          <p className="text-sm text-gray-500 mt-1">AKADEMO PLATFORM</p>
         </div>
 
         {/* Stats Cards */}
@@ -121,7 +120,7 @@ export default function AdminDashboard() {
           />
           <StatCard
             title="Profesores"
-            value={academies.length}
+            value={totalTeachers}
             change={growth.teachers}
             trend="up"
             icon={
@@ -182,11 +181,11 @@ export default function AdminDashboard() {
                           <span className="text-sm font-medium text-gray-900">{academy.name}</span>
                         </td>
                         <td className="px-4 py-3">
-                          <div className="text-sm text-gray-900">{academy.owner.firstName} {academy.owner.lastName}</div>
-                          <div className="text-xs text-gray-500">{academy.owner.email}</div>
+                          <div className="text-sm text-gray-900">{academy.ownerName}</div>
+                          <div className="text-xs text-gray-500">{academy.ownerEmail}</div>
                         </td>
-                        <td className="px-4 py-3 text-center text-sm text-gray-600">{academy._count.memberships}</td>
-                        <td className="px-4 py-3 text-center text-sm text-gray-600">{academy._count.classes}</td>
+                        <td className="px-4 py-3 text-center text-sm text-gray-600">{academy.studentCount || 0}</td>
+                        <td className="px-4 py-3 text-center text-sm text-gray-600">{academy.classCount || 0}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -203,10 +202,10 @@ export default function AdminDashboard() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-medium text-gray-900 truncate">{academy.name}</h3>
-                        <p className="text-sm text-gray-500">{academy.owner.firstName} {academy.owner.lastName}</p>
+                        <p className="text-sm text-gray-500">{academy.ownerName}</p>
                         <div className="flex gap-4 mt-2 text-xs text-gray-500">
-                          <span>{academy._count.memberships} students</span>
-                          <span>{academy._count.classes} classes</span>
+                          <span>{academy.studentCount || 0} students</span>
+                          <span>{academy.classCount || 0} classes</span>
                         </div>
                       </div>
                     </div>

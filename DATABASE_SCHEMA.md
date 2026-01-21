@@ -8,7 +8,7 @@
 
 ---
 
-## Core Tables (14 tables)
+## Core Tables (15 tables)
 
 ### 1. **User**
 Central user table for all roles.
@@ -331,6 +331,38 @@ SELECT c.* FROM Class c
 JOIN ClassEnrollment e ON e.classId = c.id
 WHERE e.userId = ? AND e.status = 'APPROVED'
 ```
+
+---
+
+### 15. **Payment**
+Financial transactions tracking.
+
+| Column | Type | Nullable | Default | Notes |
+|--------|------|----------|---------|-------|
+| id | TEXT | NO | - | PK |
+| type | TEXT | NO | - | STUDENT_TO_ACADEMY, ACADEMY_TO_PLATFORM |
+| payerId | TEXT | NO | - | User.id or Academy.ownerId |
+| payerType | TEXT | NO | - | STUDENT, ACADEMY |
+| payerName | TEXT | NO | - | |
+| payerEmail | TEXT | NO | - | |
+| receiverId | TEXT | YES | - | Academy.id for student payments |
+| receiverName | TEXT | YES | - | |
+| amount | REAL | NO | - | Payment amount |
+| currency | TEXT | NO | 'USD' | |
+| status | TEXT | NO | 'PENDING' | PENDING, COMPLETED, FAILED, REFUNDED |
+| stripePaymentId | TEXT | YES | - | Stripe payment ID |
+| stripeCheckoutSessionId | TEXT | YES | - | Stripe session ID |
+| paymentMethod | TEXT | YES | - | stripe, paypal, etc. |
+| classId | TEXT | YES | - | FK → Class.id (for enrollments) |
+| description | TEXT | YES | - | |
+| metadata | TEXT | YES | - | JSON extra data |
+| createdAt | TEXT | NO | datetime('now') | |
+| completedAt | TEXT | YES | - | When payment completed |
+| updatedAt | TEXT | NO | datetime('now') | |
+
+**Payment Types:**
+- `STUDENT_TO_ACADEMY` - Student pays for enrollment/subscription
+- `ACADEMY_TO_PLATFORM` - Academy pays platform fees
 
 ---
 

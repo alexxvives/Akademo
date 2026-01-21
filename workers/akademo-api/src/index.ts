@@ -21,6 +21,7 @@ import bunnyRoutes from './routes/bunny';
 import storageRoutes from './routes/storage';
 import webhookRoutes from './routes/webhooks';
 import studentRoutes from './routes/students';
+import adminRoutes from './routes/admin';
 import { Bindings } from './types';
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -59,14 +60,15 @@ app.use('*', cors({
 app.get('/', (c) => c.json({ 
   status: 'ok', 
   service: 'akademo-api',
-  version: '3.1',
-  routes: 18,
-  phase: 'Topics Support',
+  version: '3.2',
+  routes: 19,
+  phase: 'Admin Dashboard + Teacher Fix',
   timestamp: new Date().toISOString() 
 }));
 
 // Routes - Phase 1: Core Routes
 app.route('/auth', authRoutes);
+app.route('/admin', adminRoutes);
 app.route('/classes', classRoutes);
 app.route('/enrollments', enrollmentRoutes);
 app.route('/requests', requestRoutes);
