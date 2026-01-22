@@ -193,7 +193,7 @@ export default function DocumentSigningModal({
               )}
             </div>
             <div className="flex-1">
-              <p className="text-sm font-semibold text-gray-900 group-hover:text-green-700 transition-colors">
+              <p className="text-sm font-semibold text-gray-900">
                 Me comprometo a no <strong>compartir</strong> ni permitir el <strong>acceso a terceros</strong> a ningún contenido de la plataforma (vídeos, audios, textos, PDFs, enlaces, imágenes u otro material didáctico). Tampoco <strong>compartiré</strong> mi cuenta con otras personas.
               </p>
             </div>
