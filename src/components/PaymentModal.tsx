@@ -7,6 +7,7 @@ interface PaymentModalProps {
   onClose: () => void;
   classId: string;
   className: string;
+  academyName: string;
   price: number;
   currency: string;
   onPaymentComplete: () => void;
@@ -17,6 +18,7 @@ export default function PaymentModal({
   onClose,
   classId,
   className,
+  academyName,
   price,
   currency,
   onPaymentComplete,
@@ -62,11 +64,25 @@ export default function PaymentModal({
   const handleStripePayment = async () => {
     setProcessing(true);
     try {
-      // TODO: Implement Stripe Connect integration
-      alert('Stripe Connect aún no está configurado. Por favor, paga en efectivo.');
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/payments/stripe-session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ 
+          classId,
+          paymentMethod: 'bank_transfer'
+        }),
+      });
+
+      const result = await res.json();
+      if (result.success && result.data?.url) {
+        // Redirect to Stripe Checkout
+        window.location.href = result.data.url;
+      } else {
+        throw new Error(result.error || 'Error al crear sesión de pago');
+      }
     } catch (error: any) {
       alert('Error: ' + error.message);
-    } finally {
       setProcessing(false);
     }
   };
@@ -102,9 +118,8 @@ export default function PaymentModal({
           <div className="p-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Left - Amount */}
-              <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 flex flex-col justify-center">
-                <p className="text-sm text-gray-600 mb-3">Total a pagar</p>
-                <p className="text-4xl font-bold text-gray-900">{formatPrice(price, currency)}</p>
+              <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 flex flex-col justify-center items-center">
+                <p className="text-5xl font-bold text-gray-900">{formatPrice(price, currency)}</p>
               </div>
               
               {/* Right - Info */}
@@ -148,7 +163,7 @@ export default function PaymentModal({
             <div>
               <h2 className="text-2xl font-semibold text-gray-900">Seleccionar Método de Pago</h2>
               <p className="text-gray-600 mt-2">
-                {className}
+                {className} <span className="text-gray-400">•</span> {academyName}
               </p>
             </div>
             <button
@@ -167,17 +182,15 @@ export default function PaymentModal({
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left Side - Price Info */}
             <div className="lg:col-span-1">
-              <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 h-full">
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-sm text-gray-600 mb-2">Total a pagar</p>
-                    <p className="text-4xl font-bold text-gray-900">{formatPrice(price, currency)}</p>
-                  </div>
-                  <div className="pt-4 border-t border-gray-200">
-                    <p className="text-sm text-gray-600">
-                      Selecciona tu método de pago preferido para continuar con la inscripción.
-                    </p>
-                  </div>
+              <div className="bg-gray-50 rounded-xl p-8 border border-gray-200 h-full flex flex-col justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-gray-500 mb-3">Total</p>
+                  <p className="text-5xl font-bold text-gray-900 mb-6">{formatPrice(price, currency)}</p>
+                </div>
+                <div className="pt-6 border-t border-gray-300">
+                  <p className="text-sm text-gray-600 leading-relaxed">
+                    Selecciona tu método de pago preferido para continuar con la inscripción.
+                  </p>
                 </div>
               </div>
             </div>

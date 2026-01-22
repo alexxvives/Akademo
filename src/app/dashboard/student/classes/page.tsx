@@ -393,6 +393,7 @@ export default function StudentClassesPage() {
         onClose={() => setPayingClass(null)}
         classId={payingClass?.id || ''}
         className={payingClass?.name || ''}
+        academyName={payingClass?.academyName || ''}
         price={payingClass?.price || 0}
         currency={payingClass?.currency || 'EUR'}
         onPaymentComplete={() => {
