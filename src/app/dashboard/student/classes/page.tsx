@@ -6,7 +6,6 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
 import DocumentSigningModal from '@/components/DocumentSigningModal';
-import PaymentModal from '@/components/PaymentModal';
 
 interface EnrolledClass {
   id: string;
@@ -43,7 +42,6 @@ export default function StudentClassesPage() {
   const [academyName, setAcademyName] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [signingClass, setSigningClass] = useState<EnrolledClass | null>(null);
-  const [payingClass, setPayingClass] = useState<EnrolledClass | null>(null);
 
   useEffect(() => {
     loadData();
@@ -378,20 +376,6 @@ export default function StudentClassesPage() {
           );
         })}
       </div>
-
-      {/* Payment Modal */}
-      <PaymentModal
-        isOpen={!!payingClass}
-        onClose={() => setPayingClass(null)}
-        classId={payingClass?.id || ''}
-        className={payingClass?.name || ''}
-        price={payingClass?.price || 0}
-        currency={payingClass?.currency || 'EUR'}
-        onPaymentComplete={() => {
-          setPayingClass(null);
-          loadData(); // Reload to get updated payment status
-        }}
-      />
 
       {/* Document Signing Modal */}
       <DocumentSigningModal
