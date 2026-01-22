@@ -100,7 +100,7 @@ export default function EnrolledAcademiesClassesPage() {
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-3">No hay más clases disponibles</h2>
           <p className="text-gray-600 mb-8">
-            Ya estás inscrito en todas las clases disponibles en tus academias, o aún no formas parte de ninguna academia.
+            Ya estás inscrito en todas las clases disponibles de tu academia
           </p>
           <Link
             href="/dashboard/student/explore"

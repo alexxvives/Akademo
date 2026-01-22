@@ -118,9 +118,9 @@ export function LoginForm({ onSuccess, onSwitchToRegister, onClose }: LoginFormP
 
       <div className="mt-6 text-center">
         <p className="text-sm text-gray-600">
-          Don't have an account?
+          ¿No tienes una cuenta?
           <button onClick={onSwitchToRegister} className="ml-1 text-brand-600 hover:text-brand-700 font-medium">
-            Sign Up
+            Registrarse
           </button>
         </p>
       </div>

@@ -216,9 +216,9 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, onClose }: RegisterFo
 
       <div className="mt-6 text-center">
         <p className="text-sm text-gray-600">
-          Already have an account?
+          ¿Ya tienes una cuenta?
           <button onClick={onSwitchToLogin} className="ml-1 text-brand-600 hover:text-brand-700 font-medium">
-            Sign In
+            Iniciar Sesión
           </button>
         </p>
       </div>
