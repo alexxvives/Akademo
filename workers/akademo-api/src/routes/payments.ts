@@ -384,6 +384,7 @@ payments.get('/history', async (c) => {
           e.paymentStatus,
           e.paymentAmount,
           e.currency,
+          e.paymentMethod,
           e.updatedAt,
           e.approvedByName,
           u.firstName as studentFirstName,

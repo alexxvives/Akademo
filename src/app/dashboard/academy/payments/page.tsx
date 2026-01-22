@@ -28,6 +28,7 @@ interface PaymentHistory {
   className: string;
   paymentAmount: number;
   currency: string;
+  paymentMethod: string;
   paymentStatus: string;
   approvedByName?: string;
   updatedAt: string;
@@ -219,6 +220,12 @@ export default function AcademyPaymentsPage() {
                         </svg>
                         <span className="font-semibold">{formatCurrency(payment.paymentAmount, payment.currency)}</span>
                       </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+                        <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                        <span className="capitalize">{payment.paymentMethod === 'CASH' ? 'Efectivo' : payment.paymentMethod}</span>
+                      </div>
                       <div className="flex items-center gap-2 text-xs text-gray-500">
                         <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -264,6 +271,7 @@ export default function AcademyPaymentsPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estudiante</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clase</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Método</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aprobado por</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
@@ -288,6 +296,9 @@ export default function AcademyPaymentsPage() {
                       <div className="text-sm font-semibold text-gray-900">
                         {formatCurrency(history.paymentAmount, history.currency)}
                       </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-700 capitalize">{history.paymentMethod === 'CASH' ? 'Efectivo' : history.paymentMethod}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-700">{history.approvedByName || 'N/A'}</div>
