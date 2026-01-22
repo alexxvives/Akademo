@@ -217,7 +217,7 @@ payments.patch('/:enrollmentId/approve-cash', async (c) => {
 payments.post('/stripe-session', async (c) => {
   try {
     const session = await requireAuth(c);
-    const { classId } = await c.req.json();
+    const { classId, method } = await c.req.json();
 
     if (!classId) {
       return c.json(errorResponse('classId is required'), 400);
@@ -226,7 +226,7 @@ payments.post('/stripe-session', async (c) => {
     // Get class details
     const classData: any = await c.env.DB
       .prepare(`
-        SELECT c.id, c.name, c.price, c.currency, a.stripeAccountId
+        SELECT c.id, c.name, c.price, c.currency, a.stripeAccountId, a.id as academyId
         FROM Class c
         JOIN Academy a ON c.academyId = a.id
         WHERE c.id = ?
@@ -242,22 +242,62 @@ payments.post('/stripe-session', async (c) => {
       return c.json(errorResponse('Academy has not set up Stripe Connect. Please pay with cash.'), 400);
     }
 
-    // TODO: Integrate with Stripe Connect
-    // const stripe = new Stripe(c.env.STRIPE_SECRET_KEY);
-    // const checkoutSession = await stripe.checkout.sessions.create({
-    //   payment_method_types: ['card', 'bizum'], // Bizum available in Spain
-    //   line_items: [{
-    //     price_data: {
-    //       currency: classData.currency || 'eur',
-    //       product_data: { name: classData.name },
-    //       unit_amount: Math.round(classData.price * 100), // Convert to cents
-    //     },
-    //     quantity: 1,
-    //   }],
-    //   mode: 'payment',
-    //   success_url: `${c.env.FRONTEND_URL}/dashboard/student/classes?payment=success`,
-    //   cancel_url: `${c.env.FRONTEND_URL}/dashboard/student/classes?payment=cancel`,
-    //   metadata: {
+    if (!c.env.STRIPE_SECRET_KEY) {
+      return c.json(errorResponse('Stripe is not configured on this server'), 500);
+    }
+
+    // Create Stripe Checkout Session
+    const stripe = require('stripe')(c.env.STRIPE_SECRET_KEY);
+    
+    // Calculate platform fee (5%)
+    const platformFeeAmount = Math.round(classData.price * 100 * 0.05);
+    
+    const paymentMethods = method === 'bizum' 
+      ? ['card', 'link'] // Bizum through Stripe Link
+      : ['card', 'link', 'bank_transfer'];
+
+    const checkoutSession = await stripe.checkout.sessions.create({
+      payment_method_types: paymentMethods,
+      line_items: [{
+        price_data: {
+          currency: classData.currency || 'eur',
+          product_data: { 
+            name: `${classData.name} - Acceso completo`,
+            description: 'Acceso al contenido de la clase',
+          },
+          unit_amount: Math.round(classData.price * 100), // Convert to cents
+        },
+        quantity: 1,
+      }],
+      mode: 'payment',
+      success_url: `${c.env.FRONTEND_URL || 'https://akademo-edu.com'}/dashboard/student/classes?payment=success&classId=${classId}`,
+      cancel_url: `${c.env.FRONTEND_URL || 'https://akademo-edu.com'}/dashboard/student/payment?classId=${classId}&payment=cancel`,
+      metadata: {
+        classId,
+        userId: session.id,
+        academyId: classData.academyId,
+      },
+      payment_intent_data: {
+        application_fee_amount: platformFeeAmount,
+        transfer_data: {
+          destination: classData.stripeAccountId,
+        },
+      },
+    });
+
+    // Save pending payment record
+    await c.env.DB
+      .prepare(`
+        UPDATE ClassEnrollment 
+        SET paymentStatus = 'PENDING',
+            paymentMethod = ?,
+            updatedAt = datetime('now')
+        WHERE userId = ? AND classId = ?
+      `)
+      .bind(method, session.id, classId)
+      .run();
+
+    return c.json(successResponse({ url: checkoutSession.url }));
     //     classId,
     //     userId: session.id,
     //     enrollmentId: enrollment.id,

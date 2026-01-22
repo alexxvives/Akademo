@@ -11,7 +11,8 @@
   "dependencies": {
     "@akademo/types": "*",
     "bcryptjs": "^2.4.3",
-    "hono": "^4.0.0"
+    "hono": "^4.0.0",
+    "stripe": "^20.2.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241127.0",

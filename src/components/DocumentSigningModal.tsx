@@ -194,10 +194,7 @@ export default function DocumentSigningModal({
             </div>
             <div className="flex-1">
               <p className="text-sm font-semibold text-gray-900 group-hover:text-green-700 transition-colors">
-                Acepto el compromiso de confidencialidad y uso responsable
-              </p>
-              <p className="text-xs text-gray-600 mt-1">
-                He leído y acepto mantener la confidencialidad del material educativo
+                Me comprometo a no <strong>compartir</strong> ni permitir el <strong>acceso a terceros</strong> a ningún contenido de la plataforma (vídeos, audios, textos, PDFs, enlaces, imágenes u otro material didáctico). Tampoco <strong>compartiré</strong> mi cuenta con otras personas.
               </p>
             </div>
           </label>
