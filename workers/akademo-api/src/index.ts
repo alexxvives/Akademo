@@ -23,6 +23,7 @@ import webhookRoutes from './routes/webhooks';
 import studentRoutes from './routes/students';
 import adminRoutes from './routes/admin';
 import paymentsRoutes from './routes/payments';
+import { zoomAccounts } from './routes/zoom-accounts';
 import { Bindings } from './types';
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -92,5 +93,6 @@ app.route('/live', liveRoutes);
 app.route('/bunny', bunnyRoutes);
 app.route('/storage', storageRoutes);
 app.route('/webhooks', webhookRoutes);
+app.route('/zoom-accounts', zoomAccounts);
 
 export default app;

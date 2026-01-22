@@ -251,7 +251,10 @@ export function Sidebar({
       {/* User Profile */}
       {user && (
         <div className="border-t border-gray-800/50 p-4">
-          <div className="flex items-center gap-3">
+          <Link
+            href={role === 'ACADEMY' ? '/dashboard/academy/profile' : '#'}
+            className={`flex items-center gap-3 mb-3 ${role === 'ACADEMY' ? 'cursor-pointer hover:bg-gray-800/30 rounded-xl p-2 -m-2 transition-colors' : ''}`}
+          >
             <div className="w-10 h-10 bg-[#b1e787] rounded-xl flex items-center justify-center text-sm font-bold text-gray-900 flex-shrink-0 shadow-lg">
               {user.firstName[0]}{user.lastName[0]}
             </div>
@@ -261,7 +264,7 @@ export function Sidebar({
               </p>
               <p className="text-xs text-gray-400 truncate">{user.email}</p>
             </div>
-          </div>
+          </Link>
           <button
             onClick={onLogout}
             onMouseEnter={() => logoutIconRef.current?.startAnimation()}
