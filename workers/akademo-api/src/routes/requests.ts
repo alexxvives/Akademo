@@ -22,9 +22,9 @@ requests.post('/student', async (c) => {
       return c.json(errorResponse('classId is required'), 400);
     }
 
-    // Check if class exists
-    const classRecord = await c.env.DB
-      .prepare('SELECT * FROM Class WHERE id = ?')
+    // Check if class exists and get price
+    const classRecord: any = await c.env.DB
+      .prepare('SELECT id, name, price FROM Class WHERE id = ?')
       .bind(classId)
       .first();
 
@@ -47,26 +47,51 @@ requests.post('/student', async (c) => {
       } else if (existing.status === 'PENDING') {
         return c.json(errorResponse('Request already pending'), 400);
       } else if (existing.status === 'REJECTED') {
-        // Allow re-requesting if previously rejected
+        // Auto-approve re-requests (no manual approval needed)
+        const now = new Date().toISOString();
+        const classPrice = classRecord.price || 0;
+        
+        // If class has a price, set paymentStatus to CASH_PENDING
+        const paymentStatus = classPrice > 0 ? 'CASH_PENDING' : 'PAID';
+        const paymentMethod = classPrice > 0 ? 'cash' : null;
+        
         await c.env.DB
-          .prepare('UPDATE ClassEnrollment SET status = ? WHERE userId = ? AND classId = ?')
-          .bind('PENDING', session.id, classId)
+          .prepare(`
+            UPDATE ClassEnrollment 
+            SET status = ?, paymentStatus = ?, paymentMethod = ?, paymentAmount = ?, updatedAt = ?
+            WHERE userId = ? AND classId = ?
+          `)
+          .bind('APPROVED', paymentStatus, paymentMethod, classPrice, now, session.id, classId)
           .run();
-        return c.json(successResponse({ message: 'Request resubmitted' }));
+        return c.json(successResponse({ message: 'Enrollment approved successfully' }));
       }
     }
 
-    // Create enrollment request
+    // Auto-approve new enrollments (no manual approval step)
     const enrollmentId = crypto.randomUUID();
     const now = new Date().toISOString();
+    const classPrice = classRecord.price || 0;
+    
+    // If class has a price > 0, create with CASH_PENDING payment status
+    // Otherwise, mark as PAID (free classes)
+    const paymentStatus = classPrice > 0 ? 'CASH_PENDING' : 'PAID';
+    const paymentMethod = classPrice > 0 ? 'cash' : null;
+    
     await c.env.DB
-      .prepare('INSERT INTO ClassEnrollment (id, classId, userId, status, documentSigned, enrolledAt, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-      .bind(enrollmentId, classId, session.id, 'PENDING', 0, now, now, now)
+      .prepare(`
+        INSERT INTO ClassEnrollment 
+        (id, classId, userId, status, documentSigned, paymentStatus, paymentMethod, paymentAmount, enrolledAt, createdAt, updatedAt) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `)
+      .bind(enrollmentId, classId, session.id, 'APPROVED', 0, paymentStatus, paymentMethod, classPrice, now, now, now)
       .run();
 
     return c.json(successResponse({ 
-      message: 'Enrollment request submitted',
-      enrollmentId 
+      message: classPrice > 0 
+        ? 'Enrollment approved! Please complete payment to access class content.' 
+        : 'Enrollment approved! You can now access the class.',
+      enrollmentId,
+      requiresPayment: classPrice > 0
     }));
   } catch (error: any) {
     console.error('[Student Request] Error:', error);

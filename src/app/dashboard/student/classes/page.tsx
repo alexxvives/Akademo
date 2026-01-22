@@ -123,13 +123,6 @@ export default function StudentClassesPage() {
       return;
     }
     
-    // Third check enrollment approval status
-    if (classItem.enrollmentStatus === 'PENDING') {
-      e.preventDefault();
-      alert('Tu solicitud de inscripción está pendiente de aprobación por el profesor/academia.');
-      return;
-    }
-    
     // All checks passed - navigate to class
     router.push(`/dashboard/student/class/${classItem.slug || classItem.id}`);
   };
@@ -157,8 +150,6 @@ export default function StudentClassesPage() {
       // Check if payment is needed
       if (updatedClass.price && updatedClass.price > 0 && updatedClass.paymentStatus !== 'PAID') {
         setPayingClass(updatedClass);
-      } else if (updatedClass.enrollmentStatus === 'PENDING') {
-        alert('Tu solicitud de inscripción está pendiente de aprobación por el profesor/academia.');
       } else {
         // Navigate to the class
         router.push(`/dashboard/student/class/${updatedClass.slug || updatedClass.id}`);
