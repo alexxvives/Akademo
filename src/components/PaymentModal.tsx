@@ -37,12 +37,20 @@ export default function PaymentModal({
   const handleConfirmCash = async () => {
     setProcessing(true);
     try {
+      // Debug: Check token
+      const token = localStorage.getItem('auth_token');
+      console.log('[PaymentModal] Token exists:', !!token);
+      console.log('[PaymentModal] Token length:', token?.length);
+      
       const res = await apiPost('/payments/initiate', { 
         classId, 
         paymentMethod: 'cash' 
       });
 
+      console.log('[PaymentModal] Response status:', res.status);
       const result = await res.json();
+      console.log('[PaymentModal] Response result:', result);
+      
       if (result.success) {
         alert('Pago en efectivo registrado. Esperando aprobación de la academia.');
         onPaymentComplete();
@@ -50,6 +58,7 @@ export default function PaymentModal({
         throw new Error(result.error || 'Error al registrar pago');
       }
     } catch (error: any) {
+      console.error('[PaymentModal] Cash payment error:', error);
       alert('Error: ' + error.message);
     } finally {
       setProcessing(false);
