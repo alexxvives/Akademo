@@ -287,7 +287,7 @@ export default function StudentClassesPage() {
                     )}
                     
                     {/* Payment Status Icon - Only show when NOT paid */}
-                    {classItem.price && classItem.price > 0 && classItem.paymentStatus !== 'PAID' && (
+                    {classItem.price > 0 && classItem.paymentStatus !== 'PAID' && (
                       classItem.paymentStatus === 'CASH_PENDING' ? (
                         <div className="relative group/payment">
                           <svg className="w-6 h-6 text-orange-500 transition-colors animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
