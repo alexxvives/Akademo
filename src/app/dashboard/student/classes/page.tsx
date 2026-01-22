@@ -106,7 +106,10 @@ export default function StudentClassesPage() {
     } finally {
       setLoading(false);
     }
-  };First check payment status
+  };
+
+  const handleClassClick = (classItem: EnrolledClass, e: React.MouseEvent) => {
+    // First check payment status
     if (classItem.paymentStatus !== 'PAID') {
       e.preventDefault();
       setPayingClass(classItem);
@@ -114,9 +117,6 @@ export default function StudentClassesPage() {
     }
     
     // Then check if document signed
-
-  const handleClassClick = (classItem: EnrolledClass, e: React.MouseEvent) => {
-    // If document not signed, show modal instead of navigating
     if (!classItem.documentSigned) {
       e.preventDefault();
       setSigningClass(classItem);

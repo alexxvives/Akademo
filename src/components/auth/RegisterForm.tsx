@@ -172,6 +172,8 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, onClose }: RegisterFo
             academyName={formData.academyName}
             monoacademy={formData.monoacademy}
             onAcademyNameChange={(name) => setFormData({ ...formData, academyName: name })}
+          />
+        ) : (
           <StudentTeacherFields
             role={formData.role as 'STUDENT' | 'TEACHER'}
             fullName={formData.fullName}
@@ -184,9 +186,6 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, onClose }: RegisterFo
             loadingClasses={loadingClasses}
             onFullNameChange={(name) => setFormData({ ...formData, fullName: name })}
             onAcademyChange={(id) => setFormData({ ...formData, academyId: id, classId: '', classIds: [] })}
-            onClassChange={(id) => setFormData({ ...formData, classId: id })}
-            onClassIdsChange={(ids) => setFormData({ ...formData, classIds: ids })}
-          />onAcademyChange={(id) => setFormData({ ...formData, academyId: id, classId: '', classIds: [] })}
             onClassChange={(id) => setFormData({ ...formData, classId: id })}
             onClassIdsChange={(ids) => setFormData({ ...formData, classIds: ids })}
           />
