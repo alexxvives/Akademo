@@ -397,8 +397,7 @@ payments.get('/history', async (c) => {
         JOIN Academy a ON c.academyId = a.id
         WHERE a.ownerId = ? 
           AND e.paymentAmount > 0
-          AND e.paymentStatus IN ('PAID', 'PENDING')
-          AND e.paymentMethod = 'CASH'
+          AND e.paymentStatus IN ('PAID', 'PENDING', 'CASH_PENDING')
         ORDER BY e.updatedAt DESC
         LIMIT 50
       `;
