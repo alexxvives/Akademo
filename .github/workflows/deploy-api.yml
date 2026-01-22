@@ -34,20 +34,4 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: 'workers/akademo-api'
-          command: deploy --config wrangler.toml
-          secrets: |
-            BUNNY_STREAM_API_KEY
-            BUNNY_STREAM_TOKEN_KEY
-            ZOOM_ACCOUNT_ID
-            ZOOM_CLIENT_ID
-            ZOOM_CLIENT_SECRET
-            ZOOM_WEBHOOK_SECRET
-            RESEND_API_KEY
-        env:
-          BUNNY_STREAM_API_KEY: ${{ secrets.BUNNY_STREAM_API_KEY }}
-          BUNNY_STREAM_TOKEN_KEY: ${{ secrets.BUNNY_STREAM_TOKEN_KEY }}
-          ZOOM_ACCOUNT_ID: ${{ secrets.ZOOM_ACCOUNT_ID }}
-          ZOOM_CLIENT_ID: ${{ secrets.ZOOM_CLIENT_ID }}
-          ZOOM_CLIENT_SECRET: ${{ secrets.ZOOM_CLIENT_SECRET }}
-          ZOOM_WEBHOOK_SECRET: ${{ secrets.ZOOM_WEBHOOK_SECRET }}
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          command: deploy

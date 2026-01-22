@@ -10,7 +10,7 @@ on:
       - 'package.json'
       - 'next.config.js'
       - 'tailwind.config.ts'
-      - 'wrangler.toml.backup'
+      - 'wrangler.toml'
   workflow_dispatch:
 
 jobs:
@@ -49,4 +49,4 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy .open-next/worker.js --name akademo --compatibility-date 2024-09-23
+          command: deploy
