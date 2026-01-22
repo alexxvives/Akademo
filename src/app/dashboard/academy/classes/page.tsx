@@ -12,6 +12,12 @@ interface Teacher {
   email: string;
 }
 
+interface ZoomAccount {
+  id: string;
+  accountName: string;
+  accountId: string;
+}
+
 interface Class {
   id: string;
   name: string;
@@ -32,13 +38,14 @@ interface Class {
 export default function AcademyClassesPage() {
   const [classes, setClasses] = useState<Class[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [zoomAccounts, setZoomAccounts] = useState<ZoomAccount[]>([]);
   const [academyName, setAcademyName] = useState<string>('');
   const [paymentStatus, setPaymentStatus] = useState<string>('NOT PAID');
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingClass, setEditingClass] = useState<Class | null>(null);
-  const [formData, setFormData] = useState({ name: '', description: '', teacherId: '', price: '10.00' });
+  const [formData, setFormData] = useState({ name: '', description: '', teacherId: '', price: '10.00', zoomAccountId: '' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -48,10 +55,11 @@ export default function AcademyClassesPage() {
 
   const loadData = async () => {
     try {
-      const [classesRes, teachersRes, academiesRes] = await Promise.all([
+      const [classesRes, teachersRes, academiesRes, zoomRes] = await Promise.all([
         apiClient('/academies/classes'),
         apiClient('/academies/teachers'),
-        apiClient('/academies')
+        apiClient('/academies'),
+        apiClient('/zoom-accounts')
       ]);
       
       if (classesRes.ok) {
@@ -80,6 +88,13 @@ export default function AcademyClassesPage() {
           lastName: t.name?.split(' ').slice(1).join(' ') || '',
           email: t.email
         })) : []);
+      }
+      
+      if (zoomRes.ok) {
+        const json = await zoomRes.json();
+        if (json.success && json.data) {
+          setZoomAccounts(json.data);
+        }
       }
     } catch (error) {
       console.error('Error loading data:', error);
@@ -119,7 +134,7 @@ export default function AcademyClassesPage() {
       }
 
       setShowCreateModal(false);
-      setFormData({ name: '', description: '', teacherId: '', price: '10.00' });
+      setFormData({ name: '', description: '', teacherId: '', price: '10.00', zoomAccountId: '' });
       loadData();
     } catch (err: any) {
       setError(err.message);
@@ -148,7 +163,7 @@ export default function AcademyClassesPage() {
 
       setShowEditModal(false);
       setEditingClass(null);
-      setFormData({ name: '', description: '', teacherId: '', price: '10.00' });
+      setFormData({ name: '', description: '', teacherId: '', price: '10.00', zoomAccountId: '' });
       loadData();
     } catch (err: any) {
       setError(err.message);
@@ -163,14 +178,15 @@ export default function AcademyClassesPage() {
       name: cls.name,
       description: cls.description || '',
       teacherId: cls.teacherId || '',
-      price: (cls as any).price?.toString() || '10.00'
+      price: (cls as any).price?.toString() || '10.00',
+      zoomAccountId: (cls as any).zoomAccountId || ''
     });
     setError('');
     setShowEditModal(true);
   };
 
   const openCreateModal = () => {
-    setFormData({ name: '', description: '', teacherId: '', price: '10.00' });
+    setFormData({ name: '', description: '', teacherId: '', price: '10.00', zoomAccountId: '' });
     setError('');
     setShowCreateModal(true);
   };
@@ -392,6 +408,36 @@ export default function AcademyClassesPage() {
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Cuenta de Zoom (opcional)
+                </label>
+                <div className="relative">
+                  <select
+                    value={formData.zoomAccountId}
+                    onChange={(e) => setFormData({ ...formData, zoomAccountId: e.target.value })}
+                    className="appearance-none w-full pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Sin cuenta de Zoom</option>
+                    {zoomAccounts.map((account) => (
+                      <option key={account.id} value={account.id}>
+                        {account.accountName}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+                {zoomAccounts.length === 0 && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    No hay cuentas de Zoom conectadas. <a href="/dashboard/academy/profile" className="text-blue-600 hover:underline">Conectar cuenta</a>
+                  </p>
+                )}
+              </div>
+
               {error && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
                   {error}
@@ -491,6 +537,36 @@ export default function AcademyClassesPage() {
                   placeholder="10.00"
                   required
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Cuenta de Zoom (opcional)
+                </label>
+                <div className="relative">
+                  <select
+                    value={formData.zoomAccountId}
+                    onChange={(e) => setFormData({ ...formData, zoomAccountId: e.target.value })}
+                    className="appearance-none w-full pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Sin cuenta de Zoom</option>
+                    {zoomAccounts.map((account) => (
+                      <option key={account.id} value={account.id}>
+                        {account.accountName}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+                {zoomAccounts.length === 0 && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    No hay cuentas de Zoom conectadas. <a href="/dashboard/academy/profile" className="text-blue-600 hover:underline">Conectar cuenta</a>
+                  </p>
+                )}
               </div>
 
               {error && (

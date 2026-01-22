@@ -2,23 +2,30 @@
 // Docs: https://developers.zoom.us/docs/api/
 
 export interface ZoomConfig {
-  ZOOM_ACCOUNT_ID: string;
-  ZOOM_CLIENT_ID: string;
-  ZOOM_CLIENT_SECRET: string;
+  ZOOM_ACCOUNT_ID?: string;
+  ZOOM_CLIENT_ID?: string;
+  ZOOM_CLIENT_SECRET?: string;
+  accessToken?: string; // Custom access token (for academy-owned accounts)
 }
 
 // Cache for access token (per-request, not truly persistent in Workers)
 let cachedToken: { token: string; expiresAt: number } | null = null;
 
-// Get OAuth access token using Server-to-Server OAuth
+// Get OAuth access token using Server-to-Server OAuth or use provided token
 export async function getAccessToken(config?: ZoomConfig): Promise<string> {
+  // If custom access token provided, use it directly
+  if (config?.accessToken) {
+    console.log('[Zoom] Using custom access token');
+    return config.accessToken;
+  }
+
   // Check if we have a valid cached token
   if (cachedToken && cachedToken.expiresAt > Date.now()) {
     console.log('[Zoom] Using cached access token');
     return cachedToken.token;
   }
 
-  if (!config) {
+  if (!config || !config.ZOOM_ACCOUNT_ID || !config.ZOOM_CLIENT_ID || !config.ZOOM_CLIENT_SECRET) {
     throw new Error('Zoom configuration required to fetch access token');
   }
 

@@ -30,6 +30,9 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_test_51Sr91MGnG2OZ2dGGUw3ObiVNKVVFUmbvm
 # API Worker URL (for frontend to call backend)
 NEXT_PUBLIC_API_URL = "https://akademo-api.alexxvives.workers.dev"
 
+# Zoom OAuth client ID (public, for OAuth redirects)
+NEXT_PUBLIC_ZOOM_CLIENT_ID = "sHMNFyqHQCGV5TpqkPo2Uw"
+
 # Bunny Stream for video hosting
 BUNNY_STREAM_LIBRARY_ID = "571240"
 BUNNY_STREAM_API_KEY = "93fa73e5-fd14-4d81-b3431ad52c89-f75a-452a"

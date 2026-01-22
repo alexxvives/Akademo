@@ -1,14 +1,13 @@
 import { Hono } from 'hono';
 import type { Context } from '../types';
-import { verifySession } from '../lib/auth';
+import { getSession } from '../lib/auth';
 import { errorResponse } from '../lib/utils';
-import { generateId } from '../lib/id';
 
 const zoomAccounts = new Hono<Context>();
 
 // Get all Zoom accounts for the academy
 zoomAccounts.get('/', async (c) => {
-  const session = await verifySession(c);
+  const session = await getSession(c);
   if (!session) return errorResponse('Not authorized', 401);
   if (session.role !== 'ACADEMY') return errorResponse('Forbidden', 403);
 
@@ -33,7 +32,7 @@ zoomAccounts.get('/', async (c) => {
 
 // Delete a Zoom account
 zoomAccounts.delete('/:id', async (c) => {
-  const session = await verifySession(c);
+  const session = await getSession(c);
   if (!session) return errorResponse('Not authorized', 401);
   if (session.role !== 'ACADEMY') return errorResponse('Forbidden', 403);
 
@@ -116,7 +115,7 @@ zoomAccounts.post('/oauth/callback', async (c) => {
     const userInfo = await userResponse.json() as any;
 
     // Store tokens in database
-    const accountId = generateId();
+    const accountId = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
 
     await c.env.DB.prepare(`

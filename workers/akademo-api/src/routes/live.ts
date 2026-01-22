@@ -52,7 +52,7 @@ live.post('/', async (c) => {
     // Get class info with academy and teacher details
     const classInfo = await c.env.DB
       .prepare(`
-        SELECT c.name, c.teacherId, c.academyId, 
+        SELECT c.name, c.teacherId, c.academyId, c.zoomAccountId,
                u.firstName, u.lastName,
                a.ownerId as academyOwnerId
         FROM Class c 
@@ -80,6 +80,40 @@ live.post('/', async (c) => {
       }
     }
 
+    // Get Zoom credentials - use class's Zoom account if assigned, otherwise platform credentials
+    let zoomConfig;
+    if (classInfo.zoomAccountId) {
+      const zoomAccount = await c.env.DB
+        .prepare('SELECT accessToken, refreshToken, expiresAt FROM ZoomAccount WHERE id = ?')
+        .bind(classInfo.zoomAccountId)
+        .first() as any;
+      
+      if (!zoomAccount) {
+        return c.json(errorResponse('Assigned Zoom account not found'), 404);
+      }
+
+      // Check if token needs refresh
+      const expiresAt = new Date(zoomAccount.expiresAt);
+      if (expiresAt <= new Date(Date.now() + 5 * 60 * 1000)) {
+        // Token expires in < 5 minutes, refresh it
+        const { refreshZoomToken } = await import('./zoom-accounts');
+        const newToken = await refreshZoomToken(c, classInfo.zoomAccountId);
+        if (!newToken) {
+          return c.json(errorResponse('Failed to refresh Zoom token'), 500);
+        }
+        zoomConfig = { accessToken: newToken };
+      } else {
+        zoomConfig = { accessToken: zoomAccount.accessToken };
+      }
+    } else {
+      // Use platform Zoom credentials
+      zoomConfig = {
+        ZOOM_ACCOUNT_ID: c.env.ZOOM_ACCOUNT_ID || '',
+        ZOOM_CLIENT_ID: c.env.ZOOM_CLIENT_ID || '',
+        ZOOM_CLIENT_SECRET: c.env.ZOOM_CLIENT_SECRET || '',
+      };
+    }
+
     // Create Zoom meeting
     let zoomMeeting;
     try {
@@ -87,11 +121,7 @@ live.post('/', async (c) => {
         topic: `${title} - ${classInfo.name}`,
         duration: 120, // 2 hours default
         waitingRoom: false,
-        config: {
-          ZOOM_ACCOUNT_ID: c.env.ZOOM_ACCOUNT_ID || '',
-          ZOOM_CLIENT_ID: c.env.ZOOM_CLIENT_ID || '',
-          ZOOM_CLIENT_SECRET: c.env.ZOOM_CLIENT_SECRET || '',
-        },
+        config: zoomConfig,
       });
     } catch (zoomError: any) {
       console.error('[Create Live Stream] Zoom error:', zoomError);
