@@ -98,14 +98,7 @@ export function DashboardChartsGrid({
               }
             }
           `}</style>
-          <div className="pt-3 border-t border-gray-100">
-            <div className="flex justify-between">
-              <span className="text-sm text-gray-600">Tiempo de visualización total</span>
-              <span className="text-sm font-semibold text-gray-900">
-                {Math.round(filteredStudents.length * 4.5)}h
-              </span>
-            </div>
-          </div>
+          {/* Tiempo de visualización total removed - needs proper tracking */}
         </div>
       </div>
 

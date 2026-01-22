@@ -438,7 +438,7 @@ export default function AcademyStreamsPage() {
         message={`¿Estás seguro que deseas eliminar el stream "${confirmModal.streamTitle}"? Esta acción no se puede deshacer.`}
         confirmText="Eliminar"
         cancelText="Cancelar"
-        type="danger"
+        type="warning"
         onConfirm={handleDeleteStream}
         onCancel={() => setConfirmModal({ isOpen: false, streamId: '', streamTitle: '' })}
       />
