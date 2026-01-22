@@ -347,7 +347,7 @@ export default function DashboardLayout({
           { label: 'Feedback', href: '/dashboard/academy/feedback', iconType: 'message' as const },
           { label: 'Streams', href: '/dashboard/academy/streams', iconType: 'clap' as const },
           { label: 'Estudiantes', href: '/dashboard/academy/students', iconType: 'users' as const },
-          { label: 'Facturas', href: '/dashboard/academy/facturas', iconType: 'receipt' as const },
+          { label: 'Facturas', href: '/dashboard/academy/facturas', iconType: 'fileText' as const },
         ];
         
         // Filter out Profesores menu for monoacademies

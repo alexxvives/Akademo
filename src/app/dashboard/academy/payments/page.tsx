@@ -126,7 +126,7 @@ export default function AcademyPaymentsPage() {
             <div>
               <p className="text-sm font-medium text-gray-600">Pagos Pendientes</p>
               <p className="text-3xl font-bold text-yellow-600 mt-2">
-                <useAnimatedNumber.AnimatedNumber value={pendingPayments.length} />
+                {pendingPayments.length}
               </p>
             </div>
             <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">

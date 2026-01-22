@@ -172,6 +172,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, onClose }: RegisterFo
             academyName={formData.academyName}
             monoacademy={formData.monoacademy}
             onAcademyNameChange={(name) => setFormData({ ...formData, academyName: name })}
+            onMonoacademyChange={(mono) => setFormData({ ...formData, monoacademy: mono })}
           />
         ) : (
           <StudentTeacherFields
