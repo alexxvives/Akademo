@@ -73,9 +73,6 @@ export default function DashboardLayout({
   // Active streams state for students
   const [activeStreams, setActiveStreams] = useState<ActiveStream[]>([]);
   
-  // Pending requests count for teachers
-  const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
-  
   // Academy state for academy join link
   const [academyId, setAcademyId] = useState<string | null>(null);
 
@@ -101,18 +98,6 @@ export default function DashboardLayout({
       }
     } catch (error) {
       console.error('Failed to load active streams:', error);
-    }
-  }, []);
-
-  const loadPendingRequestsCount = useCallback(async () => {
-    try {
-      const response = await apiClient('/enrollments/pending');
-      const result = await response.json();
-      if (result.success && Array.isArray(result.data)) {
-        setPendingRequestsCount(result.data.length);
-      }
-    } catch (error) {
-      console.error('Failed to load pending requests count:', error);
     }
   }, []);
 
@@ -152,19 +137,10 @@ export default function DashboardLayout({
       };
     }
     
-    if (role === 'TEACHER') {
-      loadPendingRequestsCount();
-      const requestsInterval = setInterval(loadPendingRequestsCount, 15000);
-      
-      return () => {
-        clearInterval(requestsInterval);
-      };
-    }
-    
     if (role === 'ACADEMY') {
       loadAcademy();
     }
-  }, [role, loadNotifications, loadActiveStreams, loadPendingRequestsCount, loadAcademy]);
+  }, [role, loadNotifications, loadActiveStreams, loadAcademy]);
 
   const checkAuth = async () => {
     try {
@@ -324,7 +300,6 @@ export default function DashboardLayout({
         return [
           { label: 'Dashboard', href: '/dashboard/teacher', iconType: 'chart' },
           { label: 'Clases', href: '/dashboard/teacher/classes', matchPaths: ['/dashboard/teacher/class'], iconType: 'book' },
-          { label: 'Solicitudes', href: '/dashboard/teacher/requests', badge: pendingRequestsCount, iconType: 'userPlus' },
           { label: 'Feedback', href: '/dashboard/teacher/feedback', iconType: 'message' },
           { label: 'Streams', href: '/dashboard/teacher/streams', iconType: 'clap' },
           { label: 'Tareas', href: '/dashboard/teacher/assignments', iconType: 'fileText' },
@@ -342,7 +317,6 @@ export default function DashboardLayout({
           { label: 'Dashboard', href: '/dashboard/academy', iconType: 'chart' as const },
           { label: 'Profesores', href: '/dashboard/academy/teachers', iconType: 'botMessage' as const },
           { label: 'Clases', href: '/dashboard/academy/classes', matchPaths: ['/dashboard/academy/class'], iconType: 'book' as const },
-          { label: 'Solicitudes', href: '/dashboard/academy/requests', badge: pendingRequestsCount, iconType: 'userPlus' as const },
           { label: 'Pagos', href: '/dashboard/academy/payments', iconType: 'handCoins' as const },
           { label: 'Feedback', href: '/dashboard/academy/feedback', iconType: 'message' as const },
           { label: 'Streams', href: '/dashboard/academy/streams', iconType: 'clap' as const },

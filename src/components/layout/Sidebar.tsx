@@ -165,11 +165,7 @@ export function Sidebar({
                 <span className="ml-auto w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
               )}
               {!hasLiveStream && item.badge !== undefined && item.badge > 0 && (
-                <span className={`ml-auto text-xs font-bold px-2 py-1 rounded-full ${
-                  item.label === 'Solicitudes'
-                    ? 'bg-accent-300 text-gray-900'
-                    : 'bg-[#b1e787]/20 text-[#b1e787]'
-                }`}>
+                <span className="ml-auto text-xs font-bold px-2 py-1 rounded-full bg-[#b1e787]/20 text-[#b1e787]">
                   {item.badge}
                 </span>
               )}
