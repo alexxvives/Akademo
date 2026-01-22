@@ -337,4 +337,91 @@ enrollments.put('/pending', async (c) => {
   }
 });
 
+// GET /enrollments/history - Get enrollment history (approved/rejected)
+enrollments.get('/history', async (c) => {
+  try {
+    const session = await requireAuth(c);
+
+    let query = '';
+    let params: any[] = [];
+
+    if (session.role === 'ACADEMY') {
+      // Get enrollment history for owned academies
+      query = `
+        SELECT 
+          e.id as enrollmentId,
+          e.status,
+          e.updatedAt,
+          e.createdAt as enrolledAt,
+          u.id as student_id,
+          u.firstName as student_firstName,
+          u.lastName as student_lastName,
+          u.email as student_email,
+          c.name as class_name,
+          c.id as class_id,
+          teacher.firstName || ' ' || teacher.lastName as teacherName
+        FROM ClassEnrollment e
+        JOIN User u ON e.userId = u.id
+        JOIN Class c ON e.classId = c.id
+        JOIN Academy a ON c.academyId = a.id
+        LEFT JOIN User teacher ON c.teacherId = teacher.id
+        WHERE a.ownerId = ? AND e.status IN ('APPROVED', 'REJECTED')
+        ORDER BY e.updatedAt DESC
+        LIMIT 50
+      `;
+      params = [session.id];
+    } else if (session.role === 'TEACHER') {
+      // Get enrollment history for teacher's classes
+      query = `
+        SELECT 
+          e.id as enrollmentId,
+          e.status,
+          e.updatedAt,
+          e.createdAt as enrolledAt,
+          u.id as student_id,
+          u.firstName as student_firstName,
+          u.lastName as student_lastName,
+          u.email as student_email,
+          c.name as class_name,
+          c.id as class_id
+        FROM ClassEnrollment e
+        JOIN User u ON e.userId = u.id
+        JOIN Class c ON e.classId = c.id
+        WHERE c.teacherId = ? AND e.status IN ('APPROVED', 'REJECTED')
+        ORDER BY e.updatedAt DESC
+        LIMIT 50
+      `;
+      params = [session.id];
+    } else {
+      return c.json(errorResponse('Not authorized'), 403);
+    }
+
+    const result = await c.env.DB.prepare(query).bind(...params).all();
+
+    // Transform to nested structure expected by frontend
+    const enrollments = (result.results || []).map((row: any) => ({
+      id: row.enrollmentId,
+      status: row.status,
+      updatedAt: row.updatedAt,
+      enrolledAt: row.enrolledAt,
+      student: {
+        id: row.student_id,
+        firstName: row.student_firstName,
+        lastName: row.student_lastName,
+        email: row.student_email,
+      },
+      class: {
+        id: row.class_id,
+        name: row.class_name,
+      },
+      teacherName: row.teacherName || undefined,
+    }));
+
+    return c.json(successResponse(enrollments));
+  } catch (error: any) {
+    console.error('[Enrollment History] Error:', error);
+    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+  }
+});
+
 export default enrollments;

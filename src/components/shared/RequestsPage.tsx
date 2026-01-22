@@ -14,27 +14,53 @@ interface PendingEnrollment {
   createdAt: string;
 }
 
+interface EnrollmentHistory {
+  id: string;
+  status: string;
+  updatedAt: string;
+  enrolledAt: string;
+  student: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  class: {
+    id: string;
+    name: string;
+  };
+  teacherName?: string;
+}
+
 interface RequestsPageProps {
   role: 'ACADEMY' | 'TEACHER';
 }
 
 export function RequestsPage({ role }: RequestsPageProps) {
   const [pendingEnrollments, setPendingEnrollments] = useState<PendingEnrollment[]>([]);
+  const [enrollmentHistory, setEnrollmentHistory] = useState<EnrollmentHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    loadPendingEnrollments();
+    loadData();
   }, []);
 
-  const loadPendingEnrollments = async () => {
+  const loadData = async () => {
     try {
-      const response = await apiClient('/enrollments/pending');
-      const result = await response.json();
+      const [pendingRes, historyRes] = await Promise.all([
+        apiClient('/enrollments/pending'),
+        apiClient('/enrollments/history'),
+      ]);
       
-      if (result.success) {
+      const [pendingResult, historyResult] = await Promise.all([
+        pendingRes.json(),
+        historyRes.json(),
+      ]);
+      
+      if (pendingResult.success) {
         // Map nested API response to flat structure
-        const mapped = result.data.map((e: any) => {
+        const mapped = pendingResult.data.map((e: any) => {
           const base = {
             id: e.id,
             studentName: `${e.student.firstName} ${e.student.lastName}`,
@@ -58,8 +84,12 @@ export function RequestsPage({ role }: RequestsPageProps) {
         
         setPendingEnrollments(mapped);
       }
+
+      if (historyResult.success) {
+        setEnrollmentHistory(historyResult.data || []);
+      }
     } catch (error) {
-      console.error('Error loading pending enrollments:', error);
+      console.error('Error loading enrollments data:', error);
     } finally {
       setLoading(false);
     }
@@ -77,6 +107,7 @@ export function RequestsPage({ role }: RequestsPageProps) {
       const result = await response.json();
       if (result.success) {
         setPendingEnrollments(prev => prev.filter(e => e.id !== enrollmentId));
+        loadData(); // Reload to update history
       } else {
         alert(result.error || 'Failed to approve enrollment');
       }
@@ -104,6 +135,7 @@ export function RequestsPage({ role }: RequestsPageProps) {
       const result = await response.json();
       if (result.success) {
         setPendingEnrollments(prev => prev.filter(e => e.id !== enrollmentId));
+        loadData(); // Reload to update history
       } else {
         alert(result.error || 'Failed to reject enrollment');
       }
@@ -207,6 +239,70 @@ export function RequestsPage({ role }: RequestsPageProps) {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Enrollment History Table */}
+        {enrollmentHistory.length > 0 && (
+          <div className="mt-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Historial de Solicitudes</h2>
+            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estudiante</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clase</th>
+                    {role === 'ACADEMY' && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Profesor</th>
+                    )}
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {enrollmentHistory.map((history, index) => (
+                    <tr key={`${history.id}-${index}`} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {history.student.firstName} {history.student.lastName}
+                          </div>
+                          <div className="text-sm text-gray-500">{history.student.email}</div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900">{history.class.name}</div>
+                      </td>
+                      {role === 'ACADEMY' && (
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-500">{history.teacherName || 'N/A'}</div>
+                        </td>
+                      )}
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {history.status === 'APPROVED' ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Aprobado
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            Rechazado
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(history.updatedAt).toLocaleDateString('es-ES', { 
+                          day: 'numeric', 
+                          month: 'short', 
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>

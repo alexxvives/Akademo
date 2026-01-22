@@ -1,8 +1,7 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
-import { useAnimatedNumber } from '@/hooks/useAnimatedNumber';
 
 interface PendingPayment {
   enrollmentId: string;
@@ -21,34 +20,56 @@ interface PendingPayment {
   academyName: string;
 }
 
+interface PaymentHistory {
+  enrollmentId: string;
+  studentFirstName: string;
+  studentLastName: string;
+  studentEmail: string;
+  className: string;
+  paymentAmount: number;
+  currency: string;
+  paymentStatus: string;
+  updatedAt: string;
+}
+
 export default function AcademyPaymentsPage() {
   const [pendingPayments, setPendingPayments] = useState<PendingPayment[]>([]);
+  const [paymentHistory, setPaymentHistory] = useState<PaymentHistory[]>([]);
   const [loading, setLoading] = useState(true);
-  const [processing, setProcessing] = useState<string | null>(null);
+  const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    loadPendingPayments();
+    loadData();
   }, []);
 
-  const loadPendingPayments = async () => {
+  const loadData = async () => {
     try {
-      const res = await apiClient('/payments/pending-cash');
-      const result = await res.json();
+      const [pendingRes, historyRes] = await Promise.all([
+        apiClient('/payments/pending-cash'),
+        apiClient('/payments/history'),
+      ]);
 
-      if (result.success) {
-        setPendingPayments(result.data || []);
+      const [pendingResult, historyResult] = await Promise.all([
+        pendingRes.json(),
+        historyRes.json(),
+      ]);
+
+      if (pendingResult.success) {
+        setPendingPayments(pendingResult.data || []);
+      }
+
+      if (historyResult.success) {
+        setPaymentHistory(historyResult.data || []);
       }
     } catch (error) {
-      console.error('Failed to load pending payments:', error);
+      console.error('Failed to load payments data:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleApprove = async (enrollmentId: string, studentName: string) => {
-    if (!confirm(`¿Aprobar pago en efectivo de ${studentName}?`)) return;
-
-    setProcessing(enrollmentId);
+  const handleApprove = async (enrollmentId: string) => {
+    setProcessingIds(prev => new Set(prev).add(enrollmentId));
     try {
       const res = await apiClient(`/payments/${enrollmentId}/approve-cash`, {
         method: 'PATCH',
@@ -58,22 +79,24 @@ export default function AcademyPaymentsPage() {
 
       const result = await res.json();
       if (result.success) {
-        alert('Pago aprobado correctamente');
         setPendingPayments(prev => prev.filter(p => p.enrollmentId !== enrollmentId));
+        loadData(); // Reload to update history
       } else {
-        throw new Error(result.error || 'Error al aprobar pago');
+        alert(result.error || 'Error al confirmar pago');
       }
     } catch (error: any) {
       alert('Error: ' + error.message);
     } finally {
-      setProcessing(null);
+      setProcessingIds(prev => {
+        const next = new Set(prev);
+        next.delete(enrollmentId);
+        return next;
+      });
     }
   };
 
-  const handleReject = async (enrollmentId: string, studentName: string) => {
-    if (!confirm(`¿Rechazar pago en efectivo de ${studentName}?\n\nEsto requerirá que el estudiante vuelva a iniciar el pago.`)) return;
-
-    setProcessing(enrollmentId);
+  const handleReject = async (enrollmentId: string) => {
+    setProcessingIds(prev => new Set(prev).add(enrollmentId));
     try {
       const res = await apiClient(`/payments/${enrollmentId}/approve-cash`, {
         method: 'PATCH',
@@ -83,15 +106,19 @@ export default function AcademyPaymentsPage() {
 
       const result = await res.json();
       if (result.success) {
-        alert('Pago rechazado');
         setPendingPayments(prev => prev.filter(p => p.enrollmentId !== enrollmentId));
+        loadData(); // Reload to update history
       } else {
-        throw new Error(result.error || 'Error al rechazar pago');
+        alert(result.error || 'Error al denegar pago');
       }
     } catch (error: any) {
       alert('Error: ' + error.message);
     } finally {
-      setProcessing(null);
+      setProcessingIds(prev => {
+        const next = new Set(prev);
+        next.delete(enrollmentId);
+        return next;
+      });
     }
   };
 
@@ -102,12 +129,11 @@ export default function AcademyPaymentsPage() {
     }).format(amount);
   };
 
-  const totalPending = pendingPayments.reduce((sum, p) => sum + p.paymentAmount, 0);
-
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="w-6 h-6 border-2 border-gray-200 border-t-blue-600 rounded-full animate-spin" />
+      <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
+        <div className="w-8 h-8 border-4 border-gray-300 border-t-gray-900 rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-600">Cargando pagos...</p>
       </div>
     );
   }
@@ -115,126 +141,145 @@ export default function AcademyPaymentsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Pagos Pendientes</h1>
-        <p className="text-sm text-gray-500 mt-1">Aprueba o rechaza los pagos en efectivo de los estudiantes</p>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white rounded-xl border-2 border-yellow-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Pagos Pendientes</p>
-              <p className="text-3xl font-bold text-yellow-600 mt-2">
-                {pendingPayments.length}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-              <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl border-2 border-green-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Pendiente</p>
-              <p className="text-3xl font-bold text-green-600 mt-2">
-                {formatCurrency(totalPending, 'EUR')}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-          </div>
-        </div>
+        <h1 className="text-2xl font-semibold text-gray-900">Pagos Pendientes</h1>
+        <p className="text-gray-600 text-sm mt-1">
+          Revisa y confirma los pagos en efectivo de los estudiantes
+        </p>
       </div>
 
       {/* Pending Payments List */}
       {pendingPayments.length === 0 ? (
-        <div className="bg-white rounded-xl border-2 border-dashed border-gray-300 p-12 text-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">No hay pagos pendientes</h3>
+        <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
+          <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay pagos pendientes</h3>
           <p className="text-gray-500">Los pagos en efectivo aparecerán aquí cuando los estudiantes los registren</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {pendingPayments.map((payment) => (
-            <div
-              key={payment.enrollmentId}
-              className="bg-white rounded-xl border-2 border-gray-200 p-6 hover:border-yellow-300 transition-colors"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center text-white font-bold">
-                      {payment.studentFirstName[0]}{payment.studentLastName[0]}
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">
+            <div key={payment.enrollmentId} className="bg-white border-2 border-gray-200 rounded-xl p-4 hover:border-gray-300 transition-all">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-accent-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-accent-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                  <div className="flex items-center gap-8">
+                    <div className="w-56">
+                      <h3 className="text-base font-semibold text-gray-900 truncate">
                         {payment.studentFirstName} {payment.studentLastName}
                       </h3>
-                      <p className="text-sm text-gray-500">{payment.studentEmail}</p>
+                      <p className="text-sm text-gray-600 truncate">{payment.studentEmail}</p>
                     </div>
-                  </div>
-
-                  <div className="mt-3 space-y-1">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                      </svg>
-                      <span className="font-medium">{payment.className}</span>
+                    <div className="border-l border-gray-200 pl-8">
+                      <div className="flex items-center gap-2 text-sm mb-0.5">
+                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                        <span className="text-gray-900 font-medium">{payment.className}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+                        <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        <span className="font-semibold">{formatCurrency(payment.paymentAmount, payment.currency)}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Registrado {(() => {
+                          const formatted = new Date(payment.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+                          return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+                        })()}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <span>Registrado el {new Date(payment.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 bg-yellow-100 text-yellow-700 rounded-full text-sm font-medium">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                    {formatCurrency(payment.paymentAmount, payment.currency)} en efectivo
                   </div>
                 </div>
-
-                {/* Actions */}
-                <div className="flex flex-col gap-2 ml-4">
+                <div className="flex items-center gap-3 flex-shrink-0">
                   <button
-                    onClick={() => handleApprove(payment.enrollmentId, `${payment.studentFirstName} ${payment.studentLastName}`)}
-                    disabled={processing === payment.enrollmentId}
-                    className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-lg hover:from-green-700 hover:to-green-600 font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    onClick={() => handleReject(payment.enrollmentId)}
+                    disabled={processingIds.has(payment.enrollmentId)}
+                    className="px-5 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    {processing === payment.enrollmentId ? 'Procesando...' : 'Aprobar'}
+                    {processingIds.has(payment.enrollmentId) ? 'Procesando...' : 'Denegar'}
                   </button>
                   <button
-                    onClick={() => handleReject(payment.enrollmentId, `${payment.studentFirstName} ${payment.studentLastName}`)}
-                    disabled={processing === payment.enrollmentId}
-                    className="px-4 py-2 border-2 border-red-300 text-red-600 rounded-lg hover:bg-red-50 font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    onClick={() => handleApprove(payment.enrollmentId)}
+                    disabled={processingIds.has(payment.enrollmentId)}
+                    className="px-5 py-2.5 bg-accent-300 text-gray-900 border-2 border-accent-300 rounded-lg hover:bg-accent-400 hover:border-accent-400 font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                    Rechazar
+                    {processingIds.has(payment.enrollmentId) ? 'Procesando...' : 'Confirmar'}
                   </button>
                 </div>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Payment History Table */}
+      {paymentHistory.length > 0 && (
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Historial de Pagos</h2>
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estudiante</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clase</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {paymentHistory.map((history, index) => (
+                  <tr key={`${history.enrollmentId}-${index}`} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {history.studentFirstName} {history.studentLastName}
+                        </div>
+                        <div className="text-sm text-gray-500">{history.studentEmail}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-900">{history.className}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-semibold text-gray-900">
+                        {formatCurrency(history.paymentAmount, history.currency)}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {history.paymentStatus === 'PAID' ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          Confirmado
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                          Denegado
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(history.updatedAt).toLocaleDateString('es-ES', { 
+                        day: 'numeric', 
+                        month: 'short', 
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

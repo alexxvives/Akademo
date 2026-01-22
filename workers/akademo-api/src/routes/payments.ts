@@ -363,4 +363,49 @@ payments.get('/my-payments', async (c) => {
   }
 });
 
+// GET /payments/history - Academy views payment history (approved/rejected)
+payments.get('/history', async (c) => {
+  try {
+    const session = await requireAuth(c);
+
+    let query = '';
+    let params: any[] = [];
+
+    if (session.role === 'ACADEMY') {
+      // Get payment history for owned academies (PAID or explicitly set to PENDING after rejection)
+      query = `
+        SELECT 
+          e.id as enrollmentId,
+          e.paymentStatus,
+          e.paymentAmount,
+          e.currency,
+          e.updatedAt,
+          u.firstName as studentFirstName,
+          u.lastName as studentLastName,
+          u.email as studentEmail,
+          c.name as className
+        FROM ClassEnrollment e
+        JOIN User u ON e.userId = u.id
+        JOIN Class c ON e.classId = c.id
+        JOIN Academy a ON c.academyId = a.id
+        WHERE a.ownerId = ? 
+          AND e.paymentAmount > 0
+          AND e.paymentStatus IN ('PAID', 'PENDING')
+          AND e.paymentMethod = 'CASH'
+        ORDER BY e.updatedAt DESC
+        LIMIT 50
+      `;
+      params = [session.id];
+    } else {
+      return c.json(errorResponse('Only academy owners can view payment history'), 403);
+    }
+
+    const result = await c.env.DB.prepare(query).bind(...params).all();
+    return c.json(successResponse(result.results || []));
+  } catch (error: any) {
+    console.error('[Payment History] Error:', error);
+    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+  }
+});
+
 export default payments;
