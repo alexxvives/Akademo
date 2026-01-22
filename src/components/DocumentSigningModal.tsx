@@ -42,28 +42,27 @@ export default function DocumentSigningModal({
   useEffect(() => {
     if (!isOpen || !pdfLoaded) return;
 
-    const checkScroll = (e: Event) => {
-      const target = e.target as HTMLElement;
-      if (target) {
-        const scrollTop = target.scrollTop;
-        const scrollHeight = target.scrollHeight;
-        const clientHeight = target.clientHeight;
-        
-        // Consider "end" when user is within 50px of bottom
-        const isAtBottom = scrollTop + clientHeight >= scrollHeight - 50;
-        
-        if (isAtBottom && !hasScrolledToEnd) {
-          setHasScrolledToEnd(true);
-        }
+    const pdfContainer = document.querySelector('.pdf-scroll-container');
+    if (!pdfContainer) return;
+
+    const checkScroll = () => {
+      const scrollTop = pdfContainer.scrollTop;
+      const scrollHeight = pdfContainer.scrollHeight;
+      const clientHeight = pdfContainer.clientHeight;
+      
+      // Consider "end" when user is within 10px of bottom
+      const isAtBottom = scrollTop + clientHeight >= scrollHeight - 10;
+      
+      if (isAtBottom && !hasScrolledToEnd) {
+        setHasScrolledToEnd(true);
       }
     };
 
-    // Get the iframe's content window to monitor scroll
-    const pdfContainer = document.querySelector('.pdf-container');
-    if (pdfContainer) {
-      pdfContainer.addEventListener('scroll', checkScroll);
-      return () => pdfContainer.removeEventListener('scroll', checkScroll);
-    }
+    pdfContainer.addEventListener('scroll', checkScroll);
+    // Check initial state
+    checkScroll();
+    
+    return () => pdfContainer.removeEventListener('scroll', checkScroll);
   }, [isOpen, pdfLoaded, hasScrolledToEnd]);
 
   if (!isOpen) return null;
@@ -138,30 +137,42 @@ export default function DocumentSigningModal({
           </div>
         </div>
 
-        {/* PDF Viewer */}
-        <div className="flex-1 overflow-y-auto pdf-container" style={{ maxHeight: '500px' }}>
-          <div className="w-full bg-gray-50 rounded-2xl border-2 border-gray-200 relative shadow-inner" style={{ minHeight: '500px' }}>
-            {!pdfLoaded && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="w-16 h-16 border-4 border-gray-200 border-t-brand-600 rounded-full animate-spin mx-auto mb-4" />
-                  <p className="text-gray-600 font-medium">Cargando documento...</p>
-                  <p className="text-sm text-gray-500 mt-1">Por favor espera</p>
-                </div>
+        {/* PDF Viewer - Scrollable Container */}
+        <div className="pdf-scroll-container overflow-y-auto bg-gray-50 rounded-2xl border-2 border-gray-200 relative shadow-inner" style={{ height: '500px' }}>
+          {!pdfLoaded && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-10">
+              <div className="text-center">
+                <div className="w-16 h-16 border-4 border-gray-200 border-t-brand-600 rounded-full animate-spin mx-auto mb-4" />
+                <p className="text-gray-600 font-medium">Cargando documento...</p>
+                <p className="text-sm text-gray-500 mt-1">Por favor espera</p>
               </div>
-            )}
-            <iframe
-              ref={iframeRef}
-              src="/legal/consent.pdf"
-              className="w-full rounded-2xl"
-              style={{ height: '500px' }}
-              onLoad={() => setPdfLoaded(true)}
-              title="Documento de Consentimiento"
-            />
-            
-            {/* Scroll indicator - appears until user scrolls to end */}
-            {pdfLoaded && !hasScrolledToEnd && (
-              Scroll Progress Indicator */}
+            </div>
+          )}
+          
+          {/* Make iframe taller than container to force scroll */}
+          <iframe
+            ref={iframeRef}
+            src="/legal/consent.pdf"
+            className="w-full rounded-2xl"
+            style={{ height: '800px', display: 'block' }}
+            onLoad={() => setPdfLoaded(true)}
+            title="Documento de Consentimiento"
+          />
+          
+          {/* Scroll indicator - appears until user scrolls to end */}
+          {pdfLoaded && !hasScrolledToEnd && (
+            <div className="sticky bottom-4 left-1/2 transform -translate-x-1/2 bg-brand-600 text-white px-4 py-2 rounded-full shadow-lg animate-bounce flex items-center gap-2 w-fit mx-auto z-20">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+              <span className="text-sm font-medium">Desplázate hasta el final</span>
+            </div>
+          )}
+        </div>
+
+        {/* Footer - Agreement and Sign Button */}
+        <div className="border-t border-gray-200 bg-white rounded-b-3xl">
+          {/* Scroll Progress Indicator */}
           {!hasScrolledToEnd && (
             <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-3 my-3 flex items-center gap-3">
               <svg className="w-5 h-5 text-yellow-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
