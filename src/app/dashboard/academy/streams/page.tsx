@@ -426,10 +426,10 @@ export default function AcademyStreamsPage() {
                     <td className="py-4 px-4">
                       {stream.recordingId ? (
                         <button
-                          onClick={() => window.location.href = `/dashboard/academy/class/${stream.classId}`}
+                          onClick={() => window.location.href = `/dashboard/academy/class/${stream.classId}?createFromStream=${stream.id}`}
                           className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                         >
-                          Crear Lección
+                          Crear clase
                         </button>
                       ) : (
                         <span className="text-gray-400 text-sm">—</span>

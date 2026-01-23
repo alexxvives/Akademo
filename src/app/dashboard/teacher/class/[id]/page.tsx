@@ -794,7 +794,7 @@ export default function TeacherClassPage() {
         await loadData();
         
         // Expand topic (or "Sin tema" if no topic selected)
-        const topicToExpand = result.data.topicId || null; // null represents "Sin tema"
+        const topicToExpand = result.data.topicId || 'uncategorized'; // 'uncategorized' represents "Sin tema"
         setExpandTopicId(topicToExpand);
         setTimeout(() => setExpandTopicId(null), 500);
       } else {

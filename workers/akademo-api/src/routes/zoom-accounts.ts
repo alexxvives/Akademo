@@ -1,15 +1,16 @@
 import { Hono } from 'hono';
-import type { Context } from '../types';
+import { Bindings } from '../types';
 import { getSession } from '../lib/auth';
 import { errorResponse } from '../lib/utils';
+import type { Context } from 'hono';
 
-const zoomAccounts = new Hono<Context>();
+const zoomAccounts = new Hono<{ Bindings: Bindings }>();
 
 // Get all Zoom accounts for the academy
 zoomAccounts.get('/', async (c) => {
   const session = await getSession(c);
-  if (!session) return errorResponse('Not authorized', 401);
-  if (session.role !== 'ACADEMY') return errorResponse('Forbidden', 403);
+  if (!session) return c.json(errorResponse('Not authorized'), 401);
+  if (session.role !== 'ACADEMY') return c.json(errorResponse('Forbidden'), 403);
 
   try {
     // Get academy ID
@@ -17,7 +18,7 @@ zoomAccounts.get('/', async (c) => {
       'SELECT id FROM Academy WHERE ownerId = ?'
     ).bind(session.id).first();
 
-    if (!academyResult) return errorResponse('Academy not found', 404);
+    if (!academyResult) return c.json(errorResponse('Academy not found'), 404);
 
     const accounts = await c.env.DB.prepare(
       'SELECT id, academyId, accountName, accountId, createdAt FROM ZoomAccount WHERE academyId = ?'
@@ -40,15 +41,15 @@ zoomAccounts.get('/', async (c) => {
     return c.json({ success: true, data: accountsWithClasses });
   } catch (error) {
     console.error('Error fetching Zoom accounts:', error);
-    return errorResponse('Failed to fetch Zoom accounts', 500);
+    return c.json(errorResponse('Failed to fetch Zoom accounts'), 500);
   }
 });
 
 // Delete a Zoom account
 zoomAccounts.delete('/:id', async (c) => {
   const session = await getSession(c);
-  if (!session) return errorResponse('Not authorized', 401);
-  if (session.role !== 'ACADEMY') return errorResponse('Forbidden', 403);
+  if (!session) return c.json(errorResponse('Not authorized'), 401);
+  if (session.role !== 'ACADEMY') return c.json(errorResponse('Forbidden'), 403);
 
   const accountId = c.req.param('id');
 
@@ -58,14 +59,14 @@ zoomAccounts.delete('/:id', async (c) => {
       'SELECT id FROM Academy WHERE ownerId = ?'
     ).bind(session.id).first();
 
-    if (!academyResult) return errorResponse('Academy not found', 404);
+    if (!academyResult) return c.json(errorResponse('Academy not found'), 404);
 
     // Verify ownership
     const account = await c.env.DB.prepare(
       'SELECT id FROM ZoomAccount WHERE id = ? AND academyId = ?'
     ).bind(accountId, academyResult.id).first();
 
-    if (!account) return errorResponse('Zoom account not found', 404);
+    if (!account) return c.json(errorResponse('Zoom account not found'), 404);
 
     // Delete the account
     await c.env.DB.prepare(
@@ -80,7 +81,7 @@ zoomAccounts.delete('/:id', async (c) => {
     return c.json({ success: true });
   } catch (error) {
     console.error('Error deleting Zoom account:', error);
-    return errorResponse('Failed to delete Zoom account', 500);
+    return c.json(errorResponse('Failed to delete Zoom account'), 500);
   }
 });
 
@@ -154,7 +155,7 @@ zoomAccounts.post('/oauth/callback', async (c) => {
 });
 
 // Refresh token helper (internal use)
-async function refreshZoomToken(c: Context, accountId: string): Promise<string | null> {
+async function refreshZoomToken(c: Context<{ Bindings: Bindings }>, accountId: string): Promise<string | null> {
   try {
     const account = await c.env.DB.prepare(
       'SELECT accessToken, refreshToken, expiresAt FROM ZoomAccount WHERE id = ?'

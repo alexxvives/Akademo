@@ -209,6 +209,19 @@ export default function TeacherClassPage() {
     }
   }, [lessonParam, watchVideoId, lessons]);
 
+  // Handle createFromStream param from streams table
+  useEffect(() => {
+    const createFromStreamId = searchParams.get('createFromStream');
+    if (createFromStreamId) {
+      // Load stream recordings and open modal
+      loadAvailableStreamRecordings().then(() => {
+        setShowLessonForm(true);
+        setEditingLessonId(null);
+        // The recording will be auto-selected in the form if there's only one
+      });
+    }
+  }, [searchParams]);
+
   // Handle action param for create lesson modal
   useEffect(() => {
     if (actionParam === 'create' || actionParam === 'create-lesson') {
@@ -794,7 +807,7 @@ export default function TeacherClassPage() {
         await loadData();
         
         // Expand topic (or "Sin tema" if no topic selected)
-        const topicToExpand = result.data.topicId || null; // null represents "Sin tema"
+        const topicToExpand = result.data.topicId || 'uncategorized'; // 'uncategorized' represents "Sin tema"
         setExpandTopicId(topicToExpand);
         setTimeout(() => setExpandTopicId(null), 500);
       } else {
