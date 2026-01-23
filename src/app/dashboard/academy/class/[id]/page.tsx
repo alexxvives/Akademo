@@ -434,7 +434,11 @@ export default function TeacherClassPage() {
     }
     
     // Show custom modal for stream title
-    const defaultTitle = `Clase ${new Date().toLocaleString('es-ES', { day: 'numeric', month: 'short' })}`;
+    const now = new Date();
+    const day = now.getDate();
+    const month = now.toLocaleString('es-ES', { month: 'long' });
+    const year = now.getFullYear();
+    const defaultTitle = `STREAM (${day} ${month.charAt(0).toUpperCase() + month.slice(1)}, ${year})`;
     setStreamNameInput(defaultTitle);
     setShowStreamNameModal(true);
   };
