@@ -164,8 +164,6 @@ export default function ProfilePage() {
     }
   };
 
-
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -442,22 +440,6 @@ export default function ProfilePage() {
               <p className="text-gray-300 mt-1">Gestiona tus cuentas PRO de Zoom para clases en vivo</p>
             </div>
             <ZoomConnectButton onClick={handleConnectZoom} />
-          // --- Animated Zoom Connect Button ---
-          function ZoomConnectButton({ onClick }: { onClick: () => void }) {
-            const iconRef = useRef<CctvIconHandle>(null);
-            return (
-              <button
-                type="button"
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-                onClick={onClick}
-                onMouseEnter={() => iconRef.current?.startAnimation()}
-                onMouseLeave={() => iconRef.current?.stopAnimation()}
-              >
-                <CctvIcon ref={iconRef} size={20} />
-                Conectar Zoom
-              </button>
-            );
-          }
           </div>
         </div>
 
@@ -508,5 +490,22 @@ export default function ProfilePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Animated Zoom Connect Button Component
+function ZoomConnectButton({ onClick }: { onClick: () => void }) {
+  const iconRef = useRef<CctvIconHandle>(null);
+  return (
+    <button
+      type="button"
+      className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+      onClick={onClick}
+      onMouseEnter={() => iconRef.current?.startAnimation()}
+      onMouseLeave={() => iconRef.current?.stopAnimation()}
+    >
+      <CctvIcon ref={iconRef} size={20} />
+      Conectar Zoom
+    </button>
   );
 }

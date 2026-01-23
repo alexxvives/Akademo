@@ -83,7 +83,6 @@ git push
 
 ### 1. Search Before You Code
 
-### 1A. Prevent Syntax Errors (Braces, JSX, etc)
 **ALWAYS**:
 - Ensure every function, if/else, and block has a matching closing brace before commit (use editor bracket highlighting, folding, or block selection)
 - Run `npm run lint` and `npm run format` before every commit and push
@@ -91,6 +90,12 @@ git push
 - Use a code editor with bracket matching/highlighting enabled
 - If you see a JSX or parse error, review the last 20 lines above and below the error for missing/extra braces or parentheses
 - Never commit code with a known syntax error or failed build
+
+### 1B. Prevent Broken Deployments (Build Before Commit)
+**ALWAYS**:
+- Run `npm run build` locally before every commit and push. Only commit if the build succeeds with no errors.
+- Never commit or push code that fails to build locally.
+- If you cannot build locally, use a CI or pre-commit hook to verify the build before pushing.
 Always verify current state before changes:
 - Use `grep_search` or `semantic_search` to find existing patterns
 - Check file size: `(Get-Content path/to/file.tsx).Count`
