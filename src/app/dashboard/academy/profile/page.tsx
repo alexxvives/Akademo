@@ -164,7 +164,7 @@ export default function ProfilePage() {
     }
   };
 
-  // --- END handleSaveProfile ---
+
 
   if (loading) {
     return (

@@ -82,6 +82,15 @@ git push
 - ❌ Not checking current directory before build commands
 
 ### 1. Search Before You Code
+
+### 1A. Prevent Syntax Errors (Braces, JSX, etc)
+**ALWAYS**:
+- Ensure every function, if/else, and block has a matching closing brace before commit (use editor bracket highlighting, folding, or block selection)
+- Run `npm run lint` and `npm run format` before every commit and push
+- Fix all linter and formatter errors before pushing
+- Use a code editor with bracket matching/highlighting enabled
+- If you see a JSX or parse error, review the last 20 lines above and below the error for missing/extra braces or parentheses
+- Never commit code with a known syntax error or failed build
 Always verify current state before changes:
 - Use `grep_search` or `semantic_search` to find existing patterns
 - Check file size: `(Get-Content path/to/file.tsx).Count`
