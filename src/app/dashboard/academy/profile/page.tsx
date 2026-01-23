@@ -134,17 +134,33 @@ export default function ProfilePage() {
     if (!academy) return;
 
     // Update local state immediately
-    setFormData({ ...formData, [field]: value });
+    const newFormData = { ...formData, [field]: value };
+    setFormData(newFormData);
 
-    // Save to database immediately
+    // Save to database immediately with ALL current values
     try {
-      await apiClient(`/academies/${academy.id}`, {
+      const response = await apiClient(`/academies/${academy.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ [field]: value })
+        body: JSON.stringify({
+          name: newFormData.name,
+          address: newFormData.address,
+          phone: newFormData.phone,
+          email: newFormData.email,
+          feedbackAnonymous: field === 'feedbackAnonymous' ? value : (newFormData.feedbackAnonymous ? 1 : 0),
+          defaultWatermarkIntervalMins: newFormData.defaultWatermarkIntervalMins,
+          defaultMaxWatchTimeMultiplier: newFormData.defaultMaxWatchTimeMultiplier
+        })
       });
+      
+      const result = await response.json();
+      if (!result.success) {
+        console.error('Error updating setting:', result);
+        alert('Error al actualizar la configuración');
+      }
     } catch (error) {
       console.error('Error updating setting:', error);
+      alert('Error al actualizar la configuración');
     }
   };
 
