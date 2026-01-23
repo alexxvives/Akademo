@@ -464,22 +464,13 @@ academies.patch('/:id', async (c) => {
   try {
     const session = await requireAuth(c);
     const academyId = c.req.param('id');
-    const { 
-      name, 
-      description, 
-      address, 
-      phone, 
-      email, 
-      feedbackAnonymous,
-      defaultWatermarkIntervalMins,
-      defaultMaxWatchTimeMultiplier
-    } = await c.req.json();
+    const body = await c.req.json();
 
     // Check ownership
     const academy = await c.env.DB
       .prepare('SELECT * FROM Academy WHERE id = ?')
       .bind(academyId)
-      .first();
+      .first<any>();
 
     if (!academy) {
       return c.json(errorResponse('Academy not found'), 404);
@@ -489,29 +480,53 @@ academies.patch('/:id', async (c) => {
       return c.json(errorResponse('Not authorized'), 403);
     }
 
+    // Build update query dynamically to only update provided fields
+    const updates: string[] = [];
+    const values: any[] = [];
+
+    if (body.name !== undefined) {
+      updates.push('name = ?');
+      values.push(body.name);
+    }
+    if (body.description !== undefined) {
+      updates.push('description = ?');
+      values.push(body.description || null);
+    }
+    if (body.address !== undefined) {
+      updates.push('address = ?');
+      values.push(body.address || null);
+    }
+    if (body.phone !== undefined) {
+      updates.push('phone = ?');
+      values.push(body.phone || null);
+    }
+    if (body.email !== undefined) {
+      updates.push('email = ?');
+      values.push(body.email || null);
+    }
+    if (body.feedbackAnonymous !== undefined) {
+      updates.push('feedbackAnonymous = ?');
+      values.push(body.feedbackAnonymous);
+    }
+    if (body.defaultWatermarkIntervalMins !== undefined) {
+      updates.push('defaultWatermarkIntervalMins = ?');
+      values.push(body.defaultWatermarkIntervalMins);
+    }
+    if (body.defaultMaxWatchTimeMultiplier !== undefined) {
+      updates.push('defaultMaxWatchTimeMultiplier = ?');
+      values.push(body.defaultMaxWatchTimeMultiplier);
+    }
+
+    if (updates.length === 0) {
+      return c.json(errorResponse('No fields to update'), 400);
+    }
+
+    updates.push('updatedAt = datetime(\'now\')');
+    values.push(academyId);
+
     await c.env.DB
-      .prepare(`UPDATE Academy 
-        SET name = ?, 
-            description = ?, 
-            address = ?,
-            phone = ?,
-            email = ?,
-            feedbackAnonymous = ?,
-            defaultWatermarkIntervalMins = ?,
-            defaultMaxWatchTimeMultiplier = ?,
-            updatedAt = datetime('now')
-        WHERE id = ?`)
-      .bind(
-        name, 
-        description || null, 
-        address || null,
-        phone || null,
-        email || null,
-        feedbackAnonymous !== undefined ? feedbackAnonymous : 0,
-        defaultWatermarkIntervalMins || 5,
-        defaultMaxWatchTimeMultiplier || 2.0,
-        academyId
-      )
+      .prepare(`UPDATE Academy SET ${updates.join(', ')} WHERE id = ?`)
+      .bind(...values)
       .run();
 
     const updated = await c.env.DB
