@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api-client';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ZoomAccount {
   id: string;
@@ -23,10 +24,31 @@ interface Academy {
   defaultMaxWatchTimeMultiplier?: number;
 }
 
+const WATERMARK_OPTIONS = [
+  { value: 1, label: '1 minuto' },
+  { value: 3, label: '3 minutos' },
+  { value: 5, label: '5 minutos' },
+  { value: 10, label: '10 minutos' },
+  { value: 15, label: '15 minutos' },
+  { value: 30, label: '30 minutos' }
+];
+
+const MULTIPLIER_OPTIONS = [
+  { value: 1.0, label: '1x (una vez)' },
+  { value: 1.5, label: '1.5x' },
+  { value: 2.0, label: '2x (dos veces)' },
+  { value: 2.5, label: '2.5x' },
+  { value: 3.0, label: '3x (tres veces)' },
+  { value: 5.0, label: '5x (cinco veces)' },
+  { value: 10.0, label: '10x (ilimitado)' }
+];
+
 export default function ProfilePage() {
+  const { user } = useAuth();
   const [academy, setAcademy] = useState<Academy | null>(null);
   const [zoomAccounts, setZoomAccounts] = useState<ZoomAccount[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -59,7 +81,7 @@ export default function ProfilePage() {
           name: academyData.name || '',
           address: academyData.address || '',
           phone: academyData.phone || '',
-          email: academyData.email || '',
+          email: academyData.email || user?.email || '',
           feedbackAnonymous: academyData.feedbackAnonymous === 1,
           defaultWatermarkIntervalMins: academyData.defaultWatermarkIntervalMins || 5,
           defaultMaxWatchTimeMultiplier: academyData.defaultMaxWatchTimeMultiplier || 2.0
@@ -78,7 +100,7 @@ export default function ProfilePage() {
 
   const handleConnectZoom = () => {
     // Redirect to Zoom OAuth
-    const clientId = process.env.NEXT_PUBLIC_ZOOM_CLIENT_ID || 'sHMNFyqHQCGV5TpqkPo2Uw';
+    const clientId = process.env.NEXT_PUBLIC_ZOOM_CLIENT_ID || 'W2jPo9CJR0uZbFnEWtBF7Q';
     const redirectUri = encodeURIComponent(`${window.location.origin}/api/zoom/oauth/callback`);
     const state = academy?.id || '';
     
@@ -107,6 +129,7 @@ export default function ProfilePage() {
   const handleSaveProfile = async () => {
     if (!academy) return;
 
+    setSaving(true);
     try {
       const response = await apiClient(`/academies/${academy.id}`, {
         method: 'PATCH',
@@ -125,13 +148,15 @@ export default function ProfilePage() {
       const result = await response.json();
       if (result.success) {
         setEditing(false);
-        loadData();
+        await loadData();
       } else {
         alert('Error al guardar los cambios');
       }
     } catch (error) {
       console.error('Error saving profile:', error);
       alert('Error al guardar los cambios');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -144,228 +169,350 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl text-gray-900">Perfil de Academia</h1>
-        <p className="text-sm text-gray-600 mt-1">Gestiona la información de tu academia y cuentas conectadas</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-semibold text-gray-900">Configuración</h1>
+          <p className="text-gray-600 mt-1">Administra la información y preferencias de tu academia</p>
+        </div>
       </div>
 
-      {/* Academy Info */}
+      {/* Academy Info Card */}
       {academy && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Información de la Academia</h2>
-            {!editing ? (
-              <button
-                onClick={() => setEditing(true)}
-                className="text-sm text-brand-600 hover:text-brand-700 font-medium"
-              >
-                Editar
-              </button>
-            ) : (
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    setEditing(false);
-                    setFormData({
-                      name: academy.name || '',
-                      address: academy.address || '',
-                      phone: academy.phone || '',
-                      email: academy.email || '',
-                      feedbackAnonymous: academy.feedbackAnonymous === 1,
-                      defaultWatermarkIntervalMins: academy.defaultWatermarkIntervalMins || 5,
-                      defaultMaxWatchTimeMultiplier: academy.defaultMaxWatchTimeMultiplier || 2.0
-                    });
-                  }}
-                  className="text-sm text-gray-600 hover:text-gray-700 font-medium"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleSaveProfile}
-                  className="text-sm text-brand-600 hover:text-brand-700 font-medium"
-                >
-                  Guardar
-                </button>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          {/* Card Header */}
+          <div className="px-8 py-6 bg-gray-50 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Información General</h2>
+                <p className="text-sm text-gray-600 mt-1">Datos principales de tu academia</p>
               </div>
-            )}
+              {!editing ? (
+                <button
+                  onClick={() => setEditing(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all font-medium text-sm shadow-sm"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  Editar
+                </button>
+              ) : (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setEditing(false);
+                      setFormData({
+                        name: academy.name || '',
+                        address: academy.address || '',
+                        phone: academy.phone || '',
+                        email: academy.email || user?.email || '',
+                        feedbackAnonymous: academy.feedbackAnonymous === 1,
+                        defaultWatermarkIntervalMins: academy.defaultWatermarkIntervalMins || 5,
+                        defaultMaxWatchTimeMultiplier: academy.defaultMaxWatchTimeMultiplier || 2.0
+                      });
+                    }}
+                    disabled={saving}
+                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all font-medium text-sm"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleSaveProfile}
+                    disabled={saving}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-all font-medium text-sm disabled:opacity-50"
+                  >
+                    {saving ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                        Guardando...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Guardar cambios
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-gray-700">Nombre</label>
+
+          {/* Card Body */}
+          <div className="px-8 py-6">
+            {/* Nombre de la academia */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Nombre de la academia <span className="text-red-500">*</span>
+              </label>
               {editing ? (
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
+                  placeholder="Ej: Academia de Matemáticas Avanzadas"
                 />
               ) : (
-                <p className="text-gray-900 mt-1">{academy.name}</p>
-              )}
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700">Dirección (para pagos en efectivo)</label>
-              {editing ? (
-                <input
-                  type="text"
-                  value={formData.address}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  placeholder="Dirección física de la academia"
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
-                />
-              ) : (
-                <p className="text-gray-900 mt-1">{academy.address || 'No especificada'}</p>
-              )}
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700">Email de contacto</label>
-              {editing ? (
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="email@academia.com"
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
-                />
-              ) : (
-                <p className="text-gray-900 mt-1">{academy.email || 'No especificado'}</p>
-              )}
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700">Teléfono de contacto</label>
-              {editing ? (
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="+34 123 456 789"
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
-                />
-              ) : (
-                <p className="text-gray-900 mt-1">{academy.phone || 'No especificado'}</p>
-              )}
-            </div>
-            <div className="pt-4 border-t border-gray-200">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">Configuración de Feedback</h3>
-              <div className="flex items-center justify-between">
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Feedback anónimo</label>
-                  <p className="text-xs text-gray-500 mt-1">Los estudiantes pueden dar feedback sin revelar su identidad</p>
+                <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-lg">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                  <span className="text-gray-900 font-medium">{academy.name}</span>
                 </div>
+              )}
+            </div>
+
+            {/* Contact Info - Side by Side */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email
+                </label>
                 {editing ? (
-                  <button
-                    onClick={() => setFormData({ ...formData, feedbackAnonymous: !formData.feedbackAnonymous })}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      formData.feedbackAnonymous ? 'bg-brand-600' : 'bg-gray-300'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        formData.feedbackAnonymous ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all text-sm"
+                    placeholder="contacto@academia.com"
+                  />
                 ) : (
-                  <span className={`text-sm font-medium ${
-                    academy.feedbackAnonymous ? 'text-green-600' : 'text-gray-500'
-                  }`}>
-                    {academy.feedbackAnonymous ? 'Activado' : 'Desactivado'}
-                  </span>
+                  <div className="flex items-center gap-2 px-3 py-2.5 bg-gray-50 rounded-lg">
+                    <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <span className="text-gray-900 text-sm truncate">{academy.email || user?.email || 'No especificado'}</span>
+                  </div>
                 )}
               </div>
-            </div>
-            <div className="pt-4 border-t border-gray-200">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">Configuración de Vídeos (por defecto)</h3>
-              <div className="space-y-3">
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Multiplicador de tiempo de visualización</label>
-                  <p className="text-xs text-gray-500 mt-1">Cuántas veces puede ver un estudiante el vídeo</p>
-                  {editing ? (
+
+              {/* Teléfono */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Teléfono
+                </label>
+                {editing ? (
+                  <input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all text-sm"
+                    placeholder="+34 123 456 789"
+                  />
+                ) : (
+                  <div className="flex items-center gap-2 px-3 py-2.5 bg-gray-50 rounded-lg">
+                    <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                    </svg>
+                    <span className="text-gray-900 text-sm">{academy.phone || 'No especificado'}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Dirección */}
+              <div className="lg:col-span-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Dirección <span className="text-xs text-gray-500">(efectivo)</span>
+                </label>
+                {editing ? (
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
                     <input
-                      type="number"
-                      step="0.5"
-                      min="1"
-                      max="10"
-                      value={formData.defaultMaxWatchTimeMultiplier}
-                      onChange={(e) => setFormData({ ...formData, defaultMaxWatchTimeMultiplier: parseFloat(e.target.value) })}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      type="text"
+                      value={formData.address}
+                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                      className="block w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all text-sm"
+                      placeholder="Calle Principal 123"
                     />
-                  ) : (
-                    <p className="text-gray-900 mt-1">{academy.defaultMaxWatchTimeMultiplier || 2.0}x</p>
-                  )}
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Intervalo de marca de agua (minutos)</label>
-                  <p className="text-xs text-gray-500 mt-1">Cada cuántos minutos aparece la marca de agua con el nombre del estudiante</p>
-                  {editing ? (
-                    <input
-                      type="number"
-                      min="1"
-                      max="30"
-                      value={formData.defaultWatermarkIntervalMins}
-                      onChange={(e) => setFormData({ ...formData, defaultWatermarkIntervalMins: parseInt(e.target.value) })}
-                      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
-                    />
-                  ) : (
-                    <p className="text-gray-900 mt-1">{academy.defaultWatermarkIntervalMins || 5} minutos</p>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 px-3 py-2.5 bg-gray-50 rounded-lg">
+                    <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span className="text-gray-900 text-sm truncate">{academy.address || 'No especificada'}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Zoom Accounts */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">Cuentas de Zoom</h2>
-            <p className="text-sm text-gray-600 mt-1">Conecta tus cuentas PRO de Zoom para crear clases en vivo</p>
+      {/* Settings Cards - Side by Side */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="px-8 py-5 bg-gray-50 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-brand-50 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Configuración Avanzada</h3>
+              <p className="text-sm text-gray-600">Feedback y reproducción de videos</p>
+            </div>
           </div>
-          <button
-            onClick={handleConnectZoom}
-            className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
-          >
-            + Conectar Zoom
-          </button>
         </div>
 
-        {zoomAccounts.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <svg className="w-12 h-12 mx-auto mb-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-            </svg>
-            <p className="text-sm">No hay cuentas de Zoom conectadas</p>
-            <p className="text-xs text-gray-400 mt-1">Conecta una cuenta PRO de Zoom para comenzar</p>
+        <div className="px-8 py-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Feedback Toggle */}
+            <div className="lg:col-span-1">
+              <label className="block text-sm font-medium text-gray-900 mb-2">
+                Anonimizar feedback
+              </label>
+              <p className="text-xs text-gray-500 mb-3">Los estudiantes comentan de forma anónima</p>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => editing && setFormData({ ...formData, feedbackAnonymous: !formData.feedbackAnonymous })}
+                  disabled={!editing}
+                  className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
+                    formData.feedbackAnonymous ? 'bg-brand-600' : 'bg-gray-300'
+                  } ${!editing ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                >
+                  <span
+                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform ${
+                      formData.feedbackAnonymous ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <span className="text-sm text-gray-700 font-medium">
+                  {formData.feedbackAnonymous ? 'Activado' : 'Desactivado'}
+                </span>
+              </div>
+            </div>
+
+            {/* Watch Time Multiplier */}
+            <div className="lg:col-span-1">
+              <label className="block text-sm font-medium text-gray-900 mb-2">
+                Límite de visualización
+              </label>
+              <p className="text-xs text-gray-500 mb-3">Veces que puede ver el contenido</p>
+              {editing ? (
+                <select
+                  value={formData.defaultMaxWatchTimeMultiplier}
+                  onChange={(e) => setFormData({ ...formData, defaultMaxWatchTimeMultiplier: parseFloat(e.target.value) })}
+                  className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all text-sm"
+                >
+                  {MULTIPLIER_OPTIONS.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              ) : (
+                <div className="px-3 py-2.5 bg-gray-50 rounded-lg">
+                  <span className="text-gray-900 font-medium text-sm">
+                    {MULTIPLIER_OPTIONS.find(o => o.value === academy?.defaultMaxWatchTimeMultiplier)?.label || '2x (dos veces)'}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Watermark Interval */}
+            <div className="lg:col-span-1">
+              <label className="block text-sm font-medium text-gray-900 mb-2">
+                Marca de agua
+              </label>
+              <p className="text-xs text-gray-500 mb-3">Frecuencia de aparición</p>
+              {editing ? (
+                <select
+                  value={formData.defaultWatermarkIntervalMins}
+                  onChange={(e) => setFormData({ ...formData, defaultWatermarkIntervalMins: parseInt(e.target.value) })}
+                  className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all text-sm"
+                >
+                  {WATERMARK_OPTIONS.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              ) : (
+                <div className="px-3 py-2.5 bg-gray-50 rounded-lg">
+                  <span className="text-gray-900 font-medium text-sm">
+                    {WATERMARK_OPTIONS.find(o => o.value === academy?.defaultWatermarkIntervalMins)?.label || '5 minutos'}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
-        ) : (
-          <div className="space-y-3">
-            {zoomAccounts.map(account => (
-              <div key={account.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M1.98 8.223A1.98 1.98 0 000 10.202v3.597a1.98 1.98 0 001.98 1.98h2.475a6.93 6.93 0 012.828-5.557H1.98zM5.055 6.91a6.93 6.93 0 012.829-5.556H1.98A1.98 1.98 0 000 3.333v3.598c0 .67.334 1.296.889 1.667L5.055 6.91zm3.48 3.094l6.193-3.556a.495.495 0 01.742.427v7.252a.495.495 0 01-.743.427l-6.192-3.557a.495.495 0 010-.855l-.001-.138zM18.054 5.91a6.93 6.93 0 012.829 5.556l4.166 1.689A1.98 1.98 0 0026 11.488V7.89a1.98 1.98 0 00-1.98-1.98h-5.966zm5.965 9.867h-5.966a6.93 6.93 0 01-2.829 5.556l4.166 1.69A1.98 1.98 0 0026 21.155v-3.598a1.98 1.98 0 00-.98-1.78z"/>
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">{account.accountName}</p>
-                    <p className="text-xs text-gray-500">ID: {account.accountId}</p>
+        </div>
+      </div>
+
+      {/* Zoom Accounts */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="px-8 py-6 bg-gray-900 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold">Cuentas de Zoom</h2>
+              <p className="text-gray-300 mt-1">Gestiona tus cuentas PRO de Zoom para clases en vivo</p>
+            </div>
+            <button
+              onClick={handleConnectZoom}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-white text-gray-900 rounded-lg hover:bg-gray-50 transition-all font-medium shadow-lg"
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 32 32">
+                <path d="M15 12.5v7l6-3.5-6-3.5zM23.5 9v14c0 1.375-1.125 2.5-2.5 2.5H9c-1.375 0-2.5-1.125-2.5-2.5V9c0-1.375 1.125-2.5 2.5-2.5h12c1.375 0 2.5 1.125 2.5 2.5z"/>
+              </svg>
+              Conectar Zoom
+            </button>
+          </div>
+        </div>
+
+        <div className="px-8 py-6">
+          {zoomAccounts.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <p className="text-gray-900 font-medium">No hay cuentas conectadas</p>
+              <p className="text-sm text-gray-500 mt-1">Conecta una cuenta PRO de Zoom para crear clases en vivo</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {zoomAccounts.map(account => (
+                <div key={account.id} className="group relative bg-blue-50 border border-blue-200 rounded-xl p-5 hover:border-brand-500 transition-all">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-4 flex-1">
+                      <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                        <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 32 32">
+                          <path d="M15 12.5v7l6-3.5-6-3.5zM23.5 9v14c0 1.375-1.125 2.5-2.5 2.5H9c-1.375 0-2.5-1.125-2.5-2.5V9c0-1.375 1.125-2.5 2.5-2.5h12c1.375 0 2.5 1.125 2.5 2.5z"/>
+                        </svg>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-900 truncate">{account.accountName}</p>
+                        <p className="text-xs text-gray-600 mt-0.5">ID: {account.accountId}</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Conectado {new Date(account.createdAt).toLocaleDateString('es-ES')}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleDisconnectZoom(account.id)}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity ml-2 p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                      title="Desconectar"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
                   </div>
                 </div>
-                <button
-                  onClick={() => handleDisconnectZoom(account.id)}
-                  className="text-sm text-red-600 hover:text-red-700 font-medium"
-                >
-                  Desconectar
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

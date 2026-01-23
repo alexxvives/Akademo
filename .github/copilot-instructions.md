@@ -20,18 +20,22 @@ git push
 # - Shows status at: https://github.com/alexxvives/Akademo/actions
 ```
 
-### Manual Deployment (Backup Method)
+### Manual Deployment (Backup Method - RARELY NEEDED)
 ```powershell
-# API Worker (from root)
+# ⚠️ IMPORTANT: Always run from project root directory
+# Check location first: Get-Location should show .../AKADEMO
+
+# API Worker
 cd workers/akademo-api
 npx wrangler deploy
 cd ../..
 
-# Frontend Worker (from root)
+# Frontend Worker (MUST be in root directory)
 npx @opennextjs/cloudflare build
 npx wrangler deploy
 
-# Note: GitHub Actions is preferred - manual only if automation fails
+# ❌ NEVER run build commands from subdirectories
+# ❌ NEVER manually deploy if you can just git push
 ```
 
 ### Database Commands
@@ -55,13 +59,27 @@ npx wrangler tail akademo --format pretty
 
 ## ⚡ CORE RULES
 
-### 0. ALWAYS DEPLOY AFTER CHANGES
+### 0. DEPLOYMENT WORKFLOW
 **CRITICAL**: We are NOT working locally - changes only work after deployment!
-- Changed API code? → Push to GitHub (auto-deploys API worker)
-- Changed frontend code? → Push to GitHub (auto-deploys frontend worker)
-- Check deployment status: https://github.com/alexxvives/Akademo/actions
-- Test deployment success before telling user "it works"
-- Manual deployment only if GitHub Actions fails
+
+**PRIMARY METHOD (99% of the time)**:
+```powershell
+git add .
+git commit -m "Description"
+git push
+```
+- GitHub Actions auto-deploys changed workers
+- Check status: https://github.com/alexxvives/Akademo/actions
+
+**ONLY manually deploy if**:
+- GitHub Actions fails
+- Need immediate hotfix
+- Testing deployment process
+
+**COMMON MISTAKES TO AVOID**:
+- ❌ Running `npx @opennextjs/cloudflare build` from subdirectories
+- ❌ Manually deploying when git push would work
+- ❌ Not checking current directory before build commands
 
 ### 1. Search Before You Code
 Always verify current state before changes:
