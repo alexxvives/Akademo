@@ -84,28 +84,10 @@ export async function createZoomMeeting(options: CreateMeetingOptions): Promise<
   console.log('[Zoom] Creating meeting with topic:', options.topic);
   const token = await getAccessToken(options.config);
   
-  // First, get the current user (me)
-  console.log('[Zoom] Fetching user info...');
-  const userResponse = await fetch('https://api.zoom.us/v2/users/me', {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
-  });
-
-  if (!userResponse.ok) {
-    const error = await userResponse.text();
-    console.error('[Zoom] ❌ Get user error:', error);
-    console.error('[Zoom] Status:', userResponse.status);
-    throw new Error(`Failed to get Zoom user: ${error}`);
-  }
-
-  const user = await userResponse.json();
-  const userId = user.id;
-  console.log('[Zoom] ✓ User ID:', userId);
-
-  // Create the meeting
-  console.log('[Zoom] Creating meeting for user:', userId);
-  const meetingResponse = await fetch(`https://api.zoom.us/v2/users/${userId}/meetings`, {
+  // Create meeting using /users/me/meetings (OAuth user-managed app)
+  // This works with meeting:write:meeting scope (no :admin needed)
+  console.log('[Zoom] Creating meeting via /users/me/meetings...');
+  const meetingResponse = await fetch('https://api.zoom.us/v2/users/me/meetings', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,

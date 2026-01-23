@@ -1,27 +1,92 @@
-# Zoom App - Switch to Production Mode
+# Zoom App - OAuth User-Managed App Configuration
 
 **Date**: January 23, 2026  
+**App Type**: OAuth User-Managed (NOT Server-to-Server)  
 **App**: AKADEMO Zoom Integration
 
 ---
 
-## ⚠️ CRITICAL: Correct Zoom Scopes
+## ⚠️ CRITICAL: App Architecture
 
-The error you're seeing is because you added **`meeting:write:meeting`** but the correct scope is **`meeting:write:meeting:admin`** (with `:admin` at the end).
+**We are using OAuth user-managed app**, where:
+- Each teacher connects their own Zoom account via OAuth
+- Each teacher's meetings are created using their own access token
+- All API calls use `/users/me/*` endpoints (not `/users/{userId}/*`)
 
-### Required Scopes (ALL must have `:admin` suffix)
+**This is NOT a Server-to-Server app!**
+
+---
+
+## Required OAuth Scopes (User-Managed)
 
 Go to your Zoom App → **Scopes** tab and ensure these are checked:
 
-✅ **`meeting:write:meeting:admin`** - Create Zoom meetings (NOT `meeting:write:meeting`)  
-✅ **`meeting:read:meeting:admin`** - Read meeting details  
-✅ **`meeting:read:participant:admin`** - Track participants  
-✅ **`meeting:read:list_past_participants:admin`** - Participant analytics  
-✅ **`cloud_recording:read:list_recording_files:admin`** - Get recording URLs  
-✅ **`cloud_recording:read:content:master`** - Download recordings  
-✅ **`user:read:user:admin`** - Get user ID  
+✅ **`meeting:write:meeting`** - Create meetings for the authenticated user  
+✅ **`meeting:read:meeting`** - Read meeting details  
+✅ **`cloud_recording:read:list_recording_files`** - Get recording URLs  
+✅ **`cloud_recording:read:content`** - Download recordings  
 
-**Important**: The `:admin` suffix is required for Server-to-Server OAuth apps!
+### ❌ DO NOT ADD Admin Scopes
+
+**User-managed OAuth apps CANNOT use admin scopes**:
+- ❌ `meeting:write:meeting:admin` - NOT available for user-managed apps
+- ❌ `meeting:read:meeting:admin` - NOT needed
+- ❌ Any scope with `:admin` suffix - NOT for user-managed apps
+
+**Why?** Admin scopes are only for account-level apps that create meetings for OTHER users. We create meetings only for the authenticated OAuth user.
+
+---
+
+## Critical Implementation Rules
+
+### ✅ CORRECT: Use `/users/me/meetings`
+
+```typescript
+// Create meeting for the OAuth-authenticated user
+POST https://api.zoom.us/v2/users/me/meetings
+Authorization: Bearer {teacher_access_token}
+```
+
+**Why**: The `me` keyword automatically maps to the authenticated user and works with `meeting:write:meeting` scope.
+
+### ❌ WRONG: Do NOT use `/users/{userId}/meetings`
+
+```typescript
+// ❌ This requires admin scope (not available)
+POST https://api.zoom.us/v2/users/{email}/meetings
+POST https://api.zoom.us/v2/users/{zoom_user_id}/meetings
+```
+
+**Why**: Specifying a user ID/email triggers the admin scope requirement, which user-managed apps cannot have.
+
+---
+
+## How It Works
+
+1. **Teacher connects Zoom** → OAuth flow stores their access token in ZoomAccount table
+2. **Teacher creates stream** → We use THEIR access token
+3. **API calls `/users/me/meetings`** → Creates meeting under their Zoom account
+4. **Recording uploads** → Uses their token to fetch recording
+
+**Key**: Each teacher's token creates meetings only for themselves.
+
+---
+
+## Testing After Scope Changes
+
+After updating scopes in Zoom App Marketplace:
+
+1. **Teachers must re-authorize** - Old tokens don't have new scopes
+2. Go to: `/api/zoom/oauth/callback` and connect again
+3. New tokens generated with correct scopes
+
+### Verify Token Scopes
+
+Decode access token at [jwt.io](https://jwt.io) - should see:
+```json
+{
+  "scope": "meeting:write:meeting meeting:read:meeting cloud_recording:read:list_recording_files"
+}
 
 ---
 
