@@ -23,7 +23,21 @@ zoomAccounts.get('/', async (c) => {
       'SELECT id, academyId, accountName, accountId, createdAt FROM ZoomAccount WHERE academyId = ?'
     ).bind(academyResult.id).all();
 
-    return c.json({ success: true, data: accounts.results || [] });
+    // For each account, get the classes that use it
+    const accountsWithClasses = await Promise.all(
+      (accounts.results || []).map(async (account: any) => {
+        const classes = await c.env.DB.prepare(
+          'SELECT id, name FROM Class WHERE zoomAccountId = ?'
+        ).bind(account.id).all();
+        
+        return {
+          ...account,
+          classes: classes.results || []
+        };
+      })
+    );
+
+    return c.json({ success: true, data: accountsWithClasses });
   } catch (error) {
     console.error('Error fetching Zoom accounts:', error);
     return errorResponse('Failed to fetch Zoom accounts', 500);

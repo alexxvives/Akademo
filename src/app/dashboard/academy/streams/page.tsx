@@ -295,6 +295,9 @@ export default function AcademyStreamsPage() {
                   <th className="text-left py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Grabación
                   </th>
+                  <th className="text-left py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Lección
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -389,7 +392,7 @@ export default function AcademyStreamsPage() {
                             {stream.participantCount}
                           </span>
                         ) : stream.status === 'ended' ? (
-                          <span className="text-sm text-gray-400 italic">No disponible</span>
+                          <span className="text-sm text-gray-400 italic">Obteniendo...</span>
                         ) : (
                           <span className="text-sm text-gray-400">—</span>
                         )}
@@ -417,7 +420,19 @@ export default function AcademyStreamsPage() {
                       ) : stream.status === 'active' || stream.status === 'scheduled' ? (
                         <span className="text-gray-400 text-sm">—</span>
                       ) : (
-                        <span className="text-xs text-gray-400">No disponible</span>
+                        <span className="text-xs text-gray-400">Obteniendo...</span>
+                      )}
+                    </td>
+                    <td className="py-4 px-4">
+                      {stream.recordingId ? (
+                        <button
+                          onClick={() => window.location.href = `/dashboard/academy/class/${stream.classId}`}
+                          className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                        >
+                          Crear Lección
+                        </button>
+                      ) : (
+                        <span className="text-gray-400 text-sm">—</span>
                       )}
                     </td>
                   </tr>

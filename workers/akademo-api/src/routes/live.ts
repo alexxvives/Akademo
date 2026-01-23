@@ -125,6 +125,10 @@ live.post('/', async (c) => {
       });
     } catch (zoomError: any) {
       console.error('[Create Live Stream] Zoom error:', zoomError);
+      // Check if error is due to no Zoom account
+      if (zoomError.message?.includes('Failed to get Zoom access token') || zoomError.message?.includes('unsupported_grant_type')) {
+        return c.json(errorResponse('Esta clase no tiene una cuenta de Zoom asignada. Por favor asigna una cuenta en la configuración de la clase.'), 400);
+      }
       return c.json(errorResponse(`Error al crear reunión Zoom: ${zoomError.message}`), 500);
     }
 
@@ -547,20 +551,33 @@ live.delete('/:id', async (c) => {
     // If there is a recording, try to delete it from Bunny
     if (stream.recordingId) {
       try {
-        // Check if recording is used in any Lesson
-        const existingUpload = await c.env.DB.prepare(`
-          SELECT id FROM Upload WHERE bunnyGuid = ?
-        `).bind(stream.recordingId).first();
+        // Parse recording IDs (can be single GUID string or JSON array)
+        let recordingGuids: string[] = [];
+        try {
+          recordingGuids = JSON.parse(stream.recordingId);
+          if (!Array.isArray(recordingGuids)) {
+            recordingGuids = [stream.recordingId];
+          }
+        } catch {
+          recordingGuids = [stream.recordingId];
+        }
 
-        // Only delete from Bunny if NOT used in any upload/lesson
-        if (!existingUpload) {
-          await fetch(
-            `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/videos/${stream.recordingId}`,
-            {
-              method: 'DELETE',
-              headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY },
-            }
-          );
+        // Check each recording and delete if not used
+        for (const guid of recordingGuids) {
+          const existingUpload = await c.env.DB.prepare(`
+            SELECT id FROM Upload WHERE bunnyGuid = ?
+          `).bind(guid).first();
+
+          // Only delete from Bunny if NOT used in any upload/lesson
+          if (!existingUpload) {
+            await fetch(
+              `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/videos/${guid}`,
+              {
+                method: 'DELETE',
+                headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY },
+              }
+            );
+          }
         }
       } catch (bunnyError) {
         console.error('[Delete Stream] Failed to delete from Bunny:', bunnyError);
@@ -623,81 +640,92 @@ live.post('/create-lesson', async (c) => {
       return c.json(errorResponse('Stream does not have a recording yet. Wait for Zoom to process the recording.'), 400);
     }
 
-    // Check if recording is already used in another lesson
-    const existingUpload = await c.env.DB.prepare(`
-      SELECT u.id, v.lessonId 
-      FROM Upload u 
-      JOIN Video v ON v.uploadId = u.id 
-      WHERE u.bunnyGuid = ?
-    `).bind(stream.recordingId).first();
-
-    if (existingUpload) {
-      return c.json(errorResponse('This recording is already used in another lesson'), 400);
-    }
-
-    // Check Bunny video status
-    let bunnyStatus = 0;
-    let videoDuration = 0;
+    // Parse recording IDs (can be single GUID string or JSON array of GUIDs)
+    let recordingGuids: string[] = [];
     try {
-      const bunnyResponse = await fetch(
-        `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/videos/${stream.recordingId}`,
-        {
-          headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY },
-        }
-      );
-
-      if (bunnyResponse.ok) {
-        const bunnyVideo = await bunnyResponse.json() as { status: number; length: number };
-        bunnyStatus = bunnyVideo.status;
-        videoDuration = bunnyVideo.length || 0;
-      } else {
-        console.error('[Create Lesson] Bunny video not found:', stream.recordingId);
-        return c.json(errorResponse('Recording video not found in Bunny. It may have been deleted.'), 404);
+      // Try parsing as JSON array first
+      recordingGuids = JSON.parse(stream.recordingId);
+      if (!Array.isArray(recordingGuids)) {
+        // If not an array, treat as single GUID
+        recordingGuids = [stream.recordingId];
       }
-    } catch (e) {
-      console.error('[Create Lesson] Failed to check Bunny status:', e);
+    } catch {
+      // If JSON parse fails, treat as single GUID string
+      recordingGuids = [stream.recordingId];
     }
 
-    // Warn if video is still processing
-    if (bunnyStatus === 0) {
-      return c.json(errorResponse('Recording video is still being uploaded to Bunny. Please wait a few minutes.'), 400);
+    console.log(`[Create Lesson] Found ${recordingGuids.length} recording segment(s)`);
+
+    // Check if any recording is already used in another lesson
+    for (const guid of recordingGuids) {
+      const existingUpload = await c.env.DB.prepare(`
+        SELECT u.id, v.lessonId 
+        FROM Upload u 
+        JOIN Video v ON v.uploadId = u.id 
+        WHERE u.bunnyGuid = ?
+      `).bind(guid).first();
+
+      if (existingUpload) {
+        return c.json(errorResponse(`Recording segment ${guid} is already used in another lesson`), 400);
+      }
     }
-    if (bunnyStatus === 1 || bunnyStatus === 2 || bunnyStatus === 3) {
-      // Still processing but allow creation
-      console.log('[Create Lesson] Video still processing, status:', bunnyStatus);
+
+    // Check Bunny video status for all segments
+    const videoStatuses: { guid: string; status: number; duration: number; title: string }[] = [];
+    
+    for (let i = 0; i < recordingGuids.length; i++) {
+      const guid = recordingGuids[i];
+      const partSuffix = recordingGuids.length > 1 ? ` - PARTE ${i + 1}` : '';
+      
+      try {
+        const bunnyResponse = await fetch(
+          `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/videos/${guid}`,
+          {
+            headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY },
+          }
+        );
+
+        if (bunnyResponse.ok) {
+          const bunnyVideo = await bunnyResponse.json() as { status: number; length: number; title?: string };
+          videoStatuses.push({
+            guid,
+            status: bunnyVideo.status,
+            duration: bunnyVideo.length || 0,
+            title: bunnyVideo.title || `${stream.title || 'Grabación'}${partSuffix}`
+          });
+        } else {
+          console.error(`[Create Lesson] Bunny video not found: ${guid}`);
+          return c.json(errorResponse(`Recording segment ${i + 1} not found in Bunny. It may have been deleted.`), 404);
+        }
+      } catch (e) {
+        console.error(`[Create Lesson] Failed to check Bunny status for ${guid}:`, e);
+        return c.json(errorResponse(`Failed to check status for recording segment ${i + 1}`), 500);
+      }
     }
-    if (bunnyStatus === 6) {
-      return c.json(errorResponse('Recording video failed to process. Please contact support.'), 400);
+
+    // Warn if any video is still processing
+    for (let i = 0; i < videoStatuses.length; i++) {
+      const videoStatus = videoStatuses[i];
+      if (videoStatus.status === 0) {
+        return c.json(errorResponse(`Recording segment ${i + 1} is still being uploaded to Bunny. Please wait a few minutes.`), 400);
+      }
+      if (videoStatus.status === 6) {
+        return c.json(errorResponse(`Recording segment ${i + 1} failed to process. Please contact support.`), 400);
+      }
+      if (videoStatus.status === 1 || videoStatus.status === 2 || videoStatus.status === 3) {
+        console.log(`[Create Lesson] Segment ${i + 1} still processing, status: ${videoStatus.status}`);
+      }
     }
 
     const now = new Date().toISOString();
 
-    // Create IDs
+    // Create lesson ID
     const lessonId = crypto.randomUUID();
-    const uploadId = crypto.randomUUID();
-    const videoId = crypto.randomUUID();
 
     // Determine lesson title
     const lessonTitle = title || stream.title || 'Grabación de clase en vivo';
 
-    // Create Upload record for the Bunny video
-    await c.env.DB.prepare(`
-      INSERT INTO Upload (id, fileName, fileSize, mimeType, storagePath, uploadedById, bunnyGuid, bunnyStatus, storageType, createdAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      uploadId,
-      `${lessonTitle}.mp4`,
-      0, // We don't know the exact size
-      'video/mp4',
-      stream.recordingId, // Use bunnyGuid as storage path
-      session.id,
-      stream.recordingId,
-      bunnyStatus,
-      'bunny',
-      now
-    ).run();
-
-    // Create Lesson record
+    // Create Lesson record first
     await c.env.DB.prepare(`
       INSERT INTO Lesson (id, title, description, classId, releaseDate, createdAt, updatedAt)
       VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -711,27 +739,65 @@ live.post('/create-lesson', async (c) => {
       now
     ).run();
 
-    // Create Video record linking Upload to Lesson
-    await c.env.DB.prepare(`
-      INSERT INTO Video (id, title, lessonId, uploadId, durationSeconds, createdAt, updatedAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      videoId,
-      lessonTitle,
-      lessonId,
-      uploadId,
-      videoDuration,
-      now,
-      now
-    ).run();
+    // Create Upload and Video records for each segment
+    const createdVideos = [];
+    for (let i = 0; i < videoStatuses.length; i++) {
+      const videoStatus = videoStatuses[i];
+      const uploadId = crypto.randomUUID();
+      const videoId = crypto.randomUUID();
+      const partSuffix = videoStatuses.length > 1 ? ` - PARTE ${i + 1}` : '';
+
+      // Create Upload record for the Bunny video
+      await c.env.DB.prepare(`
+        INSERT INTO Upload (id, fileName, fileSize, mimeType, storagePath, uploadedById, bunnyGuid, bunnyStatus, storageType, createdAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        uploadId,
+        `${lessonTitle}${partSuffix}.mp4`,
+        0, // We don't know the exact size
+        'video/mp4',
+        videoStatus.guid, // Use bunnyGuid as storage path
+        session.id,
+        videoStatus.guid,
+        videoStatus.status,
+        'bunny',
+        now
+      ).run();
+
+      // Create Video record linking Upload to Lesson
+      await c.env.DB.prepare(`
+        INSERT INTO Video (id, title, lessonId, uploadId, durationSeconds, createdAt, updatedAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        videoId,
+        `${lessonTitle}${partSuffix}`,
+        lessonId,
+        uploadId,
+        videoStatus.duration,
+        now,
+        now
+      ).run();
+
+      createdVideos.push({
+        id: videoId,
+        title: `${lessonTitle}${partSuffix}`,
+        uploadId,
+        bunnyGuid: videoStatus.guid
+      });
+    }
 
     // Get the created lesson
     const lesson = await c.env.DB.prepare('SELECT * FROM Lesson WHERE id = ?').bind(lessonId).first();
 
+    // Determine overall video status (all must be ready for status to be ready)
+    const allReady = videoStatuses.every(v => v.status === 4 || v.status === 5);
+    const videoStatus = allReady ? 'ready' : 'processing';
+
     return c.json(successResponse({
       lesson,
-      message: 'Lesson created from stream recording',
-      videoStatus: bunnyStatus === 4 || bunnyStatus === 5 ? 'ready' : 'processing'
+      videos: createdVideos,
+      message: `Lesson created from stream recording (${createdVideos.length} segment${createdVideos.length > 1 ? 's' : ''})`,
+      videoStatus
     }), 201);
 
   } catch (error: any) {
@@ -793,23 +859,36 @@ live.delete('/:id', async (c) => {
         const BUNNY_LIBRARY_ID = c.env.BUNNY_STREAM_LIBRARY_ID;
         const BUNNY_API_KEY = c.env.BUNNY_STREAM_API_KEY;
 
-        console.log('[Delete Stream] Attempting Bunny deletion:', stream.recordingId);
-        const bunnyResponse = await fetch(
-          `https://video.bunnycdn.com/library/${BUNNY_LIBRARY_ID}/videos/${stream.recordingId}`,
-          {
-            method: 'DELETE',
-            headers: {
-              'AccessKey': BUNNY_API_KEY,
-            },
+        // Parse recording IDs (can be single GUID string or JSON array)
+        let recordingGuids: string[] = [];
+        try {
+          recordingGuids = JSON.parse(stream.recordingId);
+          if (!Array.isArray(recordingGuids)) {
+            recordingGuids = [stream.recordingId];
           }
-        );
+        } catch {
+          recordingGuids = [stream.recordingId];
+        }
 
-        if (!bunnyResponse.ok) {
-          const bunnyError = await bunnyResponse.text();
-          console.error('[Delete Stream] Bunny deletion failed:', bunnyResponse.status, bunnyError);
-          // Continue with database deletion even if Bunny fails
-        } else {
-          console.log('[Delete Stream] Successfully deleted from Bunny:', stream.recordingId);
+        console.log(`[Delete Stream] Attempting Bunny deletion of ${recordingGuids.length} segment(s)`);
+        
+        for (const guid of recordingGuids) {
+          const bunnyResponse = await fetch(
+            `https://video.bunnycdn.com/library/${BUNNY_LIBRARY_ID}/videos/${guid}`,
+            {
+              method: 'DELETE',
+              headers: {
+                'AccessKey': BUNNY_API_KEY,
+              },
+            }
+          );
+
+          if (!bunnyResponse.ok) {
+            const bunnyError = await bunnyResponse.text();
+            console.error(`[Delete Stream] Bunny deletion failed for ${guid}:`, bunnyResponse.status, bunnyError);
+          } else {
+            console.log(`[Delete Stream] Successfully deleted from Bunny: ${guid}`);
+          }
         }
       } catch (bunnyError: any) {
         console.error('[Delete Stream] Bunny error:', bunnyError.message);
@@ -940,56 +1019,83 @@ live.post('/:id/check-recording', async (c) => {
       return c.json(errorResponse('No recording found in Zoom yet'), 404);
     }
 
-    // Find MP4
-    const apiMp4 = recordingData.recording_files.find((f: any) => f.file_type === 'MP4');
-    if (!apiMp4) {
+    // Find ALL MP4 recording files (handles multiple segments when recording is paused/restarted)
+    const mp4Files = recordingData.recording_files.filter((f: any) => f.file_type === 'MP4');
+    if (mp4Files.length === 0) {
       return c.json(errorResponse('No MP4 file found in recording'), 404);
     }
 
-    // Prepare download URL safely using OAuth token
-    const downloadUrl = await getZoomRecordingDownloadUrl(apiMp4.download_url, zoomConfig);
-    console.log('[Check Recording] Generated download URL with OAuth token');
-
-    // Upload to Bunny
-    const bunnyResponse = await fetch(`https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/videos/fetch`, {
-      method: 'POST',
-      headers: {
-        'AccessKey': c.env.BUNNY_STREAM_API_KEY,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        url: downloadUrl,
-        title: `${stream.title || 'Zoom Recording'} - Sync`,
-      })
+    // Sort by recording_start timestamp to maintain chronological order
+    mp4Files.sort((a: any, b: any) => {
+      const dateA = new Date(a.recording_start || 0).getTime();
+      const dateB = new Date(b.recording_start || 0).getTime();
+      return dateA - dateB;
     });
 
-    if (!bunnyResponse.ok) {
-      const errorText = await bunnyResponse.text();
-      return c.json(errorResponse(`Failed to sync to Bunny (${bunnyResponse.status}): ${errorText}`), 502);
-    }
+    console.log(`[Check Recording] Found ${mp4Files.length} MP4 recording file(s)`);
 
-    const bunnyData = await bunnyResponse.json();
-    console.log('[Check Recording] Bunny response:', bunnyData);
+    // Upload each segment to Bunny Stream
+    const bunnyGuids: string[] = [];
     
-    // Bunny response for fetch usually has { success: true, id: "..." }
-    // Sometimes it might return the video object directly
-    const bunnyGuid = bunnyData.guid || bunnyData.id;
+    for (let i = 0; i < mp4Files.length; i++) {
+      const mp4File = mp4Files[i];
+      const partSuffix = mp4Files.length > 1 ? ` - PARTE ${i + 1}` : '';
+      const videoTitle = `${stream.title || 'Zoom Recording'}${partSuffix}`;
+      
+      console.log(`[Check Recording] Uploading segment ${i + 1}/${mp4Files.length}: ${mp4File.id}`);
 
-    if (!bunnyGuid) {
-      console.error('[Check Recording] Bunny returned success but no GUID:', bunnyData);
-      // Return the actual response for debugging
-      return c.json(errorResponse(`Failed to get video ID from Bunny response: ${JSON.stringify(bunnyData)}`), 502);
+      // Prepare download URL safely using OAuth token
+      const downloadUrl = await getZoomRecordingDownloadUrl(mp4File.download_url, zoomConfig);
+
+      // Upload to Bunny
+      const bunnyResponse = await fetch(`https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/videos/fetch`, {
+        method: 'POST',
+        headers: {
+          'AccessKey': c.env.BUNNY_STREAM_API_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          url: downloadUrl,
+          title: videoTitle,
+        })
+      });
+
+      if (!bunnyResponse.ok) {
+        const errorText = await bunnyResponse.text();
+        console.error(`[Check Recording] Bunny upload failed for segment ${i + 1}:`, errorText);
+        // Continue with other segments even if one fails
+        continue;
+      }
+
+      const bunnyData = await bunnyResponse.json();
+      console.log(`[Check Recording] Bunny response for segment ${i + 1}:`, bunnyData);
+      
+      const bunnyGuid = bunnyData.guid || bunnyData.id;
+
+      if (bunnyGuid) {
+        bunnyGuids.push(bunnyGuid);
+      } else {
+        console.error(`[Check Recording] Bunny returned success but no GUID for segment ${i + 1}:`, bunnyData);
+      }
     }
 
+    if (bunnyGuids.length === 0) {
+      return c.json(errorResponse('Failed to upload any recording segments to Bunny'), 502);
+    }
+
+    // Store all bunnyGuids as JSON array in recordingId field
+    const recordingIds = JSON.stringify(bunnyGuids);
+    
     // Update DB
     await c.env.DB
         .prepare('UPDATE LiveStream SET recordingId = ?, status = ? WHERE id = ?')
-        .bind(bunnyGuid, 'ended', streamId)
+        .bind(recordingIds, 'ended', streamId)
         .run();
 
     return c.json(successResponse({ 
-      message: 'Recording synced successfully',
-      recordingId: bunnyGuid 
+      message: `Recording synced successfully (${bunnyGuids.length} segment${bunnyGuids.length > 1 ? 's' : ''})`,
+      recordingIds: bunnyGuids,
+      segmentCount: bunnyGuids.length
     }));
 
   } catch (error: any) {

@@ -521,6 +521,18 @@ export default function ProfilePage() {
                     <p className="text-xs text-gray-500">
                       Conectado el {new Date(account.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
                     </p>
+                    {account.classes && account.classes.length > 0 && (
+                      <div className="mt-2">
+                        <p className="text-xs font-medium text-gray-700 mb-1">Clases asignadas:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {account.classes.map((cls: any) => (
+                            <span key={cls.id} className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-blue-50 text-blue-700">
+                              {cls.name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

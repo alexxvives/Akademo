@@ -30,10 +30,10 @@ export default function StudentsList({ enrollments }: StudentsListProps) {
               <div className="flex items-center gap-3">
                 <div className="relative w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                   {e.student.firstName[0]}{e.student.lastName[0]}
-                  {/* Status dot: Green for approved/active */}
+                  {/* Status dot: Green for paid, Red for payment denied */}
                   <div 
-                    className="absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-white bg-green-500" 
-                    title="Activo"
+                    className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${(e as any).paymentStatus === 'DENIED' ? 'bg-red-500' : 'bg-green-500'}`}
+                    title={(e as any).paymentStatus === 'DENIED' ? 'Pago denegado' : 'Activo'}
                   ></div>
                 </div>
                 <div className="flex-1 min-w-0">

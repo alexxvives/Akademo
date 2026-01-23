@@ -1224,40 +1224,64 @@ lessons.post('/:id/add-stream', async (c) => {
       return c.json(errorResponse('Stream does not have a recording'), 400);
     }
 
-    // Check if an Upload already exists for this bunnyGuid
-    let uploadId = crypto.randomUUID();
-    const existingUpload = await c.env.DB.prepare(`
-        SELECT * FROM Upload WHERE bunnyGuid = ?
-    `).bind(stream.recordingId).first() as any;
-
-    if (existingUpload) {
-        uploadId = existingUpload.id;
-    } else {
-        // Create new Upload record
-        const now = new Date().toISOString();
-        const fileName = stream.title ? `${stream.title}.mp4` : 'Stream Recording.mp4';
-        await c.env.DB.prepare(`
-            INSERT INTO Upload (id, userId, storageType, bunnyGuid, fileName, mimeType, size, status, createdAt)
-            VALUES (?, ?, 'bunny', ?, ?, 'video/mp4', 0, 'completed', ?)
-        `).bind(uploadId, session.id, stream.recordingId, fileName, now).run();
+    // Parse recording IDs (can be single GUID string or JSON array of GUIDs)
+    let recordingGuids: string[] = [];
+    try {
+      recordingGuids = JSON.parse(stream.recordingId);
+      if (!Array.isArray(recordingGuids)) {
+        recordingGuids = [stream.recordingId];
+      }
+    } catch {
+      recordingGuids = [stream.recordingId];
     }
-    
-    // Create Video record linked to Lesson
-    const videoId = crypto.randomUUID();
+
     const now = new Date().toISOString();
-    
-    // Create Video
-    await c.env.DB.prepare(`
+    const createdVideos = [];
+
+    // Create Upload and Video for each recording segment
+    for (let i = 0; i < recordingGuids.length; i++) {
+      const guid = recordingGuids[i];
+      const partSuffix = recordingGuids.length > 1 ? ` - PARTE ${i + 1}` : '';
+      
+      // Check if an Upload already exists for this bunnyGuid
+      let uploadId = crypto.randomUUID();
+      const existingUpload = await c.env.DB.prepare(`
+          SELECT * FROM Upload WHERE bunnyGuid = ?
+      `).bind(guid).first() as any;
+
+      if (existingUpload) {
+          uploadId = existingUpload.id;
+      } else {
+          // Create new Upload record
+          const fileName = stream.title ? `${stream.title}${partSuffix}.mp4` : `Stream Recording${partSuffix}.mp4`;
+          await c.env.DB.prepare(`
+              INSERT INTO Upload (id, userId, storageType, bunnyGuid, fileName, mimeType, size, status, createdAt)
+              VALUES (?, ?, 'bunny', ?, ?, 'video/mp4', 0, 'completed', ?)
+          `).bind(uploadId, session.id, guid, fileName, now).run();
+      }
+      
+      // Create Video record linked to Lesson
+      const videoId = crypto.randomUUID();
+      
+      // Create Video
+      const videoTitle = stream.title ? `${stream.title}${partSuffix}` : `Stream Recording${partSuffix}`;
+      await c.env.DB.prepare(`
         INSERT INTO Video (id, lessonId, uploadId, title, description, durationSeconds, position, status, createdAt)
         VALUES (?, ?, ?, ?, ?, 0, 0, 'ready', ?)
-    `).bind(videoId, lessonId, uploadId, stream.title || 'Stream Recording', 'Grabación de clase en vivo', now).run();
+    `).bind(videoId, lessonId, uploadId, videoTitle, 'Grabación de clase en vivo', now).run();
     
-    // Increment video count
+    createdVideos.push({ id: videoId, title: videoTitle });
+    }
+    
+    // Increment video count by number of segments added
     await c.env.DB.prepare(`
-        UPDATE Lesson SET videoCount = videoCount + 1 WHERE id = ?
-    `).bind(lessonId).run();
+        UPDATE Lesson SET videoCount = videoCount + ? WHERE id = ?
+    `).bind(recordingGuids.length, lessonId).run();
 
-    return c.json(successResponse({ videoId }));
+    return c.json(successResponse({ 
+      videos: createdVideos,
+      message: `Added ${createdVideos.length} video${createdVideos.length > 1 ? 's' : ''} from stream recording`
+    }));
 
   } catch (error: any) {
     console.error('[Add Stream] Error:', error);
