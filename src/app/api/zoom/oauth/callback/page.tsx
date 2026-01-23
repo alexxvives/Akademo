@@ -26,6 +26,13 @@ function CallbackContent() {
           body: JSON.stringify({ code, state })
         });
 
+        // Check if response is ok before parsing
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('API error response:', errorText);
+          throw new Error(`API returned ${response.status}: ${errorText}`);
+        }
+
         const result = await response.json();
 
         if (result.success) {
@@ -36,7 +43,7 @@ function CallbackContent() {
         }
       } catch (error) {
         console.error('OAuth callback error:', error);
-        alert('Error connecting Zoom account');
+        alert(`Error connecting Zoom account: ${error instanceof Error ? error.message : 'Unknown error'}`);
         router.push('/dashboard/academy/profile');
       }
     };
