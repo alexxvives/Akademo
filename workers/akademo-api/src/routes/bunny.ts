@@ -100,7 +100,7 @@ bunny.put('/video/upload', async (c) => {
       return c.json(errorResponse('Unauthorized - no session cookie'), 401);
     }
 
-    if (!['ADMIN', 'TEACHER'].includes(session.role)) {
+    if (!['ADMIN', 'TEACHER', 'ACADEMY'].includes(session.role)) {
       return c.json(errorResponse(`Not authorized - role ${session.role} not allowed`), 403);
     }
 

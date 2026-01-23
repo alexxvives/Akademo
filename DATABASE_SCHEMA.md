@@ -75,6 +75,7 @@ Courses within an academy.
 | description | TEXT | YES | - | |
 | academyId | TEXT | NO | - | FK → Academy.id |
 | teacherId | TEXT | YES | - | FK → User.id (the assigned teacher) |
+| zoomAccountId | TEXT | YES | - | FK → ZoomAccount.id (assigned Zoom account for live classes) |
 | createdAt | TEXT | NO | - | |
 | updatedAt | TEXT | NO | - | |
 

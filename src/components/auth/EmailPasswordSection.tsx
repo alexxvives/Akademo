@@ -55,7 +55,7 @@ export function EmailPasswordSection({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">Contraseña</label>
         <PasswordInput
           required
           minLength={8}
@@ -64,7 +64,7 @@ export function EmailPasswordSection({
           className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm transition-all"
           placeholder="••••••••"
         />
-        <p className="text-xs text-gray-500 mt-1">Minimum 8 characters</p>
+        <p className="text-xs text-gray-500 mt-1">Mínimo 8 caracteres</p>
       </div>
 
       <button
@@ -79,15 +79,15 @@ export function EmailPasswordSection({
         {loading ? (
           <span className="flex items-center justify-center gap-2">
             <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            Please wait...
+            Espera por favor...
           </span>
         ) : error ? (
           error
         ) : (
           <>
             {role === 'STUDENT' && showVerification && !verificationSuccess 
-              ? 'Verify email to continue' 
-              : 'Create Account'}
+              ? 'Verifica tu email para continuar' 
+              : 'Crear Cuenta'}
           </>
         )}
       </button>

@@ -129,7 +129,7 @@ export default function AcademyPaymentsPage() {
 
   const handleReversePayment = async (enrollmentId: string, currentStatus: string) => {
     const newStatus = currentStatus === 'PAID' ? 'denegado' : 'confirmado';
-    if (!confirm(`¿Estás seguro de revertir este estado a ${newStatus}?`)) {
+    if (!confirm(`�Est�s seguro de revertir este estado a ${newStatus}?`)) {
       return;
     }
 
@@ -186,7 +186,7 @@ export default function AcademyPaymentsPage() {
       {pendingPayments.length === 0 ? (
         <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay pagos pendientes</h3>
-          <p className="text-gray-500">Los pagos en efectivo aparecerán aquí cuando los estudiantes los registren</p>
+          <p className="text-gray-500">Los pagos en efectivo aparecer�n aqu� cuando los estudiantes los registren</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -279,11 +279,11 @@ export default function AcademyPaymentsPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clase</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Profesor</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Método</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">M�todo</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aprobado por</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acción</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acci�n</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">

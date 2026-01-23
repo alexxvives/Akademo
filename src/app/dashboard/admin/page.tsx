@@ -172,7 +172,7 @@ export default function AdminDashboard() {
             }
           />
           <StatCard
-            title="Lecciones"
+            title="Clases"
             value={totalLessons}
             change={'+15%'}
             trend="up"
@@ -189,7 +189,7 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <BarChart
               data={lessonsPerAcademy}
-              title="Lecciones por Academia"
+              title="Clases por Academia"
               height={300}
             />
             <DonutChart

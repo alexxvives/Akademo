@@ -399,7 +399,7 @@ export default function ClassPage() {
                   <div className="flex items-center gap-3 text-sm">
                     <div className="px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-lg flex items-center gap-1.5">
                       <span className="font-semibold text-blue-900">{lessons.length}</span>
-                      <span className="text-blue-700">lecciones</span>
+                      <span className="text-blue-700">Clases</span>
                     </div>
                   </div>
                 </div>
@@ -459,7 +459,7 @@ export default function ClassPage() {
               <div className="flex-1">
                 <h3 className="text-sm font-semibold text-gray-900 mb-1">Solicitud Pendiente</h3>
                 <p className="text-sm text-gray-600">
-                  Tu solicitud está esperando aprobación. Puedes ver las lecciones, pero el contenido estará disponible una vez que el profesor apruebe tu inscripción.
+                  Tu solicitud está esperando aprobación. Puedes ver las Clases, pero el contenido estará disponible una vez que el profesor apruebe tu inscripción.
                 </p>
               </div>
             </div>
@@ -497,7 +497,7 @@ export default function ClassPage() {
                 onClick={goBackToLessons}
                 className="text-sm text-gray-500 hover:text-gray-900 mb-2"
               >
-                ← Volver a lecciones
+                ← Volver a Clases
               </button>
               <h2 className="text-xl font-semibold text-gray-900 mb-4">{selectedLesson.title}</h2>
               

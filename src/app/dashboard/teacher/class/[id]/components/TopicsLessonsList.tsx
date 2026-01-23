@@ -40,6 +40,7 @@ interface TopicsLessonsListProps {
   topics: Topic[];
   classId: string;
   totalStudents: number;
+  expandTopicId?: string | null;
   onSelectLesson: (lesson: Lesson) => void;
   onEditLesson: (lesson: Lesson) => void;
   onDeleteLesson: (lessonId: string) => void;
@@ -54,6 +55,7 @@ export default function TopicsLessonsList({
   topics,
   classId,
   totalStudents,
+  expandTopicId,
   onSelectLesson,
   onEditLesson,
   onDeleteLesson,
@@ -70,6 +72,17 @@ export default function TopicsLessonsList({
   const [creatingTopic, setCreatingTopic] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollAnimationRef = useRef<number | null>(null);
+  
+  // Auto-expand topic when expandTopicId prop changes
+  useEffect(() => {
+    if (expandTopicId) {
+      setExpandedTopics(prev => {
+        const newSet = new Set(prev);
+        newSet.add(expandTopicId);
+        return newSet;
+      });
+    }
+  }, [expandTopicId]);
   
   // Student time management modal
   const [showTimeModal, setShowTimeModal] = useState(false);
@@ -229,7 +242,7 @@ export default function TopicsLessonsList({
   };
 
   const handleDeleteTopic = async (topicId: string) => {
-    if (!confirm('¿Eliminar este tema? Las lecciones se moverán a "Sin tema".')) return;
+    if (!confirm('¿Eliminar este tema? Las Clases se moverán a "Sin tema".')) return;
     try {
       const res = await apiClient(`/topics/${topicId}`, { method: 'DELETE' });
       if (res.ok) {
@@ -558,7 +571,7 @@ export default function TopicsLessonsList({
             </svg>
             <span className="font-semibold text-gray-900">{topicName}</span>
             <span className="text-xs text-gray-600 bg-gray-200 px-2.5 py-1 rounded-full font-medium">
-              {topicLessons.length} {topicLessons.length === 1 ? 'lección' : 'lecciones'}
+              {topicLessons.length} {topicLessons.length === 1 ? 'lección' : 'Clases'}
             </span>
           </div>
           {topicId && (
@@ -568,7 +581,7 @@ export default function TopicsLessonsList({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (!confirm('¿Ocultar todas las lecciones visibles de este tema?')) return;
+                    if (!confirm('¿Ocultar todas las Clases visibles de este tema?')) return;
                     topicLessons.filter(l => isReleased(l.releaseDate)).forEach(l => onToggleRelease(l));
                   }}
                   className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 rounded-lg transition-all duration-200"
@@ -580,7 +593,7 @@ export default function TopicsLessonsList({
                 {/* Tooltip */}
                 <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 px-3 py-2 bg-slate-800 text-slate-200 text-xs rounded-lg shadow-xl border border-slate-700 opacity-0 invisible group-hover/hidetopic:opacity-100 group-hover/hidetopic:visible transition-all duration-200 whitespace-nowrap z-20">
                   <div className="absolute top-1/2 -translate-y-1/2 -right-1 w-2 h-2 bg-slate-800 border-r border-b border-slate-700 rotate-45"></div>
-                  Ocultar todas las lecciones de este tema
+                  Ocultar todas las Clases de este tema
                 </div>
               </div>
               
@@ -599,7 +612,7 @@ export default function TopicsLessonsList({
               {/* Tooltip - positioned to the left */}
               <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 px-3 py-2 bg-slate-800 text-slate-200 text-xs rounded-lg shadow-xl border border-slate-700 opacity-0 invisible group-hover/delete:opacity-100 group-hover/delete:visible transition-all duration-200 whitespace-nowrap z-20">
                 <div className="absolute top-1/2 -translate-y-1/2 -right-1 w-2 h-2 bg-slate-800 border-r border-b border-slate-700 rotate-45"></div>
-                Las lecciones se moverán a "Sin tema"
+                Las Clases se moverán a "Sin tema"
               </div>
             </div>
             </div>
@@ -614,7 +627,7 @@ export default function TopicsLessonsList({
                 <svg className="w-8 h-8 mx-auto mb-2 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
                 </svg>
-                <p>Arrastra lecciones aquí</p>
+                <p>Arrastra Clases aquí</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-2">
@@ -631,12 +644,12 @@ export default function TopicsLessonsList({
     <div>
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-3">
-          <h2 className="text-lg font-semibold text-gray-900">Lecciones</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Clases</h2>
           {/* Global Hide/Show All Button */}
           <div className="relative group/hideall">
             <button
               onClick={() => {
-                if (!confirm('¿Ocultar todas las lecciones visibles de todas las clases?')) return;
+                if (!confirm('¿Ocultar todas las Clases visibles de todas las clases?')) return;
                 lessons.filter(l => isReleased(l.releaseDate)).forEach(l => onToggleRelease(l));
               }}
               className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 rounded-lg transition-all duration-200"
@@ -648,7 +661,7 @@ export default function TopicsLessonsList({
             {/* Tooltip */}
             <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-3 py-2 bg-slate-800 text-slate-200 text-xs rounded-lg shadow-xl border border-slate-700 opacity-0 invisible group-hover/hideall:opacity-100 group-hover/hideall:visible transition-all duration-200 whitespace-nowrap z-20">
               <div className="absolute top-1/2 -translate-y-1/2 -left-1 w-2 h-2 bg-slate-800 border-l border-t border-slate-700 rotate-45"></div>
-              Ocultar todas las lecciones visibles
+              Ocultar todas las Clases visibles
             </div>
           </div>
         </div>
@@ -697,7 +710,7 @@ export default function TopicsLessonsList({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
           </div>
-          <h3 className="text-base font-semibold text-gray-900 mb-1">Aún no hay lecciones</h3>
+          <h3 className="text-base font-semibold text-gray-900 mb-1">Aún no hay Clases</h3>
           <p className="text-gray-500 text-sm">Crea tu primera lección para comenzar</p>
         </div>
       ) : (
@@ -713,12 +726,12 @@ export default function TopicsLessonsList({
       {/* Student Time Management Modal */}
       {showTimeModal && selectedLessonForTime && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[95vh] overflow-hidden flex flex-col">
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900">{selectedLessonForTime.title}</h3>
-                  <p className="text-sm text-gray-600 mt-1">Gestionar tiempos de estudiantes</p>
+                  <h3 className="text-xl font-semibold text-gray-900">Gestionar tiempos de estudiantes</h3>
+                  <p className="text-sm text-gray-600 mt-1">{selectedLessonForTime.title}</p>
                 </div>
                 <button
                   onClick={() => {
@@ -757,10 +770,10 @@ export default function TopicsLessonsList({
                         <div className="space-y-3">
                           {studentData.videos.map((video, videoIndex) => (
                             <div key={video.videoId} className="bg-white rounded-lg p-3 border border-gray-200">
-                              <div className="flex items-start justify-between gap-4">
-                                <div className="flex-1">
+                              <div className="flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-3 flex-1">
                                   <p className="font-medium text-gray-900 text-sm">Video {videoIndex + 1}</p>
-                                  <div className="flex items-center gap-2 mt-1">
+                                  <div className="flex items-center gap-2">
                                     <span className="text-xs text-gray-600">
                                       Tiempo usado: {Math.floor(video.totalWatchTimeSeconds / 60)}:{String(Math.floor(video.totalWatchTimeSeconds % 60)).padStart(2, '0')}
                                     </span>

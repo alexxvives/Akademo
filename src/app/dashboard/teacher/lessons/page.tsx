@@ -107,7 +107,7 @@ export default function TeacherLessons() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Mis Lecciones</h1>
+            <h1 className="text-2xl font-semibold text-gray-900">Mis Asignaturas</h1>
             {academyName && <p className="text-sm text-gray-500 mt-1">{academyName}</p>}
           </div>
           <Link
@@ -117,7 +117,7 @@ export default function TeacherLessons() {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
-            Nueva Lección
+            Nueva Clase
           </Link>
         </div>
 
@@ -128,8 +128,8 @@ export default function TeacherLessons() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay lecciones</h3>
-            <p className="text-gray-500 mb-6">Crea una clase y añade lecciones para comenzar</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay Clases</h3>
+            <p className="text-gray-500 mb-6">Crea una clase y añade Clases para comenzar</p>
             <Link
               href="/dashboard/teacher/classes"
               className="px-4 py-2 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors inline-block"
@@ -177,7 +177,7 @@ export default function TeacherLessons() {
                         </div>
                         <div className="text-left">
                           <h3 className="text-lg font-semibold text-gray-900">{topicName}</h3>
-                          <p className="text-sm text-gray-500">{topicLessons.length} {topicLessons.length === 1 ? 'lección' : 'lecciones'}</p>
+                          <p className="text-sm text-gray-500">{topicLessons.length} {topicLessons.length === 1 ? 'lección' : 'Clases'}</p>
                         </div>
                       </div>
                       <svg

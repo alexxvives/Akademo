@@ -102,8 +102,8 @@ export default function AcademyLessonsPage() {
     <>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900 mb-2">Lecciones</h1>
-          <p className="text-gray-600 text-sm">Todas las lecciones de la academia</p>
+          <h1 className="text-2xl font-semibold text-gray-900 mb-2">Asignaturas</h1>
+          <p className="text-gray-600 text-sm">Todas las Asignaturas de la academia</p>
         </div>
 
         {/* Filters */}
@@ -128,18 +128,18 @@ export default function AcademyLessonsPage() {
         {loading ? (
           <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
             <div className="w-8 h-8 border-4 border-gray-300 border-t-gray-900 rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600">Cargando lecciones...</p>
+            <p className="text-gray-600">Cargando Asignaturas...</p>
           </div>
         ) : filteredLessons.length === 0 ? (
           <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
             <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
             </svg>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No se encontraron lecciones</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No se encontraron Asignaturas</h3>
             <p className="text-gray-600">
               {filterClass !== 'all'
                 ? 'Intenta ajustar el filtro de clase.'
-                : 'Los profesores pueden crear lecciones desde sus clases.'}
+                : 'Los profesores pueden crear Asignaturas desde sus clases.'}
             </p>
           </div>
         ) : (
@@ -147,7 +147,7 @@ export default function AcademyLessonsPage() {
             {filteredLessons.map((lesson) => (
               <Link
                 key={lesson.id}
-                href={`/dashboard/teacher/class/${lesson.classSlug || lesson.classId}`}
+                href={`/dashboard/academy/class/${lesson.classSlug || lesson.classId}`}
                 className="block bg-white rounded-xl border-2 border-gray-200 hover:border-blue-400 hover:shadow-lg transition-all p-5 group"
               >
                 <div className="flex items-start justify-between mb-3">

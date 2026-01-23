@@ -297,7 +297,7 @@ export default function AcademyDashboard() {
               <div className="space-y-4">
                 <div>
                   <div className="flex justify-between mb-2">
-                    <span className="text-sm text-gray-600">Progreso Promedio (Lecciones)</span>
+                    <span className="text-sm text-gray-600">Progreso Promedio (Clases)</span>
                     <span className="text-sm font-semibold text-gray-900">{avgLessonProgress}%</span>
                   </div>
                   <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">

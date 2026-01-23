@@ -83,7 +83,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister, onClose }: LoginFormP
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Password</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Contraseña</label>
           <PasswordInput
             required
             minLength={8}
@@ -106,12 +106,12 @@ export function LoginForm({ onSuccess, onSwitchToRegister, onClose }: LoginFormP
           {loading ? (
             <span className="flex items-center justify-center gap-2">
               <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Please wait...
+              Espera por favor...
             </span>
           ) : error ? (
             error
           ) : (
-            'Sign In'
+            'Iniciar Sesión'
           )}
         </button>
       </form>

@@ -468,7 +468,7 @@ export default function ProfilePage() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold">Cuentas de Zoom</h2>
-              <p className="text-gray-300 mt-1">Gestiona tus cuentas PRO de Zoom para clases en vivo</p>
+              <p className="text-gray-300 mt-1">Gestiona tus cuentas de Zoom para clases en vivo</p>
             </div>
             <ZoomConnectButton onClick={handleConnectZoom} />
           </div>
@@ -488,31 +488,39 @@ export default function ProfilePage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {zoomAccounts.map(account => (
-                <div key={account.id} className="group relative bg-blue-50 border border-blue-200 rounded-xl p-5 hover:border-brand-500 transition-all">
-                  <div className="flex items-start justify-between">
+                <div key={account.id} className="group relative bg-white border border-gray-200 rounded-xl p-6 hover:border-brand-500 hover:shadow-lg transition-all">
+                  <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-4 flex-1">
-                      <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-                        <svg className="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 32 32">
-                          <path d="M15 12.5v7l6-3.5-6-3.5zM23.5 9v14c0 1.375-1.125 2.5-2.5 2.5H9c-1.375 0-2.5-1.125-2.5-2.5V9c0-1.375 1.125-2.5 2.5-2.5h12c1.375 0 2.5 1.125 2.5 2.5z"/>
+                      <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-md">
+                        <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 576 512">
+                          <path d="M0 128C0 92.7 28.7 64 64 64H320c35.3 0 64 28.7 64 64V384c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V128zM559.1 99.8c10.4 5.6 16.9 16.4 16.9 28.2V384c0 11.8-6.5 22.6-16.9 28.2s-23 5-32.9-1.6l-96-64L416 337.1V320 192 174.9l14.2-9.5 96-64c9.8-6.5 22.4-7.2 32.9-1.6z"/>
                         </svg>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-gray-900 truncate">{account.accountName}</p>
-                        <p className="text-xs text-gray-600 mt-0.5">ID: {account.accountId}</p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Conectado {new Date(account.createdAt).toLocaleDateString('es-ES')}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-gray-900 truncate">{account.accountName}</p>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Activa
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-500 mt-1">ID: {account.accountId}</p>
                       </div>
                     </div>
                     <button
                       onClick={() => handleDisconnectZoom(account.id)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity ml-2 p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-2 text-red-600 hover:bg-red-50 rounded-lg"
                       title="Desconectar"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
+                  </div>
+                  
+                  <div className="pt-3 border-t border-gray-100">
+                    <p className="text-xs text-gray-500">
+                      Conectado el {new Date(account.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </p>
                   </div>
                 </div>
               ))}

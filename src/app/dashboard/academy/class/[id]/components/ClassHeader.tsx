@@ -33,8 +33,8 @@ export default function ClassHeader({
   return (
     <>
       {/* Back to classes link */}
-      <Link href="/dashboard/teacher" className="text-sm text-gray-500 hover:text-gray-900 inline-block">
-        ← Volver a clases
+      <Link href="/dashboard/academy/classes" className="text-sm text-gray-500 hover:text-gray-900 inline-block">
+        ← Volver a asignaturas
       </Link>
       
       {/* Title and Actions */}
@@ -52,7 +52,7 @@ export default function ClassHeader({
             onClick={onCreateLesson}
             className="px-5 py-2.5 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-all"
           >
-            + Nueva Lección
+            + Nueva Clase
           </button>
           <button
             onClick={onCreateStream}

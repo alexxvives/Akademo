@@ -70,7 +70,7 @@ export default function AdminClasses() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Clases</h1>
+            <h1 className="text-2xl font-semibold text-gray-900">Asignaturas</h1>
             <p className="text-sm text-gray-500 mt-1">AKADEMO PLATFORM</p>
           </div>
         </div>
@@ -85,7 +85,7 @@ export default function AdminClasses() {
                 </svg>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Total Clases</p>
+                <p className="text-sm text-gray-500">Total Asignaturas</p>
                 <p className="text-2xl font-bold text-gray-900">{classes.length}</p>
               </div>
             </div>
@@ -111,7 +111,7 @@ export default function AdminClasses() {
                 </svg>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Total Lecciones</p>
+                <p className="text-sm text-gray-500">Total Asignaturas</p>
                 <p className="text-2xl font-bold text-gray-900">{totalLessons}</p>
               </div>
             </div>
@@ -179,7 +179,7 @@ export default function AdminClasses() {
                     Estudiantes
                   </th>
                   <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Lecciones
+                    Asignaturas
                   </th>
                 </tr>
               </thead>

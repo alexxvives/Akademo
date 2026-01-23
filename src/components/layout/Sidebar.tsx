@@ -129,13 +129,13 @@ export function Sidebar({
           const iconRef = iconRefs.current[item.href];
 
           const handleMouseEnter = () => {
-            if (iconRef?.current?.startAnimation) {
+            if (iconRef && iconRef.current && typeof iconRef.current.startAnimation === 'function') {
               iconRef.current.startAnimation();
             }
           };
 
           const handleMouseLeave = () => {
-            if (iconRef?.current?.stopAnimation) {
+            if (iconRef && iconRef.current && typeof iconRef.current.stopAnimation === 'function') {
               iconRef.current.stopAnimation();
             }
           };
@@ -211,8 +211,16 @@ export function Sidebar({
         <div className="px-3 py-2 border-t border-gray-800/50">
           <button
             onClick={onCopyAcademyLink}
-            onMouseEnter={() => linkIconRef.current?.startAnimation()}
-            onMouseLeave={() => linkIconRef.current?.stopAnimation()}
+            onMouseEnter={() => {
+              if (linkIconRef.current && typeof linkIconRef.current.startAnimation === 'function') {
+                linkIconRef.current.startAnimation();
+              }
+            }}
+            onMouseLeave={() => {
+              if (linkIconRef.current && typeof linkIconRef.current.stopAnimation === 'function') {
+                linkIconRef.current.stopAnimation();
+              }
+            }}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
               linkCopied
                 ? 'bg-[#b1e787]/20 text-[#b1e787]'
@@ -232,8 +240,16 @@ export function Sidebar({
         <div className="px-3 py-2 border-t border-gray-800/50">
           <button
             onClick={onCopyJoinLink}
-            onMouseEnter={() => linkIconRef.current?.startAnimation()}
-            onMouseLeave={() => linkIconRef.current?.stopAnimation()}
+            onMouseEnter={() => {
+              if (linkIconRef.current && typeof linkIconRef.current.startAnimation === 'function') {
+                linkIconRef.current.startAnimation();
+              }
+            }}
+            onMouseLeave={() => {
+              if (linkIconRef.current && typeof linkIconRef.current.stopAnimation === 'function') {
+                linkIconRef.current.stopAnimation();
+              }
+            }}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
               linkCopied
                 ? 'bg-[#b1e787]/20 text-[#b1e787]'
@@ -252,8 +268,8 @@ export function Sidebar({
       {user && (
         <div className="border-t border-gray-800/50 p-4">
           <Link
-            href={role === 'ACADEMY' ? '/dashboard/academy/profile' : '#'}
-            className={`flex items-center gap-3 mb-3 ${role === 'ACADEMY' ? 'cursor-pointer hover:bg-gray-800/30 rounded-xl p-2 -m-2 transition-colors' : ''}`}
+            href={`/dashboard/${role.toLowerCase()}/profile`}
+            className="flex items-center gap-3 mb-3 cursor-pointer hover:bg-gray-800/30 rounded-xl p-2 -m-2 transition-colors group"
           >
             <div className="w-10 h-10 bg-[#b1e787] rounded-xl flex items-center justify-center text-sm font-bold text-gray-900 flex-shrink-0 shadow-lg">
               {user.firstName[0]}{user.lastName[0]}
@@ -264,11 +280,22 @@ export function Sidebar({
               </p>
               <p className="text-xs text-gray-400 truncate">{user.email}</p>
             </div>
+            <svg className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
           </Link>
           <button
             onClick={onLogout}
-            onMouseEnter={() => logoutIconRef.current?.startAnimation()}
-            onMouseLeave={() => logoutIconRef.current?.stopAnimation()}
+            onMouseEnter={() => {
+              if (logoutIconRef.current && typeof logoutIconRef.current.startAnimation === 'function') {
+                logoutIconRef.current.startAnimation();
+              }
+            }}
+            onMouseLeave={() => {
+              if (logoutIconRef.current && typeof logoutIconRef.current.stopAnimation === 'function') {
+                logoutIconRef.current.stopAnimation();
+              }
+            }}
             className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-gray-800/50 rounded-xl transition-colors"
           >
             <LogoutIcon ref={logoutIconRef} size={16} />

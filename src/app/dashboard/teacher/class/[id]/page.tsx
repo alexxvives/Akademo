@@ -112,6 +112,8 @@ export default function TeacherClassPage() {
   const activeUploadRef = useRef<XMLHttpRequest | null>(null);
   const uploadStartTimeRef = useRef<number>(0);
   const lastProgressRef = useRef<{loaded: number, time: number}>({loaded: 0, time: 0});
+  const [expandTopicId, setExpandTopicId] = useState<string | null>(null);
+  const [academyDefaults, setAcademyDefaults] = useState({ maxWatchTimeMultiplier: 2.0, watermarkIntervalMins: 5 });
   const [lessonFormData, setLessonFormData] = useState({
     title: '',
     description: '',
@@ -372,6 +374,27 @@ export default function TeacherClassPage() {
       
       setClassData(classResult.data);
       const actualClassId = classResult.data.id;
+      
+      // Load academy defaults for lesson creation
+      try {
+        const academyRes = await apiClient(`/academies/${classResult.data.academyId}`);
+        const academyResult = await academyRes.json();
+        if (academyResult.success && academyResult.data) {
+          const defaults = {
+            maxWatchTimeMultiplier: academyResult.data.defaultMaxWatchTimeMultiplier || 2.0,
+            watermarkIntervalMins: academyResult.data.defaultWatermarkIntervalMins || 5
+          };
+          setAcademyDefaults(defaults);
+          // Update lesson form data with academy defaults
+          setLessonFormData(prev => ({
+            ...prev,
+            maxWatchTimeMultiplier: defaults.maxWatchTimeMultiplier,
+            watermarkIntervalMins: defaults.watermarkIntervalMins
+          }));
+        }
+      } catch (e) {
+        console.error('Failed to load academy defaults:', e);
+      }
       
       // Now fetch lessons, topics, and pending enrollments using the actual class ID
       const [lessonsRes, topicsRes, pendingRes] = await Promise.all([
@@ -713,6 +736,11 @@ export default function TeacherClassPage() {
     setUploading(true);
     setUploadProgress(0);
     
+    // Auto-expand the topic if lesson has a topicId
+    if (lessonFormData.topicId) {
+      setExpandTopicId(lessonFormData.topicId);
+    }
+    
     const abortController = new AbortController();
     activeUploadRef.current = abortController as any; // Store abort controller for cancellation
     
@@ -748,7 +776,7 @@ export default function TeacherClassPage() {
         setLessonFormData({
           title: '', description: '', externalUrl: '', releaseDate: new Date().toISOString().split('T')[0],
           releaseTime: '00:00', publishImmediately: true,
-          maxWatchTimeMultiplier: 2.0, watermarkIntervalMins: 5, topicId: '', videos: [], documents: [], selectedStreamRecordings: []
+          maxWatchTimeMultiplier: academyDefaults.maxWatchTimeMultiplier, watermarkIntervalMins: academyDefaults.watermarkIntervalMins, topicId: '', videos: [], documents: [], selectedStreamRecordings: []
         });
         setUploadProgress(0);
         
@@ -768,6 +796,11 @@ export default function TeacherClassPage() {
           setTimeout(() => notification.remove(), 300);
         }, 3000);
         await loadData();
+        
+        // Expand topic (or "Sin tema" if no topic selected)
+        const topicToExpand = result.data.topicId || 'no-topic';
+        setExpandTopicId(topicToExpand);
+        setTimeout(() => setExpandTopicId(null), 500);
       } else {
         // Remove temp lesson on error
         setLessons(prev => prev.filter(l => l.id !== tempLessonId));
@@ -1092,7 +1125,7 @@ export default function TeacherClassPage() {
       setLessonFormData({
         title: '', description: '', externalUrl: '', releaseDate: new Date().toISOString().split('T')[0],
         releaseTime: '00:00', publishImmediately: true,
-        maxWatchTimeMultiplier: 2.0, watermarkIntervalMins: 5, topicId: '', videos: [], documents: [], selectedStreamRecordings: []
+        maxWatchTimeMultiplier: academyDefaults.maxWatchTimeMultiplier, watermarkIntervalMins: academyDefaults.watermarkIntervalMins, topicId: '', videos: [], documents: [], selectedStreamRecordings: []
       });
       setEditingLessonId(null);
       setEditingLessonMedia(null);
@@ -1193,7 +1226,7 @@ export default function TeacherClassPage() {
           <div className="space-y-6">
             <div>
               <button onClick={goBackToLessons} className="text-sm text-gray-500 hover:text-gray-900 mb-2">
-                ← Volver a lecciones
+                ← Volver a Clases
               </button>
               <h2 className="text-xl font-semibold text-gray-900">{selectedLesson.title}</h2>
               {selectedLesson.description ? (
@@ -1475,7 +1508,7 @@ export default function TeacherClassPage() {
                 <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
                   <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center flex-shrink-0">
                     <h3 className="text-xl font-semibold text-gray-900">
-                      {editingLessonId ? 'Editar Lección' : 'Crear Nueva Lección'}
+                      {editingLessonId ? 'Editar Clase' : 'Crear Nueva Clase'}
                     </h3>
                     <button 
                       onClick={() => { setShowLessonForm(false); setEditingLessonId(null); setEditingLessonMedia(null); router.push(`/dashboard/teacher/class/${classId}`); }}
@@ -1618,24 +1651,22 @@ export default function TeacherClassPage() {
                         {lessonFormData.videos.length > 0 && (
                           <div className="mt-2 space-y-2">
                             {lessonFormData.videos.map((v, i) => (
-                              <div key={i} className="relative p-3 border border-blue-200 rounded-lg">
-                                <div className="absolute top-1/2 -translate-y-1/2 left-2 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center animate-[scale-in_0.3s_ease-out]">
-                                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              <div key={i} className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
                                   </svg>
                                 </div>
-                                <div className="pl-8 pr-6">
-                                  <span className="text-sm text-gray-700 font-medium">{v.file.name}</span>
+                                <div className="flex-1 min-w-0">
+                                  <span className="text-sm font-medium text-gray-900 truncate block">{v.file.name}</span>
                                 </div>
                                 <button 
                                   type="button" 
                                   onClick={() => setLessonFormData({ ...lessonFormData, videos: lessonFormData.videos.filter((_, j) => j !== i) })} 
-                                  className="absolute top-1/2 -translate-y-1/2 right-2 w-5 h-5 flex items-center justify-center text-red-500 hover:text-red-700 hover:bg-red-100 rounded transition-colors"
+                                  className="text-xs text-red-600 bg-red-100 hover:bg-red-200 px-2 py-1 rounded transition-colors"
                                   title="Eliminar video"
                                 >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                  </svg>
+                                  Eliminar
                                 </button>
                               </div>
                             ))}
@@ -1698,24 +1729,22 @@ export default function TeacherClassPage() {
                       {lessonFormData.documents.length > 0 && (
                         <div className="mt-2 space-y-2">
                           {lessonFormData.documents.map((d, i) => (
-                            <div key={i} className="relative p-3 border border-red-200 rounded-lg">
-                              <div className="absolute top-1/2 -translate-y-1/2 left-2 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center animate-[scale-in_0.3s_ease-out]">
-                                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            <div key={i} className="flex items-center gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                              <div className="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                                 </svg>
                               </div>
-                              <div className="pl-8 pr-6">
-                                <span className="text-sm text-gray-700 font-medium">{d.file.name}</span>
+                              <div className="flex-1 min-w-0">
+                                <span className="text-sm font-medium text-gray-900 truncate block">{d.file.name}</span>
                               </div>
                               <button 
                                 type="button" 
                                 onClick={() => setLessonFormData({ ...lessonFormData, documents: lessonFormData.documents.filter((_, j) => j !== i) })} 
-                                className="absolute top-1/2 -translate-y-1/2 right-2 w-5 h-5 flex items-center justify-center text-red-500 hover:text-red-700 hover:bg-red-100 rounded transition-colors"
+                                className="text-xs text-red-600 bg-red-100 hover:bg-red-200 px-2 py-1 rounded transition-colors"
                                 title="Eliminar documento"
                               >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
+                                Eliminar
                               </button>
                             </div>
                           ))}
@@ -1993,13 +2022,14 @@ export default function TeacherClassPage() {
               </div>
             )}
 
-            {/* Lecciones - Component */}
+            {/* Clases - Component */}
             {!selectedLesson && (
               <TopicsLessonsList 
                 lessons={lessons}
                 topics={topics}
                 classId={classData?.id || ''}
                 totalStudents={classData.enrollments.filter(e => e.status === 'APPROVED').length}
+                expandTopicId={expandTopicId}
                 onSelectLesson={selectLesson}
                 onEditLesson={handleEditLesson}
                 onDeleteLesson={handleDeleteLesson}

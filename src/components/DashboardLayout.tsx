@@ -266,7 +266,7 @@ export default function DashboardLayout({
       case 'ADMIN':
         return [
           {
-            label: 'Dashboard',
+            label: 'Panel de Control',
             href: '/dashboard/admin',
             iconType: 'chart' as const,
           },
@@ -281,7 +281,7 @@ export default function DashboardLayout({
             icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>) 
           },
           { 
-            label: 'Clases', 
+            label: 'Asignaturas', 
             href: '/dashboard/admin/classes', 
             iconType: 'book' as const,
           },
@@ -298,24 +298,24 @@ export default function DashboardLayout({
         ];
       case 'TEACHER':
         return [
-          { label: 'Dashboard', href: '/dashboard/teacher', iconType: 'chart' },
-          { label: 'Clases', href: '/dashboard/teacher/classes', matchPaths: ['/dashboard/teacher/class'], iconType: 'book' },
-          { label: 'Feedback', href: '/dashboard/teacher/feedback', iconType: 'message' },
+          { label: 'Panel de Control', href: '/dashboard/teacher', iconType: 'chart' },
+          { label: 'Asignaturas', href: '/dashboard/teacher/classes', matchPaths: ['/dashboard/teacher/class'], iconType: 'book' },
+          { label: 'Valoraciones', href: '/dashboard/teacher/feedback', iconType: 'message' },
           { label: 'Streams', href: '/dashboard/teacher/streams', iconType: 'clap' },
-          { label: 'Tareas', href: '/dashboard/teacher/assignments', iconType: 'fileText' },
+          { label: 'Ejercicios', href: '/dashboard/teacher/assignments', iconType: 'fileText' },
           { label: 'Calificaciones', href: '/dashboard/teacher/grading', iconType: 'clipboard' },
           { label: 'Estudiantes', href: '/dashboard/teacher/progress', iconType: 'users' },
         ];
       case 'STUDENT':
         return [
-          { label: 'Mis Clases', href: '/dashboard/student/classes', matchPaths: ['/dashboard/student/class'], badge: activeStreams.length > 0 ? activeStreams.length : undefined, icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>) },
-          { label: 'Tareas', href: '/dashboard/student/assignments', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>) },
+          { label: 'Mis Asignaturas', href: '/dashboard/student/classes', matchPaths: ['/dashboard/student/class'], badge: activeStreams.length > 0 ? activeStreams.length : undefined, icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>) },
+          { label: 'Ejercicios', href: '/dashboard/student/assignments', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>) },
           { label: 'Cuestionarios', href: '/dashboard/student/quizzes', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>) },
         ];
       case 'ACADEMY':
         const academyMenuItems: MenuItem[] = [
-          { label: 'Dashboard', href: '/dashboard/academy', iconType: 'chart' as const },
-          { label: 'Clases', href: '/dashboard/academy/classes', matchPaths: ['/dashboard/academy/class'], iconType: 'book' as const },
+          { label: 'Panel de Control', href: '/dashboard/academy', iconType: 'chart' as const },
+          { label: 'Asignaturas', href: '/dashboard/academy/classes', matchPaths: ['/dashboard/academy/class'], iconType: 'book' as const },
           { label: 'Streams', href: '/dashboard/academy/streams', iconType: 'clap' as const },
           { label: 'Profesores', href: '/dashboard/academy/teachers', iconType: 'botMessage' as const },
           { label: 'Estudiantes', href: '/dashboard/academy/students', iconType: 'users' as const },
