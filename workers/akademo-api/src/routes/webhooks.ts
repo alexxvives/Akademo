@@ -61,8 +61,11 @@ webhooks.post('/zoom', async (c) => {
 
       console.log('[Zoom Webhook] Meeting ended:', meetingId);
     } else if (event === 'recording.completed') {
+      // Zoom provides meeting UUID (encrypted meeting ID) for recordings
+      const meetingUuid = data.object.uuid;
       const meetingId = data.object.id;
       console.log('[Zoom Webhook] Recording completed for meeting:', meetingId);
+      console.log('[Zoom Webhook] Meeting UUID:', meetingUuid);
       console.log('[Zoom Webhook] Full recording payload:', JSON.stringify(data, null, 2));
       console.log('[Zoom Webhook] Using OAuth flow (no server-to-server)');
       
@@ -102,9 +105,11 @@ webhooks.post('/zoom', async (c) => {
           const accessToken = zoomAccount.accessToken;
 
           // Fetch recording details from Zoom API (using OAuth token directly)
-          console.log('[Zoom Webhook] Fetching recordings from Zoom API...');
+          // IMPORTANT: Use UUID (double-encoded for API) instead of numeric meeting ID
+          const encodedUuid = encodeURIComponent(encodeURIComponent(meetingUuid));
+          console.log('[Zoom Webhook] Fetching recordings from Zoom API with UUID:', encodedUuid);
           const recordingsResponse = await fetch(
-            `https://api.zoom.us/v2/meetings/${meetingId}/recordings`,
+            `https://api.zoom.us/v2/meetings/${encodedUuid}/recordings`,
             {
               headers: {
                 'Authorization': `Bearer ${accessToken}`,
@@ -113,8 +118,10 @@ webhooks.post('/zoom', async (c) => {
           );
 
           if (!recordingsResponse.ok) {
-            console.error('[Zoom Webhook] Failed to fetch recordings:', recordingsResponse.status);
-            return;
+            const errorText = await recordingsResponse.text();
+            console.error('[Zoom Webhook] Failed to fetch recordings:', recordingsResponse.status, errorText);
+            // Return success to prevent Zoom retries
+            return c.json(successResponse({ received: true, error: 'Failed to fetch recordings' }));
           }
 
           const recordingsData = await recordingsResponse.json() as any;
