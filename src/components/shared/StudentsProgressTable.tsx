@@ -261,11 +261,14 @@ export function StudentsProgressTable({
                       <div className="flex items-center gap-2">
                         <span className={`text-sm font-medium ${activityStatus.textColor}`}>
                           {student.lastActive
-                            ? new Date(student.lastActive).toLocaleDateString('es-ES', {
-                                day: 'numeric',
-                                month: 'short',
-                                year: 'numeric',
-                              })
+                            ? (() => {
+                                const date = new Date(student.lastActive);
+                                const day = date.getDate();
+                                const month = date.toLocaleDateString('es-ES', { month: 'long' });
+                                const year = date.getFullYear();
+                                const time = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
+                                return `Ú ${day} ${month.charAt(0).toUpperCase() + month.slice(1)} ${year} a las ${time}`;
+                              })()
                             : 'Sin actividad'}
                         </span>
                       </div>

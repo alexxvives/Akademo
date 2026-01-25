@@ -72,16 +72,6 @@ export function DashboardChartsGrid({
           </div>
           <div>
             <div className="flex justify-between mb-2">
-              <span className="text-sm text-gray-600">Tiempo Total de Streams</span>
-              <span className="text-sm font-semibold text-gray-900">
-                {streamStats.totalHours > 0 || streamStats.totalMinutes > 0
-                  ? `${streamStats.totalHours}h ${streamStats.totalMinutes}min`
-                  : '0h 0min'}
-              </span>
-            </div>
-          </div>
-          <div>
-            <div className="flex justify-between mb-2">
               <span className="text-sm text-gray-600">Asistencia Promedio (Streams)</span>
               <span className="text-sm font-semibold text-gray-900">
                 {streamStats.total > 0 && filteredStudents.length > 0
@@ -99,6 +89,16 @@ export function DashboardChartsGrid({
                   animation: 'slideIn 1s ease-out 0.1s backwards' 
                 }} 
               />
+            </div>
+          </div>
+          <div>
+            <div className="flex justify-between mb-2">
+              <span className="text-sm text-gray-600">Tiempo Total de Streams</span>
+              <span className="text-sm font-semibold text-gray-900">
+                {streamStats.totalHours > 0 || streamStats.totalMinutes > 0
+                  ? `${streamStats.totalHours}h ${streamStats.totalMinutes}min`
+                  : '0h 0min'}
+              </span>
             </div>
           </div>
           <style jsx>{`
