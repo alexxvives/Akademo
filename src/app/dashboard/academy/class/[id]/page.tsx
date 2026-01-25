@@ -388,12 +388,17 @@ export default function TeacherClassPage() {
       }
 
       // If NOT PAID and this is a demo class, load demo data
-      if (paymentStatus === 'NOT PAID' && classId.startsWith('demo-')) {
+      if (paymentStatus === 'NOT PAID') {
         const { generateDemoClasses, generateDemoLessons } = await import('@/lib/demo-data');
         const demoClasses = generateDemoClasses();
         const demoLessons = generateDemoLessons();
         
-        const demoClass = demoClasses.find(c => c.id === classId);
+        // Find demo class by ID or by slug
+        const demoClass = demoClasses.find(c => 
+          c.id === classId || 
+          c.name.toLowerCase().replace(/\s+/g, '-') === classId.toLowerCase()
+        );
+        
         if (demoClass) {
           setClassData({
             id: demoClass.id,
@@ -405,7 +410,7 @@ export default function TeacherClassPage() {
           
           // Filter lessons for this class and map to Lesson interface
           const classLessons = demoLessons
-            .filter(l => l.classId === classId)
+            .filter(l => l.classId === demoClass.id)
             .map(l => ({
               id: l.id,
               title: l.title,

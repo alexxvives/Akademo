@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { BarChart, DonutChart } from '@/components/Charts';
 import { apiClient } from '@/lib/api-client';
 import { useAnimatedNumber } from '@/hooks';
-import { generateDemoStudents, generateDemoStats, generateDemoStreams } from '@/lib/demo-data';
+import { generateDemoStudents, generateDemoStats, generateDemoStreams, generateDemoClasses } from '@/lib/demo-data';
 
 interface Class {
   id: string;
@@ -114,6 +114,20 @@ export default function AcademyDashboard() {
           const demoStats = generateDemoStats();
           const demoStudents = generateDemoStudents(100);
           const demoStreams = generateDemoStreams();
+          const demoClasses = generateDemoClasses();
+          
+          setClasses(demoClasses.map(c => ({
+            id: c.id,
+            name: c.name,
+            description: c.description,
+            slug: c.name.toLowerCase().replace(/\s+/g, '-'),
+            academyName: 'Mi Academia Demo',
+            teacherName: c.teacherName,
+            studentCount: c.studentCount,
+            videoCount: c.videoCount,
+            documentCount: c.documentCount,
+            enrollmentCount: c.studentCount,
+          })));
           
           setEnrolledStudents(demoStudents.map(s => ({
             id: s.id,
