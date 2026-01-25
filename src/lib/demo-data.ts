@@ -2,7 +2,7 @@
 // Shows sample data to help academies visualize the platform before purchasing
 
 export const DEMO_VIDEO_URL = "https://www.youtube.com/watch?v=2lAe1cqCOXo"; // 1-hour timer video
-export const DEMO_VIDEO_GUID = "demo-1hour-timer";
+export const DEMO_VIDEO_GUID = "912efe98-e6af-4c29-ada3-2617f0ff6674";
 
 export interface DemoTeacher {
   id: string;
@@ -150,15 +150,58 @@ export function generateDemoStreams(): DemoStream[] {
       title: 'Clase en Vivo - Introducción a React',
       className: 'Programación Web',
       teacherName: 'Carlos Rodríguez',
-      participantCount: 45,
+      participantCount: 35,
       startedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-      endedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 90 * 60 * 1000).toISOString(),
+      endedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 75 * 60 * 1000).toISOString(),
       status: 'ENDED',
-      duration: 90,
+      duration: 75,
     },
     {
       id: 'demo-stream2',
       title: 'Repaso de Matemáticas - Ecuaciones Diferenciales',
+      className: 'Matemáticas Avanzadas',
+      teacherName: 'María García',
+      participantCount: 22,
+      startedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+      endedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000 + 50 * 60 * 1000).toISOString(),
+      status: 'ENDED',
+      duration: 50,
+    },
+    {
+      id: 'demo-stream3',
+      title: 'Workshop - Diseño de Logotipos',
+      className: 'Diseño Gráfico Profesional',
+      teacherName: 'Ana Martínez',
+      participantCount: 18,
+      startedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+      endedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 + 120 * 60 * 1000).toISOString(),
+      status: 'ENDED',
+      duration: 120,
+    },
+    {
+      id: 'demo-stream4',
+      title: 'Sesión de Consultas - Node.js Backend',
+      className: 'Programación Web',
+      teacherName: 'Carlos Rodríguez',
+      participantCount: 28,
+      startedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      endedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 + 45 * 60 * 1000).toISOString(),
+      status: 'ENDED',
+      duration: 45,
+    },
+    {
+      id: 'demo-stream5',
+      title: 'Clase Especial - Teoría del Color',
+      className: 'Diseño Gráfico Profesional',
+      teacherName: 'Ana Martínez',
+      participantCount: 31,
+      startedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+      endedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000 + 65 * 60 * 1000).toISOString(),
+      status: 'ENDED',
+      duration: 65,
+    },
+  ];
+}
       className: 'Matemáticas Avanzadas',
       teacherName: 'María García',
       participantCount: 67,

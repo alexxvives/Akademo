@@ -50,7 +50,7 @@ export default function StudentsList({ enrollments }: StudentsListProps) {
   };
 
   return (
-    <div>
+    <div className="pb-8">
       <h2 className="text-lg font-semibold text-gray-900 mb-4">Estudiantes</h2>
       {visibleEnrollments.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
