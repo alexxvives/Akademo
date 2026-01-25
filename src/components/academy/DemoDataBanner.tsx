@@ -21,7 +21,7 @@ export function DemoDataBanner() {
             </div>
           </div>
           <a
-            href="/api/stripe/create-checkout-session"
+            href="/dashboard/academy/payments"
             className="flex-shrink-0 px-5 py-2 bg-white text-red-700 font-semibold rounded-md hover:bg-red-50 transition-colors shadow-sm text-sm whitespace-nowrap"
           >
             Activar Academia

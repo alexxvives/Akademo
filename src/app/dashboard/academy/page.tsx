@@ -145,7 +145,7 @@ export default function AcademyDashboard() {
               totalRatings: demoStats.totalRatings,
               ratedLessons: 8,
             },
-            lessons: demoStats.recentRatings.map(r => ({
+            lessons: (demoStats.recentRatings || []).map(r => ({
               lessonId: r.id,
               lessonTitle: r.lessonTitle,
               className: 'Programación Web',
