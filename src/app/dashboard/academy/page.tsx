@@ -84,6 +84,7 @@ export default function AcademyDashboard() {
 
   const loadData = async () => {
     try {
+      console.log('🔵 Starting loadData...');
       const [academiesRes, classesRes, pendingRes, ratingsRes, rejectedRes, streamsRes, progressRes] = await Promise.all([
         apiClient('/academies'),
         apiClient('/academies/classes'),
@@ -104,19 +105,29 @@ export default function AcademyDashboard() {
         progressRes.json(),
       ]);
 
+      console.log('🔵 academiesResult:', academiesResult);
+
       if (academiesResult.success && Array.isArray(academiesResult.data) && academiesResult.data.length > 0) {
         const academy = academiesResult.data[0];
+        console.log('🔵 Academy:', academy);
+        console.log('🔵 Payment status:', academy.paymentStatus);
         setAcademyInfo(academy);
         setPaymentStatus(academy.paymentStatus || 'NOT PAID');
         
         // If academy hasn't paid, use demo data
         if (academy.paymentStatus === 'NOT PAID') {
+          console.log('🟡 Loading DEMO DATA...');
           const demoStats = generateDemoStats();
           const demoStudents = generateDemoStudents(100);
           const demoStreams = generateDemoStreams();
           const demoClasses = generateDemoClasses();
           
-          setClasses((demoClasses || []).map(c => ({
+          console.log('🟡 demoStats:', demoStats);
+          console.log('🟡 demoStats.recentRatings length:', demoStats.recentRatings?.length);
+          console.log('🟡 demoClasses length:', demoClasses?.length);
+          console.log('🟡 demoStudents length:', demoStudents?.length);
+          
+          const mappedClasses = (demoClasses || []).map(c => ({
             id: c.id,
             name: c.name,
             description: c.description,
@@ -127,9 +138,11 @@ export default function AcademyDashboard() {
             videoCount: c.videoCount,
             documentCount: c.documentCount,
             enrollmentCount: c.studentCount,
-          })));
+          }));
+          console.log('🟡 mappedClasses:', mappedClasses);
+          setClasses(mappedClasses);
           
-          setEnrolledStudents((demoStudents || []).map(s => ({
+          const mappedStudents = (demoStudents || []).map(s => ({
             id: s.id,
             name: `${s.firstName} ${s.lastName}`,
             email: s.email,
@@ -137,23 +150,30 @@ export default function AcademyDashboard() {
             className: s.className,
             lessonsCompleted: Math.floor(Math.random() * 10),
             totalLessons: 10,
-          })));
+          }));
+          console.log('🟡 mappedStudents length:', mappedStudents.length);
+          setEnrolledStudents(mappedStudents);
           
-          setRatingsData({
+          const lessonsData = (demoStats.recentRatings || []).map(r => ({
+            lessonId: r.id,
+            lessonTitle: r.lessonTitle,
+            className: 'Programación Web',
+            classId: 'demo-c1',
+            averageRating: r.rating,
+            ratingCount: Math.floor(Math.random() * 20) + 5,
+          }));
+          console.log('🟡 lessonsData length:', lessonsData.length);
+          
+          const ratingsDataObj = {
             overall: {
               averageRating: demoStats.averageRating || 4.5,
               totalRatings: demoStats.totalRatings || 250,
               ratedLessons: 8,
             },
-            lessons: (demoStats.recentRatings || []).map(r => ({
-              lessonId: r.id,
-              lessonTitle: r.lessonTitle,
-              className: 'Programación Web',
-              classId: 'demo-c1',
-              averageRating: r.rating,
-              ratingCount: Math.floor(Math.random() * 20) + 5,
-            })),
-          });
+            lessons: lessonsData,
+          };
+          console.log('🟡 Setting ratingsData:', ratingsDataObj);
+          setRatingsData(ratingsDataObj);
           
           setStreamStats({
             total: demoStats.totalStreams,
@@ -185,10 +205,13 @@ export default function AcademyDashboard() {
           }));
           setPendingEnrollments(demoPending);
           setRejectedCount(8);
+          console.log('🟢 DEMO DATA LOADED - setting loading to false');
           setLoading(false);
           return;
         }
       }
+
+      console.log('🔵 Loading REAL DATA...');
 
       if (rejectedResult.success && rejectedResult.data) {
         setRejectedCount(rejectedResult.data.count || 0);
@@ -305,7 +328,7 @@ export default function AcademyDashboard() {
         }
       }
     } catch (error) {
-      console.error('Failed to load data:', error);
+      console.error('❌ Failed to load data:', error);
     } finally {
       setLoading(false);
     }
@@ -523,6 +546,14 @@ export default function AcademyDashboard() {
           {/* Star Ratings Distribution - BOTTOM LEFT (Bar Chart) */}
           <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full">
             <h3 className="text-lg font-semibold text-gray-900 mb-6">Valoraciones</h3>
+            {(() => {
+              console.log('🎨 Rendering Valoraciones...');
+              console.log('🎨 ratingsData:', ratingsData);
+              console.log('🎨 ratingsData?.lessons:', ratingsData?.lessons);
+              console.log('🎨 ratingsData?.lessons?.length:', ratingsData?.lessons?.length);
+              console.log('🎨 ratingsData?.overall?.totalRatings:', ratingsData?.overall?.totalRatings);
+              return null;
+            })()}
             {ratingsData && ratingsData.overall.totalRatings > 0 && ratingsData.lessons ? (
               <>
                 <BarChart
