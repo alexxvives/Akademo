@@ -2,13 +2,7 @@
 
 import Link from 'next/link';
 
-interface DemoDataBannerProps {
-  paymentStatus: string;
-}
-
-export function DemoDataBanner({ paymentStatus }: DemoDataBannerProps) {
-  if (paymentStatus === 'PAID') return null;
-
+export function DemoDataBanner() {
   return (
     <div className="sticky top-0 z-50 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 border-b-4 border-amber-600 shadow-lg">
       <div className="max-w-7xl mx-auto px-4 py-3">
