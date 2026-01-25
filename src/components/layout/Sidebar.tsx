@@ -116,7 +116,7 @@ export function Sidebar({
         </Link>
       </div>
 
-      {/* Scrollable content - everything except user profile */}
+      {/* Scrollable content - navigation and buttons */}
       <div className="flex-1 overflow-y-auto min-h-0 flex flex-col">
         {/* Navigation */}
         <nav className="px-3 py-6 space-y-2">
@@ -207,7 +207,10 @@ export function Sidebar({
             </button>
           </div>
         )}
+      </div>
 
+      {/* Fixed bottom section - always visible */}
+      <div className="flex-shrink-0">
         {/* Academy Invite Link */}
         {role === 'ACADEMY' && academyId && (
           <div className="px-3 py-2 border-t border-gray-800/50">
@@ -265,11 +268,10 @@ export function Sidebar({
             </button>
           </div>
         )}
-      </div>
-
-      {/* User Profile - Fixed at bottom, always visible */}
-      {user && (
-        <div className="flex-shrink-0 border-t border-gray-800/50 p-4">
+        
+        {/* User Profile */}
+        {user && (
+          <div className="border-t border-gray-800/50 p-4">
           <Link
             href={`/dashboard/${role.toLowerCase()}/profile`}
             className="flex items-center gap-3 mb-3 cursor-pointer hover:bg-gray-800/30 rounded-xl p-2 -m-2 transition-colors group"
@@ -306,6 +308,7 @@ export function Sidebar({
           </button>
         </div>
       )}
+      </div>
     </aside>
   );
 }
