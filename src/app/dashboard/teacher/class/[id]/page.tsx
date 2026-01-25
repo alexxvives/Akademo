@@ -420,8 +420,8 @@ export default function TeacherClassPage() {
       const res = await apiClient(`/live?classId=${classId}`);
       const result = await res.json();
       if (result.success) {
-        // Filter out ended streams - only show scheduled and active
-        setLiveClasses((result.data || []).filter((s: any) => s.status === 'scheduled' || s.status === 'active'));
+        // Only show active streams (scheduled = not started yet, ended = finished)
+        setLiveClasses((result.data || []).filter((s: any) => s.status === 'active'));
       }
     } catch (e) {
       console.error('Failed to load live classes:', e);
@@ -794,9 +794,18 @@ export default function TeacherClassPage() {
         }, 3000);
         await loadData();
         
+        // Remove ?action=create from URL so user can create another lesson
+        const url = new URL(window.location.href);
+        if (url.searchParams.has('action')) {
+          url.searchParams.delete('action');
+          window.history.replaceState({}, '', url.toString());
+        }
+        
         // Always expand the topic section where the lesson was uploaded
-        // If topicId exists, expand that topic. Otherwise expand 'uncategorized' (Sin tema)
-        const topicToExpand = result.data.topicId || 'uncategorized';
+        // Explicitly check for null/undefined and convert to 'uncategorized'
+        const topicToExpand = (result.data.topicId === null || result.data.topicId === undefined || result.data.topicId === '') 
+          ? 'uncategorized' 
+          : result.data.topicId;
         setExpandTopicId(topicToExpand);
         setTimeout(() => setExpandTopicId(null), 500);
       } else {
