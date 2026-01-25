@@ -339,14 +339,17 @@ export default function AcademyDashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="w-6 h-6 border-2 border-gray-200 border-t-blue-600 rounded-full animate-spin" />
-      </div>
+      <>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="w-6 h-6 border-2 border-gray-200 border-t-blue-600 rounded-full animate-spin" />
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="w-full space-y-6">
+    <>
+      <div className="w-full space-y-6">
         {/* Page Header with Class Filter */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100">
           <div>
@@ -552,6 +555,6 @@ export default function AcademyDashboard() {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
