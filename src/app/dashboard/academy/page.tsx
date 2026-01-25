@@ -141,11 +141,11 @@ export default function AcademyDashboard() {
           
           setRatingsData({
             overall: {
-              averageRating: demoStats?.averageRating || 4.5,
-              totalRatings: demoStats?.totalRatings || 250,
+              averageRating: demoStats.averageRating || 4.5,
+              totalRatings: demoStats.totalRatings || 250,
               ratedLessons: 8,
             },
-            lessons: ((demoStats?.recentRatings) || []).map(r => ({
+            lessons: (demoStats.recentRatings || []).map(r => ({
               lessonId: r.id,
               lessonTitle: r.lessonTitle,
               className: 'Programación Web',
