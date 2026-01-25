@@ -3,7 +3,6 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
-import { DemoDataBanner } from '@/components/academy/DemoDataBanner';
 import { generateDemoStreams } from '@/lib/demo-data';
 
 interface Stream {
@@ -43,14 +42,7 @@ export default function AcademyStreamsPage() {
   const [deletingStreamId, setDeletingStreamId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadStreams();
     loadAcademyInfo();
-    
-    const pollInterval = setInterval(() => {
-      loadStreams();
-    }, 10000);
-    
-    return () => clearInterval(pollInterval);
   }, []);
 
   const loadAcademyInfo = async () => {
@@ -80,6 +72,15 @@ export default function AcademyStreamsPage() {
           setLoading(false);
           return;
         }
+        
+        // If PAID, load real streams and start polling
+        await loadStreams();
+        const pollInterval = setInterval(() => {
+          loadStreams();
+        }, 10000);
+        
+        // Cleanup function
+        window.addEventListener('beforeunload', () => clearInterval(pollInterval));
       }
       
       if (classesResult.success && Array.isArray(classesResult.data)) {
@@ -87,6 +88,7 @@ export default function AcademyStreamsPage() {
       }
     } catch (error) {
       console.error('Error loading academy info:', error);
+      setLoading(false);
     }
   };
 
@@ -248,14 +250,12 @@ export default function AcademyStreamsPage() {
   const totalMinutes = Math.floor((totalDurationMs % (1000 * 60 * 60)) / (1000 * 60));
 
   return (
-    <>
-      <DemoDataBanner paymentStatus={paymentStatus} />
-      <div className="space-y-6">
-        {/* Header with Filter */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Historial de Streams</h1>
-            {academyName && <p className="text-gray-600 text-sm mt-1">{academyName}</p>}
+    <div className="space-y-6">
+      {/* Header with Filter */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">Historial de Streams</h1>
+          {academyName && <p className="text-gray-600 text-sm mt-1">{academyName}</p>}
           </div>
   {classes.length > 0 && (
           <div className="relative">
@@ -459,7 +459,6 @@ export default function AcademyStreamsPage() {
           </div>
         </div>
       )}
-      </div>
-    </>
+    </div>
   );
 }

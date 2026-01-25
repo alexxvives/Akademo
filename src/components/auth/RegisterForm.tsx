@@ -125,7 +125,8 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, onClose }: RegisterFo
     setError('');
 
     try {
-      if (formData.role === 'STUDENT' && !showVerification && !verificationSuccess) {
+      // Email verification required for ACADEMY and STUDENT roles
+      if ((formData.role === 'STUDENT' || formData.role === 'ACADEMY') && !showVerification && !verificationSuccess) {
         try {
           await sendVerificationCode();
           setShowVerification(true);
@@ -139,8 +140,8 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, onClose }: RegisterFo
         return;
       }
 
-      if (formData.role === 'STUDENT' && !verificationSuccess) {
-        setError('Please verify your email first');
+      if ((formData.role === 'STUDENT' || formData.role === 'ACADEMY') && !verificationSuccess) {
+        setError('Por favor verifica tu email primero');
         setLoading(false);
         return;
       }

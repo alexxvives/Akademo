@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
-import { DemoDataBanner } from '@/components/academy/DemoDataBanner';
 import { generateDemoClasses, generateDemoTeachers } from '@/lib/demo-data';
 
 interface Teacher {
@@ -233,7 +232,6 @@ export default function AcademyClassesPage() {
 
   return (
     <>
-      <DemoDataBanner paymentStatus={paymentStatus} />
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>

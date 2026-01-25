@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
+import { generateDemoPendingPayments, generateDemoPaymentHistory } from '@/lib/demo-data';
 
 interface PendingPayment {
   enrollmentId: string;
@@ -42,6 +43,7 @@ export default function AcademyPaymentsPage() {
   const [loading, setLoading] = useState(true);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
   const [reversingIds, setReversingIds] = useState<Set<string>>(new Set());
+  const [paymentStatus, setPaymentStatus] = useState<string>('PAID');
 
   useEffect(() => {
     loadData();
@@ -49,6 +51,27 @@ export default function AcademyPaymentsPage() {
 
   const loadData = async () => {
     try {
+      // Check academy payment status first
+      const academyRes = await apiClient('/academies');
+      const academyResult = await academyRes.json();
+      
+      if (academyResult.success && Array.isArray(academyResult.data) && academyResult.data.length > 0) {
+        const academy = academyResult.data[0];
+        const status = academy.paymentStatus || 'PAID';
+        setPaymentStatus(status);
+        
+        // If NOT PAID, show demo payments
+        if (status === 'NOT PAID') {
+          const demoPending = generateDemoPendingPayments();
+          const demoHistory = generateDemoPaymentHistory();
+          setPendingPayments(demoPending as any[]);
+          setPaymentHistory(demoHistory as any[]);
+          setLoading(false);
+          return;
+        }
+      }
+      
+      // If PAID, load real payments
       const [pendingRes, historyRes] = await Promise.all([
         apiClient('/payments/pending-cash'),
         apiClient('/payments/history'),

@@ -270,6 +270,96 @@ export function generateDemoLessons(): DemoLesson[] {
   ];
 }
 
+export interface DemoPendingEnrollment {
+  id: string;
+  student: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+  class: {
+    id: string;
+    name: string;
+  };
+  enrolledAt: string;
+}
+
+export interface DemoPayment {
+  enrollmentId: string;
+  studentFirstName: string;
+  studentLastName: string;
+  studentEmail: string;
+  className: string;
+  paymentAmount: number;
+  currency: string;
+  paymentMethod: string;
+  paymentStatus: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export function generateDemoPendingEnrollments(): DemoPendingEnrollment[] {
+  const firstNames = ['Juan', 'María', 'Pedro', 'Laura', 'Diego', 'Carmen', 'Luis', 'Ana', 'José', 'Isabel', 'Carlos', 'Elena', 'Miguel', 'Sofía', 'Javier'];
+  const lastNames = ['García', 'Rodríguez', 'Martínez', 'López', 'Sánchez', 'Pérez', 'Gómez', 'Díaz'];
+  const classes = generateDemoClasses();
+  
+  return Array.from({ length: 15 }, (_, i) => ({
+    id: `demo-pending-${i + 1}`,
+    student: {
+      id: `demo-student-pending-${i + 1}`,
+      firstName: firstNames[i % firstNames.length],
+      lastName: lastNames[i % lastNames.length],
+      email: `estudiante.pendiente${i + 1}@demo.com`,
+    },
+    class: {
+      id: classes[i % classes.length].id,
+      name: classes[i % classes.length].name,
+    },
+    enrolledAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+  }));
+}
+
+export function generateDemoPendingPayments(): DemoPayment[] {
+  const firstNames = ['Ana', 'Carlos', 'María', 'Luis', 'Carmen'];
+  const lastNames = ['Torres', 'Ruiz', 'Morales', 'Hernández', 'Jiménez'];
+  const classes = ['Programación Web', 'Matemáticas Avanzadas', 'Diseño Gráfico', 'Física Cuántica'];
+  
+  return Array.from({ length: 5 }, (_, i) => ({
+    enrollmentId: `demo-payment-pending-${i + 1}`,
+    studentFirstName: firstNames[i],
+    studentLastName: lastNames[i],
+    studentEmail: `${firstNames[i].toLowerCase()}.${lastNames[i].toLowerCase()}@demo.com`,
+    className: classes[i % classes.length],
+    paymentAmount: [49.99, 39.99, 59.99, 44.99][i % 4],
+    currency: 'EUR',
+    paymentMethod: 'cash',
+    paymentStatus: 'CASH_PENDING',
+    createdAt: new Date(Date.now() - Math.random() * 5 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - Math.random() * 5 * 24 * 60 * 60 * 1000).toISOString(),
+  }));
+}
+
+export function generateDemoPaymentHistory(): DemoPayment[] {
+  const firstNames = ['Juan', 'María', 'Pedro', 'Laura', 'Diego', 'Carmen', 'Luis', 'Ana', 'José', 'Isabel'];
+  const lastNames = ['García', 'Rodríguez', 'Martínez', 'López', 'Sánchez'];
+  const classes = ['Programación Web', 'Matemáticas Avanzadas', 'Diseño Gráfico', 'Física Cuántica'];
+  
+  return Array.from({ length: 20 }, (_, i) => ({
+    enrollmentId: `demo-payment-history-${i + 1}`,
+    studentFirstName: firstNames[i % firstNames.length],
+    studentLastName: lastNames[i % lastNames.length],
+    studentEmail: `estudiante${i + 1}@demo.com`,
+    className: classes[i % classes.length],
+    paymentAmount: [49.99, 39.99, 59.99, 44.99][i % 4],
+    currency: 'EUR',
+    paymentMethod: i % 3 === 0 ? 'cash' : 'stripe',
+    paymentStatus: 'PAID',
+    createdAt: new Date(Date.now() - Math.random() * 60 * 24 * 60 * 60 * 1000).toISOString(),
+    updatedAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+  }));
+}
+
 export function generateDemoStats() {
   const ratings = generateDemoRatings(250);
   const distribution = ratings.reduce((acc, r) => {
@@ -286,7 +376,7 @@ export function generateDemoStats() {
     totalRatings: 250,
     averageRating: +(totalRating / ratings.length).toFixed(1),
     ratingDistribution: distribution,
-    recentRatings: ratings.slice(0, 10),
+    recentRatings: ratings.slice(0, 100),
     totalStreams: 5,
     avgParticipants: 46,
     streamsThisMonth: 2,

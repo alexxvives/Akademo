@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { FeedbackView, type ClassFeedback } from '@/components/shared';
-import { DemoDataBanner } from '@/components/academy/DemoDataBanner';
 import { generateDemoRatings, generateDemoClasses } from '@/lib/demo-data';
 
 export default function AcademyFeedbackPage() {
@@ -13,7 +12,6 @@ export default function AcademyFeedbackPage() {
   const [paymentStatus, setPaymentStatus] = useState<string>('NOT PAID');
 
   useEffect(() => {
-    loadFeedback();
     loadAcademyName();
   }, []);
 
@@ -40,25 +38,38 @@ export default function AcademyFeedbackPage() {
             averageRating: 4.3 + Math.random() * 0.7,
             topics: [
               {
-                lessonId: `${c.id}-l1`,
-                lessonTitle: 'Introducción',
-                ratings: demoRatings.slice(0, 15).map(r => ({
-                  id: r.id,
-                  rating: r.rating,
-                  studentFirstName: r.studentFirstName,
-                  studentLastName: r.studentLastName,
-                  comment: r.comment,
-                  createdAt: r.createdAt,
-                })),
+                id: `${c.id}-topic1`,
+                name: 'Introducción y Fundamentos',
+                totalRatings: 25,
+                averageRating: 4.5,
+                lessons: [
+                  {
+                    id: `${c.id}-l1`,
+                    title: 'Lección 1: Introducción',
+                    totalRatings: 15,
+                    averageRating: 4.6,
+                    ratings: demoRatings.slice(0, 15).map(r => ({
+                      id: r.id,
+                      rating: r.rating,
+                      studentName: r.studentName,
+                      comment: r.comment,
+                      createdAt: r.createdAt,
+                    })),
+                  },
+                ],
               },
             ],
           })));
           setLoading(false);
           return;
         }
+        
+        // If PAID, load real feedback
+        await loadFeedback();
       }
     } catch (error) {
       console.error('Failed to load academy name:', error);
+      setLoading(false);
     }
   };
 
@@ -107,13 +118,11 @@ export default function AcademyFeedbackPage() {
   };
 
   return (
-    <>
-      <DemoDataBanner paymentStatus={paymentStatus} />
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Feedback de Estudiantes</h1>
-          {academyName && <p className="text-sm text-gray-500 mt-1">{academyName}</p>}
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold text-gray-900">Feedback de Estudiantes</h1>
+        {academyName && <p className="text-sm text-gray-500 mt-1">{academyName}</p>}
+      </div>
 
       <FeedbackView
         classes={classes}

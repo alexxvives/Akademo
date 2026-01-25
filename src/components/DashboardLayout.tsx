@@ -6,6 +6,7 @@ import { apiClient } from '@/lib/api-client';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { MobileSidebar } from '@/components/layout/MobileSidebar';
 import { NotificationPanel } from '@/components/layout/NotificationPanel';
+import { DemoDataBanner } from '@/components/academy/DemoDataBanner';
 
 interface User {
   id: string;
@@ -75,6 +76,7 @@ export default function DashboardLayout({
   
   // Academy state for academy join link
   const [academyId, setAcademyId] = useState<string | null>(null);
+  const [academyPaymentStatus, setAcademyPaymentStatus] = useState<string>('PAID');
 
   const loadNotifications = useCallback(async () => {
     try {
@@ -107,6 +109,7 @@ export default function DashboardLayout({
       const result = await response.json();
       if (result.success && Array.isArray(result.data) && result.data.length > 0) {
         setAcademyId(result.data[0].id);
+        setAcademyPaymentStatus(result.data[0].paymentStatus || 'PAID');
       }
     } catch (error) {
       console.error('Failed to load academy:', error);
@@ -397,6 +400,10 @@ export default function DashboardLayout({
             onMarkAllAsRead={markAllAsRead}
             onJoinLiveClass={joinLiveClass}
           />
+        )}
+
+        {role === 'ACADEMY' && academyPaymentStatus === 'NOT PAID' && (
+          <DemoDataBanner />
         )}
 
         <main className="flex-1 overflow-y-auto bg-gray-100">

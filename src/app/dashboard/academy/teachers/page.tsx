@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
-import { DemoDataBanner } from '@/components/academy/DemoDataBanner';
 import { generateDemoTeachers } from '@/lib/demo-data';
 
 interface Teacher {
@@ -117,7 +116,6 @@ export default function AcademyTeachers() {
 
   return (
     <>
-      <DemoDataBanner paymentStatus={paymentStatus} />
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>

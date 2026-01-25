@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { BarChart, DonutChart } from '@/components/Charts';
 import { apiClient } from '@/lib/api-client';
 import { useAnimatedNumber } from '@/hooks';
-import { DemoDataBanner } from '@/components/academy/DemoDataBanner';
 import { generateDemoStudents, generateDemoStats, generateDemoStreams } from '@/lib/demo-data';
 
 interface Class {
@@ -105,7 +104,8 @@ export default function AcademyDashboard() {
         progressRes.json(),
       ]);
 
-      ifconst academy = academiesResult.data[0];
+      if (academiesResult.success && Array.isArray(academiesResult.data) && academiesResult.data.length > 0) {
+        const academy = academiesResult.data[0];
         setAcademyInfo(academy);
         setPaymentStatus(academy.paymentStatus || 'NOT PAID');
         
@@ -154,12 +154,26 @@ export default function AcademyDashboard() {
             minutes: 30,
           });
           
-          setPendingEnrollments([]);
-          setRejectedCount(0);
+          // Add demo pending enrollments and rejected students
+          const demoPending = Array.from({ length: 15 }, (_, i) => ({
+            id: `demo-pending-${i + 1}`,
+            student: {
+              id: `demo-student-${i + 1}`,
+              firstName: ['Juan', 'María', 'Pedro'][i % 3],
+              lastName: ['García', 'López', 'Martínez'][i % 3],
+              email: `pendiente${i + 1}@demo.com`,
+            },
+            class: {
+              id: 'demo-c1',
+              name: 'Programación Web',
+            },
+            enrolledAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+          }));
+          setPendingEnrollments(demoPending);
+          setRejectedCount(8);
           setLoading(false);
           return;
-        }ay(academiesResult.data) && academiesResult.data.length > 0) {
-        setAcademyInfo(academiesResult.data[0]);
+        }
       }
 
       if (rejectedResult.success && rejectedResult.data) {
@@ -325,18 +339,14 @@ export default function AcademyDashboard() {
 
   if (loading) {
     return (
-      <>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="w-6 h-6 border-2 border-gray-200 border-t-blue-600 rounded-full animate-spin" />
-        </div>
-      </>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="w-6 h-6 border-2 border-gray-200 border-t-blue-600 rounded-full animate-spin" />
+      </div>
     );
   }
 
   return (
-    <>
-      <DemoDataBanner paymentStatus={paymentStatus} />
-      <div className="w-full space-y-6">
+    <div className="w-full space-y-6">
         {/* Page Header with Class Filter */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100">
           <div>
@@ -542,6 +552,6 @@ export default function AcademyDashboard() {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

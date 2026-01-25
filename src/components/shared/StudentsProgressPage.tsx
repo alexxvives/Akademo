@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { StudentsProgressTable, type StudentProgress } from '@/components/shared';
+import { generateDemoStudents } from '@/lib/demo-data';
 
 interface Class {
   id: string;
@@ -18,6 +19,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
   const [classes, setClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(true);
   const [academyName, setAcademyName] = useState<string>('');
+  const [paymentStatus, setPaymentStatus] = useState<string>('PAID');
   
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,7 +43,29 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
         }
       } else if (result.success && Array.isArray(result.data) && result.data.length > 0) {
         // Academy endpoint returns { success, data }
-        setAcademyName(result.data[0].name || '');
+        const academy = result.data[0];
+        setAcademyName(academy.name || '');
+        const status = academy.paymentStatus || 'PAID';
+        setPaymentStatus(status);
+        
+        // If NOT PAID, show demo students
+        if (status === 'NOT PAID' && role === 'ACADEMY') {
+          const demoStudents = generateDemoStudents(100);
+          setStudents(demoStudents.map(s => ({
+            id: s.id,
+            name: `${s.firstName} ${s.lastName}`,
+            email: s.email,
+            className: s.className,
+            classId: s.className,
+            teacherName: ['Carlos Rodríguez', 'María García', 'Ana Martínez'][Math.floor(Math.random() * 3)],
+            totalWatchTime: Math.floor(Math.random() * 7200),
+            videosWatched: Math.floor(Math.random() * 15),
+            totalVideos: 20,
+            lastActive: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+          })));
+          setLoading(false);
+          return;
+        }
       }
     } catch (error) {
       console.error('Failed to load academy name:', error);
