@@ -105,21 +105,31 @@ export function useProgressTracker({
 
   // Track play time
   useEffect(() => {
+    console.log('[ProgressTracker] useEffect triggered', { isUnlimitedUser, isPlaying });
+    
     // Don't track for unlimited users
     if (isUnlimitedUser) {
+      console.log('[ProgressTracker] Skipping tracking - unlimited user (TEACHER/ADMIN)');
       return;
     }
 
     if (isPlaying) {
+      console.log('[ProgressTracker] Starting interval for video tracking');
       // Start the interval
       watchTimeInterval.current = setInterval(() => {
         // Check if we should still be tracking
         if (!isPlayingRef.current || !canPlayRef.current) {
+          console.log('[ProgressTracker] Skipping tick - not playing or cannot play', { 
+            isPlaying: isPlayingRef.current, 
+            canPlay: canPlayRef.current 
+          });
           return;
         }
 
         // Multiply by playback rate so time passes faster at higher speeds
         const increment = playbackRateRef.current;
+
+        console.log('[ProgressTracker] Incrementing watch time by', increment, 'seconds');
 
         onPlayStateUpdate((prev: VideoPlayState) => ({
           ...prev,
@@ -128,9 +138,11 @@ export function useProgressTracker({
         }));
 
         playTimeTracker.current += increment;
+        console.log('[ProgressTracker] playTimeTracker now at', playTimeTracker.current, 'seconds');
 
         // Save every 5 seconds
         if (playTimeTracker.current >= 5) {
+          console.log('[ProgressTracker] Saving progress to server...');
           saveProgress(playTimeTracker.current);
           playTimeTracker.current = 0;
         }
