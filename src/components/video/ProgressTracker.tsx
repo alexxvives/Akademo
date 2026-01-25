@@ -154,8 +154,14 @@ export function useProgressTracker({
           watchTimeInterval.current = null;
         }
       };
+    } else {
+      // Clear interval if stopped playing
+      if (watchTimeInterval.current) {
+        clearInterval(watchTimeInterval.current);
+        watchTimeInterval.current = null;
+      }
     }
-  }, [isPlaying, isUnlimitedUser, saveProgress, onPlayStateUpdate]);
+  }, [isPlaying, isUnlimitedUser]); // Removed saveProgress and onPlayStateUpdate to prevent infinite recreation
 
   // Save remaining progress when unmounting
   useEffect(() => {
