@@ -146,6 +146,7 @@ export default function TeacherClassPage() {
   const [streamFormData, setStreamFormData] = useState({
     title: '',
   });
+  const [paymentStatus, setPaymentStatus] = useState<string>('PAID');
 
   useEffect(() => {
     if (classId) {
@@ -382,13 +383,14 @@ export default function TeacherClassPage() {
       // Check payment status first
       const academiesRes = await apiClient('/academies');
       const academiesResult = await academiesRes.json();
-      let paymentStatus = 'NOT PAID';
+      let currentPaymentStatus = 'NOT PAID';
       if (academiesResult.success && Array.isArray(academiesResult.data) && academiesResult.data.length > 0) {
-        paymentStatus = academiesResult.data[0].paymentStatus || 'NOT PAID';
+        currentPaymentStatus = academiesResult.data[0].paymentStatus || 'NOT PAID';
       }
+      setPaymentStatus(currentPaymentStatus);
 
       // If NOT PAID and this is a demo class, load demo data
-      if (paymentStatus === 'NOT PAID') {
+      if (currentPaymentStatus === 'NOT PAID') {
         const { generateDemoClasses, generateDemoLessons } = await import('@/lib/demo-data');
         const demoClasses = generateDemoClasses();
         const demoLessons = generateDemoLessons();
@@ -404,26 +406,33 @@ export default function TeacherClassPage() {
         };
         
         const urlSlug = normalizeSlug(decodeURIComponent(classId));
-        console.log('[Demo Class] URL classId:', classId);
-        console.log('[Demo Class] Decoded:', decodeURIComponent(classId));
-        console.log('[Demo Class] Normalized URL slug:', urlSlug);
         
         // Find demo class by ID or by normalized slug
         const demoClass = demoClasses.find(c => {
           const classSlug = normalizeSlug(c.name);
-          console.log(`[Demo Class] Checking ${c.name} -> ${classSlug} vs ${urlSlug}`);
           return c.id === classId || classSlug === urlSlug;
         });
         
-        console.log('[Demo Class] Found demo class:', demoClass);
-        
         if (demoClass) {
+          // Generate demo students for this class
+          const demoStudentsForClass = Array.from({ length: demoClass.studentCount || 30 }, (_, i) => ({
+            id: `demo-enrollment-${demoClass.id}-${i + 1}`,
+            student: {
+              id: `demo-student-${i + 1}`,
+              firstName: ['Juan', 'María', 'Carlos', 'Ana', 'Luis', 'Carmen', 'José', 'Laura', 'Pedro', 'Isabel'][i % 10],
+              lastName: ['García', 'Rodríguez', 'Martínez', 'López', 'Sánchez'][i % 5],
+              email: `estudiante${i + 1}@demo.com`,
+            },
+            enrolledAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+            status: 'APPROVED',
+          }));
+          
           setClassData({
             id: demoClass.id,
             name: demoClass.name,
             description: demoClass.description,
             academy: { id: 'demo-academy', name: 'Mi Academia Demo' },
-            enrollments: [] // Empty enrollments for demo
+            enrollments: demoStudentsForClass,
           });
           
           // Filter lessons for this class and map to Lesson interface
