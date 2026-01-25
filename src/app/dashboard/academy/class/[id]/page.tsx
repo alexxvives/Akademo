@@ -756,9 +756,18 @@ export default function TeacherClassPage() {
     setUploading(true);
     setUploadProgress(0);
     
-    // Auto-expand the topic if lesson has a topicId
-    if (lessonFormData.topicId) {
-      setExpandTopicId(lessonFormData.topicId);
+    // IMMEDIATELY expand topic and clean URL when lesson creation starts
+    const topicToExpand = (lessonFormData.topicId === null || lessonFormData.topicId === undefined || lessonFormData.topicId === '') 
+      ? 'uncategorized' 
+      : lessonFormData.topicId;
+    setExpandTopicId(topicToExpand);
+    setTimeout(() => setExpandTopicId(null), 500);
+    
+    // Remove ?action=create from URL immediately
+    const url = new URL(window.location.href);
+    if (url.searchParams.has('action')) {
+      url.searchParams.delete('action');
+      window.history.replaceState({}, '', url.toString());
     }
     
     const abortController = new AbortController();
@@ -816,21 +825,6 @@ export default function TeacherClassPage() {
           setTimeout(() => notification.remove(), 300);
         }, 3000);
         await loadData();
-        
-        // Remove ?action=create from URL so user can create another lesson
-        const url = new URL(window.location.href);
-        if (url.searchParams.has('action')) {
-          url.searchParams.delete('action');
-          window.history.replaceState({}, '', url.toString());
-        }
-        
-        // Always expand the topic section where the lesson was uploaded
-        // Explicitly check for null/undefined and convert to 'uncategorized'
-        const topicToExpand = (result.data.topicId === null || result.data.topicId === undefined || result.data.topicId === '') 
-          ? 'uncategorized' 
-          : result.data.topicId;
-        setExpandTopicId(topicToExpand);
-        setTimeout(() => setExpandTopicId(null), 500);
       } else {
         // Remove temp lesson on error
         setLessons(prev => prev.filter(l => l.id !== tempLessonId));

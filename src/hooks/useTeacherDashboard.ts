@@ -85,7 +85,7 @@ export function useTeacherDashboard() {
   const [academyName, setAcademyName] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [rejectedCount, setRejectedCount] = useState(0);
-  const [streamStats, setStreamStats] = useState({ total: 0, avgParticipants: 0, thisMonth: 0, totalHours: 0 });
+  const [streamStats, setStreamStats] = useState({ total: 0, avgParticipants: 0, thisMonth: 0, totalHours: 0, totalMinutes: 0 });
 
   const loadData = useCallback(async () => {
     try {
@@ -121,12 +121,15 @@ export function useTeacherDashboard() {
         
         const totalParticipants = streams.reduce((sum: number, s: any) => sum + (s.participantCount || 0), 0);
         const totalDuration = streams.reduce((sum: number, s: any) => sum + (s.durationMinutes || 0), 0);
+        const totalHours = Math.floor(totalDuration / 60);
+        const totalMinutes = totalDuration % 60;
         
         setStreamStats({
           total: streams.length,
           avgParticipants: streams.length > 0 ? Math.round(totalParticipants / streams.length) : 0,
           thisMonth: thisMonthStreams.length,
-          totalHours: Math.round(totalDuration / 60),
+          totalHours: totalHours,
+          totalMinutes: totalMinutes,
         });
       }
 

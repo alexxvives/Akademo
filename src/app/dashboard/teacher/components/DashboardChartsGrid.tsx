@@ -13,7 +13,7 @@ interface DashboardChartsGridProps {
   filteredStudents: EnrolledStudent[];
   pendingEnrollments: PendingEnrollment[];
   rejectedCount: number;
-  streamStats: { total: number; avgParticipants: number; thisMonth: number; totalHours: number };
+  streamStats: { total: number; avgParticipants: number; thisMonth: number; totalHours: number; totalMinutes: number };
   ratingsData: RatingsData | null;
   selectedClass: string;
 }
@@ -91,7 +91,7 @@ export function DashboardChartsGrid({
               />
             </div>
             <div className="mt-2 text-xs text-gray-500">
-              Tiempo total de streams: {streamStats.totalHours}h
+              Tiempo total de streams: {streamStats.totalHours}h {streamStats.totalMinutes}min
             </div>
           </div>
           <style jsx>{`
