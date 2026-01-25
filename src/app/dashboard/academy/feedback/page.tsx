@@ -66,9 +66,79 @@ export default function AcademyFeedbackPage() {
         
         // If PAID, load real feedback
         await loadFeedback();
+      } else {
+        // If API fails or returns empty, treat as demo account
+        const demoClasses = generateDemoClasses();
+        const demoRatings = generateDemoRatings(250);
+        
+        setClasses(demoClasses.map(c => ({
+          id: c.id,
+          name: c.name,
+          teacherName: c.teacherName,
+          totalRatings: Math.floor(Math.random() * 50) + 20,
+          averageRating: 4.3 + Math.random() * 0.7,
+          topics: [
+            {
+              id: `${c.id}-topic1`,
+              name: 'Introducción y Fundamentos',
+              totalRatings: 25,
+              averageRating: 4.5,
+              lessons: [
+                {
+                  id: `${c.id}-l1`,
+                  title: 'Lección 1: Introducción',
+                  totalRatings: 15,
+                  averageRating: 4.6,
+                  ratings: demoRatings.slice(0, 15).map(r => ({
+                    id: r.id,
+                    rating: r.rating,
+                    studentName: r.studentName,
+                    comment: r.comment,
+                    createdAt: r.createdAt,
+                  })),
+                },
+              ],
+            },
+          ],
+        })));
+        setLoading(false);
       }
     } catch (error) {
       console.error('Failed to load academy name:', error);
+      // On error, also show demo data as fallback
+      const demoClasses = generateDemoClasses();
+      const demoRatings = generateDemoRatings(250);
+      
+      setClasses(demoClasses.map(c => ({
+        id: c.id,
+        name: c.name,
+        teacherName: c.teacherName,
+        totalRatings: Math.floor(Math.random() * 50) + 20,
+        averageRating: 4.3 + Math.random() * 0.7,
+        topics: [
+          {
+            id: `${c.id}-topic1`,
+            name: 'Introducción y Fundamentos',
+            totalRatings: 25,
+            averageRating: 4.5,
+            lessons: [
+              {
+                id: `${c.id}-l1`,
+                title: 'Lección 1: Introducción',
+                totalRatings: 15,
+                averageRating: 4.6,
+                ratings: demoRatings.slice(0, 15).map(r => ({
+                  id: r.id,
+                  rating: r.rating,
+                  studentName: r.studentName,
+                  comment: r.comment,
+                  createdAt: r.createdAt,
+                })),
+              },
+            ],
+          },
+        ],
+      })));
       setLoading(false);
     }
   };

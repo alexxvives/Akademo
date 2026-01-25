@@ -33,11 +33,16 @@ export default function TeacherProfile() {
     try {
       const res = await apiClient('/requests/teacher');
       const result = await res.json();
-      if (result.success && Array.isArray(result.data) && result.data.length > 0) {
+      if (Array.isArray(result) && result.length > 0) {
+        // Teacher endpoint returns array directly
+        setAcademyName(result[0].academyName || '');
+      } else if (result.success && Array.isArray(result.data) && result.data.length > 0) {
+        // Fallback for wrapped response
         setAcademyName(result.data[0].academyName || '');
       }
     } catch (error) {
       console.error('Failed to load academy name:', error);
+      // Continue gracefully - page still works without academy name
     }
   };
 
