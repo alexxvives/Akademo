@@ -393,11 +393,23 @@ export default function TeacherClassPage() {
         const demoClasses = generateDemoClasses();
         const demoLessons = generateDemoLessons();
         
-        // Find demo class by ID or by slug
-        const demoClass = demoClasses.find(c => 
-          c.id === classId || 
-          c.name.toLowerCase().replace(/\s+/g, '-') === classId.toLowerCase()
-        );
+        // Normalize slug for comparison (handle Spanish characters)
+        const normalizeSlug = (str: string) => {
+          return str
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '') // Remove accents
+            .replace(/[^a-z0-9]+/g, '-') // Replace non-alphanumeric with dash
+            .replace(/^-+|-+$/g, ''); // Remove leading/trailing dashes
+        };
+        
+        const urlSlug = normalizeSlug(classId);
+        
+        // Find demo class by ID or by normalized slug
+        const demoClass = demoClasses.find(c => {
+          const classSlug = normalizeSlug(c.name);
+          return c.id === classId || classSlug === urlSlug;
+        });
         
         if (demoClass) {
           setClassData({
