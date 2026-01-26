@@ -2164,14 +2164,7 @@ export default function TeacherClassPage() {
                 classId={classData?.id || ''}
                 totalStudents={classData.enrollments.filter(e => e.status === 'APPROVED').length}
                 expandTopicId={expandTopicId}
-                onSelectLesson={selectLesson}
-                onEditLesson={handleEditLesson}
-                onDeleteLesson={handleDeleteLesson}
-                onRescheduleLesson={handleRescheduleLesson}
-                onTopicsChange={loadData}
-                onLessonMove={handleLessonMove}
-                onToggleRelease={handleToggleRelease}
-              />
+                  paymentStatus={paymentStatus}
             )}
 
             {/* Reschedule Modal */}

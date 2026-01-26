@@ -41,6 +41,7 @@ interface TopicsLessonsListProps {
   classId: string;
   totalStudents: number;
   expandTopicId?: string | null;
+  paymentStatus?: string;
   onSelectLesson: (lesson: Lesson) => void;
   onEditLesson: (lesson: Lesson) => void;
   onDeleteLesson: (lessonId: string) => void;
@@ -56,6 +57,7 @@ export default function TopicsLessonsList({
   classId,
   totalStudents,
   expandTopicId,
+  paymentStatus,
   onSelectLesson,
   onEditLesson,
   onDeleteLesson,
@@ -260,13 +262,15 @@ export default function TopicsLessonsList({
     setStudentTimesData([]);
     
     try {
-      // Load student times for this lesson
-      const res = await apiClient(`/lessons/${lesson.id}/student-times`);
-      const result = await res.json();
-      if (result.success) {
-        setStudentTimesData(result.data || []);
+      // If demo academy, load demo data
+      if (paymentStatus === 'NOT PAID') {
+        const { generateDemoStudentTimes } = await import('@/lib/demo-data');
+        const demoData = generateDemoStudentTimes(lesson.id);
+        setStudentTimesData(demoData);
+        setIsLoadingStudentTimes(false);
+        return;
       }
-    } catch (error) {
+      
       console.error('Failed to load student times:', error);
       alert('Error al cargar tiempos de estudiantes');
     } finally {
@@ -348,10 +352,11 @@ export default function TopicsLessonsList({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      onRescheduleLesson(lesson);
+                      if (paymentStatus !== 'NOT PAID') onRescheduleLesson(lesson);
                     }}
-                    className="p-2 bg-violet-500/20 text-violet-400 rounded-lg hover:bg-violet-500/30 hover:scale-105 transition-all border border-violet-500/30"
-                    title="Reprogramar"
+                    disabled={paymentStatus === 'NOT PAID'}
+                    className="p-2 bg-violet-500/20 text-violet-400 rounded-lg hover:bg-violet-500/30 hover:scale-105 transition-all border border-violet-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
+                    title={paymentStatus === 'NOT PAID' ? 'Active su academia para reprogramar lecciones' : 'Reprogramar'}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -360,11 +365,11 @@ export default function TopicsLessonsList({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (!lesson.isUploading) onEditLesson(lesson);
+                      if (!lesson.isUploading && paymentStatus !== 'NOT PAID') onEditLesson(lesson);
                     }}
-                    disabled={lesson.isUploading}
+                    disabled={lesson.isUploading || paymentStatus === 'NOT PAID'}
                     className="p-2 bg-accent-500/20 text-accent-400 rounded-lg hover:bg-accent-500/30 hover:scale-105 transition-all border border-accent-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
-                    title="Editar lección"
+                    title={paymentStatus === 'NOT PAID' ? 'Active su academia para editar lecciones' : 'Editar lección'}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -373,11 +378,11 @@ export default function TopicsLessonsList({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (!lesson.isUploading) onDeleteLesson(lesson.id);
+                      if (!lesson.isUploading && paymentStatus !== 'NOT PAID') onDeleteLesson(lesson.id);
                     }}
-                    disabled={lesson.isUploading}
+                    disabled={lesson.isUploading || paymentStatus === 'NOT PAID'}
                     className="p-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 hover:scale-105 transition-all border border-red-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
-                    title="Eliminar lección"
+                    title={paymentStatus === 'NOT PAID' ? 'Active su academia para eliminar lecciones' : 'Eliminar lección'}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -793,8 +798,9 @@ export default function TopicsLessonsList({
                                 <div className="flex items-center gap-2 flex-wrap justify-end">
                                   <button
                                     onClick={() => handleUpdateStudentTime(studentData.studentId, video.videoId, 0)}
-                                    className="px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 whitespace-nowrap"
-                                    title="Reiniciar completamente"
+                                    disabled={paymentStatus === 'NOT PAID'}
+                                    className="px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title={paymentStatus === 'NOT PAID' ? 'Active su academia para modificar tiempos' : 'Reiniciar completamente'}
                                   >
                                     Reiniciar
                                   </button>
@@ -803,8 +809,9 @@ export default function TopicsLessonsList({
                                       const newTime = Math.max(0, video.totalWatchTimeSeconds - 900);
                                       handleUpdateStudentTime(studentData.studentId, video.videoId, newTime);
                                     }}
-                                    className="px-2 py-1 bg-gray-900 text-white rounded text-xs hover:bg-gray-800 whitespace-nowrap"
-                                    title="Reducir 15 minutos"
+                                    disabled={paymentStatus === 'NOT PAID'}
+                                    className="px-2 py-1 bg-gray-900 text-white rounded text-xs hover:bg-gray-800 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title={paymentStatus === 'NOT PAID' ? 'Active su academia para modificar tiempos' : 'Reducir 15 minutos'}
                                   >
                                     +15min
                                   </button>
@@ -813,8 +820,9 @@ export default function TopicsLessonsList({
                                       const newTime = Math.max(0, video.totalWatchTimeSeconds - 1800);
                                       handleUpdateStudentTime(studentData.studentId, video.videoId, newTime);
                                     }}
-                                    className="px-2 py-1 bg-gray-900 text-white rounded text-xs hover:bg-gray-800 whitespace-nowrap"
-                                    title="Reducir 30 minutos"
+                                    disabled={paymentStatus === 'NOT PAID'}
+                                    className="px-2 py-1 bg-gray-900 text-white rounded text-xs hover:bg-gray-800 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title={paymentStatus === 'NOT PAID' ? 'Active su academia para modificar tiempos' : 'Reducir 30 minutos'}
                                   >
                                     +30min
                                   </button>
@@ -823,8 +831,9 @@ export default function TopicsLessonsList({
                                       const newTime = Math.max(0, video.totalWatchTimeSeconds - 3600);
                                       handleUpdateStudentTime(studentData.studentId, video.videoId, newTime);
                                     }}
-                                    className="px-2 py-1 bg-gray-900 text-white rounded text-xs hover:bg-gray-800 whitespace-nowrap"
-                                    title="Reducir 1 hora"
+                                    disabled={paymentStatus === 'NOT PAID'}
+                                    className="px-2 py-1 bg-gray-900 text-white rounded text-xs hover:bg-gray-800 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                                    title={paymentStatus === 'NOT PAID' ? 'Active su academia para modificar tiempos' : 'Reducir 1 hora'}
                                   >
                                     +1hr
                                   </button>
