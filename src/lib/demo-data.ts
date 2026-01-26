@@ -46,6 +46,7 @@ export interface DemoStream {
   duration?: number;
   recordingId: string;
   classId: string;
+  participantsData?: string; // JSON string with participant details
 }
 
 export interface DemoClass {
@@ -181,6 +182,15 @@ export function generateDemoStreams(): DemoStream[] {
       duration: 75,
       recordingId: DEMO_VIDEO_GUID,
       classId: 'demo-class1',
+      participantsData: JSON.stringify({
+        totalRecords: 35,
+        uniqueCount: 35,
+        participants: [
+          { name: 'Juan García', email: 'juan@example.com', joinTime: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), duration: 4500 },
+          { name: 'María López', email: 'maria@example.com', joinTime: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 5 * 60 * 1000).toISOString(), duration: 4200 },
+          { name: 'Carlos Martínez', email: 'carlos@example.com', joinTime: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 10 * 60 * 1000).toISOString(), duration: 4100 },
+        ]
+      }),
     },
     {
       id: 'demo-stream2',
@@ -194,6 +204,7 @@ export function generateDemoStreams(): DemoStream[] {
       duration: 50,
       recordingId: DEMO_VIDEO_GUID,
       classId: 'demo-class2',
+      participantsData: JSON.stringify({ totalRecords: 22, uniqueCount: 22, participants: [{ name: 'Ana Rodríguez', email: 'ana@example.com', duration: 3000 }] }),
     },
     {
       id: 'demo-stream3',
@@ -207,6 +218,7 @@ export function generateDemoStreams(): DemoStream[] {
       duration: 120,
       recordingId: DEMO_VIDEO_GUID,
       classId: 'demo-class3',
+      participantsData: JSON.stringify({ totalRecords: 18, uniqueCount: 18, participants: [{ name: 'Luis Fernández', email: 'luis@example.com', duration: 7200 }] }),
     },
     {
       id: 'demo-stream4',
@@ -220,6 +232,7 @@ export function generateDemoStreams(): DemoStream[] {
       duration: 45,
       recordingId: DEMO_VIDEO_GUID,
       classId: 'demo-class1',
+      participantsData: JSON.stringify({ totalRecords: 28, uniqueCount: 28, participants: [{ name: 'Pedro Sánchez', email: 'pedro@example.com', duration: 2700 }] }),
     },
     {
       id: 'demo-stream5',
@@ -233,6 +246,7 @@ export function generateDemoStreams(): DemoStream[] {
       duration: 65,
       recordingId: DEMO_VIDEO_GUID,
       classId: 'demo-class3',
+      participantsData: JSON.stringify({ totalRecords: 31, uniqueCount: 31, participants: [{ name: 'Laura Gómez', email: 'laura@example.com', duration: 3900 }] }),
     },
   ];
 }
@@ -384,12 +398,17 @@ export function generateDemoPaymentHistory(): DemoPayment[] {
   const lastNames = ['García', 'Rodríguez', 'Martínez', 'López', 'Sánchez'];
   const classes = ['Programación Web', 'Matemáticas Avanzadas', 'Diseño Gráfico', 'Física Cuántica'];
   
+  const teacherNames = ['Carlos Rodríguez', 'María García', 'Ana Martínez', 'Luis Fernández', 'Carmen López'];
+  const approverNames = ['Carlos Rodríguez', 'María García', 'Ana Martínez', 'Pedro Administrador'];
+  
   return Array.from({ length: 20 }, (_, i) => ({
     enrollmentId: `demo-payment-history-${i + 1}`,
     studentFirstName: firstNames[i % firstNames.length],
     studentLastName: lastNames[i % lastNames.length],
     studentEmail: `estudiante${i + 1}@demo.com`,
     className: classes[i % classes.length],
+    teacherName: teacherNames[i % teacherNames.length],
+    approvedByName: approverNames[i % approverNames.length],
     paymentAmount: [49.99, 39.99, 59.99, 44.99][i % 4],
     currency: 'EUR',
     paymentMethod: i % 3 === 0 ? 'cash' : 'stripe',
@@ -422,6 +441,34 @@ export function generateDemoStats() {
     totalStreamHours: 7,
     totalStreamMinutes: 30,
   };
+}
+
+export function generateDemoStudentTimes(lessonId: string) {
+  const firstNames = ['Juan', 'María', 'Carlos', 'Ana', 'Luis', 'Carmen', 'José', 'Laura', 'Pedro', 'Isabel'];
+  const lastNames = ['García', 'Rodríguez', 'Martínez', 'López', 'Sánchez', 'Pérez', 'Gómez', 'Fernández'];
+  
+  // Generate 15-25 students with video watch times
+  const studentCount = 15 + Math.floor(Math.random() * 10);
+  
+  return Array.from({ length: studentCount }, (_, i) => {
+    const videoDuration = 3600; // 1 hour video
+    const maxWatchTime = videoDuration * 2; // 2x multiplier
+    const watchedTime = Math.floor(Math.random() * maxWatchTime * 1.2); // Some students may exceed
+    
+    return {
+      studentId: `demo-student-${i + 1}`,
+      studentName: `${firstNames[i % firstNames.length]} ${lastNames[i % lastNames.length]}`,
+      videos: [
+        {
+          videoId: `demo-video-1`,
+          videoTitle: 'Video Principal de la Lección',
+          totalWatchTimeSeconds: watchedTime,
+          maxWatchTimeSeconds: maxWatchTime,
+          status: watchedTime >= maxWatchTime ? 'BLOCKED' : watchedTime > videoDuration * 0.9 ? 'COMPLETED' : 'ACTIVE',
+        }
+      ]
+    };
+  });
 }
 
 function shuffle<T>(array: T[]): T[] {
