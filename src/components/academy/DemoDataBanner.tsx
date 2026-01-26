@@ -41,7 +41,9 @@ export function DemoDataBanner() {
 
   const handleConfirm = () => {
     setShowModal(false);
-    window.location.href = 'https://buy.stripe.com/test_aFa14m20ndS212ReGr77O01';
+    // Stripe Payment Link with success_url to redirect back to AKADEMO dashboard after payment
+    const successUrl = encodeURIComponent('https://akademo-edu.com/dashboard/academy?payment=success');
+    window.location.href = `https://buy.stripe.com/test_aFa14m20ndS212ReGr77O01?success_url=${successUrl}`;
   };
 
   const handleCancel = () => {
