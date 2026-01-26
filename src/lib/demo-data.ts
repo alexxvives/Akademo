@@ -154,7 +154,7 @@ export function generateDemoTeachers(): DemoTeacher[] {
 export function generateDemoStudents(count: number = DEMO_STUDENT_COUNT.TOTAL): DemoStudent[] {
   // Fully hardcoded demo students with activity distribution:
   // 75% active (<24h), 10% active 7d (1-7 days), 10% active 30d (7-30 days), 5% inactive (never/>30d)
-  const baseDate = new Date('2026-01-26T00:00:00Z');
+  const baseDate = new Date(); // Use current time so relative timestamps are always correct
   const hardcodedStudents: DemoStudent[] = [
     // Active students (last 24h) - 123 students (75%)
     { id: 'demo-s1', firstName: 'Juan', lastName: 'García', email: 'estudiante1@demo.com', enrolledAt: new Date(baseDate.getTime() - 60 * 24 * 60 * 60 * 1000).toISOString(), className: 'Programación Web', lastLoginAt: new Date(baseDate.getTime() - 1 * 60 * 60 * 1000).toISOString() },
