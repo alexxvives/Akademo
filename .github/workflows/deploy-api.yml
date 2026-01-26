@@ -24,7 +24,7 @@ jobs:
       
       - name: Install dependencies
         working-directory: workers/akademo-api
-        run: npm install
+        run: npm install --legacy-peer-deps
       
       - name: Deploy to Cloudflare Workers
         working-directory: workers/akademo-api

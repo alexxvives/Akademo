@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@akademo/types": "*",
-    "@opennextjs/cloudflare": "^1.14.0",
+    "@opennextjs/cloudflare": "1.14.0",
     "@stripe/stripe-js": "^8.6.1",
     "bcryptjs": "^2.4.3",
     "clsx": "^2.1.1",
