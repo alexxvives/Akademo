@@ -151,6 +151,54 @@ lessons.get('/:id', async (c) => {
     const session = await requireAuth(c);
     const lessonId = c.req.param('id');
 
+    // Handle demo lessons
+    if (lessonId.startsWith('demo-')) {
+      // Return demo lesson data
+      const demoLessons = [
+        { id: 'demo-l1', title: 'Introducción al Curso', classId: 'demo-c1', className: 'Programación Web Moderna', videoGuid: '912efe98-e6af-4c29-ada3-2617f0ff6674', duration: 3600 },
+        { id: 'demo-l2', title: 'Variables y Tipos de Datos', classId: 'demo-c1', className: 'Programación Web Moderna', videoGuid: '912efe98-e6af-4c29-ada3-2617f0ff6674', duration: 3600 },
+        { id: 'demo-l3', title: 'Funciones y Scope', classId: 'demo-c1', className: 'Programación Web Moderna', videoGuid: '912efe98-e6af-4c29-ada3-2617f0ff6674', duration: 3600 },
+        { id: 'demo-l4', title: 'Arrays y Objetos', classId: 'demo-c1', className: 'Programación Web Moderna', videoGuid: '912efe98-e6af-4c29-ada3-2617f0ff6674', duration: 3600 },
+        { id: 'demo-l5', title: 'Límites y Continuidad', classId: 'demo-c2', className: 'Matemáticas Avanzadas', videoGuid: '912efe98-e6af-4c29-ada3-2617f0ff6674', duration: 3600 },
+        { id: 'demo-l6', title: 'Derivadas', classId: 'demo-c2', className: 'Matemáticas Avanzadas', videoGuid: '912efe98-e6af-4c29-ada3-2617f0ff6674', duration: 3600 },
+        { id: 'demo-l7', title: 'Integrales Definidas', classId: 'demo-c2', className: 'Matemáticas Avanzadas', videoGuid: '912efe98-e6af-4c29-ada3-2617f0ff6674', duration: 3600 },
+        { id: 'demo-l8', title: 'Principios de Diseño', classId: 'demo-c3', className: 'Diseño Gráfico Profesional', videoGuid: '912efe98-e6af-4c29-ada3-2617f0ff6674', duration: 3600 },
+      ];
+      
+      const demoLesson = demoLessons.find(l => l.id === lessonId);
+      if (!demoLesson) {
+        return c.json(errorResponse('Demo lesson not found'), 404);
+      }
+
+      return c.json({
+        success: true,
+        data: {
+          id: demoLesson.id,
+          title: demoLesson.title,
+          description: 'Lección de demostración con video de 1 hora',
+          externalUrl: null,
+          releaseDate: new Date().toISOString(),
+          maxWatchTimeMultiplier: 2.0,
+          watermarkIntervalMins: 5,
+          className: demoLesson.className,
+          classId: demoLesson.classId,
+          videos: [{
+            id: `${demoLesson.id}-video`,
+            title: demoLesson.title,
+            description: null,
+            durationSeconds: 3600,
+            upload: {
+              bunnyGuid: demoLesson.videoGuid,
+              storageType: 'bunny',
+              fileName: 'demo-timer-1hour.mp4',
+              mimeType: 'video/mp4',
+            },
+          }],
+          documents: [],
+        },
+      });
+    }
+
     // Get lesson with videos and documents
     const lesson = await c.env.DB
       .prepare(`

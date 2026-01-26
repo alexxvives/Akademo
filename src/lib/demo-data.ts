@@ -43,6 +43,8 @@ export interface DemoStream {
   endedAt: string;
   status: string;
   duration?: number;
+  recordingId: string;
+  classId: string;
 }
 
 export interface DemoClass {
@@ -84,14 +86,35 @@ export function generateDemoStudents(count: number = 100): DemoStudent[] {
   const lastNames = ['García', 'Rodríguez', 'Martínez', 'López', 'Sánchez', 'Pérez', 'Gómez', 'Fernández', 'Torres', 'Díaz'];
   const classes = ['Programación Web', 'Matemáticas Avanzadas', 'Física Cuántica', 'Diseño Gráfico'];
   
-  return Array.from({ length: count }, (_, i) => ({
-    id: `demo-s${i + 1}`,
-    firstName: firstNames[i % firstNames.length],
-    lastName: lastNames[Math.floor(i / firstNames.length) % lastNames.length],
-    email: `estudiante${i + 1}@demo.com`,
-    enrolledAt: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString(),
-    className: classes[i % classes.length],
-  }));
+  return Array.from({ length: count }, (_, i) => {
+    let lastLoginAt: string | null;
+    
+    // Activity distribution: 30% active (<24h), 40% recent (<7d), 20% inactive (>7d), 10% never logged in
+    const activityRoll = Math.random();
+    if (activityRoll < 0.3) {
+      // Active: last 24 hours
+      lastLoginAt = new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000).toISOString();
+    } else if (activityRoll < 0.7) {
+      // Recent: 1-7 days ago
+      lastLoginAt = new Date(Date.now() - (1 + Math.random() * 6) * 24 * 60 * 60 * 1000).toISOString();
+    } else if (activityRoll < 0.9) {
+      // Inactive: 7-30 days ago
+      lastLoginAt = new Date(Date.now() - (7 + Math.random() * 23) * 24 * 60 * 60 * 1000).toISOString();
+    } else {
+      // Never logged in
+      lastLoginAt = null;
+    }
+    
+    return {
+      id: `demo-s${i + 1}`,
+      firstName: firstNames[i % firstNames.length],
+      lastName: lastNames[Math.floor(i / firstNames.length) % lastNames.length],
+      email: `estudiante${i + 1}@demo.com`,
+      enrolledAt: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString(),
+      className: classes[i % classes.length],
+      lastLoginAt,
+    };
+  });
 }
 
 export function generateDemoRatings(count: number = 250): DemoRating[] {
@@ -155,6 +178,8 @@ export function generateDemoStreams(): DemoStream[] {
       endedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 75 * 60 * 1000).toISOString(),
       status: 'ENDED',
       duration: 75,
+      recordingId: DEMO_VIDEO_GUID,
+      classId: 'demo-class1',
     },
     {
       id: 'demo-stream2',
@@ -166,6 +191,8 @@ export function generateDemoStreams(): DemoStream[] {
       endedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000 + 50 * 60 * 1000).toISOString(),
       status: 'ENDED',
       duration: 50,
+      recordingId: DEMO_VIDEO_GUID,
+      classId: 'demo-class2',
     },
     {
       id: 'demo-stream3',
@@ -177,6 +204,8 @@ export function generateDemoStreams(): DemoStream[] {
       endedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 + 120 * 60 * 1000).toISOString(),
       status: 'ENDED',
       duration: 120,
+      recordingId: DEMO_VIDEO_GUID,
+      classId: 'demo-class3',
     },
     {
       id: 'demo-stream4',
@@ -188,6 +217,8 @@ export function generateDemoStreams(): DemoStream[] {
       endedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 + 45 * 60 * 1000).toISOString(),
       status: 'ENDED',
       duration: 45,
+      recordingId: DEMO_VIDEO_GUID,
+      classId: 'demo-class1',
     },
     {
       id: 'demo-stream5',
@@ -199,6 +230,8 @@ export function generateDemoStreams(): DemoStream[] {
       endedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000 + 65 * 60 * 1000).toISOString(),
       status: 'ENDED',
       duration: 65,
+      recordingId: DEMO_VIDEO_GUID,
+      classId: 'demo-class3',
     },
   ];
 }

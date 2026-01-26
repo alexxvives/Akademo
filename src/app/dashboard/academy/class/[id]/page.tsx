@@ -414,18 +414,37 @@ export default function TeacherClassPage() {
         });
         
         if (demoClass) {
-          // Generate demo students for this class
-          const demoStudentsForClass = Array.from({ length: demoClass.studentCount || 30 }, (_, i) => ({
-            id: `demo-enrollment-${demoClass.id}-${i + 1}`,
-            student: {
-              id: `demo-student-${i + 1}`,
-              firstName: ['Juan', 'María', 'Carlos', 'Ana', 'Luis', 'Carmen', 'José', 'Laura', 'Pedro', 'Isabel'][i % 10],
-              lastName: ['García', 'Rodríguez', 'Martínez', 'López', 'Sánchez'][i % 5],
-              email: `estudiante${i + 1}@demo.com`,
-            },
-            enrolledAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-            status: 'APPROVED',
-          }));
+          // Generate demo students for this class with varied activity
+          const demoStudentsForClass = Array.from({ length: demoClass.studentCount || 30 }, (_, i) => {
+            let lastLoginAt: string | null;
+            const activityRoll = Math.random();
+            if (activityRoll < 0.3) {
+              // Active: last 24 hours (green)
+              lastLoginAt = new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000).toISOString();
+            } else if (activityRoll < 0.7) {
+              // Recent: 1-7 days ago (yellow)
+              lastLoginAt = new Date(Date.now() - (1 + Math.random() * 6) * 24 * 60 * 60 * 1000).toISOString();
+            } else if (activityRoll < 0.9) {
+              // Inactive: 7-30 days ago (red)
+              lastLoginAt = new Date(Date.now() - (7 + Math.random() * 23) * 24 * 60 * 60 * 1000).toISOString();
+            } else {
+              // Never logged in (gray)
+              lastLoginAt = null;
+            }
+            
+            return {
+              id: `demo-enrollment-${demoClass.id}-${i + 1}`,
+              student: {
+                id: `demo-student-${i + 1}`,
+                firstName: ['Juan', 'María', 'Carlos', 'Ana', 'Luis', 'Carmen', 'José', 'Laura', 'Pedro', 'Isabel'][i % 10],
+                lastName: ['García', 'Rodríguez', 'Martínez', 'López', 'Sánchez'][i % 5],
+                email: `estudiante${i + 1}@demo.com`,
+                lastLoginAt,
+              },
+              enrolledAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+              status: 'APPROVED',
+            };
+          });
           
           setClassData({
             id: demoClass.id,
