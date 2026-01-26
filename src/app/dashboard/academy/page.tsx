@@ -669,26 +669,26 @@ export default function AcademyDashboard() {
                     const thirtyDaysAgo = now - (30 * 24 * 60 * 60 * 1000);
                     
                     const activos = filteredStudents.filter(s => {
-                      if (!s.lastLoginAt) return false;
-                      const loginTime = new Date(s.lastLoginAt).getTime();
+                      if (!s.lastActive) return false;
+                      const loginTime = new Date(s.lastActive).getTime();
                       return loginTime >= oneDayAgo;
                     }).length;
                     
                     const activos7dias = filteredStudents.filter(s => {
-                      if (!s.lastLoginAt) return false;
-                      const loginTime = new Date(s.lastLoginAt).getTime();
+                      if (!s.lastActive) return false;
+                      const loginTime = new Date(s.lastActive).getTime();
                       return loginTime < oneDayAgo && loginTime >= sevenDaysAgo;
                     }).length;
                     
                     const activos30dias = filteredStudents.filter(s => {
-                      if (!s.lastLoginAt) return false;
-                      const loginTime = new Date(s.lastLoginAt).getTime();
+                      if (!s.lastActive) return false;
+                      const loginTime = new Date(s.lastActive).getTime();
                       return loginTime < sevenDaysAgo && loginTime >= thirtyDaysAgo;
                     }).length;
                     
                     const inactivos = filteredStudents.filter(s => {
-                      if (!s.lastLoginAt) return true;
-                      const loginTime = new Date(s.lastLoginAt).getTime();
+                      if (!s.lastActive) return true;
+                      const loginTime = new Date(s.lastActive).getTime();
                       return loginTime < thirtyDaysAgo;
                     }).length;
                     
