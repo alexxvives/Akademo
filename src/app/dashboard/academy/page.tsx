@@ -503,7 +503,7 @@ export default function AcademyDashboard() {
         {/* Visual Analytics Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Engagement Metrics - TOP LEFT */}
-          <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full">
+          <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full animate-fade-in">
             <h3 className="text-lg font-semibold text-gray-900 mb-6">Participación</h3>
             {filteredStudents.length > 0 ? (
               <div className="space-y-4">

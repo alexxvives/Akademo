@@ -203,7 +203,7 @@ export function FeedbackView({
                       {topic.lessons.flatMap(lesson => lesson.ratings).length === 0 ? (
                         <p className="text-sm text-gray-500 italic text-center py-4">Sin comentarios en este tema</p>
                       ) : (
-                        <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2">
+                        <div className="space-y-2 max-h-[51vh] overflow-y-auto pr-2">
                           {topic.lessons.flatMap(lesson => 
                             lesson.ratings.map(rating => ({
                               ...rating,

@@ -467,7 +467,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Zoom Accounts */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-8">
         <div className="px-8 py-6 bg-gray-900 text-white">
           <div className="flex items-center justify-between">
             <div>
