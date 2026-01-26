@@ -37,9 +37,8 @@ enrollments.get('/', async (c) => {
             e.classId,
             e.userId,
             e.status,
-            e.documentSigned,
-            e.createdAt,
-            e.updatedAt,
+            e.enrolledAt,
+            e.approvedAt,
             u.id as student_id,
             u.firstName as student_firstName,
             u.lastName as student_lastName,
@@ -51,7 +50,7 @@ enrollments.get('/', async (c) => {
           JOIN User u ON e.userId = u.id
           JOIN Class c ON e.classId = c.id
           WHERE e.classId = ? AND e.status = 'APPROVED'
-          ORDER BY e.createdAt DESC
+          ORDER BY e.enrolledAt DESC
         `)
         .bind(classId)
         .all();
@@ -62,9 +61,8 @@ enrollments.get('/', async (c) => {
         classId: row.classId,
         userId: row.userId,
         status: row.status,
-        documentSigned: row.documentSigned,
-        createdAt: row.createdAt,
-        updatedAt: row.updatedAt,
+        enrolledAt: row.enrolledAt,
+        approvedAt: row.approvedAt,
         student: {
           id: row.student_id,
           firstName: row.student_firstName,
@@ -124,12 +122,7 @@ enrollments.post('/sign-document', async (c) => {
       return c.json(errorResponse('Enrollment not found'), 404);
     }
 
-    // Update documentSigned
-    await c.env.DB
-      .prepare('UPDATE ClassEnrollment SET documentSigned = 1 WHERE userId = ? AND classId = ?')
-      .bind(session.id, classId)
-      .run();
-
+    // Document signing feature not currently used (documentSigned column removed)
     return c.json(successResponse({ message: 'Document signed successfully' }));
   } catch (error: any) {
     console.error('[Sign Document] Error:', error);
@@ -153,9 +146,8 @@ enrollments.get('/pending', async (c) => {
           e.classId,
           e.userId,
           e.status,
-          e.documentSigned,
-          e.createdAt as enrolledAt,
-          e.updatedAt,
+          e.enrolledAt,
+          e.approvedAt,
           u.id as student_id,
           u.firstName as student_firstName,
           u.lastName as student_lastName,
@@ -171,7 +163,7 @@ enrollments.get('/pending', async (c) => {
         JOIN Academy a ON c.academyId = a.id
         LEFT JOIN User teacher ON c.teacherId = teacher.id
         WHERE a.ownerId = ? AND e.status = 'PENDING'
-        ORDER BY e.createdAt DESC
+        ORDER BY e.enrolledAt DESC
       `;
       params = [session.id];
     } else if (session.role === 'TEACHER') {
@@ -182,9 +174,8 @@ enrollments.get('/pending', async (c) => {
           e.classId,
           e.userId,
           e.status,
-          e.documentSigned,
-          e.createdAt as enrolledAt,
-          e.updatedAt,
+          e.enrolledAt,
+          e.approvedAt,
           u.id as student_id,
           u.firstName as student_firstName,
           u.lastName as student_lastName,
@@ -200,7 +191,7 @@ enrollments.get('/pending', async (c) => {
         JOIN Academy a ON c.academyId = a.id
         LEFT JOIN User teacher ON c.teacherId = teacher.id
         WHERE c.teacherId = ? AND e.status = 'PENDING'
-        ORDER BY e.createdAt DESC
+        ORDER BY e.enrolledAt DESC
       `;
       params = [session.id];
     } else {
@@ -215,9 +206,8 @@ enrollments.get('/pending', async (c) => {
       classId: row.classId,
       userId: row.userId,
       status: row.status,
-      documentSigned: row.documentSigned,
       enrolledAt: row.enrolledAt,
-      updatedAt: row.updatedAt,
+      approvedAt: row.approvedAt,
       student: {
         id: row.student_id,
         firstName: row.student_firstName,

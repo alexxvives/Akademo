@@ -150,7 +150,9 @@ export default function TeacherClasses() {
                   href={`/dashboard/teacher/class/${cls.slug || cls.id}`}
                   className="block bg-white rounded-xl border-2 border-gray-200 hover:border-brand-400 hover:shadow-xl transition-all p-6 group"
                 >
-                  <div className="flex items-start justify-between">
+                  {/* Main card layout: content on left, badge on right */}
+                  <div className="flex items-center gap-6">
+                    {/* Left side: all content */}
                     <div className="flex-1">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-3">
@@ -165,12 +167,12 @@ export default function TeacherClasses() {
                           )}
                         </div>
                       </div>
-                    {cls.description ? (
-                      <p className="text-sm text-gray-600 mb-4 line-clamp-2">{cls.description}</p>
-                    ) : (
-                      <p className="text-sm text-gray-400 italic mb-4">Sin descripción</p>
-                    )}
-                    <div className="flex items-center justify-between gap-4">
+                      {cls.description ? (
+                        <p className="text-sm text-gray-600 mb-4 line-clamp-2">{cls.description}</p>
+                      ) : (
+                        <p className="text-sm text-gray-400 italic mb-4">Sin descripción</p>
+                      )}
+                      {/* Stats row - no longer side by side with badge */}
                       <div className="flex items-center gap-6 text-sm text-gray-500">
                         <span className="flex items-center gap-1">
                           <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -203,24 +205,25 @@ export default function TeacherClasses() {
                           Creada el {new Date(cls.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </span>
                       </div>
-                      {/* Zoom Badge - Flexbox positioned to far right */}
-                      <div className="flex-shrink-0">
-                        {cls.zoomAccountName ? (
-                          <span className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border-2 border-green-200 rounded-lg shadow-sm">
-                            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                            </svg>
-                            <span className="text-sm font-semibold text-green-700">{cls.zoomAccountName}</span>
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border-2 border-gray-200 rounded-lg shadow-sm">
-                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                            <span className="text-sm font-semibold text-gray-500">Sin Zoom</span>
-                          </span>
-                        )}
-                      </div>
+                    </div>
+
+                    {/* Right side: Zoom badge, vertically centered */}
+                    <div className="flex-shrink-0">
+                      {cls.zoomAccountName ? (
+                        <span className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border-2 border-green-200 rounded-lg shadow-sm">
+                          <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                          <span className="text-sm font-semibold text-green-700">{cls.zoomAccountName}</span>
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border-2 border-gray-200 rounded-lg shadow-sm">
+                          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                          <span className="text-sm font-semibold text-gray-500">Sin Zoom</span>
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
