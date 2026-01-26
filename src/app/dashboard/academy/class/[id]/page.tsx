@@ -2164,15 +2164,15 @@ export default function TeacherClassPage() {
                 classId={classData?.id || ''}
                 totalStudents={classData.enrollments.filter(e => e.status === 'APPROVED').length}
                 expandTopicId={expandTopicId}
-                  paymentStatus={paymentStatus}
-            )}
-
-            {/* Reschedule Modal */}
-            {showRescheduleModal && reschedulingLesson && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-2xl max-w-md w-full p-6">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4">Reprogramar Lección</h3>
-                  
+                paymentStatus={paymentStatus}
+                onSelectLesson={selectLesson}
+                onEditLesson={handleEditLesson}
+                onDeleteLesson={handleDeleteLesson}
+                onRescheduleLesson={handleRescheduleLesson}
+                onTopicsChange={loadData}
+                onLessonMove={handleLessonMove}
+                onToggleRelease={handleToggleRelease}
+              />
                   <form onSubmit={(e) => {
                     e.preventDefault();
                     const form = e.target as HTMLFormElement;
