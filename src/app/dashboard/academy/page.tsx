@@ -466,7 +466,7 @@ export default function AcademyDashboard() {
                     <span className="text-sm text-gray-600">Asistencia Promedio (Streams)</span>
                     <span className="text-sm font-semibold text-gray-900">
                       {filteredStreamStats.total > 0 && filteredStudents.length > 0
-                        ? Math.min(100, Math.round((filteredStreamStats.avgParticipants / filteredStudents.length) * 100))
+                        ? Math.round((filteredStreamStats.avgParticipants / filteredStudents.length) * 100)
                         : 0}%
                     </span>
                   </div>
