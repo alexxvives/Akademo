@@ -130,15 +130,25 @@ export default function AcademyDashboard() {
           }));
           setClasses(mappedClasses);
           
-          const mappedStudents = (demoStudents || []).map(s => ({
-            id: s.id,
-            name: `${s.firstName} ${s.lastName}`,
-            email: s.email,
-            classId: s.className,
-            className: s.className,
-            lessonsCompleted: Math.floor(Math.random() * 10),
-            totalLessons: 10,
-          }));
+          const mappedStudents = (demoStudents || []).map(s => {
+            // Map class names to demo class IDs
+            const classNameToId: Record<string, string> = {
+              'Programación Web': 'demo-c1',
+              'Matemáticas Avanzadas': 'demo-c2',
+              'Física Cuántica': 'demo-c3',
+              'Diseño Gráfico': 'demo-c3',
+              'Diseño Gráfico Profesional': 'demo-c3',
+            };
+            return {
+              id: s.id,
+              name: `${s.firstName} ${s.lastName}`,
+              email: s.email,
+              classId: classNameToId[s.className] || 'demo-c1',
+              className: s.className,
+              lessonsCompleted: Math.floor(Math.random() * 10),
+              totalLessons: 10,
+            };
+          });
           setEnrolledStudents(mappedStudents);
           
           const lessonsData = (demoStats.recentRatings || []).map(r => ({

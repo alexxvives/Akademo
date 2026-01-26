@@ -198,14 +198,14 @@ export default function AcademyStreamsPage() {
   };
 
   const formatDate = (date: string): string => {
-    const formatted = new Date(date).toLocaleDateString('es-ES', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+    const d = new Date(date);
+    const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const day = d.getDate();
+    const month = months[d.getMonth()];
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    return `${day} ${month} ${year}, ${hours}:${minutes}`;
   };
 
   const getStatusBadge = (status: string) => {

@@ -40,6 +40,8 @@ interface PaymentHistory {
 export default function AcademyPaymentsPage() {
   const [pendingPayments, setPendingPayments] = useState<PendingPayment[]>([]);
   const [paymentHistory, setPaymentHistory] = useState<PaymentHistory[]>([]);
+  const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
+  const [selectedClass, setSelectedClass] = useState('all');
   const [loading, setLoading] = useState(true);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
   const [reversingIds, setReversingIds] = useState<Set<string>>(new Set());
@@ -66,20 +68,27 @@ export default function AcademyPaymentsPage() {
           const demoHistory = generateDemoPaymentHistory();
           setPendingPayments(demoPending as any[]);
           setPaymentHistory(demoHistory as any[]);
+          setClasses([
+            { id: 'demo-c1', name: 'Programación Web Moderna' },
+            { id: 'demo-c2', name: 'Matemáticas Avanzadas' },
+            { id: 'demo-c3', name: 'Diseño Gráfico Profesional' },
+          ]);
           setLoading(false);
           return;
         }
       }
       
       // If PAID, load real payments
-      const [pendingRes, historyRes] = await Promise.all([
+      const [pendingRes, historyRes, classesRes] = await Promise.all([
         apiClient('/payments/pending-cash'),
         apiClient('/payments/history'),
+        apiClient('/academies/classes'),
       ]);
 
-      const [pendingResult, historyResult] = await Promise.all([
+      const [pendingResult, historyResult, classesResult] = await Promise.all([
         pendingRes.json(),
         historyRes.json(),
+        classesRes.json(),
       ]);
 
       if (pendingResult.success) {
@@ -88,6 +97,10 @@ export default function AcademyPaymentsPage() {
 
       if (historyResult.success) {
         setPaymentHistory(historyResult.data || []);
+      }
+      
+      if (classesResult.success && Array.isArray(classesResult.data)) {
+        setClasses(classesResult.data);
       }
     } catch (error) {
       console.error('Failed to load payments data:', error);
@@ -186,6 +199,10 @@ export default function AcademyPaymentsPage() {
       currency: currency || 'EUR',
     }).format(amount);
   };
+  
+  const filteredPaymentHistory = paymentHistory.filter(p => 
+    selectedClass === 'all' || p.className === classes.find(c => c.id === selectedClass)?.name
+  );
 
   if (loading) {
     return (
@@ -198,11 +215,33 @@ export default function AcademyPaymentsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Pagos Pendientes</h1>
-        <p className="text-gray-600 text-sm mt-1">
-          Revisa y confirma los pagos en efectivo de los estudiantes
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">Pagos Pendientes</h1>
+          <p className="text-gray-600 text-sm mt-1">
+            Revisa y confirma los pagos en efectivo de los estudiantes
+          </p>
+        </div>
+        {/* Class Filter */}
+        {classes.length > 0 && (
+          <div className="relative">
+            <select
+              value={selectedClass}
+              onChange={(e) => setSelectedClass(e.target.value)}
+              className="appearance-none w-56 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+            >
+              <option value="all">Todas las clases</option>
+              {classes.map((cls) => (
+                <option key={cls.id} value={cls.id}>{cls.name}</option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Pending Payments List */}
@@ -301,7 +340,7 @@ export default function AcademyPaymentsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {paymentHistory.map((history, index) => (
+                {filteredPaymentHistory.map((history, index) => (
                   <tr key={`${history.enrollmentId}-${index}`} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
