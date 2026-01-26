@@ -1,6 +1,32 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { apiClient } from '@/lib/api-client';
+
 export function DemoDataBanner() {
+  const [academyId, setAcademyId] = useState<string>('');
+
+  useEffect(() => {
+    // Get academy ID for Stripe metadata
+    const fetchAcademyId = async () => {
+      try {
+        const res = await apiClient('/academies');
+        const result = await res.json();
+        if (result.success && result.data?.[0]?.id) {
+          setAcademyId(result.data[0].id);
+        }
+      } catch (error) {
+        console.error('Error fetching academy:', error);
+      }
+    };
+    fetchAcademyId();
+  }, []);
+
+  // Build Stripe checkout URL with metadata
+  const stripeUrl = academyId 
+    ? `https://buy.stripe.com/test_aFa14m20ndS212ReGr77O01?client_reference_id=${academyId}&metadata[type]=academy_activation&metadata[academyId]=${academyId}`
+    : 'https://buy.stripe.com/test_aFa14m20ndS212ReGr77O01';
+
   return (
     <div className="sticky top-0 z-50 bg-gradient-to-r from-red-600 to-red-700 shadow-md">
       <div className="max-w-7xl mx-auto px-4 py-2">
@@ -21,7 +47,7 @@ export function DemoDataBanner() {
             </div>
           </div>
           <a
-            href="https://buy.stripe.com/test_aFa14m20ndS212ReGr77O01"
+            href={stripeUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="flex-shrink-0 px-5 py-2 bg-white text-red-700 font-semibold rounded-md hover:bg-red-50 transition-colors shadow-sm text-sm whitespace-nowrap"

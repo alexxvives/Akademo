@@ -347,21 +347,40 @@ webhooks.post('/stripe', async (c) => {
       const { id: sessionId, metadata, payment_status } = data;
 
       if (payment_status === 'paid') {
-        const { enrollmentId, classId, userId } = metadata;
+        // Check if this is an academy activation payment or enrollment payment
+        if (metadata.type === 'academy_activation') {
+          const { academyId } = metadata;
 
-        // Update enrollment payment status
-        await c.env.DB
-          .prepare(`
-            UPDATE ClassEnrollment 
-            SET paymentStatus = 'PAID',
-                paymentMethod = 'stripe',
-                updatedAt = datetime('now')
-            WHERE id = ?
-          `)
-          .bind(enrollmentId)
-          .run();
+          // Update academy payment status
+          await c.env.DB
+            .prepare(`
+              UPDATE Academy 
+              SET paymentStatus = 'PAID',
+                  updatedAt = datetime('now')
+              WHERE id = ?
+            `)
+            .bind(academyId)
+            .run();
 
-        console.log('[Stripe Webhook] Payment confirmed for enrollment:', enrollmentId);
+          console.log('[Stripe Webhook] Academy activated:', academyId);
+        } else {
+          // Enrollment payment
+          const { enrollmentId, classId, userId } = metadata;
+
+          // Update enrollment payment status
+          await c.env.DB
+            .prepare(`
+              UPDATE ClassEnrollment 
+              SET paymentStatus = 'PAID',
+                  paymentMethod = 'stripe',
+                  updatedAt = datetime('now')
+              WHERE id = ?
+            `)
+            .bind(enrollmentId)
+            .run();
+
+          console.log('[Stripe Webhook] Payment confirmed for enrollment:', enrollmentId);
+        }
       }
     }
 
