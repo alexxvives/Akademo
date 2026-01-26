@@ -83,7 +83,7 @@ export function DemoDataBanner() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden animate-scale-in">
             {/* Header */}
-            <div className="bg-gradient-to-r from-amber-500 to-amber-600 px-6 py-4">
+            <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4">
               <div className="flex items-center gap-3">
                 <div className="bg-white/20 backdrop-blur-sm rounded-full p-2">
                   <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -95,33 +95,22 @@ export function DemoDataBanner() {
             </div>
 
             {/* Content */}
-            <div className="px-6 py-6 space-y-4">
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <div className="px-6 py-6">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                 <p className="text-sm text-gray-700 font-medium mb-3">
-                  Para activar tu academia correctamente, debes usar el siguiente correo electrónico en el formulario de pago de Stripe:
+                  Utiliza el email viculado a tu cuenta de AKADEMO durante el pago:
                 </p>
-                <div className="bg-white border-2 border-amber-300 rounded-lg px-4 py-3 flex items-center gap-3">
-                  <svg className="w-5 h-5 text-amber-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="bg-white border-2 border-red-300 rounded-lg px-4 py-3 flex items-center gap-3">
+                  <svg className="w-5 h-5 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
                   <span className="text-base font-semibold text-gray-900 break-all">{userEmail}</span>
                 </div>
               </div>
-
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex gap-3">
-                  <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <p className="text-sm text-gray-700">
-                    Si usas un correo diferente, el sistema no podrá vincular el pago con tu academia y deberás contactar soporte.
-                  </p>
-                </div>
-              </div>
             </div>
 
             {/* Actions */}
-            <div className="bg-gray-50 px-6 py-4 flex gap-3 justify-end border-t border-gray-200">
+            <div className="bg-gray-50 px-6 py-4 flex gap-3 justify-center border-t border-gray-200">
               <button
                 onClick={handleCancel}
                 className="px-4 py-2 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
@@ -130,7 +119,7 @@ export function DemoDataBanner() {
               </button>
               <button
                 onClick={handleConfirm}
-                className="px-6 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white font-semibold rounded-lg hover:from-amber-600 hover:to-amber-700 transition-all shadow-md hover:shadow-lg"
+                className="px-6 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white font-semibold rounded-lg hover:from-red-700 hover:to-red-800 transition-all shadow-md hover:shadow-lg"
               >
                 Continuar al Pago
               </button>

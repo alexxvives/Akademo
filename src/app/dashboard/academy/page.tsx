@@ -657,10 +657,10 @@ export default function AcademyDashboard() {
           </div>
 
           {/* Student Status - BOTTOM RIGHT (Pie Chart) */}
-          <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full">
+          <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full flex flex-col">
             <h3 className="text-lg font-semibold text-gray-900 mb-6">Actividad</h3>
             {filteredStudents.length > 0 ? (
-              <div className="h-40 flex items-center justify-center">
+              <div className="flex-1 flex items-center justify-center min-h-40">
                 <DonutChart
                   data={(() => {
                     const now = Date.now();
