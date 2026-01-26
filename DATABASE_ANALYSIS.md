@@ -48,19 +48,19 @@
 | description | TEXT | NO | - | ✅ KEEP - Academy profile |
 | ownerId | TEXT | NO | - | ✅ KEEP - Critical: Links to ACADEMY role user |
 | status | TEXT | NO | 'PENDING' | ❌ **UNUSED** - Approval system not implemented |
-| monoacademy | INTEGER | NO | 0 | ❌ **UNUSED** - Feature not implemented |
+| monoacademy | INTEGER | NO | 0 | ✅ KEEP - Role switcher feature (ACTIVE) |
 | paymentStatus | TEXT | NO | 'NOT PAID' | ✅ KEEP - Stripe payment tracking (active) |
-| stripeAccountId | TEXT | NO | NULL | ❌ **UNUSED** - Stripe Connect not implemented |
+| stripeAccountId | TEXT | NO | NULL | ✅ KEEP - Stripe Connect (planned) |
 | address | TEXT | NO | null | ✅ KEEP - Profile page display |
 | phone | TEXT | NO | null | ✅ KEEP - Profile page display |
 | email | TEXT | NO | null | ✅ KEEP - Profile page display |
-| feedbackAnonymous | INTEGER | NO | 0 | ❌ **UNUSED** - Feature not implemented |
-| defaultWatermarkIntervalMins | INTEGER | NO | 5 | ⚠️ **REDUNDANT** - Set per lesson, not used |
-| defaultMaxWatchTimeMultiplier | REAL | NO | 2.0 | ⚠️ **REDUNDANT** - Set per lesson, not used |
+| feedbackAnonymous | INTEGER | NO | 0 | ✅ KEEP - Feedback toggle on profile (ACTIVE) |
+| defaultWatermarkIntervalMins | INTEGER | NO | 5 | ✅ KEEP - Default for new lessons (ACTIVE) |
+| defaultMaxWatchTimeMultiplier | REAL | NO | 2.0 | ✅ KEEP - Default for new lessons (ACTIVE) |
 
 **Recommendation**:
-- **REMOVE**: `status`, `monoacademy`, `stripeAccountId`, `feedbackAnonymous`, `defaultWatermarkIntervalMins`, `defaultMaxWatchTimeMultiplier`
-- **KEEP**: Basic profile fields (name, description, ownerId, payment fields, contact info)
+- **REMOVE**: `status` only
+- **KEEP**: All other columns are actively used
 
 ---
 
@@ -72,15 +72,15 @@
 | id | TEXT | NO | - | ✅ KEEP - Primary key |
 | userId | TEXT | YES | - | ✅ KEEP - Links to User (TEACHER role) |
 | academyId | TEXT | YES | - | ✅ KEEP - Links to Academy |
-| defaultMaxWatchTimeMultiplier | REAL | NO | 2.0 | ❌ **UNUSED** - Set per lesson |
+| defaultMaxWatchTimeMultiplier | REAL | NO | 2.0 | ❌ **UNUSED** - Not used anywhere |
 | createdAt | TEXT | YES | - | ✅ KEEP - Audit trail |
 | updatedAt | TEXT | YES | - | ⚠️ RARELY USED |
 | status | TEXT | NO | 'PENDING' | ✅ KEEP - Approval workflow (active) |
-| monoacademy | INTEGER | NO | 0 | ❌ **UNUSED** - Feature not implemented |
+| monoacademy | INTEGER | NO | 0 | ✅ KEEP - Role switcher feature (ACTIVE) |
 
 **Recommendation**:
-- **REMOVE**: `defaultMaxWatchTimeMultiplier`, `monoacademy`, `updatedAt`
-- **KEEP**: Core relationship fields (userId, academyId, status, createdAt)
+- **REMOVE**: `defaultMaxWatchTimeMultiplier`, `updatedAt`
+- **KEEP**: Core relationship fields (userId, academyId, status, monoacademy, createdAt)
 
 ---
 
@@ -91,7 +91,7 @@
 |--------|------|----------|---------|----------|
 | id | TEXT | NO | - | ✅ KEEP - Primary key |
 | name | TEXT | YES | - | ✅ KEEP - Class name |
-| slug | TEXT | NO | null | ❌ **UNUSED** - URL-friendly names not used |
+| slug | TEXT | NO | null | ✅ KEEP - URL-friendly class identifier (ACTIVE) |
 | description | TEXT | NO | null | ✅ KEEP - Class description |
 | academyId | TEXT | YES | - | ✅ KEEP - Academy relationship |
 | teacherId | TEXT | NO | null | ✅ KEEP - Assigned teacher |
@@ -104,8 +104,8 @@
 | zoomAccountId | TEXT | NO | null | ✅ KEEP - Zoom account assignment |
 
 **Recommendation**:
-- **REMOVE**: `slug`, `updatedAt`
-- **KEEP**: All others (actively used)
+- **REMOVE**: `updatedAt` only
+- **KEEP**: All others (actively used including slug for URLs)
 
 ---
 
@@ -409,36 +409,35 @@
 
 ## Cleanup Recommendations Summary
 
-### ❌ **REMOVE (19 columns)**
+### ❌ **REMOVE (10 columns total)**
 
-**High Priority (Unused Features)**:
+**High Priority (Unused Features - 2 columns)**:
 1. `User.phone` - Not used anywhere
 2. `Academy.status` - Approval system not implemented
-3. `Academy.monoacademy` - Feature not implemented
-4. `Academy.stripeAccountId` - Stripe Connect not implemented
-5. `Academy.feedbackAnonymous` - Feature not implemented
-6. `Academy.defaultWatermarkIntervalMins` - Set per lesson
-7. `Academy.defaultMaxWatchTimeMultiplier` - Set per lesson
-8. `Teacher.defaultMaxWatchTimeMultiplier` - Set per lesson
-9. `Teacher.monoacademy` - Feature not implemented
-10. `Class.slug` - URL slugs not used
-11. `ClassEnrollment.documentSigned` - Document signing not used
-12. `LiveStream.roomName` - Redundant with `title`
-13. `LiveStream.roomUrl` - Redundant with `zoomLink`
 
-**Low Priority (Rarely Updated - Consider Removing)**:
-14. `User.updatedAt`
-15. `Academy.updatedAt`
-16. `Teacher.updatedAt`
-17. `Class.updatedAt`
-18. `ClassEnrollment.updatedAt` (also redundant with `enrolledAt`)
-19. `ClassEnrollment.createdAt` (redundant with `enrolledAt`)
-20. `Lesson.updatedAt`
-21. `Video.updatedAt`
-22. `Document.updatedAt`
-23. `LessonRating.updatedAt`
-24. `Payment.updatedAt`
-25. `Topic.updatedAt`
+**Teacher table (1 column)**:
+3. `Teacher.defaultMaxWatchTimeMultiplier` - Not used anywhere
+
+**LiveStream redundant columns (2 columns)**:
+4. `LiveStream.roomName` - Redundant with `title`
+5. `LiveStream.roomUrl` - Redundant with `zoomLink`
+
+**Low Priority (`updatedAt` columns - consider removing for simplicity)**:
+6. `User.updatedAt`
+7. `Academy.updatedAt`
+8. `Teacher.updatedAt`
+9. `Class.updatedAt`
+10. `ClassEnrollment.updatedAt` (also redundant with `enrolledAt`)
+11. `ClassEnrollment.createdAt` (redundant with `enrolledAt`)
+12. `Lesson.updatedAt`
+13. `Video.updatedAt`
+14. `Document.updatedAt`
+15. `LessonRating.updatedAt`
+16. `Payment.updatedAt`
+17. `Topic.updatedAt`
+
+**Note**: Keep `ZoomAccount.updatedAt` - needed for OAuth token refresh tracking
+**Note**: Keep `VideoPlayState.updatedAt` - actively tracks progress updates
 
 ### ✅ **KEEP (All Other Columns)**
 
@@ -453,20 +452,13 @@ ALTER TABLE User DROP COLUMN updatedAt;
 
 -- Remove unused columns from Academy
 ALTER TABLE Academy DROP COLUMN status;
-ALTER TABLE Academy DROP COLUMN monoacademy;
-ALTER TABLE Academy DROP COLUMN stripeAccountId;
-ALTER TABLE Academy DROP COLUMN feedbackAnonymous;
-ALTER TABLE Academy DROP COLUMN defaultWatermarkIntervalMins;
-ALTER TABLE Academy DROP COLUMN defaultMaxWatchTimeMultiplier;
 ALTER TABLE Academy DROP COLUMN updatedAt;
 
 -- Remove unused columns from Teacher
 ALTER TABLE Teacher DROP COLUMN defaultMaxWatchTimeMultiplier;
-ALTER TABLE Teacher DROP COLUMN monoacademy;
 ALTER TABLE Teacher DROP COLUMN updatedAt;
 
 -- Remove unused columns from Class
-ALTER TABLE Class DROP COLUMN slug;
 ALTER TABLE Class DROP COLUMN updatedAt;
 
 -- Remove unused columns from ClassEnrollment
@@ -505,17 +497,24 @@ ALTER TABLE Topic DROP COLUMN updatedAt;
 
 ### After Cleanup:
 - **Total Columns Before**: ~170
-- **Total Columns After**: ~145
-- **Reduction**: ~15% smaller schema
+- **Total Columns After**: ~153
+- **Reduction**: ~10% smaller schema
 - **Benefits**:
   - Simpler schema to maintain
   - Faster queries (fewer columns to scan)
   - Less storage space
-  - Clearer documentation
+  - Clearer audit trail (less confusion between createdAt/updatedAt)
   - Reduced migration complexity
 
 ### Breaking Changes:
-- **NONE** - All removed columns are unused in current codebase
+- **NONE** - All removed columns are either unused or redundant
+
+### About `updatedAt` Columns:
+**Why remove them?**
+- Most entities are append-only (videos, documents, enrollments)
+- Updates are rare and don't need historical tracking
+- `createdAt` is sufficient for most audit purposes
+- Exception: Keep for OAuth tokens (ZoomAccount) and real-time updates (VideoPlayState)
 
 ---
 
