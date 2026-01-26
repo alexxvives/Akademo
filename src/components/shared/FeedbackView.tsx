@@ -203,7 +203,7 @@ export function FeedbackView({
                       {topic.lessons.flatMap(lesson => lesson.ratings).length === 0 ? (
                         <p className="text-sm text-gray-500 italic text-center py-4">Sin comentarios en este tema</p>
                       ) : (
-                        <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+                        <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2">
                           {topic.lessons.flatMap(lesson => 
                             lesson.ratings.map(rating => ({
                               ...rating,
@@ -211,8 +211,8 @@ export function FeedbackView({
                               lessonRating: lesson.averageRating
                             }))
                           ).map((rating) => (
-                            <div key={rating.id} className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-                              <div className="flex items-start justify-between mb-2">
+                            <div key={rating.id} className="bg-white rounded-lg p-3 shadow-sm border border-gray-200">
+                              <div className="flex items-start justify-between mb-1.5">
                                 <div className="flex items-center gap-3 flex-wrap">
                                   <span className="font-medium text-gray-900">{rating.studentName}</span>
                                   <span className="text-sm text-gray-500">• {rating.lessonTitle}</span>
@@ -223,7 +223,7 @@ export function FeedbackView({
                                 </span>
                               </div>
                               {rating.comment && (
-                                <p className="text-sm text-gray-700 mt-2">{rating.comment}</p>
+                                <p className="text-sm text-gray-700 mt-1.5">{rating.comment}</p>
                               )}
                             </div>
                           ))}

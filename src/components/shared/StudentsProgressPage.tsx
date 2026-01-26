@@ -50,14 +50,13 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
         
         // If NOT PAID, show demo students
         if (status === 'NOT PAID' && role === 'ACADEMY') {
-          const demoStudents = generateDemoStudents(100);
+          const demoStudents = generateDemoStudents(); // Uses DEMO_STUDENT_COUNT.TOTAL (164)
           // Map class names to demo class IDs
           const classNameToId: Record<string, string> = {
             'Programación Web': 'demo-c1',
             'Matemáticas Avanzadas': 'demo-c2',
-            'Física Cuántica': 'demo-c3',
+            'Física Cuántica': 'demo-c4',
             'Diseño Gráfico': 'demo-c3',
-            'Diseño Gráfico Profesional': 'demo-c3',
           };
           setStudents(demoStudents.map(s => ({
             id: s.id,
@@ -73,9 +72,10 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
           })));
           // Load demo classes for filter
           setClasses([
-            { id: 'demo-c1', name: 'Programación Web Moderna' },
+            { id: 'demo-c1', name: 'Programación Web' },
             { id: 'demo-c2', name: 'Matemáticas Avanzadas' },
-            { id: 'demo-c3', name: 'Diseño Gráfico Profesional' },
+            { id: 'demo-c3', name: 'Diseño Gráfico' },
+            { id: 'demo-c4', name: 'Física Cuántica' },
           ]);
           setLoading(false);
           return;
@@ -84,13 +84,12 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
       } else {
         // If API returns unexpected format, show demo data as fallback
         if (role === 'ACADEMY') {
-          const demoStudents = generateDemoStudents(100);
+          const demoStudents = generateDemoStudents(); // Uses DEMO_STUDENT_COUNT.TOTAL (164)
           const classNameToId: Record<string, string> = {
             'Programación Web': 'demo-c1',
             'Matemáticas Avanzadas': 'demo-c2',
-            'Física Cuántica': 'demo-c3',
+            'Física Cuántica': 'demo-c4',
             'Diseño Gráfico': 'demo-c3',
-            'Diseño Gráfico Profesional': 'demo-c3',
           };
           setStudents(demoStudents.map(s => ({
             id: s.id,
@@ -105,9 +104,9 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
             lastActive: s.lastLoginAt,
           })));
           setClasses([
-            { id: 'demo-c1', name: 'Programación Web Moderna' },
+            { id: 'demo-c1', name: 'Programación Web' },
             { id: 'demo-c2', name: 'Matemáticas Avanzadas' },
-            { id: 'demo-c3', name: 'Diseño Gráfico Profesional' },
+            { id: 'demo-c3', name: 'Diseño Gráfico' },
             { id: 'demo-c4', name: 'Física Cuántica' },
           ]);
           setLoading(false);
@@ -119,13 +118,12 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
       console.error('Failed to load academy name:', error);
       // On error, show demo data for academy role
       if (role === 'ACADEMY') {
-        const demoStudents = generateDemoStudents(100);
+        const demoStudents = generateDemoStudents(); // Uses DEMO_STUDENT_COUNT.TOTAL (164)
         const classNameToId: Record<string, string> = {
           'Programación Web': 'demo-c1',
           'Matemáticas Avanzadas': 'demo-c2',
           'Física Cuántica': 'demo-c4',
           'Diseño Gráfico': 'demo-c3',
-          'Diseño Gráfico Profesional': 'demo-c3',
         };
         setStudents(demoStudents.map(s => ({
           id: s.id,
@@ -140,9 +138,9 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
           lastActive: s.lastLoginAt,
         })));
         setClasses([
-          { id: 'demo-c1', name: 'Programación Web Moderna' },
+          { id: 'demo-c1', name: 'Programación Web' },
           { id: 'demo-c2', name: 'Matemáticas Avanzadas' },
-          { id: 'demo-c3', name: 'Diseño Gráfico Profesional' },
+          { id: 'demo-c3', name: 'Diseño Gráfico' },
           { id: 'demo-c4', name: 'Física Cuántica' },
         ]);
       }

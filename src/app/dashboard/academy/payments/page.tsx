@@ -69,9 +69,9 @@ export default function AcademyPaymentsPage() {
           setPendingPayments(demoPending as any[]);
           setPaymentHistory(demoHistory as any[]);
           setClasses([
-            { id: 'demo-c1', name: 'Programación Web Moderna' },
+            { id: 'demo-c1', name: 'Programación Web' },
             { id: 'demo-c2', name: 'Matemáticas Avanzadas' },
-            { id: 'demo-c3', name: 'Diseño Gráfico Profesional' },
+            { id: 'demo-c3', name: 'Diseño Gráfico' },
             { id: 'demo-c4', name: 'Física Cuántica' },
           ]);
           setLoading(false);

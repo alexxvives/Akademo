@@ -114,7 +114,7 @@ export default function AcademyDashboard() {
         // If academy hasn't paid, use demo data
         if (academy.paymentStatus === 'NOT PAID') {
           const demoStats = generateDemoStats();
-          const demoStudents = generateDemoStudents(100);
+          const demoStudents = generateDemoStudents(); // Uses DEMO_STUDENT_COUNT.TOTAL by default
           const demoStreams = generateDemoStreams();
           const demoClasses = generateDemoClasses();
           
@@ -135,10 +135,10 @@ export default function AcademyDashboard() {
           const mappedStudents = (demoStudents || []).map(s => {
             // Map class names to demo class IDs
             const classNameToId: Record<string, string> = {
-              'Programación Web Moderna': 'demo-c1',
+              'Programación Web': 'demo-c1',
               'Matemáticas Avanzadas': 'demo-c2',
               'Física Cuántica': 'demo-c4',
-              'Diseño Gráfico Profesional': 'demo-c3',
+              'Diseño Gráfico': 'demo-c3',
             };
             return {
               id: s.id,
@@ -146,7 +146,7 @@ export default function AcademyDashboard() {
               email: s.email,
               classId: classNameToId[s.className] || 'demo-c1',
               className: s.className,
-              lessonsCompleted: Math.floor(Math.random() * 10),
+              lessonsCompleted: Math.floor(Math.random() * 5) + 2, // 2-6 lessons completed (avg ~4 out of 10 = 40%)
               totalLessons: 10,
               lastLoginAt: s.lastLoginAt,
             };
@@ -156,22 +156,22 @@ export default function AcademyDashboard() {
           // More varied ratings (1-5 stars) with realistic distribution
           const lessonsData = [
             // Programación Web (demo-c1) - varied ratings
-            { lessonId: 'demo-l1', lessonTitle: 'Introducción a React', className: 'Programación Web Moderna', classId: 'demo-c1', averageRating: 4.8, ratingCount: 25 },
-            { lessonId: 'demo-l2', lessonTitle: 'Variables y Tipos', className: 'Programación Web Moderna', classId: 'demo-c1', averageRating: 3.5, ratingCount: 23 },
-            { lessonId: 'demo-l3', lessonTitle: 'Funciones y Scope', className: 'Programación Web Moderna', classId: 'demo-c1', averageRating: 4.7, ratingCount: 22 },
-            { lessonId: 'demo-l4', lessonTitle: 'Arrays y Objetos', className: 'Programación Web Moderna', classId: 'demo-c1', averageRating: 2.1, ratingCount: 21 },
-            { lessonId: 'demo-l5', lessonTitle: 'Programación Asíncrona', className: 'Programación Web Moderna', classId: 'demo-c1', averageRating: 5.0, ratingCount: 19 },
-            { lessonId: 'demo-l6', lessonTitle: 'React Hooks', className: 'Programación Web Moderna', classId: 'demo-c1', averageRating: 4.2, ratingCount: 18 },
+            { lessonId: 'demo-l1', lessonTitle: 'Introducción a React', className: 'Programación Web', classId: 'demo-c1', averageRating: 4.8, ratingCount: 25 },
+            { lessonId: 'demo-l2', lessonTitle: 'Variables y Tipos', className: 'Programación Web', classId: 'demo-c1', averageRating: 3.5, ratingCount: 23 },
+            { lessonId: 'demo-l3', lessonTitle: 'Funciones y Scope', className: 'Programación Web', classId: 'demo-c1', averageRating: 4.7, ratingCount: 22 },
+            { lessonId: 'demo-l4', lessonTitle: 'Arrays y Objetos', className: 'Programación Web', classId: 'demo-c1', averageRating: 2.1, ratingCount: 21 },
+            { lessonId: 'demo-l5', lessonTitle: 'Programación Asíncrona', className: 'Programación Web', classId: 'demo-c1', averageRating: 5.0, ratingCount: 19 },
+            { lessonId: 'demo-l6', lessonTitle: 'React Hooks', className: 'Programación Web', classId: 'demo-c1', averageRating: 4.2, ratingCount: 18 },
             // Matemáticas (demo-c2) - varied ratings
             { lessonId: 'demo-l7', lessonTitle: 'Límites y Continuidad', className: 'Matemáticas Avanzadas', classId: 'demo-c2', averageRating: 4.3, ratingCount: 18 },
             { lessonId: 'demo-l8', lessonTitle: 'Derivadas', className: 'Matemáticas Avanzadas', classId: 'demo-c2', averageRating: 1.8, ratingCount: 17 },
             { lessonId: 'demo-l9', lessonTitle: 'Integrales Definidas', className: 'Matemáticas Avanzadas', classId: 'demo-c2', averageRating: 4.9, ratingCount: 16 },
             { lessonId: 'demo-l10', lessonTitle: 'Series y Sucesiones', className: 'Matemáticas Avanzadas', classId: 'demo-c2', averageRating: 2.4, ratingCount: 15 },
             // Diseño Gráfico (demo-c3) - varied ratings
-            { lessonId: 'demo-l11', lessonTitle: 'Principios de Diseño', className: 'Diseño Gráfico Profesional', classId: 'demo-c3', averageRating: 4.9, ratingCount: 20 },
-            { lessonId: 'demo-l12', lessonTitle: 'Photoshop Básico', className: 'Diseño Gráfico Profesional', classId: 'demo-c3', averageRating: 3.2, ratingCount: 19 },
-            { lessonId: 'demo-l13', lessonTitle: 'Tipografía', className: 'Diseño Gráfico Profesional', classId: 'demo-c3', averageRating: 5.0, ratingCount: 18 },
-            { lessonId: 'demo-l14', lessonTitle: 'Teoría del Color', className: 'Diseño Gráfico Profesional', classId: 'demo-c3', averageRating: 2.7, ratingCount: 17 },
+            { lessonId: 'demo-l11', lessonTitle: 'Principios de Diseño', className: 'Diseño Gráfico', classId: 'demo-c3', averageRating: 4.9, ratingCount: 20 },
+            { lessonId: 'demo-l12', lessonTitle: 'Photoshop Básico', className: 'Diseño Gráfico', classId: 'demo-c3', averageRating: 3.2, ratingCount: 19 },
+            { lessonId: 'demo-l13', lessonTitle: 'Tipografía', className: 'Diseño Gráfico', classId: 'demo-c3', averageRating: 5.0, ratingCount: 18 },
+            { lessonId: 'demo-l14', lessonTitle: 'Teoría del Color', className: 'Diseño Gráfico', classId: 'demo-c3', averageRating: 2.7, ratingCount: 17 },
             // Física Cuántica (demo-c4) - varied ratings
             { lessonId: 'demo-l15', lessonTitle: 'Mecánica Cuántica', className: 'Física Cuántica', classId: 'demo-c4', averageRating: 4.5, ratingCount: 14 },
             { lessonId: 'demo-l16', lessonTitle: 'Partículas y Ondas', className: 'Física Cuántica', classId: 'demo-c4', averageRating: 1.9, ratingCount: 13 },
@@ -221,23 +221,34 @@ export default function AcademyDashboard() {
             minutes: totalMinutes % 60,
           });
           
-          // Add demo pending enrollments and rejected students
-          const demoPending = Array.from({ length: 15 }, (_, i) => ({
-            id: `demo-pending-${i + 1}`,
-            student: {
-              id: `demo-student-${i + 1}`,
-              firstName: ['Juan', 'María', 'Pedro'][i % 3],
-              lastName: ['García', 'López', 'Martínez'][i % 3],
-              email: `pendiente${i + 1}@demo.com`,
-            },
-            class: {
-              id: 'demo-c1',
-              name: 'Programación Web',
-            },
-            enrolledAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
-          }));
+          // Add demo pending enrollments and rejected students (varies by class)
+          // Pending: Prog Web=5, Matemáticas=4, Diseño=8, Física=6 (Total: 23)
+          // Rejected: Prog Web=2, Matemáticas=3, Diseño=5, Física=1 (Total: 11)
+          const pendingByClass = [
+            { classId: 'demo-c1', className: 'Programación Web', count: 5 },
+            { classId: 'demo-c2', className: 'Matemáticas Avanzadas', count: 4 },
+            { classId: 'demo-c3', className: 'Diseño Gráfico', count: 8 },
+            { classId: 'demo-c4', className: 'Física Cuántica', count: 6 },
+          ];
+          
+          const demoPending = pendingByClass.flatMap(cls => 
+            Array.from({ length: cls.count }, (_, i) => ({
+              id: `demo-pending-${cls.classId}-${i + 1}`,
+              student: {
+                id: `demo-student-pending-${cls.classId}-${i + 1}`,
+                firstName: ['Juan', 'María', 'Pedro', 'Ana', 'Luis', 'Carmen'][i % 6],
+                lastName: ['García', 'López', 'Martínez', 'Rodríguez', 'Sánchez'][i % 5],
+                email: `pendiente${cls.classId}${i + 1}@demo.com`,
+              },
+              class: {
+                id: cls.classId,
+                name: cls.className,
+              },
+              enrolledAt: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+            }))
+          );
           setPendingEnrollments(demoPending);
-          setRejectedCount(8);
+          setRejectedCount(11); // Total rejected across all classes
           setLoading(false);
           return;
         }
@@ -426,17 +437,19 @@ export default function AcademyDashboard() {
   // Calculate filtered class watch time
   const filteredClassWatchTime = useMemo(() => {
     if (paymentStatus === 'NOT PAID') {
-      // Demo data: calculate based on selected class
+      // Demo data: using DEMO_STATS constants from demo-data.ts
+      // Total: 15h 45min across all classes (from DEMO_STATS.totalClassHours/Minutes)
+      // Distributed per class based on lesson count
       const demoClassWatchData = [
-        { classId: 'demo-c1', hours: 15, minutes: 45 },
-        { classId: 'demo-c2', hours: 12, minutes: 30 },
-        { classId: 'demo-c3', hours: 10, minutes: 15 },
-        { classId: 'demo-c4', hours: 7, minutes: 0 },
+        { classId: 'demo-c1', hours: 7, minutes: 54 },  // Programación Web: 4 lessons × 118.5min = 7h 54min
+        { classId: 'demo-c2', hours: 5, minutes: 55 },  // Matemáticas: 3 lessons × 118.5min = 5h 55min  
+        { classId: 'demo-c3', hours: 1, minutes: 58 },  // Diseño Gráfico: 1 lesson × 118min = 1h 58min
+        { classId: 'demo-c4', hours: 0, minutes: 0 },   // Física Cuántica: 0 lessons = 0h
       ];
       
       if (selectedClass === 'all') {
-        const totalMinutes = demoClassWatchData.reduce((sum, d) => sum + d.hours * 60 + d.minutes, 0);
-        return { hours: Math.floor(totalMinutes / 60), minutes: totalMinutes % 60 };
+        // Return total from DEMO_STATS
+        return { hours: 15, minutes: 45 };
       } else {
         const classData = demoClassWatchData.find(d => d.classId === selectedClass);
         return classData || { hours: 0, minutes: 0 };
