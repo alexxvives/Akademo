@@ -271,7 +271,14 @@ export default function TopicsLessonsList({
         return;
       }
       
-      console.error('Failed to load student times:', error);
+      // For real academies, fetch from API
+      const res = await apiClient(`/videos/student-times?lessonId=${lesson.id}`);
+      const result = await res.json();
+      if (result.success) {
+        setStudentTimesData(result.data || []);
+      }
+    } catch (err) {
+      console.error('Failed to load student times:', err);
       alert('Error al cargar tiempos de estudiantes');
     } finally {
       setIsLoadingStudentTimes(false);
