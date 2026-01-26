@@ -7,6 +7,7 @@ export function DemoDataBanner() {
   const [academyId, setAcademyId] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
   const [showModal, setShowModal] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     // Get academy ID and user email
@@ -48,6 +49,16 @@ export function DemoDataBanner() {
 
   const handleCancel = () => {
     setShowModal(false);
+  };
+
+  const handleCopyEmail = async () => {
+    try {
+      await navigator.clipboard.writeText(userEmail);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy email:', err);
+    }
   };
 
   return (
@@ -102,11 +113,28 @@ export function DemoDataBanner() {
                 <p className="text-sm text-gray-700 font-medium mb-3">
                   Utiliza el email viculado a tu cuenta de AKADEMO durante el pago:
                 </p>
-                <div className="bg-white border-2 border-red-300 rounded-lg px-4 py-3 flex items-center gap-3">
-                  <svg className="w-5 h-5 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                  <span className="text-base font-semibold text-gray-900 break-all">{userEmail}</span>
+                <div className="bg-white border-2 border-red-300 rounded-lg px-4 py-3 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <svg className="w-5 h-5 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <span className="text-base font-semibold text-gray-900 break-all">{userEmail}</span>
+                  </div>
+                  <button
+                    onClick={handleCopyEmail}
+                    className="flex-shrink-0 p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors relative group"
+                    title="Copiar email"
+                  >
+                    {copied ? (
+                      <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    )}
+                  </button>
                 </div>
               </div>
             </div>
