@@ -10,7 +10,7 @@ interface PendingPayment {
   paymentMethod: string;
   paymentAmount: number;
   currency: string;
-  createdAt: string;
+  enrolledAt: string;
   studentId: string;
   studentFirstName: string;
   studentLastName: string;
@@ -33,7 +33,7 @@ interface PaymentHistory {
   paymentMethod: string;
   paymentStatus: string;
   approvedByName?: string;
-  updatedAt: string;
+  approvedAt: string;
   teacherName?: string;
 }
 
@@ -280,7 +280,7 @@ export default function AcademyPaymentsPage() {
                         <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
-                        <span>Registrado {new Date(payment.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                        <span>Registrado {new Date(payment.enrolledAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                       </div>
                     </div>
                     <div className="border-l border-gray-200 pl-8">
@@ -380,7 +380,7 @@ export default function AcademyPaymentsPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(history.updatedAt).toLocaleDateString('es-ES', { 
+                      {new Date(history.approvedAt).toLocaleDateString('es-ES', { 
                         day: 'numeric', 
                         month: 'short', 
                         year: 'numeric',
