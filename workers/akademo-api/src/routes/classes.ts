@@ -186,8 +186,8 @@ classes.post('/', async (c) => {
     const now = new Date().toISOString();
 
     await c.env.DB.prepare(`
-      INSERT INTO Class (id, name, slug, description, academyId, teacherId, whatsappGroupLink, zoomAccountId, createdAt, updatedAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO Class (id, name, slug, description, academyId, teacherId, whatsappGroupLink, zoomAccountId, createdAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       classId,
       name,
@@ -197,7 +197,6 @@ classes.post('/', async (c) => {
       teacherId || session.id, // Default to creator if no teacher specified
       whatsappGroupLink || null,
       body.zoomAccountId || null,
-      now,
       now
     ).run();
 

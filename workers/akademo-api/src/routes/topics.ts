@@ -161,8 +161,7 @@ topics.put('/:id', async (c) => {
     await c.env.DB.prepare(`
       UPDATE Topic 
       SET name = COALESCE(?, name), 
-          orderIndex = COALESCE(?, orderIndex),
-          updatedAt = datetime('now')
+          orderIndex = COALESCE(?, orderIndex)
       WHERE id = ?
     `).bind(name || null, orderIndex ?? null, topicId).run();
 
@@ -283,7 +282,7 @@ topics.put('/:id/reorder', async (c) => {
 
     // Update the moved topic's orderIndex
     await c.env.DB.prepare(`
-      UPDATE Topic SET orderIndex = ?, updatedAt = datetime('now') WHERE id = ?
+      UPDATE Topic SET orderIndex = ? WHERE id = ?
     `).bind(newOrderIndex, topicId).run();
 
     return c.json(successResponse({ message: 'Topic reordered' }));

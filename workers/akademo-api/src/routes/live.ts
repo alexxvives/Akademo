@@ -723,15 +723,14 @@ live.post('/create-lesson', async (c) => {
 
     // Create Lesson record first
     await c.env.DB.prepare(`
-      INSERT INTO Lesson (id, title, description, classId, releaseDate, createdAt, updatedAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO Lesson (id, title, description, classId, releaseDate, createdAt)
+      VALUES (?, ?, ?, ?, ?, ?)
     `).bind(
       lessonId,
       lessonTitle,
       description || null,
       stream.classId,
       releaseDate || now,
-      now,
       now
     ).run();
 

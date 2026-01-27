@@ -338,16 +338,16 @@ ratings.post('/', async (c) => {
       // Update existing rating
       await c.env.DB.prepare(`
         UPDATE LessonRating
-        SET rating = ?, comment = ?, updatedAt = ?
+        SET rating = ?, comment = ?
         WHERE id = ?
-      `).bind(rating, feedback || null, now, existing.id).run();
+      `).bind(rating, feedback || null, existing.id).run();
     } else {
       // Create new rating
       const ratingId = crypto.randomUUID();
       await c.env.DB.prepare(`
-        INSERT INTO LessonRating (id, lessonId, studentId, rating, comment, createdAt, updatedAt)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).bind(ratingId, lessonId, session.id, rating, feedback || null, now, now).run();
+        INSERT INTO LessonRating (id, lessonId, studentId, rating, comment, createdAt)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).bind(ratingId, lessonId, session.id, rating, feedback || null, now).run();
     }
 
     return c.json(successResponse({

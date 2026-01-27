@@ -55,8 +55,7 @@ payments.post('/initiate', async (c) => {
           UPDATE ClassEnrollment 
           SET paymentStatus = 'CASH_PENDING', 
               paymentMethod = 'cash',
-              paymentAmount = ?,
-              updatedAt = datetime('now')
+              paymentAmount = ?
           WHERE id = ?
         `)
         .bind(classData.price, enrollment.id)
@@ -208,8 +207,7 @@ payments.patch('/:enrollmentId/approve-cash', async (c) => {
         UPDATE ClassEnrollment 
         SET paymentStatus = ?,
             approvedBy = ?,
-            approvedByName = ?,
-            updatedAt = datetime('now')
+            approvedByName = ?
         WHERE id = ?
       `)
       .bind(newStatus, session.id, approverName, enrollmentId)
@@ -310,8 +308,7 @@ payments.post('/stripe-session', async (c) => {
       .prepare(`
         UPDATE ClassEnrollment 
         SET paymentStatus = 'PENDING',
-            paymentMethod = ?,
-            updatedAt = datetime('now')
+            paymentMethod = ?
         WHERE userId = ? AND classId = ?
       `)
       .bind(method, session.id, classId)
@@ -465,11 +462,9 @@ payments.put('/history/:id/reverse', async (c) => {
         UPDATE ClassEnrollment 
         SET paymentStatus = ?,
             approvedBy = ?,
-            approvedByName = ?,
-            updatedAt = datetime('now')
+            approvedByName = ?
         WHERE id = ?
-      `)
-      .bind(newStatus, session.id, approverName, enrollmentId)
+      `)\n      .bind(newStatus, session.id, approverName, enrollmentId)
       .run();
 
     return c.json(successResponse({ 

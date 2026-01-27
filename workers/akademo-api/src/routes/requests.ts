@@ -58,10 +58,10 @@ requests.post('/student', async (c) => {
         await c.env.DB
           .prepare(`
             UPDATE ClassEnrollment 
-            SET status = ?, paymentStatus = ?, paymentMethod = ?, paymentAmount = ?, updatedAt = ?
+            SET status = ?, paymentStatus = ?, paymentMethod = ?, paymentAmount = ?
             WHERE userId = ? AND classId = ?
           `)
-          .bind('APPROVED', paymentStatus, paymentMethod, classPrice, now, session.id, classId)
+          .bind('APPROVED', paymentStatus, paymentMethod, classPrice, session.id, classId)
           .run();
         return c.json(successResponse({ message: 'Enrollment approved successfully' }));
       }
@@ -80,10 +80,10 @@ requests.post('/student', async (c) => {
     await c.env.DB
       .prepare(`
         INSERT INTO ClassEnrollment 
-        (id, classId, userId, status, documentSigned, paymentStatus, paymentMethod, paymentAmount, enrolledAt, createdAt, updatedAt) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (id, classId, userId, status, documentSigned, paymentStatus, paymentMethod, paymentAmount, enrolledAt, createdAt) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `)
-      .bind(enrollmentId, classId, session.id, 'APPROVED', 0, paymentStatus, paymentMethod, classPrice, now, now, now)
+      .bind(enrollmentId, classId, session.id, 'APPROVED', 0, paymentStatus, paymentMethod, classPrice, now, now)
       .run();
 
     return c.json(successResponse({ 
@@ -134,7 +134,6 @@ requests.get('/teacher', async (c) => {
       status: 'APPROVED', // Teacher table entries are always approved
       requestedAt: row.createdAt,
       createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
     }));
 
     return c.json(memberships);
