@@ -39,7 +39,8 @@ classes.get('/', async (c) => {
       // Get enrolled classes with counts and payment status
       query = `
         SELECT 
-          c.*,
+          c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
+          c.feedbackEnabled, c.whatsappGroupLink, c.price, c.currency, c.zoomAccountId,
           a.name as academyName,
           ce.status as enrollmentStatus,
           ce.documentSigned,
@@ -61,7 +62,8 @@ classes.get('/', async (c) => {
       // Get classes teacher is assigned to
       query = `
         SELECT 
-          c.*,
+          c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
+          c.feedbackEnabled, c.whatsappGroupLink, c.price, c.currency, c.zoomAccountId,
           a.name as academyName,
           za.accountName as zoomAccountName,
           (SELECT COUNT(*) FROM ClassEnrollment WHERE classId = c.id AND status = 'APPROVED') as studentCount,
@@ -80,7 +82,8 @@ classes.get('/', async (c) => {
       // Get classes in owned academies
       query = `
         SELECT 
-          c.*,
+          c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
+          c.feedbackEnabled, c.whatsappGroupLink, c.price, c.currency, c.zoomAccountId,
           a.name as academyName,
           u.firstName as teacherFirstName,
           u.lastName as teacherLastName,
@@ -100,7 +103,8 @@ classes.get('/', async (c) => {
       // Admin gets all classes
       query = `
         SELECT 
-          c.*,
+          c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
+          c.feedbackEnabled, c.whatsappGroupLink, c.price, c.currency, c.zoomAccountId,
           a.name as academyName
         FROM Class c
         JOIN Academy a ON c.academyId = a.id
@@ -202,7 +206,10 @@ classes.post('/', async (c) => {
 
     // Return the created class
     const created = await c.env.DB.prepare(`
-      SELECT c.*, a.name as academyName
+      SELECT 
+        c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
+        c.feedbackEnabled, c.whatsappGroupLink, c.price, c.currency, c.zoomAccountId,
+        a.name as academyName
       FROM Class c
       JOIN Academy a ON c.academyId = a.id
       WHERE c.id = ?
@@ -224,7 +231,8 @@ classes.get('/:id', async (c) => {
     // Query to get class details with academy name
     const query = `
       SELECT 
-        c.*,
+        c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
+        c.feedbackEnabled, c.whatsappGroupLink, c.price, c.currency, c.zoomAccountId,
         a.name as academyName,
         a.ownerId as academyOwnerId,
         (u.firstName || ' ' || u.lastName) as teacherName,
@@ -340,7 +348,10 @@ classes.patch('/:id', async (c) => {
 
     // Get class to check permissions
     const classRecord = await c.env.DB.prepare(`
-      SELECT c.*, a.ownerId 
+      SELECT 
+        c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
+        c.feedbackEnabled, c.whatsappGroupLink, c.price, c.currency, c.zoomAccountId,
+        a.ownerId 
       FROM Class c
       JOIN Academy a ON c.academyId = a.id
       WHERE c.id = ?
@@ -395,7 +406,10 @@ classes.patch('/:id', async (c) => {
 
     // Return updated class
     const updated = await c.env.DB.prepare(`
-      SELECT c.*, a.name as academyName
+      SELECT 
+        c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
+        c.feedbackEnabled, c.whatsappGroupLink, c.price, c.currency, c.zoomAccountId,
+        a.name as academyName
       FROM Class c
       JOIN Academy a ON c.academyId = a.id
       WHERE c.id = ?
