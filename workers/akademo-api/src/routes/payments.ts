@@ -464,7 +464,8 @@ payments.put('/history/:id/reverse', async (c) => {
             approvedBy = ?,
             approvedByName = ?
         WHERE id = ?
-      `)\n      .bind(newStatus, session.id, approverName, enrollmentId)
+      `)
+      .bind(newStatus, session.id, approverName, enrollmentId)
       .run();
 
     return c.json(successResponse({ 
