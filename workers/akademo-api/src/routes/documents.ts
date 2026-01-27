@@ -15,7 +15,8 @@ documents.get('/', async (c) => {
       // Get documents for specific lesson
       const result = await c.env.DB
         .prepare(`
-          SELECT d.*, u.fileName, u.fileSize, u.mimeType, u.storagePath, l.title as lessonTitle
+          SELECT d.id, d.title, d.lessonId, d.uploadId, d.createdAt, 
+                 u.fileName, u.fileSize, u.mimeType, u.storagePath, l.title as lessonTitle
           FROM Document d
           LEFT JOIN Upload u ON d.uploadId = u.id
           JOIN Lesson l ON d.lessonId = l.id
@@ -30,7 +31,8 @@ documents.get('/', async (c) => {
       // Get all documents for class (across lessons)
       const result = await c.env.DB
         .prepare(`
-          SELECT d.*, u.fileName, u.fileSize, u.mimeType, u.storagePath, l.title as lessonTitle
+          SELECT d.id, d.title, d.lessonId, d.uploadId, d.createdAt, 
+                 u.fileName, u.fileSize, u.mimeType, u.storagePath, l.title as lessonTitle
           FROM Document d
           LEFT JOIN Upload u ON d.uploadId = u.id
           JOIN Lesson l ON d.lessonId = l.id

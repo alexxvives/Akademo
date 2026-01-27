@@ -17,7 +17,9 @@ topics.get('/', async (c) => {
 
     // Verify access to the class
     const classRecord = await c.env.DB.prepare(`
-      SELECT c.*, a.ownerId as academyOwnerId
+      SELECT c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
+             c.feedbackEnabled, c.whatsappGroupLink, c.price, c.currency, c.zoomAccountId, 
+             a.ownerId as academyOwnerId
       FROM Class c
       JOIN Academy a ON c.academyId = a.id
       WHERE c.id = ?
@@ -81,7 +83,9 @@ topics.post('/', async (c) => {
 
     // Verify access to the class
     const classRecord = await c.env.DB.prepare(`
-      SELECT c.*, a.ownerId as academyOwnerId
+      SELECT c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
+             c.feedbackEnabled, c.whatsappGroupLink, c.price, c.currency, c.zoomAccountId, 
+             a.ownerId as academyOwnerId
       FROM Class c
       JOIN Academy a ON c.academyId = a.id
       WHERE c.id = ?
@@ -138,7 +142,8 @@ topics.put('/:id', async (c) => {
 
     // Get topic and verify access
     const topic = await c.env.DB.prepare(`
-      SELECT t.*, c.teacherId, a.ownerId as academyOwnerId
+      SELECT t.id, t.name, t.classId, t.orderIndex, t.createdAt, 
+             c.teacherId, a.ownerId as academyOwnerId
       FROM Topic t
       JOIN Class c ON t.classId = c.id
       JOIN Academy a ON c.academyId = a.id
@@ -188,7 +193,8 @@ topics.delete('/:id', async (c) => {
 
     // Get topic and verify access
     const topic = await c.env.DB.prepare(`
-      SELECT t.*, c.teacherId, a.ownerId as academyOwnerId
+      SELECT t.id, t.name, t.classId, t.orderIndex, t.createdAt, 
+             c.teacherId, a.ownerId as academyOwnerId
       FROM Topic t
       JOIN Class c ON t.classId = c.id
       JOIN Academy a ON c.academyId = a.id
@@ -242,7 +248,8 @@ topics.put('/:id/reorder', async (c) => {
 
     // Get topic and verify access
     const topic = await c.env.DB.prepare(`
-      SELECT t.*, c.teacherId, a.ownerId as academyOwnerId
+      SELECT t.id, t.name, t.classId, t.orderIndex, t.createdAt, 
+             c.teacherId, a.ownerId as academyOwnerId
       FROM Topic t
       JOIN Class c ON t.classId = c.id
       JOIN Academy a ON c.academyId = a.id

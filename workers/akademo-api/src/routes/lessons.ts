@@ -18,7 +18,9 @@ lessons.get('/', async (c) => {
 
     // Verify access to the class
     const classRecord = await c.env.DB.prepare(`
-      SELECT c.*, a.ownerId as academyOwnerId
+      SELECT c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
+             c.feedbackEnabled, c.whatsappGroupLink, c.price, c.currency, c.zoomAccountId, 
+             a.ownerId as academyOwnerId
       FROM Class c
       JOIN Academy a ON c.academyId = a.id
       WHERE c.id = ?
@@ -263,7 +265,8 @@ lessons.get('/:id', async (c) => {
         ORDER BY v.createdAt
       `
       : `
-        SELECT v.*, u.fileName, u.fileSize, u.mimeType, u.storagePath, u.bunnyGuid, u.bunnyStatus, u.storageType
+        SELECT v.id, v.title, v.lessonId, v.uploadId, v.durationSeconds, v.createdAt, 
+               u.fileName, u.fileSize, u.mimeType, u.storagePath, u.bunnyGuid, u.bunnyStatus, u.storageType
         FROM Video v
         LEFT JOIN Upload u ON v.uploadId = u.id
         WHERE v.lessonId = ?
@@ -277,7 +280,8 @@ lessons.get('/:id', async (c) => {
     // Get documents
     const documents = await c.env.DB
       .prepare(`
-        SELECT d.*, u.fileName, u.fileSize, u.mimeType, u.storagePath, u.storageType
+        SELECT d.id, d.title, d.lessonId, d.uploadId, d.createdAt, 
+               u.fileName, u.fileSize, u.mimeType, u.storagePath, u.storageType
         FROM Document d
         LEFT JOIN Upload u ON d.uploadId = u.id
         WHERE d.lessonId = ?
@@ -365,7 +369,7 @@ lessons.patch('/:id', async (c) => {
 
     // Verify access
     const lesson = await c.env.DB
-      .prepare('SELECT l.*, c.teacherId, a.ownerId FROM Lesson l JOIN Class c ON l.classId = c.id JOIN Academy a ON c.academyId = a.id WHERE l.id = ?')
+      .prepare('SELECT l.id, l.title, l.description, l.classId, l.maxWatchTimeMultiplier, l.watermarkIntervalMins, l.createdAt, l.releaseDate, l.topicId, c.teacherId, a.ownerId FROM Lesson l JOIN Class c ON l.classId = c.id JOIN Academy a ON c.academyId = a.id WHERE l.id = ?')
       .bind(lessonId)
       .first() as any;
 
@@ -511,7 +515,7 @@ lessons.put('/:id/move', async (c) => {
 
     // Verify access to the lesson
     const lesson = await c.env.DB
-      .prepare('SELECT l.*, c.teacherId, a.ownerId, c.id as classId FROM Lesson l JOIN Class c ON l.classId = c.id JOIN Academy a ON c.academyId = a.id WHERE l.id = ?')
+      .prepare('SELECT l.id, l.title, l.description, l.classId, l.maxWatchTimeMultiplier, l.watermarkIntervalMins, l.createdAt, l.releaseDate, l.topicId, c.teacherId, a.ownerId, c.id as classId FROM Lesson l JOIN Class c ON l.classId = c.id JOIN Academy a ON c.academyId = a.id WHERE l.id = ?')
       .bind(lessonId)
       .first() as any;
 
@@ -569,7 +573,7 @@ lessons.delete('/:id', async (c) => {
 
     // Verify access
     const lesson = await c.env.DB
-      .prepare('SELECT l.*, c.teacherId, a.ownerId FROM Lesson l JOIN Class c ON l.classId = c.id JOIN Academy a ON c.academyId = a.id WHERE l.id = ?')
+      .prepare('SELECT l.id, l.title, l.description, l.classId, l.maxWatchTimeMultiplier, l.watermarkIntervalMins, l.createdAt, l.releaseDate, l.topicId, c.teacherId, a.ownerId FROM Lesson l JOIN Class c ON l.classId = c.id JOIN Academy a ON c.academyId = a.id WHERE l.id = ?')
       .bind(lessonId)
       .first();
 
@@ -640,7 +644,8 @@ lessons.delete('/document/:id', async (c) => {
 
     // Get document and verify access
     const document = await c.env.DB.prepare(`
-      SELECT d.*, l.classId, c.teacherId, a.ownerId
+      SELECT d.id, d.title, d.lessonId, d.uploadId, d.createdAt, 
+             l.classId, c.teacherId, a.ownerId
       FROM Document d
       JOIN Lesson l ON d.lessonId = l.id
       JOIN Class c ON l.classId = c.id
@@ -682,7 +687,8 @@ lessons.delete('/video/:id', async (c) => {
 
     // Get video and verify access
     const video = await c.env.DB.prepare(`
-      SELECT v.*, l.classId, c.teacherId, a.ownerId
+      SELECT v.id, v.title, v.lessonId, v.uploadId, v.durationSeconds, v.createdAt, 
+             l.classId, c.teacherId, a.ownerId
       FROM Video v
       JOIN Lesson l ON v.lessonId = l.id
       JOIN Class c ON l.classId = c.id
@@ -733,7 +739,9 @@ lessons.post('/create-with-uploaded', async (c) => {
 
     // Verify access to the class
     const classRecord = await c.env.DB.prepare(`
-      SELECT c.*, a.ownerId as academyOwnerId
+      SELECT c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
+             c.feedbackEnabled, c.whatsappGroupLink, c.price, c.currency, c.zoomAccountId, 
+             a.ownerId as academyOwnerId
       FROM Class c
       JOIN Academy a ON c.academyId = a.id
       WHERE c.id = ?
@@ -969,7 +977,8 @@ lessons.post('/:id/add-files', async (c) => {
 
     // Get lesson and verify access
     const lesson = await c.env.DB.prepare(`
-      SELECT l.*, c.teacherId, a.ownerId as academyOwnerId
+      SELECT l.id, l.title, l.description, l.classId, l.maxWatchTimeMultiplier, l.watermarkIntervalMins, l.createdAt, l.releaseDate, l.topicId, 
+             c.teacherId, a.ownerId as academyOwnerId
       FROM Lesson l
       JOIN Class c ON l.classId = c.id
       JOIN Academy a ON c.academyId = a.id
@@ -1085,7 +1094,8 @@ lessons.get('/:id/ratings', async (c) => {
 
     // Verify the lesson exists and user has access
     const lesson = await c.env.DB.prepare(`
-      SELECT l.*, c.teacherId, c.academyId
+      SELECT l.id, l.title, l.description, l.classId, l.maxWatchTimeMultiplier, l.watermarkIntervalMins, l.createdAt, l.releaseDate, l.topicId, 
+             c.teacherId, c.academyId
       FROM Lesson l
       JOIN Class c ON l.classId = c.id
       WHERE l.id = ?
@@ -1143,7 +1153,7 @@ lessons.get('/:id/student-times', async (c) => {
 
     // Verify lesson access
     const lesson = await c.env.DB
-      .prepare('SELECT l.*, c.teacherId, a.ownerId FROM Lesson l JOIN Class c ON l.classId = c.id JOIN Academy a ON c.academyId = a.id WHERE l.id = ?')
+      .prepare('SELECT l.id, l.title, l.description, l.classId, l.maxWatchTimeMultiplier, l.watermarkIntervalMins, l.createdAt, l.releaseDate, l.topicId, c.teacherId, a.ownerId FROM Lesson l JOIN Class c ON l.classId = c.id JOIN Academy a ON c.academyId = a.id WHERE l.id = ?')
       .bind(lessonId)
       .first() as any;
 
@@ -1239,7 +1249,8 @@ lessons.post('/:id/add-stream', async (c) => {
 
     // Verify the lesson exists and user has access
     const lesson = await c.env.DB.prepare(`
-      SELECT l.*, c.teacherId, c.academyId, a.ownerId as academyOwnerId
+      SELECT l.id, l.title, l.description, l.classId, l.maxWatchTimeMultiplier, l.watermarkIntervalMins, l.createdAt, l.releaseDate, l.topicId, 
+             c.teacherId, c.academyId, a.ownerId as academyOwnerId
       FROM Lesson l
       JOIN Class c ON l.classId = c.id
       JOIN Academy a ON c.academyId = a.id

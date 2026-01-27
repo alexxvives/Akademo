@@ -292,7 +292,9 @@ enrollments.put('/pending', async (c) => {
     // Get enrollment details including class owner
     const enrollment = await c.env.DB
       .prepare(`
-        SELECT e.*, c.teacherId, a.ownerId
+        SELECT e.id, e.classId, e.userId, e.status, e.enrolledAt, e.approvedAt, e.createdAt, 
+               e.documentSigned, e.documentSignedAt, e.paymentStatus, e.paymentMethod, e.paymentAmount, 
+               e.approvedBy, c.teacherId, a.ownerId
         FROM ClassEnrollment e
         JOIN Class c ON e.classId = c.id
         JOIN Academy a ON c.academyId = a.id
@@ -447,7 +449,9 @@ enrollments.put('/history/:id/reverse', async (c) => {
     // Get enrollment details including class owner
     const enrollment = await c.env.DB
       .prepare(`
-        SELECT e.*, c.teacherId, a.ownerId
+        SELECT e.id, e.classId, e.userId, e.status, e.enrolledAt, e.approvedAt, e.createdAt, 
+               e.documentSigned, e.documentSignedAt, e.paymentStatus, e.paymentMethod, e.paymentAmount, 
+               e.approvedBy, c.teacherId, a.ownerId
         FROM ClassEnrollment e
         JOIN Class c ON e.classId = c.id
         JOIN Academy a ON c.academyId = a.id

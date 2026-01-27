@@ -18,7 +18,10 @@ live.get('/', async (c) => {
 
     const result = await c.env.DB
       .prepare(`
-        SELECT ls.*, u.firstName, u.lastName
+        SELECT ls.id, ls.classId, ls.teacherId, ls.status, ls.title, ls.startedAt, ls.endedAt, 
+               ls.recordingId, ls.createdAt, ls.zoomLink, ls.zoomMeetingId, ls.zoomStartUrl, 
+               ls.participantCount, ls.participantsFetchedAt, ls.participantsData, 
+               u.firstName, u.lastName
         FROM LiveStream ls
         JOIN User u ON ls.teacherId = u.id
         WHERE ls.classId = ? AND ls.status IN ('scheduled', 'active')
@@ -322,7 +325,10 @@ live.get('/:id', async (c) => {
 
     const stream = await c.env.DB
       .prepare(`
-        SELECT ls.*, u.firstName, u.lastName, c.name as className
+        SELECT ls.id, ls.classId, ls.teacherId, ls.status, ls.title, ls.startedAt, ls.endedAt, 
+               ls.recordingId, ls.createdAt, ls.zoomLink, ls.zoomMeetingId, ls.zoomStartUrl, 
+               ls.participantCount, ls.participantsFetchedAt, ls.participantsData, 
+               u.firstName, u.lastName, c.name as className
         FROM LiveStream ls
         JOIN User u ON ls.teacherId = u.id
         JOIN Class c ON ls.classId = c.id
@@ -611,7 +617,10 @@ live.post('/create-lesson', async (c) => {
 
     // Get the stream with class info
     const stream = await c.env.DB.prepare(`
-      SELECT ls.*, c.academyId, c.teacherId as classTeacherId, a.ownerId as academyOwnerId
+      SELECT ls.id, ls.classId, ls.teacherId, ls.status, ls.title, ls.startedAt, ls.endedAt, 
+             ls.recordingId, ls.createdAt, ls.zoomLink, ls.zoomMeetingId, ls.zoomStartUrl, 
+             ls.participantCount, ls.participantsFetchedAt, ls.participantsData, 
+             c.academyId, c.teacherId as classTeacherId, a.ownerId as academyOwnerId
       FROM LiveStream ls
       JOIN Class c ON ls.classId = c.id
       JOIN Academy a ON c.academyId = a.id

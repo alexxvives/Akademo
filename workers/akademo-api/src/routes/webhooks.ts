@@ -79,7 +79,7 @@ webhooks.post('/zoom', async (c) => {
         try {
           // Get Zoom account for this stream's class
           const streamWithClass = await c.env.DB
-            .prepare('SELECT ls.*, c.zoomAccountId FROM LiveStream ls JOIN Class c ON ls.classId = c.id WHERE ls.id = ?')
+            .prepare('SELECT ls.id, ls.classId, ls.teacherId, ls.status, ls.title, ls.startedAt, ls.endedAt, ls.recordingId, ls.createdAt, ls.zoomLink, ls.zoomMeetingId, ls.zoomStartUrl, ls.participantCount, ls.participantsFetchedAt, ls.participantsData, c.zoomAccountId FROM LiveStream ls JOIN Class c ON ls.classId = c.id WHERE ls.id = ?')
             .bind(stream.id)
             .first() as any;
 

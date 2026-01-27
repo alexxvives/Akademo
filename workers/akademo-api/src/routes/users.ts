@@ -55,7 +55,7 @@ users.post('/create-student', async (c) => {
         }
       } else if (session.role === 'ACADEMY') {
         const classRecord = await c.env.DB
-          .prepare('SELECT c.*, a.ownerId FROM Class c JOIN Academy a ON c.academyId = a.id WHERE c.id = ?')
+          .prepare('SELECT c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, c.feedbackEnabled, c.whatsappGroupLink, c.price, c.currency, c.zoomAccountId, a.ownerId FROM Class c JOIN Academy a ON c.academyId = a.id WHERE c.id = ?')
           .bind(classId)
           .first();
 

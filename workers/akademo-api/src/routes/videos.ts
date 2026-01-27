@@ -190,7 +190,8 @@ videos.post('/progress/admin-update', async (c) => {
     // Get video and lesson details to check authorization
     const video = await c.env.DB
       .prepare(`
-        SELECT v.*, l.classId, l.maxWatchTimeMultiplier, c.teacherId, a.ownerId
+        SELECT v.id, v.title, v.lessonId, v.uploadId, v.durationSeconds, v.createdAt, 
+               l.classId, l.maxWatchTimeMultiplier, c.teacherId, a.ownerId
         FROM Video v
         JOIN Lesson l ON v.lessonId = l.id
         JOIN Class c ON l.classId = c.id

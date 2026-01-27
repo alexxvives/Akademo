@@ -309,7 +309,9 @@ ratings.post('/', async (c) => {
 
     // Verify student is enrolled in the class
     const lesson = await c.env.DB.prepare(`
-      SELECT l.*, c.id as classId
+      SELECT l.id, l.title, l.description, l.classId, l.maxWatchTimeMultiplier, 
+             l.watermarkIntervalMins, l.createdAt, l.releaseDate, l.topicId, 
+             c.id as classId
       FROM Lesson l
       JOIN Class c ON l.classId = c.id
       WHERE l.id = ?

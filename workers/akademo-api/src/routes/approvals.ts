@@ -58,7 +58,9 @@ approvals.post('/academy', async (c) => {
     // Verify ownership
     const enrollment = await c.env.DB
       .prepare(`
-        SELECT ce.*, a.ownerId
+        SELECT ce.id, ce.classId, ce.userId, ce.status, ce.enrolledAt, ce.approvedAt, ce.createdAt, 
+               ce.documentSigned, ce.documentSignedAt, ce.paymentStatus, ce.paymentMethod, ce.paymentAmount, 
+               ce.approvedBy, a.ownerId
         FROM ClassEnrollment ce
         JOIN Class c ON ce.classId = c.id
         JOIN Academy a ON c.academyId = a.id
@@ -139,7 +141,9 @@ approvals.post('/teacher', async (c) => {
     // Verify ownership
     const enrollment = await c.env.DB
       .prepare(`
-        SELECT ce.*, c.teacherId
+        SELECT ce.id, ce.classId, ce.userId, ce.status, ce.enrolledAt, ce.approvedAt, ce.createdAt, 
+               ce.documentSigned, ce.documentSignedAt, ce.paymentStatus, ce.paymentMethod, ce.paymentAmount, 
+               ce.approvedBy, c.teacherId
         FROM ClassEnrollment ce
         JOIN Class c ON ce.classId = c.id
         WHERE ce.id = ?

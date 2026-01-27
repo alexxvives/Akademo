@@ -8,10 +8,12 @@ const classes = new Hono<{ Bindings: Bindings }>();
 // GET /classes - Get user's classes
 classes.get('/', async (c) => {
   try {
+    console.log('[Classes GET] Request received');
     const academyIdParam = c.req.query('academyId'); // For public/signup filtering
     
     // If academyId is provided, return classes for that academy (public access for signup)
     if (academyIdParam) {
+      console.log('[Classes GET] Public academyId query:', academyIdParam);
       const query = `
         SELECT 
           c.id,
@@ -19,7 +21,7 @@ classes.get('/', async (c) => {
           c.description,
           c.academyId,
           u.firstName || ' ' || u.lastName as teacherName,
-          (SELECT COUNT(*) FROM ClassEnrollment WHERE classId = c.id AND status = 'APPROVED') as studentCount,
+          (SELECT COUNT(*) FROM ClassEnrollment WHERE classId = c.id AND STATUS = 'APPROVED') as studentCount,
           (SELECT COUNT(*) FROM Lesson WHERE classId = c.id) as lessonCount
         FROM Class c
         LEFT JOIN User u ON c.teacherId = u.id
@@ -27,10 +29,12 @@ classes.get('/', async (c) => {
         ORDER BY c.name ASC
       `;
       const result = await c.env.DB.prepare(query).bind(academyIdParam).all();
+      console.log('[Classes GET] Public query result:', result.results?.length || 0, 'classes');
       return c.json(successResponse(result.results || []));
     }
 
     const session = await requireAuth(c);
+    console.log('[Classes GET] Authenticated user:', session.id, 'Role:', session.role);
 
     let query = '';
     let params: any[] = [];
@@ -113,10 +117,13 @@ classes.get('/', async (c) => {
     }
 
     const result = await c.env.DB.prepare(query).bind(...params).all();
+    console.log('[Classes GET] Query executed successfully. Results:', result.results?.length || 0, 'classes');
 
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
-    console.error('[Classes] Error:', error);
+    console.error('[Classes GET] Error:', error);
+    console.error('[Classes GET] Error message:', error.message);
+    console.error('[Classes GET] Error stack:', error.stack);
     return c.json(errorResponse(error.message || 'Internal server error'), 500);
   }
 });
