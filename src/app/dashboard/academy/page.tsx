@@ -148,7 +148,7 @@ export default function AcademyDashboard() {
               className: s.className,
               lessonsCompleted: Math.floor(Math.random() * 5) + 2, // 2-6 lessons completed (avg ~4 out of 10 = 40%)
               totalLessons: 10,
-              lastLoginAt: s.lastLoginAt,
+              lastActive: s.lastLoginAt,
             };
           });
           setEnrolledStudents(mappedStudents);
@@ -332,6 +332,7 @@ export default function AcademyDashboard() {
                       className: cls.name,
                       lessonsCompleted: student.lessonsCompleted || 0,
                       totalLessons: student.totalLessons || 0,
+                      lastActive: student.lastActive,
                     });
                   }
                 }
@@ -357,6 +358,7 @@ export default function AcademyDashboard() {
                   className: cls.name,
                   lessonsCompleted: 0,
                   totalLessons: 0,
+                  lastActive: null,
                 }));
                 allStudents.push(...studentsInClass);
               }
