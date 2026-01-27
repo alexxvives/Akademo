@@ -1880,7 +1880,7 @@ export default function TeacherClassPage() {
                                       {recording.title}
                                     </span>
                                   </label>
-                                ))})
+                                ))}
                               </div>
                             )}
                           </div>
