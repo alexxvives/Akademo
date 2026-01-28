@@ -138,11 +138,6 @@ export default function AdminClassesPage() {
                         <span className="text-sm font-bold text-gray-900">{cls.avgRating.toFixed(1)}</span>
                       </div>
                     )}
-                    
-                    {/* Academy Badge */}
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                      {cls.academyName}
-                    </span>
                   </div>
                   
                   {cls.description ? (
@@ -159,8 +154,8 @@ export default function AdminClassesPage() {
                     <span className="font-medium">Profesor:</span>
                     <span>
                       {cls.teacherFirstName && cls.teacherLastName 
-                        ? `${cls.teacherFirstName} ${cls.teacherLastName}` 
-                        : cls.teacherName || 'Sin asignar'
+                        ? `${cls.teacherFirstName} ${cls.teacherLastName} (${cls.academyName})` 
+                        : cls.teacherName ? `${cls.teacherName} (${cls.academyName})` : 'Sin asignar'
                       }
                     </span>
                   </div>

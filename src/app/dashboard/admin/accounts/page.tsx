@@ -199,41 +199,40 @@ export default function AccountsPage() {
 
   return (
     <div className="p-8 space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Gestión de Cuentas</h1>
-        <p className="text-gray-600 mt-2">Administrar y eliminar cuentas de usuarios</p>
-      </div>
-
-      {/* Filters */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Buscar
-            </label>
+      {/* Header with Filters */}
+      <div className="flex items-center justify-between gap-4 border-b border-gray-100">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">Gestión de Cuentas</h1>
+          <p className="text-sm text-gray-500 mt-1">Administrar y eliminar cuentas de usuarios</p>
+        </div>
+        
+        {/* Filters in top-right */}
+        <div className="flex gap-3">
+          <div className="relative">
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Nombre, email, academia..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+              placeholder="Buscar..."
+              className="appearance-none w-64 pl-3 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tipo de Usuario
-            </label>
+          <div className="relative">
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="appearance-none w-48 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               <option value="ALL">Todos</option>
               <option value="STUDENT">Estudiantes</option>
               <option value="TEACHER">Profesores</option>
               <option value="ACADEMY">Academias</option>
             </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
           </div>
         </div>
       </div>
@@ -259,8 +258,8 @@ export default function AccountsPage() {
       </div>
 
       {/* Users Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
+      <div className="overflow-hidden">
+        <div className="overflow-x-auto bg-white rounded-xl border border-gray-200">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>

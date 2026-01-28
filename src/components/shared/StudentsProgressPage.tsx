@@ -8,6 +8,12 @@ import { generateDemoStudents } from '@/lib/demo-data';
 interface Class {
   id: string;
   name: string;
+  academyId?: string;
+}
+
+interface Academy {
+  id: string;
+  name: string;
 }
 
 interface StudentsProgressPageProps {
@@ -17,17 +23,31 @@ interface StudentsProgressPageProps {
 export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
   const [students, setStudents] = useState<StudentProgress[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
+  const [academies, setAcademies] = useState<Academy[]>([]);
   const [loading, setLoading] = useState(true);
   const [academyName, setAcademyName] = useState<string>('');
   const [paymentStatus, setPaymentStatus] = useState<string>('PAID');
   
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedAcademy, setSelectedAcademy] = useState('all');
   const [selectedClass, setSelectedClass] = useState('all');
+  const [filteredClasses, setFilteredClasses] = useState<Class[]>([]);
 
   useEffect(() => {
     loadAcademyName();
   }, []);
+
+  useEffect(() => {
+    // Filter classes when academy is selected (for ADMIN role)
+    if (role === 'ADMIN' && selectedAcademy && selectedAcademy !== 'all') {
+      const filtered = classes.filter(c => c.academyId === selectedAcademy);
+      setFilteredClasses(filtered);
+      setSelectedClass('all');
+    } else {
+      setFilteredClasses(classes);
+    }
+  }, [selectedAcademy, classes, role]);
 
   const loadAcademyName = async () => {
     try {
@@ -150,12 +170,22 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
 
   const loadProgress = async () => {
     try {
+      // Load academies if ADMIN
+      if (role === 'ADMIN') {
+        const academiesRes = await apiClient('/admin/academies');
+        const academiesData = await academiesRes.json();
+        if (academiesData.success && Array.isArray(academiesData.data)) {
+          setAcademies(academiesData.data);
+        }
+      }
+
       // Load classes
       const classesEndpoint = role === 'ADMIN' ? '/admin/classes' : role === 'TEACHER' ? '/classes' : '/academies/classes';
       const classesRes = await apiClient(classesEndpoint);
       const classesData = await classesRes.json();
       if (classesData.success && Array.isArray(classesData.data)) {
         setClasses(classesData.data);
+        setFilteredClasses(classesData.data);
       }
 
       // Load student progress
@@ -212,24 +242,46 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          {/* Class Filter */}
-          <div className="relative">
-            <select
-              value={selectedClass}
-              onChange={(e) => setSelectedClass(e.target.value)}
-              className="appearance-none w-48 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-            >
-              <option value="all">Todas las clases</option>
-              {classes.map((cls) => (
-                <option key={cls.id} value={cls.id}>{cls.name}</option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
+          {/* Class Filter - Shows when academy is selected for ADMIN or always for others */}
+          {(role !== 'ADMIN' || selectedAcademy !== 'all') && (
+            <div className="relative">
+              <select
+                value={selectedClass}
+                onChange={(e) => setSelectedClass(e.target.value)}
+                className="appearance-none w-48 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              >
+                <option value="all">Todas las clases</option>
+                {filteredClasses.map((cls) => (
+                  <option key={cls.id} value={cls.id}>{cls.name}</option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
             </div>
-          </div>
+          )}
+          {/* Academy Filter - Only for ADMIN */}
+          {role === 'ADMIN' && academies.length > 0 && (
+            <div className="relative">
+              <select
+                value={selectedAcademy}
+                onChange={(e) => setSelectedAcademy(e.target.value)}
+                className="appearance-none w-56 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              >
+                <option value="all">Todas las Academias</option>
+                {academies.map((academy) => (
+                  <option key={academy.id} value={academy.id}>{academy.name}</option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
