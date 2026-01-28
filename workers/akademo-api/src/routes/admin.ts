@@ -305,7 +305,7 @@ admin.get('/students', async (c) => {
         u.firstName,
         u.lastName,
         u.email,
-        GROUP_CONCAT(DISTINCT a.name, ', ') as academyNames,
+        GROUP_CONCAT(a.name) as academyNames,
         COUNT(DISTINCT c.id) as classCount,
         COUNT(DISTINCT e.id) as enrollmentCount,
         u.createdAt

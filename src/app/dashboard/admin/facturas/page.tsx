@@ -98,7 +98,7 @@ export default function AdminFacturas() {
     }
     return (
       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-        Academia → Plataforma
+        Academia → AKADEMO
       </span>
     );
   };
@@ -185,7 +185,7 @@ export default function AdminFacturas() {
                 : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
             }`}
           >
-            Academia → Plataforma
+            Academia → AKADEMO
           </button>
         </div>
       </div>

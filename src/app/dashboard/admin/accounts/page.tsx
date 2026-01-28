@@ -198,7 +198,7 @@ export default function AccountsPage() {
   }
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="space-y-6">
       {/* Header with Filters */}
       <div className="flex items-center justify-between gap-4 border-b border-gray-100">
         <div>
@@ -237,23 +237,23 @@ export default function AccountsPage() {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
+      {/* Stats - No containers */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div>
           <p className="text-sm text-gray-600">Total</p>
-          <p className="text-2xl font-bold text-gray-900">{users.length}</p>
+          <p className="text-3xl font-bold text-gray-900">{users.length}</p>
         </div>
-        <div className="bg-blue-50 rounded-xl p-4 shadow-sm border border-blue-200">
-          <p className="text-sm text-blue-600">Estudiantes</p>
-          <p className="text-2xl font-bold text-blue-900">{users.filter(u => u.role === 'STUDENT').length}</p>
+        <div>
+          <p className="text-sm text-gray-600">Estudiantes</p>
+          <p className="text-3xl font-bold text-gray-900">{users.filter(u => u.role === 'STUDENT').length}</p>
         </div>
-        <div className="bg-green-50 rounded-xl p-4 shadow-sm border border-green-200">
-          <p className="text-sm text-green-600">Profesores</p>
-          <p className="text-2xl font-bold text-green-900">{users.filter(u => u.role === 'TEACHER').length}</p>
+        <div>
+          <p className="text-sm text-gray-600">Profesores</p>
+          <p className="text-3xl font-bold text-gray-900">{users.filter(u => u.role === 'TEACHER').length}</p>
         </div>
-        <div className="bg-purple-50 rounded-xl p-4 shadow-sm border border-purple-200">
-          <p className="text-sm text-purple-600">Academias</p>
-          <p className="text-2xl font-bold text-purple-900">{users.filter(u => u.role === 'ACADEMY').length}</p>
+        <div>
+          <p className="text-sm text-gray-600">Academias</p>
+          <p className="text-3xl font-bold text-gray-900">{users.filter(u => u.role === 'ACADEMY').length}</p>
         </div>
       </div>
 

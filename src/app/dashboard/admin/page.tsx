@@ -189,40 +189,31 @@ export default function AdminDashboard() {
       }
 
       if (classesResult.success && Array.isArray(classesResult.data)) {
-        const classList = classesResult.data;
-        setClasses(classList);
-        
-        if (progressResult.success && Array.isArray(progressResult.data)) {
-          const allStudents: EnrolledStudent[] = [];
-          
-          for (const student of progressResult.data) {
-            try {
-              for (const cls of classList) {
-                const enrollRes = await apiClient(`/enrollments?classId=${cls.id}`);
-                const enrollData = await enrollRes.json();
-                if (enrollData.success && Array.isArray(enrollData.data)) {
-                  const studentInClass = enrollData.data.find((e: any) => e.student.id === student.id);
-                  if (studentInClass) {
-                    allStudents.push({
-                      id: student.id,
-                      name: `${student.firstName} ${student.lastName}`,
-                      email: student.email,
-                      classId: cls.id,
-                      className: cls.name,
-                      academyId: cls.academyId,
-                      lessonsCompleted: student.lessonsCompleted || 0,
-                      totalLessons: student.totalLessons || 0,
-                      lastActive: student.lastActive,
-                    });
-                  }
-                }
-              }
-            } catch (err) {
-              console.error(`Failed to map student ${student.id}:`, err);
-            }
-          }
-          setEnrolledStudents(allStudents);
-        }
+        setClasses(classesResult.data);
+      }
+
+      if (pendingResult.success && Array.isArray(pendingResult.data)) {
+        setPendingEnrollments(pendingResult.data);
+      }
+
+      if (ratingsResult.success) {
+        setRatingsData(ratingsResult.data);
+      }
+
+      // Process student progress data - much faster without nested API calls
+      if (progressResult.success && Array.isArray(progressResult.data)) {
+        const allStudents: EnrolledStudent[] = progressResult.data.map((student: any) => ({
+          id: student.id,
+          name: `${student.firstName} ${student.lastName}`,
+          email: student.email,
+          classId: student.classId,
+          className: student.className || 'Sin clase',
+          academyId: student.academyId,
+          lessonsCompleted: student.lessonsCompleted || 0,
+          totalLessons: student.totalLessons || 0,
+          lastActive: student.lastActive,
+        }));
+        setEnrolledStudents(allStudents);
       }
     } catch (error) {
       console.error('❌ Failed to load data:', error);
