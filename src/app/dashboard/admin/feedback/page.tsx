@@ -84,7 +84,7 @@ export default function AdminFeedbackPage() {
   }, [classes, selectedAcademy, selectedClass]);
 
   const filteredClassOptions = useMemo(() => {
-    if (selectedAcademy === 'all') return allClasses;
+    if (selectedAcademy === 'all') return [];
     return allClasses.filter(c => c.academyId === selectedAcademy);
   }, [allClasses, selectedAcademy]);
 
@@ -125,17 +125,18 @@ export default function AdminFeedbackPage() {
             ))}
           </select>
           
-          <select
-            value={selectedClass}
-            onChange={(e) => setSelectedClass(e.target.value)}
-            className="appearance-none w-56 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-            disabled={selectedAcademy === 'all' && allClasses.length === 0}
-          >
-            <option value="all">Todas las clases</option>
-            {filteredClassOptions.map(cls => (
-              <option key={cls.id} value={cls.id}>{cls.name}</option>
-            ))}
-          </select>
+          {selectedAcademy !== 'all' && filteredClassOptions.length > 0 && (
+            <select
+              value={selectedClass}
+              onChange={(e) => setSelectedClass(e.target.value)}
+              className="appearance-none w-56 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+            >
+              <option value="all">Todas las clases</option>
+              {filteredClassOptions.map(cls => (
+                <option key={cls.id} value={cls.id}>{cls.name}</option>
+              ))}
+            </select>
+          )}
         </div>
       </div>
 

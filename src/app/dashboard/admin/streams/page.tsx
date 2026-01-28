@@ -160,7 +160,7 @@ export default function AdminStreamsPage() {
   }, [streams, selectedAcademy, selectedClass]);
 
   const filteredClasses = useMemo(() => {
-    if (selectedAcademy === 'all') return classes;
+    if (selectedAcademy === 'all') return [];
     return classes.filter(c => c.academyId === selectedAcademy);
   }, [classes, selectedAcademy]);
 

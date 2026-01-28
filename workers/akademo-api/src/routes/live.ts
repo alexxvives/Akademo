@@ -276,6 +276,7 @@ live.get('/history', async (c) => {
         JOIN Class c ON ls.classId = c.id
         JOIN Academy a ON c.academyId = a.id
         JOIN User u ON ls.teacherId = u.id
+        WHERE ls.status != 'scheduled'
         ORDER BY ls.createdAt DESC
       `;
     }
