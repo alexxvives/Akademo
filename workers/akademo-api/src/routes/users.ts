@@ -151,4 +151,76 @@ users.post('/create-teacher', async (c) => {
   }
 });
 
+// DELETE /users/delete-account - Delete user account
+users.delete('/delete-account', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    const userId = session.id;
+
+    console.log('[Delete Account] User:', userId, 'Role:', session.role);
+
+    // Perform different cleanup based on role
+    if (session.role === 'STUDENT') {
+      // Delete student enrollments and ratings
+      await c.env.DB.prepare('DELETE FROM ClassEnrollment WHERE userId = ?').bind(userId).run();
+      await c.env.DB.prepare('DELETE FROM LessonRating WHERE studentId = ?').bind(userId).run();
+      await c.env.DB.prepare('DELETE FROM VideoPlayState WHERE studentId = ?').bind(userId).run();
+      
+    } else if (session.role === 'TEACHER') {
+      // Unassign from classes and delete teacher records
+      await c.env.DB.prepare('UPDATE Class SET teacherId = NULL WHERE teacherId = ?').bind(userId).run();
+      await c.env.DB.prepare('DELETE FROM Teacher WHERE userId = ?').bind(userId).run();
+      await c.env.DB.prepare('DELETE FROM LiveStream WHERE teacherId = ?').bind(userId).run();
+      
+    } else if (session.role === 'ACADEMY') {
+      // Delete academy and all related data (dangerous!)
+      const academy: any = await c.env.DB.prepare('SELECT id FROM Academy WHERE ownerId = ?').bind(userId).first();
+      
+      if (academy) {
+        const academyId = academy.id;
+        
+        // Delete all classes and their related data
+        const classes: any = await c.env.DB.prepare('SELECT id FROM Class WHERE academyId = ?').bind(academyId).all();
+        
+        for (const classRow of classes.results || []) {
+          const classId = classRow.id;
+          
+          // Delete lessons and their content
+          const lessons: any = await c.env.DB.prepare('SELECT id FROM Lesson WHERE classId = ?').bind(classId).all();
+          for (const lesson of lessons.results || []) {
+            await c.env.DB.prepare('DELETE FROM Video WHERE lessonId = ?').bind(lesson.id).run();
+            await c.env.DB.prepare('DELETE FROM Document WHERE lessonId = ?').bind(lesson.id).run();
+            await c.env.DB.prepare('DELETE FROM LessonRating WHERE lessonId = ?').bind(lesson.id).run();
+          }
+          await c.env.DB.prepare('DELETE FROM Lesson WHERE classId = ?').bind(classId).run();
+          
+          // Delete enrollments and live streams
+          await c.env.DB.prepare('DELETE FROM ClassEnrollment WHERE classId = ?').bind(classId).run();
+          await c.env.DB.prepare('DELETE FROM LiveStream WHERE classId = ?').bind(classId).run();
+        }
+        
+        // Delete all classes
+        await c.env.DB.prepare('DELETE FROM Class WHERE academyId = ?').bind(academyId).run();
+        
+        // Delete teachers
+        await c.env.DB.prepare('DELETE FROM Teacher WHERE academyId = ?').bind(academyId).run();
+        
+        // Delete academy
+        await c.env.DB.prepare('DELETE FROM Academy WHERE id = ?').bind(academyId).run();
+      }
+    }
+
+    // Delete the user account
+    await c.env.DB.prepare('DELETE FROM User WHERE id = ?').bind(userId).run();
+    
+    console.log('[Delete Account] Successfully deleted user:', userId);
+    
+    return c.json(successResponse({ message: 'Account deleted successfully' }));
+    
+  } catch (error: any) {
+    console.error('[Delete Account] Error:', error);
+    return c.json(errorResponse(error.message || 'Failed to delete account'), 500);
+  }
+});
+
 export default users;

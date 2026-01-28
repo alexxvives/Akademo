@@ -225,6 +225,7 @@ live.get('/history', async (c) => {
       query = `
         SELECT 
           ls.*,
+          c.academyId,
           c.name as className,
           c.slug as classSlug,
           u.firstName || ' ' || u.lastName as teacherName,
@@ -244,6 +245,7 @@ live.get('/history', async (c) => {
       query = `
         SELECT 
           ls.*,
+          c.academyId,
           c.name as className,
           c.slug as classSlug,
           (SELECT v.lessonId FROM Video v 
@@ -260,6 +262,7 @@ live.get('/history', async (c) => {
       query = `
         SELECT 
           ls.*,
+          c.academyId,
           c.name as className,
           c.slug as classSlug,
           u.firstName || ' ' || u.lastName as teacherName,

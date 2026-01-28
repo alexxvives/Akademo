@@ -10,14 +10,50 @@ students.get('/progress', async (c) => {
   try {
     const session = await requireAuth(c);
 
-    if (session.role !== 'TEACHER' && session.role !== 'ACADEMY') {
+    if (session.role !== 'TEACHER' && session.role !== 'ACADEMY' && session.role !== 'ADMIN') {
       return c.json(errorResponse('Not authorized'), 403);
     }
 
     let query = '';
     let params: any[] = [];
 
-    if (session.role === 'TEACHER') {
+    if (session.role === 'ADMIN') {
+      // Get ALL student progress across platform
+      query = `
+        SELECT 
+          u.id,
+          u.firstName,
+          u.lastName,
+          u.email,
+          COALESCE(u.lastLoginAt, u.createdAt) as lastActive,
+          c.name as className,
+          c.id as classId,
+          c.academyId,
+          ut.firstName || ' ' || ut.lastName as teacherName,
+          COUNT(DISTINCT CASE 
+            WHEN vps.videoId IS NOT NULL AND v.id IS NOT NULL THEN vps.videoId 
+          END) as lessonsCompleted,
+          COUNT(DISTINCT l.id) as totalLessons,
+          COALESCE(SUM(CASE 
+            WHEN vps.videoId IS NOT NULL AND v.id IS NOT NULL THEN vps.totalWatchTimeSeconds 
+            ELSE 0 
+          END), 0) as totalWatchTime,
+          COALESCE(AVG(CASE 
+            WHEN lr.lessonId IS NOT NULL THEN lr.rating 
+          END), 0) as averageRating
+        FROM User u
+        JOIN ClassEnrollment e ON e.userId = u.id AND e.status = 'APPROVED'
+        JOIN Class c ON e.classId = c.id
+        LEFT JOIN User ut ON c.teacherId = ut.id
+        LEFT JOIN Lesson l ON l.classId = c.id
+        LEFT JOIN Video v ON v.lessonId = l.id
+        LEFT JOIN VideoPlayState vps ON vps.videoId = v.id AND vps.studentId = u.id
+        LEFT JOIN LessonRating lr ON lr.studentId = u.id AND lr.lessonId = l.id
+        GROUP BY u.id, u.firstName, u.lastName, u.email, u.lastLoginAt, c.id, c.name, c.academyId, ut.firstName, ut.lastName
+        ORDER BY u.lastName, u.firstName, c.name
+      `;
+      params = [];
+    } else if (session.role === 'TEACHER') {
       // Get progress for each student-class combination (one row per student per class)
       query = `
         SELECT 

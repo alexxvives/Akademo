@@ -11,7 +11,7 @@ interface Class {
 }
 
 interface StudentsProgressPageProps {
-  role: 'TEACHER' | 'ACADEMY';
+  role: 'TEACHER' | 'ACADEMY' | 'ADMIN';
 }
 
 export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
@@ -31,7 +31,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
 
   const loadAcademyName = async () => {
     try {
-      const endpoint = role === 'TEACHER' ? '/requests/teacher' : '/academies';
+      const endpoint = role === 'ADMIN' ? '/admin/academies' : role === 'TEACHER' ? '/requests/teacher' : '/academies';
       const res = await apiClient(endpoint);
       const result = await res.json();
       
@@ -151,7 +151,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
   const loadProgress = async () => {
     try {
       // Load classes
-      const classesEndpoint = role === 'TEACHER' ? '/classes' : '/academies/classes';
+      const classesEndpoint = role === 'ADMIN' ? '/admin/classes' : role === 'TEACHER' ? '/classes' : '/academies/classes';
       const classesRes = await apiClient(classesEndpoint);
       const classesData = await classesRes.json();
       if (classesData.success && Array.isArray(classesData.data)) {

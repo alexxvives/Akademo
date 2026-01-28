@@ -11,13 +11,13 @@ enrollments.get('/', async (c) => {
     const session = await requireAuth(c);
     const classId = c.req.query('classId');
 
-    // If classId provided, return enrollments for that class (TEACHER only)
+    // If classId provided, return enrollments for that class (TEACHER, ACADEMY, or ADMIN)
     if (classId) {
-      if (session.role !== 'TEACHER' && session.role !== 'ACADEMY') {
+      if (session.role !== 'TEACHER' && session.role !== 'ACADEMY' && session.role !== 'ADMIN') {
         return c.json(errorResponse('Not authorized'), 403);
       }
 
-      // Verify teacher owns this class
+      // Verify teacher owns this class (skip check for ADMIN)
       if (session.role === 'TEACHER') {
         const classCheck = await c.env.DB
           .prepare('SELECT id FROM Class WHERE id = ? AND teacherId = ?')
@@ -137,7 +137,7 @@ enrollments.post('/sign-document', async (c) => {
   }
 });
 
-// GET /enrollments/pending - Get pending enrollments (ACADEMY/TEACHER)
+// GET /enrollments/pending - Get pending enrollments (ACADEMY/TEACHER/ADMIN)
 enrollments.get('/pending', async (c) => {
   try {
     const session = await requireAuth(c);
@@ -145,7 +145,38 @@ enrollments.get('/pending', async (c) => {
     let query = '';
     let params: any[] = [];
 
-    if (session.role === 'ACADEMY') {
+    if (session.role === 'ADMIN') {
+      // Get ALL pending enrollments across platform
+      query = `
+        SELECT 
+          e.id,
+          e.classId,
+          e.userId,
+          e.status,
+          e.documentSigned,
+          e.enrolledAt,
+          e.approvedAt,
+          u.id as student_id,
+          u.firstName as student_firstName,
+          u.lastName as student_lastName,
+          u.email as student_email,
+          c.name as class_name,
+          c.id as class_id,
+          c.academyId as class_academyId,
+          c.teacherId,
+          teacher.firstName || ' ' || teacher.lastName as teacherName,
+          a.name as academyName,
+          a.id as academyId
+        FROM ClassEnrollment e
+        JOIN User u ON e.userId = u.id
+        JOIN Class c ON e.classId = c.id
+        JOIN Academy a ON c.academyId = a.id
+        LEFT JOIN User teacher ON c.teacherId = teacher.id
+        WHERE e.status = 'PENDING'
+        ORDER BY e.enrolledAt DESC
+      `;
+      params = [];
+    } else if (session.role === 'ACADEMY') {
       // Get pending enrollments for owned academies
       query = `
         SELECT 
@@ -162,9 +193,11 @@ enrollments.get('/pending', async (c) => {
           u.email as student_email,
           c.name as class_name,
           c.id as class_id,
+          c.academyId as class_academyId,
           c.teacherId,
           teacher.firstName || ' ' || teacher.lastName as teacherName,
-          a.name as academyName
+          a.name as academyName,
+          a.id as academyId
         FROM ClassEnrollment e
         JOIN User u ON e.userId = u.id
         JOIN Class c ON e.classId = c.id
@@ -191,9 +224,11 @@ enrollments.get('/pending', async (c) => {
           u.email as student_email,
           c.name as class_name,
           c.id as class_id,
+          c.academyId as class_academyId,
           c.teacherId,
           teacher.firstName || ' ' || teacher.lastName as teacherName,
-          a.name as academyName
+          a.name as academyName,
+          a.id as academyId
         FROM ClassEnrollment e
         JOIN User u ON e.userId = u.id
         JOIN Class c ON e.classId = c.id
@@ -229,8 +264,10 @@ enrollments.get('/pending', async (c) => {
         name: row.class_name,
         teacherId: row.teacherId,
         teacherName: row.teacherName,
+        academyId: row.class_academyId,
       },
       academyName: row.academyName,
+      academyId: row.academyId,
     }));
 
     return c.json(successResponse(enrollments));
@@ -245,14 +282,21 @@ enrollments.get('/rejected', async (c) => {
   try {
     const session = await requireAuth(c);
 
-    if (!['TEACHER', 'ACADEMY'].includes(session.role)) {
+    if (!['TEACHER', 'ACADEMY', 'ADMIN'].includes(session.role)) {
       return c.json(errorResponse('Not authorized'), 403);
     }
 
     let query = '';
     let params: any[] = [];
 
-    if (session.role === 'TEACHER') {
+    if (session.role === 'ADMIN') {
+      query = `
+        SELECT COUNT(*) as count
+        FROM ClassEnrollment e
+        WHERE e.status = 'REJECTED'
+      `;
+      params = [];
+    } else if (session.role === 'TEACHER') {
       query = `
         SELECT COUNT(*) as count
         FROM ClassEnrollment e

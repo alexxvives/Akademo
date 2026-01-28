@@ -199,18 +199,26 @@ ratings.get('/', async (c) => {
       return c.json(successResponse(rating || null));
     }
 
-    // Only Teachers and Academy owners can see their teaching stats
-    if (session.role !== 'TEACHER' && session.role !== 'ACADEMY') {
+    // Only Teachers, Academy owners, and Admins can see teaching stats
+    if (session.role !== 'TEACHER' && session.role !== 'ACADEMY' && session.role !== 'ADMIN') {
       console.log('[Ratings] Forbidden - role:', session.role);
       return c.json(errorResponse('Forbidden'), 403);
     }
 
-    let queryParams = [session.id];
-    let whereClause = 'WHERE c.teacherId = ?';
+    let queryParams: any[] = [];
+    let whereClause = '';
     
-    if (session.role === 'ACADEMY') {
+    if (session.role === 'ADMIN') {
+        // Admin sees all ratings across platform
+        whereClause = 'WHERE 1=1';
+    } else if (session.role === 'ACADEMY') {
         // Academy owner sees all classes in their academies
         whereClause = 'WHERE c.academyId IN (SELECT id FROM Academy WHERE ownerId = ?)';
+        queryParams = [session.id];
+    } else {
+        // Teacher sees their own classes
+        whereClause = 'WHERE c.teacherId = ?';
+        queryParams = [session.id];
     }
 
     if (classId) {
@@ -265,13 +273,14 @@ ratings.get('/', async (c) => {
           l.title as lessonTitle,
           c.id as classId,
           c.name as className,
+          c.academyId,
           COALESCE(AVG(lr.rating), 0) as averageRating,
           COUNT(lr.id) as ratingCount
         FROM Class c
         JOIN Lesson l ON l.classId = c.id
         LEFT JOIN LessonRating lr ON lr.lessonId = l.id
         ${whereClause}
-        GROUP BY l.id, l.title, c.id, c.name
+        GROUP BY l.id, l.title, c.id, c.name, c.academyId
         HAVING COUNT(lr.id) > 0
         ORDER BY c.name, l.title
     `).bind(...queryParams).all();

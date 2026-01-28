@@ -11,17 +11,48 @@ interface Teacher {
   email: string;
   academyName?: string;
   classCount: number;
+  classNames?: string;
   studentCount: number;
   createdAt: string;
 }
 
 export default function AdminTeachers() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [academies, setAcademies] = useState<Array<{id: string; name: string}>>([]);
+  const [selectedAcademy, setSelectedAcademy] = useState<string>('ALL');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadTeachers();
+    loadData();
   }, []);
+  
+  const loadData = async () => {
+    try {
+      const [teachersRes, academiesRes] = await Promise.all([
+        apiClient('/admin/teachers'),
+        apiClient('/admin/academies')
+      ]);
+      
+      const [teachersResult, academiesResult] = await Promise.all([
+        teachersRes.json(),
+        academiesRes.json()
+      ]);
+      
+      if (teachersResult.success) {
+        setTeachers(teachersResult.data || []);
+      }
+      if (academiesResult.success) {
+        setAcademies((academiesResult.data || []).map((a: any) => ({
+          id: a.id,
+          name: a.name
+        })));
+      }
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadTeachers = async () => {
     try {
@@ -36,6 +67,13 @@ export default function AdminTeachers() {
       setLoading(false);
     }
   };
+  
+  // Filter teachers by academy
+  const filteredTeachers = teachers.filter(t => {
+    if (selectedAcademy === 'ALL') return true;
+    const academy = academies.find(a => a.id === selectedAcademy);
+    return t.academyName === academy?.name;
+  });
 
   if (loading) {
     return (
@@ -55,9 +93,30 @@ export default function AdminTeachers() {
             <h1 className="text-2xl font-semibold text-gray-900">Profesores</h1>
             <p className="text-sm text-gray-500 mt-1">AKADEMO PLATFORM</p>
           </div>
+          
+          {/* Academy Filter - Top Right */}
+          {academies.length > 0 && (
+            <div className='relative'>
+              <select
+                value={selectedAcademy}
+                onChange={(e) => setSelectedAcademy(e.target.value)}
+                className='appearance-none w-64 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent'
+              >
+                <option value="ALL">Todas las Academias</option>
+                {academies.map(a => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+              </select>
+              <div className='pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500'>
+                <svg className='w-4 h-4' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                  <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M19 9l-7 7-7-7' />
+                </svg>
+              </div>
+            </div>
+          )}
         </div>
 
-        {teachers.length === 0 ? (
+        {filteredTeachers.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -90,7 +149,7 @@ export default function AdminTeachers() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {teachers.map((teacher) => (
+                {filteredTeachers.map((teacher) => (
                   <tr key={teacher.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -108,8 +167,18 @@ export default function AdminTeachers() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm text-gray-900">{teacher.academyName || '-'}</span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-900">{teacher.classCount}</span>
+                    <td className="px-6 py-4">
+                      {teacher.classNames ? (
+                        <div className="flex flex-wrap gap-1">
+                          {teacher.classNames.split(',').map((name, i) => (
+                            <span key={i} className="inline-block bg-gray-100 px-2 py-0.5 rounded text-xs text-gray-700">
+                              {name}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-400">-</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm text-gray-900">{teacher.studentCount}</span>

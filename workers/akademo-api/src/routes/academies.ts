@@ -27,7 +27,6 @@ academies.get('/', async (c) => {
           COUNT(DISTINCT c.id) as classCount
         FROM Academy a
         LEFT JOIN Class c ON a.id = c.academyId
-        WHERE a.status = 'APPROVED'
         GROUP BY a.id
         ORDER BY a.name ASC
       `;
@@ -62,7 +61,7 @@ academies.get('/', async (c) => {
       `;
       params = [session.id];
     } else {
-      // Public/students see only approved academies (for signup/browsing)
+      // Public/students see all academies (for signup/browsing)
       console.log('[Academies] Using PUBLIC query (no session or student role)');
       query = `
         SELECT 
@@ -73,7 +72,6 @@ academies.get('/', async (c) => {
           COUNT(DISTINCT c.id) as classCount
         FROM Academy a
         LEFT JOIN Class c ON a.id = c.academyId
-        WHERE a.status = 'APPROVED'
         GROUP BY a.id
         ORDER BY a.name ASC
       `;
