@@ -113,14 +113,18 @@ export default function ClassPage() {
     loadData();
   }, [classId]);
 
-  // Poll for active streams
+  // Poll for active streams - must use classData.id (resolved UUID) not classId (could be slug)
   useEffect(() => {
+    // Only start polling after classData is loaded
+    if (!classData?.id) return;
+
     const checkStream = async () => {
       try {
         const res = await apiClient('/live/active');
         const result = await res.json();
         if (result.success && Array.isArray(result.data)) {
-          const stream = result.data.find((s: ActiveStream) => s.classId === classId);
+          // Use classData.id (UUID) instead of classId (might be slug)
+          const stream = result.data.find((s: ActiveStream) => s.classId === classData.id);
           setActiveStream(stream || null);
         }
       } catch (error) {
@@ -133,7 +137,7 @@ export default function ClassPage() {
     // Then check every 10 seconds
     const interval = setInterval(checkStream, 10000);
     return () => clearInterval(interval);
-  }, [classId]);
+  }, [classData?.id]); // Depend on classData.id, not classId
 
   // Handle URL parameters for lesson and video selection
   useEffect(() => {
@@ -223,16 +227,14 @@ export default function ClassPage() {
       // Use the resolved class ID for subsequent requests
       const resolvedClassId = classResult.data.id;
 
-      const [lessonsRes, topicsRes, streamsRes] = await Promise.all([
+      const [lessonsRes, topicsRes] = await Promise.all([
         apiClient(`/lessons?classId=${resolvedClassId}`),
         apiClient(`/topics?classId=${resolvedClassId}`),
-        apiClient('/live/active'),
       ]);
 
-      const [lessonsResult, topicsResult, streamsResult] = await Promise.all([
+      const [lessonsResult, topicsResult] = await Promise.all([
         lessonsRes.json(),
         topicsRes.json(),
-        streamsRes.json(),
       ]);
 
       console.log('[Student Class] Topics result:', topicsResult);
@@ -247,11 +249,7 @@ export default function ClassPage() {
         setLessons(lessonsResult.data);
       }
 
-      // Check for active stream in this class
-      if (streamsResult.success && Array.isArray(streamsResult.data)) {
-        const stream = streamsResult.data.find((s: ActiveStream) => s.classId === resolvedClassId);
-        setActiveStream(stream || null);
-      }
+      // Stream state managed by checkStream() polling - no duplicate fetching here
     } catch (error) {
       console.error('[Student Class] Failed to load data:', error);
     } finally {

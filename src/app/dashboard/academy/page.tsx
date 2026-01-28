@@ -263,7 +263,10 @@ export default function AcademyDashboard() {
         const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
         const thisMonthStreams = streams.filter((s: any) => new Date(s.createdAt) >= thisMonthStart);
         
-        const totalParticipants = streams.reduce((sum: number, s: any) => sum + (s.participantCount || 0), 0);
+        // Exclude streams with 0 or null participants from attendance calculation
+        const streamsWithParticipants = streams.filter((s: any) => s.participantCount && s.participantCount > 0);
+        const totalParticipants = streamsWithParticipants.reduce((sum: number, s: any) => sum + s.participantCount, 0);
+        
         // Calculate duration from startedAt and endedAt timestamps
         const totalDurationMs = streams.reduce((sum: number, s: any) => {
           if (s.startedAt && s.endedAt) {
@@ -279,7 +282,7 @@ export default function AcademyDashboard() {
         
         setStreamStats({
           total: streams.length,
-          avgParticipants: streams.length > 0 ? Math.round(totalParticipants / streams.length) : 0,
+          avgParticipants: streamsWithParticipants.length > 0 ? Math.round(totalParticipants / streamsWithParticipants.length) : 0,
           thisMonth: thisMonthStreams.length,
           totalHours: totalHours,
           totalMinutes: totalMinutes,
@@ -532,8 +535,8 @@ export default function AcademyDashboard() {
                   <div className="flex justify-between mb-2">
                     <span className="text-sm text-gray-600">Asistencia Promedio (Streams)</span>
                     <span className="text-sm font-semibold text-gray-900">
-                      {filteredStreamStats.total > 0 && filteredStudents.length > 0
-                        ? Math.round((filteredStreamStats.avgParticipants / filteredStudents.length) * 100)
+                      {filteredStreamStats.total > 0 && filteredStudents.length > 0 && filteredStreamStats.avgParticipants > 0
+                        ? Math.max(0, Math.round(((filteredStreamStats.avgParticipants - 1) / filteredStudents.length) * 100))
                         : 0}%
                     </span>
                   </div>
@@ -541,8 +544,8 @@ export default function AcademyDashboard() {
                     <div 
                       className="bg-purple-500 h-2 rounded-full" 
                       style={{ 
-                        width: `${filteredStreamStats.total > 0 && filteredStudents.length > 0
-                          ? Math.min(100, Math.round((filteredStreamStats.avgParticipants / filteredStudents.length) * 100))
+                        width: `${filteredStreamStats.total > 0 && filteredStudents.length > 0 && filteredStreamStats.avgParticipants > 0
+                          ? Math.max(0, Math.min(100, Math.round(((filteredStreamStats.avgParticipants - 1) / filteredStudents.length) * 100)))
                           : 0}%`, 
                         animation: 'slideIn 1s ease-out 0.1s backwards' 
                       }} 

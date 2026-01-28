@@ -125,9 +125,19 @@ export function useTeacherDashboard() {
         // Exclude streams with 0 or null participants from attendance calculation
         const streamsWithParticipants = streams.filter((s: any) => s.participantCount && s.participantCount > 0);
         const totalParticipants = streamsWithParticipants.reduce((sum: number, s: any) => sum + s.participantCount, 0);
-        const totalDuration = streams.reduce((sum: number, s: any) => sum + (s.durationMinutes || 0), 0);
-        const totalHours = Math.floor(totalDuration / 60);
-        const totalMinutes = totalDuration % 60;
+        
+        // Calculate total stream duration from startedAt/endedAt
+        const totalDurationMinutes = streams.reduce((sum: number, s: any) => {
+          if (s.startedAt && s.endedAt) {
+            const start = new Date(s.startedAt).getTime();
+            const end = new Date(s.endedAt).getTime();
+            const durationMs = end - start;
+            return sum + Math.floor(durationMs / (1000 * 60)); // Convert to minutes
+          }
+          return sum;
+        }, 0);
+        const totalHours = Math.floor(totalDurationMinutes / 60);
+        const totalMinutes = totalDurationMinutes % 60;
         
         setStreamStats({
           total: streams.length,

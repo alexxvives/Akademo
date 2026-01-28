@@ -65,6 +65,7 @@ interface ClassData {
   id: string;
   name: string;
   description: string | null;
+  whatsappGroupLink?: string | null;
   academy: { id: string; name: string };
   enrollments: Array<{
     id: string;
@@ -163,7 +164,8 @@ export default function TeacherClassPage() {
         const res = await apiClient(`/live?classId=${classData.id}`);
         const result = await res.json();
         if (result.success) {
-          // Only show active or scheduled streams
+          // Show scheduled (before stream starts) and active streams
+          // When stream ends (status='ended'), it disappears
           setLiveClasses((result.data || []).filter((s: any) => 
             s.status === 'active' || s.status === 'scheduled'
           ));
@@ -253,7 +255,7 @@ export default function TeacherClassPage() {
             console.log('[Debug] Found matching stream:', matchingStream);
             setLessonFormData(prev => ({
               ...prev,
-              selectedStreamRecording: matchingStream.id, // Use stream.id as the value
+              selectedStreamRecordings: [matchingStream.id], // Use array with stream.id
               title: decodeURIComponent(streamTitle),
             }));
           } else {
@@ -457,8 +459,11 @@ export default function TeacherClassPage() {
       const res = await apiClient(`/live?classId=${classId}`);
       const result = await res.json();
       if (result.success) {
-        // Only show active streams (scheduled = not started yet, ended = finished)
-        setLiveClasses((result.data || []).filter((s: any) => s.status === 'active'));
+        // Show scheduled (before stream starts) and active streams
+        // When stream ends (status='ended'), it disappears
+        setLiveClasses((result.data || []).filter((s: any) => 
+          s.status === 'active' || s.status === 'scheduled'
+        ));
       }
     } catch (e) {
       console.error('Failed to load live classes:', e);
@@ -1531,35 +1536,25 @@ export default function TeacherClassPage() {
                     </button>
                     <button
                       onClick={async () => {
-                        try {
-                          console.log('Sending notification with data:', {
-                            classId: classData?.id,
-                            liveStreamId: liveClasses[0].id,
-                            message: `Clase en vivo: ${liveClasses[0].title}`
-                          });
-                          const res = await apiClient('/notifications', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              classId: classData?.id,
-                              liveStreamId: liveClasses[0].id,
-                              message: `Clase en vivo: ${liveClasses[0].title}`,
-                            }),
-                          });
-                          const result = await res.json();
-                          console.log('Notification response:', result);
-                          if (res.ok) {
-                            alert(result.data?.message || 'Estudiantes notificados');
-                          } else {
-                            alert(`Error: ${result.error || 'No se pudo enviar notificaciones'}`);
-                          }
-                        } catch (error) {
-                          console.error('Error notifying students:', error);
-                          alert('Error al enviar notificaciones');
+                        // Check if class has WhatsApp group link
+                        if (!classData?.whatsappGroupLink) {
+                          alert('No hay un enlace de WhatsApp configurado para esta clase. Ve a la configuración de la clase para agregar un grupo de WhatsApp.');
+                          return;
                         }
+
+                        // Open WhatsApp group with pre-filled message (no emojis to avoid encoding issues)
+                        const message = `*Clase en vivo iniciando!*\n\n*${liveClasses[0].title}*\n\nUnete ahora: ${liveClasses[0].zoomLink}`;
+                        // Extract group ID from invite link (format: https://chat.whatsapp.com/GROUPID)
+                        const groupId = classData.whatsappGroupLink.split('/').pop();
+                        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+                        // If it's a group link, open it directly; otherwise send as message
+                        const targetUrl = classData.whatsappGroupLink.includes('chat.whatsapp.com') 
+                          ? `${classData.whatsappGroupLink}?text=${encodeURIComponent(message)}`
+                          : whatsappUrl;
+                        window.open(targetUrl, '_blank');
                       }}
                       className="px-3 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition-colors flex items-center gap-2"
-                      title="Notificar a estudiantes"
+                      title="Notificar por WhatsApp"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -1567,9 +1562,30 @@ export default function TeacherClassPage() {
                       <span className="text-sm font-medium">Notificar</span>
                     </button>
                     <button
-                      onClick={() => deleteLiveClass(liveClasses[0].id)}
-                      className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
-                      title="Cancelar stream"
+                      onClick={async () => {
+                        if (!confirm('¿Terminar este stream? Los estudiantes ya no podrán unirse.')) return;
+                        try {
+                          const res = await apiClient(`/live/${liveClasses[0].id}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ 
+                              status: 'ended',
+                              endedAt: new Date().toISOString()
+                            }),
+                          });
+                          const result = await res.json();
+                          if (res.ok) {
+                            setLiveClasses([]); // Remove from UI immediately
+                          } else {
+                            alert(`Error: ${result.error || 'No se pudo terminar el stream'}`);
+                          }
+                        } catch (error) {
+                          console.error('Error ending stream:', error);
+                          alert('Error al terminar el stream');
+                        }
+                      }}
+                      className="p-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors"
+                      title="Terminar stream"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

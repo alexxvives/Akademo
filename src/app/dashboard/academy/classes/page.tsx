@@ -46,7 +46,7 @@ export default function AcademyClassesPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingClass, setEditingClass] = useState<Class | null>(null);
-  const [formData, setFormData] = useState({ name: '', description: '', teacherId: '', price: '10.00', zoomAccountId: '' });
+  const [formData, setFormData] = useState({ name: '', description: '', teacherId: '', price: '10.00', zoomAccountId: '', whatsappGroupLink: '' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -173,7 +173,7 @@ export default function AcademyClassesPage() {
       }
 
       setShowCreateModal(false);
-      setFormData({ name: '', description: '', teacherId: '', price: '10.00', zoomAccountId: '' });
+      setFormData({ name: '', description: '', teacherId: '', price: '10.00', zoomAccountId: '', whatsappGroupLink: '' });
       loadData();
     } catch (err: any) {
       setError(err.message);
@@ -202,7 +202,7 @@ export default function AcademyClassesPage() {
 
       setShowEditModal(false);
       setEditingClass(null);
-      setFormData({ name: '', description: '', teacherId: '', price: '10.00', zoomAccountId: '' });
+      setFormData({ name: '', description: '', teacherId: '', price: '10.00', zoomAccountId: '', whatsappGroupLink: '' });
       loadData();
     } catch (err: any) {
       setError(err.message);
@@ -218,14 +218,15 @@ export default function AcademyClassesPage() {
       description: cls.description || '',
       teacherId: cls.teacherId || '',
       price: (cls as any).price?.toString() || '10.00',
-      zoomAccountId: (cls as any).zoomAccountId || ''
+      zoomAccountId: (cls as any).zoomAccountId || '',
+      whatsappGroupLink: (cls as any).whatsappGroupLink || ''
     });
     setError('');
     setShowEditModal(true);
   };
 
   const openCreateModal = () => {
-    setFormData({ name: '', description: '', teacherId: '', price: '10.00', zoomAccountId: '' });
+    setFormData({ name: '', description: '', teacherId: '', price: '10.00', zoomAccountId: '', whatsappGroupLink: '' });
     setError('');
     setShowCreateModal(true);
   };
@@ -606,6 +607,22 @@ export default function AcademyClassesPage() {
                     No hay cuentas de Zoom conectadas. <a href="/dashboard/academy/profile" className="text-blue-600 hover:underline">Conectar cuenta</a>
                   </p>
                 )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Enlace de grupo de WhatsApp (opcional)
+                </label>
+                <input
+                  type="url"
+                  value={formData.whatsappGroupLink}
+                  onChange={(e) => setFormData({ ...formData, whatsappGroupLink: e.target.value })}
+                  placeholder="https://chat.whatsapp.com/..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Los profesores podrán enviar notificaciones de streams en vivo a este grupo
+                </p>
               </div>
 
               {error && (
