@@ -100,7 +100,7 @@ export function MobileSidebar({
               ? pathname === item.href
               : pathname === item.href || pathname.startsWith(item.href + '/');
 
-            const hasLiveStream = role === 'STUDENT' && item.label === 'Mis Clases' && activeStreams.length > 0;
+            const hasLiveStream = role === 'STUDENT' && item.label === 'Mis Asignaturas' && activeStreams.length > 0;
 
             return (
               <Link

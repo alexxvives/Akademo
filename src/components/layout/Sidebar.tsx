@@ -127,7 +127,7 @@ export function Sidebar({
               ? pathname === item.href
               : pathname === item.href || pathname.startsWith(item.href + '/') || matchesPath;
 
-            const hasLiveStream = role === 'STUDENT' && item.label === 'Mis Clases' && activeStreams.length > 0;
+            const hasLiveStream = role === 'STUDENT' && item.label === 'Mis Asignaturas' && activeStreams.length > 0;
             const iconRef = iconRefs.current[item.href];
 
             const handleMouseEnter = () => {
