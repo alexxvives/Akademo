@@ -169,10 +169,10 @@ export function StreamRow({ stream, onDelete, onUpdateStream, deletingStreamId }
       <td className="py-4 px-4">{getStatusBadge(stream.status)}</td>
       <td className="py-4 px-4">
         <div className="flex items-center gap-2">
-          {stream.participantCount != null && stream.participantCount > 0 ? (
+          {stream.participantCount != null ? (
             <span className="text-sm text-gray-600 font-medium">{stream.participantCount}</span>
           ) : (
-            <span className="text-sm text-gray-400">—</span>
+            <span className="text-sm text-gray-400">0</span>
           )}
         </div>
       </td>

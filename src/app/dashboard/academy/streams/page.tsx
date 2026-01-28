@@ -412,10 +412,10 @@ export default function AcademyStreamsPage() {
                       {getStatusBadge(stream.status)}
                     </td>
                     <td className="py-4 px-4">
-                      {stream.status === 'ended' && stream.participantCount != null ? (
+                      {stream.participantCount != null ? (
                         <span className="text-sm text-gray-600 font-medium">{stream.participantCount}</span>
                       ) : (
-                        <span className="text-sm text-gray-400">—</span>
+                        <span className="text-sm text-gray-400">0</span>
                       )}
                     </td>
                     <td className="py-4 px-4 text-sm text-gray-600">
