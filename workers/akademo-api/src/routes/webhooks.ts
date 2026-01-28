@@ -346,10 +346,11 @@ webhooks.post('/stripe', async (c) => {
     console.log('[Stripe Webhook] Metadata:', data.metadata);
 
     if (event === 'checkout.session.completed') {
-      const { id: sessionId, metadata, payment_status, customer_details } = data;
+      const { id: sessionId, metadata, payment_status, customer_details, subscription } = data;
 
       console.log('[Stripe Webhook] Session ID:', sessionId);
       console.log('[Stripe Webhook] Payment status:', payment_status);
+      console.log('[Stripe Webhook] Subscription ID:', subscription);
       console.log('[Stripe Webhook] Metadata received:', JSON.stringify(metadata));
 
       if (payment_status === 'paid') {
@@ -378,10 +379,11 @@ webhooks.post('/stripe', async (c) => {
             .prepare(`
               UPDATE ClassEnrollment 
               SET paymentStatus = 'PAID',
-                  paymentMethod = 'stripe'
+                  paymentMethod = 'stripe',
+                  stripeSubscriptionId = ?
               WHERE id = ?
             `)
-            .bind(enrollmentId)
+            .bind(subscription || null, enrollmentId)
             .run();
 
           console.log('[Stripe Webhook] Update result:', JSON.stringify(result));

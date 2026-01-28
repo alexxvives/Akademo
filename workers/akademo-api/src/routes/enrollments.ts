@@ -92,7 +92,7 @@ enrollments.get('/', async (c) => {
         JOIN Class c ON e.classId = c.id
         JOIN Academy a ON c.academyId = a.id
         WHERE e.userId = ?
-        ORDER BY e.createdAt DESC
+        ORDER BY e.enrolledAt DESC
       `)
       .bind(session.id)
       .all();
@@ -361,7 +361,7 @@ enrollments.get('/history', async (c) => {
           e.id as enrollmentId,
           e.status,
           e.updatedAt,
-          e.createdAt as enrolledAt,
+          e.enrolledAt,
           e.approvedByName,
           u.id as student_id,
           u.firstName as student_firstName,
@@ -387,7 +387,7 @@ enrollments.get('/history', async (c) => {
           e.id as enrollmentId,
           e.status,
           e.updatedAt,
-          e.createdAt as enrolledAt,
+          e.enrolledAt,
           e.approvedByName,
           u.id as student_id,
           u.firstName as student_firstName,
@@ -497,6 +497,76 @@ enrollments.put('/history/:id/reverse', async (c) => {
 
   } catch (error: any) {
     console.error('[Reverse Enrollment] Error:', error);
+    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+  }
+});
+
+// POST /enrollments/leave - Student leaves a class (cancels enrollment & subscription)
+enrollments.post('/leave', async (c) => {
+  try {
+    console.log('[Leave Class] Request received');
+    const session = await requireAuth(c);
+    console.log('[Leave Class] Session:', session);
+    
+    const { classId } = await c.req.json();
+    console.log('[Leave Class] ClassId:', classId);
+
+    if (!classId) {
+      return c.json(errorResponse('classId is required'), 400);
+    }
+
+    // Only students can leave
+    if (session.role !== 'STUDENT') {
+      console.error('[Leave Class] User is not a student:', session.role);
+      return c.json(errorResponse('Only students can leave classes'), 403);
+    }
+
+    // Check if enrollment exists
+    console.log('[Leave Class] Checking enrollment...');
+    const enrollment: any = await c.env.DB
+      .prepare('SELECT * FROM ClassEnrollment WHERE userId = ? AND classId = ?')
+      .bind(session.id, classId)
+      .first();
+
+    console.log('[Leave Class] Enrollment found:', enrollment);
+
+    if (!enrollment) {
+      return c.json(errorResponse('Enrollment not found'), 404);
+    }
+
+    // Cancel Stripe subscription if exists
+    if (enrollment.stripeSubscriptionId) {
+      try {
+        if (!c.env.STRIPE_SECRET_KEY) {
+          console.warn('[Leave Class] STRIPE_SECRET_KEY not configured, skipping subscription cancellation');
+        } else {
+          const stripe = (await import('stripe')).default;
+          const stripeClient = new stripe(c.env.STRIPE_SECRET_KEY, {
+            apiVersion: '2024-12-18.acacia',
+          });
+          
+          await stripeClient.subscriptions.cancel(enrollment.stripeSubscriptionId);
+          console.log('[Leave Class] Stripe subscription cancelled:', enrollment.stripeSubscriptionId);
+        }
+      } catch (stripeError: any) {
+        console.error('[Leave Class] Stripe cancellation error:', stripeError);
+        // Continue anyway - mark as withdrawn even if Stripe fails
+      }
+    }
+
+    // Update enrollment status to WITHDRAWN and reset documentSigned
+    await c.env.DB
+      .prepare('UPDATE ClassEnrollment SET status = ?, documentSigned = 0 WHERE userId = ? AND classId = ?')
+      .bind('WITHDRAWN', session.id, classId)
+      .run();
+
+    return c.json(successResponse({ 
+      message: 'Successfully left the class',
+      status: 'WITHDRAWN'
+    }));
+
+  } catch (error: any) {
+    console.error('[Leave Class] Error:', error);
     return c.json(errorResponse(error.message || 'Internal server error'), 500);
   }
 });

@@ -7,7 +7,7 @@ import ProtectedVideoPlayer from '@/components/ProtectedVideoPlayer';
 import { PageLoader } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
 import { getBunnyThumbnailUrl } from '@/lib/bunny-stream';
-import { apiClient, API_BASE_URL } from '@/lib/api-client';
+import { apiClient, apiPost, API_BASE_URL } from '@/lib/api-client';
 import StudentTopicsLessonsList from './components/StudentTopicsLessonsList';
 
 interface Video {

@@ -58,7 +58,7 @@ classes.get('/', async (c) => {
         FROM ClassEnrollment ce
         JOIN Class c ON ce.classId = c.id
         JOIN Academy a ON c.academyId = a.id
-        WHERE ce.userId = ?
+        WHERE ce.userId = ? AND ce.status != 'WITHDRAWN'
         ORDER BY ce.enrolledAt DESC
       `;
       params = [session.id];

@@ -46,7 +46,7 @@ requests.post('/student', async (c) => {
         return c.json(errorResponse('Already enrolled in this class'), 400);
       } else if (existing.status === 'PENDING') {
         return c.json(errorResponse('Request already pending'), 400);
-      } else if (existing.status === 'REJECTED') {
+      } else if (existing.status === 'REJECTED' || existing.status === 'WITHDRAWN') {
         // Auto-approve re-requests (no manual approval needed)
         const now = new Date().toISOString();
         const classPrice = classRecord.price || 0;
@@ -80,10 +80,10 @@ requests.post('/student', async (c) => {
     await c.env.DB
       .prepare(`
         INSERT INTO ClassEnrollment 
-        (id, classId, userId, status, documentSigned, paymentStatus, paymentMethod, paymentAmount, enrolledAt, createdAt) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (id, classId, userId, status, documentSigned, paymentStatus, paymentMethod, paymentAmount, enrolledAt) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `)
-      .bind(enrollmentId, classId, session.id, 'APPROVED', 0, paymentStatus, paymentMethod, classPrice, now, now)
+      .bind(enrollmentId, classId, session.id, 'APPROVED', 0, paymentStatus, paymentMethod, classPrice, now)
       .run();
 
     return c.json(successResponse({ 

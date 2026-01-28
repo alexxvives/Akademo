@@ -72,7 +72,7 @@ payments.post('/initiate', async (c) => {
       await c.env.DB
         .prepare(`
           UPDATE ClassEnrollment 
-          SET paymentStatus = 'CASH_PENDING', 
+          SET paymentStatus = 'BIZUM_PENDING', 
               paymentMethod = 'bizum',
               paymentAmount = ?
           WHERE id = ?
@@ -82,7 +82,7 @@ payments.post('/initiate', async (c) => {
 
       return c.json(successResponse({
         message: 'Bizum payment registered. Waiting for academy approval.',
-        status: 'CASH_PENDING',
+        status: 'BIZUM_PENDING',
       }));
     }
 
@@ -128,7 +128,7 @@ payments.get('/pending-cash', async (c) => {
         JOIN Academy a ON c.academyId = a.id
         LEFT JOIN User teacher ON c.teacherId = teacher.id
         WHERE a.ownerId = ? 
-        AND e.paymentStatus = 'CASH_PENDING'
+        AND e.paymentStatus IN ('CASH_PENDING', 'BIZUM_PENDING')
         ORDER BY e.enrolledAt DESC
       `;
       params = [session.id];
@@ -155,7 +155,7 @@ payments.get('/pending-cash', async (c) => {
         JOIN Class c ON e.classId = c.id
         JOIN Academy a ON c.academyId = a.id
         WHERE c.teacherId = ? 
-        AND e.paymentStatus = 'CASH_PENDING'
+        AND e.paymentStatus IN ('CASH_PENDING', 'BIZUM_PENDING')
         ORDER BY e.enrolledAt DESC
       `;
       params = [session.id];
@@ -212,7 +212,7 @@ payments.patch('/:enrollmentId/approve-cash', async (c) => {
       return c.json(errorResponse('Only academy owners can approve payments'), 403);
     }
 
-    if (enrollment.paymentStatus !== 'CASH_PENDING') {
+    if (enrollment.paymentStatus !== 'CASH_PENDING' && enrollment.paymentStatus !== 'BIZUM_PENDING') {
       return c.json(errorResponse('Payment is not in pending state'), 400);
     }
 
@@ -310,12 +310,16 @@ payments.post('/stripe-session', async (c) => {
           product_data: { 
             name: `${classData.name} - Acceso completo`,
             description: 'Acceso al contenido de la clase',
+            images: ['https://akademo-edu.com/logo/akademo-icon.png'],
           },
           unit_amount: Math.round(classData.price * 100), // Convert to cents
+          recurring: {
+            interval: 'month',
+          },
         },
         quantity: 1,
       }],
-      mode: 'payment',
+      mode: 'subscription',
       success_url: `${c.env.FRONTEND_URL || 'https://akademo-edu.com'}/dashboard/student/classes?payment=success&classId=${classId}`,
       cancel_url: `${c.env.FRONTEND_URL || 'https://akademo-edu.com'}/dashboard/student/classes?payment=cancel`,
       metadata: {
@@ -323,12 +327,6 @@ payments.post('/stripe-session', async (c) => {
         classId,
         userId: session.id,
         academyId: classData.academyId,
-      },
-      payment_intent_data: {
-        application_fee_amount: platformFeeAmount,
-        transfer_data: {
-          destination: classData.stripeAccountId,
-        },
       },
     });
 

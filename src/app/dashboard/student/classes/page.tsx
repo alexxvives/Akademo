@@ -90,6 +90,7 @@ export default function StudentClassesPage() {
           documentSigned: c.documentSigned ?? 0,
           whatsappGroupLink: c.whatsappGroupLink,
           paymentStatus: c.paymentStatus || 'PENDING',
+          paymentMethod: c.paymentMethod || '',
           price: c.price || 0,
           currency: c.currency || 'EUR',
         }));
@@ -219,23 +220,13 @@ export default function StudentClassesPage() {
         {enrolledClasses.map((classItem) => {
           const liveStream = activeStreams.find(s => s.classId === classItem.id);
           const needsSignature = !classItem.documentSigned;
-          const isPaymentPending = classItem.paymentStatus === 'CASH_PENDING' || classItem.paymentStatus === 'PENDING';
+          const isPaymentPending = classItem.paymentStatus === 'CASH_PENDING' || classItem.paymentStatus === 'BIZUM_PENDING' || classItem.paymentStatus === 'PENDING';
           
           return (
             <div
               key={classItem.id}
               className="block bg-white rounded-xl border-2 border-gray-200 hover:border-brand-400 hover:shadow-xl transition-all p-6 group cursor-pointer relative"
             >
-              {/* Payment Pending Tag - Top Right */}
-              {isPaymentPending && (
-                <div className="absolute top-4 right-4 bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 shadow-sm">
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Pago pendiente
-                </div>
-              )}
-              
               <div 
                 onClick={(e) => {
                   handleClassClick(classItem, e);
@@ -243,11 +234,12 @@ export default function StudentClassesPage() {
                 className="flex items-start justify-between"
               >
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    {liveStream && (
-                      <span className="w-3 h-3 bg-red-500 rounded-full animate-pulse flex-shrink-0" />
-                    )}
-                    <h3 className="text-xl font-bold text-gray-900 group-hover:text-brand-600 transition-colors">{classItem.name}</h3>
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-2">
+                      {liveStream && (
+                        <span className="w-3 h-3 bg-red-500 rounded-full animate-pulse flex-shrink-0" />
+                      )}
+                      <h3 className="text-xl font-bold text-gray-900 group-hover:text-brand-600 transition-colors">{classItem.name}</h3>
                     {/* Shield Icon - Shows broken shield if unsigned, verified shield if signed */}
                     {needsSignature ? (
                       <div className="relative group/shield">
@@ -291,13 +283,13 @@ export default function StudentClassesPage() {
                     
                     {/* Payment Status Icon - Show for any non-PAID status */}
                     {classItem.paymentStatus !== 'PAID' && (
-                      (classItem.paymentStatus === 'CASH_PENDING' || classItem.paymentStatus === 'PENDING') ? (
+                      (classItem.paymentStatus === 'CASH_PENDING' || classItem.paymentStatus === 'BIZUM_PENDING' || classItem.paymentStatus === 'PENDING') ? (
                         <div className="relative group/payment">
                           <svg className="w-6 h-6 text-orange-500 transition-colors animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                           <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover/payment:opacity-100 transition-opacity z-10">
-                            {classItem.paymentStatus === 'CASH_PENDING' ? 'Pago pendiente (efectivo)' : 'Pago requerido'}
+                            {classItem.paymentStatus === 'CASH_PENDING' ? 'Pago pendiente (efectivo)' : classItem.paymentStatus === 'BIZUM_PENDING' ? 'Pago pendiente (bizum)' : 'Pago requerido'}
                           </div>
                         </div>
                       ) : (
@@ -329,12 +321,44 @@ export default function StudentClassesPage() {
                         </div>
                       </a>
                     )}
-                    {liveStream && (
-                      <span className="flex items-center gap-1.5 text-xs bg-red-100 text-red-700 px-2.5 py-1 rounded-full font-semibold border border-red-200">
-                        <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                        EN VIVO
-                      </span>
-                    )}
+                      {liveStream && (
+                        <span className="flex items-center gap-1.5 text-xs bg-red-100 text-red-700 px-2.5 py-1 rounded-full font-semibold border border-red-200">
+                          <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                          EN VIVO
+                        </span>
+                      )}
+                    </div>
+                    
+                    {/* Abandonar Clase Button - Right side of header */}
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        if (confirm('¿Estás seguro de que quieres abandonar esta clase? Esta acción cancelará tu suscripción y no podrás acceder más al contenido.')) {
+                          try {
+                            const res = await apiClient('/enrollments/leave', {
+                              method: 'POST',
+                              body: JSON.stringify({ classId: classItem.id }),
+                            });
+                            const result = await res.json();
+                            if (result.success) {
+                              alert('Has abandonado la clase exitosamente');
+                              window.location.reload();
+                            } else {
+                              alert('Error al abandonar la clase: ' + (result.error || 'Error desconocido'));
+                            }
+                          } catch (error) {
+                            console.error('Error leaving class:', error);
+                            alert('Error al abandonar la clase');
+                          }
+                        }
+                      }}
+                      className="flex items-center gap-2 px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all font-medium text-sm border border-red-200"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      Abandonar Clase
+                    </button>
                   </div>
                   {classItem.description ? (
                     <p className="text-sm text-gray-600 mb-4 line-clamp-2">{classItem.description}</p>

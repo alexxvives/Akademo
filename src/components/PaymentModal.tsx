@@ -33,6 +33,27 @@ export default function PaymentModal({
   const [confirmingCash, setConfirmingCash] = useState(false);
   const [confirmingBizum, setConfirmingBizum] = useState(false);
 
+  // Debug logging
+  console.log('[PaymentModal] Props:', {
+    currentPaymentStatus,
+    currentPaymentMethod,
+    classId,
+    className
+  });
+
+  // Debug conditional checks
+  console.log('[PaymentModal] CASH Check:', {
+    isCashPending: currentPaymentStatus === 'CASH_PENDING',
+    isCashMethod: currentPaymentMethod === 'cash',
+    shouldShowGreen: currentPaymentStatus === 'CASH_PENDING' && currentPaymentMethod === 'cash'
+  });
+
+  console.log('[PaymentModal] BIZUM Check:', {
+    isBizumPending: currentPaymentStatus === 'BIZUM_PENDING',
+    isBizumMethod: currentPaymentMethod === 'bizum',
+    shouldShowGreen: currentPaymentStatus === 'BIZUM_PENDING' && currentPaymentMethod === 'bizum'
+  });
+
   if (!isOpen) return null;
 
   const handleCashPayment = () => {
@@ -219,8 +240,8 @@ export default function PaymentModal({
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl w-full max-w-4xl shadow-xl">
+    <div className="fixed top-0 left-0 right-0 bottom-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm p-4" style={{ margin: 0 }}>
+      <div className="bg-white rounded-2xl w-full max-w-4xl shadow-xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="p-8 border-b border-gray-200">
           <div className="flex items-center justify-between">
@@ -249,6 +270,7 @@ export default function PaymentModal({
               <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 h-full flex flex-col justify-center">
                 <p className="text-xs uppercase tracking-wider text-gray-500 mb-2 text-center">Total</p>
                 <p className="text-3xl font-bold text-gray-900 text-center">{formatPrice(price, currency)}</p>
+                <p className="text-xs text-gray-500 mt-1 text-center">/ mes</p>
               </div>
             </div>
 
@@ -289,25 +311,13 @@ export default function PaymentModal({
                     <p className="text-gray-600 mb-3">
                       Pago instantáneo con tu banco español
                     </p>
-                    {currentPaymentStatus === 'CASH_PENDING' && currentPaymentMethod === 'bizum' ? (
-                      <div className="bg-green-50 border-2 border-green-500 rounded-lg p-3">
-                        <div className="flex items-start gap-2">
-                          <svg className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <div>
-                            <p className="text-sm font-semibold text-green-800">
-                              Esperando la aprobación de la academia
-                            </p>
-                            <p className="text-xs text-green-700 mt-1">
-                              Tu solicitud está pendiente de confirmación. La academia revisará tu pago y te dará acceso una vez confirmado.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+                    {currentPaymentStatus === 'BIZUM_PENDING' && currentPaymentMethod === 'bizum' ? (
+                      <span className="inline-block text-xs px-3 py-1.5 rounded-full font-medium" style={{ backgroundColor: '#b1e787', color: '#1a1c29' }}>
+                        Esperando aprobación de la academia
+                      </span>
                     ) : (
                       <span className="inline-block text-xs text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
-                        Requiere aprobación manual
+                        Requiere aprobación del profesor
                       </span>
                     )}
                   </div>
@@ -329,24 +339,12 @@ export default function PaymentModal({
                       Paga directamente a la academia en persona
                     </p>
                     {currentPaymentStatus === 'CASH_PENDING' && currentPaymentMethod === 'cash' ? (
-                      <div className="bg-green-50 border-2 border-green-500 rounded-lg p-3">
-                        <div className="flex items-start gap-2">
-                          <svg className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <div>
-                            <p className="text-sm font-semibold text-green-800">
-                              Esperando la aprobación de la academia
-                            </p>
-                            <p className="text-xs text-green-700 mt-1">
-                              Tu solicitud está pendiente de confirmación. La academia revisará tu pago y te dará acceso una vez confirmado.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+                      <span className="inline-block text-xs px-3 py-1.5 rounded-full font-medium" style={{ backgroundColor: '#b1e787', color: '#1a1c29' }}>
+                        Esperando aprobación de la academia
+                      </span>
                     ) : (
                       <span className="inline-block text-xs text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
-                        Requiere aprobación manual
+                        Requiere aprobación del profesor
                       </span>
                     )}
                   </div>

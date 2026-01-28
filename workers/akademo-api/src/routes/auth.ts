@@ -157,13 +157,14 @@ auth.post('/register', async (c) => {
       const monoacademyFlag = monoacademy ? 1 : 0;
       const now = new Date().toISOString();
       await c.env.DB
-        .prepare('INSERT INTO Academy (id, name, description, ownerId, monoacademy, createdAt) VALUES (?, ?, ?, ?, ?, ?)')
+        .prepare('INSERT INTO Academy (id, name, description, ownerId, monoacademy, paymentStatus, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)')
         .bind(
           newAcademyId,
           academyName,
           `Welcome to ${academyName}`,
           userId,
           monoacademyFlag,
+          'NOT PAID', // Demo mode by default
           now
         )
         .run();

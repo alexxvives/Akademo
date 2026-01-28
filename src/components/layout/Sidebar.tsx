@@ -175,10 +175,13 @@ export function Sidebar({
             );
           })}
         </nav>
+      </div>
 
-        {/* Quick Action Button */}
-        <div className="px-3 pb-3">
-          {role === 'STUDENT' && (
+      {/* Fixed bottom section - always visible */}
+      <div className="flex-shrink-0">
+        {/* Quick Action Button - Above Role Switcher */}
+        {role === 'STUDENT' && (
+          <div className="px-3 py-2 border-t border-gray-800/50">
             <Link
               href="/dashboard/student/enrolled-academies/classes"
               className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#b1e787] hover:bg-[#9dd46f] text-gray-900 rounded-xl transition-all shadow-lg font-semibold"
@@ -188,8 +191,8 @@ export function Sidebar({
               </svg>
               <span className="text-sm">Explorar Clases</span>
             </Link>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Role Switcher (MonoAcademy) */}
         {user?.monoacademy && (role === 'ACADEMY' || role === 'TEACHER') && (
@@ -207,10 +210,7 @@ export function Sidebar({
             </button>
           </div>
         )}
-      </div>
 
-      {/* Fixed bottom section - always visible */}
-      <div className="flex-shrink-0">
         {/* Academy Invite Link */}
         {role === 'ACADEMY' && academyId && (
           <div className="px-3 py-2 border-t border-gray-800/50">
