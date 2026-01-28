@@ -29,19 +29,19 @@ export function useAcademyLogo() {
         }
       } else if (user.role === 'TEACHER') {
         // Get teacher's academy logo
-        const res = await apiClient('/teachers/me');
+        const res = await apiClient('/academies/my-academy');
         const result = await res.json();
-        if (result.success && result.data?.academy?.logoUrl) {
-          setLogoUrl(result.data.academy.logoUrl);
+        if (result.success && result.data?.logoUrl) {
+          setLogoUrl(result.data.logoUrl);
         }
       } else if (user.role === 'STUDENT') {
         // Get first enrolled class's academy logo
-        const res = await apiClient('/classes/enrolled');
+        const res = await apiClient('/enrollments');
         const result = await res.json();
         if (result.success && result.data.length > 0) {
-          const firstClass = result.data[0];
-          if (firstClass.academyLogoUrl) {
-            setLogoUrl(firstClass.academyLogoUrl);
+          const firstEnrollment = result.data[0];
+          if (firstEnrollment.academyLogoUrl) {
+            setLogoUrl(firstEnrollment.academyLogoUrl);
           }
         }
       }

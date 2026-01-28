@@ -87,7 +87,8 @@ enrollments.get('/', async (c) => {
         SELECT 
           e.*,
           c.name as className,
-          a.name as academyName
+          a.name as academyName,
+          a.logoUrl as academyLogoUrl
         FROM ClassEnrollment e
         JOIN Class c ON e.classId = c.id
         JOIN Academy a ON c.academyId = a.id

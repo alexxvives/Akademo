@@ -257,6 +257,34 @@ academies.post('/teachers', async (c) => {
   }
 });
 
+// GET /academies/my-academy - Get teacher's academy (for sidebar logo)
+academies.get('/my-academy', async (c) => {
+  try {
+    const session = await requireAuth(c);
+
+    if (session.role !== 'TEACHER') {
+      return c.json(errorResponse('Only teachers can use this endpoint'), 403);
+    }
+
+    // Get teacher's academy
+    const result = await c.env.DB.prepare(`
+      SELECT a.id, a.name, a.logoUrl
+      FROM Academy a
+      JOIN Teacher t ON t.academyId = a.id
+      WHERE t.userId = ?
+    `).bind(session.id).first();
+
+    if (!result) {
+      return c.json(errorResponse('Academy not found'), 404);
+    }
+
+    return c.json(successResponse(result));
+  } catch (error: any) {
+    console.error('[My Academy] Error:', error);
+    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+  }
+});
+
 // GET /academies/teachers - Get all teachers
 // IMPORTANT: This must come BEFORE /:id route to avoid being captured as an ID
 academies.get('/teachers', async (c) => {
