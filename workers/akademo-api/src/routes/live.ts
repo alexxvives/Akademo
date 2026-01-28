@@ -1106,4 +1106,56 @@ live.post('/:id/check-recording', async (c) => {
   }
 });
 
+// GET /live/:id/participants - Get real-time participant info
+live.get('/:id/participants', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    const streamId = c.req.param('id');
+
+    if (!['ADMIN', 'TEACHER', 'ACADEMY'].includes(session.role)) {
+      return c.json(errorResponse('Not authorized'), 403);
+    }
+
+    // Get stream with participant data
+    const stream = await c.env.DB
+      .prepare(`
+        SELECT ls.id, ls.classId, ls.teacherId, ls.status, ls.title, ls.participantCount, 
+               ls.participantsFetchedAt, ls.participantsData, ls.zoomMeetingId
+        FROM LiveStream ls
+        WHERE ls.id = ?
+      `)
+      .bind(streamId)
+      .first() as any;
+
+    if (!stream) {
+      return c.json(errorResponse('Stream not found'), 404);
+    }
+
+    // Verify permissions
+    if (session.role === 'TEACHER' && stream.teacherId !== session.id) {
+      return c.json(errorResponse('Not authorized to view participants'), 403);
+    } else if (session.role === 'ACADEMY') {
+      // Verify academy ownership
+      const classInfo = await c.env.DB
+        .prepare('SELECT c.academyId, a.ownerId FROM Class c JOIN Academy a ON c.academyId = a.id WHERE c.id = ?')
+        .bind(stream.classId)
+        .first() as any;
+      
+      if (!classInfo || classInfo.ownerId !== session.id) {
+        return c.json(errorResponse('Not authorized to view participants'), 403);
+      }
+    }
+
+    return c.json(successResponse({
+      streamId: stream.id,
+      participantCount: stream.participantCount || 0,
+      participantsFetchedAt: stream.participantsFetchedAt,
+      participantsData: stream.participantsData ? JSON.parse(stream.participantsData) : null,
+    }));
+  } catch (error: any) {
+    console.error('[Get Participants] Error:', error);
+    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+  }
+});
+
 export default live;

@@ -208,6 +208,7 @@ webhooks.post('/zoom', async (c) => {
       
       // Don't trust participant_count from webhooks - maintain our own counter
       console.log('[Zoom Webhook] Participant event:', event, 'Meeting:', meetingId, 'Participant:', participantUserId);
+      console.log('[Zoom Webhook] Meeting ID type:', typeof meetingId, 'Value:', meetingId);
 
       // Get current stream
       const stream = await c.env.DB
@@ -216,6 +217,8 @@ webhooks.post('/zoom', async (c) => {
         .first() as any;
 
       if (stream) {
+        console.log('[Zoom Webhook] ✅ Stream found:', stream.id, 'Title:', stream.title, 'Current count:', stream.participantCount || 0);
+        
         const isJoin = event.includes('joined');
         const currentCount = stream.participantCount || 0;
         const newCount = isJoin ? currentCount + 1 : Math.max(0, currentCount - 1);
@@ -230,7 +233,14 @@ webhooks.post('/zoom', async (c) => {
 
         console.log('[Zoom Webhook] Participant update result:', result.meta?.changes, 'rows affected');
       } else {
-        console.log('[Zoom Webhook] No stream found for participant event, meetingId:', meetingId);
+        console.log('[Zoom Webhook] ❌ No stream found for participant event');
+        console.log('[Zoom Webhook] Looking for zoomMeetingId:', meetingId.toString());
+        
+        // Debug: Show all active streams
+        const activeStreams = await c.env.DB
+          .prepare('SELECT id, zoomMeetingId, title, status FROM LiveStream WHERE status IN ("scheduled", "active") ORDER BY createdAt DESC LIMIT 5')
+          .all();
+        console.log('[Zoom Webhook] Active streams in DB:', JSON.stringify(activeStreams.results));
       }
     }
 
