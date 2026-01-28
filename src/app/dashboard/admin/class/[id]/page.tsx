@@ -1369,7 +1369,7 @@ export default function TeacherClassPage() {
               creatingStream={creatingStream}
               showPendingRequests={showPendingRequests}
               paymentStatus={paymentStatus}
-              onCreateLesson={() => { router.push(`/dashboard/academy/class/${classId}?action=create`); }}
+              onCreateLesson={() => { router.push(`/dashboard/admin/class/${classId}?action=create`); }}
               onCreateStream={createLiveClass}
               onTogglePendingRequests={() => setShowPendingRequests(!showPendingRequests)}
             />
@@ -1676,7 +1676,7 @@ export default function TeacherClassPage() {
                       {editingLessonId ? 'Editar Clase' : 'Crear Nueva Clase'}
                     </h3>
                     <button 
-                      onClick={() => { setShowLessonForm(false); setEditingLessonId(null); setEditingLessonMedia(null); router.push(`/dashboard/academy/class/${classId}`); }}
+                      onClick={() => { setShowLessonForm(false); setEditingLessonId(null); setEditingLessonMedia(null); router.push(`/dashboard/admin/class/${classId}`); }}
                       className="text-gray-400 hover:text-gray-600 transition-colors"
                     >
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

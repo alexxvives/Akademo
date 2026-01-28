@@ -35,7 +35,7 @@ export default function ClassHeader({
   return (
     <>
       {/* Back to classes link */}
-      <Link href="/dashboard/academy/classes" className="text-sm text-gray-500 hover:text-gray-900 inline-block">
+      <Link href="/dashboard/admin/classes" className="text-sm text-gray-500 hover:text-gray-900 inline-block">
         ← Volver a asignaturas
       </Link>
       
