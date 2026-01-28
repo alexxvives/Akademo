@@ -263,16 +263,16 @@ export default function AcademyDashboard() {
             }
             return sum;
           }, 0);
-          const totalDuration = Math.floor(totalDurationMs / (1000 * 60));
-          const totalHours = Math.floor(totalDuration / 60);
-          const totalMinutes = totalDuration % 60;
+          const totalStreamDuration = Math.floor(totalDurationMs / (1000 * 60));
+          const totalStreamHours = Math.floor(totalStreamDuration / 60);
+          const totalStreamMinutes = totalStreamDuration % 60;
           
           setStreamStats({
             total: demoStreams.length,
             avgParticipants: streamsWithParticipants.length > 0 ? Math.round(totalParticipants / streamsWithParticipants.length) : 0,
             thisMonth: demoStreams.length, // All demo streams count as "this month"
-            totalHours,
-            totalMinutes,
+            totalHours: totalStreamHours,
+            totalMinutes: totalStreamMinutes,
           });
           
           setLoading(false);
