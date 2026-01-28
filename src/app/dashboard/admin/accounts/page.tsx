@@ -56,7 +56,8 @@ export default function AccountsPage() {
           firstName: s.firstName,
           lastName: s.lastName,
           role: 'STUDENT',
-          createdAt: s.createdAt
+          createdAt: s.createdAt,
+          academyName: s.academyNames || undefined
         })));
       }
 
@@ -171,18 +172,18 @@ export default function AccountsPage() {
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
-      case 'STUDENT': return 'bg-blue-100 text-blue-800';
-      case 'TEACHER': return 'bg-green-100 text-green-800';
-      case 'ACADEMY': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'STUDENT': return 'text-blue-600';
+      case 'TEACHER': return 'text-green-600';
+      case 'ACADEMY': return 'text-purple-600';
+      default: return 'text-gray-600';
     }
   };
 
   const getRoleLabel = (role: string) => {
     switch (role) {
-      case 'STUDENT': return 'Estudiante';
-      case 'TEACHER': return 'Profesor';
-      case 'ACADEMY': return 'Academia';
+      case 'STUDENT': return 'ESTUDIANTE';
+      case 'TEACHER': return 'PROFESOR';
+      case 'ACADEMY': return 'ACADEMIA';
       default: return role;
     }
   };
@@ -262,31 +263,44 @@ export default function AccountsPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Fecha Registro
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Acciones
-                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
                     No se encontraron usuarios
                   </td>
                 </tr>
               ) : (
                 filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50">
+                  <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="font-medium text-gray-900">
-                        {user.firstName} {user.lastName}
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleDeleteAccount(user)}
+                          disabled={deletingId === user.id}
+                          className="text-red-600 hover:text-red-700 transition-colors disabled:opacity-50 flex-shrink-0"
+                          title="Eliminar cuenta"
+                        >
+                          {deletingId === user.id ? (
+                            <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          )}
+                        </button>
+                        <span className="font-medium text-gray-900">
+                          {user.firstName} {user.lastName}
+                        </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                       {user.email}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeColor(user.role)}`}>
+                      <span className={`text-xs font-bold uppercase ${getRoleBadgeColor(user.role)}`}>
                         {getRoleLabel(user.role)}
                       </span>
                     </td>
@@ -295,27 +309,6 @@ export default function AccountsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                       {new Date(user.createdAt).toLocaleDateString('es-ES')}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                      <button
-                        onClick={() => handleDeleteAccount(user)}
-                        disabled={deletingId === user.id}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {deletingId === user.id ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            Eliminando...
-                          </>
-                        ) : (
-                          <>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                            Eliminar
-                          </>
-                        )}
-                      </button>
                     </td>
                   </tr>
                 ))
