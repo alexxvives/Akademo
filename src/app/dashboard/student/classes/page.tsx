@@ -48,8 +48,9 @@ export default function StudentClassesPage() {
 
   useEffect(() => {
     loadData();
-    // Poll for active streams every 10 seconds
-    const interval = setInterval(() => {
+    
+    // Function to poll active streams
+    const pollActiveStreams = () => {
       apiClient('/live/active')
         .then(res => res.json())
         .then(result => {
@@ -58,7 +59,13 @@ export default function StudentClassesPage() {
           }
         })
         .catch(err => console.error('Failed to check streams:', err));
-    }, 10000);
+    };
+    
+    // Call immediately on mount
+    pollActiveStreams();
+    
+    // Then poll every 10 seconds
+    const interval = setInterval(pollActiveStreams, 10000);
     return () => clearInterval(interval);
   }, []);
 
