@@ -368,7 +368,7 @@ export default function DashboardLayout({
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
-      {role === 'ACADEMY' && academyPaymentStatus === 'NOT PAID' && (
+      {(role === 'ACADEMY' && academyPaymentStatus === 'NOT PAID') && (
         <DemoDataBanner />
       )}
       <div className="dashboard-layout flex-1 flex overflow-hidden">

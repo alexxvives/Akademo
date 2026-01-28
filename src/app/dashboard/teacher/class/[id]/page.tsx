@@ -408,6 +408,16 @@ export default function TeacherClassPage() {
         const classPending = (pendingResult.data || []).filter((e: any) => e.classId === actualClassId);
         setPendingEnrollments(classPending);
       }
+      
+      // Fetch approved enrollments separately to display students
+      const enrollmentsRes = await apiClient(`/enrollments?classId=${actualClassId}`);
+      const enrollmentsResult = await enrollmentsRes.json();
+      if (enrollmentsResult.success && Array.isArray(enrollmentsResult.data)) {
+        setClassData(prev => ({
+          ...prev!,
+          enrollments: enrollmentsResult.data
+        }));
+      }
     } catch (e) {
       console.error(e);
     } finally {

@@ -506,6 +506,21 @@ export default function TeacherClassPage() {
       setClassData(classResult.data);
       const actualClassId = classResult.data.id;
       
+      // Fetch enrollments separately (admin has access to all classes)
+      try {
+        const enrollmentsRes = await apiClient(`/enrollments?classId=${actualClassId}`);
+        const enrollmentsResult = await enrollmentsRes.json();
+        if (enrollmentsResult.success && Array.isArray(enrollmentsResult.data)) {
+          // Update classData with enrollments
+          setClassData(prev => ({
+            ...prev!,
+            enrollments: enrollmentsResult.data
+          }));
+        }
+      } catch (e) {
+        console.error('Failed to load enrollments:', e);
+      }
+      
       // Load academy defaults for lesson creation
       try {
         const academyRes = await apiClient(`/academies/${classResult.data.academyId}`);
@@ -669,11 +684,11 @@ export default function TeacherClassPage() {
   };
 
   const selectLesson = (lesson: Lesson) => {
-    router.push(`/dashboard/academy/class/${classId}?lesson=${lesson.id}`);
+    router.push(`/dashboard/admin/class/${classId}?lesson=${lesson.id}`);
   };
 
   const goBackToLessons = () => {
-    router.push(`/dashboard/academy/class/${classId}`);
+    router.push(`/dashboard/admin/class/${classId}`);
     setSelectedLesson(null);
     setSelectedVideo(null);
     loadData();
@@ -687,7 +702,7 @@ export default function TeacherClassPage() {
     console.log('[Teacher Video Switch] Target video:', video.id, video.title);
     console.log('[Teacher Video Switch] Lesson:', selectedLesson.id);
     
-    const newUrl = `/dashboard/academy/class/${classId}?lesson=${selectedLesson.id}&watch=${video.id}`;
+    const newUrl = `/dashboard/admin/class/${classId}?lesson=${selectedLesson.id}&watch=${video.id}`;
     console.log('[Teacher Video Switch] Navigating to:', newUrl);
     
     // Use soft navigation with key prop on player to force remount
@@ -2267,7 +2282,7 @@ export default function TeacherClassPage() {
 
             {/* Students - Component */}
             {!selectedLesson && (
-              <StudentsList enrollments={classData.enrollments} />
+              <StudentsList enrollments={classData.enrollments || []} />
             )}
           </>
         )}

@@ -1087,8 +1087,8 @@ lessons.get('/:id/ratings', async (c) => {
     const session = await requireAuth(c);
     const lessonId = c.req.param('id');
 
-    // Only teachers and academy owners can view lesson feedback
-    if (session.role !== 'TEACHER' && session.role !== 'ACADEMY') {
+    // Only teachers, academy owners, and admins can view lesson feedback
+    if (!['TEACHER', 'ACADEMY', 'ADMIN'].includes(session.role)) {
       return c.json(errorResponse('Unauthorized'), 403);
     }
 
@@ -1105,7 +1105,7 @@ lessons.get('/:id/ratings', async (c) => {
       return c.json(errorResponse('Lesson not found'), 404);
     }
 
-    // Check authorization
+    // Check authorization (skip for ADMIN)
     if (session.role === 'TEACHER' && lesson.teacherId !== session.id) {
       return c.json(errorResponse('Not authorized'), 403);
     }
@@ -1119,6 +1119,8 @@ lessons.get('/:id/ratings', async (c) => {
         return c.json(errorResponse('Not authorized'), 403);
       }
     }
+
+    // ADMIN role has access to all ratings, no check needed
 
     // Get all ratings for this lesson with student names
     const ratings = await c.env.DB.prepare(`

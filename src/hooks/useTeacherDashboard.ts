@@ -42,7 +42,8 @@ export interface EnrolledStudent {
   className: string;
   lessonsCompleted?: number;
   totalLessons?: number;
-  lastActive?: string | null;
+  lastActive: string | null;
+  totalWatchTime?: number;
 }
 
 export interface PendingEnrollment {
@@ -171,23 +172,22 @@ export function useTeacherDashboard() {
         const classList = classesResult.data;
         setClasses(classList);
         
+        // Fetch student progress which includes lastActive data
         const allStudents: EnrolledStudent[] = [];
-        for (const cls of classList) {
-          try {
-            const enrollRes = await apiClient(`/enrollments?classId=${cls.id}`);
-            const enrollData = await enrollRes.json();
-            if (enrollData.success && Array.isArray(enrollData.data)) {
-              const studentsInClass = enrollData.data.map((e: any) => ({
-                id: e.student.id,
-                name: `${e.student.firstName} ${e.student.lastName}`,
-                email: e.student.email,
-                classId: cls.id,
-                className: cls.name,
-              }));
-              allStudents.push(...studentsInClass);
-            }
-          } catch (err) {
-            console.error(`Failed to load students for class ${cls.id}:`, err);
+        if (progressResult.success && Array.isArray(progressResult.data)) {
+          // Map progress data to EnrolledStudent format
+          for (const student of progressResult.data) {
+            allStudents.push({
+              id: student.id,
+              name: `${student.firstName} ${student.lastName}`,
+              email: student.email,
+              classId: student.classId,
+              className: student.className,
+              lessonsCompleted: student.lessonsCompleted || 0,
+              totalLessons: student.totalLessons || 0,
+              lastActive: student.lastActive || null,
+              totalWatchTime: student.totalWatchTime || 0,
+            });
           }
         }
         setEnrolledStudents(allStudents);

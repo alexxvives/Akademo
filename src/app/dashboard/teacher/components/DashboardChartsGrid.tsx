@@ -62,6 +62,7 @@ export function DashboardChartsGrid({
       {/* Engagement Metrics */}
       <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full">
         <h3 className="text-lg font-semibold text-gray-900 mb-6">Participación</h3>
+        {filteredStudents.length > 0 ? (
         <div className="space-y-4">
           <div>
             <div className="flex justify-between mb-2">
@@ -129,6 +130,15 @@ export function DashboardChartsGrid({
           `}</style>
           {/* Tiempo de visualización total removed - needs proper tracking */}
         </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-40 text-gray-400">
+            <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            <p className="text-sm font-medium">Sin datos de participación</p>
+            <p className="text-xs text-gray-400 mt-1">{selectedClass === 'all' ? 'Aún no hay estudiantes' : 'No hay estudiantes en esta clase'}</p>
+          </div>
+        )}
       </div>
 
       {/* Student Summary */}
@@ -171,24 +181,30 @@ export function DashboardChartsGrid({
       {/* Star Ratings Distribution */}
       <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full">
         <h3 className="text-lg font-semibold text-gray-900 mb-6">Valoraciones</h3>
-        {ratingsData && ratingsData.overall.totalRatings > 0 ? (
-          <BarChart
-            data={[
-              { label: '1★', value: ratingsData.lessons.filter(l => (selectedClass === 'all' || l.classId === selectedClass) && l.averageRating && l.averageRating >= 1 && l.averageRating < 1.5).length, color: '#ef4444' },
-              { label: '2★', value: ratingsData.lessons.filter(l => (selectedClass === 'all' || l.classId === selectedClass) && l.averageRating && l.averageRating >= 1.5 && l.averageRating < 2.5).length, color: '#f97316' },
-              { label: '3★', value: ratingsData.lessons.filter(l => (selectedClass === 'all' || l.classId === selectedClass) && l.averageRating && l.averageRating >= 2.5 && l.averageRating < 3.5).length, color: '#a3e635' },
-              { label: '4★', value: ratingsData.lessons.filter(l => (selectedClass === 'all' || l.classId === selectedClass) && l.averageRating && l.averageRating >= 3.5 && l.averageRating < 4.5).length, color: '#84cc16' },
-              { label: '5★', value: ratingsData.lessons.filter(l => (selectedClass === 'all' || l.classId === selectedClass) && l.averageRating && l.averageRating >= 4.5).length, color: '#22c55e' },
-            ]}
-          />
-        ) : (
-          <div className="flex flex-col items-center justify-center h-40 text-gray-400">
-            <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-            </svg>
-            <p className="text-sm">Sin valoraciones aún</p>
-          </div>
-        )}
+        {(() => {
+          const filteredLessons = ratingsData?.lessons.filter(l => selectedClass === 'all' || l.classId === selectedClass) || [];
+          const hasRatings = filteredLessons.length > 0 && filteredLessons.some(l => l.ratingCount > 0);
+          
+          return hasRatings ? (
+            <BarChart
+              data={[
+                { label: '1★', value: filteredLessons.filter(l => l.averageRating && l.averageRating >= 1 && l.averageRating < 1.5).length, color: '#ef4444' },
+                { label: '2★', value: filteredLessons.filter(l => l.averageRating && l.averageRating >= 1.5 && l.averageRating < 2.5).length, color: '#f97316' },
+                { label: '3★', value: filteredLessons.filter(l => l.averageRating && l.averageRating >= 2.5 && l.averageRating < 3.5).length, color: '#a3e635' },
+                { label: '4★', value: filteredLessons.filter(l => l.averageRating && l.averageRating >= 3.5 && l.averageRating < 4.5).length, color: '#84cc16' },
+                { label: '5★', value: filteredLessons.filter(l => l.averageRating && l.averageRating >= 4.5).length, color: '#22c55e' },
+              ]}
+            />
+          ) : (
+            <div className="flex flex-col items-center justify-center h-40 text-gray-400">
+              <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+              </svg>
+              <p className="text-sm font-medium">Sin valoraciones</p>
+              <p className="text-xs text-gray-400 mt-1">{selectedClass === 'all' ? 'Aún no hay valoraciones' : 'No hay valoraciones en esta clase'}</p>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Student Status */}

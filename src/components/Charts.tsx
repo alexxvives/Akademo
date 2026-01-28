@@ -279,6 +279,34 @@ export function DonutChart({
     const innerRadius = radius * 0.6;
     const total = data.reduce((sum, item) => sum + item.value, 0);
 
+    // If total is 0, show a gray circle indicating no data
+    if (total === 0) {
+      ctx.clearRect(0, 0, size, size);
+      ctx.fillStyle = '#E5E7EB'; // gray-200
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      ctx.arc(centerX, centerY, innerRadius, 0, Math.PI * 2, true);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Draw center circle
+      ctx.fillStyle = 'white';
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, innerRadius, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Draw "0" in center
+      ctx.fillStyle = '#6B7280';
+      ctx.font = 'bold 24px system-ui';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('0', centerX, centerY);
+      ctx.font = '12px system-ui';
+      ctx.fillStyle = '#9CA3AF';
+      ctx.fillText('Sin datos', centerX, centerY + 20);
+      return;
+    }
+
     // Animation state
     let animationProgress = 0;
     const animationDuration = 1000; // ms
