@@ -120,7 +120,7 @@ export default function AdminFacturas() {
               onChange={(e) => setFilter(e.target.value as typeof filter)}
               className="appearance-none w-64 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
-              <option value="ALL">Todos ({payments.length})</option>
+              <option value="ALL">Todos</option>
               <option value="STUDENT_TO_ACADEMY">Estudiante → Academia</option>
               <option value="ACADEMY_TO_PLATFORM">Academia → AKADEMO</option>
             </select>
