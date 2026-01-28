@@ -71,15 +71,8 @@ export default function StudentClassesPage() {
 
   const loadData = async () => {
     try {
-      const [classesRes, streamsRes] = await Promise.all([
-        apiClient('/classes'),
-        apiClient('/live/active'),
-      ]);
-
-      const [classesResult, streamsResult] = await Promise.all([
-        classesRes.json(),
-        streamsRes.json(),
-      ]);
+      const classesRes = await apiClient('/classes');
+      const classesResult = await classesRes.json();
 
       if (classesResult.success && Array.isArray(classesResult.data)) {
         const classes = classesResult.data.map((c: any) => ({
@@ -105,10 +98,6 @@ export default function StudentClassesPage() {
         if (classes.length > 0) {
           setAcademyName(classes[0].academyName);
         }
-      }
-
-      if (streamsResult.success && Array.isArray(streamsResult.data)) {
-        setActiveStreams(streamsResult.data);
       }
     } catch (error) {
       console.error('Failed to load data:', error);
