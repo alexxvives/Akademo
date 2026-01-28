@@ -108,7 +108,7 @@ export function StreamRow({ stream, onDelete, onUpdateStream, deletingStreamId }
           <button
             onClick={() => onDelete(stream.id, stream.title)}
             disabled={deletingStreamId === stream.id}
-            className="flex-shrink-0 p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+            className="text-red-600 hover:text-red-700 transition-colors disabled:opacity-50 flex-shrink-0"
             title="Eliminar stream"
           >
             {deletingStreamId === stream.id ? (

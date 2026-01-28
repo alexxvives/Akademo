@@ -56,7 +56,7 @@ export default function AdminFeedbackPage() {
 
   const loadFeedback = async () => {
     try {
-      const res = await apiClient('/ratings');
+      const res = await apiClient('/ratings/teacher');
       const result = await res.json();
       
       if (result.success && Array.isArray(result.data)) {
