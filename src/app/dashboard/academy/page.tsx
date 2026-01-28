@@ -339,64 +339,60 @@ export default function AcademyDashboard() {
         const classList = classesResult.data;
         setClasses(classList);
         
-        // Use progress data instead of loading enrollments separately
+        // FIXED: Parallelize enrollment API calls for all classes at once
         if (progressResult.success && Array.isArray(progressResult.data)) {
-          // Create a map of student ID to classes they're enrolled in
-          const allStudents: EnrolledStudent[] = [];
+          // Load ALL enrollments in parallel
+          const enrollmentResponses = await Promise.all(
+            classList.map(cls => apiClient(`/enrollments?classId=${cls.id}`).then(r => r.json()))
+          );
           
-          for (const student of progressResult.data) {
-            // Need to get actual classId from enrollments
-            // The progress API doesn't return individual classIds properly
-            try {
-              // Find which classes this student is in
-              for (const cls of classList) {
-                const enrollRes = await apiClient(`/enrollments?classId=${cls.id}`);
-                const enrollData = await enrollRes.json();
-                if (enrollData.success && Array.isArray(enrollData.data)) {
-                  const studentInClass = enrollData.data.find((e: any) => e.student.id === student.id);
-                  if (studentInClass) {
-                    allStudents.push({
-                      id: student.id,
-                      name: `${student.firstName} ${student.lastName}`,
-                      email: student.email,
-                      classId: cls.id, // Correct classId
-                      className: cls.name,
-                      lessonsCompleted: student.lessonsCompleted || 0,
-                      totalLessons: student.totalLessons || 0,
-                      lastActive: student.lastActive,
-                    });
-                  }
+          // Create student map with progress data
+          const allStudents: EnrolledStudent[] = [];
+          progressResult.data.forEach((student: any) => {
+            // Find which classes this student is in
+            classList.forEach((cls, idx) => {
+              const enrollData = enrollmentResponses[idx];
+              if (enrollData.success && Array.isArray(enrollData.data)) {
+                const studentInClass = enrollData.data.find((e: any) => e.student.id === student.id);
+                if (studentInClass) {
+                  allStudents.push({
+                    id: student.id,
+                    name: `${student.firstName} ${student.lastName}`,
+                    email: student.email,
+                    classId: cls.id,
+                    className: cls.name,
+                    lessonsCompleted: student.lessonsCompleted || 0,
+                    totalLessons: student.totalLessons || 0,
+                    lastActive: student.lastActive,
+                  });
                 }
               }
-            } catch (err) {
-              console.error(`Failed to map student ${student.id}:`, err);
-            }
-          }
+            });
+          });
           setEnrolledStudents(allStudents);
         } else {
-          // Fallback to old method if progress API fails
+          // Fallback: Parallelize enrollment loading
+          const enrollmentResponses = await Promise.all(
+            classList.map(cls => apiClient(`/enrollments?classId=${cls.id}`).then(r => r.json()))
+          );
+          
           const allStudents: EnrolledStudent[] = [];
-          for (const cls of classList) {
-            try {
-              const enrollRes = await apiClient(`/enrollments?classId=${cls.id}`);
-              const enrollData = await enrollRes.json();
-              if (enrollData.success && Array.isArray(enrollData.data)) {
-                const studentsInClass = enrollData.data.map((e: any) => ({
-                  id: e.student.id,
-                  name: `${e.student.firstName} ${e.student.lastName}`,
-                  email: e.student.email,
-                  classId: cls.id,
-                  className: cls.name,
-                  lessonsCompleted: 0,
-                  totalLessons: 0,
-                  lastActive: null,
-                }));
-                allStudents.push(...studentsInClass);
-              }
-            } catch (err) {
-              console.error(`Failed to load students for class ${cls.id}:`, err);
+          classList.forEach((cls, idx) => {
+            const enrollData = enrollmentResponses[idx];
+            if (enrollData.success && Array.isArray(enrollData.data)) {
+              const studentsInClass = enrollData.data.map((e: any) => ({
+                id: e.student.id,
+                name: `${e.student.firstName} ${e.student.lastName}`,
+                email: e.student.email,
+                classId: cls.id,
+                className: cls.name,
+                lessonsCompleted: 0,
+                totalLessons: 0,
+                lastActive: null,
+              }));
+              allStudents.push(...studentsInClass);
             }
-          }
+          });
           setEnrolledStudents(allStudents);
         }
       }
@@ -452,7 +448,9 @@ export default function AcademyDashboard() {
     const filtered = selectedClass === 'all' ? allStreams : allStreams.filter(s => s.classId === selectedClass);
     if (filtered.length === 0) return { avgParticipants: 0, total: 0, totalHours: 0, totalMinutes: 0 };
     
-    const totalParticipants = filtered.reduce((sum, s) => sum + (s.participantCount || 0), 0);
+    // Only count streams with participants > 0
+    const streamsWithParticipants = filtered.filter(s => s.participantCount != null && s.participantCount > 0);
+    const totalParticipants = streamsWithParticipants.reduce((sum, s) => sum + (s.participantCount || 0), 0);
     
     // Calculate duration from startedAt and endedAt timestamps
     const totalDurationMs = filtered.reduce((sum, s) => {
@@ -468,7 +466,7 @@ export default function AcademyDashboard() {
     const totalMinutes = totalDurationMinutes % 60;
     
     return {
-      avgParticipants: Math.round(totalParticipants / filtered.length),
+      avgParticipants: streamsWithParticipants.length > 0 ? Math.round(totalParticipants / streamsWithParticipants.length) : 0,
       total: filtered.length,
       totalHours,
       totalMinutes,
