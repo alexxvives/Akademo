@@ -222,6 +222,19 @@ export default function AdminStreamsPage() {
         </div>
         
         <div className="flex gap-3">
+          {selectedAcademy !== 'all' && filteredClasses.length > 0 && (
+            <select
+              value={selectedClass}
+              onChange={(e) => setSelectedClass(e.target.value)}
+              className="appearance-none w-56 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+            >
+              <option value="all">Todas las clases</option>
+              {filteredClasses.map(cls => (
+                <option key={cls.id} value={cls.id}>{cls.name}</option>
+              ))}
+            </select>
+          )}
+          
           <select
             value={selectedAcademy}
             onChange={(e) => {
@@ -233,17 +246,6 @@ export default function AdminStreamsPage() {
             <option value="all">Todas las academias</option>
             {academies.map(academy => (
               <option key={academy.id} value={academy.id}>{academy.name}</option>
-            ))}
-          </select>
-          
-          <select
-            value={selectedClass}
-            onChange={(e) => setSelectedClass(e.target.value)}
-            className="appearance-none w-56 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-          >
-            <option value="all">Todas las clases</option>
-            {filteredClasses.map(cls => (
-              <option key={cls.id} value={cls.id}>{cls.name}</option>
             ))}
           </select>
         </div>

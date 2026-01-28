@@ -69,20 +69,20 @@ export default function AdminFacturas() {
   };
 
   const getStatusBadge = (status: string) => {
-    const badges = {
-      COMPLETED: 'bg-green-100 text-green-800',
-      PENDING: 'bg-yellow-100 text-yellow-800',
-      FAILED: 'bg-red-100 text-red-800',
-      REFUNDED: 'bg-gray-100 text-gray-800',
+    const colors = {
+      COMPLETED: 'text-green-600',
+      PENDING: 'text-yellow-600',
+      FAILED: 'text-red-600',
+      REFUNDED: 'text-gray-600',
     };
     const labels = {
-      COMPLETED: 'Completado',
-      PENDING: 'Pendiente',
-      FAILED: 'Fallido',
-      REFUNDED: 'Reembolsado',
+      COMPLETED: 'COMPLETADO',
+      PENDING: 'PENDIENTE',
+      FAILED: 'FALLIDO',
+      REFUNDED: 'REEMBOLSADO',
     };
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badges[status as keyof typeof badges] || badges.PENDING}`}>
+      <span className={`text-xs font-bold uppercase ${colors[status as keyof typeof colors] || colors.PENDING}`}>
         {labels[status as keyof typeof labels] || status}
       </span>
     );

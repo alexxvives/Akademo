@@ -112,19 +112,6 @@ export default function AdminFeedbackPage() {
         
         {/* Filters as dropdown */}
         <div className="flex gap-3">
-          <select
-            value={selectedAcademy}
-            onChange={(e) => {
-              setSelectedAcademy(e.target.value);
-              setSelectedClass('all');
-            }}
-            className="appearance-none w-56 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent">
-            <option value="all">Todas las academias</option>
-            {academies.map(academy => (
-              <option key={academy.id} value={academy.id}>{academy.name}</option>
-            ))}
-          </select>
-          
           {selectedAcademy !== 'all' && filteredClassOptions.length > 0 && (
             <select
               value={selectedClass}
@@ -137,6 +124,19 @@ export default function AdminFeedbackPage() {
               ))}
             </select>
           )}
+          
+          <select
+            value={selectedAcademy}
+            onChange={(e) => {
+              setSelectedAcademy(e.target.value);
+              setSelectedClass('all');
+            }}
+            className="appearance-none w-56 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent">
+            <option value="all">Todas las academias</option>
+            {academies.map(academy => (
+              <option key={academy.id} value={academy.id}>{academy.name}</option>
+            ))}
+          </select>
         </div>
       </div>
 
