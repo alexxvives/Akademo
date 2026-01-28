@@ -7,6 +7,7 @@ import { apiClient } from '@/lib/api-client';
 export function useAcademyLogo() {
   const { user } = useAuth();
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [academyName, setAcademyName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,6 +27,7 @@ export function useAcademyLogo() {
         const result = await res.json();
         if (result.success && result.data.length > 0) {
           setLogoUrl(result.data[0].logoUrl || null);
+          setAcademyName(result.data[0].name || null);
         }
       } else if (user.role === 'TEACHER') {
         // Get teacher's academy logo
@@ -33,6 +35,7 @@ export function useAcademyLogo() {
         const result = await res.json();
         if (result.success && result.data?.logoUrl) {
           setLogoUrl(result.data.logoUrl);
+          setAcademyName(result.data.name || null);
         }
       } else if (user.role === 'STUDENT') {
         // Get first enrolled class's academy logo
@@ -43,6 +46,9 @@ export function useAcademyLogo() {
           if (firstEnrollment.academyLogoUrl) {
             setLogoUrl(firstEnrollment.academyLogoUrl);
           }
+          if (firstEnrollment.academyName) {
+            setAcademyName(firstEnrollment.academyName);
+          }
         }
       }
     } catch (error) {
@@ -52,5 +58,5 @@ export function useAcademyLogo() {
     }
   };
 
-  return { logoUrl, loading };
+  return { logoUrl, academyName, loading };
 }
