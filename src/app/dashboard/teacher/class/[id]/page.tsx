@@ -154,6 +154,30 @@ export default function TeacherClassPage() {
     }
   }, [classId]);
 
+  // Poll for active live streams every 10 seconds
+  useEffect(() => {
+    if (!classData?.id) return;
+    
+    const pollLiveStreams = async () => {
+      try {
+        const res = await apiClient(`/live?classId=${classData.id}`);
+        const result = await res.json();
+        if (result.success) {
+          // Only show active or scheduled streams
+          setLiveClasses((result.data || []).filter((s: any) => 
+            s.status === 'active' || s.status === 'scheduled'
+          ));
+        }
+      } catch (e) {
+        console.error('Failed to poll live classes:', e);
+      }
+    };
+
+    // Poll every 10 seconds
+    const interval = setInterval(pollLiveStreams, 10000);
+    return () => clearInterval(interval);
+  }, [classData?.id]);
+
   // Poll for transcoding status updates
   useEffect(() => {
     const hasTranscoding = lessons.some(l => l.isTranscoding === 1);
