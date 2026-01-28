@@ -46,6 +46,8 @@ interface TopicsLessonsListProps {
   onDeleteLesson: (lessonId: string) => void;
   onRescheduleLesson: (lesson: Lesson) => void;
   onTopicsChange: () => void;
+  onTopicsUpdate?: (topics: Topic[] | ((prev: Topic[]) => Topic[])) => void;
+  onLessonsUpdate?: (lessons: Lesson[] | ((prev: Lesson[]) => Lesson[])) => void;
   onLessonMove: (lessonId: string, topicId: string | null) => void;
   onToggleRelease: (lesson: Lesson) => void;
 }
@@ -61,6 +63,8 @@ export default function TopicsLessonsList({
   onDeleteLesson,
   onRescheduleLesson,
   onTopicsChange,
+  onTopicsUpdate,
+  onLessonsUpdate,
   onLessonMove,
   onToggleRelease,
 }: TopicsLessonsListProps) {
@@ -224,32 +228,77 @@ export default function TopicsLessonsList({
   const handleCreateTopic = async () => {
     if (!newTopicName.trim()) return;
     setCreatingTopic(true);
+    
+    // Generate temporary ID for optimistic update
+    const tempId = `temp-${Date.now()}`;
+    const tempTopic: Topic = {
+      id: tempId,
+      name: newTopicName.trim(),
+      classId,
+      orderIndex: topics.length,
+      lessonCount: 0
+    };
+    
+    // Optimistic update
+    if (onTopicsUpdate) {
+      onTopicsUpdate(prev => [...prev, tempTopic]);
+    }
+    setNewTopicName('');
+    setShowNewTopicInput(false);
+    
     try {
       const res = await apiClient('/topics', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ classId, name: newTopicName.trim() }),
+        body: JSON.stringify({ classId, name: tempTopic.name }),
       });
+      
       if (res.ok) {
-        setNewTopicName('');
-        setShowNewTopicInput(false);
-        onTopicsChange();
+        const result = await res.json();
+        // Replace temp topic with real one from server
+        if (result.success && result.data && onTopicsUpdate) {
+          onTopicsUpdate(prev => prev.map(t => t.id === tempId ? result.data : t));
+        }
+      } else {
+        // Remove temp topic on error
+        if (onTopicsUpdate) {
+          onTopicsUpdate(prev => prev.filter(t => t.id !== tempId));
+        }
+        onTopicsChange(); // Fallback to full reload
       }
     } catch (error) {
       console.error('Failed to create topic:', error);
+      // Remove temp topic on error
+      if (onTopicsUpdate) {
+        onTopicsUpdate(prev => prev.filter(t => t.id !== tempId));
+      }
+      onTopicsChange();
     }
     setCreatingTopic(false);
   };
 
   const handleDeleteTopic = async (topicId: string) => {
     if (!confirm('¿Eliminar este tema? Las Clases se moverán a "Sin tema".')) return;
+    
+    // Optimistic update: remove topic and move its lessons to null
+    if (onTopicsUpdate) {
+      onTopicsUpdate(prev => prev.filter(t => t.id !== topicId));
+    }
+    if (onLessonsUpdate) {
+      onLessonsUpdate(prev => prev.map(l => 
+        l.topicId === topicId ? { ...l, topicId: null } : l
+      ));
+    }
+    
     try {
       const res = await apiClient(`/topics/${topicId}`, { method: 'DELETE' });
-      if (res.ok) {
+      if (!res.ok) {
+        // Reload on error to restore accurate state
         onTopicsChange();
       }
     } catch (error) {
       console.error('Failed to delete topic:', error);
+      onTopicsChange();
     }
   };
   

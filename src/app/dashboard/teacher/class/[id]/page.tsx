@@ -833,13 +833,22 @@ export default function TeacherClassPage() {
 
   const handleDeleteLesson = async (lessonId: string) => {
     if (!confirm('Delete this lesson? All videos and documents will be deleted.')) return;
+    
+    // Optimistic update: remove lesson from UI immediately
+    const deletedLesson = lessons.find(l => l.id === lessonId);
+    setLessons(prev => prev.filter(l => l.id !== lessonId));
+    
     try {
       const res = await apiClient(`/lessons/${lessonId}`, { method: 'DELETE' });
       const result = await res.json();
-      if (result.success) loadData();
-      else alert(result.error || 'Failed to delete');
+      if (!result.success) {
+        // If failed, restore the lesson and reload
+        alert(result.error || 'Failed to delete');
+        loadData();
+      }
     } catch (e) {
       alert('Error occurred');
+      loadData(); // Reload on error to restore accurate state
     }
   };
 
@@ -975,41 +984,45 @@ export default function TeacherClassPage() {
 
   const handleDeleteVideo = async (videoId: string) => {
     if (!confirm('¿Estás seguro de eliminar este video?')) return;
+    
+    // Optimistic update
+    setEditingLessonMedia(prev => prev ? ({
+      ...prev,
+      videos: prev.videos.filter(v => v.id !== videoId)
+    }) : null);
+    
     try {
       const res = await apiClient(`/lessons/video/${videoId}`, { method: 'DELETE' });
       const result = await res.json();
-      if (result.success) {
-        setEditingLessonMedia(prev => prev ? ({
-          ...prev,
-          videos: prev.videos.filter(v => v.id !== videoId)
-        }) : null);
-        // Refresh data in background
-        loadData();
-      } else {
+      if (!result.success) {
         alert(result.error || 'Error al eliminar video');
+        loadData(); // Reload only on error
       }
     } catch (e) {
       alert('Error de conexión');
+      loadData();
     }
   };
 
   const handleDeleteDocument = async (documentId: string) => {
     if (!confirm('¿Estás seguro de eliminar este documento?')) return;
+    
+    // Optimistic update
+    setEditingLessonMedia(prev => prev ? ({
+      ...prev,
+      documents: prev.documents.filter(d => d.id !== documentId)
+    }) : null);
+    
     try {
       const res = await apiClient(`/lessons/document/${documentId}`, { method: 'DELETE' });
       const result = await res.json();
-      if (result.success) {
-        setEditingLessonMedia(prev => prev ? ({
-          ...prev,
-          documents: prev.documents.filter(d => d.id !== documentId)
-        }) : null);
-        // Refresh data in background
-        loadData();
-      } else {
+      if (!result.success) {
         alert(result.error || 'Error al eliminar documento');
+        loadData(); // Reload only on error
       }
     } catch (e) {
       alert('Error de conexión');
+      loadData();
     }
   };
 
@@ -1161,6 +1174,23 @@ export default function TeacherClassPage() {
   };
 
   const handleEnrollmentAction = async (enrollmentId: string, action: 'approve' | 'reject') => {
+    // Optimistic update: remove from pending immediately
+    const enrollment = pendingEnrollments.find(e => e.id === enrollmentId);
+    setPendingEnrollments(prev => prev.filter(e => e.id !== enrollmentId));
+    
+    // If approving, add to enrollments list immediately
+    if (action === 'approve' && enrollment && classData) {
+      setClassData(prev => ({
+        ...prev!,
+        enrollments: [...prev!.enrollments, {
+          id: enrollment.id,
+          student: enrollment.student,
+          enrolledAt: enrollment.enrolledAt,
+          status: 'APPROVED'
+        }]
+      }));
+    }
+    
     try {
       const res = await apiClient('/enrollments/pending', {
         method: 'POST',
@@ -1168,16 +1198,14 @@ export default function TeacherClassPage() {
         body: JSON.stringify({ enrollmentId, action }),
       });
       const result = await res.json();
-      if (result.success) {
-        // Reload pending enrollments
-        setPendingEnrollments(prev => prev.filter(e => e.id !== enrollmentId));
-        loadData(); // Refresh class data with new enrollments
-      } else {
+      if (!result.success) {
         alert(result.error || 'Failed to process enrollment');
+        loadData(); // Reload only on error
       }
     } catch (e) {
       console.error(e);
       alert('Error processing enrollment');
+      loadData();
     }
   };
 
@@ -2048,6 +2076,8 @@ export default function TeacherClassPage() {
                 onDeleteLesson={handleDeleteLesson}
                 onRescheduleLesson={handleRescheduleLesson}
                 onTopicsChange={loadData}
+                onTopicsUpdate={setTopics}
+                onLessonsUpdate={setLessons}
                 onLessonMove={handleLessonMove}
                 onToggleRelease={handleToggleRelease}
               />

@@ -134,13 +134,11 @@ live.post('/', async (c) => {
     // Create livestream record with Zoom details
     const streamId = crypto.randomUUID();
     const now = new Date().toISOString();
-    const roomName = `live-${streamId.substring(0, 8)}`;
-    const roomUrl = `https://akademo-edu.com/live/${streamId}`;
 
     await c.env.DB
       .prepare(`
-        INSERT INTO LiveStream (id, classId, teacherId, title, status, zoomLink, zoomMeetingId, zoomStartUrl, roomName, roomUrl, createdAt) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO LiveStream (id, classId, teacherId, title, status, zoomLink, zoomMeetingId, zoomStartUrl, createdAt) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `)
       .bind(
         streamId, 
@@ -151,8 +149,6 @@ live.post('/', async (c) => {
         zoomMeeting.join_url,
         String(zoomMeeting.id),
         zoomMeeting.start_url,
-        roomName, 
-        roomUrl, 
         now
       )
       .run();
