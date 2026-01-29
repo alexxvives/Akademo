@@ -218,7 +218,7 @@ export function StudentPaymentDetailModal({
                     </div>
 
                     {/* Pendiente a Pagar */}
-                    <div className="bg-white rounded-lg p-4 border border-orange-200">
+                    <div className="bg-white rounded-lg p-4 border border-gray-200">
                       <div className="text-sm text-gray-500 mb-1">Pendiente a Pagar</div>
                       <div className="text-2xl font-bold text-orange-600">{formatCurrency(totalDue - totalPaid)}</div>
                       <div className="mt-2 text-xs text-gray-600">

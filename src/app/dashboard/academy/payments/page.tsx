@@ -64,6 +64,24 @@ export default function AcademyPaymentsPage() {
     try {
       // Fetch real payment history from API
       const res = await apiClient(`/student-payments/${studentId}/class/${classId}`);
+      
+      // Check if response is OK before parsing JSON
+      if (!res.ok) {
+        console.error(`API returned ${res.status}: ${res.statusText}`);
+        const text = await res.text();
+        console.error('Response body:', text);
+        // Still open modal even if fetch fails, will show empty state
+        setSelectedStudent({
+          studentId,
+          name: studentName,
+          email: studentEmail,
+          className,
+          enrollmentDate,
+          paymentData: null,
+        });
+        return;
+      }
+      
       const result = await res.json();
       
       if (result.success && result.data) {
