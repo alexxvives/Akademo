@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense, useRef } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { SkeletonForm } from '@/components/ui/SkeletonLoader';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -242,16 +242,10 @@ function VerifyEmailContent() {
 }
 
 export default function VerifyEmailPage() {
-  const fallbackLoaderRef = useRef<any>(null);
-  
-  useEffect(() => {
-    fallbackLoaderRef.current?.startAnimation();
-  }, []);
-  
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-        <LoaderPinwheelIcon ref={fallbackLoaderRef} size={32} className="text-black" />
+        <SkeletonForm />
       </div>
     }>
       <VerifyEmailContent />

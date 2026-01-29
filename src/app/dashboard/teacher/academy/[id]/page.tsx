@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { LoaderPinwheelIcon } from '@/components/ui/LoaderPinwheelIcon';
+import { SkeletonProfile } from '@/components/ui/SkeletonLoader';
 
 interface Academy {
   id: string;
@@ -41,19 +41,12 @@ interface Academy {
 }
 
 export default function AcademyManagePage() {
-  const loaderRef = useRef<any>(null);
   const params = useParams();
   const academyId = params.id as string;
   const [academy, setAcademy] = useState<Academy | null>(null);
   const [loading, setLoading] = useState(true);
   const [showClassForm, setShowClassForm] = useState(false);
   const [classFormData, setClassFormData] = useState({ name: '', description: '' });
-
-  useEffect(() => {
-    if (loading) {
-      loaderRef.current?.startAnimation();
-    }
-  }, [loading]);
 
   useEffect(() => {
     if (academyId) loadAcademy();
@@ -108,13 +101,7 @@ export default function AcademyManagePage() {
   };
 
   if (loading) {
-    return (
-      <>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <LoaderPinwheelIcon ref={loaderRef} size={32} className="text-black" />
-        </div>
-      </>
-    );
+    return <SkeletonProfile />;
   }
 
   if (!academy) {

@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
 import { generateDemoClasses, generateDemoTeachers } from '@/lib/demo-data';
-import { LoaderPinwheelIcon } from '@/components/ui/LoaderPinwheelIcon';
+import { SkeletonClasses } from '@/components/ui/SkeletonLoader';
 
 interface Teacher {
   id: string;
@@ -50,13 +50,6 @@ export default function AcademyClassesPage() {
   const [formData, setFormData] = useState({ name: '', description: '', teacherId: '', price: '', zoomAccountId: '', whatsappGroupLink: '' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const loaderRef = useRef<any>(null);
-
-  useEffect(() => {
-    if (loading) {
-      loaderRef.current?.startAnimation();
-    }
-  }, [loading]);
 
   useEffect(() => {
     loadData();
@@ -269,9 +262,7 @@ export default function AcademyClassesPage() {
 
 
         {loading ? (
-          <div className="flex items-center justify-center min-h-[400px]">
-            <LoaderPinwheelIcon ref={loaderRef} size={32} className="text-black" />
-          </div>
+          <SkeletonClasses />
         ) : classes.length === 0 ? (
           <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
             <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

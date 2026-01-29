@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { SkeletonList } from '@/components/ui/SkeletonLoader';
 
@@ -40,7 +40,7 @@ export default function AdminAcademies() {
   };
 
   if (loading) {
-    return <SkeletonList />;
+    return <SkeletonList rows={10} />;
   }
 
   return (

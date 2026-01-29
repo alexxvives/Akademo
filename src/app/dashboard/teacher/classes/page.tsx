@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
 import { SkeletonClasses } from '@/components/ui/SkeletonLoader';
@@ -28,20 +28,12 @@ interface LessonFeedback {
 }
 
 export default function TeacherClasses() {
-  const feedbackLoaderRef = useRef<any>(null);
-
   const [classes, setClasses] = useState<Class[]>([]);
   const [academyName, setAcademyName] = useState<string>('');  const [loading, setLoading] = useState(true);
   const [openFeedbackDropdown, setOpenFeedbackDropdown] = useState<string | null>(null);
   const [feedbackComments, setFeedbackComments] = useState<Array<{ id: string; rating: number; comment: string; lessonTitle: string; topicName: string; createdAt: string }>>([]);
   const [loadingFeedback, setLoadingFeedback] = useState(false);
   const [ratingsData, setRatingsData] = useState<{ overall: any, lessons: any[] } | null>(null);
-
-  useEffect(() => {
-    if (loadingFeedback) {
-      feedbackLoaderRef.current?.startAnimation();
-    }
-  }, [loadingFeedback]);
 
   useEffect(() => {
     loadClasses();

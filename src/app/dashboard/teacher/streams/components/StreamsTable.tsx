@@ -1,6 +1,6 @@
 import { Stream } from '@/hooks/useStreamsData';
 import { StreamRow } from './StreamRow';
-import { LoaderPinwheelIcon } from '@/components/ui/LoaderPinwheelIcon';
+import { SkeletonList } from '@/components/ui/SkeletonLoader';
 
 interface StreamsTableProps {
   streams: Stream[];
@@ -12,11 +12,7 @@ interface StreamsTableProps {
 
 export function StreamsTable({ streams, loading, deletingStreamId, onDelete, onUpdateStream }: StreamsTableProps) {
   if (loading) {
-    return (
-      <div className="bg-white rounded-xl border border-gray-200 p-12 flex items-center justify-center">
-        <LoaderPinwheelIcon size={32} className="text-brand-500" />
-      </div>
-    );
+    return <SkeletonList rows={8} />;
   }
 
   return (

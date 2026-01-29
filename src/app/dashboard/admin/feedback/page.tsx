@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState, useMemo, useRef } from 'react';
-import { LoaderPinwheelIcon } from '@/components/ui/LoaderPinwheelIcon';
+import { useEffect, useState, useMemo } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { FeedbackView, type ClassFeedback } from '@/components/shared';
+import { SkeletonFeedback } from '@/components/ui/SkeletonLoader';
 
 interface Academy {
   id: string;
@@ -23,13 +23,6 @@ export default function AdminFeedbackPage() {
   const [allClasses, setAllClasses] = useState<Class[]>([]);
   const [selectedAcademy, setSelectedAcademy] = useState('all');
   const [selectedClass, setSelectedClass] = useState('all');
-  const loaderRef = useRef<any>(null);
-
-  useEffect(() => {
-    if (loading) {
-      loaderRef.current?.startAnimation();
-    }
-  }, [loading]);
 
   useEffect(() => {
     loadData();
@@ -102,11 +95,7 @@ export default function AdminFeedbackPage() {
     : 0;
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <LoaderPinwheelIcon ref={loaderRef} size={32} className="text-black" />
-      </div>
-    );
+    return <SkeletonFeedback />;
   }
 
   return (

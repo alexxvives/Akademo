@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
 import { SkeletonList } from '@/components/ui/SkeletonLoader';
@@ -127,9 +127,7 @@ export default function AcademyLessonsPage() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center min-h-[400px]">
-            <LoaderPinwheelIcon ref={loaderRef} size={32} className="text-black" />
-          </div>
+          <SkeletonList rows={12} />
         ) : filteredLessons.length === 0 ? (
           <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
             <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

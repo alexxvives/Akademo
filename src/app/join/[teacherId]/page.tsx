@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { SkeletonForm } from '@/components/ui/SkeletonLoader';
 import { useParams, useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
@@ -29,13 +29,6 @@ export default function JoinPage() {
   const [classes, setClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const loaderRef = useRef<any>(null);
-
-  useEffect(() => {
-    if (loading) {
-      loaderRef.current?.startAnimation();
-    }
-  }, [loading]);
   
   // Auth state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -313,7 +306,7 @@ export default function JoinPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <LoaderPinwheelIcon ref={loaderRef} size={32} className="text-black" />
+        <SkeletonForm />
       </div>
     );
   }

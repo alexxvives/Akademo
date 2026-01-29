@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { SkeletonList } from '@/components/ui/SkeletonLoader';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
@@ -206,7 +206,7 @@ export default function AdminStreamsPage() {
   };
 
   if (loading) {
-    return <SkeletonList />;
+    return <SkeletonList rows={8} />;
   }
 
   return (

@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { generateDemoPendingPayments, generateDemoPaymentHistory } from '@/lib/demo-data';
 import { SkeletonTable } from '@/components/ui/SkeletonLoader';
@@ -207,7 +207,7 @@ export default function AcademyPaymentsPage() {
   );
 
   if (loading) {
-    return <SkeletonTable />;
+    return <SkeletonTable rows={10} cols={6} />;
   }
 
   return (

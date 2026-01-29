@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { generateDemoTeachers } from '@/lib/demo-data';
-import { LoaderPinwheelIcon } from '@/components/ui/LoaderPinwheelIcon';
+import { SkeletonList } from '@/components/ui/SkeletonLoader';
 
 interface Teacher {
   id: string;
@@ -198,20 +198,8 @@ export default function AcademyTeachers() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const loaderRef = useRef<any>(null);
-
-  useEffect(() => {
-    if (loading) {
-      loaderRef.current?.startAnimation();
-    }
-  }, [loading]);
-
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <LoaderPinwheelIcon ref={loaderRef} size={32} className="text-black" />
-      </div>
-    );
+    return <SkeletonList rows={10} />;
   }
 
   return (

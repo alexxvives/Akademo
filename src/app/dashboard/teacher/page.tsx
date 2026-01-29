@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { SkeletonDashboard } from '@/components/ui/SkeletonLoader';
 import { useTeacherDashboard } from '@/hooks/useTeacherDashboard';

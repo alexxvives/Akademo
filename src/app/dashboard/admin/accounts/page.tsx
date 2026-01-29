@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { SkeletonList } from '@/components/ui/SkeletonLoader';
 
@@ -189,7 +189,7 @@ export default function AccountsPage() {
   };
 
   if (loading) {
-    return <SkeletonList />;
+    return <SkeletonList rows={10} />;
   }
 
   return (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { useAuth } from '@/hooks/useAuth';
 import { CctvIcon, CctvIconHandle } from '@/components/icons/CctvIcon';
@@ -76,12 +76,6 @@ export default function ProfilePage() {
     defaultWatermarkIntervalMins: 5,
     defaultMaxWatchTimeMultiplier: 2.0
   });
-
-  useEffect(() => {
-    if (loading) {
-      loaderRef.current?.startAnimation();
-    }
-  }, [loading]);
 
   useEffect(() => {
     loadData();

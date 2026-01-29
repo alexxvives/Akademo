@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
 import { generateDemoStreams } from '@/lib/demo-data';
-import { LoaderPinwheelIcon } from '@/components/ui/LoaderPinwheelIcon';
+import { SkeletonList } from '@/components/ui/SkeletonLoader';
 
 interface Stream {
   id: string;
@@ -42,13 +42,6 @@ export default function AcademyStreamsPage() {
   const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
   const [editingTitleValue, setEditingTitleValue] = useState<string>('');
   const [deletingStreamId, setDeletingStreamId] = useState<string | null>(null);
-  const loaderRef = useRef<any>(null);
-
-  useEffect(() => {
-    if (loading) {
-      loaderRef.current?.startAnimation();
-    }
-  }, [loading]);
 
   useEffect(() => {
     loadAcademyInfo();
@@ -295,9 +288,7 @@ export default function AcademyStreamsPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center min-h-[400px]">
-          <LoaderPinwheelIcon ref={loaderRef} size={32} className="text-black" />
-        </div>
+        <SkeletonList rows={8} />
       ) : (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
           <div className="overflow-x-auto max-h-[750px] overflow-y-auto">
