@@ -1,8 +1,9 @@
 ﻿'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { generateDemoPendingPayments, generateDemoPaymentHistory } from '@/lib/demo-data';
+import { LoaderPinwheelIcon } from '@/components/ui/LoaderPinwheelIcon';
 
 interface PendingPayment {
   enrollmentId: string;
@@ -46,6 +47,13 @@ export default function AcademyPaymentsPage() {
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
   const [reversingIds, setReversingIds] = useState<Set<string>>(new Set());
   const [paymentStatus, setPaymentStatus] = useState<string>('PAID');
+  const loaderRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (loading) {
+      loaderRef.current?.startAnimation();
+    }
+  }, [loading]);
 
   useEffect(() => {
     loadData();
@@ -207,9 +215,8 @@ export default function AcademyPaymentsPage() {
 
   if (loading) {
     return (
-      <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
-        <div className="w-8 h-8 border-4 border-gray-300 border-t-gray-900 rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-gray-600">Cargando pagos...</p>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <LoaderPinwheelIcon ref={loaderRef} size={32} className="text-black" />
       </div>
     );
   }
@@ -370,12 +377,12 @@ export default function AcademyPaymentsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {history.paymentStatus === 'PAID' ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          Confirmado
+                        <span className="text-xs font-bold text-green-600 uppercase">
+                          CONFIRMADO
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                          Denegado
+                        <span className="text-xs font-bold text-red-600 uppercase">
+                          DENEGADO
                         </span>
                       )}
                     </td>
@@ -392,7 +399,7 @@ export default function AcademyPaymentsPage() {
                       <button
                         onClick={() => handleReversePayment(history.enrollmentId, history.paymentStatus)}
                         disabled={reversingIds.has(history.enrollmentId) || paymentStatus === 'NOT PAID'}
-                        className="text-sm text-accent-600 hover:text-accent-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="text-sm text-red-600 hover:text-red-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {reversingIds.has(history.enrollmentId) ? 'Procesando...' : 'Revertir'}
                       </button>

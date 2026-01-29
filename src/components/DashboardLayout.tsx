@@ -120,7 +120,9 @@ export default function DashboardLayout({
       const pendingRes = await apiClient('/enrollments/pending');
       const pendingResult = await pendingRes.json();
       if (pendingResult.success && Array.isArray(pendingResult.data)) {
-        setPendingEnrollmentsCount(pendingResult.data.length);
+        // Filter only PENDING status enrollments
+        const pendingOnly = pendingResult.data.filter((e: any) => e.status === 'PENDING');
+        setPendingEnrollmentsCount(pendingOnly.length);
       }
     } catch (error) {
       console.error('Failed to load academy:', error);

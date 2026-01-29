@@ -286,6 +286,10 @@ export default function AcademyTeachers() {
                             </svg>
                           )}
                         </button>
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-gray-900">{teacher.name}</div>
+                          <div className="text-sm text-gray-500">{teacher.email}</div>
+                        </div>
                         <button
                           onClick={() => openEditModal(teacher)}
                           disabled={paymentStatus === 'NOT PAID'}
@@ -296,10 +300,6 @@ export default function AcademyTeachers() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                           </svg>
                         </button>
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{teacher.name}</div>
-                          <div className="text-sm text-gray-500">{teacher.email}</div>
-                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
