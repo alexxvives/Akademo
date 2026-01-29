@@ -690,11 +690,12 @@ export default function ProfilePage() {
             {/* Stripe */}
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
                 const updated = formData.allowedPaymentMethods.includes('stripe')
                   ? formData.allowedPaymentMethods.filter(m => m !== 'stripe')
                   : [...formData.allowedPaymentMethods, 'stripe'];
                 setFormData({ ...formData, allowedPaymentMethods: updated });
+                await handleSettingChange('allowedPaymentMethods', JSON.stringify(updated));
               }}
               className={`p-4 border-2 rounded-xl transition-all duration-200 text-left ${
                 formData.allowedPaymentMethods.includes('stripe')
@@ -730,11 +731,12 @@ export default function ProfilePage() {
             {/* Cash */}
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
                 const updated = formData.allowedPaymentMethods.includes('cash')
                   ? formData.allowedPaymentMethods.filter(m => m !== 'cash')
                   : [...formData.allowedPaymentMethods, 'cash'];
                 setFormData({ ...formData, allowedPaymentMethods: updated });
+                await handleSettingChange('allowedPaymentMethods', JSON.stringify(updated));
               }}
               className={`p-4 border-2 rounded-xl transition-all duration-200 text-left ${
                 formData.allowedPaymentMethods.includes('cash')
@@ -770,11 +772,12 @@ export default function ProfilePage() {
             {/* Bizum */}
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
                 const updated = formData.allowedPaymentMethods.includes('bizum')
                   ? formData.allowedPaymentMethods.filter(m => m !== 'bizum')
                   : [...formData.allowedPaymentMethods, 'bizum'];
                 setFormData({ ...formData, allowedPaymentMethods: updated });
+                await handleSettingChange('allowedPaymentMethods', JSON.stringify(updated));
               }}
               className={`p-4 border-2 rounded-xl transition-all duration-200 text-left ${
                 formData.allowedPaymentMethods.includes('bizum')

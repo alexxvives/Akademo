@@ -43,6 +43,7 @@ export default function AcademyClassesPage() {
   const [zoomAccounts, setZoomAccounts] = useState<ZoomAccount[]>([]);
   const [academyName, setAcademyName] = useState<string>('');
   const [paymentStatus, setPaymentStatus] = useState<string>('NOT PAID');
+  const [allowMultipleTeachers, setAllowMultipleTeachers] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -60,6 +61,7 @@ export default function AcademyClassesPage() {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [paymentOptionsError, setPaymentOptionsError] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -82,6 +84,7 @@ export default function AcademyClassesPage() {
           setAcademyName(academy.name);
           const status = academy.paymentStatus || 'NOT PAID';
           setPaymentStatus(status);
+          setAllowMultipleTeachers(academy.allowMultipleTeachers === 1);
           
           // If NOT PAID, show demo data
           if (status === 'NOT PAID') {
@@ -156,10 +159,11 @@ export default function AcademyClassesPage() {
   const handleCreateClass = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setPaymentOptionsError(false);
     
     // Validation: at least one payment option must be selected
     if (!formData.allowMonthly && !formData.allowOneTime) {
-      setError('Debes seleccionar al menos una opción de pago');
+      setPaymentOptionsError(true);
       return;
     }
     
@@ -454,21 +458,28 @@ export default function AcademyClassesPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Profesor asignado *
+                    Profesor asignado (opcional)
                   </label>
                   <div className="relative">
                     <select
                       value={formData.teacherId}
                       onChange={(e) => setFormData({ ...formData, teacherId: e.target.value })}
-                      className="appearance-none w-full pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      required
+                      className="appearance-none w-full pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
                     >
-                      <option value="">Selecciona un profesor</option>
-                      {teachers.map((teacher) => (
-                        <option key={teacher.userId} value={teacher.userId}>
-                          {teacher.firstName} {teacher.lastName} ({teacher.email})
-                        </option>
-                      ))}
+                      <option value="">Sin profesor asignado (asignar después)</option>
+                      {teachers
+                        .filter(teacher => {
+                          // If allowMultipleTeachers is false, filter out already assigned teachers
+                          if (!allowMultipleTeachers) {
+                            return !classes.some(cls => cls.teacherId === teacher.userId);
+                          }
+                          return true;
+                        })
+                        .map((teacher) => (
+                          <option key={teacher.userId} value={teacher.userId}>
+                            {teacher.firstName} {teacher.lastName} ({teacher.email})
+                          </option>
+                        ))}
                     </select>
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -493,7 +504,7 @@ export default function AcademyClassesPage() {
               </div>
 
               {/* Pricing Options - Redesigned */}
-              <div className="space-y-4">
+              <div className={`space-y-4 p-4 rounded-xl transition-all ${paymentOptionsError ? 'border-2 border-red-500 bg-red-50' : ''}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 group relative">
                     <label className="block text-sm font-medium text-gray-900">
@@ -686,7 +697,7 @@ export default function AcademyClassesPage() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400 transition-colors"
+                  className="flex-1 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-400 transition-colors"
                 >
                   {saving ? 'Creando...' : 'Crear Clase'}
                 </button>
@@ -948,7 +959,7 @@ export default function AcademyClassesPage() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-blue-400 transition-colors"
+                  className="flex-1 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-400 transition-colors"
                 >
                   {saving ? 'Guardando...' : 'Guardar Cambios'}
                 </button>
