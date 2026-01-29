@@ -688,7 +688,7 @@ auth.post('/switch-role', async (c) => {
 
     // Get the updated user info
     const updatedUser = await c.env.DB
-      .prepare('SELECT id, email, firstName, lastName, role, monoacademy FROM User WHERE id = ?')
+      .prepare('SELECT id, email, firstName, lastName, role FROM User WHERE id = ?')
       .bind(session.id)
       .first();
 
