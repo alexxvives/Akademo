@@ -17,37 +17,50 @@ export function SkeletonText({ className = '' }: { className?: string }) {
 
 export function SkeletonTable({ rows = 5, cols = 5 }: { rows?: number; cols?: number }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      {/* Header */}
-      <div className="border-b border-gray-200 p-4 space-y-3">
-        <div className="flex items-center gap-4">
-          <SkeletonBox className="h-10 w-64" />
-          <SkeletonBox className="h-10 w-40" />
+    <div className="space-y-6">
+      {/* Page Header - Reserves space for title + subtitle to prevent layout shift */}
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <SkeletonBox className="h-8 w-56" /> {/* Title */}
+          <SkeletonBox className="h-4 w-40" /> {/* Subtitle */}
         </div>
+        <SkeletonBox className="h-10 w-32" /> {/* Optional button/filter */}
       </div>
       
-      {/* Table Header */}
-      <div className="border-b border-gray-200 bg-gray-50 p-4">
-        <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
-          {Array.from({ length: cols }).map((_, i) => (
-            <SkeletonBox key={i} className="h-4 w-20" />
-          ))}
+      {/* Table Card */}
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        {/* Header */}
+        <div className="border-b border-gray-200 p-4 space-y-3">
+          <div className="flex items-center gap-4">
+            <SkeletonBox className="h-10 w-64" />
+            <SkeletonBox className="h-10 w-40" />
+          </div>
         </div>
-      </div>
-      
-      {/* Table Rows */}
-      {Array.from({ length: rows }).map((_, rowIdx) => (
-        <div key={rowIdx} className="border-b border-gray-200 p-4">
+        
+        {/* Table Header */}
+        <div className="border-b border-gray-200 bg-gray-50 p-4">
           <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
-            {Array.from({ length: cols }).map((_, colIdx) => (
-              <SkeletonBox key={colIdx} className="h-4 w-full" />
+            {Array.from({ length: cols }).map((_, i) => (
+              <SkeletonBox key={i} className="h-4 w-20" />
             ))}
           </div>
         </div>
-      ))}
+        
+        {/* Table Rows */}
+        {Array.from({ length: rows }).map((_, rowIdx) => (
+          <div key={rowIdx} className="border-b border-gray-200 p-4">
+            <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
+              {Array.from({ length: cols }).map((_, colIdx) => (
+                <SkeletonBox key={colIdx} className="h-4 w-full" />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
+
 
 export function SkeletonCard() {
   return (
@@ -94,9 +107,12 @@ export function SkeletonStats() {
 export function SkeletonFeedback() {
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Page Header - Reserves space for title + subtitle to prevent layout shift */}
       <div className="flex items-center justify-between">
-        <SkeletonBox className="h-8 w-48" />
+        <div className="space-y-2">
+          <SkeletonBox className="h-8 w-56" /> {/* Title */}
+          <SkeletonBox className="h-4 w-40" /> {/* Subtitle */}
+        </div>
         <SkeletonBox className="h-10 w-32" />
       </div>
       
@@ -132,6 +148,15 @@ export function SkeletonFeedback() {
 export function SkeletonDashboard() {
   return (
     <div className="space-y-6">
+      {/* Page Header - Reserves space for title + subtitle to prevent layout shift */}
+      <div className="flex items-center justify-between border-b border-gray-100 pb-6">
+        <div className="space-y-2">
+          <SkeletonBox className="h-8 w-56" /> {/* Title */}
+          <SkeletonBox className="h-4 w-40" /> {/* Subtitle */}
+        </div>
+        <SkeletonBox className="h-10 w-40" /> {/* Optional filter */}
+      </div>
+      
       {/* Stats Grid */}
       <SkeletonStats />
       
@@ -169,35 +194,43 @@ export function SkeletonDashboard() {
 
 export function SkeletonList({ rows = 8 }: { rows?: number }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      {/* Header */}
-      <div className="border-b border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <SkeletonBox className="h-8 w-64" />
-          <SkeletonBox className="h-10 w-32" />
+    <div className="space-y-6">
+      {/* Page Header - Reserves space for title + subtitle to prevent layout shift */}
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <SkeletonBox className="h-8 w-56" /> {/* Title */}
+          <SkeletonBox className="h-4 w-40" /> {/* Subtitle */}
         </div>
-        <div className="flex items-center gap-3">
-          <SkeletonBox className="h-10 w-64" />
-          <SkeletonBox className="h-10 w-40" />
-        </div>
+        <SkeletonBox className="h-10 w-32" /> {/* Optional button */}
       </div>
       
-      {/* List Items */}
-      <div className="divide-y divide-gray-200">
-        {Array.from({ length: rows }).map((_, i) => (
-          <div key={i} className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4 flex-1">
-                <SkeletonBox className="h-12 w-12 rounded-lg" />
-                <div className="space-y-2 flex-1">
-                  <SkeletonBox className="h-5 w-3/4" />
-                  <SkeletonBox className="h-4 w-1/2" />
-                </div>
-              </div>
-              <SkeletonBox className="h-8 w-24" />
-            </div>
+      {/* Content Card */}
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        {/* Search/Filter Bar */}
+        <div className="border-b border-gray-200 p-6">
+          <div className="flex items-center gap-3">
+            <SkeletonBox className="h-10 w-64" />
+            <SkeletonBox className="h-10 w-40" />
           </div>
-        ))}
+        </div>
+        
+        {/* List Items */}
+        <div className="divide-y divide-gray-200">
+          {Array.from({ length: rows }).map((_, i) => (
+            <div key={i} className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4 flex-1">
+                  <SkeletonBox className="h-12 w-12 rounded-lg" />
+                  <div className="space-y-2 flex-1">
+                    <SkeletonBox className="h-5 w-3/4" />
+                    <SkeletonBox className="h-4 w-1/2" />
+                  </div>
+                </div>
+                <SkeletonBox className="h-8 w-24" />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -206,6 +239,14 @@ export function SkeletonList({ rows = 8 }: { rows?: number }) {
 export function SkeletonProfile() {
   return (
     <div className="max-w-4xl space-y-6">
+      {/* Page Header - Reserves space for title + subtitle to prevent layout shift */}
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <SkeletonBox className="h-8 w-56" /> {/* Title */}
+          <SkeletonBox className="h-4 w-40" /> {/* Subtitle */}
+        </div>
+      </div>
+      
       {/* Profile Header */}
       <div className="bg-white rounded-xl border border-gray-200 p-8">
         <div className="flex items-center gap-6 mb-6">
@@ -275,9 +316,12 @@ export function SkeletonForm() {
 export function SkeletonClasses() {
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Page Header - Reserves space for title + subtitle to prevent layout shift */}
       <div className="flex items-center justify-between">
-        <SkeletonBox className="h-10 w-48" />
+        <div className="space-y-2">
+          <SkeletonBox className="h-8 w-56" /> {/* Title */}
+          <SkeletonBox className="h-4 w-40" /> {/* Subtitle */}
+        </div>
         <SkeletonBox className="h-11 w-36" />
       </div>
       
