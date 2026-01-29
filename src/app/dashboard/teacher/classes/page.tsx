@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
 import { SkeletonClasses } from '@/components/ui/SkeletonLoader';
+import { LoaderPinwheelIcon } from '@/components/ui/LoaderPinwheelIcon';
 
 interface Class {
   id: string;
@@ -34,6 +35,7 @@ export default function TeacherClasses() {
   const [feedbackComments, setFeedbackComments] = useState<Array<{ id: string; rating: number; comment: string; lessonTitle: string; topicName: string; createdAt: string }>>([]);
   const [loadingFeedback, setLoadingFeedback] = useState(false);
   const [ratingsData, setRatingsData] = useState<{ overall: any, lessons: any[] } | null>(null);
+  const feedbackLoaderRef = useRef<any>(null);
 
   useEffect(() => {
     loadClasses();

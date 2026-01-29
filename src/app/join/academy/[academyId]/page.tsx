@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { SkeletonForm } from '@/components/ui/SkeletonLoader';
 import { useParams, useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
