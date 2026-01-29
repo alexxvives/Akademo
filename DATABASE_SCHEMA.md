@@ -93,6 +93,8 @@ Student enrollment in classes.
 | status | TEXT | YES | 'PENDING' | PENDING, APPROVED, REJECTED |
 | enrolledAt | TEXT | NO | - | When enrollment was requested |
 | approvedAt | TEXT | YES | - | When approved |
+| paymentFrequency | TEXT | NO | 'ONE_TIME' | ONE_TIME or MONTHLY |
+| nextPaymentDue | TEXT | YES | - | Next payment date (for monthly) |
 | createdAt | TEXT | NO | - | |
 | updatedAt | TEXT | NO | - | |
 

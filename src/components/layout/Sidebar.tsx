@@ -116,6 +116,8 @@ export function Sidebar({
                 src={`/api/storage/serve/${logoUrl}`}
                 alt="Academy Logo"
                 className="h-10 w-auto object-contain"
+                loading="eager"
+                fetchPriority="high"
               />
               {academyName && (
                 <span className="text-lg font-bold text-gray-400 font-[family-name:var(--font-montserrat)]">

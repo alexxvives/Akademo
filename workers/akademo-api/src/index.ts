@@ -23,6 +23,7 @@ import webhookRoutes from './routes/webhooks';
 import studentRoutes from './routes/students';
 import adminRoutes from './routes/admin';
 import paymentsRoutes from './routes/payments';
+import studentPaymentsRoutes from './routes/student-payments';
 import { zoomAccounts } from './routes/zoom-accounts';
 import { Bindings } from './types';
 
@@ -87,6 +88,7 @@ app.route('/notifications', notificationRoutes);
 app.route('/ratings', ratingRoutes);
 app.route('/analytics', analyticsRoutes);
 app.route('/payments', paymentsRoutes);
+app.route('/student-payments', studentPaymentsRoutes);
 
 // Routes - Phase 2: Advanced Features
 app.route('/live', liveRoutes);
@@ -95,4 +97,88 @@ app.route('/storage', storageRoutes);
 app.route('/webhooks', webhookRoutes);
 app.route('/zoom-accounts', zoomAccounts);
 
-export default app;
+// Cron trigger handler for monthly payment generation
+async function handleScheduled(env: Bindings) {
+  console.log('[Cron] Monthly payment generation triggered at', new Date().toISOString());
+
+  try {
+    // Find all active monthly cash/bizum enrollments that are due for payment
+    const enrollments = await env.DB.prepare(`
+      SELECT 
+        e.id as enrollmentId,
+        e.classId,
+        e.userId,
+        e.nextPaymentDue,
+        c.monthlyPrice,
+        c.name as className,
+        c.academyId,
+        u.firstName,
+        u.lastName,
+        u.email
+      FROM ClassEnrollment e
+      JOIN Class c ON e.classId = c.id
+      JOIN User u ON e.userId = u.id
+      WHERE e.paymentFrequency = 'MONTHLY'
+      AND e.paymentMethod IN ('cash', 'bizum')
+      AND e.paymentStatus = 'PAID'
+      AND date(e.nextPaymentDue) <= date('now')
+      AND c.allowMonthly = 1
+    `).all();
+
+    console.log(`[Cron] Found ${enrollments.results.length} enrollments due for payment`);
+
+    let created = 0;
+    for (const enrollment of enrollments.results as any[]) {
+      try {
+        // Create pending payment record
+        await env.DB.prepare(`
+          INSERT INTO Payment (
+            id, type, payerId, payerType, payerName, payerEmail,
+            receiverId, amount, currency, status, paymentMethod,
+            classId, description, metadata, createdAt, updatedAt
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+        `).bind(
+          crypto.randomUUID(),
+          'STUDENT_TO_ACADEMY',
+          enrollment.userId,
+          'STUDENT',
+          `${enrollment.firstName} ${enrollment.lastName}`,
+          enrollment.email,
+          enrollment.academyId,
+          enrollment.monthlyPrice,
+          'EUR',
+          'PENDING',
+          enrollment.paymentMethod,
+          enrollment.classId,
+          `Pago mensual - ${enrollment.className}`,
+          JSON.stringify({ generatedBySystem: true, dueDate: enrollment.nextPaymentDue }),
+        ).run();
+
+        // Update next payment due date (add 1 month)
+        await env.DB.prepare(`
+          UPDATE ClassEnrollment
+          SET nextPaymentDue = date(nextPaymentDue, '+1 month'),
+              updatedAt = datetime('now')
+          WHERE id = ?
+        `).bind(enrollment.enrollmentId).run();
+
+        created++;
+        console.log(`[Cron] Created pending payment for enrollment ${enrollment.enrollmentId}`);
+      } catch (error) {
+        console.error(`[Cron] Error creating payment for enrollment ${enrollment.enrollmentId}:`, error);
+      }
+    }
+
+    console.log(`[Cron] Successfully created ${created} pending payments`);
+  } catch (error) {
+    console.error('[Cron] Error in monthly payment generation:', error);
+  }
+}
+
+// Export handler that supports both HTTP requests and scheduled events
+export default {
+  fetch: app.fetch,
+  scheduled: async (event: any, env: Bindings, ctx: any) => {
+    await handleScheduled(env);
+  },
+};

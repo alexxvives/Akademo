@@ -25,6 +25,10 @@ BUNNY_STREAM_LIBRARY_ID = "571240"
 BUNNY_STREAM_CDN_HOSTNAME = "vz-bb8d111e-8eb.b-cdn.net"
 FRONTEND_URL = "https://akademo-edu.com"
 
+# Cron Triggers - Monthly payment generation
+[triggers]
+crons = ["0 0 1 * *"]  # Run at midnight on 1st of each month
+
 # Secrets (configured via: wrangler secret put NAME)
 # Bunny Stream (for video hosting)
 # BUNNY_STREAM_API_KEY - Configured
@@ -38,3 +42,7 @@ FRONTEND_URL = "https://akademo-edu.com"
 
 # Email verification
 # RESEND_API_KEY - Configured
+
+# Stripe (for payments)
+# STRIPE_SECRET_KEY - Configured
+# STRIPE_WEBHOOK_SECRET - Configured

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { generateDemoPendingPayments, generateDemoPaymentHistory } from '@/lib/demo-data';
 import { SkeletonTable } from '@/components/ui/SkeletonLoader';
+import { StudentPaymentDetailModal } from '@/components/shared';
 
 interface PendingPayment {
   enrollmentId: string;
@@ -25,10 +26,12 @@ interface PendingPayment {
 
 interface PaymentHistory {
   enrollmentId: string;
+  studentId: string;
   studentFirstName: string;
   studentLastName: string;
   studentEmail: string;
   className: string;
+  classId: string;
   paymentAmount: number;
   currency: string;
   paymentMethod: string;
@@ -43,10 +46,60 @@ export default function AcademyPaymentsPage() {
   const [paymentHistory, setPaymentHistory] = useState<PaymentHistory[]>([]);
   const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
   const [selectedClass, setSelectedClass] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
   const [reversingIds, setReversingIds] = useState<Set<string>>(new Set());
   const [paymentStatus, setPaymentStatus] = useState<string>('PAID');
+  const [selectedStudent, setSelectedStudent] = useState<{
+    studentId: string;
+    name: string;
+    email: string;
+    className: string;
+    enrollmentDate: string;
+    paymentData?: any;
+  } | null>(null);
+
+  const showStudentPaymentHistory = async (studentId: string, studentName: string, studentEmail: string, className: string, enrollmentDate: string, classId: string) => {
+    try {
+      // Fetch real payment history from API
+      const res = await apiClient(`/student-payments/${studentId}/class/${classId}`);
+      const result = await res.json();
+      
+      if (result.success && result.data) {
+        setSelectedStudent({
+          studentId,
+          name: studentName,
+          email: studentEmail,
+          className,
+          enrollmentDate,
+          paymentData: result.data, // Include the fetched payment data
+        });
+      } else {
+        console.error('Failed to fetch payment history:', result.error);
+        // Still open modal even if fetch fails, will show empty state
+        setSelectedStudent({
+          studentId,
+          name: studentName,
+          email: studentEmail,
+          className,
+          enrollmentDate,
+          paymentData: null,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching payment history:', error);
+      // Still open modal on error, will show empty state
+      setSelectedStudent({
+        studentId,
+        name: studentName,
+        email: studentEmail,
+        className,
+        enrollmentDate,
+        paymentData: null,
+      });
+    }
+  };
 
   useEffect(() => {
     loadData();
@@ -202,9 +255,21 @@ export default function AcademyPaymentsPage() {
     }).format(amount);
   };
   
-  const filteredPaymentHistory = paymentHistory.filter(p => 
-    selectedClass === 'all' || p.className === classes.find(c => c.id === selectedClass)?.name
-  );
+  const filteredPendingPayments = pendingPayments.filter(p => {
+    const matchesSearch = searchQuery === '' || 
+      `${p.studentFirstName} ${p.studentLastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.studentEmail.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesClass = selectedClass === 'all' || p.classId === selectedClass;
+    return matchesSearch && matchesClass;
+  });
+
+  const filteredPaymentHistory = paymentHistory.filter(p => {
+    const matchesSearch = searchQuery === '' || 
+      `${p.studentFirstName} ${p.studentLastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.studentEmail.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesClass = selectedClass === 'all' || p.className === classes.find(c => c.id === selectedClass)?.name;
+    return matchesSearch && matchesClass;
+  });
 
   if (loading) {
     return <SkeletonTable rows={10} cols={6} />;
@@ -219,37 +284,54 @@ export default function AcademyPaymentsPage() {
             Revisa y confirma los pagos en efectivo de los estudiantes
           </p>
         </div>
-        {/* Class Filter */}
-        {classes.length > 0 && (
+        <div className="flex items-center gap-3">
+          {/* Search Bar */}
           <div className="relative">
-            <select
-              value={selectedClass}
-              onChange={(e) => setSelectedClass(e.target.value)}
-              className="appearance-none w-56 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-            >
-              <option value="all">Todas las clases</option>
-              {classes.map((cls) => (
-                <option key={cls.id} value={cls.id}>{cls.name}</option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
+            <input
+              type="text"
+              id="student-search"
+              name="studentSearch"
+              placeholder="Buscar estudiante..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-64 pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+            />
+            <svg className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
           </div>
-        )}
+          {/* Class Filter */}
+          {classes.length > 0 && (
+            <div className="relative">
+              <select
+                value={selectedClass}
+                onChange={(e) => setSelectedClass(e.target.value)}
+                className="appearance-none w-56 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              >
+                <option value="all">Todas las clases</option>
+                {classes.map((cls) => (
+                  <option key={cls.id} value={cls.id}>{cls.name}</option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Pending Payments List */}
-      {pendingPayments.length === 0 ? (
+      {filteredPendingPayments.length === 0 ? (
         <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
           <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay pagos pendientes</h3>
-          <p className="text-gray-500">Los pagos en efectivo aparecerán aquí cuando los estudiantes los registren</p>
+          <p className="text-gray-500">{searchQuery || selectedClass !== 'all' ? 'No se encontraron pagos con los filtros aplicados' : 'Los pagos en efectivo aparecerán aquí cuando los estudiantes los registren'}</p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {pendingPayments.map((payment) => (
+        <div className="max-h-[600px] overflow-y-auto pr-2 space-y-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400">
+          {filteredPendingPayments.map((payment) => (
             <div key={payment.enrollmentId} className="bg-white border-2 border-gray-200 rounded-xl p-4 hover:border-gray-300 transition-all">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
@@ -296,6 +378,22 @@ export default function AcademyPaymentsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3 flex-shrink-0">
+                  <button
+                    onClick={() => showStudentPaymentHistory(
+                      payment.studentId,
+                      `${payment.studentFirstName} ${payment.studentLastName}`,
+                      payment.studentEmail,
+                      payment.className,
+                      payment.enrolledAt,
+                      payment.classId
+                    )}
+                    className="px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium text-sm transition-all flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    Ver historial
+                  </button>
                   <button
                     onClick={() => handleReject(payment.enrollmentId)}
                     disabled={processingIds.has(payment.enrollmentId) || paymentStatus === 'NOT PAID'}
@@ -386,11 +484,20 @@ export default function AcademyPaymentsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <button
-                        onClick={() => handleReversePayment(history.enrollmentId, history.paymentStatus)}
-                        disabled={reversingIds.has(history.enrollmentId) || paymentStatus === 'NOT PAID'}
-                        className="text-sm text-red-600 hover:text-red-700 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => showStudentPaymentHistory(
+                          (history as any).studentId || '',
+                          `${history.studentFirstName} ${history.studentLastName}`,
+                          history.studentEmail,
+                          history.className,
+                          history.approvedAt,
+                          history.classId
+                        )}
+                        className="text-sm text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1.5"
                       >
-                        {reversingIds.has(history.enrollmentId) ? 'Procesando...' : 'Revertir'}
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                        Ver historial
                       </button>
                     </td>
                   </tr>
@@ -399,6 +506,22 @@ export default function AcademyPaymentsPage() {
             </table>
           </div>
         </div>
+      )}
+
+      {/* Student Payment Detail Modal */}
+      {selectedStudent && (
+        <StudentPaymentDetailModal
+          isOpen={selectedStudent !== null}
+          onClose={() => setSelectedStudent(null)}
+          studentName={selectedStudent.name}
+          studentEmail={selectedStudent.email}
+          className={selectedStudent.className}
+          payments={selectedStudent.paymentData?.payments || []}
+          totalPaid={selectedStudent.paymentData?.totalPaid || 0}
+          totalDue={selectedStudent.paymentData?.totalDue || 0}
+          paymentFrequency={selectedStudent.paymentData?.paymentFrequency || 'ONE_TIME'}
+          enrollmentDate={selectedStudent.paymentData?.enrollmentDate || selectedStudent.enrollmentDate}
+        />
       )}
     </div>
   );

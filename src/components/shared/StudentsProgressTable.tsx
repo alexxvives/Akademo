@@ -76,13 +76,15 @@ export function StudentsProgressTable({
   };
 
   const filteredStudents = useMemo(() => {
-    return students.filter(student => {
-      const matchesSearch = student.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                           student.email.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesClass = selectedClass === 'all' || student.classId === selectedClass;
-      
-      return matchesSearch && matchesClass;
-    });
+    return students
+      .filter(student => {
+        const matchesSearch = student.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                             student.email.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesClass = selectedClass === 'all' || student.classId === selectedClass;
+        
+        return matchesSearch && matchesClass;
+      })
+      .sort((a, b) => b.totalWatchTime - a.totalWatchTime); // Sort by highest tiempo total first
   }, [students, searchQuery, selectedClass]);
 
   const chartData = useMemo(() => {

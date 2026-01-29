@@ -355,8 +355,9 @@ webhooks.post('/stripe', async (c) => {
     console.log('[Stripe Webhook] Payment data:', data);
     console.log('[Stripe Webhook] Metadata:', data.metadata);
 
+    // Handle all 5 Stripe webhook events
     if (event === 'checkout.session.completed') {
-      const { id: sessionId, metadata, payment_status, customer_details, subscription } = data;
+      const { id: sessionId, metadata, payment_status, customer_details, subscription, amount_total } = data;
 
       console.log('[Stripe Webhook] Session ID:', sessionId);
       console.log('[Stripe Webhook] Payment status:', payment_status);
@@ -385,19 +386,64 @@ webhooks.post('/stripe', async (c) => {
 
           console.log('[Stripe Webhook] Processing enrollment payment for:', enrollmentId);
 
-          const result = await c.env.DB
+          // Get enrollment details for payment record
+          const enrollment = await c.env.DB
             .prepare(`
-              UPDATE ClassEnrollment 
-              SET paymentStatus = 'PAID',
-                  paymentMethod = 'stripe',
-                  stripeSubscriptionId = ?
-              WHERE id = ?
+              SELECT e.*, c.name as className, c.academyId, u.firstName, u.lastName, u.email
+              FROM ClassEnrollment e
+              JOIN Class c ON e.classId = c.id
+              JOIN User u ON e.userId = u.id
+              WHERE e.id = ?
             `)
-            .bind(subscription || null, enrollmentId)
-            .run();
+            .bind(enrollmentId)
+            .first() as any;
 
-          console.log('[Stripe Webhook] Update result:', JSON.stringify(result));
-          console.log('[Stripe Webhook] Payment confirmed for enrollment:', enrollmentId);
+          if (enrollment) {
+            // Update enrollment
+            await c.env.DB
+              .prepare(`
+                UPDATE ClassEnrollment 
+                SET paymentStatus = 'PAID',
+                    paymentMethod = 'stripe',
+                    stripeSubscriptionId = ?,
+                    updatedAt = datetime('now')
+                WHERE id = ?
+              `)
+              .bind(subscription || null, enrollmentId)
+              .run();
+
+            // Create payment history record
+            await c.env.DB
+              .prepare(`
+                INSERT INTO Payment (
+                  id, type, payerId, payerType, payerName, payerEmail,
+                  receiverId, amount, currency, status, stripePaymentId,
+                  stripeCheckoutSessionId, paymentMethod, classId,
+                  description, metadata, createdAt, completedAt, updatedAt
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'), datetime('now'))
+              `)
+              .bind(
+                crypto.randomUUID(),
+                'STUDENT_TO_ACADEMY',
+                enrollment.userId,
+                'STUDENT',
+                `${enrollment.firstName} ${enrollment.lastName}`,
+                enrollment.email,
+                enrollment.academyId,
+                amount_total ? amount_total / 100 : 0, // Stripe uses cents
+                'EUR',
+                'COMPLETED',
+                sessionId,
+                sessionId,
+                'stripe',
+                enrollment.classId,
+                `Pago de matrícula - ${enrollment.className}`,
+                JSON.stringify({ subscriptionId: subscription, source: 'stripe_checkout' })
+              )
+              .run();
+
+            console.log('[Stripe Webhook] Payment confirmed and recorded for enrollment:', enrollmentId);
+          }
         } else {
           // No metadata - assume academy activation, look up by customer email
           const customerEmail = customer_details?.email;
@@ -431,6 +477,167 @@ webhooks.post('/stripe', async (c) => {
               console.log('[Stripe Webhook] No unpaid academy found for email:', customerEmail);
             }
           }
+        }
+      }
+    } else if (event === 'invoice.payment_succeeded') {
+      // Recurring payment succeeded - add to payment history
+      const { subscription, customer_email, amount_paid, lines } = data;
+      console.log('[Stripe Webhook] Recurring payment succeeded for subscription:', subscription);
+
+      // Find enrollment by subscription ID
+      const enrollment = await c.env.DB
+        .prepare(`
+          SELECT e.*, c.name as className, c.academyId, u.firstName, u.lastName, u.email
+          FROM ClassEnrollment e
+          JOIN Class c ON e.classId = c.id
+          JOIN User u ON e.userId = u.id
+          WHERE e.stripeSubscriptionId = ?
+        `)
+        .bind(subscription)
+        .first() as any;
+
+      if (enrollment) {
+        // Add to payment history
+        await c.env.DB
+          .prepare(`
+            INSERT INTO Payment (
+              id, type, payerId, payerType, payerName, payerEmail,
+              receiverId, amount, currency, status, stripePaymentId,
+              paymentMethod, classId, description, metadata,
+              createdAt, completedAt, updatedAt
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'), datetime('now'))
+          `)
+          .bind(
+            crypto.randomUUID(),
+            'STUDENT_TO_ACADEMY',
+            enrollment.userId,
+            'STUDENT',
+            `${enrollment.firstName} ${enrollment.lastName}`,
+            enrollment.email,
+            enrollment.academyId,
+            amount_paid ? amount_paid / 100 : 0,
+            'EUR',
+            'COMPLETED',
+            data.id,
+            'stripe',
+            enrollment.classId,
+            `Pago mensual - ${enrollment.className}`,
+            JSON.stringify({ subscriptionId: subscription, source: 'stripe_recurring' })
+          )
+          .run();
+
+        console.log('[Stripe Webhook] Recurring payment recorded for enrollment:', enrollment.id);
+      }
+    } else if (event === 'invoice.payment_failed') {
+      // Recurring payment failed - create pending payment
+      const { subscription, customer_email, amount_due } = data;
+      console.log('[Stripe Webhook] Recurring payment failed for subscription:', subscription);
+
+      const enrollment = await c.env.DB
+        .prepare(`
+          SELECT e.*, c.name as className, c.monthlyPrice, c.academyId, u.firstName, u.lastName, u.email
+          FROM ClassEnrollment e
+          JOIN Class c ON e.classId = c.id
+          JOIN User u ON e.userId = u.id
+          WHERE e.stripeSubscriptionId = ?
+        `)
+        .bind(subscription)
+        .first() as any;
+
+      if (enrollment) {
+        // Create pending payment
+        await c.env.DB
+          .prepare(`
+            INSERT INTO Payment (
+              id, type, payerId, payerType, payerName, payerEmail,
+              receiverId, amount, currency, status, paymentMethod,
+              classId, description, metadata, createdAt, updatedAt
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+          `)
+          .bind(
+            crypto.randomUUID(),
+            'STUDENT_TO_ACADEMY',
+            enrollment.userId,
+            'STUDENT',
+            `${enrollment.firstName} ${enrollment.lastName}`,
+            enrollment.email,
+            enrollment.academyId,
+            amount_due ? amount_due / 100 : enrollment.monthlyPrice,
+            'EUR',
+            'PENDING',
+            'stripe',
+            enrollment.classId,
+            `Pago mensual fallido - ${enrollment.className}`,
+            JSON.stringify({ subscriptionId: subscription, reason: 'payment_failed' })
+          )
+          .run();
+
+        console.log('[Stripe Webhook] Pending payment created for failed recurring payment');
+      }
+    } else if (event === 'customer.subscription.deleted') {
+      // Subscription cancelled - mark enrollment
+      const subscriptionId = data.id;
+      console.log('[Stripe Webhook] Subscription cancelled:', subscriptionId);
+
+      await c.env.DB
+        .prepare(`
+          UPDATE ClassEnrollment
+          SET status = 'CANCELLED',
+              updatedAt = datetime('now')
+          WHERE stripeSubscriptionId = ?
+        `)
+        .bind(subscriptionId)
+        .run();
+
+      console.log('[Stripe Webhook] Enrollment cancelled for subscription:', subscriptionId);
+    } else if (event === 'payment_intent.succeeded') {
+      // One-time payment succeeded (for non-recurring enrollments)
+      const { id: paymentIntentId, amount, metadata } = data;
+      console.log('[Stripe Webhook] Payment intent succeeded:', paymentIntentId);
+
+      if (metadata?.enrollmentId) {
+        const enrollment = await c.env.DB
+          .prepare(`
+            SELECT e.*, c.name as className, c.academyId, u.firstName, u.lastName, u.email
+            FROM ClassEnrollment e
+            JOIN Class c ON e.classId = c.id
+            JOIN User u ON e.userId = u.id
+            WHERE e.id = ?
+          `)
+          .bind(metadata.enrollmentId)
+          .first() as any;
+
+        if (enrollment) {
+          // Add to payment history
+          await c.env.DB
+            .prepare(`
+              INSERT INTO Payment (
+                id, type, payerId, payerType, payerName, payerEmail,
+                receiverId, amount, currency, status, stripePaymentId,
+                paymentMethod, classId, description, metadata,
+                createdAt, completedAt, updatedAt
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'), datetime('now'))
+            `)
+            .bind(
+              crypto.randomUUID(),
+              'STUDENT_TO_ACADEMY',
+              enrollment.userId,
+              'STUDENT',
+              `${enrollment.firstName} ${enrollment.lastName}`,
+              enrollment.email,
+              enrollment.academyId,
+              amount ? amount / 100 : 0,
+              'EUR',
+              'COMPLETED',
+              paymentIntentId,
+              'stripe',
+              enrollment.classId,
+              `Pago único - ${enrollment.className}`,
+              JSON.stringify({ paymentIntentId, source: 'stripe_payment_intent' })
+            )
+            .run();
+
+          console.log('[Stripe Webhook] One-time payment recorded for enrollment:', enrollment.id);
         }
       }
     }

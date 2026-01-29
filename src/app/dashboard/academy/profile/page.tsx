@@ -448,10 +448,10 @@ export default function ProfilePage() {
 
               {/* Logo Upload */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2 text-center">
                   Logo de la academia (SVG)
                 </label>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col items-center gap-3">
                   {academy.logoUrl ? (
                     <div className="w-12 h-12 bg-gray-50 border border-gray-200 rounded-lg p-1.5 flex items-center justify-center flex-shrink-0">
                       <img src={`/api/storage/serve/${academy.logoUrl}`} alt="Logo" className="w-full h-full object-contain" />
@@ -463,30 +463,28 @@ export default function ProfilePage() {
                       </svg>
                     </div>
                   )}
-                  <div className="flex-1">
-                    <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all font-medium text-sm">
-                      <input
-                        type="file"
-                        accept="image/svg+xml"
-                        onChange={handleLogoUpload}
-                        disabled={uploadingLogo}
-                        className="hidden"
-                      />
-                      {uploadingLogo ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-600 border-t-transparent"></div>
-                          Subiendo...
-                        </>
-                      ) : (
-                        <>
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                          </svg>
-                          {academy.logoUrl ? 'Cambiar' : 'Subir logo'}
-                        </>
-                      )}
-                    </label>
-                  </div>
+                  <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all font-medium text-sm">
+                    <input
+                      type="file"
+                      accept="image/svg+xml"
+                      onChange={handleLogoUpload}
+                      disabled={uploadingLogo}
+                      className="hidden"
+                    />
+                    {uploadingLogo ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-600 border-t-transparent"></div>
+                        Subiendo...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        {academy.logoUrl ? 'Cambiar' : 'Subir logo'}
+                      </>
+                    )}
+                  </label>
                 </div>
               </div>
             </div>
@@ -588,7 +586,7 @@ export default function ProfilePage() {
         </div>
 
         <div className="px-8 py-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Feedback Toggle */}
             <div className="lg:col-span-1">
               <label className="block text-sm font-medium text-gray-900 mb-2">
@@ -690,75 +688,132 @@ export default function ProfilePage() {
         <div className="px-8 py-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Stripe */}
-            <div className="flex items-start gap-3 p-4 border border-gray-200 rounded-lg hover:border-brand-500 transition-colors">
-              <input
-                type="checkbox"
-                id="payment-stripe"
-                checked={formData.allowedPaymentMethods.includes('stripe')}
-                onChange={(e) => {
-                  const updated = e.target.checked
-                    ? [...formData.allowedPaymentMethods, 'stripe']
-                    : formData.allowedPaymentMethods.filter(m => m !== 'stripe');
-                  setFormData({ ...formData, allowedPaymentMethods: updated });
-                }}
-                className="mt-1 h-4 w-4 text-brand-600 focus:ring-brand-500 border-gray-300 rounded"
-              />
-              <div className="flex-1">
-                <label htmlFor="payment-stripe" className="block text-sm font-medium text-gray-900 cursor-pointer">
-                  Stripe
-                </label>
-                <p className="text-xs text-gray-500 mt-1">Tarjetas de crédito/débito</p>
+            <button
+              type="button"
+              onClick={() => {
+                const updated = formData.allowedPaymentMethods.includes('stripe')
+                  ? formData.allowedPaymentMethods.filter(m => m !== 'stripe')
+                  : [...formData.allowedPaymentMethods, 'stripe'];
+                setFormData({ ...formData, allowedPaymentMethods: updated });
+              }}
+              className={`p-4 border-2 rounded-xl transition-all duration-200 text-left ${
+                formData.allowedPaymentMethods.includes('stripe')
+                  ? 'border-brand-600 bg-brand-50 shadow-md'
+                  : 'border-gray-200 bg-white hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                  formData.allowedPaymentMethods.includes('stripe') ? 'border-brand-600 bg-brand-600' : 'border-gray-300'
+                }`}>
+                  {formData.allowedPaymentMethods.includes('stripe') && (
+                    <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <div className={`text-sm font-semibold mb-1 ${
+                    formData.allowedPaymentMethods.includes('stripe') ? 'text-brand-900' : 'text-gray-900'
+                  }`}>
+                    Stripe
+                  </div>
+                  <p className={`text-xs ${
+                    formData.allowedPaymentMethods.includes('stripe') ? 'text-brand-700' : 'text-gray-500'
+                  }`}>
+                    Tarjetas de crédito/débito
+                  </p>
+                </div>
               </div>
-            </div>
+            </button>
 
             {/* Cash */}
-            <div className="flex items-start gap-3 p-4 border border-gray-200 rounded-lg hover:border-brand-500 transition-colors">
-              <input
-                type="checkbox"
-                id="payment-cash"
-                checked={formData.allowedPaymentMethods.includes('cash')}
-                onChange={(e) => {
-                  const updated = e.target.checked
-                    ? [...formData.allowedPaymentMethods, 'cash']
-                    : formData.allowedPaymentMethods.filter(m => m !== 'cash');
-                  setFormData({ ...formData, allowedPaymentMethods: updated });
-                }}
-                className="mt-1 h-4 w-4 text-brand-600 focus:ring-brand-500 border-gray-300 rounded"
-              />
-              <div className="flex-1">
-                <label htmlFor="payment-cash" className="block text-sm font-medium text-gray-900 cursor-pointer">
-                  Efectivo
-                </label>
-                <p className="text-xs text-gray-500 mt-1">Pago en persona</p>
+            <button
+              type="button"
+              onClick={() => {
+                const updated = formData.allowedPaymentMethods.includes('cash')
+                  ? formData.allowedPaymentMethods.filter(m => m !== 'cash')
+                  : [...formData.allowedPaymentMethods, 'cash'];
+                setFormData({ ...formData, allowedPaymentMethods: updated });
+              }}
+              className={`p-4 border-2 rounded-xl transition-all duration-200 text-left ${
+                formData.allowedPaymentMethods.includes('cash')
+                  ? 'border-green-500 bg-green-50 shadow-md'
+                  : 'border-gray-200 bg-white hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                  formData.allowedPaymentMethods.includes('cash') ? 'border-green-500 bg-green-500' : 'border-gray-300'
+                }`}>
+                  {formData.allowedPaymentMethods.includes('cash') && (
+                    <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <div className={`text-sm font-semibold mb-1 ${
+                    formData.allowedPaymentMethods.includes('cash') ? 'text-green-900' : 'text-gray-900'
+                  }`}>
+                    Efectivo
+                  </div>
+                  <p className={`text-xs ${
+                    formData.allowedPaymentMethods.includes('cash') ? 'text-green-700' : 'text-gray-500'
+                  }`}>
+                    Pago en persona
+                  </p>
+                </div>
               </div>
-            </div>
+            </button>
 
             {/* Bizum */}
-            <div className="flex items-start gap-3 p-4 border border-gray-200 rounded-lg hover:border-brand-500 transition-colors">
-              <input
-                type="checkbox"
-                id="payment-bizum"
-                checked={formData.allowedPaymentMethods.includes('bizum')}
-                onChange={(e) => {
-                  const updated = e.target.checked
-                    ? [...formData.allowedPaymentMethods, 'bizum']
-                    : formData.allowedPaymentMethods.filter(m => m !== 'bizum');
-                  setFormData({ ...formData, allowedPaymentMethods: updated });
-                }}
-                className="mt-1 h-4 w-4 text-brand-600 focus:ring-brand-500 border-gray-300 rounded"
-              />
-              <div className="flex-1">
-                <label htmlFor="payment-bizum" className="block text-sm font-medium text-gray-900 cursor-pointer">
-                  Bizum
-                </label>
-                <p className="text-xs text-gray-500 mt-1">Transferencia instantánea</p>
+            <button
+              type="button"
+              onClick={() => {
+                const updated = formData.allowedPaymentMethods.includes('bizum')
+                  ? formData.allowedPaymentMethods.filter(m => m !== 'bizum')
+                  : [...formData.allowedPaymentMethods, 'bizum'];
+                setFormData({ ...formData, allowedPaymentMethods: updated });
+              }}
+              className={`p-4 border-2 rounded-xl transition-all duration-200 text-left ${
+                formData.allowedPaymentMethods.includes('bizum')
+                  ? 'border-purple-500 bg-purple-50 shadow-md'
+                  : 'border-gray-200 bg-white hover:border-gray-300'
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                  formData.allowedPaymentMethods.includes('bizum') ? 'border-purple-500 bg-purple-500' : 'border-gray-300'
+                }`}>
+                  {formData.allowedPaymentMethods.includes('bizum') && (
+                    <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </div>
+                <div className="flex-1">
+                  <div className={`text-sm font-semibold mb-1 ${
+                    formData.allowedPaymentMethods.includes('bizum') ? 'text-purple-900' : 'text-gray-900'
+                  }`}>
+                    Bizum
+                  </div>
+                  <p className={`text-xs ${
+                    formData.allowedPaymentMethods.includes('bizum') ? 'text-purple-700' : 'text-gray-500'
+                  }`}>
+                    Transferencia instantánea
+                  </p>
+                </div>
               </div>
-            </div>
+            </button>
           </div>
 
           {formData.allowedPaymentMethods.length === 0 && (
-            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-sm text-yellow-800">⚠️ Debes seleccionar al menos un método de pago</p>
+            <div className="mt-4 flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <svg className="w-5 h-5 text-amber-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <p className="text-sm text-amber-800 font-medium">Debes seleccionar al menos un método de pago</p>
             </div>
           )}
         </div>
