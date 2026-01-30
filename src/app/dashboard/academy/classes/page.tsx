@@ -796,7 +796,13 @@ export default function AcademyClassesPage() {
                       <p>Si seleccionas ambas opciones, los estudiantes podrán elegir entre pago mensual o pago único al inscribirse.</p>
                     </div>
                   </div>
-                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">Selecciona al menos una</span>
+                  <span className={`text-xs px-2 py-1 rounded-full transition-all ${
+                    paymentOptionsError 
+                      ? 'bg-red-100 text-red-700 border-2 border-red-400 font-medium' 
+                      : 'text-gray-500 bg-gray-100'
+                  }`}>
+                    Selecciona al menos una
+                  </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

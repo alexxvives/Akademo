@@ -713,7 +713,6 @@ export default function ProfilePage() {
                   : [...currentMethods, 'stripe'];
                 console.log('[Payment Methods] Updated array:', updated);
                 console.log('[Payment Methods] Stringified:', JSON.stringify(updated));
-                setFormData({ ...formData, allowedPaymentMethods: updated });
                 await handleSettingChange('allowedPaymentMethods', JSON.stringify(updated));
               }}
               className={`p-4 border-2 rounded-xl transition-all duration-200 text-left ${
@@ -755,7 +754,6 @@ export default function ProfilePage() {
                 const updated = currentMethods.includes('cash')
                   ? currentMethods.filter(m => m !== 'cash')
                   : [...currentMethods, 'cash'];
-                setFormData({ ...formData, allowedPaymentMethods: updated });
                 await handleSettingChange('allowedPaymentMethods', JSON.stringify(updated));
               }}
               className={`p-4 border-2 rounded-xl transition-all duration-200 text-left ${
@@ -797,7 +795,6 @@ export default function ProfilePage() {
                 const updated = currentMethods.includes('bizum')
                   ? currentMethods.filter(m => m !== 'bizum')
                   : [...currentMethods, 'bizum'];
-                setFormData({ ...formData, allowedPaymentMethods: updated });
                 await handleSettingChange('allowedPaymentMethods', JSON.stringify(updated));
               }}
               className={`p-4 border-2 rounded-xl transition-all duration-200 text-left ${
