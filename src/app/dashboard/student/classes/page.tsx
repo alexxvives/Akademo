@@ -27,6 +27,11 @@ interface EnrolledClass {
   paymentMethod?: string; // 'cash', 'bizum', 'stripe'
   price?: number;
   currency?: string;
+  allowMonthly?: number;
+  allowOneTime?: number;
+  monthlyPrice?: number;
+  oneTimePrice?: number;
+  maxStudents?: number;
 }
 
 interface ActiveStream {
@@ -94,6 +99,11 @@ export default function StudentClassesPage() {
           paymentMethod: c.paymentMethod || '',
           price: c.price || 0,
           currency: c.currency || 'EUR',
+          allowMonthly: c.allowMonthly ?? 1,
+          allowOneTime: c.allowOneTime ?? 0,
+          monthlyPrice: c.monthlyPrice || 0,
+          oneTimePrice: c.oneTimePrice || 0,
+          maxStudents: c.maxStudents,
         }));
         setEnrolledClasses(classes);
         if (classes.length > 0) {
@@ -406,6 +416,12 @@ export default function StudentClassesPage() {
         currency={payingClass?.currency || 'EUR'}
         currentPaymentStatus={payingClass?.paymentStatus || 'PENDING'}
         currentPaymentMethod={payingClass?.paymentMethod || ''}
+        allowMonthly={payingClass?.allowMonthly === 1}
+        allowOneTime={payingClass?.allowOneTime === 1}
+        monthlyPrice={payingClass?.monthlyPrice || 0}
+        oneTimePrice={payingClass?.oneTimePrice || 0}
+        maxStudents={payingClass?.maxStudents}
+        currentStudentCount={payingClass?.studentCount || 0}
         onPaymentComplete={() => {
           setPayingClass(null);
           loadData();
