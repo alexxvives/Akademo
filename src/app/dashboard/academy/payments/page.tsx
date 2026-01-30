@@ -434,7 +434,6 @@ export default function AcademyPaymentsPage() {
             </div>
           )}
         </div>
-      </div>
 
       {/* Pending Payments List */}
       {filteredPendingPayments.length === 0 ? (
