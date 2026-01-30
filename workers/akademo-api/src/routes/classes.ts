@@ -406,6 +406,22 @@ classes.patch('/:id', async (c) => {
       updates.push('zoomAccountId = ?');
       params.push(body.zoomAccountId);
     }
+    if (body.allowMonthly !== undefined) {
+      updates.push('allowMonthly = ?');
+      params.push(body.allowMonthly ? 1 : 0);
+    }
+    if (body.allowOneTime !== undefined) {
+      updates.push('allowOneTime = ?');
+      params.push(body.allowOneTime ? 1 : 0);
+    }
+    if (body.monthlyPrice !== undefined) {
+      updates.push('monthlyPrice = ?');
+      params.push(body.monthlyPrice || null);
+    }
+    if (body.oneTimePrice !== undefined) {
+      updates.push('oneTimePrice = ?');
+      params.push(body.oneTimePrice || null);
+    }
 
     if (updates.length === 0) {
       return c.json(errorResponse('No fields to update'), 400);
@@ -421,6 +437,7 @@ classes.patch('/:id', async (c) => {
       SELECT 
         c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
         c.feedbackEnabled, c.whatsappGroupLink, c.price, c.currency, c.zoomAccountId,
+        c.allowMonthly, c.allowOneTime, c.monthlyPrice, c.oneTimePrice,
         a.name as academyName
       FROM Class c
       JOIN Academy a ON c.academyId = a.id
