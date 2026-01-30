@@ -610,6 +610,7 @@ export default function AcademyPaymentsPage() {
                         </svg>
                         Ver historial
                       </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
