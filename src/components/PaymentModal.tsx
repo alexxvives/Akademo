@@ -14,6 +14,12 @@ interface PaymentModalProps {
   currentPaymentStatus?: string;
   currentPaymentMethod?: string;
   onPaymentComplete: () => void;
+  allowMonthly?: boolean;
+  allowOneTime?: boolean;
+  monthlyPrice?: number;
+  oneTimePrice?: number;
+  maxStudents?: number;
+  currentStudentCount?: number;
 }
 
 export default function PaymentModal({
@@ -27,6 +33,12 @@ export default function PaymentModal({
   currentPaymentStatus,
   currentPaymentMethod,
   onPaymentComplete,
+  allowMonthly = true,
+  allowOneTime = true,
+  monthlyPrice,
+  oneTimePrice,
+  maxStudents,
+  currentStudentCount,
 }: PaymentModalProps) {
   const [selectedMethod, setSelectedMethod] = useState<'cash' | 'stripe' | 'bizum' | null>(null);
   const [processing, setProcessing] = useState(false);
@@ -55,6 +67,9 @@ export default function PaymentModal({
   });
 
   if (!isOpen) return null;
+
+  // Check if class is full
+  const isClassFull = maxStudents && currentStudentCount && currentStudentCount >= maxStudents;
 
   const handleCashPayment = () => {
     setConfirmingCash(true);
@@ -274,28 +289,45 @@ export default function PaymentModal({
               </div>
             </div>
 
-            {/* Right Side - Payment Options */}
+            {/* Right Side - Payment Options or Full Message */}
             <div className="lg:col-span-3 space-y-3">
-              {/* Stripe Payment (Card) - FIRST */}
-              <button
-                onClick={() => {
-                  setSelectedMethod('stripe');
-                  handleStripePayment();
-                }}
-                className="w-full p-4 border-2 border-gray-300 rounded-xl text-left transition-all hover:border-gray-400 hover:shadow-md"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Tarjeta de Crédito/Débito</h3>
-                    <p className="text-gray-600 mb-3">
-                      Pago seguro con Stripe (Visa, Mastercard, etc.)
-                    </p>
-                    <span className="inline-block text-xs text-white bg-gray-900 px-3 py-1.5 rounded-full">
-                      Acceso inmediato
-                    </span>
-                  </div>
+              {isClassFull ? (
+                <div className="bg-red-50 border-2 border-red-200 rounded-xl p-8 text-center">
+                  <svg className="w-16 h-16 text-red-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Clase completa</h3>
+                  <p className="text-gray-600 mb-4">
+                    Esta clase ha alcanzado su límite máximo de {maxStudents} estudiantes.
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Puedes contactar a la academia para solicitar más cupos.
+                  </p>
                 </div>
-              </button>
+              ) : (
+                <>
+                  {/* Only show Stripe if either payment type is enabled */}
+                  {(allowMonthly || allowOneTime) && (
+                    <button
+                      onClick={() => {
+                        setSelectedMethod('stripe');
+                        handleStripePayment();
+                      }}
+                      className="w-full p-4 border-2 border-gray-300 rounded-xl text-left transition-all hover:border-gray-400 hover:shadow-md"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-semibold text-gray-900 mb-2">Tarjeta de Crédito/Débito</h3>
+                          <p className="text-gray-600 mb-3">
+                            Pago seguro con Stripe (Visa, Mastercard, etc.)
+                          </p>
+                          <span className="inline-block text-xs text-white bg-gray-900 px-3 py-1.5 rounded-full">
+                            Acceso inmediato
+                          </span>
+                        </div>
+                      </div>
+                    </button>
+                  )}
 
               {/* Bizum - SECOND */}
               <button
@@ -350,6 +382,8 @@ export default function PaymentModal({
                   </div>
                 </div>
               </button>
+                </>
+              )}
             </div>
           </div>
         </div>

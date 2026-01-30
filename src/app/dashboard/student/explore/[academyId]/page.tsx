@@ -23,6 +23,11 @@ interface AcademyClass {
   teacherEmail: string;
   studentCount: number;
   enrollmentStatus: string | null; // null = not enrolled, 'PENDING', 'APPROVED'
+  maxStudents?: number;
+  allowMonthly?: number;
+  allowOneTime?: number;
+  monthlyPrice?: number;
+  oneTimePrice?: number;
 }
 
 export default function AcademyClassesPage() {
@@ -66,7 +71,13 @@ export default function AcademyClassesPage() {
     }
   };
 
-  const handleRequestClass = async (classId: string) => {
+  const handleRequestClass = async (classId: string, classItem: AcademyClass) => {
+    // Check if class is full before making request
+    if (classItem.maxStudents && classItem.studentCount >= classItem.maxStudents) {
+      alert(`Esta clase ha alcanzado su límite de ${classItem.maxStudents} estudiantes. Puedes contactar a la academia para solicitar más cupos.`);
+      return;
+    }
+
     setRequesting(classId);
     try {
       const response = await apiClient('/requests/student', {
@@ -174,11 +185,12 @@ export default function AcademyClassesPage() {
                   </span>
                 ) : (
                   <button
-                    onClick={() => handleRequestClass(classItem.id)}
-                    disabled={requesting === classItem.id}
+                    onClick={() => handleRequestClass(classItem.id, classItem)}
+                    disabled={requesting === classItem.id || (classItem.maxStudents ? classItem.studentCount >= classItem.maxStudents : false)}
                     className="px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {requesting === classItem.id ? 'Solicitando...' : 'Solicitar Inscripción'}
+                    {(classItem.maxStudents && classItem.studentCount >= classItem.maxStudents) ? 'Clase llena' : 
+                     requesting === classItem.id ? 'Solicitando...' : 'Solicitar Inscripción'}
                   </button>
                 )}
               </div>
