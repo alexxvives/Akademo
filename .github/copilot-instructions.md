@@ -43,8 +43,11 @@ npx wrangler deploy
 # Query remote D1
 npx wrangler d1 execute akademo-db --remote --command "SELECT * FROM User LIMIT 10"
 
-# Run specific migration file (safer than applying all)
-npx wrangler d1 execute akademo-db --remote --file=migrations/0019_example.sql
+# ⚠️ CRITICAL: Run ONLY specific new migration files
+# ❌ NEVER run: npx wrangler d1 migrations apply akademo-db --remote
+# ❌ This applies ALL 50+ migrations and breaks the database!
+# ✅ ALWAYS run specific files:
+npx wrangler d1 execute akademo-db --remote --file=migrations/0034_example.sql
 
 # Check schema
 npx wrangler d1 execute akademo-db --remote --command "SELECT sql FROM sqlite_master WHERE type='table' AND name='User'"

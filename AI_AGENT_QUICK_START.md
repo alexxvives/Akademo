@@ -71,17 +71,25 @@ Video.lessonId → Lesson.id (Video.bunnyGuid → Bunny Stream video)
 ### Important Columns
 
 **Academy:**
-- `status` - PENDING/APPROVED/REJECTED (approval workflow - **DEPRECATED**, see below)
+- `status` - PENDING/APPROVED/REJECTED (approval workflow - **DEPRECATED**, always APPROVED)
 - `paymentStatus` - NOT PAID/PAID (subscription status)
 - `ownerId` - FK to User.id (ACADEMY role)
 - `stripeAccountId` - Stripe Connect account (future)
 
 **ClassEnrollment:**
 - `status` - PENDING/APPROVED/REJECTED (enrollment approval)
-- `paymentStatus` - PENDING/CASH_PENDING/PAID (payment status)
-- `paymentMethod` - cash/stripe/bizum
-- `paymentAmount` - Class price
+- `paymentStatus` - PENDING/CASH_PENDING/PAID (payment status - **DEPRECATED for new payments**)
+- `paymentMethod` - cash/stripe/bizum (**Legacy - use Payment table for new payments**)
+- `paymentAmount` - Class price (**Legacy - use Payment table for new payments**)
 - `documentSigned` - 0/1 (enrollment document)
+
+**Note:** Payment data has been migrated to the dedicated **Payment** table. ClassEnrollment payment fields are legacy and should not be used for new payments.
+
+**Payment:** (Single source of truth for all payments)
+- `type` - STUDENT_TO_ACADEMY, ACADEMY_TO_PLATFORM
+- `status` - PAID, COMPLETED, PENDING, FAILED
+- `paymentMethod` - cash, bizum, stripe
+- `metadata` - JSON with enrollment linkage and approval details
 
 **Class:**
 - `price` - Class cost (default 10.00 EUR)

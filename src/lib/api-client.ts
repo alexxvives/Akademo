@@ -24,7 +24,7 @@ export async function apiClient(
   const { skipCredentials, ...fetchOptions } = options;
   
   const url = `${API_BASE_URL}${path}`;
-
+  
   // Get token from local storage if available (Client-side)
   let token = '';
   if (typeof window !== 'undefined') {

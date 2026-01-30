@@ -26,6 +26,7 @@ interface PendingPayment {
 
 interface PaymentHistory {
   enrollmentId: string;
+  paymentId?: string;
   studentId: string;
   studentFirstName: string;
   studentLastName: string;
@@ -58,29 +59,32 @@ export default function AcademyPaymentsPage() {
     className: string;
     enrollmentDate: string;
     paymentData?: any;
+    classId?: string;
   } | null>(null);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [editingPaymentId, setEditingPaymentId] = useState<string | null>(null);
   const [registerForm, setRegisterForm] = useState({
     studentId: '',
     classId: '',
     amount: '',
     paymentMethod: 'cash' as 'cash' | 'bizum',
+    status: 'PAID' as 'PAID' | 'PENDING',
   });
   const [students, setStudents] = useState<{id: string; firstName: string; lastName: string; email: string}[]>([]);
   const [deletingPaymentId, setDeletingPaymentId] = useState<string | null>(null);
+  const [studentSearchTerm, setStudentSearchTerm] = useState('');
+  const [showStudentDropdown, setShowStudentDropdown] = useState(false);
+  const [studentEnrollments, setStudentEnrollments] = useState<{[key: string]: {classId: string; className: string}[]}>({});
 
   const showStudentPaymentHistory = async (studentId: string, studentName: string, studentEmail: string, className: string, enrollmentDate: string, classId: string) => {
     try {
       const url = `/student-payments/${studentId}/class/${classId}`;
-      console.log('Fetching payment history from:', url);
       // Fetch real payment history from API
       const res = await apiClient(url);
       
       // Check if response is OK before parsing JSON
       if (!res.ok) {
-        console.error(`API returned ${res.status}: ${res.statusText} for URL: ${url}`);
-        const text = await res.text();
-        console.error('Response body:', text);
+        console.error(`Failed to fetch payment history: ${res.status}`);
         // Still open modal even if fetch fails, will show empty state
         setSelectedStudent({
           studentId,
@@ -89,26 +93,13 @@ export default function AcademyPaymentsPage() {
           className,
           enrollmentDate,
           paymentData: null,
+          classId,
         });
         return;
       }
       
-      // Check if response has content before parsing
-      const text = await res.text();
-      if (!text || text.trim() === '') {
-        console.error('Empty response from API');
-        setSelectedStudent({
-          studentId,
-          name: studentName,
-          email: studentEmail,
-          className,
-          enrollmentDate,
-          paymentData: null,
-        });
-        return;
-      }
-      
-      const result = JSON.parse(text);
+      // Parse JSON directly - don't consume the body twice!
+      const result = await res.json();
       
       if (result.success && result.data) {
         setSelectedStudent({
@@ -117,7 +108,8 @@ export default function AcademyPaymentsPage() {
           email: studentEmail,
           className,
           enrollmentDate,
-          paymentData: result.data, // Include the fetched payment data
+          paymentData: { ...result.data, classId }, // Add classId to track current class
+          classId,
         });
       } else {
         console.error('Failed to fetch payment history:', result.error);
@@ -129,6 +121,7 @@ export default function AcademyPaymentsPage() {
           className,
           enrollmentDate,
           paymentData: null,
+          classId,
         });
       }
     } catch (error) {
@@ -141,6 +134,7 @@ export default function AcademyPaymentsPage() {
         className,
         enrollmentDate,
         paymentData: null,
+        classId,
       });
     }
   };
@@ -206,6 +200,31 @@ export default function AcademyPaymentsPage() {
 
       if (studentsResult.success && Array.isArray(studentsResult.data)) {
         setStudents(studentsResult.data);
+        
+        // Build enrollment map for filtering classes (deduplicated by classId)
+        const enrollmentMap: {[key: string]: {classId: string; className: string}[]} = {};
+        const addToEnrollmentMap = (studentId: string, classId: string, className: string) => {
+          if (!enrollmentMap[studentId]) {
+            enrollmentMap[studentId] = [];
+          }
+          // Check if class already exists to avoid duplicates
+          const exists = enrollmentMap[studentId].some(e => e.classId === classId);
+          if (!exists) {
+            enrollmentMap[studentId].push({ classId, className });
+          }
+        };
+        
+        if (pendingResult.success && Array.isArray(pendingResult.data)) {
+          pendingResult.data.forEach((p: any) => {
+            addToEnrollmentMap(p.studentId, p.classId, p.className);
+          });
+        }
+        if (historyResult.success && Array.isArray(historyResult.data)) {
+          historyResult.data.forEach((p: any) => {
+            addToEnrollmentMap(p.studentId, p.classId, p.className);
+          });
+        }
+        setStudentEnrollments(enrollmentMap);
       }
     } catch (error) {
       console.error('Failed to load payments data:', error);
@@ -217,7 +236,8 @@ export default function AcademyPaymentsPage() {
   const handleApprove = async (enrollmentId: string) => {
     setProcessingIds(prev => new Set(prev).add(enrollmentId));
     try {
-      const res = await apiClient(`/payments/${enrollmentId}/approve-cash`, {
+      // All payments are now in Payment table - use approve-payment endpoint
+      const res = await apiClient(`/payments/${enrollmentId}/approve-payment`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ approved: true }),
@@ -311,26 +331,51 @@ export default function AcademyPaymentsPage() {
     }
 
     try {
-      const res = await apiClient('/payments/register-manual', {
-        method: 'POST',
+      const isEditing = editingPaymentId !== null;
+      const endpoint = isEditing ? `/payments/${editingPaymentId}` : '/payments/register-manual';
+      const method = isEditing ? 'PATCH' : 'POST';
+
+      const res = await apiClient(endpoint, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           studentId: registerForm.studentId,
           classId: registerForm.classId,
           amount: parseFloat(registerForm.amount),
           paymentMethod: registerForm.paymentMethod,
+          status: registerForm.status,
         }),
       });
 
-      const result = await res.json();
+      if (!res.ok) {
+        const text = await res.text();
+        console.error('API error:', text);
+        alert(`Error al registrar pago: ${res.status} ${res.statusText}`);
+        return;
+      }
+
+      const text = await res.text();
+      if (!text || text.trim() === '') {
+        console.error('Empty response from API');
+        alert('Error: El servidor no respondió correctamente');
+        return;
+      }
+
+      const result = JSON.parse(text);
       if (result.success) {
         setShowRegisterModal(false);
-        setRegisterForm({ studentId: '', classId: '', amount: '', paymentMethod: 'cash' });
+        setEditingPaymentId(null);
+        setRegisterForm({ studentId: '', classId: '', amount: '', paymentMethod: 'cash', status: 'PAID' });
+        setStudentSearchTerm('');
+        // Reload data to show updated payment
+        await loadData();
+        setShowStudentDropdown(false);
         loadData();
       } else {
         alert(result.error || 'Error al registrar pago');
       }
     } catch (error: any) {
+      console.error('Error registering payment:', error);
       alert('Error: ' + error.message);
     }
   };
@@ -382,9 +427,9 @@ export default function AcademyPaymentsPage() {
       {/* Header with Filters - matching students page layout */}
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Pagos Pendientes</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">Gestión de Pagos</h1>
           <p className="text-gray-600 text-sm mt-1">
-            Revisa y confirma los pagos en efectivo de los estudiantes
+            Gestiona todos los pagos - pendientes y completados
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -417,221 +462,300 @@ export default function AcademyPaymentsPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </div>
+          {/* Register Payment Button */}
+          <button
+            onClick={() => {
+              setEditingPaymentId(null);
+              setRegisterForm({ studentId: '', classId: '', amount: '', paymentMethod: 'cash', status: 'PAID' });
+              setStudentSearchTerm('');
+              setShowRegisterModal(true);
+            }}
+            className="px-4 py-2 bg-accent-300 text-gray-900 border-2 border-accent-300 rounded-lg hover:bg-accent-400 hover:border-accent-400 font-medium text-sm transition-all flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Registrar Pago
+          </button>
         </div>
       </div>
 
-      {/* Pending Payments List */}
-      {filteredPendingPayments.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay pagos pendientes</h3>
-          <p className="text-gray-500">{searchQuery || selectedClass !== 'all' ? 'No se encontraron pagos con los filtros aplicados' : 'Los pagos en efectivo aparecerán aquí cuando los estudiantes los registren'}</p>
+      {/* Unified Payments Table with hover hint */}
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div className="px-6 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-xs text-gray-600">
+              Haz clic en cualquier fila para editar. Los pagos pendientes aparecen destacados.
+            </span>
+          </div>
         </div>
-      ) : (
-        <div className="max-h-[600px] overflow-y-auto pr-2 space-y-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400">
-          {filteredPendingPayments.map((payment) => (
-            <div key={payment.enrollmentId} className="bg-white border-2 border-gray-200 rounded-xl p-4 hover:border-gray-300 transition-all">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-accent-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-accent-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
+        <table className="w-full">
+          <thead className="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estudiante</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clase</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Método</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Historial</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acción</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {/* Pending Payments First (highlighted) */}
+            {filteredPendingPayments.map((payment) => (
+              <tr
+                key={`pending-${payment.enrollmentId}`}
+                className="bg-amber-50 hover:bg-amber-100 border-l-4 border-amber-400 transition-colors"
+              >
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className="px-3 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                    Pendiente
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {payment.studentFirstName} {payment.studentLastName}
+                    </div>
+                    <div className="text-sm text-gray-500">{payment.studentEmail}</div>
                   </div>
-                  <div className="flex items-center gap-8">
-                    <div className="w-56">
-                      <h3 className="text-base font-semibold text-gray-900 truncate">
-                        {payment.studentFirstName} {payment.studentLastName}
-                      </h3>
-                      <p className="text-sm text-gray-600 truncate">{payment.studentEmail}</p>
-                    </div>
-                    <div className="border-l border-gray-200 pl-8">
-                      <div className="flex items-center gap-2 text-sm mb-0.5">
-                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                        </svg>
-                        <span className="text-gray-900 font-medium">{payment.className}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <span>Registrado {new Date(payment.enrolledAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-                      </div>
-                    </div>
-                    <div className="border-l border-gray-200 pl-8">
-                      <div className="flex items-center gap-2 text-sm mb-0.5">
-                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                        <span className="font-semibold">{formatCurrency(payment.paymentAmount, payment.currency)}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                        </svg>
-                        <span className="capitalize">{payment.paymentMethod === 'CASH' ? 'Efectivo' : payment.paymentMethod}</span>
-                      </div>
-                    </div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="text-sm text-gray-900">{payment.className}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm font-semibold text-gray-900">
+                    {formatCurrency(payment.paymentAmount, payment.currency)}
                   </div>
-                </div>
-                <div className="flex items-center gap-3 flex-shrink-0">
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-700 capitalize">
+                    {payment.paymentMethod?.toUpperCase() === 'CASH' ? 'Efectivo' : payment.paymentMethod}
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {new Date(payment.enrolledAt).toLocaleDateString('es-ES', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric'
+                  })}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
                   <button
-                    onClick={() => showStudentPaymentHistory(
-                      payment.studentId,
-                      `${payment.studentFirstName} ${payment.studentLastName}`,
-                      payment.studentEmail,
-                      payment.className,
-                      payment.enrolledAt,
-                      payment.classId
-                    )}
-                    className="px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium text-sm transition-all flex items-center gap-2"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      showStudentPaymentHistory(
+                        payment.studentId,
+                        `${payment.studentFirstName} ${payment.studentLastName}`,
+                        payment.studentEmail,
+                        'Todas las clases',
+                        payment.enrolledAt,
+                        'all'
+                      );
+                    }}
+                    className="text-sm text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1.5"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    Ver historial
+                    Ver
                   </button>
-                  <button
-                    onClick={() => handleReject(payment.enrollmentId)}
-                    disabled={processingIds.has(payment.enrollmentId) || paymentStatus === 'NOT PAID'}
-                    className="px-5 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {processingIds.has(payment.enrollmentId) ? 'Procesando...' : 'Denegar'}
-                  </button>
-                  <button
-                    onClick={() => handleApprove(payment.enrollmentId)}
-                    disabled={processingIds.has(payment.enrollmentId) || paymentStatus === 'NOT PAID'}
-                    className="px-5 py-2.5 bg-accent-300 text-gray-900 border-2 border-accent-300 rounded-lg hover:bg-accent-400 hover:border-accent-400 font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {processingIds.has(payment.enrollmentId) ? 'Procesando...' : 'Confirmar'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleReject(payment.enrollmentId);
+                      }}
+                      disabled={processingIds.has(payment.enrollmentId)}
+                      className="px-3 py-1.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-xs font-medium disabled:opacity-50"
+                      title="Denegar pago"
+                    >
+                      ✕
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleApprove(payment.enrollmentId);
+                      }}
+                      disabled={processingIds.has(payment.enrollmentId)}
+                      className="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 text-xs font-medium disabled:opacity-50"
+                      title="Aprobar pago"
+                    >
+                      {processingIds.has(payment.enrollmentId) ? '...' : '✓ Aprobar'}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
 
-      {/* Payment History Table */}
-      {paymentHistory.length > 0 && (
-        <div className="mt-8">
-          <div className="flex items-center mb-4">
-            <h2 className="text-xl font-semibold text-gray-900">Historial de Pagos</h2>
-            <button
-              onClick={() => setShowRegisterModal(true)}
-              className="ml-3 px-4 py-2 bg-accent-300 text-gray-900 border-2 border-accent-300 rounded-lg hover:bg-accent-400 hover:border-accent-400 font-medium text-sm transition-all flex items-center gap-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Registrar Pago
-            </button>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estudiante</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clase</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Profesor</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">METODO</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aprobado por</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ACCION</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredPaymentHistory.map((history, index) => (
-                  <tr key={`${history.enrollmentId}-${index}`} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {history.studentFirstName} {history.studentLastName}
-                        </div>
-                        <div className="text-sm text-gray-500">{history.studentEmail}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900">{history.className}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-700">{history.teacherName || 'N/A'}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-semibold text-gray-900">
-                        {formatCurrency(history.paymentAmount, history.currency)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-700 capitalize">{history.paymentMethod === 'CASH' ? 'Efectivo' : history.paymentMethod}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-700">{history.approvedByName || 'N/A'}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(history.approvedAt).toLocaleDateString('es-ES', { 
-                        day: 'numeric', 
-                        month: 'short', 
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <button
-                        onClick={() => showStudentPaymentHistory(
-                          (history as any).studentId || '',
-                          `${history.studentFirstName} ${history.studentLastName}`,
-                          history.studentEmail,
-                          history.className,
-                          history.approvedAt,
-                          history.classId
-                        )}
-                        className="text-sm text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1.5"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                        </svg>
-                        Ver historial
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+            {/* Paid Payments (editable on click) */}
+            {filteredPaymentHistory.map((history, index) => (
+              <tr
+                key={`history-${history.enrollmentId}-${index}`}
+                onClick={() => {
+                  setRegisterForm({
+                    studentId: (history as any).studentId || '',
+                    classId: history.classId || '',
+                    amount: history.paymentAmount.toString(),
+                    paymentMethod: (history.paymentMethod.toLowerCase() === 'cash' || history.paymentMethod === 'CASH') ? 'cash' : 'bizum',
+                    status: 'PAID',
+                  });
+                  setEditingPaymentId(history.paymentId || null);
+                  setShowRegisterModal(true);
+                }}
+                className="hover:bg-gray-50 cursor-pointer transition-colors"
+              >
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                    Pagado
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {history.studentFirstName} {history.studentLastName}
+                    </div>
+                    <div className="text-sm text-gray-500">{history.studentEmail}</div>
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="text-sm text-gray-900">{history.className}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm font-semibold text-gray-900">
+                    {formatCurrency(history.paymentAmount, history.currency)}
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-700 capitalize">
+                    {history.paymentMethod.toLowerCase() === 'cash' || history.paymentMethod === 'CASH'
+                      ? 'Efectivo'
+                      : history.paymentMethod.toLowerCase() === 'bizum' || history.paymentMethod === 'BIZUM'
+                      ? 'Bizum'
+                      : history.paymentMethod.toLowerCase() === 'stripe' || history.paymentMethod === 'STRIPE'
+                      ? 'Stripe'
+                      : history.paymentMethod}
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {new Date(history.approvedAt).toLocaleDateString('es-ES', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap hover:bg-gray-50">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      showStudentPaymentHistory(
+                        (history as any).studentId || '',
+                        `${history.studentFirstName} ${history.studentLastName}`,
+                        history.studentEmail,
+                        'Todas las clases',
+                        history.approvedAt,
+                        'all'
+                      );
+                    }}
+                    className="text-sm text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1.5"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Ver
+                  </button>
+                </td>
+              </tr>
+            ))}
+
+            {/* Empty State */}
+            {filteredPendingPayments.length === 0 && filteredPaymentHistory.length === 0 && (
+              <tr>
+                <td colSpan={8} className="px-6 py-12 text-center">
+                  <div className="text-gray-400">
+                    <svg className="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                    </svg>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay pagos</h3>
+                    <p className="text-gray-500">
+                      {searchQuery || selectedClass !== 'all'
+                        ? 'No se encontraron pagos con los filtros aplicados'
+                        : 'Los pagos aparecerán aquí cuando se registren'}
+                    </p>
+                  </div>
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Remove the old separate Payment History section - now integrated above */}
 
       {/* Register Payment Modal */}
       {showRegisterModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4">
           <div className="bg-white rounded-2xl w-full max-w-md p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Registrar Pago</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-4">
+              {editingPaymentId ? 'Editar Pago' : 'Registrar Pago'}
+            </h2>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Estudiante *</label>
                 <div className="relative">
                   <input
                     type="text"
-                    list="students-list"
-                    value={students.find(s => s.id === registerForm.studentId) ? `${students.find(s => s.id === registerForm.studentId)!.firstName} ${students.find(s => s.id === registerForm.studentId)!.lastName}` : ''}
+                    value={studentSearchTerm}
                     onChange={(e) => {
-                      const student = students.find(s => `${s.firstName} ${s.lastName}` === e.target.value);
-                      setRegisterForm({ ...registerForm, studentId: student?.id || '' });
+                      setStudentSearchTerm(e.target.value);
+                      setShowStudentDropdown(true);
                     }}
+                    onFocus={() => setShowStudentDropdown(true)}
                     placeholder="Buscar estudiante..."
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500"
                   />
                   <svg className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
-                  <datalist id="students-list">
-                    {students.map(s => (
-                      <option key={s.id} value={`${s.firstName} ${s.lastName}`}>{s.email}</option>
-                    ))}
-                  </datalist>
+                  {showStudentDropdown && studentSearchTerm.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {students
+                        .filter(s => 
+                          `${s.firstName} ${s.lastName}`.toLowerCase().includes(studentSearchTerm.toLowerCase()) ||
+                          s.email.toLowerCase().includes(studentSearchTerm.toLowerCase())
+                        )
+                        .map(s => (
+                          <button
+                            key={s.id}
+                            type="button"
+                            onClick={() => {
+                              setRegisterForm({ ...registerForm, studentId: s.id });
+                              setStudentSearchTerm(`${s.firstName} ${s.lastName}`);
+                              setShowStudentDropdown(false);
+                            }}
+                            className="w-full text-left px-4 py-2 hover:bg-gray-100 flex flex-col"
+                          >
+                            <span className="font-medium">{s.firstName} {s.lastName}</span>
+                            <span className="text-sm text-gray-500">{s.email}</span>
+                          </button>
+                        ))}
+                      {students.filter(s => 
+                        `${s.firstName} ${s.lastName}`.toLowerCase().includes(studentSearchTerm.toLowerCase()) ||
+                        s.email.toLowerCase().includes(studentSearchTerm.toLowerCase())
+                      ).length === 0 && (
+                        <div className="px-4 py-2 text-gray-500">No se encontraron estudiantes</div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
               <div>
@@ -641,10 +765,11 @@ export default function AcademyPaymentsPage() {
                     value={registerForm.classId}
                     onChange={(e) => setRegisterForm({ ...registerForm, classId: e.target.value })}
                     className="w-full appearance-none px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500"
+                    disabled={!registerForm.studentId}
                   >
-                    <option value="">Seleccionar clase...</option>
-                    {classes.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
+                    <option value="">{registerForm.studentId ? 'Seleccionar clase...' : 'Primero selecciona un estudiante'}</option>
+                    {registerForm.studentId && studentEnrollments[registerForm.studentId]?.map(e => (
+                      <option key={e.classId} value={e.classId}>{e.className}</option>
                     ))}
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
@@ -683,10 +808,51 @@ export default function AcademyPaymentsPage() {
                   </div>
                 </div>
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Estado *</label>
+                <button
+                  type="button"
+                  onClick={() => setRegisterForm({ ...registerForm, status: registerForm.status === 'PAID' ? 'PENDING' : 'PAID' })}
+                  className="w-full relative h-12 rounded-lg overflow-hidden border-2 border-gray-200 transition-all hover:border-gray-300"
+                >
+                  {/* Sliding background */}
+                  <div
+                    className={`absolute inset-0 transition-transform duration-300 ease-in-out ${
+                      registerForm.status === 'PAID' ? 'translate-x-0' : 'translate-x-1/2'
+                    }`}
+                  >
+                    <div className="w-1/2 h-full bg-gray-900"></div>
+                  </div>
+                  
+                  {/* Labels */}
+                  <div className="relative z-10 flex h-full">
+                    <div className="flex-1 flex items-center justify-center">
+                      <span className={`font-semibold transition-colors ${
+                        registerForm.status === 'PAID' ? 'text-white' : 'text-gray-600'
+                      }`}>
+                        Pagado
+                      </span>
+                    </div>
+                    <div className="flex-1 flex items-center justify-center">
+                      <span className={`font-semibold transition-colors ${
+                        registerForm.status === 'PENDING' ? 'text-white' : 'text-gray-600'
+                      }`}>
+                        Por Pagar
+                      </span>
+                    </div>
+                  </div>
+                </button>
+              </div>
             </div>
             <div className="flex gap-3 mt-6">
               <button
-                onClick={() => setShowRegisterModal(false)}
+                onClick={() => {
+                  setShowRegisterModal(false);
+                  setEditingPaymentId(null);
+                  setStudentSearchTerm('');
+                  setShowStudentDropdown(false);
+                  setRegisterForm({ studentId: '', classId: '', amount: '', paymentMethod: 'cash', status: 'PAID' });
+                }}
                 className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
               >
                 Cancelar
@@ -715,6 +881,36 @@ export default function AcademyPaymentsPage() {
           totalDue={selectedStudent.paymentData?.totalDue || 0}
           paymentFrequency={selectedStudent.paymentData?.paymentFrequency || 'ONE_TIME'}
           enrollmentDate={selectedStudent.paymentData?.enrollmentDate || selectedStudent.enrollmentDate}
+          availableClasses={(studentEnrollments[selectedStudent.studentId] || []).map(e => ({
+            id: e.classId,
+            name: e.className
+          }))}
+          currentClassId="all"
+          onClassChange={async (classId) => {
+            if (classId === 'all') {
+              // Show all payments across all classes
+              await showStudentPaymentHistory(
+                selectedStudent.studentId,
+                selectedStudent.name,
+                selectedStudent.email,
+                'Todas las clases',
+                selectedStudent.enrollmentDate,
+                classId
+              );
+            } else {
+              const selectedClass = studentEnrollments[selectedStudent.studentId]?.find(c => c.classId === classId);
+              if (selectedClass) {
+                await showStudentPaymentHistory(
+                  selectedStudent.studentId,
+                  selectedStudent.name,
+                  selectedStudent.email,
+                  selectedClass.className,
+                  selectedStudent.enrollmentDate,
+                  classId
+                );
+              }
+            }
+          }}
         />
       )}
     </div>

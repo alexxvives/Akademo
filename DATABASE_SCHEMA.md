@@ -339,34 +339,53 @@ WHERE e.userId = ? AND e.status = 'APPROVED'
 ---
 
 ### 15. **Payment**
-Financial transactions tracking.
+Financial transactions tracking (single source of truth for all payments).
 
 | Column | Type | Nullable | Default | Notes |
 |--------|------|----------|---------|-------|
 | id | TEXT | NO | - | PK |
 | type | TEXT | NO | - | STUDENT_TO_ACADEMY, ACADEMY_TO_PLATFORM |
-| payerId | TEXT | NO | - | User.id or Academy.ownerId |
+| payerId | TEXT | NO | - | User.id (for students) or Academy.ownerId |
 | payerType | TEXT | NO | - | STUDENT, ACADEMY |
-| payerName | TEXT | NO | - | |
-| payerEmail | TEXT | NO | - | |
-| receiverId | TEXT | YES | - | Academy.id for student payments |
-| receiverName | TEXT | YES | - | |
+| payerName | TEXT | NO | - | Full name for display |
+| payerEmail | TEXT | NO | - | Email for notifications |
+| receiverId | TEXT | YES | - | Academy.id (for student payments) |
+| receiverName | TEXT | YES | - | Academy name (optional, can be joined) |
 | amount | REAL | NO | - | Payment amount |
-| currency | TEXT | NO | 'USD' | |
-| status | TEXT | NO | 'PENDING' | PENDING, COMPLETED, FAILED, REFUNDED |
-| stripePaymentId | TEXT | YES | - | Stripe payment ID |
-| stripeCheckoutSessionId | TEXT | YES | - | Stripe session ID |
-| paymentMethod | TEXT | YES | - | stripe, paypal, etc. |
-| classId | TEXT | YES | - | FK → Class.id (for enrollments) |
-| description | TEXT | YES | - | |
-| metadata | TEXT | YES | - | JSON extra data |
-| createdAt | TEXT | NO | datetime('now') | |
-| completedAt | TEXT | YES | - | When payment completed |
-| updatedAt | TEXT | NO | datetime('now') | |
+| currency | TEXT | NO | 'USD' | EUR, USD, etc. |
+| status | TEXT | NO | 'PENDING' | PAID, COMPLETED, PENDING, FAILED, REFUNDED |
+| stripePaymentId | TEXT | YES | - | Stripe payment ID (for online payments) |
+| stripeCheckoutSessionId | TEXT | YES | - | Stripe session ID (for online payments) |
+| paymentMethod | TEXT | YES | - | cash, bizum, stripe, paypal |
+| classId | TEXT | YES | - | FK → Class.id (links payment to enrollment) |
+| description | TEXT | YES | - | Human-readable description |
+| metadata | TEXT | YES | - | JSON with enrollmentId, approvedBy, etc. |
+| createdAt | TEXT | NO | datetime('now') | When payment record created |
+| completedAt | TEXT | YES | - | When payment was completed/approved |
+| updatedAt | TEXT | NO | datetime('now') | Last modified (DEPRECATED - not used) |
 
 **Payment Types:**
 - `STUDENT_TO_ACADEMY` - Student pays for enrollment/subscription
-- `ACADEMY_TO_PLATFORM` - Academy pays platform fees
+- `ACADEMY_TO_PLATFORM` - Academy pays platform fees (future)
+
+**Column Usage Notes:**
+- **receiverName**: Optional - can be derived via JOIN with Academy table. Stored for performance/denormalization.
+- **stripePaymentId/stripeCheckoutSessionId**: Only used for online Stripe payments. NULL for cash/bizum.
+- **updatedAt**: DEPRECATED - not actively used. Status changes should be tracked via metadata.
+- **metadata**: Store enrollment linkage, approval info, migration data as JSON:
+  ```json
+  {
+    "originalEnrollmentId": "enrollment-id",
+    "approvedBy": "user-id",
+    "approvedAt": "2026-01-30T...",
+    "migratedAt": "2026-01-30T..."
+  }
+  ```
+
+**Recommended Cleanup (Future):**
+- Remove `updatedAt` column (not used)
+- Remove `receiverName` column (can be JOINed from Academy table)
+- These are safe to remove once existing queries are audited
 
 ---
 

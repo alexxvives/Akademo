@@ -36,7 +36,7 @@ payments.post('/initiate', async (c) => {
 
     // Check if enrollment exists
     const enrollment: any = await c.env.DB
-      .prepare('SELECT id, paymentStatus FROM ClassEnrollment WHERE userId = ? AND classId = ?')
+      .prepare('SELECT id FROM ClassEnrollment WHERE userId = ? AND classId = ?')
       .bind(session.id, classId)
       .first();
 
@@ -44,47 +44,49 @@ payments.post('/initiate', async (c) => {
       return c.json(errorResponse('You must be enrolled in this class first'), 400);
     }
 
-    if (enrollment.paymentStatus === 'PAID') {
-      return c.json(errorResponse('Payment already completed for this class'), 400);
+    // Check if payment already exists
+    const existingPayment: any = await c.env.DB
+      .prepare('SELECT id, status FROM Payment WHERE payerId = ? AND classId = ? AND status IN (?, ?)')
+      .bind(session.id, classId, 'PENDING', 'COMPLETED')
+      .first();
+
+    if (existingPayment) {
+      return c.json(errorResponse('Payment already exists for this class'), 400);
     }
 
-    // Handle cash payment - just mark as CASH_PENDING
-    if (paymentMethod === 'cash') {
-      await c.env.DB
-        .prepare(`
-          UPDATE ClassEnrollment 
-          SET paymentStatus = 'CASH_PENDING', 
-              paymentMethod = 'cash',
-              paymentAmount = ?
-          WHERE id = ?
-        `)
-        .bind(classData.price, enrollment.id)
-        .run();
+    // Create Payment record (no longer update ClassEnrollment)
+    const paymentId = `payment-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    await c.env.DB
+      .prepare(`
+        INSERT INTO Payment (
+          id, type, payerId, receiverId, amount, currency, status,
+          paymentMethod, classId, metadata, createdAt
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      `)
+      .bind(
+        paymentId,
+        'STUDENT_TO_ACADEMY',
+        session.id,
+        classData.academyId,
+        classData.price,
+        classData.currency || 'EUR',
+        'PENDING',
+        paymentMethod,
+        classId,
+        JSON.stringify({
+          payerName: `${session.firstName} ${session.lastName}`,
+          payerEmail: session.email,
+          className: classData.name
+        })
+      )
+      .run();
 
-      return c.json(successResponse({
-        message: 'Cash payment registered. Waiting for academy approval.',
-        status: 'CASH_PENDING',
-      }));
-    }
-
-    // Handle Bizum payment - same as cash, requires manual confirmation
-    if (paymentMethod === 'bizum') {
-      await c.env.DB
-        .prepare(`
-          UPDATE ClassEnrollment 
-          SET paymentStatus = 'BIZUM_PENDING', 
-              paymentMethod = 'bizum',
-              paymentAmount = ?
-          WHERE id = ?
-        `)
-        .bind(classData.price, enrollment.id)
-        .run();
-
-      return c.json(successResponse({
-        message: 'Bizum payment registered. Waiting for academy approval.',
-        status: 'BIZUM_PENDING',
-      }));
-    }
+    return c.json(successResponse({
+      message: `${paymentMethod === 'cash' ? 'Cash' : 'Bizum'} payment registered. Waiting for academy approval.`,
+      status: 'PENDING',
+      paymentId: paymentId,
+    }));
 
     // For Stripe (card payment), continue to Stripe checkout
     // Note: Actual Stripe Connect integration requires STRIPE_SECRET_KEY
@@ -104,59 +106,61 @@ payments.get('/pending-cash', async (c) => {
     let params: any[] = [];
 
     if (session.role === 'ACADEMY') {
-      // Get pending cash payments for owned academies
+      // Get pending payments ONLY from Payment table (no longer check ClassEnrollment)
       query = `
         SELECT 
-          e.id as enrollmentId,
-          e.paymentStatus,
-          e.paymentMethod,
-          e.paymentAmount,
-          e.enrolledAt,
-          u.id as studentId,
+          p.id as enrollmentId,
+          p.status as paymentStatus,
+          p.paymentMethod,
+          p.amount as paymentAmount,
+          p.createdAt as enrolledAt,
+          p.payerId as studentId,
           u.firstName as studentFirstName,
           u.lastName as studentLastName,
           u.email as studentEmail,
-          c.id as classId,
+          p.classId,
           c.name as className,
-          c.currency,
+          p.currency,
           a.id as academyId,
           a.name as academyName,
           teacher.firstName || ' ' || teacher.lastName as teacherName
-        FROM ClassEnrollment e
-        JOIN User u ON e.userId = u.id
-        JOIN Class c ON e.classId = c.id
+        FROM Payment p
+        JOIN Class c ON p.classId = c.id
         JOIN Academy a ON c.academyId = a.id
+        JOIN User u ON p.payerId = u.id
         LEFT JOIN User teacher ON c.teacherId = teacher.id
         WHERE a.ownerId = ? 
-        AND e.paymentStatus IN ('CASH_PENDING', 'BIZUM_PENDING')
-        ORDER BY e.enrolledAt DESC
+        AND p.status = 'PENDING'
+        AND p.type = 'STUDENT_TO_ACADEMY'
+        ORDER BY p.createdAt DESC
       `;
       params = [session.id];
     } else if (session.role === 'TEACHER') {
-      // Teachers can only see their own classes
+      // Teachers can only see payments for their own classes
       query = `
         SELECT 
-          e.id as enrollmentId,
-          e.paymentStatus,
-          e.paymentMethod,
-          e.paymentAmount,
-          e.enrolledAt,
-          u.id as studentId,
+          p.id as enrollmentId,
+          p.status as paymentStatus,
+          p.paymentMethod,
+          p.amount as paymentAmount,
+          p.createdAt as enrolledAt,
+          p.payerId as studentId,
           u.firstName as studentFirstName,
           u.lastName as studentLastName,
           u.email as studentEmail,
-          c.id as classId,
+          p.classId,
           c.name as className,
-          c.currency,
+          p.currency,
           a.id as academyId,
           a.name as academyName
-        FROM ClassEnrollment e
-        JOIN User u ON e.userId = u.id
-        JOIN Class c ON e.classId = c.id
+        FROM Payment p
+        JOIN Class c ON p.classId = c.id
         JOIN Academy a ON c.academyId = a.id
+        JOIN User u ON p.payerId = u.id
         WHERE c.teacherId = ? 
-        AND e.paymentStatus IN ('CASH_PENDING', 'BIZUM_PENDING')
-        ORDER BY e.enrolledAt DESC
+        AND p.status = 'PENDING'
+        AND p.type = 'STUDENT_TO_ACADEMY'
+        ORDER BY p.createdAt DESC
       `;
       params = [session.id];
     } else {
@@ -191,9 +195,11 @@ payments.patch('/:enrollmentId/approve-cash', async (c) => {
       .prepare(`
         SELECT 
           e.id,
-          e.paymentStatus,
+          e.status as enrollmentStatus,
           e.classId,
           c.academyId,
+          c.price,
+          c.currency,
           a.ownerId
         FROM ClassEnrollment e
         JOIN Class c ON e.classId = c.id
@@ -212,25 +218,70 @@ payments.patch('/:enrollmentId/approve-cash', async (c) => {
       return c.json(errorResponse('Only academy owners can approve payments'), 403);
     }
 
-    if (enrollment.paymentStatus !== 'CASH_PENDING' && enrollment.paymentStatus !== 'BIZUM_PENDING') {
-      return c.json(errorResponse('Payment is not in pending state'), 400);
+    if (enrollment.enrollmentStatus !== 'PENDING') {
+      return c.json(errorResponse('Enrollment is not in pending state'), 400);
     }
 
     // Track who approved/denied the payment
     const approverName = `Academia: ${session.firstName} ${session.lastName}`;
 
-    // Update payment status
-    const newStatus = approved ? 'PAID' : 'PENDING';
+    // Update ClassEnrollment status
+    const newStatus = approved ? 'APPROVED' : 'REJECTED';
     await c.env.DB
       .prepare(`
         UPDATE ClassEnrollment 
-        SET paymentStatus = ?,
-            approvedBy = ?,
-            approvedByName = ?
+        SET status = ?,
+            approvedAt = CASE WHEN ? = 'APPROVED' THEN datetime('now') ELSE NULL END
         WHERE id = ?
       `)
-      .bind(newStatus, session.id, approverName, enrollmentId)
+      .bind(newStatus, newStatus, enrollmentId)
       .run();
+
+    // If approved, create Payment record
+    if (approved) {
+      const enrollmentData: any = await c.env.DB
+        .prepare(`
+          SELECT 
+            e.userId,
+            e.classId,
+            u.firstName,
+            u.lastName,
+            u.email,
+            c.academyId,
+            c.price,
+            c.currency
+          FROM ClassEnrollment e
+          JOIN User u ON e.userId = u.id
+          JOIN Class c ON e.classId = c.id
+          WHERE e.id = ?
+        `)
+        .bind(enrollmentId)
+        .first();
+
+      if (enrollmentData) {
+        const paymentId = crypto.randomUUID();
+        await c.env.DB
+          .prepare(`
+            INSERT INTO Payment (
+              id, type, payerId, receiverId, amount, currency, status, paymentMethod,
+              classId, metadata, createdAt, completedAt
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+          `)
+          .bind(
+            paymentId,
+            'STUDENT_TO_ACADEMY',
+            enrollmentData.userId,
+            enrollmentData.academyId,
+            enrollmentData.price,
+            enrollmentData.currency || 'EUR',
+            'PAID',
+            'cash',
+            enrollmentData.classId,
+            JSON.stringify({ originalEnrollmentId: enrollmentId, approvedBy: session.id, approvedAt: new Date().toISOString(), approverName: approverName })
+          )
+          .run();
+      }
+    }
 
     return c.json(successResponse({
       message: approved ? 'Cash payment approved' : 'Cash payment rejected',
@@ -369,20 +420,20 @@ payments.get('/my-payments', async (c) => {
     const result = await c.env.DB
       .prepare(`
         SELECT 
-          e.id as enrollmentId,
-          e.paymentStatus,
-          e.paymentMethod,
-          e.paymentAmount,
-          e.createdAt,
-          c.id as classId,
+          p.id as enrollmentId,
+          p.status as paymentStatus,
+          p.paymentMethod,
+          p.amount as paymentAmount,
+          p.completedAt as createdAt,
+          p.classId,
           c.name as className,
-          c.currency,
+          p.currency,
           a.name as academyName
-        FROM ClassEnrollment e
-        JOIN Class c ON e.classId = c.id
-        JOIN Academy a ON c.academyId = a.id
-        WHERE e.userId = ?
-        ORDER BY e.createdAt DESC
+        FROM Payment p
+        JOIN Class c ON p.classId = c.id
+        JOIN Academy a ON p.receiverId = a.id
+        WHERE p.payerId = ? AND p.type = 'STUDENT_TO_ACADEMY'
+        ORDER BY p.completedAt DESC
       `)
       .bind(session.id)
       .all();
@@ -394,48 +445,77 @@ payments.get('/my-payments', async (c) => {
   }
 });
 
+// PATCH /payments/:id/approve-payment - Approve a Payment table record (not ClassEnrollment)
+payments.patch('/:id/approve-payment', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    const paymentId = c.req.param('id');
+    const { approved } = await c.req.json();
+
+    // Get payment details
+    const payment: any = await c.env.DB
+      .prepare(`
+        SELECT 
+          p.id,
+          p.status,
+          p.classId,
+          c.academyId,
+          a.ownerId
+        FROM Payment p
+        JOIN Class c ON p.classId = c.id
+        JOIN Academy a ON c.academyId = a.id
+        WHERE p.id = ?
+      `)
+      .bind(paymentId)
+      .first();
+
+    if (!payment) {
+      return c.json(errorResponse('Payment not found'), 404);
+    }
+
+    // Verify user owns the academy
+    if (session.role !== 'ACADEMY' || payment.ownerId !== session.id) {
+      return c.json(errorResponse('Only academy owners can approve payments'), 403);
+    }
+
+    if (payment.status !== 'PENDING') {
+      return c.json(errorResponse('Payment is not in pending state'), 400);
+    }
+
+    // Update Payment status
+    const newStatus = approved ? 'PAID' : 'REJECTED';
+    await c.env.DB
+      .prepare(`
+        UPDATE Payment 
+        SET status = ?,
+            completedAt = datetime('now')
+        WHERE id = ?
+      `)
+      .bind(newStatus, paymentId)
+      .run();
+
+    return c.json(successResponse({ message: approved ? 'Payment approved' : 'Payment rejected' }));
+  } catch (error: any) {
+    console.error('[Approve Payment] Error:', error);
+    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+  }
+});
+
 // GET /payments/history - Academy views payment history (approved/rejected)
 payments.get('/history', async (c) => {
   try {
     const session = await requireAuth(c);
+    console.log('[Payment History] Request from:', session.id, session.role, session.email);
 
     let query = '';
     let params: any[] = [];
 
     if (session.role === 'ACADEMY') {
-      // Query BOTH ClassEnrollment (legacy) and Payment table (new), then merge
-      // This handles existing payments and new manually registered ones
+      // Query Payment table (migration from ClassEnrollment completed)
       query = `
         SELECT 
-          e.id as enrollmentId,
-          e.id as paymentId,
-          e.userId as studentId,
-          e.classId,
-          e.paymentAmount,
-          c.currency,
-          e.paymentMethod,
-          e.approvedAt,
-          e.paymentStatus,
-          u.firstName as studentFirstName,
-          u.lastName as studentLastName,
-          u.email as studentEmail,
-          c.name as className,
-          teacher.firstName || ' ' || teacher.lastName as teacherName,
-          'ENROLLMENT' as source
-        FROM ClassEnrollment e
-        JOIN User u ON e.userId = u.id
-        JOIN Class c ON e.classId = c.id
-        JOIN Academy a ON c.academyId = a.id
-        LEFT JOIN User teacher ON c.teacherId = teacher.id
-        WHERE a.ownerId = ? 
-          AND e.paymentAmount > 0
-          AND e.paymentStatus = 'PAID'
-        
-        UNION ALL
-        
-        SELECT 
-          p.id as enrollmentId,
           p.id as paymentId,
+          p.id as enrollmentId,
           p.payerId as studentId,
           p.classId,
           p.amount as paymentAmount,
@@ -447,8 +527,7 @@ payments.get('/history', async (c) => {
           u.lastName as studentLastName,
           u.email as studentEmail,
           c.name as className,
-          teacher.firstName || ' ' || teacher.lastName as teacherName,
-          'PAYMENT' as source
+          teacher.firstName || ' ' || teacher.lastName as teacherName
         FROM Payment p
         JOIN Class c ON p.classId = c.id
         JOIN Academy a ON c.academyId = a.id
@@ -457,16 +536,23 @@ payments.get('/history', async (c) => {
         WHERE a.ownerId = ? 
           AND p.status IN ('PAID', 'COMPLETED')
           AND p.type = 'STUDENT_TO_ACADEMY'
-        
-        ORDER BY approvedAt DESC
+        ORDER BY p.completedAt DESC
         LIMIT 50
       `;
-      params = [session.id, session.id];
+      params = [session.id];
+      console.log('[Payment History] Querying for ownerId:', session.id);
     } else {
+      console.log('[Payment History] Non-academy role attempted access');
       return c.json(errorResponse('Only academy owners can view payment history'), 403);
     }
 
     const result = await c.env.DB.prepare(query).bind(...params).all();
+    console.log('[Payment History] Query returned:', result.results?.length || 0, 'records');
+    
+    if (result.results && result.results.length > 0) {
+      console.log('[Payment History] First record:', JSON.stringify(result.results[0]));
+    }
+
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
     console.error('[Payment History] Error:', error);
@@ -484,44 +570,41 @@ payments.put('/history/:id/reverse', async (c) => {
       return c.json(errorResponse('enrollmentId required'), 400);
     }
 
-    // Get enrollment with academy info
-    const enrollment: any = await c.env.DB
+    // Get payment with academy info
+    const payment: any = await c.env.DB
       .prepare(`
         SELECT 
-          e.id,
-          e.paymentStatus,
-          e.classId,
+          p.id,
+          p.status,
+          p.classId,
           c.academyId,
           a.ownerId
-        FROM ClassEnrollment e
-        JOIN Class c ON e.classId = c.id
+        FROM Payment p
+        JOIN Class c ON p.classId = c.id
         JOIN Academy a ON c.academyId = a.id
-        WHERE e.id = ?
+        WHERE p.id = ?
       `)
       .bind(enrollmentId)
       .first();
 
-    if (!enrollment) {
-      return c.json(errorResponse('Enrollment not found'), 404);
+    if (!payment) {
+      return c.json(errorResponse('Payment not found'), 404);
     }
 
     // Verify user owns the academy
-    if (session.role !== 'ACADEMY' || enrollment.ownerId !== session.id) {
+    if (session.role !== 'ACADEMY' || payment.ownerId !== session.id) {
       return c.json(errorResponse('Only academy owners can reverse payments'), 403);
     }
 
-    // Toggle status: PAID <-> PENDING
-    const newStatus = enrollment.paymentStatus === 'PAID' ? 'PENDING' : 'PAID';
-    
-    // Track who reversed the decision
-    const approverName = `Academia: ${session.firstName} ${session.lastName}`;
+    // Toggle status: COMPLETED <-> PENDING
+    const newStatus = payment.status === 'COMPLETED' ? 'PENDING' : 'COMPLETED';
+    const completedAt = newStatus === 'COMPLETED' ? 'datetime(\'now\')' : 'NULL';
 
     await c.env.DB
       .prepare(`
-        UPDATE ClassEnrollment 
-        SET paymentStatus = ?,
-            approvedBy = ?,
-            approvedByName = ?
+        UPDATE Payment 
+        SET status = ?,
+            completedAt = ${completedAt}
         WHERE id = ?
       `)
       .bind(newStatus, session.id, approverName, enrollmentId)
@@ -680,14 +763,14 @@ payments.get('/stripe-status', async (c) => {
 });
 
 // POST /payments/register-manual - Academy registers a manual payment
-payments.post('/register-manual', requireAuth, async (c) => {
+payments.post('/register-manual', async (c) => {
+  const session = await requireAuth(c);
   try {
-    const session = c.get('session');
     if (session.role !== 'ACADEMY' && session.role !== 'ADMIN') {
       return c.json(errorResponse('Only academy owners can register payments'), 403);
     }
 
-    const { studentId, classId, amount, paymentMethod } = await c.req.json();
+    const { studentId, classId, amount, paymentMethod, status = 'PAID' } = await c.req.json();
 
     if (!studentId || !classId || !amount || !paymentMethod) {
       return c.json(errorResponse('All fields are required'), 400);
@@ -696,7 +779,7 @@ payments.post('/register-manual', requireAuth, async (c) => {
     // Verify class belongs to academy
     const classData: any = await c.env.DB
       .prepare(`
-        SELECT c.id, c.name, c.academyId, a.ownerId
+        SELECT c.id, c.name, c.academyId, a.ownerId, a.name as academyName
         FROM Class c
         JOIN Academy a ON c.academyId = a.id
         WHERE c.id = ?
@@ -726,29 +809,34 @@ payments.post('/register-manual', requireAuth, async (c) => {
 
     // Create payment record
     const paymentId = crypto.randomUUID();
+    const approvedBy = `${session.firstName} ${session.lastName} (${classData.academyName})`;
+    const completedAt = status === 'PAID' ? "datetime('now')" : 'NULL';
+    
     const result = await c.env.DB
       .prepare(`
         INSERT INTO Payment (
-          id, type, payerId, payerType, payerName, payerEmail,
-          receiverId, amount, currency, status, paymentMethod,
-          classId, description, metadata, createdAt, completedAt
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+          id, type, payerId, receiverId, amount, currency, status, paymentMethod,
+          classId, metadata, createdAt, completedAt, payerName, payerEmail, receiverName
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ${completedAt}, ?, ?, ?)
       `)
       .bind(
         paymentId,
         'STUDENT_TO_ACADEMY',
         studentId,
-        'STUDENT',
-        `${student.firstName} ${student.lastName}`,
-        student.email,
         classData.academyId,
         amount,
         'EUR',
-        'PAID',
+        status,
         paymentMethod,
         classId,
-        `Pago manual registrado por academia`,
-        JSON.stringify({ registeredBy: session.id, enrollmentId: enrollment.id }),
+        JSON.stringify({ 
+          registeredBy: session.id, 
+          approvedBy: approvedBy,
+          enrollmentId: enrollment.id 
+        }),
+        `${student.firstName} ${student.lastName}`,
+        student.email,
+        classData.academyName,
       )
       .run();
 
@@ -764,9 +852,9 @@ payments.post('/register-manual', requireAuth, async (c) => {
 });
 
 // DELETE /payments/:id - Delete a payment (reject or remove from ClassEnrollment)
-payments.delete('/:id', requireAuth, async (c) => {
+payments.delete('/:id', async (c) => {
   try {
-    const session = c.get('session');
+    const session = await requireAuth(c);
     const enrollmentId = c.req.param('id');
 
     // Get enrollment details  
@@ -802,6 +890,87 @@ payments.delete('/:id', requireAuth, async (c) => {
     return c.json(successResponse({ message: 'Payment deleted successfully' }));
   } catch (error: any) {
     console.error('[Payments] Error deleting payment:', error);
+    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+  }
+});
+
+// PATCH /payments/:id - Update a payment record
+payments.patch('/:id', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    const paymentId = c.req.param('id');
+    const { amount, paymentMethod, status } = await c.req.json();
+
+    // Get payment details with enrollment and academy info
+    const payment: any = await c.env.DB
+      .prepare(`
+        SELECT p.*, e.classId, c.academyId, a.ownerId
+        FROM Payment p
+        JOIN ClassEnrollment e ON p.classId = e.classId AND p.payerId = e.userId
+        JOIN Class c ON e.classId = c.id
+        JOIN Academy a ON c.academyId = a.id
+        WHERE p.id = ?
+      `)
+      .bind(paymentId)
+      .first();
+
+    if (!payment) {
+      return c.json(errorResponse('Payment not found'), 404);
+    }
+
+    // Check permissions - only academy owner or admin can edit
+    const isOwner = session.role === 'ACADEMY' && payment.ownerId === session.id;
+    const isAdmin = session.role === 'ADMIN';
+
+    if (!isOwner && !isAdmin) {
+      return c.json(errorResponse('Not authorized to edit this payment'), 403);
+    }
+
+    // Build update query
+    const updates: string[] = [];
+    const values: any[] = [];
+
+    if (amount !== undefined) {
+      updates.push('amount = ?');
+      values.push(amount);
+    }
+
+    if (paymentMethod !== undefined) {
+      updates.push('paymentMethod = ?');
+      values.push(paymentMethod);
+    }
+
+    if (status !== undefined) {
+      updates.push('status = ?');
+      values.push(status);
+      
+      // Update completedAt based on status
+      if (status === 'PAID') {
+        updates.push('completedAt = datetime(\'now\')');
+      } else {
+        updates.push('completedAt = NULL');
+      }
+    }
+
+    if (updates.length === 0) {
+      return c.json(errorResponse('No fields to update'), 400);
+    }
+
+    values.push(paymentId);
+
+    await c.env.DB
+      .prepare(`UPDATE Payment SET ${updates.join(', ')} WHERE id = ?`)
+      .bind(...values)
+      .run();
+
+    const updated = await c.env.DB
+      .prepare('SELECT * FROM Payment WHERE id = ?')
+      .bind(paymentId)
+      .first();
+
+    return c.json(successResponse(updated));
+  } catch (error: any) {
+    console.error('[Payments] Error updating payment:', error);
     return c.json(errorResponse(error.message || 'Internal server error'), 500);
   }
 });

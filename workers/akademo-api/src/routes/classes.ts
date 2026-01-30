@@ -48,10 +48,7 @@ classes.get('/', async (c) => {
           a.name as academyName,
           ce.status as enrollmentStatus,
           ce.documentSigned,
-          ce.paymentStatus,
-          ce.paymentMethod,
-          ce.paymentAmount,
-          (SELECT COUNT(*) FROM ClassEnrollment WHERE classId = c.id AND status = 'APPROVED') as studentCount,
+          (SELECT COUNT(*) FROM ClassEnrollment WHERE classId = c.id AND STATUS = 'APPROVED') as studentCount,
           (SELECT COUNT(*) FROM Lesson WHERE classId = c.id) as lessonCount,
           (SELECT COUNT(*) FROM Video v JOIN Lesson l ON v.lessonId = l.id WHERE l.classId = c.id) as videoCount,
           (SELECT COUNT(*) FROM Document d JOIN Lesson l ON d.lessonId = l.id WHERE l.classId = c.id) as documentCount

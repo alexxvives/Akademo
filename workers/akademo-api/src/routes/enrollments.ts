@@ -338,8 +338,7 @@ enrollments.put('/pending', async (c) => {
     const enrollment = await c.env.DB
       .prepare(`
         SELECT e.id, e.classId, e.userId, e.status, e.enrolledAt, e.approvedAt, 
-               e.documentSigned, e.paymentStatus, e.paymentMethod, e.paymentAmount, 
-               e.approvedBy, c.teacherId, a.ownerId
+               e.documentSigned, c.teacherId, a.ownerId
         FROM ClassEnrollment e
         JOIN Class c ON e.classId = c.id
         JOIN Academy a ON c.academyId = a.id
@@ -495,8 +494,7 @@ enrollments.put('/history/:id/reverse', async (c) => {
     const enrollment = await c.env.DB
       .prepare(`
         SELECT e.id, e.classId, e.userId, e.status, e.enrolledAt, e.approvedAt, 
-               e.documentSigned, e.paymentStatus, e.paymentMethod, e.paymentAmount, 
-               e.approvedBy, c.teacherId, a.ownerId
+               e.documentSigned, c.teacherId, a.ownerId
         FROM ClassEnrollment e
         JOIN Class c ON e.classId = c.id
         JOIN Academy a ON c.academyId = a.id

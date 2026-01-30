@@ -59,37 +59,30 @@ admin.get('/payments', async (c) => {
 
     const type = c.req.query('type'); // Filter by type (not used for enrollments)
     
-    // Query ClassEnrollment for payment data
+    // Get all payments from Payment table
     const query = `
       SELECT 
-        ce.id,
-        'STUDENT_TO_ACADEMY' as type,
-        ce.userId as payerId,
-        'STUDENT' as payerType,
-        u.firstName || ' ' || u.lastName as payerName,
+        p.id,
+        p.type,
+        p.payerId,
         u.email as payerEmail,
-        a.id as receiverId,
+        p.receiverId,
         a.name as receiverName,
         a.name as academyName,
         c.name as className,
-        ce.paymentAmount as amount,
-        'EUR' as currency,
-        CASE 
-          WHEN ce.paymentStatus = 'PAID' THEN 'COMPLETED'
-          WHEN ce.paymentStatus = 'BIZUM_PENDING' OR ce.paymentStatus = 'CASH_PENDING' THEN 'PENDING'
-          ELSE 'PENDING'
-        END as status,
-        NULL as stripePaymentId,
-        ce.paymentMethod as paymentMethod,
-        'Pago de matrícula para ' || c.name as description,
-        ce.enrolledAt as createdAt,
-        ce.approvedAt as completedAt
-      FROM ClassEnrollment ce
-      JOIN User u ON ce.userId = u.id
-      JOIN Class c ON ce.classId = c.id
-      JOIN Academy a ON c.academyId = a.id
-      WHERE ce.paymentAmount > 0
-      ORDER BY ce.enrolledAt DESC
+        p.amount,
+        p.currency,
+        p.status,
+        p.stripePaymentId,
+        p.paymentMethod,
+        JSON_EXTRACT(p.metadata, '$.className') as description,
+        p.createdAt,
+        p.completedAt
+      FROM Payment p
+      LEFT JOIN User u ON p.payerId = u.id
+      LEFT JOIN Academy a ON p.receiverId = a.id
+      LEFT JOIN Class c ON p.classId = c.id
+      ORDER BY p.createdAt DESC
     `;
     
     const result = await c.env.DB.prepare(query).all();

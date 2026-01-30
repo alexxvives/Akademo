@@ -59,8 +59,7 @@ approvals.post('/academy', async (c) => {
     const enrollment = await c.env.DB
       .prepare(`
         SELECT ce.id, ce.classId, ce.userId, ce.status, ce.enrolledAt, ce.approvedAt, 
-               ce.documentSigned, ce.paymentStatus, ce.paymentMethod, ce.paymentAmount, 
-               ce.approvedBy, a.ownerId
+               ce.documentSigned, a.ownerId
         FROM ClassEnrollment ce
         JOIN Class c ON ce.classId = c.id
         JOIN Academy a ON c.academyId = a.id
@@ -142,8 +141,7 @@ approvals.post('/teacher', async (c) => {
     const enrollment = await c.env.DB
       .prepare(`
         SELECT ce.id, ce.classId, ce.userId, ce.status, ce.enrolledAt, ce.approvedAt, 
-               ce.documentSigned, ce.paymentStatus, ce.paymentMethod, ce.paymentAmount, 
-               ce.approvedBy, c.teacherId
+               ce.documentSigned, c.teacherId
         FROM ClassEnrollment ce
         JOIN Class c ON ce.classId = c.id
         WHERE ce.id = ?

@@ -5,83 +5,151 @@ import { successResponse, errorResponse } from '../lib/utils';
 
 const studentPayments = new Hono<{ Bindings: Bindings }>();
 
+// Test endpoint to verify route works
+studentPayments.get('/test', async (c) => {
+  console.log('[Student Payments] TEST endpoint hit');
+  return c.json({ success: true, message: 'Student payments route works' });
+});
+
 // GET /student-payments/:studentId/class/:classId - Get student payment history for a class
-studentPayments.get('/:studentId/class/:classId', requireAuth, async (c) => {
-  const session = c.get('session');
+studentPayments.get('/:studentId/class/:classId', async (c) => {
+  const session = await requireAuth(c);  // Call inside handler, not as middleware
   const { studentId, classId } = c.req.param();
 
+  console.log(`[Student Payments] Request for studentId=${studentId}, classId=${classId}, role=${session.role}`);
+
   try {
-    // Verify the requesting user has permission (must be academy owner or teacher of the class)
-    const classData = await c.env.DB
-      .prepare(`
-        SELECT c.*, a.ownerId, c.teacherId
-        FROM Class c
-        JOIN Academy a ON c.academyId = a.id
-        WHERE c.id = ?
-      `)
-      .bind(classId)
-      .first() as any;
+    // Verify the requesting user has permission
+    // For 'all' classes, skip class-specific permission check
+    if (classId !== 'all') {
+      const classData = await c.env.DB
+        .prepare(`
+          SELECT c.*, a.ownerId, c.teacherId
+          FROM Class c
+          JOIN Academy a ON c.academyId = a.id
+          WHERE c.id = ?
+        `)
+        .bind(classId)
+        .first() as any;
 
-    if (!classData) {
-      return c.json(errorResponse('Class not found'), 404);
+      console.log(`[Student Payments] Class data:`, classData);
+
+      if (!classData) {
+        return c.json(errorResponse('Class not found'), 404);
+      }
+
+      // Check permissions for specific class
+      const isOwner = session.role === 'ACADEMY' && classData.ownerId === session.id;
+      const isTeacher = session.role === 'TEACHER' && classData.teacherId === session.id;
+      const isAdmin = session.role === 'ADMIN';
+      const isStudent = session.role === 'STUDENT' && studentId === session.id;
+
+      if (!isOwner && !isTeacher && !isAdmin && !isStudent) {
+        return c.json(errorResponse('Not authorized to view this student payment history'), 403);
+      }
+    } else {
+      // For 'all' classes, just verify academy owner or admin
+      // We'll check if they own any academy this student is enrolled in
+      if (session.role === 'ACADEMY') {
+        const studentEnrollments = await c.env.DB
+          .prepare(`
+            SELECT e.classId
+            FROM ClassEnrollment e
+            JOIN Class c ON e.classId = c.id
+            JOIN Academy a ON c.academyId = a.id
+            WHERE e.userId = ? AND a.ownerId = ?
+            LIMIT 1
+          `)
+          .bind(studentId, session.id)
+          .first();
+        
+        if (!studentEnrollments) {
+          return c.json(errorResponse('Not authorized to view this student'), 403);
+        }
+      } else if (session.role !== 'ADMIN' && (session.role !== 'STUDENT' || studentId !== session.id)) {
+        return c.json(errorResponse('Not authorized to view payment history'), 403);
+      }
     }
 
-    // Check permissions
-    const isOwner = session.role === 'ACADEMY' && classData.ownerId === session.id;
-    const isTeacher = session.role === 'TEACHER' && classData.teacherId === session.id;
-    const isAdmin = session.role === 'ADMIN';
-    const isStudent = session.role === 'STUDENT' && studentId === session.id;
+    // Get enrollment details (skip if 'all' classes)
+    let enrollment: any = null;
+    if (classId !== 'all') {
+      enrollment = await c.env.DB
+        .prepare(`
+          SELECT 
+            e.*,
+            c.name as className,
+            c.monthlyPrice,
+            c.oneTimePrice,
+            c.allowMonthly
+          FROM ClassEnrollment e
+          JOIN Class c ON e.classId = c.id
+          WHERE e.userId = ? AND e.classId = ?
+        `)
+        .bind(studentId, classId)
+        .first() as any;
 
-    if (!isOwner && !isTeacher && !isAdmin && !isStudent) {
-      return c.json(errorResponse('Not authorized to view this student payment history'), 403);
+      if (!enrollment) {
+        return c.json(errorResponse('Enrollment not found'), 404);
+      }
     }
 
-    // Get enrollment details
-    const enrollment = await c.env.DB
-      .prepare(`
-        SELECT 
-          e.*,
-          c.name as className,
-          c.monthlyPrice,
-          c.oneTimePrice,
-          c.allowMonthly
-        FROM ClassEnrollment e
-        JOIN Class c ON e.classId = c.id
-        WHERE e.userId = ? AND e.classId = ?
-      `)
-      .bind(studentId, classId)
-      .first() as any;
-
-    if (!enrollment) {
-      return c.json(errorResponse('Enrollment not found'), 404);
-    }
-
-    // Get all payments for this student in this class
-    const payments = await c.env.DB
-      .prepare(`
+    // Get all payments for this student (all classes or specific class)
+    let paymentsQuery = '';
+    let paymentsParams: any[] = [];
+    
+    if (classId === 'all') {
+      // Fetch all payments across all classes for this student
+      paymentsQuery = `
+        SELECT p.*, c.name as className
+        FROM Payment p
+        JOIN Class c ON p.classId = c.id
+        WHERE p.payerId = ?
+        ORDER BY p.createdAt DESC
+      `;
+      paymentsParams = [studentId];
+    } else {
+      // Fetch payments for specific class
+      paymentsQuery = `
         SELECT *
         FROM Payment
         WHERE payerId = ? 
         AND classId = ?
         ORDER BY createdAt DESC
-      `)
-      .bind(studentId, classId)
+      `;
+      paymentsParams = [studentId, classId];
+    }
+    
+    const payments = await c.env.DB
+      .prepare(paymentsQuery)
+      .bind(...paymentsParams)
       .all();
 
-    // Calculate totals
+    console.log(`[Student Payments] Found ${payments.results?.length || 0} payments`);
+    console.log(`[Student Payments] Payments:`, JSON.stringify(payments.results));
+
+    // Calculate totals - only count PAID/COMPLETED for totalPaid
     const completedPayments = (payments.results || []).filter((p: any) => 
       p.status === 'COMPLETED' || p.status === 'PAID'
     );
     const totalPaid = completedPayments.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
+    
+    // Calculate totalDue from PENDING payments (what still needs to be paid)
+    const pendingPayments = (payments.results || []).filter((p: any) => 
+      p.status === 'PENDING'
+    );
+    const totalDue = pendingPayments.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
+    
+    // But show ALL payments in history (including PENDING)
+    const allPayments = payments.results || [];
 
-    // Determine total due based on payment frequency
-    const paymentFrequency = enrollment.paymentFrequency || 'ONE_TIME';
-    const totalDue = paymentFrequency === 'MONTHLY' 
-      ? (enrollment.monthlyPrice || 0)
-      : (enrollment.oneTimePrice || enrollment.paymentAmount || 0);
+    console.log(`[Student Payments] Total paid: ${totalPaid}, Total due: ${totalDue}, Completed: ${completedPayments.length}, Pending: ${pendingPayments.length}`);
 
-    // Format payments for frontend
-    const formattedPayments = (payments.results || []).map((payment: any, index: number) => {
+    // Get payment frequency from enrollment (if specific class)
+    const paymentFrequency = enrollment?.paymentFrequency || 'ONE_TIME';
+
+    // Format payments for frontend (all statuses including PENDING)
+    const formattedPayments = allPayments.map((payment: any, index: number) => {
       const metadata = payment.metadata ? JSON.parse(payment.metadata) : {};
       const dueDate = metadata.dueDate || payment.createdAt;
       const paymentDate = payment.completedAt || payment.createdAt;
@@ -99,17 +167,21 @@ studentPayments.get('/:studentId/class/:classId', requireAuth, async (c) => {
         dueDate: dueDate,
         isLate: isLate,
         approvedBy: metadata.approvedBy || null,
-        monthNumber: paymentFrequency === 'MONTHLY' ? (payments.results.length - index) : null,
+        monthNumber: paymentFrequency === 'MONTHLY' ? (allPayments.length - index) : null,
       };
     });
 
-    return c.json(successResponse({
+    const responseData = {
       totalPaid,
       totalDue,
       paymentFrequency,
-      enrollmentDate: enrollment.enrolledAt || enrollment.createdAt,
+      enrollmentDate: enrollment ? (enrollment.enrolledAt || enrollment.createdAt) : null,
       payments: formattedPayments,
-    }));
+    };
+
+    console.log(`[Student Payments] Returning response:`, JSON.stringify(responseData));
+
+    return c.json(successResponse(responseData));
   } catch (error: any) {
     console.error('[Student Payments] Error fetching payment history:', error);
     return c.json(errorResponse(`Failed to fetch payment history: ${error.message}`), 500);

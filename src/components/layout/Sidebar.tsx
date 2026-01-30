@@ -115,7 +115,7 @@ export function Sidebar({
               <img
                 src={`/api/storage/serve/${logoUrl}`}
                 alt="Academy Logo"
-                className="h-10 w-auto object-contain"
+                className="h-10 w-10 object-contain"
                 loading="eager"
                 fetchPriority="high"
               />

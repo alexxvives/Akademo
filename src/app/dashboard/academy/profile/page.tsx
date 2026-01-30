@@ -292,9 +292,10 @@ export default function ProfilePage() {
 
     const file = e.target.files[0];
     
-    // Validate SVG
-    if (file.type !== 'image/svg+xml') {
-      alert('Solo se permiten archivos SVG');
+    // Validate image types (SVG, PNG, JPG)
+    const validTypes = ['image/svg+xml', 'image/png', 'image/jpeg', 'image/jpg'];
+    if (!validTypes.includes(file.type)) {
+      alert('Solo se permiten archivos SVG, PNG o JPG');
       return;
     }
 
@@ -463,42 +464,78 @@ export default function ProfilePage() {
               {/* Logo Upload */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2 text-center">
-                  Logo de la academia (SVG)
+                  Logo de la academia
                 </label>
-                <div className="flex flex-col items-center gap-3">
+                <div className="flex items-center justify-center gap-3">
                   {academy.logoUrl ? (
-                    <div className="w-12 h-12 bg-gray-50 border border-gray-200 rounded-lg p-1.5 flex items-center justify-center flex-shrink-0">
-                      <img src={`/api/storage/serve/${academy.logoUrl}`} alt="Logo" className="w-full h-full object-contain" />
+                    <div className="w-16 h-16 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      <img src={`/api/storage/serve/${academy.logoUrl}`} alt="Logo" className="w-full h-full" style={{objectFit: 'contain'}} />
                     </div>
                   ) : (
-                    <div className="w-12 h-12 bg-gray-100 border border-gray-300 border-dashed rounded-lg flex items-center justify-center flex-shrink-0">
-                      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-16 h-16 bg-gray-100 border border-gray-300 border-dashed rounded-lg flex items-center justify-center flex-shrink-0">
+                      <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                     </div>
                   )}
-                  <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all font-medium text-sm">
-                    <input
-                      type="file"
-                      accept="image/svg+xml"
-                      onChange={handleLogoUpload}
-                      disabled={uploadingLogo}
-                      className="hidden"
-                    />
-                    {uploadingLogo ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-600 border-t-transparent"></div>
-                        Subiendo...
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  <div className="flex items-center gap-2">
+                    <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all font-medium text-sm">
+                      <input
+                        type="file"
+                        accept="image/svg+xml,image/png,image/jpeg,image/jpg"
+                        onChange={handleLogoUpload}
+                        disabled={uploadingLogo}
+                        className="hidden"
+                      />
+                      {uploadingLogo ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-600 border-t-transparent"></div>
+                          Subiendo...
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                          </svg>
+                          {academy.logoUrl ? 'Cambiar' : 'Subir logo'}
+                        </>
+                      )}
+                    </label>
+                    {academy.logoUrl && (
+                      <button
+                        onClick={async () => {
+                          if (confirm('¿Estás seguro de que quieres eliminar el logo?')) {
+                            try {
+                              const token = localStorage.getItem('auth_token') || '';
+                              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/academies/${academy.id}`, {
+                                method: 'PATCH',
+                                credentials: 'include',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                                },
+                                body: JSON.stringify({ logoUrl: null }),
+                              });
+                              if (response.ok) {
+                                setAcademy({ ...academy, logoUrl: undefined });
+                              } else {
+                                const errorData = await response.json();
+                                alert(`Error: ${errorData.error || 'Error al eliminar el logo'}`);
+                              }
+                            } catch (error) {
+                              alert('Error al eliminar el logo');
+                            }
+                          }
+                        }}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                        title="Eliminar logo"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
-                        {academy.logoUrl ? 'Cambiar' : 'Subir logo'}
-                      </>
+                      </button>
                     )}
-                  </label>
+                  </div>
                 </div>
               </div>
             </div>

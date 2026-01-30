@@ -153,18 +153,19 @@ academies.get('/students', async (c) => {
         ORDER BY u.lastName, u.firstName
       `;
     } else {
-      // Academy owners see students in their academies
+      // Academy owners see students in their academies (unique students only)
       query = `
-        SELECT DISTINCT
-          u.id, u.email, u.firstName, u.lastName,
-          a.id as academyId, a.name as academyName,
-          c.id as classId, c.name as className,
-          ce.status as enrollmentStatus
+        SELECT 
+          u.id, 
+          u.email, 
+          u.firstName, 
+          u.lastName
         FROM User u
         JOIN ClassEnrollment ce ON u.id = ce.userId
         JOIN Class c ON ce.classId = c.id
         JOIN Academy a ON c.academyId = a.id
         WHERE u.role = 'STUDENT' AND a.ownerId = ?
+        GROUP BY u.id, u.email, u.firstName, u.lastName
         ORDER BY u.lastName, u.firstName
       `;
       params = [session.id];

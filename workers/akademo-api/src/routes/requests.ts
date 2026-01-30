@@ -49,19 +49,14 @@ requests.post('/student', async (c) => {
       } else if (existing.status === 'REJECTED' || existing.status === 'WITHDRAWN') {
         // Auto-approve re-requests (no manual approval needed)
         const now = new Date().toISOString();
-        const classPrice = classRecord.price || 0;
-        
-        // If class has a price, set paymentStatus to CASH_PENDING
-        const paymentStatus = classPrice > 0 ? 'CASH_PENDING' : 'PAID';
-        const paymentMethod = classPrice > 0 ? 'cash' : null;
         
         await c.env.DB
           .prepare(`
             UPDATE ClassEnrollment 
-            SET status = ?, paymentStatus = ?, paymentMethod = ?, paymentAmount = ?
+            SET status = ?, approvedAt = ?
             WHERE userId = ? AND classId = ?
           `)
-          .bind('APPROVED', paymentStatus, paymentMethod, classPrice, session.id, classId)
+          .bind('APPROVED', now, session.id, classId)
           .run();
         return c.json(successResponse({ message: 'Enrollment approved successfully' }));
       }
@@ -72,18 +67,13 @@ requests.post('/student', async (c) => {
     const now = new Date().toISOString();
     const classPrice = classRecord.price || 0;
     
-    // If class has a price > 0, create with CASH_PENDING payment status
-    // Otherwise, mark as PAID (free classes)
-    const paymentStatus = classPrice > 0 ? 'CASH_PENDING' : 'PAID';
-    const paymentMethod = classPrice > 0 ? 'cash' : null;
-    
     await c.env.DB
       .prepare(`
         INSERT INTO ClassEnrollment 
-        (id, classId, userId, status, documentSigned, paymentStatus, paymentMethod, paymentAmount, enrolledAt) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (id, classId, userId, status, documentSigned, enrolledAt, approvedAt) 
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `)
-      .bind(enrollmentId, classId, session.id, 'APPROVED', 0, paymentStatus, paymentMethod, classPrice, now)
+      .bind(enrollmentId, classId, session.id, 'APPROVED', 0, now, now)
       .run();
 
     return c.json(successResponse({ 
