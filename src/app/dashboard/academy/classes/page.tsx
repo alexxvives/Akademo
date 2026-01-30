@@ -227,8 +227,12 @@ export default function AcademyClassesPage() {
     if (!editingClass) return;
     setError('');
     
+    console.log('[Edit Class] formData:', formData);
+    console.log('[Edit Class] allowMonthly:', formData.allowMonthly, 'allowOneTime:', formData.allowOneTime);
+    
     // Validate payment options
     if (!formData.allowMonthly && !formData.allowOneTime) {
+      console.log('[Edit Class] Validation failed - no payment options selected');
       setPaymentOptionsError(true);
       return;
     }
@@ -237,13 +241,18 @@ export default function AcademyClassesPage() {
     setSaving(true);
 
     try {
+      const body = JSON.stringify(formData);
+      console.log('[Edit Class] Sending request body:', body);
+      
       const res = await apiClient(`/classes/${editingClass.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body
       });
 
       const data = await res.json();
+      console.log('[Edit Class] Response:', data);
+      
       if (!res.ok) {
         throw new Error(data.error || 'Error updating class');
       }
