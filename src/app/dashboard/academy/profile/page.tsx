@@ -205,29 +205,39 @@ export default function ProfilePage() {
   const handleSettingChange = async (field: string, value: any) => {
     if (!academy) return;
 
+    console.log('[handleSettingChange] Called with field:', field, 'value:', value);
+
     // Update local state immediately
     const newFormData = { ...formData, [field]: value };
     setFormData(newFormData);
 
+    console.log('[handleSettingChange] newFormData:', newFormData);
+
     // Save to database immediately with ALL current values
     try {
+      const body = {
+        name: newFormData.name,
+        address: newFormData.address,
+        phone: newFormData.phone,
+        email: newFormData.email,
+        feedbackAnonymous: field === 'feedbackAnonymous' ? value : (newFormData.feedbackAnonymous ? 1 : 0),
+        defaultWatermarkIntervalMins: newFormData.defaultWatermarkIntervalMins,
+        defaultMaxWatchTimeMultiplier: newFormData.defaultMaxWatchTimeMultiplier,
+        allowedPaymentMethods: field === 'allowedPaymentMethods' ? value : JSON.stringify(newFormData.allowedPaymentMethods),
+        allowMultipleTeachers: field === 'allowMultipleTeachers' ? value : (newFormData.allowMultipleTeachers ? 1 : 0)
+      };
+
+      console.log('[handleSettingChange] Request body:', body);
+
       const response = await apiClient(`/academies/${academy.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: newFormData.name,
-          address: newFormData.address,
-          phone: newFormData.phone,
-          email: newFormData.email,
-          feedbackAnonymous: field === 'feedbackAnonymous' ? value : (newFormData.feedbackAnonymous ? 1 : 0),
-          defaultWatermarkIntervalMins: newFormData.defaultWatermarkIntervalMins,
-          defaultMaxWatchTimeMultiplier: newFormData.defaultMaxWatchTimeMultiplier,
-          allowedPaymentMethods: field === 'allowedPaymentMethods' ? value : JSON.stringify(newFormData.allowedPaymentMethods),
-          allowMultipleTeachers: field === 'allowMultipleTeachers' ? value : (newFormData.allowMultipleTeachers ? 1 : 0)
-        })
+        body: JSON.stringify(body)
       });
       
       const result = await response.json();
+      console.log('[handleSettingChange] Response:', result);
+      
       if (!result.success) {
         console.error('Error updating setting:', result);
         alert('Error al actualizar la configuración');
@@ -692,10 +702,14 @@ export default function ProfilePage() {
             <button
               type="button"
               onClick={async () => {
+                console.log('[Payment Methods] Before - formData.allowedPaymentMethods:', formData.allowedPaymentMethods);
                 const currentMethods = Array.isArray(formData.allowedPaymentMethods) ? formData.allowedPaymentMethods : [];
+                console.log('[Payment Methods] currentMethods:', currentMethods);
                 const updated = currentMethods.includes('stripe')
                   ? currentMethods.filter(m => m !== 'stripe')
                   : [...currentMethods, 'stripe'];
+                console.log('[Payment Methods] Updated array:', updated);
+                console.log('[Payment Methods] Stringified:', JSON.stringify(updated));
                 setFormData({ ...formData, allowedPaymentMethods: updated });
                 await handleSettingChange('allowedPaymentMethods', JSON.stringify(updated));
               }}
