@@ -57,7 +57,9 @@ export default function AcademyClassesPage() {
     allowMonthly: true, 
     allowOneTime: false,
     zoomAccountId: '', 
-    whatsappGroupLink: '' 
+    whatsappGroupLink: '',
+    maxStudents: '',
+    startDate: ''
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -193,6 +195,8 @@ export default function AcademyClassesPage() {
           allowOneTime: formData.allowOneTime ? 1 : 0,
           zoomAccountId: formData.zoomAccountId || null,
           whatsappGroupLink: formData.whatsappGroupLink || null,
+          maxStudents: formData.maxStudents ? parseInt(formData.maxStudents) : null,
+          startDate: formData.startDate || null,
           academyId
         })
       });
@@ -212,7 +216,9 @@ export default function AcademyClassesPage() {
         allowMonthly: true, 
         allowOneTime: false,
         zoomAccountId: '', 
-        whatsappGroupLink: '' 
+        whatsappGroupLink: '',
+        maxStudents: '',
+        startDate: ''
       });
       loadData();
     } catch (err: any) {
@@ -259,16 +265,18 @@ export default function AcademyClassesPage() {
 
       setShowEditModal(false);
       setEditingClass(null);
-      setFormData({ 
-        name: '', 
-        description: '', 
-        teacherId: '', 
-        monthlyPrice: '', 
-        oneTimePrice: '', 
-        allowMonthly: true, 
+      setFormData({
+        name: '',
+        description: '',
+        teacherId: '',
+        monthlyPrice: '',
+        oneTimePrice: '',
+        allowMonthly: true,
         allowOneTime: false,
-        zoomAccountId: '', 
-        whatsappGroupLink: '' 
+        zoomAccountId: '',
+        whatsappGroupLink: '',
+        maxStudents: '',
+        startDate: ''
       });
       setPaymentOptionsError(false);  // Reset validation error
       await loadData();  // Wait for data to refresh before allowing next edit
@@ -290,7 +298,9 @@ export default function AcademyClassesPage() {
       allowMonthly: (cls as any).allowMonthly === 1,
       allowOneTime: (cls as any).allowOneTime === 1,
       zoomAccountId: (cls as any).zoomAccountId || '',
-      whatsappGroupLink: (cls as any).whatsappGroupLink || ''
+      whatsappGroupLink: (cls as any).whatsappGroupLink || '',
+      maxStudents: (cls as any).maxStudents?.toString() || '',
+      startDate: (cls as any).startDate || ''
     });
     setError('');
     setShowEditModal(true);
@@ -306,7 +316,9 @@ export default function AcademyClassesPage() {
       allowMonthly: true, 
       allowOneTime: false,
       zoomAccountId: '', 
-      whatsappGroupLink: '' 
+      whatsappGroupLink: '',
+      maxStudents: '',
+      startDate: ''
     });
     setError('');
     setShowCreateModal(true);
@@ -695,6 +707,35 @@ export default function AcademyClassesPage() {
                 />
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Máximo de estudiantes (opcional)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={formData.maxStudents}
+                    onChange={(e) => setFormData({ ...formData, maxStudents: e.target.value })}
+                    placeholder="Ej: 30"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Dejar vacío para sin límite</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Fecha de inicio (opcional)
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.startDate}
+                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
               {error && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
                   {error}
@@ -963,6 +1004,35 @@ export default function AcademyClassesPage() {
                   placeholder="https://chat.whatsapp.com/..."
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Máximo de estudiantes (opcional)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={formData.maxStudents}
+                    onChange={(e) => setFormData({ ...formData, maxStudents: e.target.value })}
+                    placeholder="Ej: 30"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Dejar vacío para sin límite</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Fecha de inicio (opcional)
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.startDate}
+                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
               </div>
 
               {error && (

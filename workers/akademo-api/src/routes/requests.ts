@@ -22,15 +22,35 @@ requests.post('/student', async (c) => {
       return c.json(errorResponse('classId is required'), 400);
     }
 
-    // Check if class exists and get price
+    // Check if class exists and get details
     const classRecord: any = await c.env.DB
-      .prepare('SELECT id, name, price FROM Class WHERE id = ?')
+      .prepare(`
+        SELECT c.id, c.name, c.price, c.maxStudents, c.academyId, a.email as academyEmail
+        FROM Class c
+        JOIN Academy a ON c.academyId = a.id
+        WHERE c.id = ?
+      `)
       .bind(classId)
       .first();
 
     if (!classRecord) {
       console.error('[Student Request] Class not found:', classId);
       return c.json(errorResponse('Class not found'), 404);
+    }
+
+    // Check if class has reached max students limit
+    if (classRecord.maxStudents !== null && classRecord.maxStudents > 0) {
+      const enrollmentCount = await c.env.DB
+        .prepare('SELECT COUNT(*) as count FROM ClassEnrollment WHERE classId = ? AND status = ?')
+        .bind(classId, 'APPROVED')
+        .first() as any;
+      
+      if (enrollmentCount && enrollmentCount.count >= classRecord.maxStudents) {
+        return c.json(errorResponse(
+          `Esta clase ha alcanzado su límite de ${classRecord.maxStudents} estudiantes. ` +
+          `Puedes contactar a la academia en ${classRecord.academyEmail} para solicitar más cupos.`
+        ), 400);
+      }
     }
 
     // Check if already enrolled

@@ -78,7 +78,7 @@ export default function AcademyClassesPage() {
       const result = await response.json();
 
       if (result.success) {
-        alert('¡Solicitud enviada! El profesor la revisará pronto.');
+        alert('¡Te has inscrito exitosamente! Ahora puedes acceder a la clase.');
         router.push('/dashboard/student/classes');
       } else {
         alert(result.error || 'Failed to send request');
