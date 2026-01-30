@@ -47,6 +47,7 @@ export default function AcademyPaymentsPage() {
   const [paymentHistory, setPaymentHistory] = useState<PaymentHistory[]>([]);
   const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
   const [selectedClass, setSelectedClass] = useState('all');
+  const [academyName, setAcademyName] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
@@ -151,6 +152,7 @@ export default function AcademyPaymentsPage() {
       
       if (academyResult.success && Array.isArray(academyResult.data) && academyResult.data.length > 0) {
         const academy = academyResult.data[0];
+        setAcademyName(academy.name);
         const status = academy.paymentStatus || 'PAID';
         setPaymentStatus(status);
         
@@ -424,12 +426,28 @@ export default function AcademyPaymentsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header with Filters - matching students page layout */}
+      {/* Header with Register Button */}
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Gestión de Pagos</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-semibold text-gray-900">Gestión de Pagos</h1>
+            <button
+              onClick={() => {
+                setEditingPaymentId(null);
+                setRegisterForm({ studentId: '', classId: '', amount: '', paymentMethod: 'cash', status: 'PAID' });
+                setStudentSearchTerm('');
+                setShowRegisterModal(true);
+              }}
+              className="px-4 py-2 bg-accent-300 text-gray-900 border-2 border-accent-300 rounded-lg hover:bg-accent-400 hover:border-accent-400 font-medium text-sm transition-all flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Registrar Pago
+            </button>
+          </div>
           <p className="text-gray-600 text-sm mt-1">
-            Gestiona todos los pagos - pendientes y completados
+            {academyName || 'Cargando...'}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -462,21 +480,6 @@ export default function AcademyPaymentsPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </div>
-          {/* Register Payment Button */}
-          <button
-            onClick={() => {
-              setEditingPaymentId(null);
-              setRegisterForm({ studentId: '', classId: '', amount: '', paymentMethod: 'cash', status: 'PAID' });
-              setStudentSearchTerm('');
-              setShowRegisterModal(true);
-            }}
-            className="px-4 py-2 bg-accent-300 text-gray-900 border-2 border-accent-300 rounded-lg hover:bg-accent-400 hover:border-accent-400 font-medium text-sm transition-all flex items-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Registrar Pago
-          </button>
         </div>
       </div>
 
