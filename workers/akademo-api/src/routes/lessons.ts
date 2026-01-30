@@ -963,6 +963,98 @@ lessons.post('/:id/rating', async (c) => {
   }
 });
 
+// GET /lessons/ratings/unread-count - Get count of unread ratings for teacher/academy
+lessons.get('/ratings/unread-count', async (c) => {
+  try {
+    const session = await requireAuth(c);
+
+    if (session.role !== 'TEACHER' && session.role !== 'ACADEMY') {
+      return c.json(errorResponse('Only teachers and academy owners can view rating counts'), 403);
+    }
+
+    let classIds: string[] = [];
+
+    if (session.role === 'TEACHER') {
+      // Get classes taught by this teacher
+      const classes = await c.env.DB
+        .prepare('SELECT id FROM Class WHERE teacherId = ?')
+        .bind(session.id)
+        .all();
+      classIds = classes.results.map((cls: any) => cls.id);
+    } else if (session.role === 'ACADEMY') {
+      // Get classes in academy owned by this user
+      const classes = await c.env.DB
+        .prepare(`
+          SELECT c.id 
+          FROM Class c 
+          JOIN Academy a ON c.academyId = a.id 
+          WHERE a.ownerId = ?
+        `)
+        .bind(session.id)
+        .all();
+      classIds = classes.results.map((cls: any) => cls.id);
+    }
+
+    if (classIds.length === 0) {
+      return c.json(successResponse({ count: 0, byClass: {} }));
+    }
+
+    // Get unread ratings for these classes
+    const placeholders = classIds.map(() => '?').join(',');
+    const unreadRatings = await c.env.DB
+      .prepare(`
+        SELECT lr.id, lr.lessonId, lr.rating, l.classId, l.title as lessonTitle
+        FROM LessonRating lr
+        JOIN Lesson l ON lr.lessonId = l.id
+        WHERE l.classId IN (${placeholders})
+        AND lr.isRead = 0
+        ORDER BY lr.createdAt DESC
+      `)
+      .bind(...classIds)
+      .all();
+
+    const totalCount = unreadRatings.results.length;
+    
+    // Group by class ID
+    const byClass: Record<string, number> = {};
+    unreadRatings.results.forEach((rating: any) => {
+      byClass[rating.classId] = (byClass[rating.classId] || 0) + 1;
+    });
+
+    return c.json(successResponse({ count: totalCount, byClass, ratings: unreadRatings.results }));
+  } catch (error: any) {
+    console.error('[Get Unread Ratings Count] Error:', error);
+    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+  }
+});
+
+// POST /lessons/ratings/mark-read - Mark rating(s) as read
+lessons.post('/ratings/mark-read', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    const { ratingIds } = await c.req.json();
+
+    if (session.role !== 'TEACHER' && session.role !== 'ACADEMY') {
+      return c.json(errorResponse('Only teachers and academy owners can mark ratings as read'), 403);
+    }
+
+    if (!ratingIds || !Array.isArray(ratingIds) || ratingIds.length === 0) {
+      return c.json(errorResponse('ratingIds array is required'), 400);
+    }
+
+    const placeholders = ratingIds.map(() => '?').join(',');
+    await c.env.DB
+      .prepare(`UPDATE LessonRating SET isRead = 1 WHERE id IN (${placeholders})`)
+      .bind(...ratingIds)
+      .run();
+
+    return c.json(successResponse({ message: 'Ratings marked as read', count: ratingIds.length }));
+  } catch (error: any) {
+    console.error('[Mark Ratings Read] Error:', error);
+    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+  }
+});
+
 // POST /lessons/:id/add-files - Add videos and documents to an existing lesson
 lessons.post('/:id/add-files', async (c) => {
   try {
