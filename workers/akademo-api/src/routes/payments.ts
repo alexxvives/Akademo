@@ -403,32 +403,32 @@ payments.get('/history', async (c) => {
     let params: any[] = [];
 
     if (session.role === 'ACADEMY') {
-      // Get payment history for owned academies (PAID only, no denied)
+      // Get payment history from Payment table
       query = `
         SELECT 
-          e.id as enrollmentId,
-          e.userId as studentId,
-          e.classId,
-          e.paymentStatus,
-          e.paymentAmount,
-          c.currency,
-          e.paymentMethod,
-          e.approvedAt,
-          e.approvedByName,
+          p.id,
+          p.payerId as studentId,
+          p.classId,
+          p.amount as paymentAmount,
+          p.currency,
+          p.paymentMethod,
+          p.completedAt as approvedAt,
+          p.status as paymentStatus,
+          p.payerName as studentName,
+          p.payerEmail as studentEmail,
           u.firstName as studentFirstName,
           u.lastName as studentLastName,
-          u.email as studentEmail,
           c.name as className,
           teacher.firstName || ' ' || teacher.lastName as teacherName
-        FROM ClassEnrollment e
-        JOIN User u ON e.userId = u.id
-        JOIN Class c ON e.classId = c.id
+        FROM Payment p
+        JOIN Class c ON p.classId = c.id
         JOIN Academy a ON c.academyId = a.id
+        JOIN User u ON p.payerId = u.id
         LEFT JOIN User teacher ON c.teacherId = teacher.id
         WHERE a.ownerId = ? 
-          AND e.paymentAmount > 0
-          AND e.paymentStatus = 'PAID'
-        ORDER BY e.approvedAt DESC
+          AND p.status IN ('PAID', 'COMPLETED')
+          AND p.type = 'STUDENT_TO_ACADEMY'
+        ORDER BY p.completedAt DESC
         LIMIT 50
       `;
       params = [session.id];
@@ -696,7 +696,7 @@ payments.post('/register-manual', requireAuth, async (c) => {
 
     // Create payment record
     const paymentId = crypto.randomUUID();
-    await c.env.DB
+    const result = await c.env.DB
       .prepare(`
         INSERT INTO Payment (
           id, type, payerId, payerType, payerName, payerEmail,
@@ -721,6 +721,10 @@ payments.post('/register-manual', requireAuth, async (c) => {
         JSON.stringify({ registeredBy: session.id, enrollmentId: enrollment.id }),
       )
       .run();
+
+    if (!result.success) {
+      throw new Error('Failed to insert payment record');
+    }
 
     return c.json(successResponse({ id: paymentId, message: 'Pago registrado exitosamente' }));
   } catch (error: any) {

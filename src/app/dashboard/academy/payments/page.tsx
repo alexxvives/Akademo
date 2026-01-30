@@ -515,11 +515,11 @@ export default function AcademyPaymentsPage() {
       {/* Payment History Table */}
       {paymentHistory.length > 0 && (
         <div className="mt-8">
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center mb-4">
             <h2 className="text-xl font-semibold text-gray-900">Historial de Pagos</h2>
             <button
               onClick={() => setShowRegisterModal(true)}
-              className="ml-auto px-4 py-2 bg-accent-300 text-gray-900 border-2 border-accent-300 rounded-lg hover:bg-accent-400 hover:border-accent-400 font-medium text-sm transition-all flex items-center gap-2"
+              className="ml-3 px-4 py-2 bg-accent-300 text-gray-900 border-2 border-accent-300 rounded-lg hover:bg-accent-400 hover:border-accent-400 font-medium text-sm transition-all flex items-center gap-2"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -622,8 +622,11 @@ export default function AcademyPaymentsPage() {
                       setRegisterForm({ ...registerForm, studentId: student?.id || '' });
                     }}
                     placeholder="Buscar estudiante..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500"
                   />
+                  <svg className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
                   <datalist id="students-list">
                     {students.map(s => (
                       <option key={s.id} value={`${s.firstName} ${s.lastName}`}>{s.email}</option>
