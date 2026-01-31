@@ -241,8 +241,8 @@ academies.post('/teachers', async (c) => {
 
     // Create teacher record linking to academy
     await c.env.DB.prepare(
-      `INSERT INTO Teacher (id, userId, academyId, createdAt, updatedAt)
-       VALUES (?, ?, ?, datetime('now'), datetime('now'))`
+      `INSERT INTO Teacher (id, userId, academyId, createdAt)
+       VALUES (?, ?, ?, datetime('now'))`
     ).bind(crypto.randomUUID(), userId, academyId).run();
 
     // Send onboarding email via Resend API

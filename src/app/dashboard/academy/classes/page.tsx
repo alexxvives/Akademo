@@ -253,6 +253,12 @@ export default function AcademyClassesPage() {
     if (!editingClass) return;
     setError('');
     
+    // Block editing for demo academy (NOT PAID status)
+    if (paymentStatus === 'NOT PAID') {
+      setError('Activa tu academia para editar clases reales');
+      return;
+    }
+    
     console.log('[Edit Class] formData:', formData);
     console.log('[Edit Class] allowMonthly:', formData.allowMonthly, 'allowOneTime:', formData.allowOneTime);
     
@@ -372,16 +378,10 @@ export default function AcademyClassesPage() {
             {academyName && <p className="text-sm text-gray-500 mt-1">{academyName}</p>}
           </div>
           <button
-            onClick={paymentStatus === 'NOT PAID' ? () => window.location.href = '/dashboard/academy/facturas' : openCreateModal}
-            disabled={teachers.length === 0 || paymentStatus === 'NOT PAID'}
+            onClick={openCreateModal}
+            disabled={teachers.length === 0}
             className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-            title={
-              paymentStatus === 'NOT PAID' 
-                ? 'Debes comprar un plan desde la página Facturas para crear clases' 
-                : teachers.length === 0 
-                  ? 'Debes tener al menos un profesor para crear clases' 
-                  : ''
-            }
+            title={teachers.length === 0 ? 'Debes tener al menos un profesor para crear clases' : ''}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -414,7 +414,7 @@ export default function AcademyClassesPage() {
             )}
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-4 pb-8">
             {classes.map((cls) => (
               <Link
                 key={cls.id}
