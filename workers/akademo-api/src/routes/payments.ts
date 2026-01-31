@@ -381,16 +381,7 @@ payments.post('/stripe-session', async (c) => {
       },
     });
 
-    // Save pending payment record (webhook will update to PAID when confirmed)
-    await c.env.DB
-      .prepare(`
-        UPDATE ClassEnrollment 
-        SET paymentStatus = 'PENDING',
-            paymentMethod = 'stripe'
-        WHERE userId = ? AND classId = ?
-      `)
-      .bind(session.id, classId)
-      .run();
+    // Enrollment already exists, no need to update it - payment will be created by webhook
 
     return c.json(successResponse({ url: checkoutSession.url }));
     //     classId,
@@ -881,10 +872,10 @@ payments.delete('/:id', async (c) => {
       return c.json(errorResponse('Not authorized to delete this payment'), 403);
     }
 
-    // Reset the payment status to PENDING (keeps enrollment but removes payment request)
+    // Delete the payment record
     await c.env.DB
-      .prepare('UPDATE ClassEnrollment SET paymentStatus = ?, paymentAmount = 0, paymentMethod = NULL WHERE id = ?')
-      .bind('PENDING', enrollmentId)
+      .prepare('DELETE FROM Payment WHERE id = ?')
+      .bind(paymentId)
       .run();
 
     return c.json(successResponse({ message: 'Payment deleted successfully' }));

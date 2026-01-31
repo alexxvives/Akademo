@@ -41,6 +41,7 @@ export default function PaymentModal({
   currentStudentCount,
 }: PaymentModalProps) {
   const [selectedMethod, setSelectedMethod] = useState<'cash' | 'stripe' | 'bizum' | null>(null);
+  const [paymentFrequency, setPaymentFrequency] = useState<'monthly' | 'one-time' | null>(null);
   const [processing, setProcessing] = useState(false);
   const [confirmingCash, setConfirmingCash] = useState(false);
   const [confirmingBizum, setConfirmingBizum] = useState(false);
@@ -70,6 +71,23 @@ export default function PaymentModal({
 
   // Check if class is full
   const isClassFull = maxStudents && currentStudentCount && currentStudentCount >= maxStudents;
+
+  // Determine if we need to show frequency selection
+  const needsFrequencySelection = allowMonthly && allowOneTime;
+  const showPaymentMethods = !needsFrequencySelection || paymentFrequency !== null;
+
+  // Get the price based on selection
+  const currentPrice = paymentFrequency === 'one-time' 
+    ? (oneTimePrice || price) 
+    : paymentFrequency === 'monthly' 
+      ? (monthlyPrice || price)
+      : allowMonthly ? (monthlyPrice || price) : (oneTimePrice || price);
+  
+  const priceLabel = paymentFrequency === 'one-time' 
+    ? 'Pago único' 
+    : paymentFrequency === 'monthly' 
+      ? 'Por mes'
+      : allowMonthly ? 'Por mes' : 'Pago único';
 
   const handleCashPayment = () => {
     setConfirmingCash(true);
@@ -284,12 +302,12 @@ export default function PaymentModal({
             <div className="lg:col-span-1">
               <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 h-full flex flex-col justify-center">
                 <p className="text-xs uppercase tracking-wider text-gray-500 mb-2 text-center">Total</p>
-                <p className="text-3xl font-bold text-gray-900 text-center">{formatPrice(price, currency)}</p>
-                <p className="text-xs text-gray-500 mt-1 text-center">/ mes</p>
+                <p className="text-3xl font-bold text-gray-900 text-center">{formatPrice(currentPrice, currency)}</p>
+                <p className="text-xs text-gray-500 mt-1 text-center">{priceLabel}</p>
               </div>
             </div>
 
-            {/* Right Side - Payment Options or Full Message */}
+            {/* Right Side - Frequency Selection or Payment Options */}
             <div className="lg:col-span-3 space-y-3">
               {isClassFull ? (
                 <div className="bg-red-50 border-2 border-red-200 rounded-xl p-8 text-center">
@@ -304,32 +322,88 @@ export default function PaymentModal({
                     Puedes contactar a la academia para solicitar más cupos.
                   </p>
                 </div>
-              ) : (
+              ) : needsFrequencySelection && !paymentFrequency ? (
                 <>
-                  {/* Only show Stripe if either payment type is enabled */}
-                  {(allowMonthly || allowOneTime) && (
-                    <button
-                      onClick={() => {
-                        setSelectedMethod('stripe');
-                        handleStripePayment();
-                      }}
-                      className="w-full p-4 border-2 border-gray-300 rounded-xl text-left transition-all hover:border-gray-400 hover:shadow-md"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-gray-900 mb-2">Tarjeta de Crédito/Débito</h3>
-                          <p className="text-gray-600 mb-3">
-                            Pago seguro con Stripe (Visa, Mastercard, etc.)
-                          </p>
-                          <span className="inline-block text-xs text-white bg-gray-900 px-3 py-1.5 rounded-full">
-                            Acceso inmediato
-                          </span>
-                        </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Selecciona el tipo de pago</h3>
+                  
+                  {/* Monthly Option */}
+                  <button
+                    onClick={() => setPaymentFrequency('monthly')}
+                    className="w-full p-6 border-2 border-blue-200 bg-blue-50 rounded-xl text-left transition-all hover:border-blue-400 hover:shadow-md"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <h4 className="text-xl font-bold text-gray-900 mb-2">Pago Mensual</h4>
+                        <p className="text-gray-600 mb-3">
+                          {formatPrice(monthlyPrice || 0, currency)} por mes
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Cobro recurrente mensual
+                        </p>
                       </div>
+                      <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </button>
+
+                  {/* One-Time Option */}
+                  <button
+                    onClick={() => setPaymentFrequency('one-time')}
+                    className="w-full p-6 border-2 border-green-200 bg-green-50 rounded-xl text-left transition-all hover:border-green-400 hover:shadow-md"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <h4 className="text-xl font-bold text-gray-900 mb-2">Pago Único</h4>
+                        <p className="text-gray-600 mb-3">
+                          {formatPrice(oneTimePrice || 0, currency)} una sola vez
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          Pago único, acceso total
+                        </p>
+                      </div>
+                      <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </button>
+                </>
+              ) : showPaymentMethods ? (
+                <>
+                  {needsFrequencySelection && (
+                    <button
+                      onClick={() => setPaymentFrequency(null)}
+                      className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                      Volver a seleccionar tipo de pago
                     </button>
                   )}
+                  
+                  {/* Stripe Payment */}
+                  <button
+                    onClick={() => {
+                      setSelectedMethod('stripe');
+                      handleStripePayment();
+                    }}
+                    className="w-full p-4 border-2 border-gray-300 rounded-xl text-left transition-all hover:border-gray-400 hover:shadow-md"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Tarjeta de Crédito/Débito</h3>
+                        <p className="text-gray-600 mb-3">
+                          Pago seguro con Stripe (Visa, Mastercard, etc.)
+                        </p>
+                        <span className="inline-block text-xs text-white bg-gray-900 px-3 py-1.5 rounded-full">
+                          Acceso inmediato
+                        </span>
+                      </div>
+                    </div>
+                  </button>
 
-              {/* Bizum - SECOND */}
+              {/* Bizum */}
               <button
                 onClick={() => {
                   setSelectedMethod('bizum');
@@ -383,7 +457,7 @@ export default function PaymentModal({
                 </div>
               </button>
                 </>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
