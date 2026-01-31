@@ -5,7 +5,7 @@ import { apiClient, API_BASE_URL } from '@/lib/api-client';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import ProtectedVideoPlayer from '@/components/ProtectedVideoPlayer';
-import { PageLoader } from '@/components/ui';
+import { SkeletonForm } from '@/components/ui/SkeletonLoader';
 import { useAuth } from '@/hooks/useAuth';
 import { multipartUpload } from '@/lib/multipart-upload';
 import { uploadToBunny } from '@/lib/bunny-upload';
