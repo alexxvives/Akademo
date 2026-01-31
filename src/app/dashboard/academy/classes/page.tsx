@@ -166,6 +166,20 @@ export default function AcademyClassesPage() {
     // Validation: at least one payment option must be selected
     if (!formData.allowMonthly && !formData.allowOneTime) {
       setPaymentOptionsError(true);
+      setError('Debes seleccionar al menos una opción de pago');
+      return;
+    }
+    
+    // Validation: if payment option is selected, price must be filled in
+    if (formData.allowMonthly && (!formData.monthlyPrice || parseFloat(formData.monthlyPrice) <= 0)) {
+      setPaymentOptionsError(true);
+      setError('Debes ingresar el precio mensual');
+      return;
+    }
+    
+    if (formData.allowOneTime && (!formData.oneTimePrice || parseFloat(formData.oneTimePrice) <= 0)) {
+      setPaymentOptionsError(true);
+      setError('Debes ingresar el precio del pago único');
       return;
     }
     
@@ -240,8 +254,23 @@ export default function AcademyClassesPage() {
     if (!formData.allowMonthly && !formData.allowOneTime) {
       console.log('[Edit Class] Validation failed - no payment options selected');
       setPaymentOptionsError(true);
+      setError('Debes seleccionar al menos una opción de pago');
       return;
     }
+    
+    // Validation: if payment option is selected, price must be filled in
+    if (formData.allowMonthly && (!formData.monthlyPrice || parseFloat(formData.monthlyPrice) <= 0)) {
+      setPaymentOptionsError(true);
+      setError('Debes ingresar el precio mensual');
+      return;
+    }
+    
+    if (formData.allowOneTime && (!formData.oneTimePrice || parseFloat(formData.oneTimePrice) <= 0)) {
+      setPaymentOptionsError(true);
+      setError('Debes ingresar el precio del pago único');
+      return;
+    }
+    
     setPaymentOptionsError(false);
     
     setSaving(true);
@@ -289,14 +318,18 @@ export default function AcademyClassesPage() {
 
   const openEditModal = (cls: Class) => {
     setEditingClass(cls);
+    const monthlyPriceValue = (cls as any).monthlyPrice;
+    const oneTimePriceValue = (cls as any).oneTimePrice;
+    
     setFormData({
       name: cls.name,
       description: cls.description || '',
       teacherId: cls.teacherId || '',
-      monthlyPrice: (cls as any).monthlyPrice?.toString() || '',
-      oneTimePrice: (cls as any).oneTimePrice?.toString() || '',
-      allowMonthly: (cls as any).allowMonthly === 1,
-      allowOneTime: (cls as any).allowOneTime === 1,
+      monthlyPrice: monthlyPriceValue?.toString() || '',
+      oneTimePrice: oneTimePriceValue?.toString() || '',
+      // Determine active payment options based on whether prices exist
+      allowMonthly: monthlyPriceValue != null && monthlyPriceValue > 0,
+      allowOneTime: oneTimePriceValue != null && oneTimePriceValue > 0,
       zoomAccountId: (cls as any).zoomAccountId || '',
       whatsappGroupLink: (cls as any).whatsappGroupLink || '',
       maxStudents: (cls as any).maxStudents?.toString() || '',

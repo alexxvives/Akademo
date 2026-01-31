@@ -198,8 +198,8 @@ payments.patch('/:enrollmentId/approve-cash', async (c) => {
           e.status as enrollmentStatus,
           e.classId,
           c.academyId,
-          c.price,
-          c.currency,
+          c.monthlyPrice,
+          c.oneTimePrice,
           a.ownerId
         FROM ClassEnrollment e
         JOIN Class c ON e.classId = c.id
@@ -248,8 +248,8 @@ payments.patch('/:enrollmentId/approve-cash', async (c) => {
             u.lastName,
             u.email,
             c.academyId,
-            c.price,
-            c.currency
+            c.monthlyPrice,
+            c.oneTimePrice
           FROM ClassEnrollment e
           JOIN User u ON e.userId = u.id
           JOIN Class c ON e.classId = c.id
@@ -310,7 +310,7 @@ payments.post('/stripe-session', async (c) => {
     // Get class details
     const classData: any = await c.env.DB
       .prepare(`
-        SELECT c.id, c.name, c.price, c.currency, a.stripeAccountId, a.id as academyId
+        SELECT c.id, c.name, c.monthlyPrice, c.oneTimePrice, a.stripeAccountId, a.id as academyId
         FROM Class c
         JOIN Academy a ON c.academyId = a.id
         WHERE c.id = ?

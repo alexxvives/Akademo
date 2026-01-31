@@ -80,8 +80,7 @@ studentPayments.get('/:studentId/class/:classId', async (c) => {
             e.*,
             c.name as className,
             c.monthlyPrice,
-            c.oneTimePrice,
-            c.allowMonthly
+            c.oneTimePrice
           FROM ClassEnrollment e
           JOIN Class c ON e.classId = c.id
           WHERE e.userId = ? AND e.classId = ?

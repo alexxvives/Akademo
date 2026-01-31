@@ -38,7 +38,8 @@ explore.get('/academies/:id/classes', async (c) => {
     const result = await c.env.DB
       .prepare(`
         SELECT 
-          c.*,
+          c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt,
+          a.feedbackEnabled, c.whatsappGroupLink, c.monthlyPrice, c.oneTimePrice, c.zoomAccountId, c.maxStudents, c.startDate,
           a.name as academyName,
           u.firstName as teacherFirstName,
           u.lastName as teacherLastName,

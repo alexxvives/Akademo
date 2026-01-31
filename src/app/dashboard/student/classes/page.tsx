@@ -97,12 +97,8 @@ export default function StudentClassesPage() {
           whatsappGroupLink: c.whatsappGroupLink,
           paymentStatus: c.paymentStatus || 'PENDING',
           paymentMethod: c.paymentMethod || '',
-          price: c.price || 0,
-          currency: c.currency || 'EUR',
-          allowMonthly: c.allowMonthly ?? 1,
-          allowOneTime: c.allowOneTime ?? 0,
-          monthlyPrice: c.monthlyPrice || 0,
-          oneTimePrice: c.oneTimePrice || 0,
+          monthlyPrice: c.monthlyPrice ?? null,
+          oneTimePrice: c.oneTimePrice ?? null,
           maxStudents: c.maxStudents,
         }));
         setEnrolledClasses(classes);
@@ -412,14 +408,10 @@ export default function StudentClassesPage() {
         classId={payingClass?.id || ''}
         className={payingClass?.name || ''}
         academyName={payingClass?.academyName || ''}
-        price={payingClass?.price || 0}
-        currency={payingClass?.currency || 'EUR'}
         currentPaymentStatus={payingClass?.paymentStatus || 'PENDING'}
         currentPaymentMethod={payingClass?.paymentMethod || ''}
-        allowMonthly={payingClass?.allowMonthly === 1}
-        allowOneTime={payingClass?.allowOneTime === 1}
-        monthlyPrice={payingClass?.monthlyPrice || 0}
-        oneTimePrice={payingClass?.oneTimePrice || 0}
+        monthlyPrice={payingClass?.monthlyPrice ?? null}
+        oneTimePrice={payingClass?.oneTimePrice ?? null}
         maxStudents={payingClass?.maxStudents}
         currentStudentCount={payingClass?.studentCount || 0}
         onPaymentComplete={() => {

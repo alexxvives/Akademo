@@ -44,7 +44,7 @@ classes.get('/', async (c) => {
       query = `
         SELECT 
           c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
-          c.feedbackEnabled, c.whatsappGroupLink, c.price, c.currency, c.zoomAccountId,
+          a.feedbackEnabled, c.whatsappGroupLink, c.monthlyPrice, c.oneTimePrice, c.zoomAccountId, c.maxStudents, c.startDate,
           a.name as academyName,
           ce.status as enrollmentStatus,
           ce.documentSigned,
@@ -64,7 +64,7 @@ classes.get('/', async (c) => {
       query = `
         SELECT 
           c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
-          c.feedbackEnabled, c.whatsappGroupLink, c.price, c.currency, c.zoomAccountId,
+          a.feedbackEnabled, c.whatsappGroupLink, c.monthlyPrice, c.oneTimePrice, c.zoomAccountId, c.maxStudents, c.startDate,
           a.name as academyName,
           za.accountName as zoomAccountName,
           (SELECT COUNT(*) FROM ClassEnrollment WHERE classId = c.id AND status = 'APPROVED') as studentCount,
@@ -84,7 +84,7 @@ classes.get('/', async (c) => {
       query = `
         SELECT 
           c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
-          c.feedbackEnabled, c.whatsappGroupLink, c.price, c.currency, c.zoomAccountId,
+          a.feedbackEnabled, c.whatsappGroupLink, c.monthlyPrice, c.oneTimePrice, c.zoomAccountId, c.maxStudents, c.startDate,
           a.name as academyName,
           u.firstName as teacherFirstName,
           u.lastName as teacherLastName,
@@ -105,7 +105,7 @@ classes.get('/', async (c) => {
       query = `
         SELECT 
           c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
-          c.feedbackEnabled, c.whatsappGroupLink, c.price, c.currency, c.zoomAccountId,
+          a.feedbackEnabled, c.whatsappGroupLink, c.monthlyPrice, c.oneTimePrice, c.zoomAccountId, c.maxStudents, c.startDate,
           a.name as academyName
         FROM Class c
         JOIN Academy a ON c.academyId = a.id
@@ -195,8 +195,8 @@ classes.post('/', async (c) => {
 
     await c.env.DB.prepare(`
       INSERT INTO Class (id, name, slug, description, academyId, teacherId, whatsappGroupLink, zoomAccountId, 
-                         monthlyPrice, oneTimePrice, allowMonthly, allowOneTime, createdAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                         monthlyPrice, oneTimePrice, createdAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       classId,
       name,
@@ -208,8 +208,6 @@ classes.post('/', async (c) => {
       body.zoomAccountId || null,
       body.monthlyPrice || null,
       body.oneTimePrice || null,
-      body.allowMonthly || 0,
-      body.allowOneTime || 0,
       now
     ).run();
 
@@ -217,7 +215,7 @@ classes.post('/', async (c) => {
     const created = await c.env.DB.prepare(`
       SELECT 
         c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
-        c.feedbackEnabled, c.whatsappGroupLink, c.price, c.currency, c.zoomAccountId,
+        a.feedbackEnabled, c.whatsappGroupLink, c.monthlyPrice, c.oneTimePrice, c.zoomAccountId, c.maxStudents, c.startDate,
         a.name as academyName
       FROM Class c
       JOIN Academy a ON c.academyId = a.id
@@ -241,7 +239,7 @@ classes.get('/:id', async (c) => {
     const query = `
       SELECT 
         c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
-        c.feedbackEnabled, c.whatsappGroupLink, c.price, c.currency, c.zoomAccountId,
+        a.feedbackEnabled, c.whatsappGroupLink, c.monthlyPrice, c.oneTimePrice, c.zoomAccountId, c.maxStudents, c.startDate,
         a.name as academyName,
         a.ownerId as academyOwnerId,
         (u.firstName || ' ' || u.lastName) as teacherName,
@@ -359,7 +357,7 @@ classes.patch('/:id', async (c) => {
     const classRecord = await c.env.DB.prepare(`
       SELECT 
         c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
-        c.feedbackEnabled, c.whatsappGroupLink, c.price, c.currency, c.zoomAccountId,
+        a.feedbackEnabled, c.whatsappGroupLink, c.monthlyPrice, c.oneTimePrice, c.zoomAccountId, c.maxStudents, c.startDate,
         a.ownerId 
       FROM Class c
       JOIN Academy a ON c.academyId = a.id
@@ -403,14 +401,6 @@ classes.patch('/:id', async (c) => {
       updates.push('zoomAccountId = ?');
       params.push(body.zoomAccountId);
     }
-    if (body.allowMonthly !== undefined) {
-      updates.push('allowMonthly = ?');
-      params.push(body.allowMonthly ? 1 : 0);
-    }
-    if (body.allowOneTime !== undefined) {
-      updates.push('allowOneTime = ?');
-      params.push(body.allowOneTime ? 1 : 0);
-    }
     if (body.monthlyPrice !== undefined) {
       updates.push('monthlyPrice = ?');
       params.push(body.monthlyPrice || null);
@@ -433,8 +423,8 @@ classes.patch('/:id', async (c) => {
     const updated = await c.env.DB.prepare(`
       SELECT 
         c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
-        c.feedbackEnabled, c.whatsappGroupLink, c.price, c.currency, c.zoomAccountId,
-        c.allowMonthly, c.allowOneTime, c.monthlyPrice, c.oneTimePrice,
+        a.feedbackEnabled, c.whatsappGroupLink, c.zoomAccountId, c.maxStudents, c.startDate,
+        c.monthlyPrice, c.oneTimePrice,
         a.name as academyName
       FROM Class c
       JOIN Academy a ON c.academyId = a.id

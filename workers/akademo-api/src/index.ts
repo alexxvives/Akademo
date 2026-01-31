@@ -122,7 +122,7 @@ async function handleScheduled(env: Bindings) {
       AND e.paymentMethod IN ('cash', 'bizum')
       AND e.paymentStatus = 'PAID'
       AND date(e.nextPaymentDue) <= date('now')
-      AND c.allowMonthly = 1
+      AND c.monthlyPrice IS NOT NULL
     `).all();
 
     console.log(`[Cron] Found ${enrollments.results.length} enrollments due for payment`);

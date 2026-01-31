@@ -18,7 +18,7 @@ topics.get('/', async (c) => {
     // Verify access to the class
     const classRecord = await c.env.DB.prepare(`
       SELECT c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
-             c.feedbackEnabled, c.whatsappGroupLink, c.price, c.currency, c.zoomAccountId, 
+             a.feedbackEnabled, c.whatsappGroupLink, c.monthlyPrice, c.oneTimePrice, c.zoomAccountId, 
              a.ownerId as academyOwnerId
       FROM Class c
       JOIN Academy a ON c.academyId = a.id
@@ -84,7 +84,7 @@ topics.post('/', async (c) => {
     // Verify access to the class
     const classRecord = await c.env.DB.prepare(`
       SELECT c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
-             c.feedbackEnabled, c.whatsappGroupLink, c.price, c.currency, c.zoomAccountId, 
+             a.feedbackEnabled, c.whatsappGroupLink, c.monthlyPrice, c.oneTimePrice, c.zoomAccountId, 
              a.ownerId as academyOwnerId
       FROM Class c
       JOIN Academy a ON c.academyId = a.id
