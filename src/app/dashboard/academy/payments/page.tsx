@@ -425,7 +425,7 @@ export default function AcademyPaymentsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-8">
       {/* Header with Register Button */}
       <div className="flex items-center justify-between gap-4">
         <div>
@@ -657,67 +657,68 @@ export default function AcademyPaymentsPage() {
                   })}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        showStudentPaymentHistory(
-                          (history as any).studentId || '',
-                          `${history.studentFirstName} ${history.studentLastName}`,
-                          history.studentEmail,
-                          'Todas las clases',
-                          history.approvedAt,
-                          'all'
-                        );
-                      }}
-                      className="text-sm text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1.5"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      Ver
-                    </button>
-                    <button
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        if (!confirm('¿Estás seguro de que quieres eliminar este pago? Esta acción no se puede deshacer.')) return;
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      showStudentPaymentHistory(
+                        (history as any).studentId || '',
+                        `${history.studentFirstName} ${history.studentLastName}`,
+                        history.studentEmail,
+                        'Todas las clases',
+                        history.approvedAt,
+                        'all'
+                      );
+                    }}
+                    className="text-sm text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1.5"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Ver
+                  </button>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      if (!confirm('¿Estás seguro de que quieres eliminar este pago? Esta acción no se puede deshacer.')) return;
+                      
+                      try {
+                        setDeletingPaymentId(history.paymentId || null);
+                        const response = await apiClient(`/payments/${history.paymentId}`, {
+                          method: 'DELETE',
+                        });
                         
-                        try {
-                          setDeletingPaymentId(history.paymentId || null);
-                          const response = await apiClient(`/payments/${history.paymentId}`, {
-                            method: 'DELETE',
-                          });
-                          
-                          if (response.ok) {
-                            // Refresh payments list
-                            const url = `/payments/pending-cash?academyId=${window.location.pathname.includes('academy') ? 'current' : ''}`;
-                            const pendingRes = await apiClient(url);
-                            if (pendingRes.ok) {
-                              const pendingData = await pendingRes.json();
-                              setPendingPayments(pendingData.data || []);
-                            }
-                            
-                            const historyRes = await apiClient('/payments/history');
-                            if (historyRes.ok) {
-                              const historyData = await historyRes.json();
-                              setPaymentHistory(historyData.data || []);
-                            }
-                          } else {
-                            alert('Error al eliminar el pago');
+                        if (response.ok) {
+                          // Refresh payments list
+                          const url = `/payments/pending-cash?academyId=${window.location.pathname.includes('academy') ? 'current' : ''}`;
+                          const pendingRes = await apiClient(url);
+                          if (pendingRes.ok) {
+                            const pendingData = await pendingRes.json();
+                            setPendingPayments(pendingData.data || []);
                           }
-                        } catch (error) {
-                          console.error('Error deleting payment:', error);
+                          
+                          const historyRes = await apiClient('/payments/history');
+                          if (historyRes.ok) {
+                            const historyData = await historyRes.json();
+                            setPaymentHistory(historyData.data || []);
+                          }
+                        } else {
                           alert('Error al eliminar el pago');
-                        } finally {
-                          setDeletingPaymentId(null);
                         }
-                      }}
-                      disabled={deletingPaymentId === history.paymentId}
-                      className="text-sm text-red-600 hover:text-red-700 font-medium flex items-center gap-1.5 disabled:opacity-50"
-                    >
-                      {deletingPaymentId === history.paymentId ? (
-                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      } catch (error) {
+                        console.error('Error deleting payment:', error);
+                        alert('Error al eliminar el pago');
+                      } finally {
+                        setDeletingPaymentId(null);
+                      }
+                    }}
+                    disabled={deletingPaymentId === history.paymentId}
+                    className="text-sm text-red-600 hover:text-red-700 font-medium flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    {deletingPaymentId === history.paymentId ? (
+                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
                       ) : (
