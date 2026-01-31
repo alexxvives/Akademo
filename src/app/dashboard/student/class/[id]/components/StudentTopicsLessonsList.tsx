@@ -61,17 +61,18 @@ interface Topic {
 interface StudentTopicsLessonsListProps {
   lessons: Lesson[];
   topics: Topic[];
+  expandedTopics: Set<string>;
+  setExpandedTopics: React.Dispatch<React.SetStateAction<Set<string>>>;
   onSelectLesson: (lesson: Lesson) => void;
 }
 
 export default function StudentTopicsLessonsList({
   lessons,
   topics,
+  expandedTopics,
+  setExpandedTopics,
   onSelectLesson,
 }: StudentTopicsLessonsListProps) {
-  const [expandedTopics, setExpandedTopics] = useState<Set<string>>(
-    new Set() // Start with all topics collapsed
-  );
 
   const formatDate = (d: string) => {
     const date = new Date(d);

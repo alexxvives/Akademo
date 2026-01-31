@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import ProtectedVideoPlayer from '@/components/ProtectedVideoPlayer';
-import { PageLoader } from '@/components/ui';
+import { SkeletonForm } from '@/components/ui/SkeletonLoader';
 import { useAuth } from '@/hooks/useAuth';
 import { getBunnyThumbnailUrl } from '@/lib/bunny-stream';
 import { apiClient, apiPost, API_BASE_URL } from '@/lib/api-client';
@@ -97,6 +97,7 @@ export default function ClassPage() {
   const [classData, setClassData] = useState<ClassData | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);
+  const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set());
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [loading, setLoading] = useState(true);
@@ -285,6 +286,14 @@ export default function ClassPage() {
   };
 
   const goBackToLessons = async () => {
+    // Expand the topic of the lesson we're leaving
+    if (selectedLesson && selectedLesson.topicId) {
+      setExpandedTopics(prev => {
+        const newSet = new Set(prev);
+        newSet.add(selectedLesson.topicId!);
+        return newSet;
+      });
+    }
     router.push(`/dashboard/student/class/${classId}`);
     setSelectedLesson(null);
     setSelectedVideo(null);
@@ -678,6 +687,8 @@ export default function ClassPage() {
           <StudentTopicsLessonsList 
             lessons={lessons}
             topics={topics}
+            expandedTopics={expandedTopics}
+            setExpandedTopics={setExpandedTopics}
             onSelectLesson={selectLesson}
           />
         )}
