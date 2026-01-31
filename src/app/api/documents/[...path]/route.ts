@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Proxy document downloads through the main domain
+// Proxy document viewing through the main domain (opens in browser instead of downloading)
 // This hides the Cloudflare worker URL from users
 export async function GET(
   request: NextRequest,
@@ -28,13 +28,17 @@ export async function GET(
     // Get the file content
     const blob = await response.blob();
     const contentType = response.headers.get('content-type') || 'application/pdf';
-    const contentDisposition = response.headers.get('content-disposition') || `attachment; filename="document.pdf"`;
+    
+    // Extract filename from content-disposition header if present
+    const contentDisposition = response.headers.get('content-disposition') || '';
+    const filenameMatch = contentDisposition.match(/filename="(.+?)"/);
+    const filename = filenameMatch ? filenameMatch[1] : 'document.pdf';
 
-    // Return the file with proper headers
+    // Return the file with inline disposition (opens in browser instead of downloading)
     return new NextResponse(blob, {
       headers: {
         'Content-Type': contentType,
-        'Content-Disposition': contentDisposition,
+        'Content-Disposition': `inline; filename="${filename}"`,
         'Cache-Control': 'private, max-age=3600',
       },
     });
