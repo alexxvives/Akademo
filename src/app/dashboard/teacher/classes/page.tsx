@@ -4,7 +4,6 @@ import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
 import { SkeletonClasses } from '@/components/ui/SkeletonLoader';
-import { LoaderPinwheelIcon } from '@/components/ui/LoaderPinwheelIcon';
 
 interface Class {
   id: string;
@@ -35,7 +34,6 @@ export default function TeacherClasses() {
   const [feedbackComments, setFeedbackComments] = useState<Array<{ id: string; rating: number; comment: string; lessonTitle: string; topicName: string; createdAt: string }>>([]);
   const [loadingFeedback, setLoadingFeedback] = useState(false);
   const [ratingsData, setRatingsData] = useState<{ overall: any, lessons: any[] } | null>(null);
-  const feedbackLoaderRef = useRef<any>(null);
 
   useEffect(() => {
     loadClasses();
@@ -238,7 +236,7 @@ export default function TeacherClasses() {
                   <div className="max-h-96 overflow-y-auto p-4">
                     {loadingFeedback ? (
                       <div className="flex items-center justify-center py-8">
-                        <LoaderPinwheelIcon ref={feedbackLoaderRef} size={32} className="text-black" />
+                        <p className="text-sm text-gray-500">Cargando...</p>
                       </div>
                     ) : feedbackComments.length > 0 ? (
                       <div className="space-y-3">
