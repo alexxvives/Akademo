@@ -1685,6 +1685,31 @@ export default function TeacherClassPage() {
                         )}
                       </div>
                       <div className="space-y-4">
+                        {/* Date/Time inputs - PERFECTLY ALIGNED with Publicación (same row) */}
+                        {!editingLessonId && !lessonFormData.publishImmediately && (
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">Fecha y Hora</label>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <input 
+                                  type="date" 
+                                  value={lessonFormData.releaseDate} 
+                                  min={new Date().toISOString().split('T')[0]}
+                                  onChange={e => setLessonFormData({ ...lessonFormData, releaseDate: e.target.value })} 
+                                  className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors"
+                                />
+                              </div>
+                              <div>
+                                <input 
+                                  type="time" 
+                                  value={lessonFormData.releaseTime} 
+                                  onChange={e => setLessonFormData({ ...lessonFormData, releaseTime: e.target.value })} 
+                                  className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
                         {/* Topic Selector - show in BOTH create and edit modes */}
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">Tema (opcional)</label>
@@ -1699,33 +1724,6 @@ export default function TeacherClassPage() {
                             ))}
                           </select>
                         </div>
-                        {/* Date/Time inputs - ALIGNED WITH PUBLICACIÓN at same vertical height */}
-                        {!editingLessonId && !lessonFormData.publishImmediately && (
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">&nbsp;</label>
-                            <div className="grid grid-cols-2 gap-2">
-                              <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">Fecha</label>
-                                <input 
-                                  type="date" 
-                                  value={lessonFormData.releaseDate} 
-                                  min={new Date().toISOString().split('T')[0]}
-                                  onChange={e => setLessonFormData({ ...lessonFormData, releaseDate: e.target.value })} 
-                                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">Hora</label>
-                                <input 
-                                  type="time" 
-                                  value={lessonFormData.releaseTime} 
-                                  onChange={e => setLessonFormData({ ...lessonFormData, releaseTime: e.target.value })} 
-                                  className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        )}
                       </div>
                     </div>
                     
