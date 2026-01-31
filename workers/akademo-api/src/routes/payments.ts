@@ -195,14 +195,15 @@ payments.post('/initiate', async (c) => {
     await c.env.DB
       .prepare(`
         INSERT INTO Payment (
-          id, type, payerId, receiverId, amount, currency, status,
+          id, type, payerId, payerType, receiverId, amount, currency, status,
           paymentMethod, classId, metadata, nextPaymentDue, billingCycleStart, billingCycleEnd, createdAt
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
       `)
       .bind(
         paymentId,
         'STUDENT_TO_ACADEMY',
         session.id,
+        'STUDENT',
         classData.academyId,
         finalAmount, // Total including catch-up
         'EUR',

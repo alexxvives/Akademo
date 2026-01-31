@@ -758,8 +758,8 @@ export default function AcademyPaymentsPage() {
 
       {/* Register Payment Modal */}
       {showRegisterModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md p-6">
+        <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-[9999] overflow-y-auto py-8 px-4">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 my-auto">
             <h2 className="text-xl font-bold text-gray-900 mb-4">
               {editingPaymentId ? 'Editar Pago' : 'Registrar Pago'}
             </h2>
@@ -846,24 +846,6 @@ export default function AcademyPaymentsPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Método de Pago *</label>
-                <div className="relative">
-                  <select
-                    value={registerForm.paymentMethod}
-                    onChange={(e) => setRegisterForm({ ...registerForm, paymentMethod: e.target.value as 'cash' | 'bizum' })}
-                    className="w-full appearance-none px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500"
-                  >
-                    <option value="cash">Efectivo</option>
-                    <option value="bizum">Bizum</option>
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Estado *</label>
                 <button
                   type="button"
@@ -897,6 +879,24 @@ export default function AcademyPaymentsPage() {
                     </div>
                   </div>
                 </button>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Método de Pago *</label>
+                <div className="relative">
+                  <select
+                    value={registerForm.paymentMethod}
+                    onChange={(e) => setRegisterForm({ ...registerForm, paymentMethod: e.target.value as 'cash' | 'bizum' })}
+                    className="w-full appearance-none px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500"
+                  >
+                    <option value="cash">Efectivo</option>
+                    <option value="bizum">Bizum</option>
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
               </div>
             </div>
             <div className="flex gap-3 mt-6">

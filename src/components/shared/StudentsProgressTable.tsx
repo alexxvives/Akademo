@@ -180,7 +180,12 @@ export function StudentsProgressTable({
 
       {/* Students Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="px-6 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+          <p className="text-sm text-gray-600">
+            Mostrando <span className="font-semibold">{filteredStudents.length}</span> {filteredStudents.length === 1 ? 'estudiante' : 'estudiantes'}
+          </p>
+        </div>
+        <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
