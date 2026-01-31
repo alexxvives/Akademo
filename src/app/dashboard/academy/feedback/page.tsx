@@ -283,6 +283,9 @@ export default function AcademyFeedbackPage() {
         }
       }
       
+      // Sort classes by average rating (highest first)
+      allClasses.sort((a, b) => b.averageRating - a.averageRating);
+      
       setClasses(allClasses);
     } catch (error) {
       console.error('Failed to load feedback:', error);

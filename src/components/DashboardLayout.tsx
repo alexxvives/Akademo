@@ -132,6 +132,15 @@ export default function DashboardLayout({
     }
   }, []);
 
+  // Listen for payment changes and update badge immediately
+  useEffect(() => {
+    const handlePaymentChange = () => {
+      loadAcademy();
+    };
+    window.addEventListener('pendingPaymentsChanged', handlePaymentChange);
+    return () => window.removeEventListener('pendingPaymentsChanged', handlePaymentChange);
+  }, [loadAcademy]);
+
   const loadUnreadValoraciones = useCallback(async () => {
     try {
       const response = await apiClient('/lessons/ratings/unread-count');

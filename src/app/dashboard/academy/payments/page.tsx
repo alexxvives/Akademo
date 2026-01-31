@@ -249,6 +249,8 @@ export default function AcademyPaymentsPage() {
       if (result.success) {
         setPendingPayments(prev => prev.filter(p => p.enrollmentId !== enrollmentId));
         loadData(); // Reload to update history
+        // Trigger badge update by dispatching custom event
+        window.dispatchEvent(new CustomEvent('pendingPaymentsChanged'));
       } else {
         alert(result.error || 'Error al confirmar pago');
       }
@@ -275,6 +277,8 @@ export default function AcademyPaymentsPage() {
       const result = await res.json();
       if (result.success) {
         setPendingPayments(prev => prev.filter(p => p.enrollmentId !== enrollmentId));
+        // Trigger badge update by dispatching custom event
+        window.dispatchEvent(new CustomEvent('pendingPaymentsChanged'));
       } else {
         alert(result.error || 'Error al denegar pago');
       }
