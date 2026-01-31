@@ -120,12 +120,10 @@ export default function DashboardLayout({
       }
       
       // Load pending cash/bizum payments count for badge
-      const pendingRes = await apiClient('/payments/pending-cash');
+      const pendingRes = await apiClient('/payments/pending-count');
       const pendingResult = await pendingRes.json();
-      if (pendingResult.success && Array.isArray(pendingResult.data)) {
-        // Count only PENDING status payments (cash/bizum awaiting approval)
-        const pendingCount = pendingResult.data.filter((p: any) => p.status === 'PENDING').length;
-        setPendingEnrollmentsCount(pendingCount);
+      if (pendingResult.success && typeof pendingResult.data === 'number') {
+        setPendingEnrollmentsCount(pendingResult.data);
       }
     } catch (error) {
       console.error('Failed to load academy:', error);

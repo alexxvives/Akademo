@@ -329,6 +329,49 @@ payments.get('/pending-cash', async (c) => {
   }
 });
 
+// GET /payments/pending-count - Get count of pending payments for academy
+payments.get('/pending-count', async (c) => {
+  try {
+    const session = await requireAuth(c);
+
+    let count = 0;
+
+    if (session.role === 'ACADEMY') {
+      const result: any = await c.env.DB
+        .prepare(`
+          SELECT COUNT(*) as count
+          FROM Payment p
+          JOIN Class c ON p.classId = c.id
+          JOIN Academy a ON c.academyId = a.id
+          WHERE a.ownerId = ? 
+          AND p.status = 'PENDING'
+          AND p.type = 'STUDENT_TO_ACADEMY'
+        `)
+        .bind(session.id)
+        .first();
+      count = result?.count || 0;
+    } else if (session.role === 'TEACHER') {
+      const result: any = await c.env.DB
+        .prepare(`
+          SELECT COUNT(*) as count
+          FROM Payment p
+          JOIN Class c ON p.classId = c.id
+          WHERE c.teacherId = ?
+          AND p.status = 'PENDING'
+          AND p.type = 'STUDENT_TO_ACADEMY'
+        `)
+        .bind(session.id)
+        .first();
+      count = result?.count || 0;
+    }
+
+    return c.json(successResponse(count));
+  } catch (error: any) {
+    console.error('[Payments] Error fetching pending count:', error);
+    return c.json(errorResponse(error.message || 'Failed to fetch pending payments count'), 500);
+  }
+});
+
 // PATCH /payments/:enrollmentId/approve-cash - Academy approves cash payment
 payments.patch('/:enrollmentId/approve-cash', async (c) => {
   try {
