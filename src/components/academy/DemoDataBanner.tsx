@@ -40,29 +40,45 @@ export function DemoDataBanner() {
     setShowModal(true);
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     setShowModal(false);
     
-    // Open Stripe in new tab
-    window.open('https://buy.stripe.com/test_aFa14m20ndS212ReGr77O01', '_blank');
-    
-    // Set up auto-refresh when user returns to this tab after payment
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        // User returned to AKADEMO tab - refresh to check if payment completed
+    try {
+      // Call API to create Stripe session with email prefill
+      const response = await apiClient('/payments/academy-activation-session', {
+        method: 'POST',
+      });
+      
+      const result = await response.json();
+      
+      if (result.success && result.data?.url) {
+        // Open Stripe in new tab
+        window.open(result.data.url, '_blank');
+        
+        // Set up auto-refresh when user returns to this tab after payment
+        const handleVisibilityChange = () => {
+          if (!document.hidden) {
+            // User returned to AKADEMO tab - refresh to check if payment completed
+            setTimeout(() => {
+              window.location.reload();
+            }, 1000);
+          }
+        };
+        
+        // Add listener for when user switches back to this tab
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        
+        // Clean up listener after 5 minutes (payment should be done by then)
         setTimeout(() => {
-          window.location.reload();
-        }, 1000);
+          document.removeEventListener('visibilitychange', handleVisibilityChange);
+        }, 5 * 60 * 1000);
+      } else {
+        alert('Error al crear sesión de pago. Por favor intenta de nuevo.');
       }
-    };
-    
-    // Add listener for when user switches back to this tab
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    // Clean up listener after 5 minutes (payment should be done by then)
-    setTimeout(() => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    }, 5 * 60 * 1000);
+    } catch (error) {
+      console.error('Error creating activation session:', error);
+      alert('Error al procesar el pago. Por favor intenta de nuevo.');
+    }
   };
 
   const handleCancel = () => {

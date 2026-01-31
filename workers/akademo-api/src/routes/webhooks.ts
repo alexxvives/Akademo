@@ -499,6 +499,14 @@ webhooks.post('/stripe', async (c) => {
               .run();
 
             console.log('[Stripe Webhook] Payment confirmed and recorded for enrollment:', enrollmentId);
+
+            // IMPORTANT: Update ClassEnrollment status to APPROVED for immediate access
+            await c.env.DB
+              .prepare('UPDATE ClassEnrollment SET status = ? WHERE id = ?')
+              .bind('APPROVED', enrollmentId)
+              .run();
+
+            console.log('[Stripe Webhook] ClassEnrollment status updated to APPROVED for:', enrollmentId);
           }
         } else {
           // No metadata - assume academy activation, look up by customer email

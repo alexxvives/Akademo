@@ -48,6 +48,8 @@ classes.get('/', async (c) => {
           a.name as academyName,
           ce.status as enrollmentStatus,
           ce.documentSigned,
+          p.status as paymentStatus,
+          p.paymentMethod,
           (SELECT COUNT(*) FROM ClassEnrollment WHERE classId = c.id AND STATUS = 'APPROVED') as studentCount,
           (SELECT COUNT(*) FROM Lesson WHERE classId = c.id) as lessonCount,
           (SELECT COUNT(*) FROM Video v JOIN Lesson l ON v.lessonId = l.id WHERE l.classId = c.id) as videoCount,
@@ -55,6 +57,7 @@ classes.get('/', async (c) => {
         FROM ClassEnrollment ce
         JOIN Class c ON ce.classId = c.id
         JOIN Academy a ON c.academyId = a.id
+        LEFT JOIN Payment p ON p.payerId = ce.userId AND p.classId = c.id AND p.status IN ('PENDING', 'COMPLETED')
         WHERE ce.userId = ? AND ce.status != 'WITHDRAWN'
         ORDER BY ce.enrolledAt DESC
       `;

@@ -117,12 +117,24 @@ payments.post('/initiate', async (c) => {
 
     // Check if payment already exists
     const existingPayment: any = await c.env.DB
-      .prepare('SELECT id, status FROM Payment WHERE payerId = ? AND classId = ? AND status IN (?, ?)')
+      .prepare('SELECT id, status, paymentMethod FROM Payment WHERE payerId = ? AND classId = ? AND status IN (?, ?)')
       .bind(session.id, classId, 'PENDING', 'COMPLETED')
       .first();
 
     if (existingPayment) {
-      return c.json(errorResponse('Payment already exists for this class'), 400);
+      // Allow resubmission - return success with appropriate message
+      const pendingMessage = existingPayment.paymentMethod === 'cash' 
+        ? 'Solicitud de pago enviada. La academia confirmará la recepción del efectivo.'
+        : existingPayment.paymentMethod === 'bizum'
+        ? 'Solicitud de pago enviada. La academia confirmará la recepción del pago por Bizum.'
+        : 'Ya tienes una solicitud de pago pendiente para esta clase.';
+      
+      return c.json(successResponse({
+        message: pendingMessage,
+        status: existingPayment.status,
+        paymentId: existingPayment.id,
+        alreadyExists: true,
+      }));
     }
 
     // Create Payment record with billing cycle info
@@ -1053,6 +1065,60 @@ payments.patch('/:id', async (c) => {
     return c.json(successResponse(updated));
   } catch (error: any) {
     console.error('[Payments] Error updating payment:', error);
+    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+  }
+});
+
+// POST /payments/academy-activation-session - Create Stripe checkout for academy activation
+payments.post('/academy-activation-session', async (c) => {
+  try {
+    const session = await requireAuth(c);
+
+    // Verify user is ACADEMY role
+    if (session.role !== 'ACADEMY') {
+      return c.json(errorResponse('Only academy owners can activate'), 403);
+    }
+
+    // Get academy ID
+    const academy: any = await c.env.DB
+      .prepare('SELECT id, name FROM Academy WHERE ownerId = ?')
+      .bind(session.id)
+      .first();
+
+    if (!academy) {
+      return c.json(errorResponse('Academy not found'), 404);
+    }
+
+    const stripe = new Stripe(c.env.STRIPE_SECRET_KEY);
+
+    const checkoutSession = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [{
+        price_data: {
+          currency: 'eur',
+          product_data: {
+            name: 'Activación de Academia AKADEMO',
+            description: 'Acceso completo a todas las funciones de AKADEMO',
+            images: ['https://akademo-edu.com/logo/akademo-icon.png'],
+          },
+          unit_amount: 29900, // €299 activation fee
+        },
+        quantity: 1,
+      }],
+      mode: 'payment',
+      customer_email: session.email, // Pre-fill email field
+      success_url: `${c.env.FRONTEND_URL || 'https://akademo-edu.com'}/dashboard/academy?payment=success`,
+      cancel_url: `${c.env.FRONTEND_URL || 'https://akademo-edu.com'}/dashboard/academy?payment=cancel`,
+      metadata: {
+        type: 'academy_activation',
+        academyId: academy.id,
+        userId: session.id,
+      },
+    });
+
+    return c.json(successResponse({ url: checkoutSession.url }));
+  } catch (error: any) {
+    console.error('[Academy Activation] Error:', error);
     return c.json(errorResponse(error.message || 'Internal server error'), 500);
   }
 });
