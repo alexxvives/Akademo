@@ -1699,10 +1699,10 @@ export default function TeacherClassPage() {
                             ))}
                           </select>
                         </div>
-                        {/* Date/Time inputs - only show when scheduling */}
+                        {/* Date/Time inputs - only show when scheduling - placed to the right of buttons */}
                         {!editingLessonId && !lessonFormData.publishImmediately && (
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
+                          <div className="flex gap-2">
+                            <div className="flex-1">
                               <label className="block text-sm font-semibold text-gray-700 mb-2">Fecha</label>
                               <input 
                                 type="date" 
@@ -1712,7 +1712,7 @@ export default function TeacherClassPage() {
                                 className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors"
                               />
                             </div>
-                            <div>
+                            <div className="flex-1">
                               <label className="block text-sm font-semibold text-gray-700 mb-2">Hora</label>
                               <input 
                                 type="time" 
