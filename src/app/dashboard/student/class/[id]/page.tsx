@@ -388,7 +388,7 @@ export default function ClassPage() {
   };
 
   if (loading) {
-    return <PageLoader label="Cargando clase..." />;
+    return <SkeletonForm />;
   }
 
   return (

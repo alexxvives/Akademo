@@ -1717,8 +1717,7 @@ export default function TeacherClassPage() {
                           </div>
                         )}
                       </div>
-                    </div>
-                  )}
+                    )}
                     </div>
                     
                     <div>
