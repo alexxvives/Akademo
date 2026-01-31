@@ -345,7 +345,7 @@ export default function PaymentModal({
                       <p className="text-sm text-gray-600">Pago con tu banco español</p>
                     </div>
                     <div className="flex-shrink-0">
-                      {currentPaymentStatus === 'BIZUM_PENDING' && currentPaymentMethod === 'bizum' ? (
+                      {currentPaymentStatus === 'PENDING' && currentPaymentMethod === 'bizum' ? (
                         <span className="inline-block text-xs font-medium px-3 py-1 rounded-full bg-[#b0e788] text-[#1a1c29]">
                           Pendiente aprobación
                         </span>
@@ -379,7 +379,7 @@ export default function PaymentModal({
                       <p className="text-sm text-gray-600">Paga directamente en la academia</p>
                     </div>
                     <div className="flex-shrink-0">
-                      {currentPaymentStatus === 'CASH_PENDING' && currentPaymentMethod === 'cash' ? (
+                      {currentPaymentStatus === 'PENDING' && currentPaymentMethod === 'cash' ? (
                         <span className="inline-block text-xs font-medium px-3 py-1 rounded-full bg-[#b0e788] text-[#1a1c29]">
                           Pendiente aprobación
                         </span>

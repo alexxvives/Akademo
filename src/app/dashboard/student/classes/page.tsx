@@ -121,8 +121,8 @@ export default function StudentClassesPage() {
       return;
     }
     
-    // Second check payment status - block if not paid
-    if (classItem.paymentStatus !== 'PAID') {
+    // Second check payment status - block if not paid (check both PAID and COMPLETED)
+    if (classItem.paymentStatus !== 'PAID' && classItem.paymentStatus !== 'COMPLETED') {
       e.preventDefault();
       setPayingClass(classItem);
       return;
@@ -219,7 +219,7 @@ export default function StudentClassesPage() {
         {enrolledClasses.map((classItem) => {
           const liveStream = activeStreams.find(s => s.classId === classItem.id);
           const needsSignature = !classItem.documentSigned;
-          const isPaymentPending = classItem.paymentStatus === 'CASH_PENDING' || classItem.paymentStatus === 'BIZUM_PENDING' || classItem.paymentStatus === 'PENDING';
+          const isPaymentPending = classItem.paymentStatus === 'PENDING' && (classItem.paymentMethod === 'cash' || classItem.paymentMethod === 'bizum');
           
           return (
             <div
@@ -278,15 +278,15 @@ export default function StudentClassesPage() {
                       </div>
                     )}
                     
-                    {/* Payment Status Icon - Show for any non-PAID status */}
-                    {classItem.paymentStatus !== 'PAID' && (
-                      (classItem.paymentStatus === 'CASH_PENDING' || classItem.paymentStatus === 'BIZUM_PENDING') ? (
+                    {/* Payment Status Icon - Show for any non-PAID/non-COMPLETED status */}
+                    {classItem.paymentStatus !== 'PAID' && classItem.paymentStatus !== 'COMPLETED' && (
+                      (classItem.paymentStatus === 'PENDING' && (classItem.paymentMethod === 'cash' || classItem.paymentMethod === 'bizum')) ? (
                         <div className="relative group/payment">
                           <svg className="w-6 h-6 text-orange-500 transition-colors animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                           <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover/payment:opacity-100 transition-opacity z-10">
-                            {classItem.paymentStatus === 'CASH_PENDING' ? 'Esperando aprobación de la academia (efectivo)' : 'Esperando aprobación de la academia (bizum)'}
+                            {classItem.paymentMethod === 'cash' ? 'Esperando aprobación de la academia (efectivo)' : 'Esperando aprobación de la academia (bizum)'}
                           </div>
                         </div>
                       ) : (
@@ -364,13 +364,13 @@ export default function StudentClassesPage() {
                   )}
                   
                   {/* Pending Payment Banner */}
-                  {(classItem.paymentStatus === 'CASH_PENDING' || classItem.paymentStatus === 'BIZUM_PENDING') && (
+                  {classItem.paymentStatus === 'PENDING' && (classItem.paymentMethod === 'cash' || classItem.paymentMethod === 'bizum') && (
                     <div className="mb-4 bg-[#1a1c29] border-l-4 border-[#b0e788] px-4 py-3 rounded-r-lg">
                       <p className="text-sm font-semibold text-[#b0e788]">
                         Esperando aprobación de la academia
                       </p>
                       <p className="text-xs text-[#b0e788]/80 mt-1">
-                        Tu solicitud de pago por {classItem.paymentStatus === 'CASH_PENDING' ? 'efectivo' : 'Bizum'} está siendo revisada
+                        Tu solicitud de pago por {classItem.paymentMethod === 'cash' ? 'efectivo' : 'Bizum'} está siendo revisada
                       </p>
                     </div>
                   )}
