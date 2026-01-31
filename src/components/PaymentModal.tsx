@@ -227,12 +227,12 @@ export default function PaymentModal({
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl w-full max-w-5xl shadow-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="p-8 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+        <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-[#b0e788]/10 to-[#b0e788]/5">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-3xl font-bold text-gray-900">{className}</h2>
-              <p className="text-gray-600 mt-2 flex items-center gap-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <h2 className="text-2xl font-bold text-[#1a1c29]">{className}</h2>
+              <p className="text-gray-600 mt-1 flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
                 {academyName}
@@ -266,72 +266,90 @@ export default function PaymentModal({
           </div>
         ) : (
           <div className="p-8">
-            {/* Payment Frequency Selection - Only if both options exist */}
-            {needsFrequencySelection && (
-              <div className="mb-8">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Selecciona tu modalidad de pago</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Monthly Card */}
-                  <button
-                    onClick={() => setPaymentFrequency('monthly')}
-                    className={`p-6 rounded-xl border-2 transition-all duration-200 text-left ${
-                      paymentFrequency === 'monthly'
-                        ? 'border-blue-500 bg-blue-50 shadow-lg ring-2 ring-blue-200'
-                        : 'border-gray-200 bg-white hover:border-blue-300 hover:shadow-md'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <span className={`text-2xl font-bold ${paymentFrequency === 'monthly' ? 'text-blue-600' : 'text-gray-700'}`}>
-                        {formatPrice(monthlyPrice || 0, currency)}
+            {/* Payment Frequency Selection - Always show both options */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Selecciona tu modalidad de pago</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* Monthly Card */}
+                <button
+                  onClick={() => hasMonthly && setPaymentFrequency('monthly')}
+                  disabled={!hasMonthly}
+                  className={`p-4 rounded-lg border-2 transition-all duration-200 text-left ${
+                    !hasMonthly
+                      ? 'border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed'
+                      : paymentFrequency === 'monthly'
+                      ? 'border-[#b0e788] bg-[#b0e788]/10 shadow-md'
+                      : 'border-gray-200 bg-white hover:border-[#b0e788]/50 hover:shadow-sm'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className={`text-base font-semibold mb-1 ${!hasMonthly ? 'text-gray-400' : 'text-[#1a1c29]'}`}>
+                        Pago Mensual
+                      </h4>
+                      <span className={`text-xl font-bold ${!hasMonthly ? 'text-gray-400' : paymentFrequency === 'monthly' ? 'text-[#1a1c29]' : 'text-gray-700'}`}>
+                        {hasMonthly ? formatPrice(monthlyPrice || 0, currency) : 'No disponible'}
                       </span>
-                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                        paymentFrequency === 'monthly' ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
-                      }`}>
-                        {paymentFrequency === 'monthly' && (
-                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
-                      </div>
                     </div>
-                    <h4 className="text-lg font-semibold text-gray-900 mb-1">Pago Mensual</h4>
-                    <p className="text-sm text-gray-600">Cobro recurrente cada mes • Mayor flexibilidad</p>
-                  </button>
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                      !hasMonthly
+                        ? 'border-gray-300 bg-gray-200'
+                        : paymentFrequency === 'monthly' 
+                        ? 'border-[#b0e788] bg-[#b0e788]' 
+                        : 'border-gray-300'
+                    }`}>
+                      {paymentFrequency === 'monthly' && hasMonthly && (
+                        <svg className="w-3 h-3 text-[#1a1c29]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                </button>
 
-                  {/* One-Time Card */}
-                  <button
-                    onClick={() => setPaymentFrequency('one-time')}
-                    className={`p-6 rounded-xl border-2 transition-all duration-200 text-left ${
-                      paymentFrequency === 'one-time'
-                        ? 'border-green-500 bg-green-50 shadow-lg ring-2 ring-green-200'
-                        : 'border-gray-200 bg-white hover:border-green-300 hover:shadow-md'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <span className={`text-2xl font-bold ${paymentFrequency === 'one-time' ? 'text-green-600' : 'text-gray-700'}`}>
-                        {formatPrice(oneTimePrice || 0, currency)}
+                {/* One-Time Card */}
+                <button
+                  onClick={() => hasOneTime && setPaymentFrequency('one-time')}
+                  disabled={!hasOneTime}
+                  className={`p-4 rounded-lg border-2 transition-all duration-200 text-left ${
+                    !hasOneTime
+                      ? 'border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed'
+                      : paymentFrequency === 'one-time'
+                      ? 'border-[#b0e788] bg-[#b0e788]/10 shadow-md'
+                      : 'border-gray-200 bg-white hover:border-[#b0e788]/50 hover:shadow-sm'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className={`text-base font-semibold mb-1 ${!hasOneTime ? 'text-gray-400' : 'text-[#1a1c29]'}`}>
+                        Pago Único
+                      </h4>
+                      <span className={`text-xl font-bold ${!hasOneTime ? 'text-gray-400' : paymentFrequency === 'one-time' ? 'text-[#1a1c29]' : 'text-gray-700'}`}>
+                        {hasOneTime ? formatPrice(oneTimePrice || 0, currency) : 'No disponible'}
                       </span>
-                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                        paymentFrequency === 'one-time' ? 'border-green-500 bg-green-500' : 'border-gray-300'
-                      }`}>
-                        {paymentFrequency === 'one-time' && (
-                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
-                      </div>
                     </div>
-                    <h4 className="text-lg font-semibold text-gray-900 mb-1">Pago Único</h4>
-                    <p className="text-sm text-gray-600">Un solo pago • Acceso total inmediato</p>
-                  </button>
-                </div>
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                      !hasOneTime
+                        ? 'border-gray-300 bg-gray-200'
+                        : paymentFrequency === 'one-time' 
+                        ? 'border-[#b0e788] bg-[#b0e788]' 
+                        : 'border-gray-300'
+                    }`}>
+                      {paymentFrequency === 'one-time' && hasOneTime && (
+                        <svg className="w-3 h-3 text-[#1a1c29]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                </button>
               </div>
-            )}
+            </div>
 
             {/* Payment Methods */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                {needsFrequencySelection && !paymentFrequency 
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                {!paymentFrequency 
                   ? 'Selecciona una modalidad primero'
                   : 'Selecciona tu método de pago'
                 }
@@ -341,26 +359,26 @@ export default function PaymentModal({
                 {/* Stripe Payment */}
                 <button
                   onClick={handleStripePayment}
-                  disabled={processing || (needsFrequencySelection && !paymentFrequency)}
-                  className={`w-full p-5 rounded-xl text-left transition-all ${
-                    needsFrequencySelection && !paymentFrequency
+                  disabled={processing || !paymentFrequency}
+                  className={`w-full p-4 rounded-lg text-left transition-all ${
+                    !paymentFrequency
                       ? 'bg-gray-50 border-2 border-gray-200 opacity-50 cursor-not-allowed'
-                      : 'bg-white border-2 border-gray-300 hover:border-blue-400 hover:shadow-lg hover:scale-[1.02]'
+                      : 'bg-white border-2 border-gray-300 hover:border-[#b0e788] hover:shadow-md'
                   }`}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex-shrink-0 w-10 h-10 bg-[#b0e788]/20 rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-[#1a1c29]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                       </svg>
                     </div>
                     <div className="flex-1">
-                      <h4 className="text-lg font-semibold text-gray-900 mb-1">Tarjeta de Crédito/Débito</h4>
-                      <p className="text-sm text-gray-600">Pago seguro con Stripe • Acceso inmediato</p>
+                      <h4 className="text-base font-semibold text-[#1a1c29] mb-0.5">Tarjeta de Crédito/Débito</h4>
+                      <p className="text-sm text-gray-600">Pago seguro con Stripe</p>
                     </div>
                     <div className="flex-shrink-0">
-                      <span className="inline-block text-xs font-medium text-white bg-green-600 px-3 py-1.5 rounded-full">
-                        ⚡ Instantáneo
+                      <span className="inline-block text-xs font-medium text-white bg-[#b0e788] px-3 py-1 rounded-full">
+                        Instantáneo
                       </span>
                     </div>
                   </div>
@@ -369,30 +387,30 @@ export default function PaymentModal({
                 {/* Bizum */}
                 <button
                   onClick={handleBizumPayment}
-                  disabled={processing || (needsFrequencySelection && !paymentFrequency)}
-                  className={`w-full p-5 rounded-xl text-left transition-all ${
-                    needsFrequencySelection && !paymentFrequency
+                  disabled={processing || !paymentFrequency}
+                  className={`w-full p-4 rounded-lg text-left transition-all ${
+                    !paymentFrequency
                       ? 'bg-gray-50 border-2 border-gray-200 opacity-50 cursor-not-allowed'
-                      : 'bg-white border-2 border-gray-300 hover:border-purple-400 hover:shadow-lg hover:scale-[1.02]'
+                      : 'bg-white border-2 border-gray-300 hover:border-[#b0e788] hover:shadow-md'
                   }`}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="flex-shrink-0 w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                      <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex-shrink-0 w-10 h-10 bg-[#b0e788]/20 rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-[#1a1c29]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
                       </svg>
                     </div>
                     <div className="flex-1">
-                      <h4 className="text-lg font-semibold text-gray-900 mb-1">Bizum</h4>
+                      <h4 className="text-base font-semibold text-[#1a1c29] mb-0.5">Bizum</h4>
                       <p className="text-sm text-gray-600">Pago con tu banco español</p>
                     </div>
                     <div className="flex-shrink-0">
                       {currentPaymentStatus === 'BIZUM_PENDING' && currentPaymentMethod === 'bizum' ? (
-                        <span className="inline-block text-xs font-medium px-3 py-1.5 rounded-full" style={{ backgroundColor: '#b1e787', color: '#1a1c29' }}>
+                        <span className="inline-block text-xs font-medium px-3 py-1 rounded-full bg-[#b0e788] text-[#1a1c29]">
                           Pendiente aprobación
                         </span>
                       ) : (
-                        <span className="inline-block text-xs font-medium text-gray-600 bg-gray-100 px-3 py-1.5 rounded-full">
+                        <span className="inline-block text-xs font-medium text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
                           Requiere aprobación
                         </span>
                       )}
@@ -403,30 +421,30 @@ export default function PaymentModal({
                 {/* Cash Payment */}
                 <button
                   onClick={handleCashPayment}
-                  disabled={processing || (needsFrequencySelection && !paymentFrequency)}
-                  className={`w-full p-5 rounded-xl text-left transition-all ${
-                    needsFrequencySelection && !paymentFrequency
+                  disabled={processing || !paymentFrequency}
+                  className={`w-full p-4 rounded-lg text-left transition-all ${
+                    !paymentFrequency
                       ? 'bg-gray-50 border-2 border-gray-200 opacity-50 cursor-not-allowed'
-                      : 'bg-white border-2 border-gray-300 hover:border-amber-400 hover:shadow-lg hover:scale-[1.02]'
+                      : 'bg-white border-2 border-gray-300 hover:border-[#b0e788] hover:shadow-md'
                   }`}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="flex-shrink-0 w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
-                      <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex-shrink-0 w-10 h-10 bg-[#b0e788]/20 rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-[#1a1c29]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                       </svg>
                     </div>
                     <div className="flex-1">
-                      <h4 className="text-lg font-semibold text-gray-900 mb-1">Efectivo</h4>
+                      <h4 className="text-base font-semibold text-[#1a1c29] mb-0.5">Efectivo</h4>
                       <p className="text-sm text-gray-600">Paga directamente en la academia</p>
                     </div>
                     <div className="flex-shrink-0">
                       {currentPaymentStatus === 'CASH_PENDING' && currentPaymentMethod === 'cash' ? (
-                        <span className="inline-block text-xs font-medium px-3 py-1.5 rounded-full" style={{ backgroundColor: '#b1e787', color: '#1a1c29' }}>
+                        <span className="inline-block text-xs font-medium px-3 py-1 rounded-full bg-[#b0e788] text-[#1a1c29]">
                           Pendiente aprobación
                         </span>
                       ) : (
-                        <span className="inline-block text-xs font-medium text-gray-600 bg-gray-100 px-3 py-1.5 rounded-full">
+                        <span className="inline-block text-xs font-medium text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
                           Requiere aprobación
                         </span>
                       )}
@@ -437,9 +455,9 @@ export default function PaymentModal({
             </div>
 
             {/* Security Badge */}
-            <div className="mt-8 pt-6 border-t border-gray-200">
+            <div className="mt-6 pt-5 border-t border-gray-200">
               <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
-                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-[#b0e788]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
                 <span>Pagos 100% seguros y encriptados</span>
