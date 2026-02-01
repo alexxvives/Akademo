@@ -7,6 +7,7 @@ interface Class { id: string; name: string; }
 interface Assignment {
   id: string; title: string; description?: string; dueDate?: string; maxScore: number;
   submissionCount: number; gradedCount: number; attachmentName?: string; createdAt: string;
+  className?: string;
 }
 interface Submission {
   id: string; studentName: string; studentEmail: string; submissionFileName: string;
@@ -16,7 +17,7 @@ interface Submission {
 
 export default function TeacherAssignments() {
   const [classes, setClasses] = useState<Class[]>([]);
-  const [selectedClassId, setSelectedClassId] = useState('');
+  const [selectedClassId, setSelectedClassId] = useState(''); // Default to empty (all assignments)
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -50,7 +51,7 @@ export default function TeacherAssignments() {
       const classResult = await classRes.json();
       if (classResult.success && classResult.data) {
         setClasses(classResult.data);
-        if (classResult.data.length > 0) setSelectedClassId(classResult.data[0].id);
+        // Don't set default - let it show all assignments
       }
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -60,9 +61,11 @@ export default function TeacherAssignments() {
   };
 
   const loadAssignments = async () => {
-    if (!selectedClassId) return;
     try {
-      const res = await apiClient(`/assignments?classId=${selectedClassId}`);
+      const url = selectedClassId 
+        ? `/assignments?classId=${selectedClassId}`
+        : '/assignments/all'; // Fetch all assignments
+      const res = await apiClient(url);
       const result = await res.json();
       if (result.success) setAssignments(result.data);
     } catch (error) {
@@ -223,7 +226,6 @@ export default function TeacherAssignments() {
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">Ejercicios</h1>
             {academyName && <p className="text-sm text-gray-500 mt-1">{academyName}</p>}
-            <p className="text-xs text-gray-400 mt-1">Haz clic en cualquier fila para ver entregas</p>
           </div>
           <div className="flex items-center gap-4">
             <div className="relative">
@@ -257,10 +259,21 @@ export default function TeacherAssignments() {
           </div>
         ) : (
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-6 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-xs text-gray-600">
+                  Haz clic en cualquier fila para ver entregas.
+                </span>
+              </div>
+            </div>
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Título</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Asignatura</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha límite</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Entregas</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Calificadas</th>
@@ -277,6 +290,9 @@ export default function TeacherAssignments() {
                     <td className="px-6 py-4">
                       <div className="text-sm font-medium text-gray-900">{assignment.title}</div>
                       {assignment.description && <div className="text-sm text-gray-500 truncate max-w-md">{assignment.description}</div>}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {assignment.className || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString('es-ES') : 'Sin fecha'}

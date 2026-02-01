@@ -5,6 +5,66 @@ import { nanoid } from 'nanoid';
 
 const assignments = new Hono();
 
+// GET /assignments/all - List all assignments for teacher or academy owner (no class filter)
+assignments.get('/all', async (c) => {
+  try {
+    const session = await requireAuth(c);
+
+    let query = '';
+    let bindings: string[] = [];
+
+    if (session.role === 'TEACHER') {
+      // Teachers see all assignments for all their classes
+      query = `
+        SELECT 
+          a.id, a.classId, a.teacherId, a.title, a.description, 
+          a.dueDate, a.maxScore, a.uploadId, a.createdAt, a.updatedAt,
+          c.name as className,
+          u.fileName as attachmentName,
+          COUNT(DISTINCT s.id) as submissionCount,
+          COUNT(DISTINCT CASE WHEN s.gradedAt IS NOT NULL THEN s.id END) as gradedCount
+        FROM Assignment a
+        JOIN Class c ON a.classId = c.id
+        LEFT JOIN Upload u ON a.uploadId = u.id
+        LEFT JOIN AssignmentSubmission s ON a.id = s.assignmentId
+        WHERE a.teacherId = ?
+        GROUP BY a.id
+        ORDER BY a.dueDate DESC, a.createdAt DESC
+      `;
+      bindings = [session.id];
+    } else if (session.role === 'ACADEMY') {
+      // Academy owners see all assignments for all classes in their academy
+      query = `
+        SELECT 
+          a.id, a.classId, a.teacherId, a.title, a.description, 
+          a.dueDate, a.maxScore, a.uploadId, a.createdAt, a.updatedAt,
+          c.name as className,
+          u.fileName as attachmentName,
+          COUNT(DISTINCT s.id) as submissionCount,
+          COUNT(DISTINCT CASE WHEN s.gradedAt IS NOT NULL THEN s.id END) as gradedCount
+        FROM Assignment a
+        JOIN Class c ON a.classId = c.id
+        JOIN Academy ac ON c.academyId = ac.id
+        LEFT JOIN Upload u ON a.uploadId = u.id
+        LEFT JOIN AssignmentSubmission s ON a.id = s.assignmentId
+        WHERE ac.ownerId = ?
+        GROUP BY a.id
+        ORDER BY a.dueDate DESC, a.createdAt DESC
+      `;
+      bindings = [session.id];
+    } else {
+      return c.json(errorResponse('Only teachers and academy owners can view all assignments'), 403);
+    }
+
+    const result = await c.env.DB.prepare(query).bind(...bindings).all();
+
+    return c.json(successResponse(result.results || []));
+  } catch (error: any) {
+    console.error('[Assignments GET /all] Error:', error);
+    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+  }
+});
+
 // GET /assignments - List assignments for a class (for teachers and students)
 assignments.get('/', async (c) => {
   try {
