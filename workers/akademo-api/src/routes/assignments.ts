@@ -37,6 +37,26 @@ assignments.get('/', async (c) => {
         ORDER BY a.dueDate DESC, a.createdAt DESC
       `;
       bindings = [classId, session.id];
+    } else if (session.role === 'ACADEMY') {
+      // Academy owners see all assignments for classes in their academy
+      query = `
+        SELECT 
+          a.id, a.classId, a.teacherId, a.title, a.description, 
+          a.dueDate, a.maxScore, a.uploadId, a.createdAt, a.updatedAt,
+          c.name as className,
+          u.fileName as attachmentName,
+          COUNT(DISTINCT s.id) as submissionCount,
+          COUNT(DISTINCT CASE WHEN s.gradedAt IS NOT NULL THEN s.id END) as gradedCount
+        FROM Assignment a
+        JOIN Class c ON a.classId = c.id
+        JOIN Academy ac ON c.academyId = ac.id
+        LEFT JOIN Upload u ON a.uploadId = u.id
+        LEFT JOIN AssignmentSubmission s ON a.id = s.assignmentId
+        WHERE a.classId = ? AND ac.ownerId = ?
+        GROUP BY a.id
+        ORDER BY a.dueDate DESC, a.createdAt DESC
+      `;
+      bindings = [classId, session.id];
     } else if (session.role === 'STUDENT') {
       // Students see assignments with their submission status
       query = `
@@ -70,13 +90,13 @@ assignments.get('/', async (c) => {
   }
 });
 
-// POST /assignments - Create new assignment (teachers only)
+// POST /assignments - Create new assignment (teachers and academy owners)
 assignments.post('/', async (c) => {
   try {
     const session = await requireAuth(c);
 
-    if (session.role !== 'TEACHER') {
-      return c.json(errorResponse('Only teachers can create assignments'), 403);
+    if (session.role !== 'TEACHER' && session.role !== 'ACADEMY') {
+      return c.json(errorResponse('Only teachers and academy owners can create assignments'), 403);
     }
 
     const body = await c.req.json();
@@ -86,10 +106,20 @@ assignments.post('/', async (c) => {
       return c.json(errorResponse('classId and title are required'), 400);
     }
 
-    // Verify teacher has access to this class
-    const classCheck = await c.env.DB.prepare(`
-      SELECT id FROM Class WHERE id = ? AND teacherId = ?
-    `).bind(classId, session.id).first();
+    // Verify user has access to this class
+    let classCheck;
+    if (session.role === 'TEACHER') {
+      classCheck = await c.env.DB.prepare(`
+        SELECT id FROM Class WHERE id = ? AND teacherId = ?
+      `).bind(classId, session.id).first();
+    } else if (session.role === 'ACADEMY') {
+      // Academy owner can create assignments for any class in their academy
+      classCheck = await c.env.DB.prepare(`
+        SELECT c.id FROM Class c
+        JOIN Academy a ON c.academyId = a.id
+        WHERE c.id = ? AND a.ownerId = ?
+      `).bind(classId, session.id).first();
+    }
 
     if (!classCheck) {
       return c.json(errorResponse('Class not found or you do not have permission'), 403);
@@ -143,8 +173,22 @@ assignments.get('/:id', async (c) => {
       return c.json(errorResponse('Assignment not found'), 404);
     }
 
-    // For teachers, include all submissions
-    if (session.role === 'TEACHER' && assignment.teacherId === session.id) {
+    // For teachers and academy owners, include all submissions
+    if ((session.role === 'TEACHER' && assignment.teacherId === session.id) || 
+        (session.role === 'ACADEMY')) {
+      // For academy owners, verify they own the academy
+      if (session.role === 'ACADEMY') {
+        const academyCheck = await c.env.DB.prepare(`
+          SELECT 1 FROM Class c
+          JOIN Academy a ON c.academyId = a.id
+          WHERE c.id = ? AND a.ownerId = ?
+        `).bind(assignment.classId, session.id).first();
+        
+        if (!academyCheck) {
+          return c.json(errorResponse('Unauthorized'), 403);
+        }
+      }
+      
       const submissions = await c.env.DB.prepare(`
         SELECT 
           s.*,

@@ -268,7 +268,11 @@ export default function TeacherAssignments() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {assignments.map((assignment) => (
-                  <tr key={assignment.id} className="hover:bg-gray-50">
+                  <tr 
+                    key={assignment.id} 
+                    onClick={() => openSubmissions(assignment)}
+                    className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  >
                     <td className="px-6 py-4">
                       <div className="text-sm font-medium text-gray-900">{assignment.title}</div>
                       {assignment.description && <div className="text-sm text-gray-500 truncate max-w-md">{assignment.description}</div>}
@@ -279,10 +283,9 @@ export default function TeacherAssignments() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm">{assignment.submissionCount}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">{assignment.gradedCount} / {assignment.submissionCount}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                      <button onClick={() => openSubmissions(assignment)}
-                        className="text-brand-600 hover:text-brand-900">
-                        Ver entregas
-                      </button>
+                      <span className="text-brand-600 hover:text-brand-900">
+                        Ver entregas →
+                      </span>
                     </td>
                   </tr>
                 ))}

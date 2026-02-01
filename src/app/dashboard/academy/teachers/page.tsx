@@ -269,11 +269,21 @@ export default function AcademyTeachers() {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {teachers.map((teacher) => (
-                  <tr key={teacher.id} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                  <tr key={teacher.id} className="hover:bg-gray-50 cursor-pointer transition-colors">
+                    <td 
+                      className="px-6 py-4 whitespace-nowrap"
+                      onClick={() => {
+                        if (paymentStatus !== 'NOT PAID') {
+                          openEditModal(teacher);
+                        }
+                      }}
+                    >
                       <div className="flex items-center gap-3">
                         <button
-                          onClick={() => handleDeleteTeacher(teacher.id, teacher.name)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteTeacher(teacher.id, teacher.name);
+                          }}
                           disabled={deleting === teacher.id || paymentStatus === 'NOT PAID'}
                           className="text-red-600 hover:text-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                           title="Eliminar profesor"
@@ -290,16 +300,6 @@ export default function AcademyTeachers() {
                           <div className="text-sm font-medium text-gray-900">{teacher.name}</div>
                           <div className="text-sm text-gray-500">{teacher.email}</div>
                         </div>
-                        <button
-                          onClick={() => openEditModal(teacher)}
-                          disabled={paymentStatus === 'NOT PAID'}
-                          className="text-gray-400 hover:text-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 ml-1"
-                          title="Editar profesor"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                          </svg>
-                        </button>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
