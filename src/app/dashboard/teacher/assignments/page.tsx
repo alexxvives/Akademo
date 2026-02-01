@@ -223,12 +223,13 @@ export default function TeacherAssignments() {
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">Ejercicios</h1>
             {academyName && <p className="text-sm text-gray-500 mt-1">{academyName}</p>}
+            <p className="text-xs text-gray-400 mt-1">Haz clic en cualquier fila para ver entregas</p>
           </div>
           <div className="flex items-center gap-4">
             <div className="relative">
               <select value={selectedClassId} onChange={(e) => setSelectedClassId(e.target.value)}
                 className="appearance-none w-64 pl-4 pr-10 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent">
-                <option value="">Seleccionar asignatura</option>
+                <option value="">Todas las asignaturas</option>
                 {classes.map((cls) => (<option key={cls.id} value={cls.id}>{cls.name}</option>))}
               </select>
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500">
@@ -284,7 +285,7 @@ export default function TeacherAssignments() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm">{assignment.gradedCount} / {assignment.submissionCount}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                       <span className="text-brand-600 hover:text-brand-900">
-                        Ver entregas →
+                        Ver entregas
                       </span>
                     </td>
                   </tr>

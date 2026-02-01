@@ -221,6 +221,7 @@ export default function AcademyTeachers() {
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">Profesores</h1>
             {academyName && <p className="text-sm text-gray-500 mt-1">{academyName}</p>}
+            <p className="text-xs text-gray-400 mt-1">Haz clic en cualquier fila para editar. Los pagos pendientes aparecen destacados.</p>
           </div>
           <button
             onClick={paymentStatus === 'NOT PAID' ? () => window.location.href = '/dashboard/academy/facturas' : () => setShowCreateModal(true)}
