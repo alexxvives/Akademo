@@ -278,13 +278,25 @@ classes.get('/:id', async (c) => {
       // Teacher can access classes they teach
       hasAccess = classRecord.teacherId === session.id;
     } else if (session.role === 'STUDENT') {
-      // Check if student is enrolled
+      // Students can view basic class details (for enrollment/payment)
+      // But check if they're enrolled to return enrollment-specific info
+      hasAccess = true; // Allow students to see class details
       try {
         const enrollment = await c.env.DB.prepare(`
-          SELECT id FROM ClassEnrollment 
-          WHERE userId = ? AND classId = ? AND status = 'APPROVED'
+          SELECT id, status, documentSigned, createdAt
+          FROM ClassEnrollment 
+          WHERE userId = ? AND classId = ?
         `).bind(session.id, classRecord.id).first();
-        hasAccess = !!enrollment;
+        
+        if (enrollment) {
+          // Student is enrolled - add enrollment status
+          (classRecord as any).isEnrolled = true;
+          (classRecord as any).enrollmentStatus = enrollment.status;
+          (classRecord as any).documentSigned = enrollment.documentSigned;
+        } else {
+          // Student is not enrolled - mark as such
+          (classRecord as any).isEnrolled = false;
+        }
       } catch (enrollError: any) {
         console.error('[Classes/:id] Enrollment check error:', enrollError);
         return c.json(errorResponse(`Failed to verify enrollment: ${enrollError.message}`), 500);
@@ -295,25 +307,8 @@ classes.get('/:id', async (c) => {
       return c.json(errorResponse(`You don't have access to class ${classIdOrSlug}`), 403);
     }
 
-    // If student, add enrollment info
-    if (session.role === 'STUDENT') {
-      try {
-        const enrollment = await c.env.DB.prepare(`
-          SELECT status, documentSigned, createdAt
-          FROM ClassEnrollment 
-          WHERE userId = ? AND classId = ?
-        `).bind(session.id, classRecord.id).first();
-        
-        if (enrollment) {
-          (classRecord as any).enrollmentStatus = enrollment.status;
-          (classRecord as any).documentSigned = enrollment.documentSigned;
-        }
-      } catch (enrollError: any) {
-        console.error('[Classes/:id] Enrollment info fetch error:', enrollError);
-        // Don't fail here, just log and continue without enrollment info
-      }
-    }
-
+    // Students already have enrollment info added above
+    
     // For TEACHER and ACADEMY roles, add enrollments list
     if (session.role === 'TEACHER' || session.role === 'ACADEMY' || session.role === 'ADMIN') {
       try {
