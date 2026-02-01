@@ -607,9 +607,9 @@ academies.patch('/:id', async (c) => {
       updates.push('email = ?');
       values.push(body.email || null);
     }
-    if (body.feedbackAnonymous !== undefined) {
-      updates.push('feedbackAnonymous = ?');
-      values.push(body.feedbackAnonymous);
+    if (body.feedbackEnabled !== undefined) {
+      updates.push('feedbackEnabled = ?');
+      values.push(body.feedbackEnabled);
     }
     if (body.defaultWatermarkIntervalMins !== undefined) {
       updates.push('defaultWatermarkIntervalMins = ?');

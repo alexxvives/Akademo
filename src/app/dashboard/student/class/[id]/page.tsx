@@ -70,6 +70,7 @@ interface ClassData {
   description: string | null;
   academy: {
     name: string;
+    id: string;
   };
 }
 
@@ -109,6 +110,8 @@ export default function ClassPage() {
   const [showRatingSuccess, setShowRatingSuccess] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
   const [tempRating, setTempRating] = useState<number | null>(null);
+  const [academyFeedbackEnabled, setAcademyFeedbackEnabled] = useState<boolean>(true);
+  const [academyFeedbackEnabled, setAcademyFeedbackEnabled] = useState<boolean>(true);
 
   useEffect(() => {
     loadData();
@@ -224,6 +227,19 @@ export default function ClassPage() {
       console.log('[Student Class] Class loaded:', classResult.data.name, 'ID:', classResult.data.id);
       setClassData(classResult.data);
       setEnrollmentStatus(classResult.data.enrollmentStatus || 'APPROVED');
+
+      // Load academy to get feedbackEnabled setting
+      if (classResult.data.academy?.id) {
+        try {
+          const academyRes = await apiClient(`/academies/${classResult.data.academy.id}`);
+          const academyResult = await academyRes.json();
+          if (academyResult.success && academyResult.data) {
+            setAcademyFeedbackEnabled(academyResult.data.feedbackEnabled !== 0);
+          }
+        } catch (error) {
+          console.error('[Student Class] Failed to load academy:', error);
+        }
+      }
 
       // Use the resolved class ID for subsequent requests
       const resolvedClassId = classResult.data.id;
@@ -505,6 +521,7 @@ export default function ClassPage() {
               </button>
               <h2 className="text-xl font-semibold text-gray-900 mb-4">{selectedLesson.title}</h2>
               
+              {academyFeedbackEnabled && (
               <div className="flex items-center gap-4 mb-2">
                 {/* Star Rating */}
                 <div className="flex gap-1 group/rating relative">
@@ -588,6 +605,7 @@ export default function ClassPage() {
                   </div>
                 )}
               </div>
+              )}
               
               {selectedLesson.description && (
                 <p className="text-gray-600 mt-1">{selectedLesson.description}</p>

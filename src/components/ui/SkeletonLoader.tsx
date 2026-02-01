@@ -325,21 +325,28 @@ export function SkeletonClasses() {
         <SkeletonBox className="h-11 w-36" />
       </div>
       
-      {/* Class Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <SkeletonBox className="h-40 w-full" />
-            <div className="p-6 space-y-4">
-              <div className="space-y-2">
-                <SkeletonBox className="h-6 w-full" />
-                <SkeletonBox className="h-4 w-3/4" />
+      {/* Class Cards - Vertical Stack like actual layout */}
+      <div className="space-y-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="bg-white rounded-xl border-2 border-gray-200 p-6">
+            <div className="flex items-center gap-6">
+              <div className="flex-1 space-y-4">
+                <div className="flex items-center gap-3">
+                  <SkeletonBox className="h-6 w-64" /> {/* Class name */}
+                  <SkeletonBox className="h-6 w-16 rounded-full" /> {/* Rating badge */}
+                </div>
+                <SkeletonBox className="h-4 w-3/4" /> {/* Description */}
+                {/* Stats row */}
+                <div className="flex items-center gap-6">
+                  <SkeletonBox className="h-4 w-24" /> {/* Students */}
+                  <SkeletonBox className="h-4 w-24" /> {/* Lessons */}
+                  <SkeletonBox className="h-4 w-20" /> {/* Videos */}
+                  <SkeletonBox className="h-4 w-28" /> {/* Documents */}
+                  <SkeletonBox className="h-4 w-32" /> {/* Date */}
+                </div>
               </div>
-              <div className="flex items-center gap-4">
-                <SkeletonBox className="h-4 w-20" />
-                <SkeletonBox className="h-4 w-20" />
-              </div>
-              <SkeletonBox className="h-10 w-full" />
+              {/* Right side badge */}
+              <SkeletonBox className="h-12 w-20 rounded-lg" />
             </div>
           </div>
         ))}

@@ -237,7 +237,7 @@ export function FeedbackView({
                               lessonRating: lesson.averageRating
                             }))
                           ).map((rating) => (
-                            <div key={rating.id} className={`bg-white rounded-lg p-3 border transition-all ${rating.isRead === false ? 'shadow-md shadow-blue-100 border-blue-300/60 bg-gradient-to-br from-blue-50/40 via-white to-transparent' : 'shadow-sm border-gray-200'}`}>
+                            <div key={rating.id} className={`bg-white rounded-lg p-3 border transition-all ${rating.isRead === false ? 'shadow-lg shadow-amber-200/80 border-amber-400 ring-2 ring-amber-300/50 bg-gradient-to-br from-amber-50 via-yellow-50/30 to-white animate-pulse' : 'shadow-sm border-gray-200'}`}>
                               <div className="flex items-start justify-between mb-1.5">
                                 <div className="flex items-center gap-3 flex-wrap">
                                   <span className="font-medium text-gray-900">{rating.studentName}</span>
