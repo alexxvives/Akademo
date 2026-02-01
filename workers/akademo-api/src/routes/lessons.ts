@@ -104,9 +104,15 @@ lessons.get('/', async (c) => {
     // Get lessons with video and document counts
     const lessonsResult = await c.env.DB.prepare(query).bind(...bindParams).all();
 
+    // Filter out transcoding lessons for students
+    let filteredLessons = lessonsResult.results || [];
+    if (session && session.role === 'STUDENT') {
+      filteredLessons = filteredLessons.filter((l: any) => l.isTranscoding !== 1);
+    }
+
     // If checkTranscoding is true, update Bunny status for any transcoding videos
     if (checkTranscoding) {
-      const transcodingLessons = (lessonsResult.results || []).filter((l: any) => l.isTranscoding === 1);
+      const transcodingLessons = filteredLessons.filter((l: any) => l.isTranscoding === 1);
       
       for (const lesson of transcodingLessons) {
         if (lesson.firstVideoBunnyGuid) {
@@ -138,9 +144,13 @@ lessons.get('/', async (c) => {
           }
         }
       }
+      // Re-filter after status updates (student might see newly finished videos)
+      if (session && session.role === 'STUDENT') {
+        filteredLessons = filteredLessons.filter((l: any) => l.isTranscoding !== 1);
+      }
     }
 
-    return c.json(successResponse(lessonsResult.results || []));
+    return c.json(successResponse(filteredLessons));
   } catch (error: any) {
     console.error('[List Lessons] Error:', error);
     return c.json(errorResponse(error.message || 'Internal server error'), 500);

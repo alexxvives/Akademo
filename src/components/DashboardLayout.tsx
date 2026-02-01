@@ -344,13 +344,13 @@ export default function DashboardLayout({
             href: '/dashboard/admin/students', 
             iconType: 'users' as const,
           },
-          { 
+          ...(academy?.feedbackEnabled !== 0 ? [{
             label: 'Valoraciones', 
             href: '/dashboard/admin/feedback', 
             iconType: 'message' as const,
             badge: unreadValoracionesCount > 0 ? unreadValoracionesCount : undefined,
             badgeColor: 'bg-blue-500'
-          },
+          }] : []),
           { 
             label: 'Streams', 
             href: '/dashboard/admin/streams', 
@@ -371,7 +371,7 @@ export default function DashboardLayout({
         return [
           { label: 'Panel de Control', href: '/dashboard/teacher', iconType: 'chart' },
           { label: 'Asignaturas', href: '/dashboard/teacher/classes', matchPaths: ['/dashboard/teacher/class'], iconType: 'book' },
-          { label: 'Valoraciones', href: '/dashboard/teacher/feedback', iconType: 'message', badge: unreadValoracionesCount > 0 ? unreadValoracionesCount : undefined, badgeColor: 'bg-[#b0e788]' },
+          ...(academy?.feedbackEnabled !== 0 ? [{ label: 'Valoraciones', href: '/dashboard/teacher/feedback', iconType: 'message', badge: unreadValoracionesCount > 0 ? unreadValoracionesCount : undefined, badgeColor: 'bg-[#b0e788]' }] : []),
           { label: 'Streams', href: '/dashboard/teacher/streams', iconType: 'clap' },
           { label: 'Ejercicios', href: '/dashboard/teacher/assignments', iconType: 'fileText' },
           { label: 'Calificaciones', href: '/dashboard/teacher/grading', iconType: 'clipboard' },

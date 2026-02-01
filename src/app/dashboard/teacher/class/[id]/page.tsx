@@ -284,12 +284,14 @@ export default function TeacherClassPage() {
         // Filter streams that:
         // 1. Belong to this class
         // 2. Have ended status OR have a valid recording ID (even if status is weird)
+        // 3. Are NOT already used in a lesson (validRecordingId is NULL)
         const recordingsForClass = result.data.filter((s: any) => {
           // Check both classId and classSlug
           const matchClass = s.classId === classId || s.classSlug === classId;
           const hasRecording = (s.status === 'ended' || (s.recordingId && s.recordingId.length > 5));
-          console.log(`[Debug] Stream ${s.id}: ClassMatch=${matchClass} (${s.classId} vs ${classId}), HasRec=${hasRecording}, Status=${s.status}, RecId=${s.recordingId}`);
-          return matchClass && hasRecording;
+          const notUsedInLesson = !s.validRecordingId; // Backend returns lessonId if already used
+          console.log(`[Debug] Stream ${s.id}: ClassMatch=${matchClass} (${s.classId} vs ${classId}), HasRec=${hasRecording}, NotUsed=${notUsedInLesson}, Status=${s.status}, RecId=${s.recordingId}`);
+          return matchClass && hasRecording && notUsedInLesson;
         });
         console.log('[Debug] Filtered recordings:', recordingsForClass);
         setAvailableStreamRecordings(recordingsForClass);

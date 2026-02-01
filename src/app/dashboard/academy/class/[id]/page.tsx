@@ -118,8 +118,8 @@ export default function TeacherClassPage() {
     title: '',
     description: '',
     externalUrl: '',
-    releaseDate: new Date().toISOString().split('T')[0],
-    releaseTime: '00:00',
+    releaseDate: new Date(Date.now() + 86400000).toISOString().split('T')[0], // Tomorrow
+    releaseTime: '09:00',
     publishImmediately: true,
     maxWatchTimeMultiplier: 2.0,
     watermarkIntervalMins: 5,

@@ -641,24 +641,24 @@ export default function ProfilePage() {
             {/* Feedback Toggle */}
             <div className="lg:col-span-1">
               <label className="block text-sm font-medium text-gray-900 mb-2">
-                Anonimizar feedback
+                Habilitar feedback
               </label>
-              <p className="text-xs text-gray-500 mb-3">Los estudiantes comentan de forma anónima</p>
+              <p className="text-xs text-gray-500 mb-3">Permitir valoraciones de estudiantes en las clases</p>
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => handleSettingChange('feedbackAnonymous', formData.feedbackAnonymous ? 0 : 1)}
+                  onClick={() => handleSettingChange('feedbackEnabled', formData.feedbackEnabled ? 0 : 1)}
                   className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors cursor-pointer ${
-                    formData.feedbackAnonymous ? 'bg-brand-600' : 'bg-gray-300'
+                    formData.feedbackEnabled ? 'bg-brand-600' : 'bg-gray-300'
                   }`}
                 >
                   <span
                     className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform ${
-                      formData.feedbackAnonymous ? 'translate-x-6' : 'translate-x-1'
+                      formData.feedbackEnabled ? 'translate-x-6' : 'translate-x-1'
                     }`}
                   />
                 </button>
                 <span className="text-sm text-gray-700 font-medium">
-                  {formData.feedbackAnonymous ? 'Activado' : 'Desactivado'}
+                  {formData.feedbackEnabled ? 'Activado' : 'Desactivado'}
                 </span>
               </div>
             </div>
