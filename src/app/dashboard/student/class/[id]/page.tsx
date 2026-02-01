@@ -111,7 +111,6 @@ export default function ClassPage() {
   const [feedbackText, setFeedbackText] = useState('');
   const [tempRating, setTempRating] = useState<number | null>(null);
   const [academyFeedbackEnabled, setAcademyFeedbackEnabled] = useState<boolean>(true);
-  const [academyFeedbackEnabled, setAcademyFeedbackEnabled] = useState<boolean>(true);
 
   useEffect(() => {
     loadData();
