@@ -67,7 +67,7 @@ export function Sidebar({
   const iconRefs = useRef<{ [key: string]: any }>({});
   const logoutIconRef = useRef<any>(null);
   const linkIconRef = useRef<any>(null);
-  const { logoUrl, academyName } = useAcademyLogo();
+  const { logoUrl, academyName, loading } = useAcademyLogo();
 
   const renderIcon = (item: MenuItem) => {
     const iconType = (item as any).iconType;
@@ -110,7 +110,12 @@ export function Sidebar({
       {/* Logo */}
       <div className="flex-shrink-0 h-20 flex items-center justify-center px-4 gap-2">
         <Link href={`/dashboard/${role.toLowerCase()}`} className="flex items-center gap-2">
-          {logoUrl ? (
+          {loading ? (
+            <>
+              <div className="h-10 w-10 bg-gray-700 animate-pulse rounded" />
+              <div className="h-6 w-24 bg-gray-700 animate-pulse rounded" />
+            </>
+          ) : logoUrl ? (
             <>
               <img
                 src={`/api/storage/serve/${logoUrl}`}

@@ -1639,20 +1639,20 @@ export default function TeacherClassPage() {
                             type="text" 
                             value={lessonFormData.title} 
                             onChange={e => setLessonFormData({ ...lessonFormData, title: e.target.value })} 
-                            className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors" 
+                            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors" 
                             placeholder="Título de la lección"
                           />
                         </div>
-                        {/* Publish options - Only for CREATE mode */}
+                        {/* Publish options with Fecha/Hora horizontally aligned - Only for CREATE mode */}
                         {!editingLessonId && (
-                          <div className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
                             <div>
                               <label className="block text-sm font-semibold text-gray-700 mb-2">Publicación</label>
                               <div className="flex gap-2">
                                 <button
                                   type="button"
                                   onClick={() => setLessonFormData({ ...lessonFormData, publishImmediately: true })}
-                                  className={`flex-1 px-3 py-2.5 rounded-xl border-2 text-sm font-medium transition-all ${
+                                  className={`flex-1 px-3 py-2.5 rounded-xl border text-sm font-medium transition-all ${
                                     lessonFormData.publishImmediately 
                                       ? 'border-brand-500 bg-brand-50 text-brand-700' 
                                       : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
@@ -1668,7 +1668,7 @@ export default function TeacherClassPage() {
                                 <button
                                   type="button"
                                   onClick={() => setLessonFormData({ ...lessonFormData, publishImmediately: false })}
-                                  className={`flex-1 px-3 py-2.5 rounded-xl border-2 text-sm font-medium transition-all ${
+                                  className={`flex-1 px-3 py-2.5 rounded-xl border text-sm font-medium transition-all ${
                                     !lessonFormData.publishImmediately 
                                       ? 'border-brand-500 bg-brand-50 text-brand-700' 
                                       : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
@@ -1694,7 +1694,7 @@ export default function TeacherClassPage() {
                                       value={lessonFormData.releaseDate} 
                                       min={new Date().toISOString().split('T')[0]}
                                       onChange={e => setLessonFormData({ ...lessonFormData, releaseDate: e.target.value })} 
-                                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors"
+                                      className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors"
                                     />
                                   </div>
                                   <div>
@@ -1702,7 +1702,7 @@ export default function TeacherClassPage() {
                                       type="time" 
                                       value={lessonFormData.releaseTime} 
                                       onChange={e => setLessonFormData({ ...lessonFormData, releaseTime: e.target.value })} 
-                                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors"
+                                      className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors"
                                     />
                                   </div>
                                 </div>
@@ -1735,7 +1735,7 @@ export default function TeacherClassPage() {
                         value={lessonFormData.description} 
                         onChange={e => setLessonFormData({ ...lessonFormData, description: e.target.value })} 
                         rows={2} 
-                        className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors resize-none" 
+                        className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors resize-none" 
                         placeholder="Descripción opcional"
                       />
                     </div>
