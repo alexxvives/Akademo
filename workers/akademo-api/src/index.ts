@@ -25,6 +25,7 @@ import adminRoutes from './routes/admin';
 import paymentsRoutes from './routes/payments';
 import studentPaymentsRoutes from './routes/student-payments';
 import { zoomAccounts } from './routes/zoom-accounts';
+import assignmentsRoutes from './routes/assignments';
 import { Bindings } from './types';
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -63,9 +64,9 @@ app.use('*', cors({
 app.get('/', (c) => c.json({ 
   status: 'ok', 
   service: 'akademo-api',
-  version: '3.3',
-  routes: 20,
-  phase: 'Payment System Integration',
+  version: '3.4',
+  routes: 21,
+  phase: 'Assignments System',
   timestamp: new Date().toISOString() 
 }));
 
@@ -89,6 +90,7 @@ app.route('/ratings', ratingRoutes);
 app.route('/analytics', analyticsRoutes);
 app.route('/payments', paymentsRoutes);
 app.route('/student-payments', studentPaymentsRoutes);
+app.route('/assignments', assignmentsRoutes);
 
 // Routes - Phase 2: Advanced Features
 app.route('/live', liveRoutes);
