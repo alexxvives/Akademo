@@ -33,7 +33,7 @@ interface Academy {
   address?: string;
   phone?: string;
   email?: string;
-  feedbackAnonymous?: number;
+  feedbackEnabled?: number;
   defaultWatermarkIntervalMins?: number;
   defaultMaxWatchTimeMultiplier?: number;
   logoUrl?: string;
@@ -74,7 +74,7 @@ export default function ProfilePage() {
     address: '',
     phone: '',
     email: '',
-    feedbackAnonymous: false,
+    feedbackEnabled: true,
     defaultWatermarkIntervalMins: 5,
     defaultMaxWatchTimeMultiplier: 2.0,
     allowedPaymentMethods: ['stripe', 'cash', 'bizum'],
@@ -116,7 +116,7 @@ export default function ProfilePage() {
           address: academyData.address || '',
           phone: academyData.phone || '',
           email: academyData.email || user?.email || '',
-          feedbackAnonymous: academyData.feedbackAnonymous === 1,
+          feedbackEnabled: academyData.feedbackEnabled !== 0,
           defaultWatermarkIntervalMins: academyData.defaultWatermarkIntervalMins || 5,
           defaultMaxWatchTimeMultiplier: academyData.defaultMaxWatchTimeMultiplier || 2.0,
           allowedPaymentMethods: allowedMethods,
