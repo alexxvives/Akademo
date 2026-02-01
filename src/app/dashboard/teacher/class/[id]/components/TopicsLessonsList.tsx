@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useCallback, DragEvent } from 'react';
 import { getBunnyThumbnailUrl } from '@/lib/bunny-stream';
 import { apiClient } from '@/lib/api-client';
-import { LoaderPinwheelIcon } from '@/components/ui/LoaderPinwheelIcon';
 
 interface Lesson {
   id: string;
@@ -449,7 +448,7 @@ export default function TopicsLessonsList({
                 />
                 {(lesson.isUploading || lesson.isTranscoding) && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60">
-                    <LoaderPinwheelIcon size={32} className="text-purple-400 mb-2" />
+                    <div className="w-8 h-8 animate-spin rounded-full border-2 border-white/30 border-t-purple-400 mb-2" />
                     <span className="text-sm font-medium text-white">
                       {lesson.isUploading ? 'Subiendo...' : 'Transcodificando...'}
                     </span>
@@ -574,7 +573,7 @@ export default function TopicsLessonsList({
               <div className="bg-blue-500/10 rounded-lg p-3 border border-blue-500/30">
                 <div className="flex items-center justify-between text-sm text-blue-400 mb-2">
                   <span className="font-medium flex items-center gap-2">
-                    <LoaderPinwheelIcon size={16} className="text-blue-400" />
+                    <div className="w-4 h-4 animate-spin rounded-full border-2 border-blue-400/30 border-t-blue-400" />
                     Subiendo...
                   </span>
                   <span className="font-bold">{Math.round(lesson.uploadProgress || 0)}%</span>

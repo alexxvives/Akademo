@@ -1645,47 +1645,74 @@ export default function TeacherClassPage() {
                         </div>
                         {/* Publish options - Only for CREATE mode */}
                         {!editingLessonId && (
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Publicación</label>
-                            <div className="flex gap-2">
-                              <button
-                                type="button"
-                                onClick={() => setLessonFormData({ ...lessonFormData, publishImmediately: true })}
-                                className={`flex-1 px-3 py-2.5 rounded-xl border-2 text-sm font-medium transition-all ${
-                                  lessonFormData.publishImmediately 
-                                    ? 'border-brand-500 bg-brand-50 text-brand-700' 
-                                    : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
-                                }`}
-                              >
-                                <div className="flex items-center justify-center gap-1.5">
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                  </svg>
-                                  Ahora
-                                </div>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setLessonFormData({ ...lessonFormData, publishImmediately: false })}
-                                className={`flex-1 px-3 py-2.5 rounded-xl border-2 text-sm font-medium transition-all ${
-                                  !lessonFormData.publishImmediately 
-                                    ? 'border-brand-500 bg-brand-50 text-brand-700' 
-                                    : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
-                                }`}
-                              >
-                                <div className="flex items-center justify-center gap-1.5">
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                  </svg>
-                                  Programar
-                                </div>
-                              </button>
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-700 mb-2">Publicación</label>
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setLessonFormData({ ...lessonFormData, publishImmediately: true })}
+                                  className={`flex-1 px-3 py-2.5 rounded-xl border-2 text-sm font-medium transition-all ${
+                                    lessonFormData.publishImmediately 
+                                      ? 'border-brand-500 bg-brand-50 text-brand-700' 
+                                      : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-center gap-1.5">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                    </svg>
+                                    Ahora
+                                  </div>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setLessonFormData({ ...lessonFormData, publishImmediately: false })}
+                                  className={`flex-1 px-3 py-2.5 rounded-xl border-2 text-sm font-medium transition-all ${
+                                    !lessonFormData.publishImmediately 
+                                      ? 'border-brand-500 bg-brand-50 text-brand-700' 
+                                      : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-center gap-1.5">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    Programar
+                                  </div>
+                                </button>
+                              </div>
                             </div>
+                            {/* Date/Time inputs - Show when Programar is selected */}
+                            {!lessonFormData.publishImmediately && (
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">Fecha y Hora</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <input 
+                                      type="date" 
+                                      value={lessonFormData.releaseDate} 
+                                      min={new Date().toISOString().split('T')[0]}
+                                      onChange={e => setLessonFormData({ ...lessonFormData, releaseDate: e.target.value })} 
+                                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors"
+                                    />
+                                  </div>
+                                  <div>
+                                    <input 
+                                      type="time" 
+                                      value={lessonFormData.releaseTime} 
+                                      onChange={e => setLessonFormData({ ...lessonFormData, releaseTime: e.target.value })} 
+                                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
                       <div className="space-y-4">
-                        {/* Topic Selector - show in BOTH create and edit modes - FIRST in column */}
+                        {/* Topic Selector - show in BOTH create and edit modes */}
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">Tema (opcional)</label>
                           <select
@@ -1699,31 +1726,6 @@ export default function TeacherClassPage() {
                             ))}
                           </select>
                         </div>
-                        {/* Date/Time inputs - SECOND in column, below topic */}
-                        {!editingLessonId && !lessonFormData.publishImmediately && (
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Fecha y Hora</label>
-                            <div className="grid grid-cols-2 gap-2">
-                              <div>
-                                <input 
-                                  type="date" 
-                                  value={lessonFormData.releaseDate} 
-                                  min={new Date().toISOString().split('T')[0]}
-                                  onChange={e => setLessonFormData({ ...lessonFormData, releaseDate: e.target.value })} 
-                                  className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors"
-                                />
-                              </div>
-                              <div>
-                                <input 
-                                  type="time" 
-                                  value={lessonFormData.releaseTime} 
-                                  onChange={e => setLessonFormData({ ...lessonFormData, releaseTime: e.target.value })} 
-                                  className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        )}
                       </div>
                     </div>
                     

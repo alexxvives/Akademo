@@ -63,6 +63,8 @@ export default function TeacherFeedbackPage() {
         body: JSON.stringify({ ratingIds }),
         headers: { 'Content-Type': 'application/json' }
       });
+      // Trigger badge update
+      window.dispatchEvent(new CustomEvent('unreadReviewsChanged'));
     } catch (error) {
       console.error('Failed to mark ratings as read:', error);
     }

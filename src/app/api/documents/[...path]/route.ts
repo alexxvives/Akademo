@@ -29,16 +29,10 @@ export async function GET(
     const blob = await response.blob();
     const contentType = response.headers.get('content-type') || 'application/pdf';
     
-    // Extract filename from content-disposition header if present
-    const contentDisposition = response.headers.get('content-disposition') || '';
-    const filenameMatch = contentDisposition.match(/filename="(.+?)"/);
-    const filename = filenameMatch ? filenameMatch[1] : 'document.pdf';
-
-    // Return the file with inline disposition (opens in browser instead of downloading)
+    // Return the file without Content-Disposition header to allow browser to handle viewing
     return new NextResponse(blob, {
       headers: {
         'Content-Type': contentType,
-        'Content-Disposition': `inline; filename="${filename}"`,
         'Cache-Control': 'private, max-age=3600',
       },
     });

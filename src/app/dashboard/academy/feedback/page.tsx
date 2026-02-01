@@ -302,6 +302,8 @@ export default function AcademyFeedbackPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ratingIds }),
       });
+      // Trigger badge update
+      window.dispatchEvent(new CustomEvent('unreadReviewsChanged'));
       // Refresh feedback to update isRead status
       loadFeedback();
     } catch (error) {
