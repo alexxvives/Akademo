@@ -7,10 +7,24 @@ import { FeedbackView, type ClassFeedback } from '@/components/shared';
 export default function TeacherFeedbackPage() {
   const [loading, setLoading] = useState(true);
   const [classes, setClasses] = useState<ClassFeedback[]>([]);
+  const [academyName, setAcademyName] = useState<string>('');
 
   useEffect(() => {
+    loadAcademyName();
     loadFeedback();
   }, []);
+
+  const loadAcademyName = async () => {
+    try {
+      const res = await apiClient('/requests/teacher');
+      const result = await res.json();
+      if (Array.isArray(result) && result.length > 0) {
+        setAcademyName(result[0].academyName || '');
+      }
+    } catch (error) {
+      console.error('Failed to load academy name:', error);
+    }
+  };
 
   const loadFeedback = async () => {
     try {
@@ -75,7 +89,7 @@ export default function TeacherFeedbackPage() {
       <div>
         <h1 className="text-2xl font-semibold text-gray-900">Feedback de Estudiantes</h1>
         <p className="text-sm text-gray-500 mt-1">
-          {classes.length > 0 && classes[0].academyName ? classes[0].academyName : 'Akademo'}
+          {academyName || ''}
         </p>
       </div>
 

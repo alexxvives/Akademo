@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import ProtectedVideoPlayer from '@/components/ProtectedVideoPlayer';
-import { SkeletonForm } from '@/components/ui/SkeletonLoader';
+import { SkeletonStudentClass } from '@/components/ui/SkeletonLoader';
 import { useAuth } from '@/hooks/useAuth';
 import { getBunnyThumbnailUrl } from '@/lib/bunny-stream';
 import { apiClient, apiPost, API_BASE_URL } from '@/lib/api-client';
@@ -403,7 +403,7 @@ export default function ClassPage() {
   };
 
   if (loading) {
-    return <SkeletonForm />;
+    return <SkeletonStudentClass />;
   }
 
   return (

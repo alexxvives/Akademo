@@ -109,42 +109,40 @@ export function Sidebar({
     <aside className="hidden lg:flex flex-col bg-[#1a1d29] w-64 h-full">
       {/* Logo */}
       <div className="flex-shrink-0 h-20 flex items-center justify-center px-4 gap-2">
-        {loading ? (
-          <div className="flex items-center gap-2">
-            <div className="h-10 w-10 bg-gray-700 animate-pulse rounded" />
-            <div className="h-6 w-24 bg-gray-700 animate-pulse rounded" />
-          </div>
-        ) : (
-          <Link href={`/dashboard/${role.toLowerCase()}`} className="flex items-center gap-2">
-            {logoUrl ? (
-              <>
-                <img
-                  src={`/api/storage/serve/${logoUrl}`}
-                  alt="Academy Logo"
-                  className="h-10 w-10 object-contain"
-                  loading="eager"
-                  fetchPriority="high"
-                />
-                {academyName && (
-                  <span className="text-lg font-bold text-gray-400 font-[family-name:var(--font-montserrat)]">
-                    {academyName}
-                  </span>
-                )}
-              </>
-            ) : (
-              <>
-                <img
-                  src="/logo/AKADEMO_logo_OTHER2.svg"
-                  alt="Akademo"
-                  className="h-8 w-auto object-contain"
-                />
+        <Link href={`/dashboard/${role.toLowerCase()}`} className="flex items-center gap-2">
+          {logoUrl ? (
+            <>
+              <img
+                src={`/api/storage/serve/${logoUrl}`}
+                alt="Academy Logo"
+                className="h-10 w-10 object-contain"
+                loading="eager"
+                fetchPriority="high"
+              />
+              {academyName && (
                 <span className="text-lg font-bold text-gray-400 font-[family-name:var(--font-montserrat)]">
-                  AKADEMO
+                  {academyName}
                 </span>
-              </>
-            )}
-          </Link>
-        )}
+              )}
+            </>
+          ) : loading ? (
+            <div className="flex items-center gap-2">
+              <div className="h-10 w-10 bg-gray-700 animate-pulse rounded" />
+              <div className="h-6 w-24 bg-gray-700 animate-pulse rounded" />
+            </div>
+          ) : (
+            <>
+              <img
+                src="/logo/AKADEMO_logo_OTHER2.svg"
+                alt="Akademo"
+                className="h-8 w-auto object-contain"
+              />
+              <span className="text-lg font-bold text-gray-400 font-[family-name:var(--font-montserrat)]">
+                AKADEMO
+              </span>
+            </>
+          )}
+        </Link>
       </div>
 
       {/* Scrollable content - navigation and buttons */}

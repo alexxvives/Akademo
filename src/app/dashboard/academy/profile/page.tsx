@@ -102,13 +102,24 @@ export default function ProfilePage() {
         setAcademy(academyData);
         
         // Parse allowed payment methods from JSON string
-        let allowedMethods = ['stripe', 'cash', 'bizum']; // default
+        let allowedMethods = ['cash', 'bizum']; // default - stripe not included by default
         if (academyData.allowedPaymentMethods) {
           try {
             allowedMethods = JSON.parse(academyData.allowedPaymentMethods);
           } catch (e) {
             console.error('Failed to parse allowedPaymentMethods:', e);
           }
+        }
+        
+        // Auto-add stripe if connected
+        if (stripeResult.success && stripeResult.data?.charges_enabled && !allowedMethods.includes('stripe')) {
+          allowedMethods.push('stripe');
+          // Persist this to database
+          await apiClient(`/academies/${academyData.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ allowedPaymentMethods: JSON.stringify(allowedMethods) })
+          });
         }
         
         setFormData({
@@ -241,7 +252,14 @@ export default function ProfilePage() {
       const result = await response.json();
       console.log('[handleSettingChange] Response:', result);
       
-      if (!result.success) {
+      if (result.success) {
+        // If feedback was toggled, dispatch event for DashboardLayout to update sidebar
+        if (field === 'feedbackEnabled') {
+          window.dispatchEvent(new CustomEvent('feedbackToggled', { 
+            detail: { feedbackEnabled: value } 
+          }));
+        }
+      } else {
         console.error('Error updating setting:', result);
         alert('Error al actualizar la configuración');
       }
@@ -750,21 +768,36 @@ export default function ProfilePage() {
             <button
               type="button"
               onClick={async () => {
-                console.log('[Payment Methods] Before - formData.allowedPaymentMethods:', formData.allowedPaymentMethods);
                 const currentMethods = Array.isArray(formData.allowedPaymentMethods) ? formData.allowedPaymentMethods : [];
-                console.log('[Payment Methods] currentMethods:', currentMethods);
-                const updated = currentMethods.includes('stripe')
+                const hasStripe = currentMethods.includes('stripe');
+                
+                // Prevent selecting stripe if no Stripe account connected
+                if (!hasStripe && (!stripeStatus?.charges_enabled)) {
+                  alert('Debes conectar una cuenta de Stripe antes de habilitar pagos con Stripe');
+                  return;
+                }
+                
+                // Prevent deselecting if it's the last payment method
+                if (hasStripe && currentMethods.length === 1) {
+                  alert('Debes tener al menos un método de pago habilitado');
+                  return;
+                }
+                
+                const updated = hasStripe
                   ? currentMethods.filter(m => m !== 'stripe')
                   : [...currentMethods, 'stripe'];
-                console.log('[Payment Methods] Updated array:', updated);
-                console.log('[Payment Methods] Stringified:', JSON.stringify(updated));
                 await handleSettingChange('allowedPaymentMethods', JSON.stringify(updated));
               }}
               className={`p-4 border-2 rounded-xl transition-all duration-200 text-left ${
                 (Array.isArray(formData.allowedPaymentMethods) && formData.allowedPaymentMethods.includes('stripe'))
                   ? 'border-brand-600 bg-brand-50 shadow-md'
                   : 'border-gray-200 bg-white hover:border-gray-300'
+              } ${
+                (!stripeStatus?.charges_enabled && !formData.allowedPaymentMethods.includes('stripe'))
+                  ? 'opacity-50 cursor-not-allowed'
+                  : ''
               }`}
+              disabled={!stripeStatus?.charges_enabled && !formData.allowedPaymentMethods.includes('stripe')}
             >
               <div className="flex items-start gap-3">
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
@@ -787,6 +820,11 @@ export default function ProfilePage() {
                   }`}>
                     Tarjetas de crédito/débito
                   </p>
+                  {(!stripeStatus?.charges_enabled && !formData.allowedPaymentMethods.includes('stripe')) && (
+                    <p className="text-xs text-amber-600 mt-1 font-medium">
+                      ⚠️ Conecta tu cuenta Stripe abajo
+                    </p>
+                  )}
                 </div>
               </div>
             </button>
@@ -796,7 +834,15 @@ export default function ProfilePage() {
               type="button"
               onClick={async () => {
                 const currentMethods = Array.isArray(formData.allowedPaymentMethods) ? formData.allowedPaymentMethods : [];
-                const updated = currentMethods.includes('cash')
+                const hasCash = currentMethods.includes('cash');
+                
+                // Prevent deselecting if it's the last payment method
+                if (hasCash && currentMethods.length === 1) {
+                  alert('Debes tener al menos un método de pago habilitado');
+                  return;
+                }
+                
+                const updated = hasCash
                   ? currentMethods.filter(m => m !== 'cash')
                   : [...currentMethods, 'cash'];
                 await handleSettingChange('allowedPaymentMethods', JSON.stringify(updated));
@@ -837,7 +883,15 @@ export default function ProfilePage() {
               type="button"
               onClick={async () => {
                 const currentMethods = Array.isArray(formData.allowedPaymentMethods) ? formData.allowedPaymentMethods : [];
-                const updated = currentMethods.includes('bizum')
+                const hasBizum = currentMethods.includes('bizum');
+                
+                // Prevent deselecting if it's the last payment method
+                if (hasBizum && currentMethods.length === 1) {
+                  alert('Debes tener al menos un método de pago habilitado');
+                  return;
+                }
+                
+                const updated = hasBizum
                   ? currentMethods.filter(m => m !== 'bizum')
                   : [...currentMethods, 'bizum'];
                 await handleSettingChange('allowedPaymentMethods', JSON.stringify(updated));

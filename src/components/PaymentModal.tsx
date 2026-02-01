@@ -43,6 +43,58 @@ export default function PaymentModal({
   const [processing, setProcessing] = useState(false);
   const [confirmingCash, setConfirmingCash] = useState(false);
   const [confirmingBizum, setConfirmingBizum] = useState(false);
+  const [allowedPaymentMethods, setAllowedPaymentMethods] = useState<string[]>(['stripe', 'cash', 'bizum']);
+
+  // Fetch academy's allowed payment methods
+  useEffect(() => {
+    if (isOpen && classId) {
+      console.log('[PaymentModal] Fetching allowed payment methods for class:', classId);
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/classes/${classId}`)
+        .then(res => res.json())
+        .then(result => {
+          console.log('[PaymentModal] Class data:', result);
+          if (result.success && result.data?.academyId) {
+            // Fetch academy details
+            return fetch(`${process.env.NEXT_PUBLIC_API_URL}/academies/${result.data.academyId}`);
+          }
+          return null;
+        })
+        .then(res => res?.json())
+        .then(result => {
+          console.log('[PaymentModal] Academy data:', result);
+          if (result?.success && result.data) {
+            let methods = result.data.allowedPaymentMethods;
+            console.log('[PaymentModal] Raw allowedPaymentMethods:', methods, 'type:', typeof methods);
+            
+            // Parse if string
+            if (typeof methods === 'string') {
+              try {
+                methods = JSON.parse(methods);
+                console.log('[PaymentModal] Parsed methods:', methods);
+              } catch (e) {
+                console.error('[PaymentModal] Failed to parse allowedPaymentMethods:', e);
+                methods = ['stripe', 'cash', 'bizum'];
+              }
+            }
+            
+            // Ensure it's an array
+            if (!Array.isArray(methods)) {
+              console.warn('[PaymentModal] allowedPaymentMethods is not an array, using default');
+              methods = ['stripe', 'cash', 'bizum'];
+            }
+            
+            console.log('[PaymentModal] Final allowed payment methods:', methods);
+            setAllowedPaymentMethods(methods);
+          } else {
+            console.log('[PaymentModal] No academy data, using defaults');
+          }
+        })
+        .catch(err => {
+          console.error('[PaymentModal] Failed to fetch allowed payment methods:', err);
+          // Keep default if fetch fails
+        });
+    }
+  }, [isOpen, classId]);
 
   // Auto-select payment frequency when modal opens
   useEffect(() => {
@@ -299,9 +351,9 @@ export default function PaymentModal({
                 {/* Stripe Payment */}
                 <button
                   onClick={handleStripePayment}
-                  disabled={processing || !paymentFrequency}
+                  disabled={processing || !paymentFrequency || !allowedPaymentMethods.includes('stripe')}
                   className={`w-full p-4 rounded-lg text-left transition-all ${
-                    !paymentFrequency
+                    !paymentFrequency || !allowedPaymentMethods.includes('stripe')
                       ? 'bg-gray-50 border-2 border-gray-200 opacity-50 cursor-not-allowed'
                       : 'bg-white border-2 border-gray-300 hover:border-[#b0e788] hover:shadow-md'
                   }`}
@@ -317,9 +369,15 @@ export default function PaymentModal({
                       <p className="text-sm text-gray-600">Pago seguro con Stripe</p>
                     </div>
                     <div className="flex-shrink-0">
-                      <span className="inline-block text-xs font-medium text-white bg-black px-3 py-1 rounded-full">
-                        Instantáneo
-                      </span>
+                      {!allowedPaymentMethods.includes('stripe') ? (
+                        <span className="inline-block text-xs font-medium text-gray-500 bg-gray-200 px-3 py-1 rounded-full">
+                          No disponible
+                        </span>
+                      ) : (
+                        <span className="inline-block text-xs font-medium text-white bg-black px-3 py-1 rounded-full">
+                          Instantáneo
+                        </span>
+                      )}
                     </div>
                   </div>
                 </button>
@@ -327,9 +385,9 @@ export default function PaymentModal({
                 {/* Bizum */}
                 <button
                   onClick={handleBizumPayment}
-                  disabled={processing || !paymentFrequency}
+                  disabled={processing || !paymentFrequency || !allowedPaymentMethods.includes('bizum')}
                   className={`w-full p-4 rounded-lg text-left transition-all ${
-                    !paymentFrequency
+                    !paymentFrequency || !allowedPaymentMethods.includes('bizum')
                       ? 'bg-gray-50 border-2 border-gray-200 opacity-50 cursor-not-allowed'
                       : 'bg-white border-2 border-gray-300 hover:border-[#b0e788] hover:shadow-md'
                   }`}
@@ -345,7 +403,11 @@ export default function PaymentModal({
                       <p className="text-sm text-gray-600">Pago con tu banco español</p>
                     </div>
                     <div className="flex-shrink-0">
-                      {currentPaymentStatus === 'PENDING' && currentPaymentMethod === 'bizum' ? (
+                      {!allowedPaymentMethods.includes('bizum') ? (
+                        <span className="inline-block text-xs font-medium text-gray-500 bg-gray-200 px-3 py-1 rounded-full">
+                          No disponible
+                        </span>
+                      ) : currentPaymentStatus === 'PENDING' && currentPaymentMethod === 'bizum' ? (
                         <span className="inline-block text-xs font-medium px-3 py-1 rounded-full bg-[#b0e788] text-[#1a1c29]">
                           Pendiente aprobación
                         </span>
@@ -361,9 +423,9 @@ export default function PaymentModal({
                 {/* Cash Payment */}
                 <button
                   onClick={handleCashPayment}
-                  disabled={processing || !paymentFrequency}
+                  disabled={processing || !paymentFrequency || !allowedPaymentMethods.includes('cash')}
                   className={`w-full p-4 rounded-lg text-left transition-all ${
-                    !paymentFrequency
+                    !paymentFrequency || !allowedPaymentMethods.includes('cash')
                       ? 'bg-gray-50 border-2 border-gray-200 opacity-50 cursor-not-allowed'
                       : 'bg-white border-2 border-gray-300 hover:border-[#b0e788] hover:shadow-md'
                   }`}
@@ -379,7 +441,11 @@ export default function PaymentModal({
                       <p className="text-sm text-gray-600">Paga directamente en la academia</p>
                     </div>
                     <div className="flex-shrink-0">
-                      {currentPaymentStatus === 'PENDING' && currentPaymentMethod === 'cash' ? (
+                      {!allowedPaymentMethods.includes('cash') ? (
+                        <span className="inline-block text-xs font-medium text-gray-500 bg-gray-200 px-3 py-1 rounded-full">
+                          No disponible
+                        </span>
+                      ) : currentPaymentStatus === 'PENDING' && currentPaymentMethod === 'cash' ? (
                         <span className="inline-block text-xs font-medium px-3 py-1 rounded-full bg-[#b0e788] text-[#1a1c29]">
                           Pendiente aprobación
                         </span>
