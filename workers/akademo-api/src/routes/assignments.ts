@@ -469,6 +469,86 @@ assignments.get('/:id/submissions/download', async (c) => {
   }
 });
 
+// PATCH /assignments/:id - Update assignment (teachers and academy owners)
+assignments.patch('/:id', async (c) => {
+  try {
+    const session = await requireAuth(c);
+
+    if (session.role !== 'TEACHER' && session.role !== 'ACADEMY') {
+      return c.json(errorResponse('Only teachers and academy owners can update assignments'), 403);
+    }
+
+    const assignmentId = c.req.param('id');
+    const { title, description, dueDate, maxScore } = await c.req.json();
+
+    // Verify assignment exists
+    const assignment = await c.env.DB.prepare(`
+      SELECT a.id, a.teacherId, a.classId, c.academyId 
+      FROM Assignment a
+      JOIN Class c ON a.classId = c.id
+      WHERE a.id = ?
+    `).bind(assignmentId).first();
+
+    if (!assignment) {
+      return c.json(errorResponse('Assignment not found'), 404);
+    }
+
+    // Verify permission
+    if (session.role === 'TEACHER') {
+      // Teacher must be the assignment creator
+      if (assignment.teacherId !== session.id) {
+        return c.json(errorResponse('You do not have permission to update this assignment'), 403);
+      }
+    } else if (session.role === 'ACADEMY') {
+      // Academy owner must own the academy
+      const academy = await c.env.DB.prepare(`
+        SELECT id FROM Academy WHERE id = ? AND ownerId = ?
+      `).bind(assignment.academyId, session.id).first();
+
+      if (!academy) {
+        return c.json(errorResponse('You do not have permission to update this assignment'), 403);
+      }
+    }
+
+    // Update assignment
+    const updatedAt = new Date().toISOString();
+    const updateFields = [];
+    const bindings = [];
+
+    if (title !== undefined) {
+      updateFields.push('title = ?');
+      bindings.push(title);
+    }
+    if (description !== undefined) {
+      updateFields.push('description = ?');
+      bindings.push(description);
+    }
+    if (dueDate !== undefined) {
+      updateFields.push('dueDate = ?');
+      bindings.push(dueDate);
+    }
+    if (maxScore !== undefined) {
+      updateFields.push('maxScore = ?');
+      bindings.push(maxScore);
+    }
+
+    updateFields.push('updatedAt = ?');
+    bindings.push(updatedAt);
+    bindings.push(assignmentId);
+
+    await c.env.DB.prepare(`
+      UPDATE Assignment 
+      SET ${updateFields.join(', ')}
+      WHERE id = ?
+    `).bind(...bindings).run();
+
+    return c.json(successResponse({ message: 'Assignment updated successfully' }));
+  } catch (error: any) {
+    console.error('[Assignments/:id PATCH] Error:', error);
+    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+  }
+});
+
 // DELETE /assignments/:id - Delete assignment (teachers only)
 assignments.delete('/:id', async (c) => {
   try {

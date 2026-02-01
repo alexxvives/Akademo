@@ -21,9 +21,14 @@ export default function TeacherAssignments() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showSubmissionsModal, setShowSubmissionsModal] = useState(false);
   const [showGradeModal, setShowGradeModal] = useState(false);
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editDueDate, setEditDueDate] = useState('');
+  const [updating, setUpdating] = useState(false);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [academyName, setAcademyName] = useState('');
@@ -198,6 +203,45 @@ export default function TeacherAssignments() {
     setUploadFile(null); setUploadProgress(0);
   };
 
+  const openEditAssignment = (assignment: Assignment) => {
+    setSelectedAssignment(assignment);
+    setEditTitle(assignment.title);
+    setEditDescription(assignment.description || '');
+    setEditDueDate(assignment.dueDate ? assignment.dueDate.split('T')[0] : '');
+    setShowEditModal(true);
+  };
+
+  const handleUpdateAssignment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedAssignment) return;
+    
+    setUpdating(true);
+    try {
+      const res = await apiClient(`/assignments/${selectedAssignment.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: editTitle,
+          description: editDescription,
+          dueDate: editDueDate || null,
+        }),
+      });
+      
+      const result = await res.json();
+      if (result.success) {
+        await loadAssignments();
+        setShowEditModal(false);
+      } else {
+        alert('Error al actualizar ejercicio');
+      }
+    } catch (error) {
+      console.error('Failed to update assignment:', error);
+      alert('Error al actualizar ejercicio');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   const openSubmissions = async (assignment: Assignment) => {
     setSelectedAssignment(assignment);
     await loadSubmissions(assignment.id);
@@ -284,7 +328,7 @@ export default function TeacherAssignments() {
                 {assignments.map((assignment) => (
                   <tr 
                     key={assignment.id} 
-                    onClick={() => openSubmissions(assignment)}
+                    onClick={() => openEditAssignment(assignment)}
                     className="hover:bg-gray-50 cursor-pointer transition-colors"
                   >
                     <td className="px-6 py-4">
@@ -300,9 +344,15 @@ export default function TeacherAssignments() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm">{assignment.submissionCount}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">{assignment.gradedCount} / {assignment.submissionCount}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                      <span className="text-brand-600 hover:text-brand-900">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openSubmissions(assignment);
+                        }}
+                        className="text-brand-600 hover:text-brand-900"
+                      >
                         Ver entregas
-                      </span>
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -433,6 +483,44 @@ export default function TeacherAssignments() {
                 </tbody>
               </table>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Edit Assignment Modal */}
+      {showEditModal && selectedAssignment && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-2xl font-bold text-gray-900">Editar Ejercicio</h2>
+            </div>
+            <form onSubmit={handleUpdateAssignment} className="p-6 space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
+                <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} rows={4}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de entrega</label>
+                <input type="date" value={editDueDate} onChange={(e) => setEditDueDate(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
+              </div>
+              <div className="flex gap-4 justify-end pt-4">
+                <button type="button" onClick={() => setShowEditModal(false)} disabled={updating}
+                  className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                  Cancelar
+                </button>
+                <button type="submit" disabled={updating}
+                  className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50">
+                  {updating ? 'Actualizando...' : 'Guardar Cambios'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
