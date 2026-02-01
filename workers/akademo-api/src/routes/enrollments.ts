@@ -614,4 +614,53 @@ enrollments.post('/leave', async (c) => {
   }
 });
 
+// DELETE /enrollments/:id - Ban student from class (ACADEMY or ADMIN only)
+enrollments.delete('/:id', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    
+    if (session.role !== 'ACADEMY' && session.role !== 'ADMIN') {
+      return c.json(errorResponse('Only academy owners can ban students'), 403);
+    }
+
+    const enrollmentId = c.req.param('id');
+
+    // Get enrollment details
+    const enrollment = await c.env.DB
+      .prepare(`
+        SELECT e.id, e.classId, e.userId, c.academyId, a.ownerId
+        FROM ClassEnrollment e
+        JOIN Class c ON e.classId = c.id
+        JOIN Academy a ON c.academyId = a.id
+        WHERE e.id = ?
+      `)
+      .bind(enrollmentId)
+      .first();
+
+    if (!enrollment) {
+      return c.json(errorResponse('Enrollment not found'), 404);
+    }
+
+    // Verify academy owner
+    if (session.role === 'ACADEMY' && enrollment.ownerId !== session.id) {
+      return c.json(errorResponse('Not authorized to ban students from this academy'), 403);
+    }
+
+    // Update enrollment status to BANNED
+    await c.env.DB
+      .prepare('UPDATE ClassEnrollment SET status = ? WHERE id = ?')
+      .bind('BANNED', enrollmentId)
+      .run();
+
+    return c.json(successResponse({ 
+      message: 'Student banned successfully',
+      enrollmentId,
+    }));
+
+  } catch (error: any) {
+    console.error('[Ban Student] Error:', error);
+    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+  }
+});
+
 export default enrollments;

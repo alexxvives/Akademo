@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { requireAuth } from '../lib/auth';
-import { successResponse, errorResponse } from '../lib/response';
+import { successResponse, errorResponse } from '../lib/utils';
 import { nanoid } from 'nanoid';
 
 const assignments = new Hono();

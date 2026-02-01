@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { apiPost } from '@/lib/api-client';
+import { apiClient, apiPost } from '@/lib/api-client';
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -49,13 +49,13 @@ export default function PaymentModal({
   useEffect(() => {
     if (isOpen && classId) {
       console.log('[PaymentModal] Fetching allowed payment methods for class:', classId);
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/classes/${classId}`)
+      apiClient(`/classes/${classId}`)
         .then(res => res.json())
         .then(result => {
           console.log('[PaymentModal] Class data:', result);
           if (result.success && result.data?.academyId) {
             // Fetch academy details
-            return fetch(`${process.env.NEXT_PUBLIC_API_URL}/academies/${result.data.academyId}`);
+            return apiClient(`/academies/${result.data.academyId}`);
           }
           return null;
         })
