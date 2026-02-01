@@ -283,7 +283,7 @@ classes.get('/:id', async (c) => {
       hasAccess = true; // Allow students to see class details
       try {
         const enrollment = await c.env.DB.prepare(`
-          SELECT id, status, documentSigned, createdAt
+          SELECT id, status, documentSigned, enrolledAt
           FROM ClassEnrollment 
           WHERE userId = ? AND classId = ?
         `).bind(session.id, classRecord.id).first();
@@ -314,12 +314,12 @@ classes.get('/:id', async (c) => {
       try {
         const enrollmentsResult = await c.env.DB.prepare(`
           SELECT 
-            ce.id, ce.status, ce.enrolledAt, ce.createdAt,
+            ce.id, ce.status, ce.enrolledAt,
             u.id as studentId, u.firstName, u.lastName, u.email, u.lastLoginAt
           FROM ClassEnrollment ce
           JOIN User u ON ce.userId = u.id
           WHERE ce.classId = ?
-          ORDER BY ce.createdAt DESC
+          ORDER BY ce.enrolledAt DESC
         `).bind(classRecord.id).all();
         
         // Transform to expected format with nested student object

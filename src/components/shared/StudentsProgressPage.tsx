@@ -204,6 +204,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
           videosWatched: student.lessonsCompleted || 0,
           totalVideos: student.totalLessons || 0,
           lastActive: student.lastActive,
+          enrollmentId: student.enrollmentId,
         }));
         
         setStudents(progressData);
@@ -212,6 +213,22 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
       console.error('Error loading progress:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBanStudent = async (enrollmentId: string) => {
+    try {
+      const res = await apiClient(`/enrollments/${enrollmentId}`, { method: 'DELETE' });
+      const result = await res.json();
+      if (result.success) {
+        alert('Estudiante expulsado exitosamente');
+        loadProgress();
+      } else {
+        alert('Error: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Failed to ban student:', error);
+      alert('Error al expulsar estudiante');
     }
   };
 
@@ -301,6 +318,8 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
         uniqueClasses={uniqueClasses}
         showClassFilter={false}
         showTeacherColumn={role === 'ACADEMY'}
+        showBanButton={role === 'ACADEMY'}
+        onBanStudent={role === 'ACADEMY' ? handleBanStudent : undefined}
       />
     </div>
   );

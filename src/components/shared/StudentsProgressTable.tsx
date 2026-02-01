@@ -15,6 +15,7 @@ export interface StudentProgress {
   videosWatched: number;
   totalVideos: number;
   lastActive: string | null;
+  enrollmentId?: string;
 }
 
 interface StudentsProgressTableProps {
@@ -27,6 +28,8 @@ interface StudentsProgressTableProps {
   uniqueClasses: string[];
   showClassFilter?: boolean;
   showTeacherColumn?: boolean;
+  showBanButton?: boolean;
+  onBanStudent?: (enrollmentId: string) => void;
 }
 
 export function StudentsProgressTable({
@@ -39,6 +42,8 @@ export function StudentsProgressTable({
   uniqueClasses,
   showClassFilter = true,
   showTeacherColumn = false,
+  showBanButton = false,
+  onBanStudent,
 }: StudentsProgressTableProps) {
   const formatTime = (totalSeconds: number) => {
     const hours = Math.floor(totalSeconds / 3600);
@@ -209,12 +214,17 @@ export function StudentsProgressTable({
                 <th className="text-left py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Última Actividad
                 </th>
+                {showBanButton && (
+                  <th className="text-left py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Acciones
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={showTeacherColumn ? 6 : 5} className="py-12 text-center">
+                  <td colSpan={(showTeacherColumn ? 6 : 5) + (showBanButton ? 1 : 0)} className="py-12 text-center">
                     <svg className="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
@@ -279,6 +289,20 @@ export function StudentsProgressTable({
                         </span>
                       </div>
                     </td>
+                    {showBanButton && (
+                      <td className="py-4 px-6">
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`¿Estás seguro de que deseas expulsar a ${student.name} de ${student.className}? Esta acción no se puede deshacer.`)) {
+                              onBanStudent?.(student.enrollmentId!);
+                            }
+                          }}
+                          className="px-3 py-1.5 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                        >
+                          Expulsar
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 );
               })
