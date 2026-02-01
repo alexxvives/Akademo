@@ -390,7 +390,7 @@ export default function DashboardLayout({
         const academyMenuItems: MenuItem[] = [
           { label: 'Panel de Control', href: '/dashboard/academy', iconType: 'chart' as const },
           { label: 'Asignaturas', href: '/dashboard/academy/classes', matchPaths: ['/dashboard/academy/class'], iconType: 'book' as const },
-          { label: 'Valoraciones', href: '/dashboard/academy/feedback', iconType: 'message' as const, badge: unreadValoracionesCount > 0 ? unreadValoracionesCount : undefined, badgeColor: 'bg-[#b0e788]' },
+          ...(academy?.feedbackEnabled !== 0 ? [{ label: 'Valoraciones', href: '/dashboard/academy/feedback', iconType: 'message' as const, badge: unreadValoracionesCount > 0 ? unreadValoracionesCount : undefined, badgeColor: 'bg-[#b0e788]' }] : []),
           { label: 'Streams', href: '/dashboard/academy/streams', iconType: 'clap' as const },
           { label: 'Profesores', href: '/dashboard/academy/teachers', iconType: 'botMessage' as const },
           { label: 'Estudiantes', href: '/dashboard/academy/students', iconType: 'users' as const },

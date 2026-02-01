@@ -542,14 +542,6 @@ export default function ClassPage() {
                       </span>
                     </button>
                   ))}
-                  
-                  {/* Hover Tooltip - Below stars */}
-                  <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-3 py-2 rounded-lg whitespace-nowrap opacity-0 group-hover/rating:opacity-100 transition-opacity pointer-events-none z-10">
-                    Tu calificación es anónima
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 -mb-1">
-                      <div className="w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-900"></div>
-                    </div>
-                  </div>
                 </div>
 
                 {/* Success Animation */}

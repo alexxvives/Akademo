@@ -5,7 +5,7 @@ import { apiClient, API_BASE_URL } from '@/lib/api-client';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import ProtectedVideoPlayer from '@/components/ProtectedVideoPlayer';
-import { SkeletonClasses } from '@/components/ui/SkeletonLoader';
+import { SkeletonForm } from '@/components/ui/SkeletonLoader';
 import { useAuth } from '@/hooks/useAuth';
 import { multipartUpload } from '@/lib/multipart-upload';
 import { uploadToBunny } from '@/lib/bunny-upload';
@@ -1351,7 +1351,7 @@ export default function TeacherClassPage() {
   const isReleased = (d: string) => new Date(d) <= new Date();
 
   if (loading) {
-    return <SkeletonClasses />;
+    return <SkeletonForm />;
   }
 
   if (!classData) {
