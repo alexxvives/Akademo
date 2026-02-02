@@ -194,18 +194,18 @@ export default function StudentLivePage() {
     };
   }, [selectedStream]); // Only re-run when selectedStream changes
 
-  // Auto-join when first active stream becomes available
-  useEffect(() => {
-    if (activeStreams.length > 0 && !selectedStream && !autoJoinedRef.current) {
-      // Only auto-join if there's an active stream (not just scheduled)
-      const activeStream = activeStreams.find(s => s.status === 'active' || s.status === 'LIVE');
-      if (activeStream) {
-        console.log('[Auto-join] Initiating auto-join for stream:', activeStream.id);
-        autoJoinedRef.current = true;
-        handleJoinStream(activeStream);
-      }
-    }
-  }, [activeStreams, selectedStream, handleJoinStream]);
+  // DISABLED: Auto-join caused multiple join attempts and errors
+  // Students now must manually click "Unirse Ahora" button
+  // useEffect(() => {
+  //   if (activeStreams.length > 0 && !selectedStream && !autoJoinedRef.current) {
+  //     const activeStream = activeStreams.find(s => s.status === 'active' || s.status === 'LIVE');
+  //     if (activeStream) {
+  //       console.log('[Auto-join] Initiating auto-join for stream:', activeStream.id);
+  //       autoJoinedRef.current = true;
+  //       handleJoinStream(activeStream);
+  //     }
+  //   }
+  // }, [activeStreams, selectedStream, handleJoinStream]);
 
   return (
     <div className="p-6">
@@ -248,11 +248,6 @@ export default function StudentLivePage() {
               /* Stream Available - Show Join Prompt */
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center max-w-md">
-                  <div className="w-24 h-24 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
-                    <svg className="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
-                      <circle cx="12" cy="12" r="10"/>
-                    </svg>
-                  </div>
                   <h3 className="text-2xl font-bold text-white mb-3">
                     🔴 Clase en Vivo
                   </h3>
