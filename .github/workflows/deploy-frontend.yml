@@ -29,6 +29,11 @@ jobs:
         run: npm install --legacy-peer-deps
       
       - name: Build with OpenNext
+        env:
+          NEXT_PUBLIC_API_URL: "https://akademo-api.alexxvives.workers.dev"
+          NEXT_PUBLIC_ZOOM_CLIENT_ID: "W2jPo9CJR0uZbFnEWtBF7Q"
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: "pk_test_51Sr91MGnG2OZ2dGGUw3ObiVNKVVFUmbvmckFtbpjQK7KRHb8M1xUayFK8QcURcUFLBcEhux80JZPQsb7z6X91ANZ00ApZwt376"
+          NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: "AIzaSyDUn8h1Aw7RwCYRxHiPl3hfOLfcKqrqsmM"
         run: |
           npx @opennextjs/cloudflare build
           ls -la .open-next/
