@@ -26,6 +26,7 @@ interface MenuItem {
   badge?: number;
   badgeColor?: string;
   matchPaths?: string[];
+  showPulse?: boolean;
 }
 
 interface Notification {
