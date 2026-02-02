@@ -145,6 +145,7 @@ export default function TeacherClassPage() {
   const [showStreamModal, setShowStreamModal] = useState(false);
   const [liveClasses, setLiveClasses] = useState<any[]>([]);
   const [creatingStream, setCreatingStream] = useState(false);
+  const [creatingAkademoStream, setCreatingAkademoStream] = useState(false);
   const [streamFormData, setStreamFormData] = useState({
     title: '',
   });
@@ -520,6 +521,47 @@ export default function TeacherClassPage() {
       alert(`Error de conexión: ${e.message || 'No se pudo conectar al servidor'}`);
     } finally {
       setCreatingStream(false);
+    }
+  };
+
+  const createAkademoLiveClass = async () => {
+    if (!classData) {
+      alert('Error: Datos de clase no cargados');
+      return;
+    }
+    
+    setCreatingAkademoStream(true);
+    try {
+      const now = new Date();
+      const day = now.getDate();
+      const month = now.toLocaleString('es-ES', { month: 'long' });
+      const year = now.getFullYear();
+      const defaultTitle = `STREAM AKADEMO (${day} ${month.charAt(0).toUpperCase() + month.slice(1)}, ${year})`;
+      
+      const res = await apiClient('/live', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          classId: classData.id,
+          title: defaultTitle,
+        }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setLiveClasses(prev => [result.data, ...prev]);
+        // Open Zoom start URL for teacher
+        if (result.data.zoomStartUrl) {
+          window.open(result.data.zoomStartUrl, '_blank');
+        }
+      } else {
+        console.error('AKADEMO live class creation error:', result);
+        alert(`Error: ${result.error || 'No se pudo crear la reunión de Zoom'}`);
+      }
+    } catch (e: any) {
+      console.error('AKADEMO live class creation exception:', e);
+      alert(`Error de conexión: ${e.message || 'No se pudo conectar al servidor'}`);
+    } finally {
+      setCreatingAkademoStream(false);
     }
   };
 
@@ -1256,7 +1298,33 @@ export default function TeacherClassPage() {
   const isReleased = (d: string) => new Date(d) <= new Date();
 
   if (loading) {
-    return <SkeletonForm />;
+    return (
+      <div className="space-y-6 animate-pulse">
+        {/* Header skeleton */}
+        <div className="h-4 w-32 bg-gray-200 rounded"></div>
+        <div className="flex items-start justify-between">
+          <div className="flex-1 space-y-3">
+            <div className="h-8 w-64 bg-gray-200 rounded"></div>
+            <div className="h-5 w-96 bg-gray-200 rounded"></div>
+          </div>
+          <div className="flex gap-3">
+            <div className="h-10 w-32 bg-gray-200 rounded-lg"></div>
+            <div className="h-10 w-40 bg-gray-200 rounded-lg"></div>
+          </div>
+        </div>
+        {/* Stats skeleton */}
+        <div className="flex gap-4">
+          <div className="h-20 flex-1 bg-gray-200 rounded-xl"></div>
+          <div className="h-20 flex-1 bg-gray-200 rounded-xl"></div>
+        </div>
+        {/* Lessons skeleton */}
+        <div className="space-y-3">
+          <div className="h-24 bg-gray-200 rounded-xl"></div>
+          <div className="h-24 bg-gray-200 rounded-xl"></div>
+          <div className="h-24 bg-gray-200 rounded-xl"></div>
+        </div>
+      </div>
+    );
   }
 
   if (!classData) {
@@ -1282,9 +1350,11 @@ export default function TeacherClassPage() {
               lessonsCount={lessons.length}
               pendingCount={pendingEnrollments.length}
               creatingStream={creatingStream}
+              creatingAkademoStream={creatingAkademoStream}
               showPendingRequests={showPendingRequests}
               onCreateLesson={() => { router.push(`/dashboard/teacher/class/${classId}?action=create`); }}
               onCreateStream={createLiveClass}
+              onCreateAkademoStream={createAkademoLiveClass}
               onTogglePendingRequests={() => setShowPendingRequests(!showPendingRequests)}
             />
         )}

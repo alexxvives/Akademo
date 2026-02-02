@@ -11,9 +11,11 @@ interface ClassHeaderProps {
   lessonsCount: number;
   pendingCount: number;
   creatingStream: boolean;
+  creatingAkademoStream: boolean;
   showPendingRequests: boolean;
   onCreateLesson: () => void;
   onCreateStream: () => void;
+  onCreateAkademoStream: () => void;
   onTogglePendingRequests: () => void;
 }
 
@@ -23,9 +25,11 @@ export default function ClassHeader({
   lessonsCount,
   pendingCount,
   creatingStream,
+  creatingAkademoStream,
   showPendingRequests,
   onCreateLesson,
   onCreateStream,
+  onCreateAkademoStream,
   onTogglePendingRequests,
 }: ClassHeaderProps) {
   const approvedCount = (classData.enrollments || []).filter((e) => e.status === 'APPROVED').length;
@@ -54,6 +58,8 @@ export default function ClassHeader({
           >
             + Nueva Clase
           </button>
+          
+          {/* Original Stream button - Traditional Zoom */}
           <button
             onClick={onCreateStream}
             disabled={creatingStream}
@@ -68,6 +74,23 @@ export default function ClassHeader({
               </span>
             )}
             {creatingStream ? 'Creando...' : 'Stream'}
+          </button>
+
+          {/* New Embedded Zoom button */}
+          <button
+            onClick={onCreateAkademoStream}
+            disabled={creatingAkademoStream}
+            className="px-5 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all"
+          >
+            {creatingAkademoStream ? (
+              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            ) : (
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-300 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-300"></span>
+              </span>
+            )}
+            {creatingAkademoStream ? 'Creando...' : 'Stream AKADEMO'}
           </button>
         </div>
       </div>

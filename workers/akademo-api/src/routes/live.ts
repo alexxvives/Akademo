@@ -150,7 +150,7 @@ live.post('/', async (c) => {
         classId, 
         classInfo.teacherId,  // Use the class's actual teacherId, not session.id
         title, 
-        'scheduled', 
+        'active',  // Start as active immediately (no manual scheduling)
         zoomMeeting.join_url,
         String(zoomMeeting.id),
         zoomMeeting.start_url,

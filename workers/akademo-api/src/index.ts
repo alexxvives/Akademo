@@ -26,6 +26,7 @@ import paymentsRoutes from './routes/payments';
 import studentPaymentsRoutes from './routes/student-payments';
 import { zoomAccounts } from './routes/zoom-accounts';
 import assignmentsRoutes from './routes/assignments';
+import zoomRoutes from './routes/zoom';
 import { Bindings } from './types';
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -98,6 +99,7 @@ app.route('/bunny', bunnyRoutes);
 app.route('/storage', storageRoutes);
 app.route('/webhooks', webhookRoutes);
 app.route('/zoom-accounts', zoomAccounts);
+app.route('/zoom', zoomRoutes);
 
 // Cron trigger handler for monthly payment generation
 async function handleScheduled(env: Bindings) {

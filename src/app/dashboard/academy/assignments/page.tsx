@@ -18,6 +18,7 @@ interface Submission {
 export default function TeacherAssignments() {
   const [classes, setClasses] = useState<Class[]>([]);
   const [selectedClassId, setSelectedClassId] = useState(''); // Default to empty (all assignments)
+  const [selectedClassForCreate, setSelectedClassForCreate] = useState(''); // Class selected in create modal
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -90,6 +91,10 @@ export default function TeacherAssignments() {
 
   const handleCreateAssignment = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedClassForCreate) {
+      alert('Por favor, selecciona una asignatura');
+      return;
+    }
     setCreating(true);
     try {
       let uploadId = null;
@@ -107,7 +112,7 @@ export default function TeacherAssignments() {
         setUploadProgress(100);
       }
       const res = await apiPost('/assignments', {
-        classId: selectedClassId, title: newTitle, description: newDescription,
+        classId: selectedClassForCreate, title: newTitle, description: newDescription,
         dueDate: newDueDate || null, maxScore: 100, uploadId,
       });
       const result = await res.json();
@@ -201,6 +206,7 @@ export default function TeacherAssignments() {
   const resetForm = () => {
     setNewTitle(''); setNewDescription(''); setNewDueDate('');
     setUploadFile(null); setUploadProgress(0);
+    setSelectedClassForCreate('');
   };
 
   const openEditAssignment = (assignment: Assignment) => {
@@ -284,8 +290,11 @@ export default function TeacherAssignments() {
                 </svg>
               </div>
             </div>
-            <button onClick={() => setShowCreateModal(true)} disabled={!selectedClassId}
-              className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+            <button onClick={() => {
+              setSelectedClassForCreate(selectedClassId);
+              setShowCreateModal(true);
+            }}
+              className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors">
               + Crear Ejercicio
             </button>
           </div>
@@ -369,7 +378,29 @@ export default function TeacherAssignments() {
             <h2 className="text-2xl font-semibold mb-6">Crear Ejercicio</h2>
             <form onSubmit={handleCreateAssignment} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Título *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Asignatura</label>
+                <div className="relative">
+                  <select
+                    value={selectedClassForCreate}
+                    onChange={(e) => setSelectedClassForCreate(e.target.value)}
+                    required
+                    className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 appearance-none bg-white cursor-pointer"
+                  >
+                    <option value="">Seleccionar asignatura...</option>
+                    {classes.map((cls) => (
+                      <option key={cls.id} value={cls.id}>
+                        {cls.name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              <div>                <label className="block text-sm font-medium text-gray-700 mb-1">Título *</label>
                 <input type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} required
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
               </div>

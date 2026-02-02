@@ -130,9 +130,106 @@ explore.get('/enrolled-academies/classes', async (c) => {
         : c.teacherFirstName || c.teacherLastName || 'Sin profesor asignado'
     }));
 
+    // Get active streams for all enrolled classes
+    const enrolledClasses = await c.env.DB
+      .prepare(`
+        SELECT classId 
+        FROM ClassEnrollment 
+        WHERE userId = ? AND status = 'APPROVED'
+      `)
+      .bind(session.id)
+      .all();
+
+    const enrolledClassIds = (enrolledClasses.results || []).map((e: any) => e.classId);
+
+    // Fetch active live streams for enrolled classes
+    if (enrolledClassIds.length > 0) {
+      const placeholders = enrolledClassIds.map(() => '?').join(',');
+      const activeStreams = await c.env.DB
+        .prepare(`
+          SELECT 
+            ls.*,
+            c.name as className,
+            u.firstName as teacherFirstName,
+            u.lastName as teacherLastName
+          FROM LiveStream ls
+          JOIN Class c ON ls.classId = c.id
+          LEFT JOIN User u ON ls.teacherId = u.id
+          WHERE ls.classId IN (${placeholders}) 
+            AND ls.status IN ('scheduled', 'active', 'LIVE')
+          ORDER BY ls.startedAt DESC
+        `)
+        .bind(...enrolledClassIds)
+        .all();
+
+      // Group streams by classId
+      const streamsByClass = (activeStreams.results || []).reduce((acc: any, stream: any) => {
+        if (!acc[stream.classId]) {
+          acc[stream.classId] = [];
+        }
+        acc[stream.classId].push({
+          ...stream,
+          teacherName: stream.teacherFirstName && stream.teacherLastName
+            ? `${stream.teacherFirstName} ${stream.teacherLastName}`
+            : 'Profesor',
+          status: 'LIVE'
+        });
+        return acc;
+      }, {});
+
+      // Add activeStreams to each class
+      classes.forEach((c: any) => {
+        c.activeStreams = streamsByClass[c.id] || [];
+      });
+    }
+
     return c.json(successResponse(classes));
   } catch (error: any) {
     console.error('[Enrolled Academies Classes] Error:', error);
+    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+  }
+});
+
+// GET /explore/my-live-streams - Get active streams for student's enrolled classes
+explore.get('/my-live-streams', async (c) => {
+  try {
+    const session = await requireAuth(c);
+
+    if (session.role !== 'STUDENT') {
+      return c.json(errorResponse('Only students can access this'), 403);
+    }
+
+    // Get active streams for all enrolled classes
+    const activeStreams = await c.env.DB
+      .prepare(`
+        SELECT 
+          ls.*,
+          c.name as className,
+          u.firstName as teacherFirstName,
+          u.lastName as teacherLastName
+        FROM LiveStream ls
+        JOIN Class c ON ls.classId = c.id
+        JOIN ClassEnrollment ce ON ce.classId = c.id
+        LEFT JOIN User u ON ls.teacherId = u.id
+        WHERE ce.userId = ?
+          AND ce.status = 'APPROVED'
+          AND ls.status IN ('active', 'LIVE')
+        ORDER BY ls.startedAt DESC
+      `)
+      .bind(session.id)
+      .all();
+
+    // Format streams
+    const streams = (activeStreams.results || []).map((stream: any) => ({
+      ...stream,
+      teacherName: stream.teacherFirstName && stream.teacherLastName
+        ? `${stream.teacherFirstName} ${stream.teacherLastName}`
+        : 'Profesor'
+    }));
+
+    return c.json(successResponse(streams));
+  } catch (error: any) {
+    console.error('[My Live Streams] Error:', error);
     return c.json(errorResponse(error.message || 'Internal server error'), 500);
   }
 });
