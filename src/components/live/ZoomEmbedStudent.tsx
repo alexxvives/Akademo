@@ -103,6 +103,7 @@ const ZoomEmbedStudentComponent = function ZoomEmbedStudent({
           zoomAppRoot: meetingContainerRef.current!,
           language: 'es-ES',
           patchJsMedia: true,
+          leaveOnPageUnload: true,
           customize: {
             video: {
               isResizable: true,
@@ -243,7 +244,8 @@ const ZoomEmbedStudentComponent = function ZoomEmbedStudent({
           left: 0 !important;
           right: 0 !important;
           bottom: 0 !important;
-          display: block !important;
+          display: flex !important;
+          flex-direction: column !important;
           visibility: visible !important;
         }
         
@@ -251,9 +253,8 @@ const ZoomEmbedStudentComponent = function ZoomEmbedStudent({
         .zmwebsdk-makeStyles-inMeeting-3 {
           width: 100% !important;
           height: 100% !important;
-          position: absolute !important;
-          top: 0 !important;
-          left: 0 !important;
+          display: flex !important;
+          flex-direction: column !important;
         }
         
         /* Video container */
@@ -261,22 +262,50 @@ const ZoomEmbedStudentComponent = function ZoomEmbedStudent({
           background: transparent !important;
         }
         
-        /* Center recording notification and other popups */
-        .zm-modal, .zm-dialog, [role="dialog"] {
+        /* Center all Zoom dialogs and modals */
+        div[role="dialog"],
+        .zm-modal,
+        .zm-dialog,
+        [class*="MuiDialog-root"],
+        [class*="zmwebsdk-dialog"] {
           position: fixed !important;
           left: 50% !important;
           top: 50% !important;
           transform: translate(-50%, -50%) !important;
-          z-index: 9999 !important;
+          z-index: 99999 !important;
+          margin: 0 !important;
         }
         
-        /* Ensure video player doesn't push content */
-        .zmwebsdk-video-player-container {
+        /* Ensure toolbar stays at bottom and is visible */
+        [class*="zmwebsdk-toolbar"],
+        [class*="footer-bar"],
+        .meeting-client-footer {
+          position: absolute !important;
+          bottom: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          z-index: 1000 !important;
+          background: rgba(0, 0, 0, 0.8) !important;
+        }
+        
+        /* Video area should not cover toolbar */
+        .zmwebsdk-video-player-container,
+        [class*="video-container"] {
           position: absolute !important;
           top: 0 !important;
           left: 0 !important;
-          width: 100% !important;
-          height: 100% !important;
+          right: 0 !important;
+          bottom: 60px !important;
+        }
+        
+        /* Recording consent dialog specific centering */
+        [class*="recording-consent"],
+        [class*="consent-dialog"] {
+          position: fixed !important;
+          left: 50% !important;
+          top: 50% !important;
+          transform: translate(-50%, -50%) !important;
+          z-index: 99999 !important;
         }
       `}</style>
 

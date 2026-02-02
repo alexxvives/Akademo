@@ -213,14 +213,12 @@ export default function StudentLivePage() {
         {/* Video Container with Fixed Height */}
         <div className="flex flex-col bg-black rounded-xl overflow-hidden shadow-2xl" style={{ height: '700px' }}>
           {/* Header */}
-          <div className="bg-gradient-to-r from-gray-900 to-gray-800 px-6 py-4 flex items-center justify-between border-b border-gray-700">
-            <div className="flex items-center gap-3">
-              <h1 className="text-lg font-bold text-white">AKADEMO Live Stream</h1>
-            </div>
+          <div className="bg-gradient-to-r from-gray-900 to-gray-800 px-6 py-4 flex items-center justify-center border-b border-gray-700 relative">
+            <h1 className="text-lg font-bold text-white">AKADEMO Live Stream</h1>
             {selectedStream && (
               <button
                 onClick={handleLeaveStream}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm font-medium"
+                className="absolute right-6 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm font-medium"
               >
                 Salir de clase
               </button>
@@ -271,11 +269,11 @@ export default function StudentLivePage() {
             ) : (
               /* No Stream - OFF State */
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center max-w-lg">
-                  <h3 className="text-3xl font-bold text-gray-400 mb-4">
+                <div className="text-center max-w-lg px-6">
+                  <h3 className="text-3xl font-bold text-gray-400 mb-4 text-center">
                     Transmisión Apagada
                   </h3>
-                  <p className="text-gray-500 text-lg">
+                  <p className="text-gray-500 text-lg text-center">
                     Esperando a que tu profesor inicie una clase en vivo...
                   </p>
                   {activeStreams.length > 0 && (
