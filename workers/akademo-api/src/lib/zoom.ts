@@ -102,6 +102,7 @@ export async function createZoomMeeting(options: CreateMeetingOptions): Promise<
         join_before_host: true,
         mute_upon_entry: true,
         auto_recording: 'cloud', // Auto-record to cloud
+        embed_password_in_join_link: true, // CRITICAL: Allows SDK to extract password automatically
       },
     }),
   });

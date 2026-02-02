@@ -103,7 +103,7 @@ export function MobileSidebar({
               ? pathname === item.href
               : pathname === item.href || pathname.startsWith(item.href + '/');
 
-            const hasLiveStream = role === 'STUDENT' && item.label === 'Mis Asignaturas' && activeStreams.length > 0;
+            const showPulse = (item as any).showPulse === true;
 
             return (
               <Link
@@ -120,10 +120,10 @@ export function MobileSidebar({
                   {item.icon}
                 </span>
                 <span className="text-sm">{item.label}</span>
-                {hasLiveStream && (
+                {showPulse && (
                   <span className="ml-auto w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
                 )}
-                {!hasLiveStream && item.badge !== undefined && item.badge > 0 && (
+                {!showPulse && item.badge !== undefined && item.badge > 0 && (
                   <span className={`ml-auto ${item.badgeColor || 'bg-[#b2e788]'} text-[#1a1c29] text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm`}>
                     {item.badge}
                   </span>

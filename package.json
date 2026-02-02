@@ -22,7 +22,7 @@
     "db:migrate:local": "wrangler d1 migrations apply akademo-db --local"
   },
   "dependencies": {
-    "@akademo/types": "*",
+    "@akademo/types": "^1.0.0",
     "@headlessui/react": "^2.2.9",
     "@opennextjs/cloudflare": "1.14.0",
     "@stripe/stripe-js": "^8.6.1",

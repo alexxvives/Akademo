@@ -16,6 +16,7 @@ interface LiveStream {
   title: string;
   zoomLink: string;
   zoomMeetingId: string;
+  zoomPassword?: string;
   status: 'scheduled' | 'active' | 'LIVE';
   startedAt: string;
 }
@@ -214,9 +215,6 @@ export default function StudentLivePage() {
           {/* Header */}
           <div className="bg-gradient-to-r from-gray-900 to-gray-800 px-6 py-4 flex items-center justify-between border-b border-gray-700">
             <div className="flex items-center gap-3">
-              <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
               <h1 className="text-lg font-bold text-white">AKADEMO Live Stream</h1>
             </div>
             {selectedStream && (
@@ -242,6 +240,7 @@ export default function StudentLivePage() {
               /* Active Stream - Embedded Zoom */
               <ZoomEmbedStudent
                 meetingNumber={selectedStream.zoomMeetingId}
+                password={selectedStream.zoomPassword}
                 userName={studentName}
                 userEmail={studentEmail}
                 signature={zoomSignature}
@@ -273,11 +272,6 @@ export default function StudentLivePage() {
               /* No Stream - OFF State */
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center max-w-lg">
-                  <div className="w-32 h-32 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-8 border-4 border-gray-700">
-                    <svg className="w-16 h-16 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
-                  </div>
                   <h3 className="text-3xl font-bold text-gray-400 mb-4">
                     Transmisión Apagada
                   </h3>
@@ -328,9 +322,6 @@ export default function StudentLivePage() {
                   <span className="text-sm text-gray-500">No hay clases activas</span>
                 </>
               )}
-            </div>
-            <div className="text-xs text-gray-500">
-              Actualización automática cada 5 segundos
             </div>
           </div>
         </div>

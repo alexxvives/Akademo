@@ -98,6 +98,7 @@ const ZoomEmbedStudentComponent = function ZoomEmbedStudent({
         console.log('[ZoomEmbedStudent] Client created');
 
         // Initialize the client with our container
+        // NOTE: SDK v4.0+ requires sdkKey and signature in init(), not join()
         await client.init({
           zoomAppRoot: meetingContainerRef.current!,
           language: 'es-ES',
@@ -117,28 +118,22 @@ const ZoomEmbedStudentComponent = function ZoomEmbedStudent({
         });
         console.log('[ZoomEmbedStudent] Client initialized');
 
-        // Join the meeting
-        const sdkKey = process.env.NEXT_PUBLIC_ZOOM_CLIENT_ID;
-        if (!sdkKey) {
-          throw new Error('ZOOM_CLIENT_ID not configured');
-        }
-
         console.log('[ZoomEmbedStudent] Joining meeting:', {
           meetingNumber,
           userName,
           userEmail,
           hasPassword: !!password,
+          signatureLength: signature?.length,
         });
 
+        // SDK v5.0+ join options - sdkKey is in the JWT signature now (appKey field)
+        // Don't pass sdkKey in joinOptions as it's deprecated since v4.0
         await client.join({
-          sdkKey: sdkKey,
           signature: signature,
           meetingNumber: meetingNumber,
           password: password || '',
           userName: userName,
-          userEmail: userEmail,
-          tk: '', // tracking id (optional)
-          zak: '', // host key (not needed for attendees)
+          userEmail: userEmail || undefined, // Don't pass empty string
         });
 
         console.log('[ZoomEmbedStudent] ✅ Successfully joined meeting!');
@@ -231,23 +226,23 @@ const ZoomEmbedStudentComponent = function ZoomEmbedStudent({
   }
 
   return (
-    <div className="relative w-full h-full min-h-[600px] bg-gray-900">
+    <div className="absolute inset-0 bg-gray-900">
       {/* Zoom Meeting Container - Component View renders here */}
       <div
         ref={meetingContainerRef}
         id="zoom-meeting-container"
-        style={{
-          width: '100%',
-          height: '100%',
-          minHeight: '600px',
-        }}
+        className="absolute inset-0"
       />
 
       {/* CSS for Zoom Component View */}
       <style jsx global>{`
-        /* Ensure Zoom container is visible */
+        /* Ensure Zoom container fills parent */
         #zoom-meeting-container {
-          position: relative !important;
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          right: 0 !important;
+          bottom: 0 !important;
           display: block !important;
           visibility: visible !important;
         }
@@ -256,11 +251,32 @@ const ZoomEmbedStudentComponent = function ZoomEmbedStudent({
         .zmwebsdk-makeStyles-inMeeting-3 {
           width: 100% !important;
           height: 100% !important;
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
         }
         
         /* Video container */
         .zmwebsdk-MuiPaper-root {
           background: transparent !important;
+        }
+        
+        /* Center recording notification and other popups */
+        .zm-modal, .zm-dialog, [role="dialog"] {
+          position: fixed !important;
+          left: 50% !important;
+          top: 50% !important;
+          transform: translate(-50%, -50%) !important;
+          z-index: 9999 !important;
+        }
+        
+        /* Ensure video player doesn't push content */
+        .zmwebsdk-video-player-container {
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100% !important;
+          height: 100% !important;
         }
       `}</style>
 

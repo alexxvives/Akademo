@@ -136,14 +136,18 @@ live.post('/', async (c) => {
       return c.json(errorResponse(`Error al crear reunión Zoom: ${zoomError.message}`), 500);
     }
 
+    // Extract password from Zoom response
+    const zoomPassword = zoomMeeting.password || '';
+    console.log('[Create Live Stream] Zoom password:', zoomPassword ? '***SET***' : 'NONE');
+
     // Create livestream record with Zoom details
     const streamId = crypto.randomUUID();
     const now = new Date().toISOString();
 
     await c.env.DB
       .prepare(`
-        INSERT INTO LiveStream (id, classId, teacherId, title, status, zoomLink, zoomMeetingId, zoomStartUrl, createdAt) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO LiveStream (id, classId, teacherId, title, status, zoomLink, zoomMeetingId, zoomStartUrl, zoomPassword, createdAt) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `)
       .bind(
         streamId, 
@@ -154,6 +158,7 @@ live.post('/', async (c) => {
         zoomMeeting.join_url,
         String(zoomMeeting.id),
         zoomMeeting.start_url,
+        zoomPassword,
         now
       )
       .run();
@@ -333,7 +338,7 @@ live.get('/:id', async (c) => {
     const stream = await c.env.DB
       .prepare(`
         SELECT ls.id, ls.classId, ls.teacherId, ls.status, ls.title, ls.startedAt, ls.endedAt, 
-               ls.recordingId, ls.createdAt, ls.zoomLink, ls.zoomMeetingId, ls.zoomStartUrl, 
+               ls.recordingId, ls.createdAt, ls.zoomLink, ls.zoomMeetingId, ls.zoomStartUrl, ls.zoomPassword,
                ls.participantCount, ls.participantsFetchedAt, ls.participantsData, 
                u.firstName, u.lastName, c.name as className
         FROM LiveStream ls

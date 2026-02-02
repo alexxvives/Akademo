@@ -190,6 +190,7 @@ export interface LiveStream {
     status: LiveStreamStatus;
     zoomMeetingId: string | null;
     zoomLink: string | null;
+    zoomPassword: string | null;
     recordingId: string | null;
     participantCount: number | null;
     createdAt: string;
