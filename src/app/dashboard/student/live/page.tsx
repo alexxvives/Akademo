@@ -266,18 +266,12 @@ export default function StudentLivePage() {
   const activeStream = activeStreams.find(s => s.status === 'active' || s.status === 'LIVE');
 
   return (
-    <div className="relative">
-      {/* Stream Container - Fixed reasonable size, not full screen */}
+    <div className="relative w-screen h-screen bg-gray-900">
+      {/* Stream Container - Full screen to allow Zoom dragging anywhere */}
       <div 
         ref={containerRef}
         id="zoom-sdk-container"
-        className={`relative bg-gray-900 rounded-xl overflow-hidden ${isFullscreen ? 'w-screen h-screen' : ''}`}
-        style={isFullscreen ? undefined : { 
-          width: `${INITIAL_WIDTH + 40}px`, 
-          height: `${INITIAL_HEIGHT + 60}px`,
-          minWidth: '900px',
-          minHeight: '600px'
-        }}
+        className="relative w-full h-full bg-gray-900"
       >
         {/* No Stream UI */}
         {!joined && (
@@ -319,11 +313,11 @@ export default function StudentLivePage() {
           </div>
         )}
 
-        {/* Zoom Meeting Container */}
+        {/* Zoom Meeting Container - Full screen for dragging */}
         <div 
           id="meetingSDKElement"
-          className={joined ? 'block w-full h-full' : 'hidden'}
-          style={{ backgroundColor: '#1a1a1a' }}
+          className={joined ? 'absolute inset-0' : 'hidden'}
+          style={{ backgroundColor: 'transparent' }}
         />
 
         {/* Fullscreen Button */}
@@ -368,10 +362,22 @@ export default function StudentLivePage() {
         </div>
       )}
       
-      {/* Minimal CSS - no layout overrides */}
+      {/* CSS for Zoom SDK - ensure dragging works */}
       <style jsx global>{`
         #zmmtg-root {
           display: none !important;
+        }
+        /* Ensure Zoom draggable elements work properly */
+        .react-draggable {
+          cursor: move !important;
+        }
+        /* Make sure Zoom video container is visible and interactive */
+        #meetingSDKElement > div {
+          position: relative !important;
+        }
+        /* Remove any overflow constraints */
+        #zoom-sdk-container {
+          overflow: visible !important;
         }
       `}</style>
     </div>
