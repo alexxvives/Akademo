@@ -523,47 +523,6 @@ export default function TeacherClassPage() {
     }
   };
 
-  const createAkademoLiveClass = async () => {
-    if (!classData) {
-      alert('Error: Datos de clase no cargados');
-      return;
-    }
-    
-    setCreatingAkademoStream(true);
-    try {
-      const now = new Date();
-      const day = now.getDate();
-      const month = now.toLocaleString('es-ES', { month: 'long' });
-      const year = now.getFullYear();
-      const defaultTitle = `STREAM AKADEMO (${day} ${month.charAt(0).toUpperCase() + month.slice(1)}, ${year})`;
-      
-      const res = await apiClient('/live', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          classId: classData.id,
-          title: defaultTitle,
-        }),
-      });
-      const result = await res.json();
-      if (result.success) {
-        setLiveClasses(prev => [result.data, ...prev]);
-        // Open Zoom start URL for teacher
-        if (result.data.zoomStartUrl) {
-          window.open(result.data.zoomStartUrl, '_blank');
-        }
-      } else {
-        console.error('AKADEMO live class creation error:', result);
-        alert(`Error: ${result.error || 'No se pudo crear la reunión de Zoom'}`);
-      }
-    } catch (e: any) {
-      console.error('AKADEMO live class creation exception:', e);
-      alert(`Error de conexión: ${e.message || 'No se pudo conectar al servidor'}`);
-    } finally {
-      setCreatingAkademoStream(false);
-    }
-  };
-
   const deleteLiveClass = async (classLiveId: string) => {
     if (!confirm('¿Eliminar esta clase en vivo? También se eliminará la reunión de Zoom.')) return;
     

@@ -244,22 +244,22 @@ export function StudentsProgressTable({
                           <div className={`w-3 h-3 rounded-full ${activityStatus.color}`} title={activityStatus.label}></div>
                         </div>
                         <div>
-                          <p className="font-medium text-gray-900">{student.name}</p>
-                          <p className="text-sm text-gray-500">{student.email}</p>
+                          <p className="text-xs font-medium text-gray-900">{student.name}</p>
+                          <p className="text-xs text-gray-500">{student.email}</p>
                         </div>
                       </div>
                     </td>
                     <td className="py-4 px-6">
-                      <span className="text-gray-900">{student.className}</span>
+                      <span className="text-xs text-gray-900">{student.className}</span>
                     </td>
                     {showTeacherColumn && (
                       <td className="py-4 px-6">
-                        <span className="text-gray-900">{student.teacherName || '-'}</span>
+                        <span className="text-xs text-gray-900">{student.teacherName || '-'}</span>
                       </td>
                     )}
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-gray-900">{student.videosWatched} / {student.totalVideos}</span>
+                        <span className="text-xs font-medium text-gray-900">{student.videosWatched} / {student.totalVideos}</span>
                         <div className="flex-1 max-w-[100px]">
                           <div className="w-full bg-gray-200 rounded-full h-2">
                             <div
@@ -271,7 +271,7 @@ export function StudentsProgressTable({
                       </div>
                     </td>
                     <td className="py-4 px-6">
-                      <span className="text-gray-900">{formatTime(student.totalWatchTime)}</span>
+                      <span className="text-xs text-gray-900">{formatTime(student.totalWatchTime)}</span>
                     </td>
                     <td className="py-4 px-6">
                       <div className="flex items-center gap-2">

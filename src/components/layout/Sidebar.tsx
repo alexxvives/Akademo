@@ -18,13 +18,14 @@ import {
 import { UsersIcon } from '@/components/ui/UsersIcon';
 import { BotMessageSquareIcon } from '@/components/ui/BotMessageSquareIcon';
 import { HandCoinsIcon } from '@/components/ui/HandCoinsIcon';
+import { PenToolIcon, type PenToolIconHandle } from '@/components/ui/PenToolIcon';
 import { useAcademyLogo } from '@/hooks/useAcademyLogo';
 
 interface MenuItem {
   label: string;
   href: string;
   icon?: JSX.Element;
-  iconType?: 'chart' | 'book' | 'userPlus' | 'message' | 'clap' | 'fileText' | 'clipboard' | 'activity' | 'users' | 'botMessage' | 'handCoins';
+  iconType?: 'chart' | 'book' | 'userPlus' | 'message' | 'clap' | 'fileText' | 'clipboard' | 'activity' | 'users' | 'botMessage' | 'handCoins' | 'star';
   badge?: number;
   badgeColor?: string;
   matchPaths?: string[];
@@ -99,6 +100,8 @@ export function Sidebar({
       return <BotMessageSquareIcon ref={iconRef} size={20} />;
     } else if (iconType === 'handCoins') {
       return <HandCoinsIcon ref={iconRef} size={20} />;
+    } else if (iconType === 'star') {
+      return <PenToolIcon ref={iconRef as any} size={20} />;
     } else if (item.icon) {
       return item.icon;
     }

@@ -20,12 +20,13 @@ assignments.get('/all', async (c) => {
           a.id, a.classId, a.teacherId, a.title, a.description, 
           a.dueDate, a.maxScore, a.uploadId, a.createdAt, a.updatedAt,
           c.name as className,
-          u.fileName as attachmentName,
+          GROUP_CONCAT(DISTINCT aa.uploadId) as attachmentIds,
+          COUNT(DISTINCT aa.id) as attachmentCount,
           COUNT(DISTINCT s.id) as submissionCount,
           COUNT(DISTINCT CASE WHEN s.gradedAt IS NOT NULL THEN s.id END) as gradedCount
         FROM Assignment a
         JOIN Class c ON a.classId = c.id
-        LEFT JOIN Upload u ON a.uploadId = u.id
+        LEFT JOIN AssignmentAttachment aa ON a.id = aa.assignmentId
         LEFT JOIN AssignmentSubmission s ON a.id = s.assignmentId
         WHERE a.teacherId = ?
         GROUP BY a.id
@@ -39,21 +40,43 @@ assignments.get('/all', async (c) => {
           a.id, a.classId, a.teacherId, a.title, a.description, 
           a.dueDate, a.maxScore, a.uploadId, a.createdAt, a.updatedAt,
           c.name as className,
-          u.fileName as attachmentName,
+          GROUP_CONCAT(DISTINCT aa.uploadId) as attachmentIds,
+          COUNT(DISTINCT aa.id) as attachmentCount,
           COUNT(DISTINCT s.id) as submissionCount,
           COUNT(DISTINCT CASE WHEN s.gradedAt IS NOT NULL THEN s.id END) as gradedCount
         FROM Assignment a
         JOIN Class c ON a.classId = c.id
         JOIN Academy ac ON c.academyId = ac.id
-        LEFT JOIN Upload u ON a.uploadId = u.id
+        LEFT JOIN AssignmentAttachment aa ON a.id = aa.assignmentId
         LEFT JOIN AssignmentSubmission s ON a.id = s.assignmentId
         WHERE ac.ownerId = ?
         GROUP BY a.id
         ORDER BY a.dueDate DESC, a.createdAt DESC
       `;
       bindings = [session.id];
+    } else if (session.role === 'ADMIN') {
+      // Admin sees all assignments from all academies
+      query = `
+        SELECT 
+          a.id, a.classId, a.teacherId, a.title, a.description, 
+          a.dueDate, a.maxScore, a.uploadId, a.createdAt, a.updatedAt,
+          c.name as className,
+          ac.name as academyName,
+          GROUP_CONCAT(DISTINCT aa.uploadId) as attachmentIds,
+          COUNT(DISTINCT aa.id) as attachmentCount,
+          COUNT(DISTINCT s.id) as submissionCount,
+          COUNT(DISTINCT CASE WHEN s.gradedAt IS NOT NULL THEN s.id END) as gradedCount
+        FROM Assignment a
+        JOIN Class c ON a.classId = c.id
+        JOIN Academy ac ON c.academyId = ac.id
+        LEFT JOIN AssignmentAttachment aa ON a.id = aa.assignmentId
+        LEFT JOIN AssignmentSubmission s ON a.id = s.assignmentId
+        GROUP BY a.id
+        ORDER BY a.dueDate DESC, a.createdAt DESC
+      `;
+      bindings = [];
     } else {
-      return c.json(errorResponse('Only teachers and academy owners can view all assignments'), 403);
+      return c.json(errorResponse('Only teachers, academy owners, and admins can view all assignments'), 403);
     }
 
     const result = await c.env.DB.prepare(query).bind(...bindings).all();
@@ -65,14 +88,45 @@ assignments.get('/all', async (c) => {
   }
 });
 
-// GET /assignments - List assignments for a class (for teachers and students)
+// GET /assignments - List assignments for a class (for teachers and students), or all assignments for students
 assignments.get('/', async (c) => {
   try {
     const session = await requireAuth(c);
     const classId = c.req.query('classId');
 
+    // Students can fetch all assignments across all enrolled classes if classId is not provided
+    if (!classId && session.role === 'STUDENT') {
+      // Get all assignments from all enrolled classes
+      const query = `
+        SELECT 
+          a.id, a.classId, a.title, a.description, 
+          a.dueDate, a.maxScore, a.uploadId, a.createdAt,
+          c.name as className,
+          s.id as submissionId,
+          s.uploadId as submissionUploadId,
+          s.score,
+          s.feedback,
+          s.submittedAt,
+          s.gradedAt,
+          s.version,
+          GROUP_CONCAT(aa.uploadId) as attachmentIds,
+          COUNT(DISTINCT aa.id) as attachmentCount
+        FROM Assignment a
+        JOIN Class c ON a.classId = c.id
+        JOIN ClassEnrollment e ON c.id = e.classId
+        LEFT JOIN AssignmentAttachment aa ON a.id = aa.assignmentId
+        LEFT JOIN AssignmentSubmission s ON a.id = s.assignmentId AND s.studentId = ? 
+          AND s.version = (SELECT MAX(version) FROM AssignmentSubmission WHERE assignmentId = a.id AND studentId = ?)
+        WHERE e.userId = ? AND e.status = 'APPROVED'
+        GROUP BY a.id, s.id
+        ORDER BY a.dueDate DESC, a.createdAt DESC
+      `;
+      const result = await c.env.DB.prepare(query).bind(session.id, session.id, session.id).all();
+      return c.json(successResponse(result.results || []));
+    }
+
     if (!classId) {
-      return c.json(errorResponse('classId query parameter is required'), 400);
+      return c.json(errorResponse('classId query parameter is required for teachers and academy owners'), 400);
     }
 
     let query = '';
@@ -85,12 +139,13 @@ assignments.get('/', async (c) => {
           a.id, a.classId, a.teacherId, a.title, a.description, 
           a.dueDate, a.maxScore, a.uploadId, a.createdAt, a.updatedAt,
           c.name as className,
-          u.fileName as attachmentName,
+          GROUP_CONCAT(DISTINCT aa.uploadId) as attachmentIds,
+          COUNT(DISTINCT aa.id) as attachmentCount,
           COUNT(DISTINCT s.id) as submissionCount,
           COUNT(DISTINCT CASE WHEN s.gradedAt IS NOT NULL THEN s.id END) as gradedCount
         FROM Assignment a
         JOIN Class c ON a.classId = c.id
-        LEFT JOIN Upload u ON a.uploadId = u.id
+        LEFT JOIN AssignmentAttachment aa ON a.id = aa.assignmentId
         LEFT JOIN AssignmentSubmission s ON a.id = s.assignmentId
         WHERE a.classId = ? AND a.teacherId = ?
         GROUP BY a.id
@@ -104,13 +159,14 @@ assignments.get('/', async (c) => {
           a.id, a.classId, a.teacherId, a.title, a.description, 
           a.dueDate, a.maxScore, a.uploadId, a.createdAt, a.updatedAt,
           c.name as className,
-          u.fileName as attachmentName,
+          GROUP_CONCAT(DISTINCT aa.uploadId) as attachmentIds,
+          COUNT(DISTINCT aa.id) as attachmentCount,
           COUNT(DISTINCT s.id) as submissionCount,
           COUNT(DISTINCT CASE WHEN s.gradedAt IS NOT NULL THEN s.id END) as gradedCount
         FROM Assignment a
         JOIN Class c ON a.classId = c.id
         JOIN Academy ac ON c.academyId = ac.id
-        LEFT JOIN Upload u ON a.uploadId = u.id
+        LEFT JOIN AssignmentAttachment aa ON a.id = aa.assignmentId
         LEFT JOIN AssignmentSubmission s ON a.id = s.assignmentId
         WHERE a.classId = ? AND ac.ownerId = ?
         GROUP BY a.id
@@ -118,25 +174,29 @@ assignments.get('/', async (c) => {
       `;
       bindings = [classId, session.id];
     } else if (session.role === 'STUDENT') {
-      // Students see assignments with their submission status
+      // Students see assignments with their submission status for specific class
       query = `
         SELECT 
           a.id, a.classId, a.title, a.description, 
           a.dueDate, a.maxScore, a.uploadId, a.createdAt,
+          c.name as className,
           u.fileName as attachmentName,
           s.id as submissionId,
           s.uploadId as submissionUploadId,
           s.score,
           s.feedback,
           s.submittedAt,
-          s.gradedAt
+          s.gradedAt,
+          s.version
         FROM Assignment a
+        JOIN Class c ON a.classId = c.id
         LEFT JOIN Upload u ON a.uploadId = u.id
         LEFT JOIN AssignmentSubmission s ON a.id = s.assignmentId AND s.studentId = ?
+          AND s.version = (SELECT MAX(version) FROM AssignmentSubmission WHERE assignmentId = a.id AND studentId = ?)
         WHERE a.classId = ?
         ORDER BY a.dueDate DESC, a.createdAt DESC
       `;
-      bindings = [session.id, classId];
+      bindings = [session.id, session.id, classId];
     } else {
       return c.json(errorResponse('Unauthorized'), 403);
     }
@@ -160,10 +220,18 @@ assignments.post('/', async (c) => {
     }
 
     const body = await c.req.json();
-    const { classId, title, description, dueDate, maxScore, uploadId } = body;
+    const { classId, title, description, dueDate, maxScore, uploadId, uploadIds } = body;
 
     if (!classId || !title) {
       return c.json(errorResponse('classId and title are required'), 400);
+    }
+
+    // Collect all upload IDs (support both single uploadId and array uploadIds)
+    let allUploadIds: string[] = [];
+    if (uploadIds && Array.isArray(uploadIds) && uploadIds.length > 0) {
+      allUploadIds = uploadIds;
+    } else if (uploadId) {
+      allUploadIds = [uploadId];
     }
 
     // Verify user has access to this class
@@ -187,9 +255,10 @@ assignments.post('/', async (c) => {
 
     const assignmentId = nanoid();
 
+    // Create Assignment record (no file columns except legacy uploadId)
     await c.env.DB.prepare(`
-      INSERT INTO Assignment (id, classId, teacherId, title, description, dueDate, maxScore, uploadId)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO Assignment (id, classId, teacherId, title, description, dueDate, maxScore, uploadId, attachmentIds)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       assignmentId,
       classId,
@@ -198,8 +267,18 @@ assignments.post('/', async (c) => {
       description || null,
       dueDate || null,
       maxScore || 100,
-      uploadId || null
+      allUploadIds.length > 0 ? allUploadIds[0] : null, // Legacy: first file as uploadId
+      '[]' // Deprecated column, keep empty for now
     ).run();
+
+    // Create AssignmentAttachment records (state of the art approach)
+    for (const uploadId of allUploadIds) {
+      const attachmentId = nanoid();
+      await c.env.DB.prepare(`
+        INSERT INTO AssignmentAttachment (id, assignmentId, uploadId)
+        VALUES (?, ?, ?)
+      `).bind(attachmentId, assignmentId, uploadId).run();
+    }
 
     const assignment = await c.env.DB.prepare(`
       SELECT * FROM Assignment WHERE id = ?
@@ -233,9 +312,10 @@ assignments.get('/:id', async (c) => {
       return c.json(errorResponse('Assignment not found'), 404);
     }
 
-    // For teachers and academy owners, include all submissions
+    // For teachers, academy owners, and admins, include all submissions
     if ((session.role === 'TEACHER' && assignment.teacherId === session.id) || 
-        (session.role === 'ACADEMY')) {
+        (session.role === 'ACADEMY') ||
+        (session.role === 'ADMIN')) {
       // For academy owners, verify they own the academy
       if (session.role === 'ACADEMY') {
         const academyCheck = await c.env.DB.prepare(`
@@ -248,6 +328,7 @@ assignments.get('/:id', async (c) => {
           return c.json(errorResponse('Unauthorized'), 403);
         }
       }
+      // ADMIN has unrestricted access
       
       const submissions = await c.env.DB.prepare(`
         SELECT 
@@ -260,20 +341,21 @@ assignments.get('/:id', async (c) => {
         JOIN User u ON s.studentId = u.id
         JOIN Upload up ON s.uploadId = up.id
         WHERE s.assignmentId = ?
-        ORDER BY s.submittedAt DESC
+        ORDER BY u.lastName ASC, u.firstName ASC, s.version DESC
       `).bind(assignmentId).all();
 
       return c.json(successResponse({ ...assignment, submissions: submissions.results || [] }));
     }
 
-    // For students, include only their own submission
+    // For students, include only their own submission (latest version)
     if (session.role === 'STUDENT') {
       const submission = await c.env.DB.prepare(`
         SELECT s.*, up.fileName as submissionFileName
         FROM AssignmentSubmission s
         LEFT JOIN Upload up ON s.uploadId = up.id
         WHERE s.assignmentId = ? AND s.studentId = ?
-      `).bind(assignmentId, session.id).first();
+          AND s.version = (SELECT MAX(version) FROM AssignmentSubmission WHERE assignmentId = ? AND studentId = ?)
+      `).bind(assignmentId, session.id, assignmentId, session.id).first();
 
       return c.json(successResponse({ ...assignment, submission }));
     }
@@ -296,10 +378,13 @@ assignments.post('/:id/submit', async (c) => {
 
     const assignmentId = c.req.param('id');
     const body = await c.req.json();
-    const { uploadId } = body;
+    const { uploadId, uploadIds } = body;
 
-    if (!uploadId) {
-      return c.json(errorResponse('uploadId is required'), 400);
+    // Support both single file (uploadId) and multiple files (uploadIds)
+    const fileIds = uploadIds || (uploadId ? [uploadId] : []);
+
+    if (fileIds.length === 0) {
+      return c.json(errorResponse('uploadId or uploadIds is required'), 400);
     }
 
     // Verify assignment exists
@@ -322,27 +407,24 @@ assignments.post('/:id/submit', async (c) => {
     }
 
     // Check if submission already exists
-    const existingSubmission = await c.env.DB.prepare(`
-      SELECT id FROM AssignmentSubmission 
+    const existingSubmissions = await c.env.DB.prepare(`
+      SELECT id, version FROM AssignmentSubmission 
       WHERE assignmentId = ? AND studentId = ?
+      ORDER BY version DESC
+      LIMIT 1
     `).bind(assignmentId, session.id).first();
 
-    const submissionId = existingSubmission?.id || nanoid();
+    const newVersion = existingSubmissions ? (existingSubmissions.version + 1) : 1;
+    const submissionId = nanoid();
 
-    if (existingSubmission) {
-      // Update existing submission
-      await c.env.DB.prepare(`
-        UPDATE AssignmentSubmission 
-        SET uploadId = ?, submittedAt = datetime('now'), score = NULL, feedback = NULL, gradedAt = NULL, gradedBy = NULL
-        WHERE id = ?
-      `).bind(uploadId, submissionId).run();
-    } else {
-      // Create new submission
-      await c.env.DB.prepare(`
-        INSERT INTO AssignmentSubmission (id, assignmentId, studentId, uploadId)
-        VALUES (?, ?, ?, ?)
-      `).bind(submissionId, assignmentId, session.id, uploadId).run();
-    }
+    // Store first file as uploadId for backwards compatibility
+    const primaryUploadId = fileIds[0];
+
+    // Always create a NEW submission (never update existing)
+    await c.env.DB.prepare(`
+      INSERT INTO AssignmentSubmission (id, assignmentId, studentId, uploadId, version)
+      VALUES (?, ?, ?, ?, ?)
+    `).bind(submissionId, assignmentId, session.id, primaryUploadId, newVersion).run();
 
     const submission = await c.env.DB.prepare(`
       SELECT * FROM AssignmentSubmission WHERE id = ?
@@ -357,22 +439,41 @@ assignments.post('/:id/submit', async (c) => {
 
 // PATCH /assignments/submissions/:submissionId/grade - Grade submission (teachers only)
 assignments.patch('/submissions/:submissionId/grade', async (c) => {
+  const submissionId = c.req.param('submissionId');
+  console.log('\n=== GRADING REQUEST START ===');
+  console.log('[Grade PATCH] Submission ID:', submissionId);
+  console.log('[Grade PATCH] Cookie header:', c.req.header('Cookie'));
+  console.log('[Grade PATCH] Authorization header:', c.req.header('Authorization'));
+  console.log('[Grade PATCH] Origin:', c.req.header('Origin'));
+  console.log('[Grade PATCH] Referer:', c.req.header('Referer'));
+  
   try {
-    const session = await requireAuth(c);
+    // Handle authentication separately to return proper 401
+    let session;
+    try {
+      console.log('[Grade PATCH] Calling requireAuth...');
+      session = await requireAuth(c);
+      console.log('[Grade PATCH] Auth SUCCESS - User:', session.id, 'Role:', session.role, 'Email:', session.email);
+    } catch (authError) {
+      console.error('[Grade PATCH] Auth FAILED:', authError);
+      console.error('[Grade PATCH] Auth error details:', JSON.stringify(authError, null, 2));
+      return c.json(errorResponse('Not authenticated. Please log in.'), 401);
+    }
 
-    if (session.role !== 'TEACHER') {
-      return c.json(errorResponse('Only teachers can grade assignments'), 403);
+    if (session.role !== 'TEACHER' && session.role !== 'ACADEMY' && session.role !== 'ADMIN') {
+      return c.json(errorResponse('Only teachers, academy owners, and admins can grade assignments'), 403);
     }
 
     const submissionId = c.req.param('submissionId');
     const body = await c.req.json();
     const { score, feedback } = body;
 
-    // Verify submission exists and teacher has access
-    const submission = await c.env.DB.prepare(`
-      SELECT s.id, a.teacherId
+    // Verify submission exists and user has access
+    const submission:any = await c.env.DB.prepare(`
+      SELECT s.id, a.teacherId, c.id as classId
       FROM AssignmentSubmission s
       JOIN Assignment a ON s.assignmentId = a.id
+      JOIN Class c ON a.classId = c.id
       WHERE s.id = ?
     `).bind(submissionId).first();
 
@@ -380,9 +481,24 @@ assignments.patch('/submissions/:submissionId/grade', async (c) => {
       return c.json(errorResponse('Submission not found'), 404);
     }
 
-    if (submission.teacherId !== session.id) {
-      return c.json(errorResponse('You do not have permission to grade this assignment'), 403);
+    // Check permissions based on role
+    if (session.role === 'TEACHER') {
+      if (submission.teacherId !== session.id) {
+        return c.json(errorResponse('You do not have permission to grade this assignment'), 403);
+      }
+    } else if (session.role === 'ACADEMY') {
+      // Academy owners can grade assignments in their academies
+      const academyCheck = await c.env.DB.prepare(`
+        SELECT 1 FROM Class c
+        JOIN Academy a ON c.academyId = a.id
+        WHERE c.id = ? AND a.ownerId = ?
+      `).bind(submission.classId, session.id).first();
+      
+      if (!academyCheck) {
+        return c.json(errorResponse('You do not have permission to grade this assignment'), 403);
+      }
     }
+    // ADMIN has no restrictions
 
     await c.env.DB.prepare(`
       UPDATE AssignmentSubmission 
@@ -479,7 +595,7 @@ assignments.patch('/:id', async (c) => {
     }
 
     const assignmentId = c.req.param('id');
-    const { title, description, dueDate, maxScore } = await c.req.json();
+    const { title, description, dueDate, maxScore, uploadId, uploadIds } = await c.req.json();
 
     // Verify assignment exists
     const assignment = await c.env.DB.prepare(`
@@ -531,6 +647,14 @@ assignments.patch('/:id', async (c) => {
       updateFields.push('maxScore = ?');
       bindings.push(maxScore);
     }
+    if (uploadId !== undefined) {
+      updateFields.push('uploadId = ?');
+      bindings.push(uploadId);
+    }
+    if (uploadIds !== undefined) {
+      updateFields.push('attachmentIds = ?');
+      bindings.push(JSON.stringify(uploadIds));
+    }
 
     updateFields.push('updatedAt = ?');
     bindings.push(updatedAt);
@@ -549,29 +673,38 @@ assignments.patch('/:id', async (c) => {
   }
 });
 
-// DELETE /assignments/:id - Delete assignment (teachers only)
+// DELETE /assignments/:id - Delete assignment (teachers, academy owners, and admins)
 assignments.delete('/:id', async (c) => {
   try {
     const session = await requireAuth(c);
 
-    if (session.role !== 'TEACHER') {
-      return c.json(errorResponse('Only teachers can delete assignments'), 403);
+    if (!['TEACHER', 'ACADEMY', 'ADMIN'].includes(session.role)) {
+      return c.json(errorResponse('Only teachers, academy owners, and admins can delete assignments'), 403);
     }
 
     const assignmentId = c.req.param('id');
 
-    // Verify assignment exists and teacher has access
+    // Verify assignment exists and get related info for permission check
     const assignment = await c.env.DB.prepare(`
-      SELECT id, teacherId FROM Assignment WHERE id = ?
+      SELECT a.id, a.teacherId, a.classId, c.academyId, ac.ownerId
+      FROM Assignment a
+      JOIN Class c ON a.classId = c.id
+      JOIN Academy ac ON c.academyId = ac.id
+      WHERE a.id = ?
     `).bind(assignmentId).first();
 
     if (!assignment) {
       return c.json(errorResponse('Assignment not found'), 404);
     }
 
-    if (assignment.teacherId !== session.id) {
-      return c.json(errorResponse('You do not have permission'), 403);
+    // Permission check based on role
+    if (session.role === 'TEACHER' && assignment.teacherId !== session.id) {
+      return c.json(errorResponse('You can only delete your own assignments'), 403);
     }
+    if (session.role === 'ACADEMY' && assignment.ownerId !== session.id) {
+      return c.json(errorResponse('You can only delete assignments from your academy'), 403);
+    }
+    // ADMIN can delete any assignment
 
     await c.env.DB.prepare(`
       DELETE FROM Assignment WHERE id = ?

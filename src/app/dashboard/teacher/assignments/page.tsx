@@ -14,7 +14,16 @@ interface Assignment {
 interface Submission {
   id: string; studentName: string; studentEmail: string; submissionFileName: string;
   submissionFileSize: number; submittedAt: string; score?: number; feedback?: string;
-  gradedAt?: string; downloadedAt?: string; uploadId: string;
+  gradedAt?: string; downloadedAt?: string; uploadId: string; version?: number;
+  studentId?: string; // Add studentId for grouping
+}
+
+interface GroupedSubmission {
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  submissions: Submission[];
+  latestSubmission: Submission;
 }
 
 export default function TeacherAssignments() {
@@ -28,6 +37,7 @@ export default function TeacherAssignments() {
   const [deletingAssignmentId, setDeletingAssignmentId] = useState<string | null>(null);
   const [showSubmissionsModal, setShowSubmissionsModal] = useState(false);
   const [showGradeModal, setShowGradeModal] = useState(false);
+  const [expandedStudents, setExpandedStudents] = useState<Set<string>>(new Set());
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
@@ -47,6 +57,29 @@ export default function TeacherAssignments() {
   const [creating, setCreating] = useState(false);
   const [editUploadFile, setEditUploadFile] = useState<File | null>(null);
   const [editUploadFiles, setEditUploadFiles] = useState<File[]>([]); // Multiple files for edit
+
+  // Helper to check if assignment is past due
+  const isPastDue = (dueDate?: string) => {
+    if (!dueDate) return false;
+    return new Date(dueDate) < new Date();
+  };
+
+  // Helper function to determine due date color
+  const getDueDateColor = (dueDate?: string) => {
+    if (!dueDate) return 'text-gray-500';
+    
+    const now = new Date();
+    const due = new Date(dueDate);
+    const diffMs = due.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    
+    // If past due: gray immediately
+    if (diffDays < 0) return 'text-gray-500';
+    // Before due date
+    if (diffDays <= 1) return 'text-red-600 font-semibold'; // Today or tomorrow
+    if (diffDays <= 5) return 'text-orange-600 font-medium'; // 2-5 days
+    return 'text-gray-900'; // 6+ days - black
+  };
 
   useEffect(() => { loadData(); }, []);
   useEffect(() => { loadAssignments(); }, [selectedClassId]);
@@ -173,10 +206,9 @@ export default function TeacherAssignments() {
     e.preventDefault();
     if (!selectedSubmission) return;
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/assignments/submissions/${selectedSubmission.id}/grade`, {
+      const res = await apiClient(`/assignments/submissions/${selectedSubmission.id}/grade`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ score: gradeScore, feedback: gradeFeedback }),
       });
       const result = await res.json();
@@ -256,10 +288,18 @@ export default function TeacherAssignments() {
     }
 
     try {
-      // Open all files in new tabs (using Next.js proxy route)
+      // Fetch Upload records to get storagePath for each uploadId
       for (const uploadId of uploadIds) {
-        const url = `/api/storage/serve/${uploadId}`;
-        window.open(url, '_blank');
+        const uploadRes = await apiClient(`/storage/upload/${uploadId}`);
+        const uploadResult = await uploadRes.json();
+        if (uploadResult.success && uploadResult.data) {
+          const storagePath = uploadResult.data.storagePath;
+          // Use /api/documents route like lesson documents do
+          const url = `/api/documents/${storagePath}`;
+          window.open(url, '_blank');
+        } else {
+          console.error('Failed to fetch upload:', uploadId);
+        }
         // Small delay between opens to avoid popup blocking
         await new Promise(resolve => setTimeout(resolve, 300));
       }
@@ -338,6 +378,46 @@ export default function TeacherAssignments() {
     setSelectedAssignment(assignment);
     await loadSubmissions(assignment.id);
     setShowSubmissionsModal(true);
+    setExpandedStudents(new Set()); // Reset expanded state
+  };
+
+  const toggleStudentExpanded = (studentId: string) => {
+    setExpandedStudents((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(studentId)) {
+        newSet.delete(studentId);
+      } else {
+        newSet.add(studentId);
+      }
+      return newSet;
+    });
+  };
+
+  // Group submissions by student
+  const groupSubmissionsByStudent = (): GroupedSubmission[] => {
+    const grouped: { [studentId: string]: GroupedSubmission } = {};
+    
+    submissions.forEach((sub) => {
+      const studentId = sub.studentId || sub.studentEmail; // Use email as fallback ID
+      if (!grouped[studentId]) {
+        grouped[studentId] = {
+          studentId,
+          studentName: sub.studentName,
+          studentEmail: sub.studentEmail,
+          submissions: [],
+          latestSubmission: sub,
+        };
+      }
+      grouped[studentId].submissions.push(sub);
+    });
+
+    // Sort each student's submissions by version (descending)
+    Object.values(grouped).forEach((group) => {
+      group.submissions.sort((a, b) => (b.version || 1) - (a.version || 1));
+      group.latestSubmission = group.submissions[0]; // Latest version
+    });
+
+    return Object.values(grouped);
   };
 
   const openGradeModal = (submission: Submission) => {
@@ -427,7 +507,8 @@ export default function TeacherAssignments() {
                 {assignments.map((assignment) => (
                   <tr 
                     key={assignment.id} 
-                    className="hover:bg-gray-50 transition-colors group"
+                    onClick={() => openEditAssignment(assignment)}
+                    className="hover:bg-gray-50 transition-colors group cursor-pointer"
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -448,10 +529,7 @@ export default function TeacherAssignments() {
                             </svg>
                           )}
                         </button>
-                        <div 
-                          onClick={() => openEditAssignment(assignment)}
-                          className="cursor-pointer flex-1"
-                        >
+                        <div className="flex-1">
                           <div className="text-sm font-medium text-gray-900">{assignment.title}</div>
                           {assignment.description && <div className="text-sm text-gray-500 truncate max-w-md">{assignment.description}</div>}
                         </div>
@@ -488,8 +566,22 @@ export default function TeacherAssignments() {
                         );
                       })()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString('es-ES') : 'Sin fecha'}
+                    <td className={`px-6 py-4 whitespace-nowrap text-sm ${getDueDateColor(assignment.dueDate)}`}>
+                      {assignment.dueDate ? (
+                        <>
+                          {new Date(assignment.dueDate).toLocaleDateString('es-ES', { 
+                            year: 'numeric', 
+                            month: 'short', 
+                            day: 'numeric' 
+                          })}
+                          <span className="text-xs ml-1">
+                            {new Date(assignment.dueDate).toLocaleTimeString('es-ES', { 
+                              hour: '2-digit', 
+                              minute: '2-digit' 
+                            })}
+                          </span>
+                        </>
+                      ) : 'Sin fecha'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">{assignment.submissionCount}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">{assignment.gradedCount} / {assignment.submissionCount}</td>
@@ -501,7 +593,7 @@ export default function TeacherAssignments() {
                         }}
                         className="text-brand-600 hover:text-brand-900"
                       >
-                        Ver entregas
+                        Ver entregas ({assignment.submissionCount || 0})
                       </button>
                     </td>
                   </tr>
@@ -552,9 +644,19 @@ export default function TeacherAssignments() {
               </div>
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Fecha límite</label>
-                  <input type="date" value={newDueDate} onChange={(e) => setNewDueDate(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Fecha y hora límite</label>
+                  <input 
+                    type="datetime-local" 
+                    value={newDueDate} 
+                    onChange={(e) => setNewDueDate(e.target.value)}
+                    min={(() => {
+                      const now = new Date();
+                      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                      return now.toISOString().slice(0, 16);
+                    })()}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" 
+                  />
+                  <p className="text-xs text-gray-500 mt-1">La fecha límite no puede estar en el pasado</p>
                 </div>
               </div>
               <div>
@@ -630,6 +732,7 @@ export default function TeacherAssignments() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estudiante</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Entregas</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Archivo</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nota</th>
@@ -637,38 +740,112 @@ export default function TeacherAssignments() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {submissions.map((sub) => (
-                    <tr key={sub.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{sub.studentName}</div>
-                        <div className="text-sm text-gray-500">{sub.studentEmail}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <button onClick={() => downloadSingleSubmission(sub)}
-                          className="text-sm text-brand-600 hover:text-brand-900 underline">
-                          {sub.submissionFileName}
-                        </button>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(sub.submittedAt).toLocaleDateString('es-ES')}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {sub.gradedAt ? (
-                          <div>
-                            <div className="text-sm font-medium">{sub.score} / {selectedAssignment.maxScore}</div>
-                            {sub.feedback && <div className="text-xs text-gray-500 truncate max-w-xs">{sub.feedback}</div>}
-                          </div>
-                        ) : (
-                          <span className="text-sm text-gray-400">Sin calificar</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                        <button onClick={() => openGradeModal(sub)} className="text-brand-600 hover:text-brand-900">
-                          {sub.gradedAt ? 'Editar nota' : 'Calificar'}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                  {groupSubmissionsByStudent().map((group) => {
+                    const isExpanded = expandedStudents.has(group.studentId);
+                    const latest = group.latestSubmission;
+                    const hasMultipleVersions = group.submissions.length > 1;
+                    
+                    return (
+                      <>
+                        {/* Main row - Latest submission */}
+                        <tr key={group.studentId} className="hover:bg-gray-50">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              {hasMultipleVersions && (
+                                <button
+                                  onClick={() => toggleStudentExpanded(group.studentId)}
+                                  className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded hover:bg-gray-200 transition-colors"
+                                  title={isExpanded ? 'Ocultar versiones anteriores' : 'Mostrar versiones anteriores'}
+                                >
+                                  <svg
+                                    className="w-4 h-4 text-gray-600 transition-transform"
+                                    style={{ transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                  </svg>
+                                </button>
+                              )}
+                              {!hasMultipleVersions && <div className="w-6" />}
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">{group.studentName}</div>
+                                <div className="text-sm text-gray-500">{group.studentEmail}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              {group.submissions.length} {group.submissions.length === 1 ? 'entrega' : 'entregas'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <button onClick={() => downloadSingleSubmission(latest)}
+                              className="text-sm text-brand-600 hover:text-brand-900 underline">
+                              {latest.submissionFileName}
+                            </button>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {new Date(latest.submittedAt).toLocaleDateString('es-ES')}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {latest.gradedAt ? (
+                              <div>
+                                <div className="text-sm font-medium">{latest.score} / {selectedAssignment.maxScore}</div>
+                                {latest.feedback && <div className="text-xs text-gray-500 truncate max-w-xs">{latest.feedback}</div>}
+                              </div>
+                            ) : (
+                              <span className="text-sm text-gray-400">Sin calificar</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                            <button onClick={() => openGradeModal(latest)} className="text-brand-600 hover:text-brand-900">
+                              {latest.gradedAt ? 'Editar nota' : 'Calificar'}
+                            </button>
+                          </td>
+                        </tr>
+                        
+                        {/* Expanded rows - Previous versions */}
+                        {isExpanded && hasMultipleVersions && group.submissions.slice(1).map((sub) => (
+                          <tr key={sub.id} className="bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap pl-16">
+                              <span className="text-xs text-gray-500">Versión #{sub.version || 1}</span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-700">
+                                Anterior
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <button onClick={() => downloadSingleSubmission(sub)}
+                                className="text-sm text-gray-600 hover:text-gray-900 underline">
+                                {sub.submissionFileName}
+                              </button>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {new Date(sub.submittedAt).toLocaleDateString('es-ES')}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              {sub.gradedAt ? (
+                                <div>
+                                  <div className="text-sm font-medium text-gray-600">{sub.score} / {selectedAssignment.maxScore}</div>
+                                  {sub.feedback && <div className="text-xs text-gray-400 truncate max-w-xs">{sub.feedback}</div>}
+                                </div>
+                              ) : (
+                                <span className="text-sm text-gray-400">Sin calificar</span>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                              <button onClick={() => openGradeModal(sub)} className="text-gray-600 hover:text-gray-900">
+                                Ver
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </>
+                    );
+                  })}
                 </tbody>
               </table>
             )}

@@ -8,6 +8,8 @@ interface Assignment {
   id: string; title: string; description?: string; dueDate?: string; maxScore: number;
   submissionCount: number; gradedCount: number; attachmentName?: string; createdAt: string;
   className?: string;
+  uploadId?: string; // Legacy single file
+  attachmentIds?: string; // JSON array of upload IDs
 }
 interface Submission {
   id: string; studentName: string; studentEmail: string; submissionFileName: string;
@@ -23,6 +25,7 @@ export default function TeacherAssignments() {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [deletingAssignmentId, setDeletingAssignmentId] = useState<string | null>(null);
   const [showSubmissionsModal, setShowSubmissionsModal] = useState(false);
   const [showGradeModal, setShowGradeModal] = useState(false);
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
@@ -37,10 +40,36 @@ export default function TeacherAssignments() {
   const [newDescription, setNewDescription] = useState('');
   const [newDueDate, setNewDueDate] = useState('');
   const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadFiles, setUploadFiles] = useState<File[]>([]); // Multiple files
   const [uploadProgress, setUploadProgress] = useState(0);
   const [gradeScore, setGradeScore] = useState(0);
   const [gradeFeedback, setGradeFeedback] = useState('');
   const [creating, setCreating] = useState(false);
+  const [editUploadFile, setEditUploadFile] = useState<File | null>(null);
+  const [editUploadFiles, setEditUploadFiles] = useState<File[]>([]); // Multiple files for edit
+
+  // Helper to check if assignment is past due
+  const isPastDue = (dueDate?: string) => {
+    if (!dueDate) return false;
+    return new Date(dueDate) < new Date();
+  };
+
+  // Helper function to determine due date color
+  const getDueDateColor = (dueDate?: string) => {
+    if (!dueDate) return 'text-gray-500';
+    
+    const now = new Date();
+    const due = new Date(dueDate);
+    const diffMs = due.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    
+    // If past due: gray immediately
+    if (diffDays < 0) return 'text-gray-500';
+    // Before due date
+    if (diffDays <= 1) return 'text-red-600 font-semibold'; // Today or tomorrow
+    if (diffDays <= 5) return 'text-orange-600 font-medium'; // 2-5 days
+    return 'text-gray-900'; // 6+ days - black
+  };
 
   useEffect(() => { loadData(); }, []);
   useEffect(() => { loadAssignments(); }, [selectedClassId]);
@@ -89,6 +118,28 @@ export default function TeacherAssignments() {
     }
   };
 
+  const handleDeleteAssignment = async (assignmentId: string, title: string) => {
+    if (!confirm(`¿Estás seguro que deseas eliminar "${title}"? Esta acción no se puede deshacer.`)) {
+      return;
+    }
+    
+    setDeletingAssignmentId(assignmentId);
+    try {
+      const res = await apiClient(`/assignments/${assignmentId}`, { method: 'DELETE' });
+      const result = await res.json();
+      if (result.success) {
+        setAssignments(prev => prev.filter(a => a.id !== assignmentId));
+      } else {
+        alert(`Error: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Failed to delete assignment:', error);
+      alert('Error al eliminar ejercicio');
+    } finally {
+      setDeletingAssignmentId(null);
+    }
+  };
+
   const handleCreateAssignment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedClassForCreate) {
@@ -97,23 +148,33 @@ export default function TeacherAssignments() {
     }
     setCreating(true);
     try {
-      let uploadId = null;
-      if (uploadFile) {
-        setUploadProgress(10);
-        const formData = new FormData();
-        formData.append('file', uploadFile);
-        formData.append('type', 'assignment');
-        const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/storage/upload`, {
-          method: 'POST', body: formData, credentials: 'include',
-        });
-        setUploadProgress(80);
-        const uploadResult = await uploadRes.json();
-        if (uploadResult.success) uploadId = uploadResult.data.uploadId;
+      let uploadIds: string[] = [];
+      
+      // Upload all selected files
+      if (uploadFiles.length > 0) {
+        for (let i = 0; i < uploadFiles.length; i++) {
+          setUploadProgress(Math.round((i / uploadFiles.length) * 80));
+          const formData = new FormData();
+          formData.append('file', uploadFiles[i]);
+          formData.append('type', 'assignment');
+          const uploadRes = await apiClient('/storage/upload', {
+            method: 'POST', body: formData,
+          });
+          const uploadResult = await uploadRes.json();
+          if (uploadResult.success) {
+            uploadIds.push(uploadResult.data.uploadId);
+          }
+        }
         setUploadProgress(100);
       }
+      
       const res = await apiPost('/assignments', {
-        classId: selectedClassForCreate, title: newTitle, description: newDescription,
-        dueDate: newDueDate || null, maxScore: 100, uploadId,
+        classId: selectedClassForCreate, 
+        title: newTitle, 
+        description: newDescription,
+        dueDate: newDueDate || null, 
+        maxScore: 100, 
+        uploadIds,
       });
       const result = await res.json();
       if (result.success) {
@@ -198,8 +259,44 @@ export default function TeacherAssignments() {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (error) {
-      console.error('Failed to download file:', error);
+      console.error('Failed to dowFiles([]); setUploadnload file:', error);
       alert('Error al descargar archivo');
+    }
+  };
+
+  const openAssignmentFiles = async (assignment: Assignment) => {
+    // Parse attachmentIds (GROUP_CONCAT returns comma-separated string)
+    let uploadIds: string[] = [];
+    if (assignment.attachmentIds && assignment.attachmentIds.trim()) {
+      uploadIds = assignment.attachmentIds.split(',').filter(id => id.trim());
+    } else if (assignment.uploadId) {
+      uploadIds = [assignment.uploadId]; // Legacy single file
+    }
+
+    if (uploadIds.length === 0) {
+      alert('No hay archivos disponibles');
+      return;
+    }
+
+    try {
+      // Fetch Upload records to get storagePath for each uploadId
+      for (const uploadId of uploadIds) {
+        const uploadRes = await apiClient(`/storage/upload/${uploadId}`);
+        const uploadResult = await uploadRes.json();
+        if (uploadResult.success && uploadResult.data) {
+          const storagePath = uploadResult.data.storagePath;
+          // Use /api/documents route like lesson documents do
+          const url = `/api/documents/${storagePath}`;
+          window.open(url, '_blank');
+        } else {
+          console.error('Failed to fetch upload:', uploadId);
+        }
+        // Small delay between opens to avoid popup blocking
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+    } catch (error) {
+      console.error('Failed to open files:', error);
+      alert('Error al abrir archivos');
     }
   };
 
@@ -214,6 +311,7 @@ export default function TeacherAssignments() {
     setEditTitle(assignment.title);
     setEditDescription(assignment.description || '');
     setEditDueDate(assignment.dueDate ? assignment.dueDate.split('T')[0] : '');
+    setEditUploadFile(null);
     setShowEditModal(true);
   };
 
@@ -223,6 +321,24 @@ export default function TeacherAssignments() {
     
     setUpdating(true);
     try {
+      let uploadId = undefined;
+      if (editUploadFile) {
+        const formData = new FormData();
+        formData.append('file', editUploadFile);
+        formData.append('type', 'assignment');
+        const uploadRes = await apiClient('/storage/upload', {
+          method: 'POST', body: formData,
+        });
+        const uploadResult = await uploadRes.json();
+        if (uploadResult.success) {
+          uploadId = uploadResult.data.uploadId;
+        } else {
+          alert('Error al subir archivo');
+          setUpdating(false);
+          return;
+        }
+      }
+      
       const res = await apiClient(`/assignments/${selectedAssignment.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -230,6 +346,7 @@ export default function TeacherAssignments() {
           title: editTitle,
           description: editDescription,
           dueDate: editDueDate || null,
+          ...(uploadId !== undefined && { uploadId }),
         }),
       });
       
@@ -263,8 +380,11 @@ export default function TeacherAssignments() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
+      <div className="space-y-6 animate-pulse">
+        <div className="h-8 w-48 bg-gray-200 rounded"></div>
+        <div className="h-10 w-64 bg-gray-200 rounded-lg"></div>
+        <div className="h-32 bg-gray-200 rounded-xl"></div>
+        <div className="h-32 bg-gray-200 rounded-xl"></div>
       </div>
     );
   }
@@ -327,6 +447,7 @@ export default function TeacherAssignments() {
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Título</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Asignatura</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ejercicios</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha límite</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Entregas</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Calificadas</th>
@@ -338,17 +459,80 @@ export default function TeacherAssignments() {
                   <tr 
                     key={assignment.id} 
                     onClick={() => openEditAssignment(assignment)}
-                    className="hover:bg-gray-50 cursor-pointer transition-colors"
+                    className="hover:bg-gray-50 transition-colors group cursor-pointer"
                   >
                     <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">{assignment.title}</div>
-                      {assignment.description && <div className="text-sm text-gray-500 truncate max-w-md">{assignment.description}</div>}
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteAssignment(assignment.id, assignment.title);
+                          }}
+                          disabled={deletingAssignmentId === assignment.id}
+                          className="text-red-600 hover:text-red-700 transition-colors disabled:opacity-50 flex-shrink-0"
+                          title="Eliminar ejercicio"
+                        >
+                          {deletingAssignmentId === assignment.id ? (
+                            <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          )}
+                        </button>
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-gray-900">{assignment.title}</div>
+                          {assignment.description && <div className="text-sm text-gray-500 truncate max-w-md">{assignment.description}</div>}
+                        </div>
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {assignment.className || 'N/A'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString('es-ES') : 'Sin fecha'}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {(() => {
+                        let fileCount = 0;
+                        if (assignment.attachmentIds && assignment.attachmentIds.trim()) {
+                          fileCount = assignment.attachmentIds.split(',').filter(id => id.trim()).length;
+                        } else if (assignment.uploadId) {
+                          fileCount = 1;
+                        }
+                        return fileCount > 0 ? (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openAssignmentFiles(assignment);
+                            }}
+                            className="flex items-center gap-2 text-sm text-brand-600 hover:text-brand-700 transition-colors group"
+                          >
+                            <div className="w-8 h-10 flex items-center justify-center bg-red-50 rounded border border-red-200 group-hover:bg-red-100 transition-colors">
+                              <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                            <span className="text-xs font-medium">{fileCount} archivo{fileCount > 1 ? 's' : ''}</span>
+                          </button>
+                        ) : (
+                          <span className="text-xs text-gray-400">Sin archivo</span>
+                        );
+                      })()}
+                    </td>
+                    <td className={`px-6 py-4 whitespace-nowrap text-sm ${getDueDateColor(assignment.dueDate)}`}>
+                      {assignment.dueDate ? (
+                        <>
+                          {new Date(assignment.dueDate).toLocaleDateString('es-ES', { 
+                            year: 'numeric', 
+                            month: 'short', 
+                            day: 'numeric' 
+                          })}
+                          <span className="text-xs ml-1">
+                            {new Date(assignment.dueDate).toLocaleTimeString('es-ES', { 
+                              hour: '2-digit', 
+                              minute: '2-digit' 
+                            })}
+                          </span>
+                        </>
+                      ) : 'Sin fecha'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">{assignment.submissionCount}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">{assignment.gradedCount} / {assignment.submissionCount}</td>
@@ -411,15 +595,42 @@ export default function TeacherAssignments() {
               </div>
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Fecha límite</label>
-                  <input type="date" value={newDueDate} onChange={(e) => setNewDueDate(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Fecha y hora límite</label>
+                  <input 
+                    type="datetime-local" 
+                    value={newDueDate} 
+                    onChange={(e) => setNewDueDate(e.target.value)}
+                    min={(() => {
+                      const now = new Date();
+                      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+                      return now.toISOString().slice(0, 16);
+                    })()}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" 
+                  />
+                  <p className="text-xs text-gray-500 mt-1">La fecha límite no puede estar en el pasado</p>
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Archivo adjunto (opcional)</label>
-                <input type="file" onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg" />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Archivos adjuntos (PDFs)</label>
+                <input 
+                  type="file" 
+                  multiple 
+                  accept=".pdf"
+                  onChange={(e) => setUploadFiles(Array.from(e.target.files || []))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200" 
+                />
+                {uploadFiles.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    {uploadFiles.map((file, idx) => (
+                      <div key={idx} className="flex items-center gap-2 text-sm text-gray-600">
+                        <svg className="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                        </svg>
+                        <span>{file.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               {uploadProgress > 0 && uploadProgress < 100 && (
                 <div className="w-full bg-gray-200 rounded-full h-2">
@@ -518,44 +729,6 @@ export default function TeacherAssignments() {
         </div>
       )}
 
-      {/* Edit Assignment Modal */}
-      {showEditModal && selectedAssignment && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900">Editar Ejercicio</h2>
-            </div>
-            <form onSubmit={handleUpdateAssignment} className="p-6 space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
-                <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
-                <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de entrega</label>
-                <input type="date" value={editDueDate} onChange={(e) => setEditDueDate(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
-              </div>
-              <div className="flex gap-4 justify-end pt-4">
-                <button type="button" onClick={() => setShowEditModal(false)} disabled={updating}
-                  className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-                  Cancelar
-                </button>
-                <button type="submit" disabled={updating}
-                  className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50">
-                  {updating ? 'Actualizando...' : 'Guardar Cambios'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
       {/* Grade Modal */}
       {showGradeModal && selectedSubmission && selectedAssignment && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -585,6 +758,63 @@ export default function TeacherAssignments() {
                 <button type="submit"
                   className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors">
                   Guardar Calificación
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Assignment Modal */}
+      {showEditModal && selectedAssignment && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-2xl font-bold text-gray-900">Editar Ejercicio</h2>
+            </div>
+            <form onSubmit={handleUpdateAssignment} className="p-6 space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
+                <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} rows={4}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de entrega</label>
+                <input type="date" value={editDueDate} onChange={(e) => setEditDueDate(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Actualizar archivo PDF (opcional)</label>
+                {selectedAssignment.attachmentName && (
+                  <div className="mb-2 text-sm text-gray-600">
+                    Archivo actual: {selectedAssignment.attachmentName}
+                  </div>
+                )}
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={(e) => setEditUploadFile(e.target.files?.[0] || null)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+                />
+                {editUploadFile && (
+                  <div className="mt-2 text-sm text-green-600">
+                    Nuevo archivo seleccionado: {editUploadFile.name}
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-4 justify-end pt-4">
+                <button type="button" onClick={() => setShowEditModal(false)} disabled={updating}
+                  className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+                  Cancelar
+                </button>
+                <button type="submit" disabled={updating}
+                  className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50">
+                  {updating ? 'Actualizando...' : 'Guardar Cambios'}
                 </button>
               </div>
             </form>

@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { Bindings } from '../types';
-import { requireAuth } from '../lib/auth';
+import { requireAuth, getSession } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 
 const storage = new Hono<{ Bindings: Bindings }>();
@@ -8,19 +8,38 @@ const storage = new Hono<{ Bindings: Bindings }>();
 // POST /storage/upload - Simple file upload (for small files like logos)
 storage.post('/upload', async (c) => {
   try {
-    const session = await requireAuth(c);
-
-    if (!['ADMIN', 'TEACHER', 'ACADEMY'].includes(session.role)) {
-      return c.json(errorResponse('Not authorized'), 403);
+    // Try to get session - catch error for better message
+    let session;
+    try {
+      session = await requireAuth(c);
+    } catch (error) {
+      console.error('[Upload] Auth error:', error);
+      return c.json(errorResponse('Error de autenticación. Intenta cerrar sesión y volver a iniciar.'), 401);
     }
+    
+    console.log('[Upload] Session found:', { id: session.id, email: session.email, role: session.role });
+
+    // Allow STUDENT for assignment submissions
+    if (!['ADMIN', 'TEACHER', 'ACADEMY', 'STUDENT'].includes(session.role)) {
+      console.error('[Upload] Role not authorized:', session.role);
+      return c.json(errorResponse(`Tu rol (${session.role}) no tiene permiso para subir archivos`), 403);
+    }
+    
+    console.log('[Upload] Role authorized:', session.role);
 
     const formData = await c.req.formData();
     const file = formData.get('file') as File;
-    const path = formData.get('path') as string;
+    const type = formData.get('type') as string; // 'assignment', 'document', 'avatar', etc.
+    const customPath = formData.get('path') as string | null; // Optional custom path
 
-    if (!file || !path) {
-      return c.json(errorResponse('file and path required'), 400);
+    if (!file) {
+      return c.json(errorResponse('file is required'), 400);
     }
+
+    // Generate path based on type or use custom path
+    const id = crypto.randomUUID().replace(/-/g, '');
+    const folder = type || 'uploads';
+    const path = customPath || `${folder}/${id}-${file.name}`;
 
     // Read file as ArrayBuffer
     const fileData = await file.arrayBuffer();
@@ -33,16 +52,63 @@ storage.post('/upload', async (c) => {
       customMetadata: {
         originalName: file.name,
         uploadedAt: new Date().toISOString(),
+        uploadedBy: session.id,
       },
     });
 
-    return c.json(successResponse({
+    // Create Upload record in DB
+    const { nanoid } = await import('nanoid');
+    const uploadId = nanoid();
+
+    await c.env.DB.prepare(`
+      INSERT INTO Upload (id, fileName, fileSize, mimeType, storagePath, uploadedById, storageType)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      uploadId,
+      file.name,
+      file.size,
+      file.type,
       path,
+      session.id,
+      'r2'
+    ).run();
+
+    return c.json(successResponse({
+      uploadId,
+      path,
+      fileName: file.name,
+      fileSize: file.size,
       message: 'File uploaded successfully',
     }));
   } catch (error: any) {
     console.error('[Simple Upload] Error:', error);
     return c.json(errorResponse(error.message || 'Failed to upload file'), 500);
+  }
+});
+
+// GET /storage/upload/:id - Get upload metadata
+storage.get('/upload/:id', async (c) => {
+  try {
+    const uploadId = c.req.param('id');
+    
+    if (!uploadId) {
+      return c.json(errorResponse('Upload ID required'), 400);
+    }
+
+    const upload = await c.env.DB.prepare(`
+      SELECT id, fileName, fileSize, mimeType, storagePath, storageType, uploadedById, createdAt
+      FROM Upload
+      WHERE id = ?
+    `).bind(uploadId).first();
+
+    if (!upload) {
+      return c.json(errorResponse('Upload not found'), 404);
+    }
+
+    return c.json(successResponse(upload));
+  } catch (error: any) {
+    console.error('[Get Upload] Error:', error);
+    return c.json(errorResponse(error.message || 'Failed to fetch upload'), 500);
   }
 });
 

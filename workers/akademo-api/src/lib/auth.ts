@@ -53,6 +53,7 @@ export async function deleteSession(c: Context<{ Bindings: Bindings }>): Promise
 }
 
 export async function getSession(c: Context<{ Bindings: Bindings }>): Promise<SessionUser | null> {
+  console.log('[getSession] === SESSION CHECK START ===');
   let sessionId = getCookie(c, SESSION_COOKIE_NAME);
   
   console.log('[getSession] Cookie value:', sessionId || 'NOT FOUND');
@@ -60,13 +61,14 @@ export async function getSession(c: Context<{ Bindings: Bindings }>): Promise<Se
 
   // Also check Authorization header (Bearer token) for cross-domain support
   const authHeader = c.req.header('Authorization');
+  console.log('[getSession] Authorization header:', authHeader || 'NOT FOUND');
   if (authHeader && authHeader.startsWith('Bearer ')) {
     sessionId = authHeader.split(' ')[1];
-    console.log('[getSession] Using Bearer token');
+    console.log('[getSession] Using Bearer token:', sessionId);
   }
 
   if (!sessionId) {
-    console.log('[getSession] No session ID found');
+    console.log('[getSession] FAILED - No session ID found in cookie or Bearer token');
     return null;
   }
 
@@ -74,24 +76,27 @@ export async function getSession(c: Context<{ Bindings: Bindings }>): Promise<Se
     let userId: string;
     try {
         // Decode base64 session ID to get user ID
+        console.log('[getSession] Attempting to decode sessionId:', sessionId);
         userId = atob(sessionId);
         console.log('[getSession] Decoded userId:', userId);
     } catch (e) {
-        console.error('[getSession] Failed to decode session ID:', e);
+        console.error('[getSession] FAILED to decode session ID:', e);
+        console.error('[getSession] Invalid sessionId format:', sessionId);
         return null;
     }
     
     // Query user directly from D1 database
+    console.log('[getSession] Querying database for userId:', userId);
     const user = await c.env.DB.prepare('SELECT id, email, firstName, lastName, role FROM User WHERE id = ?')
       .bind(userId)
       .first<UserRow>();
 
     if (!user) {
-      console.log('[getSession] User not found in database for userId:', userId);
+      console.log('[getSession] FAILED - User not found in database for userId:', userId);
       return null;
     }
     
-    console.log('[getSession] User found:', user.email, 'Role:', user.role);
+    console.log('[getSession] SUCCESS - User found:', user.email, 'Role:', user.role, 'ID:', user.id);
     return {
       id: user.id,
       email: user.email,
@@ -100,16 +105,19 @@ export async function getSession(c: Context<{ Bindings: Bindings }>): Promise<Se
       role: user.role as UserRole,
     };
   } catch (error) {
-    console.error('[getSession] Error:', error);
+    console.error('[getSession] EXCEPTION:', error);
     return null;
   }
 }
 
 export async function requireAuth(c: Context<{ Bindings: Bindings }>): Promise<SessionUser> {
+  console.log('[requireAuth] Starting authentication check...');
   const session = await getSession(c);
   if (!session) {
+    console.error('[requireAuth] FAILED - No session found');
     throw new Error('Unauthorized');
   }
+  console.log('[requireAuth] SUCCESS - Session found for user:', session.id, 'role:', session.role);
   return session;
 }
 

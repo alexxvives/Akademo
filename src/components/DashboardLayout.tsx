@@ -22,7 +22,7 @@ interface MenuItem {
   label: string;
   href: string;
   icon?: JSX.Element;
-  iconType?: 'chart' | 'book' | 'userPlus' | 'message' | 'clap' | 'fileText' | 'clipboard' | 'activity' | 'users' | 'botMessage' | 'handCoins';
+  iconType?: 'chart' | 'book' | 'userPlus' | 'message' | 'clap' | 'fileText' | 'clipboard' | 'activity' | 'users' | 'botMessage' | 'handCoins' | 'star';
   badge?: number;
   badgeColor?: string;
   matchPaths?: string[];
@@ -391,6 +391,7 @@ export default function DashboardLayout({
           ...(academy?.feedbackEnabled !== 0 ? [{ label: 'Valoraciones', href: '/dashboard/teacher/feedback', iconType: 'message' as const, badge: unreadValoracionesCount > 0 ? unreadValoracionesCount : undefined, badgeColor: 'bg-[#b0e788]' }] : []),
           { label: 'Streams', href: '/dashboard/teacher/streams', iconType: 'clap' },
           { label: 'Ejercicios', href: '/dashboard/teacher/assignments', iconType: 'fileText' },
+          { label: 'Calificaciones', href: '/dashboard/teacher/grades', iconType: 'star' as const },
           { label: 'Estudiantes', href: '/dashboard/teacher/progress', iconType: 'users' },
         ];
       case 'STUDENT':
@@ -405,6 +406,7 @@ export default function DashboardLayout({
           ...(academy?.feedbackEnabled !== 0 ? [{ label: 'Valoraciones', href: '/dashboard/academy/feedback', iconType: 'message' as const, badge: unreadValoracionesCount > 0 ? unreadValoracionesCount : undefined, badgeColor: 'bg-[#b0e788]' }] : []),
           { label: 'Streams', href: '/dashboard/academy/streams', iconType: 'clap' as const },
           { label: 'Ejercicios', href: '/dashboard/academy/assignments', iconType: 'fileText' as const },
+          { label: 'Calificaciones', href: '/dashboard/academy/grades', iconType: 'star' as const },
           { label: 'Profesores', href: '/dashboard/academy/teachers', iconType: 'botMessage' as const },
           { label: 'Estudiantes', href: '/dashboard/academy/students', iconType: 'users' as const },
           { label: 'Pagos', href: '/dashboard/academy/payments', iconType: 'handCoins' as const, badge: pendingEnrollmentsCount > 0 ? pendingEnrollmentsCount : undefined, badgeColor: 'bg-[#b0e788]' },

@@ -11,6 +11,7 @@ interface Assignment {
   className?: string; classId?: string; 
   uploadId?: string; // Legacy single file
   attachmentIds?: string; // JSON array of upload IDs
+  submissionUploadId?: string; // Student's submitted file uploadId
 }
 
 export default function StudentAssignments() {
@@ -20,9 +21,30 @@ export default function StudentAssignments() {
   const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
-  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadFiles, setUploadFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [activeTab, setActiveTab] = useState<'pendientes' | 'completados'>('pendientes');
+
+  // Helper to check if assignment is past due
+  const isPastDue = (dueDate?: string) => {
+    if (!dueDate) return false;
+    return new Date(dueDate) < new Date();
+  };
+
+  // Helper function to determine due date color
+  const getDueDateColor = (dueDate?: string) => {
+    if (!dueDate) return 'text-gray-500';
+    
+    const now = new Date();
+    const due = new Date(dueDate);
+    const diffDays = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) return 'text-gray-500'; // Past due - gray
+    if (diffDays <= 1) return 'text-red-600 font-semibold'; // Today or tomorrow
+    if (diffDays <= 5) return 'text-orange-600 font-medium'; // 2-5 days
+    return 'text-gray-900'; // 6+ days - black
+  };
 
   useEffect(() => { loadClasses(); }, []);
   useEffect(() => { loadAssignments(); }, [selectedClassId]); // Load even when empty
@@ -74,44 +96,47 @@ export default function StudentAssignments() {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setUploadFile(e.dataTransfer.files[0]);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const newFiles = Array.from(e.dataTransfer.files);
+      setUploadFiles(prev => [...prev, ...newFiles]);
     }
   };
 
   const handleSubmitAssignment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!uploadFile || !selectedAssignment) return;
+    if (uploadFiles.length === 0 || !selectedAssignment) return;
 
     setUploading(true);
     try {
-      // Upload file
-      const formData = new FormData();
-      formData.append('file', uploadFile);
-      formData.append('type', 'assignment_submission');
+      // Upload all files
+      const uploadIds: string[] = [];
+      for (const file of uploadFiles) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('type', 'assignment_submission');
 
-      const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/storage/upload`, {
-        method: 'POST',
-        body: formData,
-        credentials: 'include',
-      });
+        const uploadRes = await apiClient('/storage/upload', {
+          method: 'POST',
+          body: formData,
+        });
 
-      const uploadResult = await uploadRes.json();
-      if (!uploadResult.success) {
-        throw new Error('Error al subir archivo');
+        const uploadResult = await uploadRes.json();
+        if (!uploadResult.success) {
+          throw new Error(uploadResult.error || 'Error al subir archivo');
+        }
+        uploadIds.push(uploadResult.data.uploadId);
       }
 
-      // Submit assignment
+      // Submit assignment with all upload IDs
       const res = await apiPost(`/assignments/${selectedAssignment.id}/submit`, {
-        uploadId: uploadResult.data.uploadId,
+        uploadIds, // Send array instead of single uploadId
       });
 
       const result = await res.json();
       if (result.success) {
         setShowUploadModal(false);
-        setUploadFile(null);
+        setUploadFiles([]);
         loadAssignments();
-        alert('Ejercicio entregado correctamente');
       } else {
         throw new Error(result.error || 'Error al entregar ejercicio');
       }
@@ -144,10 +169,18 @@ export default function StudentAssignments() {
     }
 
     try {
-      // Open all files in new tabs (using Next.js proxy route like lesson documents)
+      // Fetch Upload records to get storagePath (like lesson documents)
       for (const uploadId of uploadIds) {
-        const url = `/api/storage/serve/${uploadId}`;
-        window.open(url, '_blank');
+        const uploadRes = await apiClient(`/storage/upload/${uploadId}`);
+        const uploadResult = await uploadRes.json();
+        if (uploadResult.success && uploadResult.data) {
+          const storagePath = uploadResult.data.storagePath;
+          // Use /api/documents route like lesson documents do
+          const url = `/api/documents/${storagePath}`;
+          window.open(url, '_blank');
+        } else {
+          console.error('Failed to fetch upload:', uploadId);
+        }
         // Small delay between opens to avoid popup blocking
         await new Promise(resolve => setTimeout(resolve, 300));
       }
@@ -201,12 +234,22 @@ export default function StudentAssignments() {
         <div className="border-b border-gray-200">
           <nav className="-mb-px flex space-x-8">
             <button
-              className="border-b-2 border-brand-600 py-4 px-1 text-sm font-medium text-brand-600"
+              onClick={() => setActiveTab('pendientes')}
+              className={`border-b-2 py-4 px-1 text-sm font-medium ${
+                activeTab === 'pendientes'
+                  ? 'border-brand-600 text-brand-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
             >
               Pendientes ({pendingAssignments.length})
             </button>
             <button
-              className="border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              onClick={() => setActiveTab('completados')}
+              className={`border-b-2 py-4 px-1 text-sm font-medium ${
+                activeTab === 'completados'
+                  ? 'border-brand-600 text-brand-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
             >
               Completados ({completedAssignments.length})
             </button>
@@ -214,17 +257,18 @@ export default function StudentAssignments() {
         </div>
 
         {/* Pending assignments - TABLE FORMAT */}
-        {pendingAssignments.length === 0 ? (
-          <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-            <div className="w-20 h-20 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+        {activeTab === 'pendientes' && (
+          pendingAssignments.length === 0 ? (
+            <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+              <div className="w-20 h-20 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">¡Todo completado!</h2>
+              <p className="text-gray-500">No tienes ejercicios pendientes por entregar</p>
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">¡Todo completado!</h2>
-            <p className="text-gray-500">No tienes ejercicios pendientes por entregar</p>
-          </div>
-        ) : (
+          ) : (
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -232,18 +276,38 @@ export default function StudentAssignments() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Título</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Asignatura</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ejercicios</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Entrega</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha límite</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {pendingAssignments.map((assignment) => (
-                  <tr key={assignment.id} className="hover:bg-gray-50 transition-colors">
+                  <tr 
+                    key={assignment.id} 
+                    className="hover:bg-gray-50 transition-colors"
+                  >
                     <td className="px-6 py-4">
-                      <div className="text-sm font-medium text-gray-900">{assignment.title}</div>
-                      {assignment.description && (
-                        <div className="text-sm text-gray-500 truncate max-w-md">{assignment.description}</div>
-                      )}
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-gray-900">{assignment.title}</div>
+                          {assignment.description && (
+                            <div className="text-sm text-gray-500 truncate max-w-md">{assignment.description}</div>
+                          )}
+                        </div>
+                        {assignment.submittedAt && !isPastDue(assignment.dueDate) && !assignment.gradedAt && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openUploadModal(assignment);
+                            }}
+                            className="px-3 py-1.5 text-xs font-medium text-brand-600 hover:text-brand-700 border border-brand-300 rounded-lg hover:bg-brand-50 transition-colors whitespace-nowrap"
+                            title="Reenviar ejercicio"
+                          >
+                            Reenviar
+                          </button>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {assignment.className || '—'}
@@ -259,27 +323,47 @@ export default function StudentAssignments() {
                         return fileCount > 0 ? (
                           <button
                             onClick={() => downloadAssignmentFile(assignment)}
-                            className="flex items-center gap-2 text-sm text-brand-600 hover:text-brand-700 transition-colors group"
+                            className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-700 transition-colors group"
                           >
                             <div className="w-8 h-10 flex items-center justify-center bg-red-50 rounded border border-red-200 group-hover:bg-red-100 transition-colors">
                               <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                               </svg>
                             </div>
-                            <span className="text-xs font-medium">{fileCount} archivo{fileCount > 1 ? 's' : ''}</span>
+                            <span className="text-xs">{fileCount} archivo{fileCount > 1 ? 's' : ''}</span>
                           </button>
                         ) : (
                           <span className="text-xs text-gray-400">Sin archivo</span>
                         );
                       })()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {assignment.submittedAt && assignment.submissionUploadId ? (
+                        <a
+                          href={`/api/documents/assignment/${assignment.submissionUploadId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-700 transition-colors group"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="w-8 h-10 flex items-center justify-center bg-green-50 rounded border border-green-200 group-hover:bg-green-100 transition-colors">
+                            <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <span className="text-xs">1 archivo</span>
+                        </a>
+                      ) : (
+                        <span className="text-xs text-gray-400">Sin entregar</span>
+                      )}
+                    </td>
+                    <td className={`px-6 py-4 whitespace-nowrap text-sm ${getDueDateColor(assignment.dueDate)}`}>
                       {assignment.dueDate ? (
                         <div className="flex items-center">
-                          <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
                           {new Date(assignment.dueDate).toLocaleDateString('es-ES')}
+                          <span className="text-xs ml-1">
+                            {new Date(assignment.dueDate).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
                         </div>
                       ) : 'Sin fecha'}
                     </td>
@@ -296,12 +380,22 @@ export default function StudentAssignments() {
               </tbody>
             </table>
           </div>
+          )
         )}
 
         {/* Completed assignments - TABLE FORMAT */}
-        {completedAssignments.length > 0 && (
-          <div className="mt-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Ejercicios completados</h2>
+        {activeTab === 'completados' && (
+          completedAssignments.length === 0 ? (
+            <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+              <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-6">
+                <svg className="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">Ningún ejercicio completado</h2>
+              <p className="text-gray-500">Los ejercicios que entregues aparecerán aquí</p>
+            </div>
+          ) : (
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
@@ -309,6 +403,7 @@ export default function StudentAssignments() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Título</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Asignatura</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ejercicios</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Entrega</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Entregado</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Puntuación</th>
@@ -318,15 +413,26 @@ export default function StudentAssignments() {
                   {completedAssignments.map((assignment) => (
                     <tr key={assignment.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <div className="text-sm font-medium text-gray-900">{assignment.title}</div>
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Entregado
-                          </span>
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1">
+                            <div className="text-sm font-medium text-gray-900">{assignment.title}</div>
+                            {assignment.description && (
+                              <div className="text-sm text-gray-500 truncate max-w-md">{assignment.description}</div>
+                            )}
+                          </div>
+                          {!isPastDue(assignment.dueDate) && !assignment.gradedAt && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openUploadModal(assignment);
+                              }}
+                              className="px-3 py-1.5 text-xs font-medium text-brand-600 hover:text-brand-700 border border-brand-300 rounded-lg hover:bg-brand-50 transition-colors whitespace-nowrap"
+                              title="Reenviar ejercicio"
+                            >
+                              Reenviar
+                            </button>
+                          )}
                         </div>
-                        {assignment.description && (
-                          <div className="text-sm text-gray-500 truncate max-w-md">{assignment.description}</div>
-                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {assignment.className || '—'}
@@ -342,22 +448,49 @@ export default function StudentAssignments() {
                           return fileCount > 0 ? (
                             <button
                               onClick={() => downloadAssignmentFile(assignment)}
-                              className="flex items-center gap-2 text-sm text-brand-600 hover:text-brand-700 transition-colors group"
+                              className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-700 transition-colors group"
                             >
                               <div className="w-8 h-10 flex items-center justify-center bg-red-50 rounded border border-red-200 group-hover:bg-red-100 transition-colors">
                                 <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
                                   <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                                 </svg>
                               </div>
-                              <span className="text-xs font-medium">{fileCount} archivo{fileCount > 1 ? 's' : ''}</span>
+                              <span className="text-xs">{fileCount} archivo{fileCount > 1 ? 's' : ''}</span>
                             </button>
                           ) : (
                             <span className="text-xs text-gray-400">Sin archivo</span>
                           );
                         })()}
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {assignment.submittedAt && assignment.submissionUploadId ? (
+                          <a
+                            href={`/api/documents/assignment/${assignment.submissionUploadId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-700 transition-colors group"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="w-8 h-10 flex items-center justify-center bg-green-50 rounded border border-green-200 group-hover:bg-green-100 transition-colors">
+                              <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                            <span className="text-xs">1 archivo</span>
+                          </a>
+                        ) : (
+                          <span className="text-xs text-gray-400">—</span>
+                        )}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {assignment.submittedAt ? new Date(assignment.submittedAt).toLocaleDateString('es-ES') : ''}
+                        {assignment.submittedAt ? (
+                          <div>
+                            {new Date(assignment.submittedAt).toLocaleDateString('es-ES')}
+                            <span className="text-xs ml-1">
+                              {new Date(assignment.submittedAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        ) : ''}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         {assignment.gradedAt ? (
@@ -366,7 +499,7 @@ export default function StudentAssignments() {
                           </span>
                         ) : (
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                            Pendiente
+                            Corrección pendiente
                           </span>
                         )}
                       </td>
@@ -391,7 +524,7 @@ export default function StudentAssignments() {
                 </tbody>
               </table>
             </div>
-          </div>
+          )
         )}
       </div>
 
@@ -399,8 +532,15 @@ export default function StudentAssignments() {
       {showUploadModal && selectedAssignment && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-2xl w-full p-6">
-            <h2 className="text-2xl font-semibold mb-2">Entregar Ejercicio</h2>
-            <p className="text-gray-600 mb-6">{selectedAssignment.title}</p>
+            <h2 className="text-2xl font-semibold mb-2">
+              {selectedAssignment.submittedAt ? 'Reenviar Ejercicio' : 'Entregar Ejercicio'}
+            </h2>
+            <p className="text-gray-600 mb-2">{selectedAssignment.title}</p>
+            {selectedAssignment.submittedAt && (
+              <p className="text-sm text-amber-600 mb-4">
+                ⚠️ Esto reemplazará tu entrega anterior. El profesor verá todas las versiones.
+              </p>
+            )}
 
             <form onSubmit={handleSubmitAssignment} className="space-y-4">
               <div
@@ -415,25 +555,47 @@ export default function StudentAssignments() {
                 <input
                   type="file"
                   id="fileInput"
-                  onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                  multiple
+                  onChange={(e) => {
+                    if (e.target.files) {
+                      const newFiles = Array.from(e.target.files);
+                      setUploadFiles(prev => [...prev, ...newFiles]);
+                    }
+                  }}
                   className="hidden"
                 />
-                {uploadFile ? (
-                  <div>
-                    <div className="w-16 h-16 bg-brand-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-8 h-8 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                    </div>
-                    <p className="text-lg font-medium text-gray-900">{uploadFile.name}</p>
-                    <p className="text-sm text-gray-500">{(uploadFile.size / 1024 / 1024).toFixed(2)} MB</p>
-                    <button
-                      type="button"
-                      onClick={() => setUploadFile(null)}
-                      className="mt-4 text-sm text-red-600 hover:text-red-800"
+                {uploadFiles.length > 0 ? (
+                  <div className="space-y-3">
+                    {uploadFiles.map((file, index) => (
+                      <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-brand-100 rounded-lg flex items-center justify-center">
+                            <svg className="w-5 h-5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">{file.name}</p>
+                            <p className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setUploadFiles(prev => prev.filter((_, i) => i !== index))}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                    <label
+                      htmlFor="fileInput"
+                      className="inline-block w-full text-center px-4 py-2 border-2 border-dashed border-brand-300 text-brand-600 rounded-lg hover:border-brand-500 hover:bg-brand-50 cursor-pointer transition-colors"
                     >
-                      Eliminar archivo
-                    </button>
+                      + Agregar más archivos
+                    </label>
                   </div>
                 ) : (
                   <div>
@@ -443,14 +605,14 @@ export default function StudentAssignments() {
                       </svg>
                     </div>
                     <p className="text-lg font-medium text-gray-900 mb-2">
-                      Arrastra tu archivo aquí
+                      Arrastra tus archivos aquí
                     </p>
                     <p className="text-sm text-gray-500 mb-4">o</p>
                     <label
                       htmlFor="fileInput"
                       className="inline-block px-6 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 cursor-pointer"
                     >
-                      Seleccionar archivo
+                      Seleccionar archivos
                     </label>
                   </div>
                 )}
@@ -461,7 +623,7 @@ export default function StudentAssignments() {
                   type="button"
                   onClick={() => {
                     setShowUploadModal(false);
-                    setUploadFile(null);
+                    setUploadFiles([]);
                   }}
                   className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
@@ -469,10 +631,10 @@ export default function StudentAssignments() {
                 </button>
                 <button
                   type="submit"
-                  disabled={!uploadFile || uploading}
+                  disabled={uploadFiles.length === 0 || uploading}
                   className="px-6 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {uploading ? 'Entregando...' : 'Entregar Ejercicio'}
+                  {uploading ? 'Entregando...' : `Entregar ${uploadFiles.length > 0 ? `(${uploadFiles.length} archivo${uploadFiles.length > 1 ? 's' : ''})` : 'Ejercicio'}`}
                 </button>
               </div>
             </form>
