@@ -13,9 +13,8 @@ interface LiveStream {
   status: 'scheduled' | 'active' | 'LIVE';
 }
 
-// Initial Zoom window size - students can resize/drag from here
-const INITIAL_WIDTH = 960;
-const INITIAL_HEIGHT = 540;
+// Zoom Component View: Let SDK handle its own sizing
+// Students can drag and resize the window freely
 
 export default function StudentLivePage() {
   const [activeStreams, setActiveStreams] = useState<LiveStream[]>([]);
@@ -175,7 +174,7 @@ export default function StudentLivePage() {
       setJoined(true);
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      // Configure with larger initial size, draggable and resizable
+      // Let Zoom SDK handle its own sizing - just enable drag and resize
       const initConfig = {
         zoomAppRoot: meetingSDKElement,
         language: 'es-ES' as const,
@@ -183,25 +182,16 @@ export default function StudentLivePage() {
         leaveOnPageUnload: true,
         customize: {
           video: {
-            isResizable: true, // Allow student to resize
+            isResizable: true,  // Student can resize
             popper: {
-              disableDraggable: false // Allow dragging
-            },
-            viewSizes: {
-              default: {
-                width: INITIAL_WIDTH,
-                height: INITIAL_HEIGHT
-              },
-              ribbon: {
-                width: 300,
-                height: 500
-              }
+              disableDraggable: false  // Student can drag
             }
+            // No viewSizes - let Zoom use its default size
           }
         }
       };
       
-      console.log('[Join Meeting] Initializing Zoom SDK with initial size:', INITIAL_WIDTH, 'x', INITIAL_HEIGHT);
+      console.log('[Join Meeting] Initializing Zoom SDK - drag and resize enabled');
       
       await client.init(initConfig);
       console.log('[Join Meeting] ✅ Zoom SDK initialized');
@@ -266,12 +256,12 @@ export default function StudentLivePage() {
   const activeStream = activeStreams.find(s => s.status === 'active' || s.status === 'LIVE');
 
   return (
-    <div className="relative w-screen h-screen bg-gray-900">
-      {/* Stream Container - Full screen to allow Zoom dragging anywhere */}
+    <div className="flex items-center justify-center min-h-[600px] p-4">
+      {/* Stream Container - Centered in content area */}
       <div 
         ref={containerRef}
         id="zoom-sdk-container"
-        className="relative w-full h-full bg-gray-900"
+        className={`relative bg-gray-900 rounded-xl ${isFullscreen ? 'fixed inset-0 z-50' : 'w-full max-w-5xl aspect-video'}`}
       >
         {/* No Stream UI */}
         {!joined && (
