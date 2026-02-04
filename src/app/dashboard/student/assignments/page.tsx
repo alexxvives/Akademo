@@ -8,11 +8,14 @@ interface Assignment {
   id: string; title: string; description?: string; dueDate?: string; maxScore: number;
   attachmentName?: string; submissionId?: string; submittedAt?: string;
   score?: number; feedback?: string; gradedAt?: string; createdAt: string;
+  className?: string; classId?: string; 
+  uploadId?: string; // Legacy single file
+  attachmentIds?: string; // JSON array of upload IDs
 }
 
 export default function StudentAssignments() {
   const [classes, setClasses] = useState<Class[]>([]);
-  const [selectedClassId, setSelectedClassId] = useState('');
+  const [selectedClassId, setSelectedClassId] = useState(''); // Default to empty (all classes)
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -22,7 +25,7 @@ export default function StudentAssignments() {
   const [dragActive, setDragActive] = useState(false);
 
   useEffect(() => { loadClasses(); }, []);
-  useEffect(() => { if (selectedClassId) loadAssignments(); }, [selectedClassId]);
+  useEffect(() => { loadAssignments(); }, [selectedClassId]); // Load even when empty
 
   const loadClasses = async () => {
     try {
@@ -34,7 +37,7 @@ export default function StudentAssignments() {
           .filter((e: any) => e.status === 'APPROVED')
           .map((e: any) => ({ id: e.classId, name: e.className }));
         setClasses(enrolledClasses);
-        if (enrolledClasses.length > 0) setSelectedClassId(enrolledClasses[0].id);
+        // Don't set default - show all assignments
       }
     } catch (error) {
       console.error('Failed to load classes:', error);
@@ -44,9 +47,12 @@ export default function StudentAssignments() {
   };
 
   const loadAssignments = async () => {
-    if (!selectedClassId) return;
     try {
-      const res = await apiClient(`/assignments?classId=${selectedClassId}`);
+      // If no class selected, fetch all assignments
+      const url = selectedClassId 
+        ? `/assignments?classId=${selectedClassId}` 
+        : '/assignments'; // Fetch all
+      const res = await apiClient(url);
       const result = await res.json();
       if (result.success) setAssignments(result.data);
     } catch (error) {
@@ -121,7 +127,35 @@ export default function StudentAssignments() {
     setSelectedAssignment(assignment);
     setShowUploadModal(true);
   };
+  const downloadAssignmentFile = async (assignment: Assignment) => {
+    // Parse attachmentIds (GROUP_CONCAT returns comma-separated string)
+    let uploadIds: string[] = [];
+    if (assignment.attachmentIds && assignment.attachmentIds.trim()) {
+      // GROUP_CONCAT format: "id1,id2,id3" (not JSON)
+      uploadIds = assignment.attachmentIds.split(',').filter(id => id.trim());
+    }
+    if (uploadIds.length === 0 && assignment.uploadId) {
+      uploadIds = [assignment.uploadId]; // Legacy single file
+    }
 
+    if (uploadIds.length === 0) {
+      alert('No hay archivos disponibles');
+      return;
+    }
+
+    try {
+      // Open all files in new tabs (using Next.js proxy route like lesson documents)
+      for (const uploadId of uploadIds) {
+        const url = `/api/storage/serve/${uploadId}`;
+        window.open(url, '_blank');
+        // Small delay between opens to avoid popup blocking
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+    } catch (error) {
+      console.error('Failed to open files:', error);
+      alert('Error al abrir archivos');
+    }
+  };
   const pendingAssignments = assignments.filter(a => !a.submittedAt);
   const completedAssignments = assignments.filter(a => a.submittedAt);
 
@@ -196,8 +230,9 @@ export default function StudentAssignments() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Título</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Asignatura</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ejercicios</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha límite</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Puntuación máx</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
                 </tr>
               </thead>
@@ -211,6 +246,34 @@ export default function StudentAssignments() {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {assignment.className || '—'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {(() => {
+                        let fileCount = 0;
+                        if (assignment.attachmentIds && assignment.attachmentIds.trim()) {
+                          fileCount = assignment.attachmentIds.split(',').filter(id => id.trim()).length;
+                        } else if (assignment.uploadId) {
+                          fileCount = 1;
+                        }
+                        return fileCount > 0 ? (
+                          <button
+                            onClick={() => downloadAssignmentFile(assignment)}
+                            className="flex items-center gap-2 text-sm text-brand-600 hover:text-brand-700 transition-colors group"
+                          >
+                            <div className="w-8 h-10 flex items-center justify-center bg-red-50 rounded border border-red-200 group-hover:bg-red-100 transition-colors">
+                              <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                            <span className="text-xs font-medium">{fileCount} archivo{fileCount > 1 ? 's' : ''}</span>
+                          </button>
+                        ) : (
+                          <span className="text-xs text-gray-400">Sin archivo</span>
+                        );
+                      })()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {assignment.dueDate ? (
                         <div className="flex items-center">
                           <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -220,13 +283,10 @@ export default function StudentAssignments() {
                         </div>
                       ) : 'Sin fecha'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {assignment.maxScore} puntos
-                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                       <button
                         onClick={() => openUploadModal(assignment)}
-                        className="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
+                        className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
                       >
                         Entregar
                       </button>
@@ -247,6 +307,8 @@ export default function StudentAssignments() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Título</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Asignatura</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ejercicios</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Entregado</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Puntuación</th>
@@ -265,6 +327,34 @@ export default function StudentAssignments() {
                         {assignment.description && (
                           <div className="text-sm text-gray-500 truncate max-w-md">{assignment.description}</div>
                         )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {assignment.className || '—'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {(() => {
+                          let fileCount = 0;
+                          if (assignment.attachmentIds && assignment.attachmentIds.trim()) {
+                            fileCount = assignment.attachmentIds.split(',').filter(id => id.trim()).length;
+                          } else if (assignment.uploadId) {
+                            fileCount = 1;
+                          }
+                          return fileCount > 0 ? (
+                            <button
+                              onClick={() => downloadAssignmentFile(assignment)}
+                              className="flex items-center gap-2 text-sm text-brand-600 hover:text-brand-700 transition-colors group"
+                            >
+                              <div className="w-8 h-10 flex items-center justify-center bg-red-50 rounded border border-red-200 group-hover:bg-red-100 transition-colors">
+                                <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                                </svg>
+                              </div>
+                              <span className="text-xs font-medium">{fileCount} archivo{fileCount > 1 ? 's' : ''}</span>
+                            </button>
+                          ) : (
+                            <span className="text-xs text-gray-400">Sin archivo</span>
+                          );
+                        })()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {assignment.submittedAt ? new Date(assignment.submittedAt).toLocaleDateString('es-ES') : ''}
