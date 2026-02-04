@@ -177,7 +177,7 @@ export default function StudentLivePage() {
       await new Promise(resolve => setTimeout(resolve, 100));
 
       // Set minimum size for gallery view (870x500) - shows all participants
-      // Students can resize larger from here
+      // defaultViewType: 'gallery' ensures all participants are shown, not just speaker
       const initConfig = {
         zoomAppRoot: meetingSDKElement,
         language: 'es-ES' as const,
@@ -194,7 +194,8 @@ export default function StudentLivePage() {
                 width: GALLERY_MIN_WIDTH,
                 height: GALLERY_MIN_HEIGHT
               }
-            }
+            },
+            defaultViewType: 'gallery'  // Show ALL participants, not just speaker
           }
         }
       };
