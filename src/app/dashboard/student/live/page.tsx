@@ -13,8 +13,10 @@ interface LiveStream {
   status: 'scheduled' | 'active' | 'LIVE';
 }
 
-// Zoom Component View: Let SDK handle its own sizing
-// Students can drag and resize the window freely
+// Zoom Component View: Minimum size for gallery view (shows more than 2 participants)
+// According to Zoom docs: Gallery view requires minimum 870x500
+const GALLERY_MIN_WIDTH = 870;
+const GALLERY_MIN_HEIGHT = 500;
 
 export default function StudentLivePage() {
   const [activeStreams, setActiveStreams] = useState<LiveStream[]>([]);
@@ -174,7 +176,8 @@ export default function StudentLivePage() {
       setJoined(true);
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      // Let Zoom SDK handle its own sizing - just enable drag and resize
+      // Set minimum size for gallery view (870x500) - shows all participants
+      // Students can resize larger from here
       const initConfig = {
         zoomAppRoot: meetingSDKElement,
         language: 'es-ES' as const,
@@ -182,16 +185,21 @@ export default function StudentLivePage() {
         leaveOnPageUnload: true,
         customize: {
           video: {
-            isResizable: true,  // Student can resize
+            isResizable: true,  // Student can resize larger
             popper: {
               disableDraggable: false  // Student can drag
+            },
+            viewSizes: {
+              default: {
+                width: GALLERY_MIN_WIDTH,
+                height: GALLERY_MIN_HEIGHT
+              }
             }
-            // No viewSizes - let Zoom use its default size
           }
         }
       };
       
-      console.log('[Join Meeting] Initializing Zoom SDK - drag and resize enabled');
+      console.log('[Join Meeting] Initializing Zoom SDK with gallery size:', GALLERY_MIN_WIDTH, 'x', GALLERY_MIN_HEIGHT);
       
       await client.init(initConfig);
       console.log('[Join Meeting] ✅ Zoom SDK initialized');
@@ -257,11 +265,17 @@ export default function StudentLivePage() {
 
   return (
     <div className="flex items-center justify-center min-h-[600px] p-4">
-      {/* Stream Container - Centered in content area */}
+      {/* Stream Container - Sized for gallery view */}
       <div 
         ref={containerRef}
         id="zoom-sdk-container"
-        className={`relative bg-gray-900 rounded-xl ${isFullscreen ? 'fixed inset-0 z-50' : 'w-full max-w-5xl aspect-video'}`}
+        className={`relative bg-gray-900 rounded-xl ${isFullscreen ? 'fixed inset-0 z-50' : ''}`}
+        style={isFullscreen ? undefined : { 
+          width: `${GALLERY_MIN_WIDTH + 50}px`,
+          height: `${GALLERY_MIN_HEIGHT + 50}px`,
+          minWidth: `${GALLERY_MIN_WIDTH}px`,
+          minHeight: `${GALLERY_MIN_HEIGHT}px`
+        }}
       >
         {/* No Stream UI */}
         {!joined && (
