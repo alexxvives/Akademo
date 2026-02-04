@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { apiClient } from '@/lib/api-client';
 
 interface LiveStream {
@@ -13,13 +13,10 @@ interface LiveStream {
   status: 'scheduled' | 'active' | 'LIVE';
 }
 
-// Zoom SDK internal render size - this is what Zoom actually renders at
-const ZOOM_INTERNAL_WIDTH = 1000;
-const ZOOM_INTERNAL_HEIGHT = 600;
-
-// Our container size for normal view
-const CONTAINER_WIDTH = 1200;
-const CONTAINER_HEIGHT = 700;
+// Gallery view minimum: 720x411, maximum: 1440x720
+// We use a comfortable size that fits most screens
+const NORMAL_WIDTH = 1000;
+const NORMAL_HEIGHT = 600;
 
 export default function StudentLivePage() {
   const [activeStreams, setActiveStreams] = useState<LiveStream[]>([]);
@@ -28,19 +25,11 @@ export default function StudentLivePage() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showWatermark, setShowWatermark] = useState(false);
   const [userInfo, setUserInfo] = useState<{ firstName: string; lastName: string; email: string } | null>(null);
-  const [zoomScale, setZoomScale] = useState(1);
+  const [currentSize, setCurrentSize] = useState({ width: NORMAL_WIDTH, height: NORMAL_HEIGHT });
   const clientRef = useRef<any>(null);
   const initStarted = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const watermarkIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Calculate scale to fit Zoom content within container
-  const calculateScale = useCallback((containerW: number, containerH: number) => {
-    const scaleX = containerW / ZOOM_INTERNAL_WIDTH;
-    const scaleY = containerH / ZOOM_INTERNAL_HEIGHT;
-    // Use the smaller scale to ensure everything fits
-    return Math.min(scaleX, scaleY, 2); // Cap at 2x max
-  }, []);
 
   useEffect(() => {
     loadActiveStreams();
@@ -66,15 +55,13 @@ export default function StudentLivePage() {
   // Start watermark interval when joined
   useEffect(() => {
     if (joined && userInfo) {
-      // Show watermark immediately
       setShowWatermark(true);
       setTimeout(() => setShowWatermark(false), 5000);
 
-      // Then every 5 minutes
       watermarkIntervalRef.current = setInterval(() => {
         setShowWatermark(true);
         setTimeout(() => setShowWatermark(false), 5000);
-      }, 5 * 60 * 1000); // 5 minutes
+      }, 5 * 60 * 1000);
 
       return () => {
         if (watermarkIntervalRef.current) {
@@ -102,7 +89,6 @@ export default function StudentLivePage() {
     try {
       console.log('[Join Meeting] Starting join process for stream:', stream.id);
 
-      // Get user info
       const userResponse = await apiClient('/auth/me');
       const userResult = await userResponse.json();
       
@@ -114,14 +100,12 @@ export default function StudentLivePage() {
       const userName = `${user.firstName} ${user.lastName}`;
       const userEmail = user.email;
 
-      // Store user info for watermark
       setUserInfo({
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email
       });
 
-      // Get signature
       const sigResponse = await apiClient('/zoom/signature', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -143,7 +127,6 @@ export default function StudentLivePage() {
 
       const { signature } = sigResult.data;
 
-      // Import Zoom SDK
       const ZoomMtgEmbedded = await import('@zoom/meetingsdk/embedded');
       const client = ZoomMtgEmbedded.default.createClient();
       clientRef.current = client;
@@ -153,14 +136,11 @@ export default function StudentLivePage() {
         throw new Error('Meeting container element not found');
       }
       
-      // Show container FIRST
       setJoined(true);
-      
-      // Wait for DOM to update
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      // Initialize Zoom SDK with fixed internal size
-      // We'll use CSS transform to scale this to fit our container
+      // Initialize with proper gallery view dimensions
+      // Gallery view min: 720x411, max: 1440x720
       const initConfig = {
         zoomAppRoot: meetingSDKElement,
         language: 'es-ES' as const,
@@ -168,36 +148,29 @@ export default function StudentLivePage() {
         leaveOnPageUnload: true,
         customize: {
           video: {
-            isResizable: false,
+            isResizable: true, // Allow SDK to resize
             popper: {
               disableDraggable: true
             },
             viewSizes: {
               default: {
-                width: ZOOM_INTERNAL_WIDTH,
-                height: ZOOM_INTERNAL_HEIGHT
+                width: NORMAL_WIDTH,
+                height: NORMAL_HEIGHT
               },
               ribbon: {
                 width: 300,
-                height: ZOOM_INTERNAL_HEIGHT
+                height: 500
               }
             }
           }
         }
       };
-      console.log('[Join Meeting] Initializing Zoom SDK with internal size:', ZOOM_INTERNAL_WIDTH, 'x', ZOOM_INTERNAL_HEIGHT);
       
-      try {
-        await client.init(initConfig);
-        console.log('[Join Meeting] ✅ Zoom SDK initialized');
-      } catch (initError) {
-        console.error('[Join Meeting] ❌ Init failed:', initError);
-        throw initError;
-      }
+      console.log('[Join Meeting] Initializing Zoom SDK:', NORMAL_WIDTH, 'x', NORMAL_HEIGHT);
+      
+      await client.init(initConfig);
+      console.log('[Join Meeting] ✅ Zoom SDK initialized');
 
-      // Join the meeting
-      console.log('[Join Meeting] Joining meeting...');
-      
       await client.join({
         signature,
         meetingNumber: stream.zoomMeetingId,
@@ -216,48 +189,62 @@ export default function StudentLivePage() {
     }
   }
 
+  // Resize Zoom using updateVideoOptions API
+  const resizeZoom = async (width: number, height: number) => {
+    if (clientRef.current) {
+      try {
+        // Clamp to Zoom's gallery view limits
+        const clampedWidth = Math.min(Math.max(width, 720), 1440);
+        const clampedHeight = Math.min(Math.max(height, 411), 720);
+        
+        await clientRef.current.updateVideoOptions({
+          viewSizes: {
+            default: {
+              width: clampedWidth,
+              height: clampedHeight
+            }
+          }
+        });
+        setCurrentSize({ width: clampedWidth, height: clampedHeight });
+        console.log('[Zoom] Resized to:', clampedWidth, 'x', clampedHeight);
+      } catch (e) {
+        console.warn('[Zoom] Resize failed:', e);
+      }
+    }
+  };
+
   const toggleFullscreen = async () => {
     if (!containerRef.current) return;
 
     try {
       if (!document.fullscreenElement) {
         await containerRef.current.requestFullscreen();
-        setIsFullscreen(true);
       } else {
         await document.exitFullscreen();
-        setIsFullscreen(false);
       }
     } catch (err) {
       console.error('Fullscreen error:', err);
     }
   };
 
-  // Listen for fullscreen changes and recalculate scale
+  // Handle fullscreen changes - resize Zoom to fill screen
   useEffect(() => {
-    const handleFullscreenChange = () => {
+    const handleFullscreenChange = async () => {
       const isNowFullscreen = !!document.fullscreenElement;
       setIsFullscreen(isNowFullscreen);
       
-      // Calculate new scale based on container size
       if (isNowFullscreen) {
-        const scale = calculateScale(window.innerWidth, window.innerHeight);
-        setZoomScale(scale);
-        console.log('[Zoom] Fullscreen scale:', scale);
+        // Use maximum gallery view size (1440x720)
+        await resizeZoom(1440, 720);
       } else {
-        const scale = calculateScale(CONTAINER_WIDTH, CONTAINER_HEIGHT);
-        setZoomScale(scale);
-        console.log('[Zoom] Normal scale:', scale);
+        // Return to normal size
+        await resizeZoom(NORMAL_WIDTH, NORMAL_HEIGHT);
       }
     };
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
-    
-    // Set initial scale
-    const initialScale = calculateScale(CONTAINER_WIDTH, CONTAINER_HEIGHT);
-    setZoomScale(initialScale);
-    
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, [calculateScale]);
+  }, []);
 
   if (loading) {
     return (
@@ -273,15 +260,14 @@ export default function StudentLivePage() {
   const activeStream = activeStreams.find(s => s.status === 'active' || s.status === 'LIVE');
 
   return (
-    <div className="relative">
-      {/* Stream Container */}
+    <div className="relative flex justify-center">
+      {/* Stream Container - matches Zoom size exactly */}
       <div 
         ref={containerRef}
-        className="relative bg-black rounded-lg mx-auto overflow-hidden"
+        className="relative bg-black rounded-lg"
         style={{ 
-          width: isFullscreen ? '100vw' : `${CONTAINER_WIDTH}px`, 
-          height: isFullscreen ? '100vh' : `${CONTAINER_HEIGHT}px`, 
-          maxWidth: isFullscreen ? '100vw' : '100%',
+          width: isFullscreen ? '100vw' : `${currentSize.width}px`, 
+          height: isFullscreen ? '100vh' : `${currentSize.height}px`,
         }}
       >
         {/* No Stream UI */}
@@ -324,18 +310,13 @@ export default function StudentLivePage() {
           </div>
         )}
 
-        {/* Zoom Meeting Container - Fixed internal size, scaled with CSS transform */}
+        {/* Zoom Meeting Container - Let Zoom handle its own layout */}
         <div 
           id="meetingSDKElement"
           className={joined ? 'block' : 'hidden'}
           style={{ 
-            width: `${ZOOM_INTERNAL_WIDTH}px`,
-            height: `${ZOOM_INTERNAL_HEIGHT}px`,
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: `translate(-50%, -50%) scale(${zoomScale})`,
-            transformOrigin: 'center center',
+            width: '100%',
+            height: '100%',
             backgroundColor: '#000',
           }}
         />
@@ -374,23 +355,10 @@ export default function StudentLivePage() {
         )}
       </div>
       
-      {/* CSS for Zoom SDK - minimal overrides, let transform handle sizing */}
+      {/* Minimal CSS - no layout overrides */}
       <style jsx global>{`
-        /* Hide the standalone Zoom root that appears outside our container */
         #zmmtg-root {
           display: none !important;
-        }
-        
-        /* Ensure Zoom SDK content doesn't overflow its container */
-        #meetingSDKElement {
-          overflow: visible !important;
-        }
-        
-        /* Keep Zoom content at fixed size - we scale the container */
-        #meetingSDKElement > div {
-          position: relative !important;
-          width: ${ZOOM_INTERNAL_WIDTH}px !important;
-          height: ${ZOOM_INTERNAL_HEIGHT}px !important;
         }
       `}</style>
     </div>
