@@ -26,7 +26,6 @@
     "@headlessui/react": "^2.2.9",
     "@opennextjs/cloudflare": "1.14.0",
     "@stripe/stripe-js": "^8.6.1",
-    "@zoom/meetingsdk": "^5.1.0",
     "bcryptjs": "^2.4.3",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
