@@ -263,8 +263,11 @@ export default function TeacherAssignments() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
+      <div className="space-y-6 animate-pulse">
+        <div className="h-8 w-48 bg-gray-200 rounded"></div>
+        <div className="h-10 w-64 bg-gray-200 rounded-lg"></div>
+        <div className="h-32 bg-gray-200 rounded-xl"></div>
+        <div className="h-32 bg-gray-200 rounded-xl"></div>
       </div>
     );
   }

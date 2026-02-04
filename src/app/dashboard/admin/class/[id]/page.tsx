@@ -1356,7 +1356,33 @@ export default function TeacherClassPage() {
   const isReleased = (d: string) => new Date(d) <= new Date();
 
   if (loading) {
-    return <PageLoader label="Cargando clase..." />;
+    return (
+      <div className="space-y-6 animate-pulse">
+        {/* Header skeleton */}
+        <div className="h-4 w-32 bg-gray-200 rounded"></div>
+        <div className="flex items-start justify-between">
+          <div className="flex-1 space-y-3">
+            <div className="h-8 w-64 bg-gray-200 rounded"></div>
+            <div className="h-5 w-96 bg-gray-200 rounded"></div>
+          </div>
+          <div className="flex gap-3">
+            <div className="h-10 w-32 bg-gray-200 rounded-lg"></div>
+            <div className="h-10 w-40 bg-gray-200 rounded-lg"></div>
+          </div>
+        </div>
+        {/* Stats skeleton */}
+        <div className="flex gap-4">
+          <div className="h-20 flex-1 bg-gray-200 rounded-xl"></div>
+          <div className="h-20 flex-1 bg-gray-200 rounded-xl"></div>
+        </div>
+        {/* Lessons skeleton */}
+        <div className="space-y-3">
+          <div className="h-24 bg-gray-200 rounded-xl"></div>
+          <div className="h-24 bg-gray-200 rounded-xl"></div>
+          <div className="h-24 bg-gray-200 rounded-xl"></div>
+        </div>
+      </div>
+    );
   }
 
   if (!classData) {

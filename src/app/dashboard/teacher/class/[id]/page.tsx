@@ -145,7 +145,6 @@ export default function TeacherClassPage() {
   const [showStreamModal, setShowStreamModal] = useState(false);
   const [liveClasses, setLiveClasses] = useState<any[]>([]);
   const [creatingStream, setCreatingStream] = useState(false);
-  const [creatingAkademoStream, setCreatingAkademoStream] = useState(false);
   const [streamFormData, setStreamFormData] = useState({
     title: '',
   });
@@ -1350,11 +1349,9 @@ export default function TeacherClassPage() {
               lessonsCount={lessons.length}
               pendingCount={pendingEnrollments.length}
               creatingStream={creatingStream}
-              creatingAkademoStream={creatingAkademoStream}
               showPendingRequests={showPendingRequests}
               onCreateLesson={() => { router.push(`/dashboard/teacher/class/${classId}?action=create`); }}
               onCreateStream={createLiveClass}
-              onCreateAkademoStream={createAkademoLiveClass}
               onTogglePendingRequests={() => setShowPendingRequests(!showPendingRequests)}
             />
         )}
