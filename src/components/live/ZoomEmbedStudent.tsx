@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback, memo } from 'react';
-import { WatermarkOverlay } from '@/components/video/WatermarkOverlay';
+import { useEffect, useRef, useState } from 'react';
 import ZoomMtgEmbedded from '@zoom/meetingsdk/embedded';
 
 interface ZoomEmbedStudentProps {
@@ -11,181 +10,102 @@ interface ZoomEmbedStudentProps {
   userEmail: string;
   signature: string;
   zoomLink?: string;
+  onLeave?: () => void;
 }
 
-const ZoomEmbedStudentComponent = function ZoomEmbedStudent({
+export default function ZoomEmbedStudent({
   meetingNumber,
   password,
   userName,
   userEmail,
   signature,
   zoomLink,
+  onLeave,
 }: ZoomEmbedStudentProps) {
-  const renderCount = useRef(0);
-  renderCount.current++;
-  
-  console.log('[ZoomEmbedStudent] RENDER #' + renderCount.current + ' - Props:', {
-    meetingNumber,
-    userName,
-    userEmail,
-    hasSignature: !!signature,
-    signatureLength: signature?.length,
-  });
-  
-  const meetingContainerRef = useRef<HTMLDivElement>(null);
   const clientRef = useRef<ReturnType<typeof ZoomMtgEmbedded.createClient> | null>(null);
-  const [showWatermark, setShowWatermark] = useState(false);
-  const [joinComplete, setJoinComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const watermarkInterval = useRef<NodeJS.Timeout | null>(null);
-  const watermarkDisplay = useRef<NodeJS.Timeout | null>(null);
-  const joinInitiated = useRef(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Watermark logic
-  const triggerWatermark = useCallback(() => {
-    setShowWatermark(true);
-    watermarkDisplay.current = setTimeout(() => {
-      setShowWatermark(false);
-    }, 5000);
-  }, []);
-
-  // Setup watermark interval when joined
   useEffect(() => {
-    if (!joinComplete) return;
-    
-    // Initial watermark after 10 seconds
-    const initialTimeout = setTimeout(() => {
-      triggerWatermark();
-    }, 10000);
-    
-    // Random interval watermarks (every 2-5 minutes)
-    watermarkInterval.current = setInterval(() => {
-      const randomDelay = Math.random() * 180000 + 120000; // 2-5 min
-      setTimeout(triggerWatermark, randomDelay);
-    }, 300000);
-
-    return () => {
-      clearTimeout(initialTimeout);
-      if (watermarkInterval.current) clearInterval(watermarkInterval.current);
-      if (watermarkDisplay.current) clearTimeout(watermarkDisplay.current);
-    };
-  }, [joinComplete, triggerWatermark]);
-
-  // Main effect: Initialize and join meeting
-  useEffect(() => {
-    if (!signature || !meetingNumber || !meetingContainerRef.current) {
-      console.log('[ZoomEmbedStudent] Missing requirements:', { 
-        hasSignature: !!signature, 
-        hasMeetingNumber: !!meetingNumber,
-        hasContainer: !!meetingContainerRef.current 
-      });
+    if (!signature || !meetingNumber) {
+      console.log('[Zoom] Missing requirements');
       return;
     }
 
-    if (joinInitiated.current) {
-      console.log('[ZoomEmbedStudent] Join already initiated, skipping');
+    const meetingSDKElement = document.getElementById('meetingSDKElement');
+    if (!meetingSDKElement) {
+      console.log('[Zoom] Container not found');
       return;
     }
 
-    joinInitiated.current = true;
-    console.log('[ZoomEmbedStudent] Starting Zoom Meeting SDK (Component View)...');
+    console.log('[Zoom] Initializing Meeting SDK...');
 
-    const initAndJoin = async () => {
+    const startMeeting = async () => {
       try {
-        // Create the Zoom client
         const client = ZoomMtgEmbedded.createClient();
         clientRef.current = client;
-        console.log('[ZoomEmbedStudent] Client created');
 
-        // Initialize the client with our container
-        // NOTE: SDK v4.0+ requires sdkKey and signature in init(), not join()
+        // Initialize with minimal config - exactly like Zoom's official sample
         await client.init({
-          zoomAppRoot: meetingContainerRef.current!,
+          zoomAppRoot: meetingSDKElement,
           language: 'es-ES',
           patchJsMedia: true,
           leaveOnPageUnload: true,
-          customize: {
-            video: {
-              isResizable: true,
-              viewSizes: {
-                default: {
-                  width: 1000,
-                  height: 600,
-                },
-              },
-            },
-            meetingInfo: ['topic', 'host', 'participant', 'dc'],
-          },
-        });
-        console.log('[ZoomEmbedStudent] Client initialized');
-
-        console.log('[ZoomEmbedStudent] Joining meeting:', {
-          meetingNumber,
-          userName,
-          userEmail,
-          hasPassword: !!password,
-          signatureLength: signature?.length,
         });
 
-        // SDK v5.0+ join options - sdkKey is in the JWT signature now (appKey field)
-        // Don't pass sdkKey in joinOptions as it's deprecated since v4.0
+        console.log('[Zoom] Joining meeting...');
+
         await client.join({
           signature: signature,
           meetingNumber: meetingNumber,
           password: password || '',
           userName: userName,
-          userEmail: userEmail || undefined, // Don't pass empty string
+          userEmail: userEmail || undefined,
         });
 
-        console.log('[ZoomEmbedStudent] ✅ Successfully joined meeting!');
-        setJoinComplete(true);
-
-        // Listen for meeting events
-        client.on('connection-change', (payload: { state: string }) => {
-          console.log('[ZoomEmbedStudent] Connection changed:', payload);
-          if (payload.state === 'Connected') {
-            console.log('[ZoomEmbedStudent] 🎉 Fully connected to meeting!');
-          }
-        });
-
-        client.on('user-added', (payload: unknown) => {
-          console.log('[ZoomEmbedStudent] User added:', payload);
-        });
-
-        client.on('user-removed', (payload: unknown) => {
-          console.log('[ZoomEmbedStudent] User removed:', payload);
-        });
-
-        client.on('user-updated', (payload: unknown) => {
-          console.log('[ZoomEmbedStudent] User updated:', payload);
-        });
-
+        console.log('[Zoom] ✅ Joined successfully');
+        setIsLoading(false);
       } catch (err) {
-        console.error('[ZoomEmbedStudent] ❌ Error:', err);
+        console.error('[Zoom] ❌ Error:', err);
         setError(err instanceof Error ? err.message : 'Failed to join meeting');
-        joinInitiated.current = false; // Allow retry
+        setIsLoading(false);
       }
     };
 
-    initAndJoin();
+    startMeeting();
 
-    // Cleanup on unmount
+    // Cleanup
     return () => {
       if (clientRef.current) {
         try {
-          console.log('[ZoomEmbedStudent] Leaving meeting...');
           clientRef.current.leaveMeeting();
         } catch (e) {
-          console.log('[ZoomEmbedStudent] Leave error (may be expected):', e);
+          console.log('[Zoom] Leave error:', e);
         }
       }
     };
-  }, [signature, meetingNumber, password, userName, userEmail]);
+  }, [meetingNumber, signature, password, userName, userEmail]);
 
-  // Loading state
+  // Expose leave handler to window for parent access
+  useEffect(() => {
+    (window as any).zoomCustomLeave = async () => {
+      if (clientRef.current) {
+        await clientRef.current.leaveMeeting();
+      }
+      if (onLeave) {
+        onLeave();
+      } else {
+        window.location.href = '/dashboard';
+      }
+    };
+    return () => {
+      delete (window as any).zoomCustomLeave;
+    };
+  }, [onLeave]);
+
   if (!signature) {
     return (
-      <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
+      <div className="flex items-center justify-center h-full bg-gray-900">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-gray-600 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-400">Generando credenciales...</p>
@@ -194,29 +114,19 @@ const ZoomEmbedStudentComponent = function ZoomEmbedStudent({
     );
   }
 
-  // Error state
   if (error) {
     return (
-      <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
+      <div className="flex items-center justify-center h-full bg-gray-900">
         <div className="text-center max-w-md p-6">
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
           <h2 className="text-xl font-bold text-white mb-2">Error al unirse</h2>
           <p className="text-gray-400 mb-4">{error}</p>
-          <button
-            onClick={() => {
-              setError(null);
-              joinInitiated.current = false;
-            }}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Reintentar
-          </button>
           {zoomLink && (
             <a
               href={zoomLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="block mt-4 text-blue-400 hover:underline"
+              className="text-blue-400 hover:underline"
             >
               Abrir en Zoom directamente
             </a>
@@ -227,119 +137,27 @@ const ZoomEmbedStudentComponent = function ZoomEmbedStudent({
   }
 
   return (
-    <div className="absolute inset-0 bg-gray-900">
-      {/* Zoom Meeting Container - Component View renders here */}
-      <div
-        ref={meetingContainerRef}
-        id="zoom-meeting-container"
-        className="absolute inset-0"
-      />
-
-      {/* CSS for Zoom Component View */}
+    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+      {/* Zoom SDK Container - needs sized parent */}
+      <div id="meetingSDKElement"></div>
+      
+      {/* Zoom's required CSS from official docs */}
       <style jsx global>{`
-        /* Ensure Zoom container fills parent */
-        #zoom-meeting-container {
-          position: absolute !important;
-          top: 0 !important;
-          left: 0 !important;
-          right: 0 !important;
-          bottom: 0 !important;
-          display: flex !important;
-          flex-direction: column !important;
-          visibility: visible !important;
+        html, body {
+          min-width: 0 !important;
         }
-        
-        /* Zoom Component View styling */
-        .zmwebsdk-makeStyles-inMeeting-3 {
-          width: 100% !important;
-          height: 100% !important;
-          display: flex !important;
-          flex-direction: column !important;
+
+        #zmmtg-root {
+          display: none;
+          min-width: 0 !important;
         }
-        
-        /* Video container */
-        .zmwebsdk-MuiPaper-root {
-          background: transparent !important;
-        }
-        
-        /* Center all Zoom dialogs and modals */
-        div[role="dialog"],
-        .zm-modal,
-        .zm-dialog,
-        [class*="MuiDialog-root"],
-        [class*="zmwebsdk-dialog"] {
-          position: fixed !important;
-          left: 50% !important;
-          top: 50% !important;
-          transform: translate(-50%, -50%) !important;
-          z-index: 99999 !important;
-          margin: 0 !important;
-        }
-        
-        /* Ensure toolbar stays at bottom and is visible */
-        [class*="zmwebsdk-toolbar"],
-        [class*="footer-bar"],
-        .meeting-client-footer {
-          position: absolute !important;
-          bottom: 0 !important;
-          left: 0 !important;
-          right: 0 !important;
-          z-index: 1000 !important;
-          background: rgba(0, 0, 0, 0.8) !important;
-        }
-        
-        /* Video area should not cover toolbar */
-        .zmwebsdk-video-player-container,
-        [class*="video-container"] {
-          position: absolute !important;
-          top: 0 !important;
-          left: 0 !important;
-          right: 0 !important;
-          bottom: 60px !important;
-        }
-        
-        /* Recording consent dialog specific centering */
-        [class*="recording-consent"],
-        [class*="consent-dialog"] {
-          position: fixed !important;
-          left: 50% !important;
-          top: 50% !important;
-          transform: translate(-50%, -50%) !important;
-          z-index: 99999 !important;
+
+        /* Let SDK fill the container */
+        #meetingSDKElement {
+          width: 100%;
+          height: 100%;
         }
       `}</style>
-
-      {/* Watermark Overlay - Works because Component View uses regular DOM */}
-      <WatermarkOverlay
-        showWatermark={showWatermark}
-        studentName={userName}
-        studentEmail={userEmail}
-        plyrContainer={null}
-        isUnlimitedUser={false}
-      />
-
-      {/* Connecting indicator */}
-      {!joinComplete && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-900/50 pointer-events-none">
-          <div className="text-center">
-            <div className="w-12 h-12 border-4 border-gray-600 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-white">Conectando a la clase...</p>
-          </div>
-        </div>
-      )}
     </div>
   );
-};
-
-// Wrap with memo to prevent unnecessary re-renders
-const ZoomEmbedStudent = memo(ZoomEmbedStudentComponent, (prevProps, nextProps) => {
-  const shouldNotRerender = 
-    prevProps.meetingNumber === nextProps.meetingNumber &&
-    prevProps.signature === nextProps.signature &&
-    prevProps.userName === nextProps.userName &&
-    prevProps.userEmail === nextProps.userEmail;
-  
-  return shouldNotRerender;
-});
-
-export default ZoomEmbedStudent;
+}
