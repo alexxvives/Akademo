@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { apiClient } from '@/lib/api-client';
 
 interface LiveStream {
@@ -13,10 +13,9 @@ interface LiveStream {
   status: 'scheduled' | 'active' | 'LIVE';
 }
 
-// Gallery view minimum: 720x411, maximum: 1440x720
-// We use a comfortable size that fits most screens
-const NORMAL_WIDTH = 1000;
-const NORMAL_HEIGHT = 600;
+// Initial Zoom window size - students can resize/drag from here
+const INITIAL_WIDTH = 960;
+const INITIAL_HEIGHT = 540;
 
 export default function StudentLivePage() {
   const [activeStreams, setActiveStreams] = useState<LiveStream[]>([]);
@@ -25,11 +24,26 @@ export default function StudentLivePage() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showWatermark, setShowWatermark] = useState(false);
   const [userInfo, setUserInfo] = useState<{ firstName: string; lastName: string; email: string } | null>(null);
-  const [currentSize, setCurrentSize] = useState({ width: NORMAL_WIDTH, height: NORMAL_HEIGHT });
+  const [zoomPosition, setZoomPosition] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
   const clientRef = useRef<any>(null);
   const initStarted = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const watermarkIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const observerRef = useRef<MutationObserver | null>(null);
+
+  // Track Zoom window position for watermark overlay
+  const trackZoomWindow = useCallback(() => {
+    const zoomVideo = document.querySelector('[class*="react-draggable"]') as HTMLElement;
+    if (zoomVideo) {
+      const rect = zoomVideo.getBoundingClientRect();
+      setZoomPosition({
+        top: rect.top,
+        left: rect.left,
+        width: rect.width,
+        height: rect.height
+      });
+    }
+  }, []);
 
   useEffect(() => {
     loadActiveStreams();
@@ -38,6 +52,9 @@ export default function StudentLivePage() {
       clearInterval(interval);
       if (watermarkIntervalRef.current) {
         clearInterval(watermarkIntervalRef.current);
+      }
+      if (observerRef.current) {
+        observerRef.current.disconnect();
       }
     };
   }, []);
@@ -52,7 +69,7 @@ export default function StudentLivePage() {
     }
   }, [activeStreams, joined]);
 
-  // Start watermark interval when joined
+  // Start watermark interval and position tracking when joined
   useEffect(() => {
     if (joined && userInfo) {
       setShowWatermark(true);
@@ -63,13 +80,32 @@ export default function StudentLivePage() {
         setTimeout(() => setShowWatermark(false), 5000);
       }, 5 * 60 * 1000);
 
+      // Track Zoom window position continuously
+      const trackInterval = setInterval(trackZoomWindow, 100);
+
+      // Also observe DOM changes to catch resize/drag
+      observerRef.current = new MutationObserver(trackZoomWindow);
+      const meetingElement = document.getElementById('meetingSDKElement');
+      if (meetingElement) {
+        observerRef.current.observe(meetingElement, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          attributeFilter: ['style', 'class']
+        });
+      }
+
       return () => {
         if (watermarkIntervalRef.current) {
           clearInterval(watermarkIntervalRef.current);
         }
+        clearInterval(trackInterval);
+        if (observerRef.current) {
+          observerRef.current.disconnect();
+        }
       };
     }
-  }, [joined, userInfo]);
+  }, [joined, userInfo, trackZoomWindow]);
 
   async function loadActiveStreams() {
     try {
@@ -139,8 +175,7 @@ export default function StudentLivePage() {
       setJoined(true);
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      // Initialize with proper gallery view dimensions
-      // Gallery view min: 720x411, max: 1440x720
+      // Configure with larger initial size, draggable and resizable
       const initConfig = {
         zoomAppRoot: meetingSDKElement,
         language: 'es-ES' as const,
@@ -148,14 +183,14 @@ export default function StudentLivePage() {
         leaveOnPageUnload: true,
         customize: {
           video: {
-            isResizable: true, // Allow SDK to resize
+            isResizable: true, // Allow student to resize
             popper: {
-              disableDraggable: true
+              disableDraggable: false // Allow dragging
             },
             viewSizes: {
               default: {
-                width: NORMAL_WIDTH,
-                height: NORMAL_HEIGHT
+                width: INITIAL_WIDTH,
+                height: INITIAL_HEIGHT
               },
               ribbon: {
                 width: 300,
@@ -166,7 +201,7 @@ export default function StudentLivePage() {
         }
       };
       
-      console.log('[Join Meeting] Initializing Zoom SDK:', NORMAL_WIDTH, 'x', NORMAL_HEIGHT);
+      console.log('[Join Meeting] Initializing Zoom SDK with initial size:', INITIAL_WIDTH, 'x', INITIAL_HEIGHT);
       
       await client.init(initConfig);
       console.log('[Join Meeting] ✅ Zoom SDK initialized');
@@ -181,6 +216,9 @@ export default function StudentLivePage() {
 
       console.log('[Join Meeting] ✅ Successfully joined meeting!');
       
+      // Initial position tracking
+      setTimeout(trackZoomWindow, 500);
+      
     } catch (error: any) {
       console.error('[Join Meeting] ❌ ERROR:', error);
       alert(`Error al unirse a la clase: ${error.message}`);
@@ -188,30 +226,6 @@ export default function StudentLivePage() {
       setJoined(false);
     }
   }
-
-  // Resize Zoom using updateVideoOptions API
-  const resizeZoom = async (width: number, height: number) => {
-    if (clientRef.current) {
-      try {
-        // Clamp to Zoom's gallery view limits
-        const clampedWidth = Math.min(Math.max(width, 720), 1440);
-        const clampedHeight = Math.min(Math.max(height, 411), 720);
-        
-        await clientRef.current.updateVideoOptions({
-          viewSizes: {
-            default: {
-              width: clampedWidth,
-              height: clampedHeight
-            }
-          }
-        });
-        setCurrentSize({ width: clampedWidth, height: clampedHeight });
-        console.log('[Zoom] Resized to:', clampedWidth, 'x', clampedHeight);
-      } catch (e) {
-        console.warn('[Zoom] Resize failed:', e);
-      }
-    }
-  };
 
   const toggleFullscreen = async () => {
     if (!containerRef.current) return;
@@ -227,19 +241,11 @@ export default function StudentLivePage() {
     }
   };
 
-  // Handle fullscreen changes - resize Zoom to fill screen
+  // Handle fullscreen changes - Zoom is already at max size (1440x720)
+  // In fullscreen, we just center the Zoom container on a black background
   useEffect(() => {
-    const handleFullscreenChange = async () => {
-      const isNowFullscreen = !!document.fullscreenElement;
-      setIsFullscreen(isNowFullscreen);
-      
-      if (isNowFullscreen) {
-        // Use maximum gallery view size (1440x720)
-        await resizeZoom(1440, 720);
-      } else {
-        // Return to normal size
-        await resizeZoom(NORMAL_WIDTH, NORMAL_HEIGHT);
-      }
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
     };
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
@@ -260,14 +266,17 @@ export default function StudentLivePage() {
   const activeStream = activeStreams.find(s => s.status === 'active' || s.status === 'LIVE');
 
   return (
-    <div className="relative flex justify-center">
-      {/* Stream Container - matches Zoom size exactly */}
+    <div className="relative">
+      {/* Stream Container - Fixed reasonable size, not full screen */}
       <div 
         ref={containerRef}
-        className="relative bg-black rounded-lg"
-        style={{ 
-          width: isFullscreen ? '100vw' : `${currentSize.width}px`, 
-          height: isFullscreen ? '100vh' : `${currentSize.height}px`,
+        id="zoom-sdk-container"
+        className={`relative bg-gray-900 rounded-xl overflow-hidden ${isFullscreen ? 'w-screen h-screen' : ''}`}
+        style={isFullscreen ? undefined : { 
+          width: `${INITIAL_WIDTH + 40}px`, 
+          height: `${INITIAL_HEIGHT + 60}px`,
+          minWidth: '900px',
+          minHeight: '600px'
         }}
       >
         {/* No Stream UI */}
@@ -310,15 +319,11 @@ export default function StudentLivePage() {
           </div>
         )}
 
-        {/* Zoom Meeting Container - Let Zoom handle its own layout */}
+        {/* Zoom Meeting Container */}
         <div 
           id="meetingSDKElement"
-          className={joined ? 'block' : 'hidden'}
-          style={{ 
-            width: '100%',
-            height: '100%',
-            backgroundColor: '#000',
-          }}
+          className={joined ? 'block w-full h-full' : 'hidden'}
+          style={{ backgroundColor: '#1a1a1a' }}
         />
 
         {/* Fullscreen Button */}
@@ -339,21 +344,29 @@ export default function StudentLivePage() {
             )}
           </button>
         )}
-
-        {/* Watermark Overlay */}
-        {showWatermark && userInfo && (
-          <div className="absolute inset-0 pointer-events-none z-40 flex items-center justify-center">
-            <div className="bg-black/30 backdrop-blur-sm px-8 py-4 rounded-lg border border-white/20">
-              <p className="text-white text-2xl font-semibold">
-                {userInfo.firstName} {userInfo.lastName}
-              </p>
-              <p className="text-white/80 text-sm text-center mt-1">
-                {userInfo.email}
-              </p>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Tracking Watermark - Follows Zoom window position */}
+      {showWatermark && userInfo && zoomPosition && (
+        <div 
+          className="fixed pointer-events-none z-[9999] flex items-center justify-center"
+          style={{
+            top: zoomPosition.top,
+            left: zoomPosition.left,
+            width: zoomPosition.width,
+            height: zoomPosition.height,
+          }}
+        >
+          <div className="bg-black/40 backdrop-blur-sm px-6 py-3 rounded-lg border border-white/20 shadow-2xl">
+            <p className="text-white text-xl font-semibold">
+              {userInfo.firstName} {userInfo.lastName}
+            </p>
+            <p className="text-white/80 text-sm text-center mt-1">
+              {userInfo.email}
+            </p>
+          </div>
+        </div>
+      )}
       
       {/* Minimal CSS - no layout overrides */}
       <style jsx global>{`
