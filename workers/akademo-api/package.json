@@ -12,6 +12,7 @@
     "@akademo/types": "*",
     "bcryptjs": "^2.4.3",
     "hono": "^4.0.0",
+    "nanoid": "^5.0.4",
     "stripe": "^20.2.0"
   },
   "devDependencies": {
