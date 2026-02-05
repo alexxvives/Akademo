@@ -104,6 +104,7 @@ assignments.get('/', async (c) => {
           c.name as className,
           s.id as submissionId,
           s.uploadId as submissionUploadId,
+          up.storagePath as submissionStoragePath,
           s.score,
           s.feedback,
           s.submittedAt,
@@ -117,6 +118,7 @@ assignments.get('/', async (c) => {
         LEFT JOIN AssignmentAttachment aa ON a.id = aa.assignmentId
         LEFT JOIN AssignmentSubmission s ON a.id = s.assignmentId AND s.studentId = ? 
           AND s.version = (SELECT MAX(version) FROM AssignmentSubmission WHERE assignmentId = a.id AND studentId = ?)
+        LEFT JOIN Upload up ON s.uploadId = up.id
         WHERE e.userId = ? AND e.status = 'APPROVED'
         GROUP BY a.id, s.id
         ORDER BY a.dueDate DESC, a.createdAt DESC
@@ -183,6 +185,7 @@ assignments.get('/', async (c) => {
           u.fileName as attachmentName,
           s.id as submissionId,
           s.uploadId as submissionUploadId,
+          up.storagePath as submissionStoragePath,
           s.score,
           s.feedback,
           s.submittedAt,
@@ -193,6 +196,7 @@ assignments.get('/', async (c) => {
         LEFT JOIN Upload u ON a.uploadId = u.id
         LEFT JOIN AssignmentSubmission s ON a.id = s.assignmentId AND s.studentId = ?
           AND s.version = (SELECT MAX(version) FROM AssignmentSubmission WHERE assignmentId = a.id AND studentId = ?)
+        LEFT JOIN Upload up ON s.uploadId = up.id
         WHERE a.classId = ?
         ORDER BY a.dueDate DESC, a.createdAt DESC
       `;
@@ -301,7 +305,8 @@ assignments.get('/:id', async (c) => {
       SELECT 
         a.*, 
         c.name as className,
-        u.fileName as attachmentName
+        u.fileName as attachmentName,
+        u.storagePath as attachmentStoragePath
       FROM Assignment a
       JOIN Class c ON a.classId = c.id
       LEFT JOIN Upload u ON a.uploadId = u.id
@@ -336,7 +341,8 @@ assignments.get('/:id', async (c) => {
           u.firstName || ' ' || u.lastName as studentName,
           u.email as studentEmail,
           up.fileName as submissionFileName,
-          up.fileSize as submissionFileSize
+          up.fileSize as submissionFileSize,
+          up.storagePath as submissionStoragePath
         FROM AssignmentSubmission s
         JOIN User u ON s.studentId = u.id
         JOIN Upload up ON s.uploadId = up.id
@@ -350,7 +356,7 @@ assignments.get('/:id', async (c) => {
     // For students, include only their own submission (latest version)
     if (session.role === 'STUDENT') {
       const submission = await c.env.DB.prepare(`
-        SELECT s.*, up.fileName as submissionFileName
+        SELECT s.*, up.fileName as submissionFileName, up.storagePath as submissionStoragePath
         FROM AssignmentSubmission s
         LEFT JOIN Upload up ON s.uploadId = up.id
         WHERE s.assignmentId = ? AND s.studentId = ?

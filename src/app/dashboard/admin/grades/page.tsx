@@ -27,8 +27,8 @@ interface StudentGrade {
   assignmentUploadIds?: string; // Comma-separated assignment file upload IDs
   assignmentUploadId?: string; // Legacy single assignment file
   submissionUploadId?: string; // Student submission file ID
-  assignmentFileName?: string; // Assignment file name
-  submissionFileName?: string; // Student submission file name
+  assignmentStoragePath?: string; // Assignment storage path
+  submissionStoragePath?: string; // Student submission storage path
 }
 
 interface StudentAverage {
@@ -149,8 +149,8 @@ export default function AdminGrades() {
                 assignmentUploadIds: assignment.attachmentIds,
                 assignmentUploadId: assignment.uploadId,
                 submissionUploadId: sub.uploadId,
-                assignmentFileName: assignmentRes.data.attachmentName || assignment.attachmentName,
-                submissionFileName: sub.submissionFileName || sub.fileName
+                assignmentStoragePath: assignmentRes.data.attachmentStoragePath,
+                submissionStoragePath: sub.submissionStoragePath
               });
             }
           });
@@ -372,13 +372,13 @@ export default function AdminGrades() {
                               fileCount = 1;
                             }
                             
-                            const handleDownload = (fileName: string) => {
-                              window.open(`/api/documents/assignment/${fileName}`, '_blank');
+                            const handleDownload = (storagePath: string) => {
+                              window.open(`/api/documents/assignment/${storagePath}`, '_blank');
                             };
                             
-                            return fileCount > 0 && grade.assignmentFileName ? (
+                            return fileCount > 0 && grade.assignmentStoragePath ? (
                               <button
-                                onClick={() => handleDownload(grade.assignmentFileName!)}
+                                onClick={() => handleDownload(grade.assignmentStoragePath!)}
                                 className="flex items-center gap-2 text-sm text-gray-900 hover:bg-gray-50 rounded px-2 py-1 -mx-2 transition-colors"
                               >
                                 <div className="w-8 h-10 flex items-center justify-center bg-red-50 rounded border border-red-200">
@@ -394,9 +394,9 @@ export default function AdminGrades() {
                           })()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {grade.submissionFileName ? (
+                          {grade.submissionStoragePath ? (
                             <button
-                              onClick={() => window.open(`/api/documents/assignment/${grade.submissionFileName}`, '_blank')}
+                              onClick={() => window.open(`/api/documents/assignment/${grade.submissionStoragePath}`, '_blank')}
                               className="flex items-center gap-2 text-sm text-gray-900 hover:bg-gray-50 rounded px-2 py-1 -mx-2 transition-colors"
                             >
                               <div className="w-8 h-10 flex items-center justify-center bg-green-50 rounded border border-green-200">

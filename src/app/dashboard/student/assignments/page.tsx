@@ -12,7 +12,7 @@ interface Assignment {
   uploadId?: string; // Legacy single file
   attachmentIds?: string; // JSON array of upload IDs
   submissionUploadId?: string; // Student's submitted file uploadId
-}
+    submissionStoragePath?: string; // Student's submitted file storage path
 
 export default function StudentAssignments() {
   const [classes, setClasses] = useState<Class[]>([]);
@@ -338,9 +338,9 @@ export default function StudentAssignments() {
                       })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {assignment.submittedAt && assignment.submissionUploadId ? (
+                      {assignment.submittedAt && assignment.submissionStoragePath ? (
                         <a
-                          href={`/api/documents/assignment/${assignment.submissionUploadId}`}
+                          href={`/api/documents/assignment/${assignment.submissionStoragePath}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-700 transition-colors group"
@@ -463,9 +463,9 @@ export default function StudentAssignments() {
                         })()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {assignment.submittedAt && assignment.submissionUploadId ? (
+                        {assignment.submittedAt && assignment.submissionStoragePath ? (
                           <a
-                            href={`/api/documents/assignment/${assignment.submissionUploadId}`}
+                            href={`/api/documents/assignment/${assignment.submissionStoragePath}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-700 transition-colors group"
