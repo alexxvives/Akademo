@@ -1,3 +1,3 @@
-import SharedLoading from '@/components/ui/SharedLoading';
-
-export default SharedLoading;
+export default function TeacherLoading() {
+	return null;
+}

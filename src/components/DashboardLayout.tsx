@@ -373,6 +373,11 @@ export default function DashboardLayout({
             href: '/dashboard/admin/assignments', 
             iconType: 'fileText' as const,
           },
+          {
+            label: 'Calificaciones',
+            href: '/dashboard/admin/grades',
+            iconType: 'star' as const,
+          },
           { 
             label: 'Gestión de Cuentas', 
             href: '/dashboard/admin/accounts', 

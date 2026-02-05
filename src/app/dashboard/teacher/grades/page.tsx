@@ -24,9 +24,11 @@ interface StudentGrade {
   maxScore: number;
   gradedAt: string;
   className: string;
-  assignmentUploadIds?: string; // JSON array of assignment file upload IDs
+  assignmentUploadIds?: string; // Comma-separated assignment file upload IDs
   assignmentUploadId?: string; // Legacy single assignment file
   submissionUploadId?: string; // Student submission file ID
+  assignmentFileName?: string; // Assignment file name
+  submissionFileName?: string; // Student submission file name
 }
 
 interface StudentAverage {
@@ -109,7 +111,9 @@ export default function TeacherGrades() {
                 className: assignment.className || '',
                 assignmentUploadIds: assignment.attachmentIds,
                 assignmentUploadId: assignment.uploadId,
-                submissionUploadId: sub.uploadId
+                submissionUploadId: sub.uploadId,
+                assignmentFileName: assignmentRes.data.attachmentName || assignment.attachmentName,
+                submissionFileName: sub.submissionFileName || sub.fileName
               });
             }
           });
@@ -309,13 +313,13 @@ export default function TeacherGrades() {
                               fileCount = 1;
                             }
                             
-                            const handleDownload = (uploadId: string) => {
-                              window.open(`/api/storage/serve/${uploadId}`, '_blank');
+                            const handleDownload = (fileName: string) => {
+                              window.open(`/api/documents/assignment/${fileName}`, '_blank');
                             };
                             
-                            return fileCount > 0 ? (
+                            return fileCount > 0 && grade.assignmentFileName ? (
                               <button
-                                onClick={() => handleDownload(uploadIds[0])}
+                                onClick={() => handleDownload(grade.assignmentFileName!)}
                                 className="flex items-center gap-2 text-sm text-gray-900 hover:bg-gray-50 rounded px-2 py-1 -mx-2 transition-colors"
                               >
                                 <div className="w-8 h-10 flex items-center justify-center bg-red-50 rounded border border-red-200">
@@ -331,9 +335,9 @@ export default function TeacherGrades() {
                           })()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          {grade.submissionUploadId ? (
+                          {grade.submissionFileName ? (
                             <button
-                              onClick={() => window.open(`/api/storage/serve/${grade.submissionUploadId}`, '_blank')}
+                              onClick={() => window.open(`/api/documents/assignment/${grade.submissionFileName}`, '_blank')}
                               className="flex items-center gap-2 text-sm text-gray-900 hover:bg-gray-50 rounded px-2 py-1 -mx-2 transition-colors"
                             >
                               <div className="w-8 h-10 flex items-center justify-center bg-green-50 rounded border border-green-200">
