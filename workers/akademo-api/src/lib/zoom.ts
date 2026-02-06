@@ -15,13 +15,11 @@ let cachedToken: { token: string; expiresAt: number } | null = null;
 export async function getAccessToken(config?: ZoomConfig): Promise<string> {
   // If custom access token provided, use it directly
   if (config?.accessToken) {
-    console.log('[Zoom] Using custom access token');
     return config.accessToken;
   }
 
   // Check if we have a valid cached token
   if (cachedToken && cachedToken.expiresAt > Date.now()) {
-    console.log('[Zoom] Using cached access token');
     return cachedToken.token;
   }
 
@@ -29,7 +27,6 @@ export async function getAccessToken(config?: ZoomConfig): Promise<string> {
     throw new Error('Zoom configuration required to fetch access token');
   }
 
-  console.log('[Zoom] Fetching new access token...');
   
   const credentials = btoa(`${config.ZOOM_CLIENT_ID}:${config.ZOOM_CLIENT_SECRET}`);
   
@@ -49,7 +46,6 @@ export async function getAccessToken(config?: ZoomConfig): Promise<string> {
   }
 
   const data = await response.json();
-  console.log('[Zoom] ✓ Access token obtained successfully');
   
   // Cache the token (expires in ~1 hour, we cache for 50 minutes to be safe)
   cachedToken = {
@@ -81,12 +77,10 @@ export interface CreateMeetingOptions {
 
 // Create a new Zoom meeting
 export async function createZoomMeeting(options: CreateMeetingOptions): Promise<ZoomMeeting> {
-  console.log('[Zoom] Creating meeting with topic:', options.topic);
   const token = await getAccessToken(options.config);
   
   // Create meeting using /users/me/meetings (OAuth user-managed app)
   // This works with meeting:write:meeting scope (no :admin needed)
-  console.log('[Zoom] Creating meeting via /users/me/meetings...');
   const meetingResponse = await fetch('https://api.zoom.us/v2/users/me/meetings', {
     method: 'POST',
     headers: {
@@ -99,10 +93,12 @@ export async function createZoomMeeting(options: CreateMeetingOptions): Promise<
       duration: options.duration || 60,
       settings: {
         waiting_room: options.waitingRoom ?? false,
-        join_before_host: true,
+        join_before_host: false, // Students must wait for teacher to start the meeting
         mute_upon_entry: true,
         auto_recording: 'cloud', // Auto-record to cloud
         embed_password_in_join_link: true, // CRITICAL: Allows SDK to extract password automatically
+        meeting_authentication: true, // Enforce authenticated users only (account-level setting required)
+        watermark: true, // Enable watermark overlay (shows participant email on video/shared content)
       },
     }),
   });
@@ -115,9 +111,6 @@ export async function createZoomMeeting(options: CreateMeetingOptions): Promise<
   }
 
   const meeting = await meetingResponse.json();
-  console.log('[Zoom] ✓ Meeting created successfully');
-  console.log('[Zoom] Meeting ID:', meeting.id);
-  console.log('[Zoom] Join URL:', meeting.join_url);
   
   return meeting;
 }
@@ -285,11 +278,9 @@ export interface ZoomParticipantsResponse {
 
 // Get participants for a past meeting
 export async function getZoomMeetingParticipants(meetingId: string | number): Promise<ZoomParticipantsResponse | null> {
-  console.log('[Zoom] Fetching participants for meeting:', meetingId);
   const token = await getAccessToken();
   
   const url = `https://api.zoom.us/v2/past_meetings/${meetingId}/participants?page_size=300`;
-  console.log('[Zoom] API URL:', url);
   
   const response = await fetch(url, {
     headers: {
@@ -297,10 +288,8 @@ export async function getZoomMeetingParticipants(meetingId: string | number): Pr
     },
   });
 
-  console.log('[Zoom] Participants API response status:', response.status);
   
   if (response.status === 404) {
-    console.log('[Zoom] ⚠️ Meeting not found or no participant data (404)');
     return null; // Meeting not found or no participant data
   }
 
@@ -330,9 +319,6 @@ export async function getZoomMeetingParticipants(meetingId: string | number): Pr
   }
 
   const data = await response.json();
-  console.log('[Zoom] ✓ Participants fetched successfully');
-  console.log('[Zoom] Total records:', data.total_records);
-  console.log('[Zoom] Participants count:', data.participants?.length || 0);
   
   return data;
 }
@@ -342,7 +328,6 @@ export async function getZoomRecording(meetingId: string, config: ZoomConfig): P
   const token = await getAccessToken(config);
   
   // Use past_meetings endpoint to find the uuid if needed, or query recordings directly
-  console.log(`[Zoom] Fetching recordings for meeting ${meetingId}...`);
   
   const response = await fetch(`https://api.zoom.us/v2/meetings/${meetingId}/recordings`, {
     headers: {
@@ -359,7 +344,6 @@ export async function getZoomRecording(meetingId: string, config: ZoomConfig): P
   }
 
   const data = await response.json();
-  console.log('[Zoom] ✓ Recordings fetched successfully');
   return data;
 }
 
