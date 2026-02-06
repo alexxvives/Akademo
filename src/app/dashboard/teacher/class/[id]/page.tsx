@@ -2157,8 +2157,8 @@ export default function TeacherClassPage() {
 
         {/* Custom Stream Name Modal */}
         {showStreamNameModal && (
-          <div className="fixed top-0 left-0 right-0 bottom-0 bg-black/50 flex items-center justify-center z-[9999] p-4 overflow-y-auto">
-            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+          <div className="fixed top-0 left-0 right-0 bottom-0 bg-black/50 flex items-center justify-center z-[9999] overflow-y-auto">
+            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl m-4">
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Nombre del Stream</h3>
               
               <input
