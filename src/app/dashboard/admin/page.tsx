@@ -328,7 +328,7 @@ export default function AdminDashboard() {
           </div>
           
           {/* Academy + Class Filter */}
-          <div className='flex gap-3'>
+          <div className='flex flex-wrap gap-3'>
             {/* Class Filter - Shows when academy is selected */}
             {selectedAcademy !== 'all' && (
               <div className='relative'>
@@ -376,7 +376,7 @@ export default function AdminDashboard() {
         {/* Visual Analytics Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Engagement Metrics - TOP LEFT */}
-          <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full animate-fade-in">
+          <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm h-full animate-fade-in">
             <h3 className="text-lg font-semibold text-gray-900 mb-6">Participación</h3>
             {filteredStudents.length > 0 ? (
               <div className="space-y-4">
@@ -450,17 +450,17 @@ export default function AdminDashboard() {
           </div>
 
           {/* Student Summary - TOP RIGHT */}
-          <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full">
+          <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm h-full">
             <h3 className="text-lg font-semibold text-gray-900 mb-6">Estudiantes</h3>
             {filteredStudents.length > 0 || pendingEnrollments.length > 0 || rejectedCount > 0 ? (
               <div className="space-y-6">
                 <div className="text-center">
-                  <AnimatedNumber value={filteredStudents.length} className="text-5xl font-bold text-gray-900 mb-2" />
+                  <AnimatedNumber value={filteredStudents.length} className="text-3xl sm:text-3xl sm:text-5xl font-bold text-gray-900 mb-2" />
                   <div className="text-sm text-gray-500">{selectedClass === 'all' ? 'Número de matriculados' : 'matriculados en esta clase'}</div>
                 </div>
                 <div className="flex justify-between gap-4 pt-4 border-t border-gray-100">
                   <div className="flex-1 text-center group/accepted relative cursor-help">
-                    <AnimatedNumber value={Math.ceil(filteredStudents.length * 1.05)} className="text-2xl font-bold text-green-600" />
+                    <AnimatedNumber value={Math.ceil(filteredStudents.length * 1.05)} className="text-lg sm:text-lg sm:text-2xl font-bold text-green-600" />
                     <div className="text-xs text-gray-500">aceptados</div>
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800 text-slate-200 text-xs rounded-lg shadow-xl border border-slate-700 opacity-0 invisible group-hover/accepted:opacity-100 group-hover/accepted:visible transition-all duration-200 whitespace-nowrap z-20">
                       <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-2 h-2 bg-slate-800 border-b border-r border-slate-700 rotate-45"></div>
@@ -474,7 +474,7 @@ export default function AdminDashboard() {
                           ? pendingEnrollments.length 
                           : pendingEnrollments.filter(p => p.class.academyId === selectedAcademy).length)
                         : pendingEnrollments.filter(p => p.class.id === selectedClass).length} 
-                      className="text-2xl font-bold text-amber-600" 
+                      className="text-lg sm:text-lg sm:text-2xl font-bold text-amber-600" 
                     />
                     <div className="text-xs text-gray-500">pendientes</div>
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800 text-slate-200 text-xs rounded-lg shadow-xl border border-slate-700 opacity-0 invisible group-hover/pending:opacity-100 group-hover/pending:visible transition-all duration-200 whitespace-nowrap z-20">
@@ -489,7 +489,7 @@ export default function AdminDashboard() {
                           ? rejectedCount
                           : Math.round(rejectedCount * (filteredStudents.length / enrolledStudents.length)))
                         : Math.round(rejectedCount * (filteredStudents.length / enrolledStudents.length))} 
-                      className="text-2xl font-bold text-red-600" 
+                      className="text-lg sm:text-lg sm:text-2xl font-bold text-red-600" 
                     />
                     <div className="text-xs text-gray-500">rechazados</div>
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800 text-slate-200 text-xs rounded-lg shadow-xl border border-slate-700 opacity-0 invisible group-hover/rejected:opacity-100 group-hover/rejected:visible transition-all duration-200 whitespace-nowrap z-20">
@@ -511,7 +511,7 @@ export default function AdminDashboard() {
           </div>
 
           {/* Star Ratings Distribution - BOTTOM LEFT (Bar Chart) */}
-          <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full">
+          <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm h-full">
             <h3 className="text-lg font-semibold text-gray-900 mb-6">Valoraciones</h3>
             {(() => {
               if (!ratingsData || !ratingsData.lessons) {
@@ -573,7 +573,7 @@ export default function AdminDashboard() {
           </div>
 
           {/* Activity Pie Chart - BOTTOM RIGHT */}
-          <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full flex flex-col">
+          <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm h-full flex flex-col">
             <h3 className="text-lg font-semibold text-gray-900 mb-6">Actividad</h3>
             {filteredStudents.length > 0 ? (
               <div className="flex-1 flex items-center justify-center min-h-40">

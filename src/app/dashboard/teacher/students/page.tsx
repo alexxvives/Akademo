@@ -88,7 +88,7 @@ export default function StudentProgressPage() {
 
         {/* Students Grid */}
         {loading ? (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"> 
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <div key={i} className="bg-white rounded-2xl border border-gray-200 p-6 animate-pulse">
                 <div className="flex items-center gap-3 mb-4">
@@ -114,7 +114,7 @@ export default function StudentProgressPage() {
             <p className="text-gray-500">Los estudiantes aparecerán aquí cuando se inscriban en tus clases</p>
           </div>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"> 
             {students.map((student) => (
               <div
                 key={student.id}
@@ -133,7 +133,7 @@ export default function StudentProgressPage() {
 
                 {/* Progress Circle */}
                 <div className="flex items-center justify-center mb-5">
-                  <div className="relative w-28 h-28">
+                  <div className="relative w-20 h-20 sm:w-28 sm:h-28">
                     <svg className="w-full h-full transform -rotate-90">
                       <circle
                         cx="56"
@@ -165,7 +165,7 @@ export default function StudentProgressPage() {
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="text-center">
-                        <p className="text-3xl font-bold text-gray-900">{Math.round(student.averageProgress)}%</p>
+                        <p className="text-2xl sm:text-3xl font-bold text-gray-900">{Math.round(student.averageProgress)}%</p>
                         <p className="text-[10px] text-gray-600 font-medium">Progreso</p>
                       </div>
                     </div>
@@ -181,7 +181,7 @@ export default function StudentProgressPage() {
                       </svg>
                       <span className="text-xs text-gray-600 font-medium">Clases</span>
                     </div>
-                    <p className="text-2xl font-bold text-gray-900">{student.classCount}</p>
+                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{student.classCount}</p>
                   </div>
 
                   <div className="bg-white/60 backdrop-blur-sm rounded-xl p-3 border border-white">
@@ -191,7 +191,7 @@ export default function StudentProgressPage() {
                       </svg>
                       <span className="text-xs text-gray-600 font-medium">Completadas</span>
                     </div>
-                    <p className="text-2xl font-bold text-gray-900">{student.lessonsCompleted}<span className="text-sm text-gray-500">/{student.totalLessons}</span></p>
+                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{student.lessonsCompleted}<span className="text-sm text-gray-500">/{student.totalLessons}</span></p>
                   </div>
 
                   <div className="bg-white/60 backdrop-blur-sm rounded-xl p-3 border border-white">

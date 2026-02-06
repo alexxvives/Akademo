@@ -295,31 +295,31 @@ export default function AcademyStreamsPage() {
             <table className="w-full">
               <thead className="bg-gray-50/50 border-b border-gray-200">
                 <tr>
-                  <th className="text-left py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="text-left py-3 px-2 sm:px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Título
                   </th>
-                  <th className="text-left py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="text-left py-3 px-2 sm:px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Profesor
                   </th>
-                  <th className="text-left py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="text-left py-3 px-2 sm:px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Clase
                   </th>
-                  <th className="text-left py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="text-left py-3 px-2 sm:px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Estado
                   </th>
-                  <th className="text-left py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="text-left py-3 px-2 sm:px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Participantes
                   </th>
-                  <th className="text-left py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="text-left py-3 px-2 sm:px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Fecha
                   </th>
-                  <th className="text-left py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="text-left py-3 px-2 sm:px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Duración
                   </th>
-                  <th className="text-left py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="text-left py-3 px-2 sm:px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Grabación
                   </th>
-                  <th className="text-left py-4 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="text-left py-3 px-2 sm:px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Lección
                   </th>
                 </tr>
@@ -327,7 +327,7 @@ export default function AcademyStreamsPage() {
               <tbody className="divide-y divide-gray-200">
                 {filteredStreams.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center">
+                    <td colSpan={8} className="py-8 sm:py-8 sm:py-12 text-center">
                       <svg className="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                       </svg>
@@ -338,7 +338,7 @@ export default function AcademyStreamsPage() {
                 ) : (
                   filteredStreams.map((stream) => (
                   <tr key={stream.id} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="py-4 px-4">
+                    <td className="py-3 px-2 sm:px-4">
                       <div className="flex items-center gap-2">
                         {/* Delete Button */}
                         <button
@@ -393,12 +393,12 @@ export default function AcademyStreamsPage() {
                         )}
                       </div>
                     </td>
-                    <td className="py-4 px-4">
+                    <td className="py-3 px-2 sm:px-4">
                       <span className="text-sm text-gray-700">
                         {stream.teacherName || '—'}
                       </span>
                     </td>
-                    <td className="py-4 px-4">
+                    <td className="py-3 px-2 sm:px-4">
                       <Link 
                         href={`/dashboard/academy/class/${stream.classSlug || stream.classId}`}
                         className="text-brand-600 hover:text-brand-700 font-medium transition-colors"
@@ -406,20 +406,20 @@ export default function AcademyStreamsPage() {
                         {stream.className}
                       </Link>
                     </td>
-                    <td className="py-4 px-4">
+                    <td className="py-3 px-2 sm:px-4">
                       {getStatusBadge(stream.status)}
                     </td>
-                    <td className="py-4 px-4">
+                    <td className="py-3 px-2 sm:px-4">
                       {stream.participantCount != null ? (
                         <span className="text-sm text-gray-600 font-medium">{stream.participantCount}</span>
                       ) : (
                         <span className="text-sm text-gray-400">0</span>
                       )}
                     </td>
-                    <td className="py-4 px-4 text-sm text-gray-600">
+                    <td className="py-3 px-2 sm:px-4 text-sm text-gray-600">
                       {formatDate(stream.startedAt || stream.createdAt)}
                     </td>
-                    <td className="py-4 px-4">
+                    <td className="py-3 px-2 sm:px-4">
                       {stream.status === 'ended' && (stream.duration || (stream.startedAt && stream.endedAt)) ? (
                         <span className="inline-flex items-center gap-1 text-sm font-medium text-gray-900">
                           <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -431,7 +431,7 @@ export default function AcademyStreamsPage() {
                         <span className="text-sm text-gray-400">—</span>
                       )}
                     </td>
-                    <td className="py-4 px-4">
+                    <td className="py-3 px-2 sm:px-4">
                       {stream.recordingId ? (
                         <span className="inline-flex items-center gap-1 text-green-600 text-sm">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -445,7 +445,7 @@ export default function AcademyStreamsPage() {
                         <span className="text-gray-400 text-sm">—</span>
                       )}
                     </td>
-                    <td className="py-4 px-4">
+                    <td className="py-3 px-2 sm:px-4">
                       {stream.recordingId ? (
                         <button
                           onClick={() => window.location.href = `/dashboard/academy/class/${stream.classId}?createFromStream=${stream.id}`}

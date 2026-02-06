@@ -47,26 +47,26 @@ export default function ClassHeader({
         ← Volver a asignaturas
       </Link>
       
-      <div className="flex items-start justify-between mb-4 mt-0">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-4 mt-0 gap-3">
         <div className="flex-1">
           <div className="flex items-center gap-4 flex-wrap mb-2">
-            <h1 className="text-2xl font-semibold text-gray-900">{classData.name}</h1>
+            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">{classData.name}</h1>
           </div>
           {classData.description && (
-            <p className="text-gray-600 text-lg max-w-3xl">{classData.description}</p>
+            <p className="text-gray-600 text-base sm:text-lg max-w-3xl">{classData.description}</p>
           )}
         </div>
-        <div className="flex gap-3 ml-auto">
+        <div className="flex gap-2 sm:gap-3 flex-wrap">
           <button
             onClick={onCreateLesson}
-            className="px-5 py-2.5 bg-gray-900 text-white rounded-lg font-medium hover:bg-gray-800 transition-all"
+            className="px-3 py-2 sm:px-5 sm:py-2.5 bg-gray-900 text-white rounded-lg text-sm sm:text-base font-medium hover:bg-gray-800 transition-all"
           >
             + Nueva Clase
           </button>
           <button
             onClick={onCreateStream}
             disabled={isStreamDisabled}
-            className="px-5 py-2.5 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all"
+            className="px-3 py-2 sm:px-5 sm:py-2.5 bg-red-500 text-white rounded-lg text-sm sm:text-base font-medium hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all"
             title={paymentStatus === 'NOT PAID' ? 'Active su academia para usar streaming en vivo' : ''}
           >
             {creatingStream ? (

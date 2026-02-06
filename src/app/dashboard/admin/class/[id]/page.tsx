@@ -1393,7 +1393,7 @@ export default function TeacherClassPage() {
             </div>
 
             {/* Video Player and Documents Side by Side */}
-            <div className="flex gap-6 items-start mt-6">
+            <div className="flex flex-col lg:flex-row gap-6 items-start mt-6">
               {/* Video Player - Left Side */}
               <div className="flex-1 min-w-0 max-w-3xl">
                 <h3 className="font-semibold text-gray-900 mb-3 text-lg text-center">VIDEOS</h3>
@@ -1421,7 +1421,7 @@ export default function TeacherClassPage() {
 
                 {/* No videos */}
                 {selectedLesson.videos.length === 0 && (
-                  <div className="bg-gray-50 rounded-xl border border-gray-200 p-8 text-center">
+                  <div className="bg-gray-50 rounded-xl border border-gray-200 p-4 sm:p-8 text-center">
                     <p className="text-gray-600">No videos in this lesson.</p>
                   </div>
                 )}
@@ -1484,7 +1484,7 @@ export default function TeacherClassPage() {
             {/* Feedback Section - Full Width Below */}
             <div className="pt-6">
               <h3 className="font-semibold text-gray-900 mb-3 text-lg text-center">FEEDBACK</h3>
-              <div className="rounded-xl border border-gray-200 p-6 animate-in slide-in-from-top-2 shadow-sm">
+              <div className="rounded-xl border border-gray-200 p-3 sm:p-6 animate-in slide-in-from-top-2 shadow-sm">
                 <div>
                 {lessonFeedback.filter(f => f.comment && f.comment.trim().length > 0).length > 0 ? (
                   <div className="space-y-4">
@@ -1553,7 +1553,7 @@ export default function TeacherClassPage() {
             {/* Active/Scheduled Stream Banner - Shows scheduled, active, and ended streams */}
             {liveClasses.length > 0 && liveClasses[0].status !== 'recording_failed' && (
               <div className="rounded-xl p-4 bg-gray-100 border-2 border-gray-200 shadow-sm">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <span className="relative flex h-3 w-3">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -1569,7 +1569,7 @@ export default function TeacherClassPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <a
                       href={liveClasses[0].zoomStartUrl || liveClasses[0].zoomLink}
                       target="_blank"
@@ -1656,7 +1656,7 @@ export default function TeacherClassPage() {
             {showLessonForm && (
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 !m-0 p-4">
                 <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-                  <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center flex-shrink-0">
+                  <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4 flex justify-between items-center flex-shrink-0">
                     <h3 className="text-xl font-semibold text-gray-900">
                       {editingLessonId ? 'Editar Clase' : 'Crear Nueva Clase'}
                     </h3>
@@ -1670,7 +1670,7 @@ export default function TeacherClassPage() {
                     </button>
                   </div>
                   
-                  <form onSubmit={editingLessonId ? handleUpdateLesson : handleLessonCreate} className="p-6 space-y-4 overflow-y-auto flex-1">
+                  <form onSubmit={editingLessonId ? handleUpdateLesson : handleLessonCreate} className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">
                     {/* Title and Topic side by side in edit mode, Title with Publish options in create mode */}
                     <div className="grid md:grid-cols-2 gap-4">
                       <div>
@@ -2154,7 +2154,7 @@ export default function TeacherClassPage() {
               <div className="bg-white rounded-xl border border-gray-200 p-5">
                 <h3 className="font-semibold text-gray-900 mb-4">📊 Class Analytics</h3>
                 {analyticsData ? (
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                     <div className="bg-blue-50 rounded-lg p-4 text-center">
                       <div className="text-2xl font-bold text-blue-900">{analyticsData.videos?.length || 0}</div>
                       <div className="text-sm text-blue-600">Videos</div>

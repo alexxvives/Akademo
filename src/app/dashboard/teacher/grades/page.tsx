@@ -245,7 +245,7 @@ export default function TeacherGrades() {
     return (
       <div className="space-y-6">
         <h1 className="text-2xl font-semibold text-gray-900">Calificaciones</h1>
-        <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-12 text-center">
           <div className="text-gray-900 font-medium mb-2">No hay asignaturas disponibles</div>
           <p className="text-gray-500">Necesitas ser asignado como profesor de una asignatura para ver calificaciones.</p>
           <p className="text-sm text-gray-400 mt-2">Contacta con el administrador de tu academia.</p>
@@ -279,7 +279,7 @@ export default function TeacherGrades() {
       </div>
 
       {averages.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-12 text-center">
             <p className="text-gray-500">No hay calificaciones para mostrar en esta asignatura</p>
           </div>
         ) : (

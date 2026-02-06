@@ -24,8 +24,8 @@ export function BrowseAcademies({ academies, memberships, onBack, onRequest }: B
         {academies.map((academy) => {
           const alreadyRequested = memberships.some(m => m.academyName === academy.name);
           return (
-            <div key={academy.id} className="bg-white border border-gray-200 rounded-xl p-6">
-              <div className="flex items-start justify-between">
+            <div key={academy.id} className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">{academy.name}</h3>
                   {academy.description && (

@@ -83,7 +83,7 @@ export default function StudentProfile() {
       {/* Profile Info Card */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
         {/* Card Header */}
-        <div className="px-8 py-6 bg-gray-50 border-b border-gray-200">
+        <div className="px-4 sm:px-8 py-4 sm:py-6 bg-gray-50 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">Información General</h2>
@@ -129,7 +129,7 @@ export default function StudentProfile() {
         </div>
 
         {/* Card Body */}
-        <div className="px-8 py-6">
+        <div className="px-4 sm:px-8 py-4 sm:py-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             {/* Nombre */}
             <div>
@@ -200,7 +200,7 @@ export default function StudentProfile() {
       {/* Password Change Card */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
         {/* Card Header */}
-        <div className="px-8 py-6 bg-gray-50 border-b border-gray-200">
+        <div className="px-4 sm:px-8 py-4 sm:py-6 bg-gray-50 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">Seguridad</h2>
@@ -231,7 +231,7 @@ export default function StudentProfile() {
         </div>
 
         {/* Card Body */}
-        <div className="px-8 py-6">
+        <div className="px-4 sm:px-8 py-4 sm:py-6">
           {showPasswordForm && (
             <form onSubmit={handleChangePassword} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

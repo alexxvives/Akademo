@@ -362,7 +362,7 @@ export function DonutChart({
   return (
     <div>
       {title && <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>}
-      <div className="flex items-center justify-center gap-8">
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8">
         <canvas ref={canvasRef} style={{ width: `${size}px`, height: `${size}px` }} />
         <div className="space-y-2">
           {(data || []).map((item, index) => (
@@ -404,7 +404,7 @@ export function StatCard({
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-3xl font-bold text-gray-900 mt-2">{value}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-2">{value}</p>
           {subtitle && (
             <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
           )}

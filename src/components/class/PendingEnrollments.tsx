@@ -34,7 +34,7 @@ export default function PendingEnrollments({
 
   return (
     <div className="bg-gradient-to-br from-blue-50/50 to-indigo-50/50 border border-blue-200 rounded-xl overflow-hidden">
-      <div className="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 px-6 py-3 border-b border-blue-200">
+      <div className="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 px-4 sm:px-6 py-3 border-b border-blue-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">

@@ -434,7 +434,7 @@ export default function ClassPage() {
                   )}
                 </div>
                 {classData.description && (
-                  <p className="text-gray-600 text-lg max-w-3xl">{classData.description}</p>
+                  <p className="text-gray-600 text-base sm:text-lg max-w-3xl">{classData.description}</p>
                 )}
               </div>
             </div>
@@ -577,7 +577,7 @@ export default function ClassPage() {
             </div>
             
             {/* Video Player and Documents Side by Side */}
-            <div className="flex gap-6 items-start">
+            <div className="flex flex-col lg:flex-row gap-6 items-start">
               {/* Video Player - Left Side */}
               <div className="flex-1 min-w-0 max-w-3xl">
                 <h3 className="font-semibold text-gray-900 mb-3 text-lg text-center">VIDEOS</h3>

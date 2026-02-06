@@ -45,7 +45,7 @@ export function DashboardChartsGrid({
 
   if (filteredStudents.length === 0) {
     return (
-      <div className="bg-white rounded-lg border border-gray-100 p-12 text-center">
+      <div className="bg-white rounded-lg border border-gray-100 p-6 sm:p-12 text-center">
         <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-3">
           <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -146,12 +146,12 @@ export function DashboardChartsGrid({
         <h3 className="text-lg font-semibold text-gray-900 mb-6">Estudiantes</h3>
         <div className="space-y-6">
           <div className="text-center">
-            <AnimatedNumber value={filteredStudents.length} className="text-5xl font-bold text-gray-900 mb-2" />
+            <AnimatedNumber value={filteredStudents.length} className="text-3xl sm:text-5xl font-bold text-gray-900 mb-2" />
             <div className="text-sm text-gray-500">estudiantes {selectedClass === 'all' ? 'totales' : 'en esta clase'}</div>
           </div>
           <div className="flex justify-between gap-4 pt-4 border-t border-gray-100">
             <div className="flex-1 text-center group/accepted relative cursor-help">
-              <AnimatedNumber value={filteredStudents.length} className="text-2xl font-bold text-green-600" />
+              <AnimatedNumber value={filteredStudents.length} className="text-lg sm:text-2xl font-bold text-green-600" />
               <div className="text-xs text-gray-500">aceptados</div>
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800 text-slate-200 text-xs rounded-lg shadow-xl border border-slate-700 opacity-0 invisible group-hover/accepted:opacity-100 group-hover/accepted:visible transition-all duration-200 whitespace-nowrap z-20">
                 <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-2 h-2 bg-slate-800 border-b border-r border-slate-700 rotate-45"></div>
@@ -159,7 +159,7 @@ export function DashboardChartsGrid({
               </div>
             </div>
             <div className="flex-1 text-center group/pending relative cursor-help">
-              <AnimatedNumber value={pendingEnrollments.length} className="text-2xl font-bold text-amber-600" />
+              <AnimatedNumber value={pendingEnrollments.length} className="text-lg sm:text-2xl font-bold text-amber-600" />
               <div className="text-xs text-gray-500">pendientes</div>
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800 text-slate-200 text-xs rounded-lg shadow-xl border border-slate-700 opacity-0 invisible group-hover/pending:opacity-100 group-hover/pending:visible transition-all duration-200 whitespace-nowrap z-20">
                 <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-2 h-2 bg-slate-800 border-b border-r border-slate-700 rotate-45"></div>
@@ -167,7 +167,7 @@ export function DashboardChartsGrid({
               </div>
             </div>
             <div className="flex-1 text-center group/rejected relative cursor-help">
-              <AnimatedNumber value={rejectedCount} className="text-2xl font-bold text-red-600" />
+              <AnimatedNumber value={rejectedCount} className="text-lg sm:text-2xl font-bold text-red-600" />
               <div className="text-xs text-gray-500">rechazados</div>
               <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800 text-slate-200 text-xs rounded-lg shadow-xl border border-slate-700 opacity-0 invisible group-hover/rejected:opacity-100 group-hover/rejected:visible transition-all duration-200 whitespace-nowrap z-20">
                 <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-2 h-2 bg-slate-800 border-b border-r border-slate-700 rotate-45"></div>

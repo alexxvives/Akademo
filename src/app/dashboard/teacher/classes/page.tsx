@@ -145,7 +145,7 @@ export default function TeacherClasses() {
                   className="block bg-white rounded-xl border-2 border-gray-200 hover:border-brand-400 hover:shadow-xl transition-all p-6 group"
                 >
                   {/* Main card layout: content on left, badge on right */}
-                  <div className="flex items-center gap-6">
+                  <div className="flex flex-wrap items-center gap-3 sm:gap-6">
                     {/* Left side: all content */}
                     <div className="flex-1">
                       <div className="flex items-start justify-between mb-2">

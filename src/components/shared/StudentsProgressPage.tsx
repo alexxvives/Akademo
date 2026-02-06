@@ -241,14 +241,14 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
     return (
       <div className="space-y-6 pb-8">
         {/* Header */}
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-2">
-            <div className="h-8 w-56 bg-gray-200 rounded animate-pulse"></div>
-            <div className="h-4 w-40 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-8 w-48 sm:w-56 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-4 w-32 sm:w-40 bg-gray-200 rounded animate-pulse"></div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-64 bg-gray-200 rounded-lg animate-pulse"></div>
-            <div className="h-10 w-48 bg-gray-200 rounded-lg animate-pulse"></div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="h-10 w-full sm:w-64 bg-gray-200 rounded-lg animate-pulse"></div>
+            <div className="h-10 w-full sm:w-48 bg-gray-200 rounded-lg animate-pulse"></div>
           </div>
         </div>
         
@@ -341,7 +341,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
                 name="academyFilter"
                 value={selectedAcademy}
                 onChange={(e) => setSelectedAcademy(e.target.value)}
-                className="appearance-none w-56 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                className="appearance-none w-full sm:w-56 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               >
                 <option value="all">Todas las Academias</option>
                 {academies.map((academy) => (

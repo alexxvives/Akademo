@@ -737,13 +737,13 @@ export default function TeacherAssignments() {
       {/* Submissions Modal */}
       {showSubmissionsModal && selectedAssignment && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto p-6">
-            <div className="flex justify-between items-center mb-6">
+          <div className="bg-white rounded-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
               <div>
-                <h2 className="text-2xl font-semibold">{selectedAssignment.title}</h2>
+                <h2 className="text-xl sm:text-2xl font-semibold">{selectedAssignment.title}</h2>
                 <p className="text-sm text-gray-500 mt-1">{submissions.length} entregas</p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <button onClick={() => handleBulkDownload(true)}
                   className="px-4 py-2 border border-gray-900 text-gray-900 rounded-lg hover:bg-gray-50 transition-colors">
                   Descargar nuevas

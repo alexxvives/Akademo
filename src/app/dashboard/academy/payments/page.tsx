@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
@@ -489,7 +489,7 @@ export default function AcademyPaymentsPage() {
 
       {/* Unified Payments Table with hover hint */}
       <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
-        <div className="px-6 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+        <div className="px-3 sm:px-3 sm:px-6 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -502,14 +502,14 @@ export default function AcademyPaymentsPage() {
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estudiante</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clase</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Método</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Historial</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acción</th>
+              <th className="px-3 sm:px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+              <th className="px-3 sm:px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estudiante</th>
+              <th className="px-3 sm:px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clase</th>
+              <th className="px-3 sm:px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
+              <th className="px-3 sm:px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Método</th>
+              <th className="px-3 sm:px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+              <th className="px-3 sm:px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Historial</th>
+              <th className="px-3 sm:px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acción</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -519,12 +519,12 @@ export default function AcademyPaymentsPage() {
                 key={`pending-${payment.enrollmentId}`}
                 className="bg-amber-50 hover:bg-amber-100 border-l-4 border-amber-400 transition-colors"
               >
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-3 sm:px-3 sm:px-6 py-4 whitespace-nowrap">
                   <span className="px-3 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
                     Pendiente
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-3 sm:px-3 sm:px-6 py-4 whitespace-nowrap">
                   <div>
                     <div className="text-sm font-medium text-gray-900">
                       {payment.studentFirstName} {payment.studentLastName}
@@ -532,27 +532,27 @@ export default function AcademyPaymentsPage() {
                     <div className="text-sm text-gray-500">{payment.studentEmail}</div>
                   </div>
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-3 sm:px-3 sm:px-6 py-4">
                   <div className="text-sm text-gray-900">{payment.className}</div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-3 sm:px-3 sm:px-6 py-4 whitespace-nowrap">
                   <div className="text-sm font-semibold text-gray-900">
                     {formatCurrency(payment.paymentAmount, payment.currency)}
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-3 sm:px-3 sm:px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-700 capitalize">
                     {payment.paymentMethod?.toUpperCase() === 'CASH' ? 'Efectivo' : payment.paymentMethod}
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-3 sm:px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {new Date(payment.enrolledAt).toLocaleDateString('es-ES', {
                     day: 'numeric',
                     month: 'long',
                     year: 'numeric'
                   })}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-3 sm:px-3 sm:px-6 py-4 whitespace-nowrap">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -573,7 +573,7 @@ export default function AcademyPaymentsPage() {
                     Ver
                   </button>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-3 sm:px-3 sm:px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center gap-2">
                     <button
                       onClick={(e) => {
@@ -619,12 +619,12 @@ export default function AcademyPaymentsPage() {
                 }}
                 className="hover:bg-gray-50 cursor-pointer transition-colors"
               >
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-3 sm:px-3 sm:px-6 py-4 whitespace-nowrap">
                   <span className="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                     Pagado
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-3 sm:px-3 sm:px-6 py-4 whitespace-nowrap">
                   <div>
                     <div className="text-sm font-medium text-gray-900">
                       {history.studentFirstName} {history.studentLastName}
@@ -632,15 +632,15 @@ export default function AcademyPaymentsPage() {
                     <div className="text-sm text-gray-500">{history.studentEmail}</div>
                   </div>
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-3 sm:px-3 sm:px-6 py-4">
                   <div className="text-sm text-gray-900">{history.className}</div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-3 sm:px-3 sm:px-6 py-4 whitespace-nowrap">
                   <div className="text-sm font-semibold text-gray-900">
                     {formatCurrency(history.paymentAmount, history.currency)}
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-3 sm:px-3 sm:px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-700 capitalize">
                     {history.paymentMethod.toLowerCase() === 'cash' || history.paymentMethod === 'CASH'
                       ? 'Efectivo'
@@ -651,7 +651,7 @@ export default function AcademyPaymentsPage() {
                       : history.paymentMethod}
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td className="px-3 sm:px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {new Date(history.approvedAt).toLocaleDateString('es-ES', {
                     day: 'numeric',
                     month: 'long',
@@ -660,7 +660,7 @@ export default function AcademyPaymentsPage() {
                     minute: '2-digit'
                   })}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-3 sm:px-3 sm:px-6 py-4 whitespace-nowrap">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -681,7 +681,7 @@ export default function AcademyPaymentsPage() {
                     Ver
                   </button>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-3 sm:px-3 sm:px-6 py-4 whitespace-nowrap">
                   <button
                     onClick={async (e) => {
                       e.stopPropagation();
@@ -739,7 +739,7 @@ export default function AcademyPaymentsPage() {
             {/* Empty State */}
             {filteredPendingPayments.length === 0 && filteredPaymentHistory.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-6 py-12 text-center">
+                <td colSpan={8} className="px-6 py-8 sm:py-8 sm:py-12 text-center">
                   <div className="text-gray-400">
                     <svg className="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />

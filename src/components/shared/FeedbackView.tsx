@@ -121,8 +121,8 @@ export function FeedbackView({
 
   if (classes.length === 0) {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-        <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="bg-white rounded-xl border border-gray-200 p-6 sm:p-12 text-center">
+        <svg className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
         </svg>
         <h3 className="text-lg font-medium text-gray-900 mb-1">Sin retroalimentación</h3>
@@ -169,7 +169,7 @@ export function FeedbackView({
           const classHasUnread = classItem.topics.some(hasUnreadRatings);
           return (
           <div key={classItem.id} className={`bg-white rounded-xl border overflow-hidden ${classHasUnread ? 'border-green-400 ring-2 ring-green-100' : 'border-gray-200'}`}>
-            <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+            <div className="p-4 sm:p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <div className="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -185,7 +185,7 @@ export function FeedbackView({
                 <div className="flex items-center gap-4">
                   <div className="sm:text-right">
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl font-bold text-gray-900">{classItem.averageRating.toFixed(1)}</span>
+                      <span className="text-xl sm:text-2xl font-bold text-gray-900">{classItem.averageRating.toFixed(1)}</span>
                       {renderStars(Math.round(classItem.averageRating))}
                     </div>
                     <p className="text-sm text-gray-500 mt-1">{classItem.totalRatings} calificaciones</p>
@@ -202,7 +202,7 @@ export function FeedbackView({
                 <div key={topic.id}>
                   <button
                     onClick={() => toggleTopic(topic.id, topic)}
-                    className={`w-full px-6 py-4 flex items-center justify-between transition-colors ${topicHasUnread ? 'bg-green-50 hover:bg-green-100' : 'hover:bg-gray-50'}`}
+                    className={`w-full px-3 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition-colors ${topicHasUnread ? 'bg-green-50 hover:bg-green-100' : 'hover:bg-gray-50'}`}
                   >
                     <div className="flex items-center gap-3">
                       <svg
@@ -215,9 +215,9 @@ export function FeedbackView({
                       </svg>
                       <span className="font-semibold text-gray-900">{topic.name}</span>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
                       <div className="flex items-center gap-2">
-                        <span className="text-lg font-bold text-gray-900">{topic.averageRating.toFixed(1)}</span>
+                        <span className="text-base sm:text-lg font-bold text-gray-900">{topic.averageRating.toFixed(1)}</span>
                         {renderStars(Math.round(topic.averageRating))}
                       </div>
                       <span className="text-sm text-gray-500">{topic.totalRatings} calificaciones</span>
@@ -225,7 +225,7 @@ export function FeedbackView({
                   </button>
 
                   {expandedTopics.has(topic.id) && (
-                    <div className="bg-gray-50 px-6 py-4">
+                    <div className="bg-gray-50 px-3 sm:px-6 py-3 sm:py-4">
                       {topic.lessons.flatMap(lesson => lesson.ratings).length === 0 ? (
                         <p className="text-sm text-gray-500 italic text-center py-4">Sin comentarios en este tema</p>
                       ) : (
