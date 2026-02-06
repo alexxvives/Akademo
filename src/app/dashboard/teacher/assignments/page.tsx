@@ -429,11 +429,44 @@ export default function TeacherAssignments() {
 
   if (loading) {
     return (
-      <div className="space-y-6 animate-pulse">
-        <div className="h-8 w-48 bg-gray-200 rounded"></div>
-        <div className="h-10 w-64 bg-gray-200 rounded-lg"></div>
-        <div className="h-32 bg-gray-200 rounded-xl"></div>
-        <div className="h-32 bg-gray-200 rounded-xl"></div>
+      <div className="space-y-6">
+        {/* Header with title + filter + button */}
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <div className="h-8 w-48 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-4 w-40 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="h-10 w-64 bg-gray-200 rounded-lg animate-pulse"></div>
+            <div className="h-10 w-40 bg-gray-200 rounded-lg animate-pulse"></div>
+          </div>
+        </div>
+        
+        {/* Table */}
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          {/* Info banner */}
+          <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
+            <div className="h-4 w-64 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+          {/* Table header */}
+          <div className="bg-gray-50 border-b border-gray-200">
+            <div className="grid grid-cols-7 gap-4 px-6 py-3">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <div key={i} className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+              ))}
+            </div>
+          </div>
+          {/* Table rows */}
+          <div className="divide-y divide-gray-200">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="grid grid-cols-7 gap-4 px-6 py-4">
+                {Array.from({ length: 7 }).map((_, j) => (
+                  <div key={j} className="h-5 bg-gray-200 rounded animate-pulse"></div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -617,7 +650,7 @@ export default function TeacherAssignments() {
                     value={selectedClassForCreate}
                     onChange={(e) => setSelectedClassForCreate(e.target.value)}
                     required
-                    className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 appearance-none bg-white cursor-pointer"
+                    className="w-full h-[38px] px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 appearance-none bg-white cursor-pointer"
                   >
                     <option value="">Seleccionar asignatura...</option>
                     {classes.map((cls) => (
@@ -655,7 +688,8 @@ export default function TeacherAssignments() {
                       now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
                       return now.toISOString().slice(0, 16);
                     })()}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" 
+                    placeholder=""
+                    className="w-full h-[38px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" 
                   />
                 </div>
               </div>

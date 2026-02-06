@@ -568,7 +568,7 @@ export default function TeacherAssignments() {
                     value={selectedClassForCreate}
                     onChange={(e) => setSelectedClassForCreate(e.target.value)}
                     required
-                    className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 appearance-none bg-white cursor-pointer"
+                    className="w-full h-[38px] px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 appearance-none bg-white cursor-pointer"
                   >
                     <option value="">Seleccionar asignatura...</option>
                     {classes.map((cls) => (
@@ -605,7 +605,8 @@ export default function TeacherAssignments() {
                       now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
                       return now.toISOString().slice(0, 16);
                     })()}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" 
+                    placeholder=""
+                    className="w-full h-[38px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" 
                   />
                 </div>
               </div>
