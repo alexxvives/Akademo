@@ -665,7 +665,7 @@ export default function TeacherAssignments() {
                   multiple 
                   accept=".pdf"
                   onChange={(e) => setUploadFiles(Array.from(e.target.files || []))}
-                  className="w-full h-[38px] px-3 border border-gray-300 rounded-lg text-sm flex items-center focus:ring-2 focus:ring-brand-500 file:mr-4 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+                  className="w-full h-[38px] px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 file:mr-4 file:py-0.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
                 />
                 {uploadFiles.length > 0 && (
                   <div className="mt-2 space-y-1">
