@@ -102,7 +102,6 @@ export default function ProtectedVideoPlayer({
 
   // Update play state when video changes (only re-run on videoId change to avoid excessive updates)
   useEffect(() => {
-    console.log('[VideoPlayer] Updating playState from props:', initialPlayState);
     setPlayState(initialPlayState);
     setIsLocked(initialPlayState?.status === 'BLOCKED');
   }, [videoId]); // Only re-run when video changes, not when playState object reference changes
@@ -144,7 +143,6 @@ export default function ProtectedVideoPlayer({
 
         const response = await apiClient(`/bunny/video/${bunnyGuid}/stream`);
         const data = await response.json();
-        console.log('Stream API response:', data);
         
         if (data.success && data.data?.streamUrl) {
           setSignedHlsUrl(data.data.streamUrl);

@@ -674,7 +674,7 @@ export function generateDemoStats() {
   };
 }
 
-export function generateDemoStudentTimes(lessonId: string) {
+export function generateDemoStudentTimes(_lessonId: string) {
   const firstNames = ['Juan', 'María', 'Carlos', 'Ana', 'Luis', 'Carmen', 'José', 'Laura', 'Pedro', 'Isabel'];
   const lastNames = ['García', 'Rodríguez', 'Martínez', 'López', 'Sánchez', 'Pérez', 'Gómez', 'Fernández'];
   

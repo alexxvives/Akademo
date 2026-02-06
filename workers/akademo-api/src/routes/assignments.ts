@@ -1,9 +1,11 @@
 import { Hono } from 'hono';
+import { Bindings } from '../types';
 import { requireAuth } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { nanoid } from 'nanoid';
+import { validateBody, createAssignmentSchema, gradeSubmissionSchema } from '../lib/validation';
 
-const assignments = new Hono();
+const assignments = new Hono<{ Bindings: Bindings }>();
 
 // GET /assignments/all - List all assignments for teacher or academy owner (no class filter)
 assignments.get('/all', async (c) => {
@@ -215,7 +217,7 @@ assignments.get('/', async (c) => {
 });
 
 // POST /assignments - Create new assignment (teachers and academy owners)
-assignments.post('/', async (c) => {
+assignments.post('/', validateBody(createAssignmentSchema), async (c) => {
   try {
     const session = await requireAuth(c);
 
@@ -225,10 +227,6 @@ assignments.post('/', async (c) => {
 
     const body = await c.req.json();
     const { classId, title, description, dueDate, maxScore, uploadId, uploadIds } = body;
-
-    if (!classId || !title) {
-      return c.json(errorResponse('classId and title are required'), 400);
-    }
 
     // Collect all upload IDs (support both single uploadId and array uploadIds)
     let allUploadIds: string[] = [];
@@ -444,25 +442,15 @@ assignments.post('/:id/submit', async (c) => {
 });
 
 // PATCH /assignments/submissions/:submissionId/grade - Grade submission (teachers only)
-assignments.patch('/submissions/:submissionId/grade', async (c) => {
+assignments.patch('/submissions/:submissionId/grade', validateBody(gradeSubmissionSchema), async (c) => {
   const submissionId = c.req.param('submissionId');
-  console.log('\n=== GRADING REQUEST START ===');
-  console.log('[Grade PATCH] Submission ID:', submissionId);
-  console.log('[Grade PATCH] Cookie header:', c.req.header('Cookie'));
-  console.log('[Grade PATCH] Authorization header:', c.req.header('Authorization'));
-  console.log('[Grade PATCH] Origin:', c.req.header('Origin'));
-  console.log('[Grade PATCH] Referer:', c.req.header('Referer'));
   
   try {
     // Handle authentication separately to return proper 401
     let session;
     try {
-      console.log('[Grade PATCH] Calling requireAuth...');
       session = await requireAuth(c);
-      console.log('[Grade PATCH] Auth SUCCESS - User:', session.id, 'Role:', session.role, 'Email:', session.email);
     } catch (authError) {
-      console.error('[Grade PATCH] Auth FAILED:', authError);
-      console.error('[Grade PATCH] Auth error details:', JSON.stringify(authError, null, 2));
       return c.json(errorResponse('Not authenticated. Please log in.'), 401);
     }
 
@@ -471,8 +459,7 @@ assignments.patch('/submissions/:submissionId/grade', async (c) => {
     }
 
     const submissionId = c.req.param('submissionId');
-    const body = await c.req.json();
-    const { score, feedback } = body;
+    const { score, feedback } = await c.req.json();
 
     // Verify submission exists and user has access
     const submission:any = await c.env.DB.prepare(`

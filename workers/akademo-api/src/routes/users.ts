@@ -209,8 +209,6 @@ users.delete('/teacher/:id', async (c) => {
       .bind(teacherId)
       .run();
 
-    console.log(`[Delete Teacher] Successfully deleted teacher ${teacherId} by academy owner ${session.id}`);
-
     return c.json(successResponse({ message: 'Teacher deleted successfully' }));
   } catch (error: any) {
     console.error('[Delete Teacher] Error:', error);
@@ -275,8 +273,6 @@ users.patch('/teacher/:id', async (c) => {
         .run();
     }
 
-    console.log(`[Update Teacher] Successfully updated teacher ${teacherId} by academy owner ${session.id}`);
-
     return c.json(successResponse({ message: 'Teacher updated successfully' }));
   } catch (error: any) {
     console.error('[Update Teacher] Error:', error);
@@ -289,8 +285,6 @@ users.delete('/delete-account', async (c) => {
   try {
     const session = await requireAuth(c);
     const userId = session.id;
-
-    console.log('[Delete Account] User:', userId, 'Role:', session.role);
 
     // Perform different cleanup based on role
     if (session.role === 'STUDENT') {
@@ -345,8 +339,6 @@ users.delete('/delete-account', async (c) => {
 
     // Delete the user account
     await c.env.DB.prepare('DELETE FROM User WHERE id = ?').bind(userId).run();
-    
-    console.log('[Delete Account] Successfully deleted user:', userId);
     
     return c.json(successResponse({ message: 'Account deleted successfully' }));
     

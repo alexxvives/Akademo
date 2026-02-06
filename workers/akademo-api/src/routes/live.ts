@@ -138,7 +138,6 @@ live.post('/', async (c) => {
 
     // Extract password from Zoom response
     const zoomPassword = zoomMeeting.password || '';
-    console.log('[Create Live Stream] Zoom password:', zoomPassword ? '***SET***' : 'NONE');
 
     // Create livestream record with Zoom details
     const streamId = crypto.randomUUID();
@@ -200,7 +199,6 @@ live.post('/', async (c) => {
         ).run();
       }
       
-      console.log('[Create Live Stream] Created notifications for', enrolledStudents.results?.length || 0, 'students');
     } catch (notifError: any) {
       console.error('[Create Live Stream] Failed to create notifications:', notifError);
       // Don't fail the request if notifications fail
@@ -671,7 +669,6 @@ live.post('/create-lesson', async (c) => {
       recordingGuids = [stream.recordingId];
     }
 
-    console.log(`[Create Lesson] Found ${recordingGuids.length} recording segment(s)`);
 
     // Check if any recording is already used in another lesson
     for (const guid of recordingGuids) {
@@ -730,7 +727,6 @@ live.post('/create-lesson', async (c) => {
         return c.json(errorResponse(`Recording segment ${i + 1} failed to process. Please contact support.`), 400);
       }
       if (videoStatus.status === 1 || videoStatus.status === 2 || videoStatus.status === 3) {
-        console.log(`[Create Lesson] Segment ${i + 1} still processing, status: ${videoStatus.status}`);
       }
     }
 
@@ -827,7 +823,6 @@ live.delete('/:id', async (c) => {
     const session = await requireAuth(c);
     const streamId = c.req.param('id');
 
-    console.log('[Delete Stream] Request to delete stream:', streamId, 'by user:', session.id);
 
     if (!['ADMIN', 'TEACHER', 'ACADEMY'].includes(session.role)) {
       return c.json(errorResponse('Not authorized'), 403);
@@ -840,11 +835,9 @@ live.delete('/:id', async (c) => {
       .first();
 
     if (!stream) {
-      console.log('[Delete Stream] Stream not found:', streamId);
       return c.json(errorResponse('Stream not found'), 404);
     }
 
-    console.log('[Delete Stream] Found stream:', stream);
 
     // Verify ownership
     if (session.role === 'TEACHER' && stream.teacherId !== session.id) {
@@ -885,7 +878,6 @@ live.delete('/:id', async (c) => {
           recordingGuids = [stream.recordingId];
         }
 
-        console.log(`[Delete Stream] Attempting Bunny deletion of ${recordingGuids.length} segment(s)`);
         
         for (const guid of recordingGuids) {
           const bunnyResponse = await fetch(
@@ -902,7 +894,6 @@ live.delete('/:id', async (c) => {
             const bunnyError = await bunnyResponse.text();
             console.error(`[Delete Stream] Bunny deletion failed for ${guid}:`, bunnyResponse.status, bunnyError);
           } else {
-            console.log(`[Delete Stream] Successfully deleted from Bunny: ${guid}`);
           }
         }
       } catch (bunnyError: any) {
@@ -912,13 +903,11 @@ live.delete('/:id', async (c) => {
     }
 
     // Delete from database
-    console.log('[Delete Stream] Deleting from database:', streamId);
     const deleteResult = await c.env.DB
       .prepare('DELETE FROM LiveStream WHERE id = ?')
       .bind(streamId)
       .run();
 
-    console.log('[Delete Stream] Database deletion result:', deleteResult);
 
     // Verify deletion
     const verification = await c.env.DB
@@ -931,7 +920,6 @@ live.delete('/:id', async (c) => {
       return c.json(errorResponse('Failed to delete stream from database'), 500);
     }
 
-    console.log('[Delete Stream] Stream successfully deleted:', streamId);
     return c.json(successResponse({ message: 'Stream deleted successfully' }));
   } catch (error: any) {
     console.error('[Delete Stream] Error:', error);
@@ -1047,7 +1035,6 @@ live.post('/:id/check-recording', async (c) => {
       return dateA - dateB;
     });
 
-    console.log(`[Check Recording] Found ${mp4Files.length} MP4 recording file(s)`);
 
     // Upload each segment to Bunny Stream
     const bunnyGuids: string[] = [];
@@ -1057,7 +1044,6 @@ live.post('/:id/check-recording', async (c) => {
       const partSuffix = mp4Files.length > 1 ? ` - PARTE ${i + 1}` : '';
       const videoTitle = `${stream.title || 'Zoom Recording'}${partSuffix}`;
       
-      console.log(`[Check Recording] Uploading segment ${i + 1}/${mp4Files.length}: ${mp4File.id}`);
 
       // Prepare download URL safely using OAuth token
       const downloadUrl = await getZoomRecordingDownloadUrl(mp4File.download_url, zoomConfig);
@@ -1083,7 +1069,6 @@ live.post('/:id/check-recording', async (c) => {
       }
 
       const bunnyData = await bunnyResponse.json();
-      console.log(`[Check Recording] Bunny response for segment ${i + 1}:`, bunnyData);
       
       const bunnyGuid = bunnyData.guid || bunnyData.id;
 

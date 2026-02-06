@@ -317,7 +317,6 @@ export async function createBunnyLiveStream(name: string): Promise<BunnyLiveStre
   // Use live-specific API key if available
   const liveApiKey = ctx?.BUNNY_STREAM_LIVE_API_KEY || config.BUNNY_STREAM_API_KEY;
   
-  console.log('Creating live stream with library:', config.BUNNY_STREAM_LIBRARY_ID);
   
   const response = await fetch(
     `${BUNNY_API_BASE}/library/${config.BUNNY_STREAM_LIBRARY_ID}/livestreams`,

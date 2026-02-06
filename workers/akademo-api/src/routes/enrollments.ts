@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { requireAuth, requireRole } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
+import { validateBody, approveEnrollmentSchema, signDocumentSchema } from '../lib/validation';
 
 const enrollments = new Hono<{ Bindings: Bindings }>();
 
@@ -106,14 +107,10 @@ enrollments.get('/', async (c) => {
 });
 
 // POST /enrollments/sign-document - Mark document as signed
-enrollments.post('/sign-document', async (c) => {
+enrollments.post('/sign-document', validateBody(signDocumentSchema), async (c) => {
   try {
     const session = await requireAuth(c);
     const { classId } = await c.req.json();
-
-    if (!classId) {
-      return c.json(errorResponse('classId is required'), 400);
-    }
 
     // Check if enrollment exists
     const enrollment = await c.env.DB
@@ -325,14 +322,10 @@ enrollments.get('/rejected', async (c) => {
 });
 
 // PUT /enrollments/pending - Approve/Reject pending enrollment
-enrollments.put('/pending', async (c) => {
+enrollments.put('/pending', validateBody(approveEnrollmentSchema), async (c) => {
   try {
     const session = await requireAuth(c);
     const { enrollmentId, action } = await c.req.json();
-
-    if (!enrollmentId || !['APPROVE', 'REJECT'].includes(action)) {
-      return c.json(errorResponse('enrollmentId and valid action (APPROVE/REJECT) required'), 400);
-    }
 
     // Get enrollment details including class owner
     const enrollment = await c.env.DB
@@ -547,12 +540,9 @@ enrollments.put('/history/:id/reverse', async (c) => {
 // POST /enrollments/leave - Student leaves a class (cancels enrollment & subscription)
 enrollments.post('/leave', async (c) => {
   try {
-    console.log('[Leave Class] Request received');
     const session = await requireAuth(c);
-    console.log('[Leave Class] Session:', session);
     
     const { classId } = await c.req.json();
-    console.log('[Leave Class] ClassId:', classId);
 
     if (!classId) {
       return c.json(errorResponse('classId is required'), 400);
@@ -565,13 +555,11 @@ enrollments.post('/leave', async (c) => {
     }
 
     // Check if enrollment exists
-    console.log('[Leave Class] Checking enrollment...');
     const enrollment: any = await c.env.DB
       .prepare('SELECT * FROM ClassEnrollment WHERE userId = ? AND classId = ?')
       .bind(session.id, classId)
       .first();
 
-    console.log('[Leave Class] Enrollment found:', enrollment);
 
     if (!enrollment) {
       return c.json(errorResponse('Enrollment not found'), 404);
@@ -589,7 +577,6 @@ enrollments.post('/leave', async (c) => {
           });
           
           await stripeClient.subscriptions.cancel(enrollment.stripeSubscriptionId);
-          console.log('[Leave Class] Stripe subscription cancelled:', enrollment.stripeSubscriptionId);
         }
       } catch (stripeError: any) {
         console.error('[Leave Class] Stripe cancellation error:', stripeError);

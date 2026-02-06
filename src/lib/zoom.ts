@@ -25,11 +25,9 @@ let cachedToken: { token: string; expiresAt: number } | null = null;
 async function getAccessToken(): Promise<string> {
   // Check if we have a valid cached token
   if (cachedToken && cachedToken.expiresAt > Date.now()) {
-    console.log('[Zoom] Using cached access token');
     return cachedToken.token;
   }
 
-  console.log('[Zoom] Fetching new access token...');
   const config = getConfig();
   
   const credentials = btoa(`${config.ZOOM_CLIENT_ID}:${config.ZOOM_CLIENT_SECRET}`);
@@ -50,7 +48,6 @@ async function getAccessToken(): Promise<string> {
   }
 
   const data = await response.json();
-  console.log('[Zoom] ✓ Access token obtained successfully');
   
   // Cache the token (expires in ~1 hour, we cache for 50 minutes to be safe)
   cachedToken = {
@@ -81,11 +78,9 @@ export interface CreateMeetingOptions {
 
 // Create a new Zoom meeting
 export async function createZoomMeeting(options: CreateMeetingOptions): Promise<ZoomMeeting> {
-  console.log('[Zoom] Creating meeting with topic:', options.topic);
   const token = await getAccessToken();
   
   // First, get the current user (me)
-  console.log('[Zoom] Fetching user info...');
   const userResponse = await fetch('https://api.zoom.us/v2/users/me', {
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -101,10 +96,8 @@ export async function createZoomMeeting(options: CreateMeetingOptions): Promise<
 
   const user = await userResponse.json();
   const userId = user.id;
-  console.log('[Zoom] ✓ User ID:', userId);
 
   // Create the meeting
-  console.log('[Zoom] Creating meeting for user:', userId);
   const meetingResponse = await fetch(`https://api.zoom.us/v2/users/${userId}/meetings`, {
     method: 'POST',
     headers: {
@@ -132,9 +125,6 @@ export async function createZoomMeeting(options: CreateMeetingOptions): Promise<
   }
 
   const meeting = await meetingResponse.json();
-  console.log('[Zoom] ✓ Meeting created successfully');
-  console.log('[Zoom] Meeting ID:', meeting.id);
-  console.log('[Zoom] Join URL:', meeting.join_url);
   
   return meeting;
 }
@@ -302,11 +292,9 @@ export interface ZoomParticipantsResponse {
 
 // Get participants for a past meeting
 export async function getZoomMeetingParticipants(meetingId: string | number): Promise<ZoomParticipantsResponse | null> {
-  console.log('[Zoom] Fetching participants for meeting:', meetingId);
   const token = await getAccessToken();
   
   const url = `https://api.zoom.us/v2/past_meetings/${meetingId}/participants?page_size=300`;
-  console.log('[Zoom] API URL:', url);
   
   const response = await fetch(url, {
     headers: {
@@ -314,10 +302,8 @@ export async function getZoomMeetingParticipants(meetingId: string | number): Pr
     },
   });
 
-  console.log('[Zoom] Participants API response status:', response.status);
   
   if (response.status === 404) {
-    console.log('[Zoom] ⚠️ Meeting not found or no participant data (404)');
     return null; // Meeting not found or no participant data
   }
 
@@ -339,7 +325,7 @@ export async function getZoomMeetingParticipants(meetingId: string | number): Pr
       if (errorData.code === 4711 || errorData.message?.includes('does not contain scopes')) {
         errorMessage = 'Error de configuración de Zoom: El scope "meeting:read:list_past_participants:admin" no está habilitado. Por favor, ve a https://marketplace.zoom.us/, encuentra tu Server-to-Server OAuth app, ve a la pestaña "Scopes" y agrega el scope requerido.';
       }
-    } catch (e) {
+    } catch {
       // Not JSON, use original error
     }
     
@@ -347,9 +333,6 @@ export async function getZoomMeetingParticipants(meetingId: string | number): Pr
   }
 
   const data = await response.json();
-  console.log('[Zoom] ✓ Participants fetched successfully');
-  console.log('[Zoom] Total records:', data.total_records);
-  console.log('[Zoom] Participants count:', data.participants?.length || 0);
   
   return data;
 }

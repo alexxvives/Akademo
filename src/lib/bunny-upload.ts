@@ -51,7 +51,6 @@ export async function uploadToBunny({
     throw new Error('Failed to create video: No videoGuid returned from server');
   }
 
-  console.log('[Bunny Upload] Video created with GUID:', videoGuid);
 
   // Get API URL for upload
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://akademo-api.alexxvives.workers.dev';

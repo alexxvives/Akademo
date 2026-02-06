@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { requireAuth } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
+import { validateBody, createRatingSchema } from '../lib/validation';
 
 const ratings = new Hono<{ Bindings: Bindings }>();
 
@@ -209,8 +210,6 @@ ratings.get('/', async (c) => {
     const session = await requireAuth(c);
     const lessonId = c.req.query('lessonId');
     const classId = c.req.query('classId');
-    console.log('[Ratings] Session:', session.id, session.role, 'lessonId:', lessonId, 'classId:', classId);
-
     // If lessonId is provided, return student's own rating for that lesson
     if (lessonId && session.role === 'STUDENT') {
       const rating = await c.env.DB.prepare(`
@@ -224,7 +223,6 @@ ratings.get('/', async (c) => {
 
     // Only Teachers, Academy owners, and Admins can see teaching stats
     if (session.role !== 'TEACHER' && session.role !== 'ACADEMY' && session.role !== 'ADMIN') {
-      console.log('[Ratings] Forbidden - role:', session.role);
       return c.json(errorResponse('Forbidden'), 403);
     }
 
@@ -248,9 +246,6 @@ ratings.get('/', async (c) => {
         whereClause += ' AND c.id = ?';
         queryParams.push(classId);
     }
-
-    console.log('[Ratings] Running query with params:', queryParams);
-
     // Get average rating and count
     const stats = await c.env.DB.prepare(`
         SELECT 
@@ -262,9 +257,6 @@ ratings.get('/', async (c) => {
         LEFT JOIN LessonRating lr ON lr.lessonId = l.id
         ${whereClause}
     `).bind(...queryParams).first();
-
-    console.log('[Ratings] Stats:', stats);
-
     // Get recent ratings
     const recent = await c.env.DB.prepare(`
         SELECT 
@@ -286,9 +278,6 @@ ratings.get('/', async (c) => {
         ORDER BY lr.createdAt DESC
         LIMIT 50
     `).bind(...queryParams).all();
-
-    console.log('[Ratings] Recent ratings count:', recent.results?.length || 0);
-
     // Get per-lesson ratings aggregated
     const lessonRatings = await c.env.DB.prepare(`
         SELECT 
@@ -326,17 +315,13 @@ ratings.get('/', async (c) => {
 });
 
 // POST /ratings - Submit or update lesson rating and feedback
-ratings.post('/', async (c) => {
+ratings.post('/', validateBody(createRatingSchema), async (c) => {
   try {
     const session = await requireAuth(c);
     const { lessonId, rating, feedback } = await c.req.json();
 
     if (session.role !== 'STUDENT') {
       return c.json(errorResponse('Only students can rate lessons'), 403);
-    }
-
-    if (!lessonId || !rating || rating < 1 || rating > 5) {
-      return c.json(errorResponse('Valid lessonId and rating (1-5) required'), 400);
     }
 
     // Verify student is enrolled in the class
@@ -369,10 +354,10 @@ ratings.post('/', async (c) => {
     const now = new Date().toISOString();
 
     if (existing) {
-      // Update existing rating
+      // Update existing rating and mark as unread so teacher/academy sees the edit
       await c.env.DB.prepare(`
         UPDATE LessonRating
-        SET rating = ?, comment = ?
+        SET rating = ?, comment = ?, isRead = 0
         WHERE id = ?
       `).bind(rating, feedback || null, existing.id).run();
     } else {

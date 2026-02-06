@@ -2,18 +2,17 @@ import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { requireAuth } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
+import { validateBody, createClassSchema, updateClassSchema } from '../lib/validation';
 
 const classes = new Hono<{ Bindings: Bindings }>();
 
 // GET /classes - Get user's classes
 classes.get('/', async (c) => {
   try {
-    console.log('[Classes GET] Request received');
     const academyIdParam = c.req.query('academyId'); // For public/signup filtering
     
     // If academyId is provided, return classes for that academy (public access for signup)
     if (academyIdParam) {
-      console.log('[Classes GET] Public academyId query:', academyIdParam);
       const query = `
         SELECT 
           c.id,
@@ -29,12 +28,10 @@ classes.get('/', async (c) => {
         ORDER BY c.name ASC
       `;
       const result = await c.env.DB.prepare(query).bind(academyIdParam).all();
-      console.log('[Classes GET] Public query result:', result.results?.length || 0, 'classes');
       return c.json(successResponse(result.results || []));
     }
 
     const session = await requireAuth(c);
-    console.log('[Classes GET] Authenticated user:', session.id, 'Role:', session.role);
 
     let query = '';
     let params: any[] = [];
@@ -122,7 +119,6 @@ classes.get('/', async (c) => {
     }
 
     const result = await c.env.DB.prepare(query).bind(...params).all();
-    console.log('[Classes GET] Query executed successfully. Results:', result.results?.length || 0, 'classes');
 
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
@@ -146,16 +142,11 @@ function generateSlug(name: string): string {
 }
 
 // POST /classes - Create a new class
-classes.post('/', async (c) => {
+classes.post('/', validateBody(createClassSchema), async (c) => {
   try {
     const session = await requireAuth(c);
     const body = await c.req.json();
-
     const { name, description, academyId, teacherId, whatsappGroupLink } = body;
-
-    if (!name || !academyId) {
-      return c.json(errorResponse('Name and academyId are required'), 400);
-    }
 
     // Check if user has permission to create class in this academy
     let hasPermission = false;
@@ -350,7 +341,7 @@ classes.get('/:id', async (c) => {
 });
 
 // PATCH /classes/:id - Update class details
-classes.patch('/:id', async (c) => {
+classes.patch('/:id', validateBody(updateClassSchema), async (c) => {
   try {
     const session = await requireAuth(c);
     const classId = c.req.param('id');

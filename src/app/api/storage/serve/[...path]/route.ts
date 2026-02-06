@@ -19,7 +19,6 @@ export async function GET(
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://akademo-api.alexxvives.workers.dev';
     const storageUrl = `${apiUrl}/storage/serve/${path}`;
     
-    console.log('[Storage Proxy] Forwarding to:', storageUrl);
     
     const response = await fetch(storageUrl);
     

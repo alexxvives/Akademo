@@ -113,13 +113,11 @@ bunny.put('/video/upload', async (c) => {
     const apiKey = c.env.BUNNY_STREAM_API_KEY;
     const libraryId = c.env.BUNNY_STREAM_LIBRARY_ID;
 
-    console.log('[Bunny Upload] Starting upload for videoGuid:', videoGuid);
 
     // Read body as ArrayBuffer to avoid stream consumption issues
     let bodyBuffer: ArrayBuffer;
     try {
       bodyBuffer = await c.req.arrayBuffer();
-      console.log('[Bunny Upload] Body size:', bodyBuffer.byteLength, 'bytes');
     } catch (bodyError: any) {
       console.error('[Bunny Upload] Failed to read body:', bodyError);
       return c.json(errorResponse(`Failed to read upload body: ${bodyError.message}`), 400);
@@ -130,7 +128,6 @@ bunny.put('/video/upload', async (c) => {
     }
 
     // Forward upload to Bunny
-    console.log('[Bunny Upload] Forwarding to Bunny API...');
     const response = await fetch(
       `https://video.bunnycdn.com/library/${libraryId}/videos/${videoGuid}`,
       {
@@ -155,7 +152,6 @@ bunny.put('/video/upload', async (c) => {
       return c.json(errorResponse(`Upload failed: ${error}`), response.status);
     }
 
-    console.log('[Bunny Upload] Upload successful for videoGuid:', videoGuid);
     return c.json(successResponse({ videoGuid }));
   } catch (error: any) {
     console.error('[Bunny Upload] Error:', error);

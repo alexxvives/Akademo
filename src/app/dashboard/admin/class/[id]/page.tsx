@@ -11,13 +11,11 @@ import { multipartUpload } from '@/lib/multipart-upload';
 import { uploadToBunny } from '@/lib/bunny-upload';
 import { getBunnyThumbnailUrl } from '@/lib/bunny-stream';
 import ConfirmModal from '@/components/ConfirmModal';
+import { useTranscodingPoll } from '@/hooks/useTranscodingPoll';
+import { formatDuration, formatDate, isReleased } from '@/lib/formatters';
 
-// Import components
-import ClassHeader from './components/ClassHeader';
-import PendingEnrollments from './components/PendingEnrollments';
-import LessonsList from './components/LessonsList';
-import TopicsLessonsList from './components/TopicsLessonsList';
-import StudentsList from './components/StudentsList';
+// Import shared components
+import { ClassHeader, PendingEnrollments, LessonsList, TopicsLessonsList, StudentsList } from '@/components/class';
 
 interface Topic {
   id: string;
@@ -156,36 +154,7 @@ export default function TeacherClassPage() {
   }, [classId]);
 
   // Poll for transcoding status updates
-  useEffect(() => {
-    const hasTranscoding = lessons.some(l => l.isTranscoding === 1);
-    if (!hasTranscoding || !classData?.id) return;
-
-    const interval = setInterval(async () => {
-      try {
-        // Use checkTranscoding=true to update Bunny status before returning lessons
-        // Use classData.id (actual UUID) instead of classId from URL (could be slug)
-        const lessonsRes = await apiClient(`/lessons?classId=${classData.id}&checkTranscoding=true`);
-        const lessonsResult = await lessonsRes.json();
-        if (lessonsResult.success && lessonsResult.data) {
-          // Preserve local upload state when updating from server
-          setLessons(prev => {
-            const newLessons = lessonsResult.data.map((serverLesson: Lesson) => {
-              const localLesson = prev.find(l => l.id === serverLesson.id);
-              if (localLesson?.isUploading) {
-                return { ...serverLesson, isUploading: true, uploadProgress: localLesson.uploadProgress };
-              }
-              return serverLesson;
-            });
-            return newLessons;
-          });
-        }
-      } catch (e) {
-        console.error('Failed to poll transcoding status:', e);
-      }
-    }, 10000); // Check every 10 seconds
-
-    return () => clearInterval(interval);
-  }, [lessons, classData?.id]);
+  useTranscodingPoll(lessons, classData?.id, setLessons);
 
   // Handle URL params for lesson/video selection
   useEffect(() => {
@@ -247,14 +216,12 @@ export default function TeacherClassPage() {
           // Find the stream that has this recordingId
           const matchingStream = recordings.find((r: any) => r.recordingId === recordingId);
           if (matchingStream) {
-            console.log('[Debug] Found matching stream:', matchingStream);
             setLessonFormData(prev => ({
               ...prev,
               selectedStreamRecording: matchingStream.id, // Use stream.id as the value
               title: decodeURIComponent(streamTitle),
             }));
           } else {
-            console.log('[Debug] No matching stream found for recordingId:', recordingId);
           }
         }
       });
@@ -271,8 +238,6 @@ export default function TeacherClassPage() {
         }
       });
       const result = await response.json();
-      console.log('[Debug] History response:', result);
-      console.log('[Debug] Current Class ID:', classId);
       
       if (result.success && result.data) {
         // Filter streams that:
@@ -282,10 +247,8 @@ export default function TeacherClassPage() {
           // Check both classId and classSlug
           const matchClass = s.classId === classId || s.classSlug === classId;
           const hasRecording = (s.status === 'ended' || (s.recordingId && s.recordingId.length > 5));
-          console.log(`[Debug] Stream ${s.id}: ClassMatch=${matchClass} (${s.classId} vs ${classId}), HasRec=${hasRecording}, Status=${s.status}, RecId=${s.recordingId}`);
           return matchClass && hasRecording;
         });
-        console.log('[Debug] Filtered recordings:', recordingsForClass);
         setAvailableStreamRecordings(recordingsForClass);
         return recordingsForClass; // Return the recordings for the useEffect
       }
@@ -697,13 +660,8 @@ export default function TeacherClassPage() {
   const selectVideoInLesson = (video: any) => {
     if (!selectedLesson) return;
     
-    console.log('[Teacher Video Switch] Starting video switch');
-    console.log('[Teacher Video Switch] Current video:', selectedVideo?.id, selectedVideo?.title);
-    console.log('[Teacher Video Switch] Target video:', video.id, video.title);
-    console.log('[Teacher Video Switch] Lesson:', selectedLesson.id);
     
     const newUrl = `/dashboard/admin/class/${classId}?lesson=${selectedLesson.id}&watch=${video.id}`;
-    console.log('[Teacher Video Switch] Navigating to:', newUrl);
     
     // Use soft navigation with key prop on player to force remount
     router.push(newUrl);
@@ -1347,13 +1305,7 @@ export default function TeacherClassPage() {
     }
   };
 
-  const formatDuration = (s: number) => {
-    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
-    return h > 0 ? `${h}h ${m}m` : `${m}m`;
-  };
 
-  const formatDate = (d: string) => new Date(d).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
-  const isReleased = (d: string) => new Date(d) <= new Date();
 
   if (loading) {
     return (
@@ -1404,9 +1356,7 @@ export default function TeacherClassPage() {
       {!selectedLesson && (
           <ClassHeader 
               classData={classData}
-              classId={classId}
-              lessonsCount={lessons.length}
-              pendingCount={pendingEnrollments.length}
+              backLink="/dashboard/admin/classes"
               creatingStream={creatingStream}
               showPendingRequests={showPendingRequests}
               paymentStatus={paymentStatus}
@@ -1660,11 +1610,6 @@ export default function TeacherClassPage() {
                     <button
                       onClick={async () => {
                         try {
-                          console.log('Sending notification with data:', {
-                            classId: classData?.id,
-                            liveStreamId: liveClasses[0].id,
-                            message: `Clase en vivo: ${liveClasses[0].title}`
-                          });
                           const res = await apiClient('/notifications', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -1675,7 +1620,6 @@ export default function TeacherClassPage() {
                             }),
                           });
                           const result = await res.json();
-                          console.log('Notification response:', result);
                           if (res.ok) {
                             alert(result.data?.message || 'Estudiantes notificados');
                           } else {

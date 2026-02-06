@@ -131,7 +131,6 @@ export default function JoinPage() {
         setTimeout(() => inputRefs.current[0]?.focus(), 100);
         // For testing: show code in console
         if (result.data.code) {
-          console.log('Verification code:', result.data.code);
         }
       } else {
         setAuthError(result.error || 'Error al enviar código');

@@ -65,22 +65,15 @@ export default function AcademyJoinPage() {
 
   const loadAcademyData = async () => {
     try {
-      console.log('[Academy Join] Loading academy:', academyId);
       const response = await apiClient(`/auth/join/academy/${academyId}`);
       
-      console.log('[Academy Join] Response status:', response.status);
-      console.log('[Academy Join] Response URL:', response.url);
       
       const text = await response.text();
-      console.log('[Academy Join] Response text:', text);
       
       try {
         const result = JSON.parse(text);
-        console.log('[Academy Join] API Response:', result);
         
         if (result.success) {
-          console.log('[Academy Join] Success! Academy:', result.data.academy);
-          console.log('[Academy Join] Classes:', result.data.classes);
           setAcademy(result.data.academy);
           setClasses(result.data.classes);
         } else {

@@ -12,7 +12,8 @@ interface Assignment {
   uploadId?: string; // Legacy single file
   attachmentIds?: string; // JSON array of upload IDs
   submissionUploadId?: string; // Student's submitted file uploadId
-    submissionStoragePath?: string; // Student's submitted file storage path
+  submissionStoragePath?: string; // Student's submitted file storage path
+}
 
 export default function StudentAssignments() {
   const [classes, setClasses] = useState<Class[]>([]);

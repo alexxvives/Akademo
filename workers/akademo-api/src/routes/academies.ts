@@ -10,14 +10,12 @@ academies.get('/', async (c) => {
   try {
     const session = await getSession(c);
     const publicMode = c.req.query('publicMode') === 'true'; // For signup page
-    console.log('[Academies] GET request, session:', session ? `${session.role} (${session.id})` : 'null', 'publicMode:', publicMode);
 
     let query = '';
     let params: any[] = [];
 
     // Force public mode for signup page, regardless of session
     if (publicMode) {
-      console.log('[Academies] Using PUBLIC query (forced by publicMode parameter)');
       query = `
         SELECT 
           a.id,
@@ -32,7 +30,6 @@ academies.get('/', async (c) => {
       `;
     } else if (session && session.role === 'ADMIN') {
       // Admin sees all with counts
-      console.log('[Academies] Using ADMIN query');
       query = `
         SELECT 
           a.*,
@@ -46,7 +43,6 @@ academies.get('/', async (c) => {
       `;
     } else if (session && (session.role === 'ACADEMY' || session.role === 'TEACHER')) {
       // Academy owners see their own
-      console.log('[Academies] Using ACADEMY/TEACHER query for user:', session.id);
       query = `
         SELECT 
           a.*,
@@ -62,7 +58,6 @@ academies.get('/', async (c) => {
       params = [session.id];
     } else {
       // Public/students see all academies (for signup/browsing)
-      console.log('[Academies] Using PUBLIC query (no session or student role)');
       query = `
         SELECT 
           a.id,
@@ -77,11 +72,8 @@ academies.get('/', async (c) => {
       `;
     }
 
-    console.log('[Academies] Executing query:', query.substring(0, 100) + '...');
     const result = await c.env.DB.prepare(query).bind(...params).all();
-    console.log('[Academies] Query result:', result.results?.length || 0, 'academies found');
     if (result.results && result.results.length > 0) {
-      console.log('[Academies] First academy:', result.results[0]);
     }
 
     return c.json(successResponse(result.results || []));
@@ -311,7 +303,6 @@ academies.post('/teachers', async (c) => {
         if (!emailResponse.ok) {
           console.error('[Create Teacher] Resend API error:', await emailResponse.text());
         } else {
-          console.log(`[Create Teacher] Onboarding email sent to ${email}`);
         }
       } catch (emailError) {
         console.error('[Create Teacher] Email sending failed:', emailError);

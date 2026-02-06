@@ -61,8 +61,6 @@ webhooks.post('/zoom', async (c) => {
   try {
     const payload = await c.req.json();
 
-    console.log('[Zoom Webhook] Received:', payload.event);
-
     // Handle Zoom URL validation (required for webhook setup)
     if (payload.event === 'endpoint.url_validation') {
       const plainToken = payload.payload.plainToken;
@@ -82,7 +80,6 @@ webhooks.post('/zoom', async (c) => {
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
       
-      console.log('[Zoom Webhook] URL validation response');
       return c.json({
         plainToken: plainToken,
         encryptedToken: hashForValidate
@@ -101,7 +98,6 @@ webhooks.post('/zoom', async (c) => {
         .bind('active', new Date().toISOString(), meetingId.toString())
         .run();
 
-      console.log('[Zoom Webhook] Meeting started:', meetingId);
     } else if (event === 'meeting.ended') {
       const meetingId = data.object.id;
 
@@ -111,13 +107,9 @@ webhooks.post('/zoom', async (c) => {
         .bind('ended', new Date().toISOString(), meetingId.toString())
         .run();
 
-      console.log('[Zoom Webhook] Meeting ended:', meetingId);
     } else if (event === 'recording.completed') {
       // Use numeric meeting ID (preferred) from webhook payload
       const meetingId = data.object.id;
-      console.log('[Zoom Webhook] Recording completed for meeting:', meetingId);
-      console.log('[Zoom Webhook] Full recording payload:', JSON.stringify(data, null, 2));
-      console.log('[Zoom Webhook] Using OAuth flow (no server-to-server)');
       
       // Find the livestream
       const stream = await c.env.DB
@@ -126,8 +118,6 @@ webhooks.post('/zoom', async (c) => {
         .first() as any;
 
       if (stream) {
-        console.log('[Zoom Webhook] Found stream:', stream.id, 'Title:', stream.title);
-        
         try {
           // Get Zoom account for this stream's class
           const streamWithClass = await c.env.DB
@@ -151,12 +141,10 @@ webhooks.post('/zoom', async (c) => {
             return c.json(successResponse({ received: true, error: 'Zoom account not found' }));
           }
 
-          console.log('[Zoom Webhook] Using OAuth token from account:', zoomAccount.accountName);
           const accessToken = zoomAccount.accessToken;
 
           // Fetch recording details from Zoom API
           // Use numeric meeting ID (preferred for recordings endpoint)
-          console.log('[Zoom Webhook] Fetching recordings from Zoom API with meeting ID:', meetingId);
           const recordingsResponse = await fetch(
             `https://api.zoom.us/v2/meetings/${meetingId}/recordings`,
             {
@@ -174,10 +162,6 @@ webhooks.post('/zoom', async (c) => {
           }
 
           const recordingsData = await recordingsResponse.json() as any;
-          console.log('[Zoom Webhook] ✅ Recording files count:', recordingsData.recording_files?.length || 0);
-          console.log('[Zoom Webhook] 📋 All recording types:', JSON.stringify(
-            recordingsData.recording_files?.map((f: any) => ({ type: f.file_type, recording_type: f.recording_type })) || []
-          ));
 
           // Find the MP4 recording
           const mp4Recording = recordingsData.recording_files?.find(
@@ -185,13 +169,10 @@ webhooks.post('/zoom', async (c) => {
           );
 
           if (!mp4Recording) {
-            console.log('[Zoom Webhook] ❌ No MP4 recording found with type "shared_screen_with_speaker_view"');
-            console.log('[Zoom Webhook] Available recordings:', JSON.stringify(recordingsData.recording_files || []));
             return c.json(successResponse({ received: true, error: 'No MP4 recording found' }));
           }
 
           const downloadUrl = mp4Recording.download_url;
-          console.log('[Zoom Webhook] 📥 Download URL found:', downloadUrl.substring(0, 100) + '...');
 
           // Upload to Bunny Stream using /fetch endpoint
           const bunnyFetchUrl = `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/videos/fetch`;
@@ -199,11 +180,6 @@ webhooks.post('/zoom', async (c) => {
             url: `${downloadUrl}?access_token=${accessToken}`,
             title: stream.title || `Recording ${new Date().toLocaleDateString()}`,
           };
-          
-          console.log('[Zoom Webhook] 🐰 Sending to Bunny Stream...');
-          console.log('[Zoom Webhook] 🐰 Bunny API URL:', bunnyFetchUrl);
-          console.log('[Zoom Webhook] 🐰 Video title:', bunnyRequestBody.title);
-          console.log('[Zoom Webhook] 🐰 Download URL length:', bunnyRequestBody.url.length);
           
           const bunnyFetchResponse = await fetch(bunnyFetchUrl, {
             method: 'POST',
@@ -214,8 +190,6 @@ webhooks.post('/zoom', async (c) => {
             body: JSON.stringify(bunnyRequestBody),
           });
 
-          console.log('[Zoom Webhook] 🐰 Bunny response status:', bunnyFetchResponse.status);
-          
           if (!bunnyFetchResponse.ok) {
             const errorText = await bunnyFetchResponse.text();
             console.error('[Zoom Webhook] ❌ Bunny fetch failed:', bunnyFetchResponse.status, errorText);
@@ -223,7 +197,6 @@ webhooks.post('/zoom', async (c) => {
           }
 
           const bunnyData = await bunnyFetchResponse.json() as any;
-          console.log('[Zoom Webhook] 🐰 Bunny response data:', JSON.stringify(bunnyData));
           
           // Bunny /fetch endpoint returns success=true and guid in response
           const videoGuid = bunnyData.guid || bunnyData.videoGuid || bunnyData.id;
@@ -233,35 +206,26 @@ webhooks.post('/zoom', async (c) => {
             return c.json(successResponse({ received: true, error: 'Bunny returned no GUID' }));
           }
           
-          console.log('[Zoom Webhook] ✅ Bunny video created! GUID:', videoGuid);
-
           // Update stream with recordingId
           const updateResult = await c.env.DB
             .prepare('UPDATE LiveStream SET recordingId = ? WHERE id = ?')
             .bind(videoGuid, stream.id)
             .run();
 
-          console.log('[Zoom Webhook] ✅ Database updated! Stream:', stream.id, 'RecordingId:', videoGuid, 'Rows affected:', updateResult.meta?.changes);
         } catch (error: any) {
           console.error('[Zoom Webhook] Error processing recording:', error.message);
         }
       } else {
-        console.log('[Zoom Webhook] No stream found for meetingId:', meetingId);
         // Log all streams for debugging
         const allStreams = await c.env.DB
           .prepare('SELECT id, zoomMeetingId, title FROM LiveStream ORDER BY createdAt DESC LIMIT 5')
           .all();
-        console.log('[Zoom Webhook] Recent streams:', allStreams.results);
       }
     } else if (event === 'meeting.participant_joined' || event === 'meeting.participant_left' || event === 'participant.joined' || event === 'participant.left') {
       const meetingId = data.object.id;
       const participant = data.payload?.object?.participant || data.object?.participant;
       const participantUserId = participant?.user_id || participant?.id || 'unknown';
       
-      // Don't trust participant_count from webhooks - maintain our own counter
-      console.log('[Zoom Webhook] Participant event:', event, 'Meeting:', meetingId, 'Participant:', participantUserId);
-      console.log('[Zoom Webhook] Meeting ID type:', typeof meetingId, 'Value:', meetingId);
-
       // Get current stream
       const stream = await c.env.DB
         .prepare('SELECT * FROM LiveStream WHERE zoomMeetingId = ?')
@@ -269,30 +233,21 @@ webhooks.post('/zoom', async (c) => {
         .first() as any;
 
       if (stream) {
-        console.log('[Zoom Webhook] ✅ Stream found:', stream.id, 'Title:', stream.title, 'Current count:', stream.participantCount || 0);
-        
         const isJoin = event.includes('joined');
         const currentCount = stream.participantCount || 0;
         const newCount = isJoin ? currentCount + 1 : Math.max(0, currentCount - 1);
         
-        console.log('[Zoom Webhook] Updating count:', currentCount, '→', newCount, '(', isJoin ? 'joined' : 'left', ')');
-
         // Update participant count
         const result = await c.env.DB
           .prepare('UPDATE LiveStream SET participantCount = ?, participantsFetchedAt = ? WHERE id = ?')
           .bind(newCount, new Date().toISOString(), stream.id)
           .run();
 
-        console.log('[Zoom Webhook] Participant update result:', result.meta?.changes, 'rows affected');
       } else {
-        console.log('[Zoom Webhook] ❌ No stream found for participant event');
-        console.log('[Zoom Webhook] Looking for zoomMeetingId:', meetingId.toString());
-        
         // Debug: Show all active streams
         const activeStreams = await c.env.DB
           .prepare('SELECT id, zoomMeetingId, title, status FROM LiveStream WHERE status IN ("scheduled", "active") ORDER BY createdAt DESC LIMIT 5')
           .all();
-        console.log('[Zoom Webhook] Active streams in DB:', JSON.stringify(activeStreams.results));
       }
     }
 
@@ -309,8 +264,6 @@ webhooks.post('/bunny', async (c) => {
   try {
     const payload = await c.req.json();
     
-    console.log('[Bunny Webhook] Received:', JSON.stringify(payload));
-    
     // Bunny sends VideoId (GUID), Status, and other metadata
     const { VideoId, Status, VideoLibraryId, Title } = payload;
     
@@ -320,13 +273,9 @@ webhooks.post('/bunny', async (c) => {
         'UPDATE Upload SET bunnyStatus = ? WHERE bunnyGuid = ?'
       ).bind(Status, VideoId).run();
       
-      console.log('[Bunny Webhook] Updated Upload status for', VideoId, 'to', Status, 'rows affected:', result.meta?.changes);
-
       // Try to match this video to a LiveStream without recordingId
       if (Title) {
         const titleLower = Title.toLowerCase().trim();
-        
-        console.log('[Bunny Webhook] Searching for stream with title:', titleLower);
         
         // Find streams without recordingId that match this title
         let matchingStream = await c.env.DB.prepare(`
@@ -340,7 +289,6 @@ webhooks.post('/bunny', async (c) => {
         
         // If exact match fails, try fuzzy matching
         if (!matchingStream) {
-          console.log('[Bunny Webhook] Exact match failed, trying fuzzy match');
           const allEndedStreams = await c.env.DB.prepare(`
             SELECT * FROM LiveStream 
             WHERE recordingId IS NULL 
@@ -357,21 +305,15 @@ webhooks.post('/bunny', async (c) => {
         }
 
         if (matchingStream) {
-          console.log('[Bunny Webhook] Matched stream:', matchingStream.id, 'with video:', VideoId);
-          
           await c.env.DB
             .prepare('UPDATE LiveStream SET recordingId = ? WHERE id = ?')
             .bind(VideoId, matchingStream.id)
             .run();
             
-          console.log('[Bunny Webhook] Updated stream', matchingStream.id, 'with recordingId:', VideoId);
         } else {
-          console.log('[Bunny Webhook] No matching stream found for title:', Title);
           const recentStreams = await c.env.DB.prepare(`
             SELECT title FROM LiveStream WHERE status = 'ended' AND recordingId IS NULL ORDER BY createdAt DESC LIMIT 5
           `).all();
-          console.log('[Bunny Webhook] Recent ended streams without recordings:', 
-            (recentStreams.results || []).map((s: any) => s.title));
         }
       }
     }
@@ -403,18 +345,9 @@ webhooks.post('/stripe', async (c) => {
     const event = payload.type;
     const data = payload.data.object;
 
-    console.log('[Stripe Webhook] Received:', event);
-    console.log('[Stripe Webhook] Payment data:', data);
-    console.log('[Stripe Webhook] Metadata:', data.metadata);
-
     // Handle all 5 Stripe webhook events
     if (event === 'checkout.session.completed') {
       const { id: sessionId, metadata, payment_status, customer_details, subscription, amount_total } = data;
-
-      console.log('[Stripe Webhook] Session ID:', sessionId);
-      console.log('[Stripe Webhook] Payment status:', payment_status);
-      console.log('[Stripe Webhook] Subscription ID:', subscription);
-      console.log('[Stripe Webhook] Metadata received:', JSON.stringify(metadata));
 
       if (payment_status === 'paid') {
         // Check if this is an academy activation payment or enrollment payment
@@ -431,12 +364,9 @@ webhooks.post('/stripe', async (c) => {
             .bind(academyId)
             .run();
 
-          console.log('[Stripe Webhook] Academy activated via metadata:', academyId);
         } else if (metadata?.enrollmentId) {
           // Enrollment payment
           const { enrollmentId } = metadata;
-
-          console.log('[Stripe Webhook] Processing enrollment payment for:', enrollmentId);
 
           // Get enrollment details for payment record
           const enrollment = await c.env.DB
@@ -504,9 +434,7 @@ webhooks.post('/stripe', async (c) => {
               )
               .run();
 
-              console.log('[Stripe Webhook] Payment confirmed and recorded for enrollment:', enrollmentId);
             } else {
-              console.log('[Stripe Webhook] Payment already exists for session:', sessionId);
             }
 
             // IMPORTANT: Update ClassEnrollment status to APPROVED for immediate access
@@ -515,15 +443,12 @@ webhooks.post('/stripe', async (c) => {
               .bind('APPROVED', enrollmentId)
               .run();
 
-            console.log('[Stripe Webhook] ClassEnrollment status updated to APPROVED for:', enrollmentId);
           }
         } else {
           // No metadata - assume academy activation, look up by customer email
           const customerEmail = customer_details?.email;
           
           if (customerEmail) {
-            console.log('[Stripe Webhook] Looking up academy by owner email:', customerEmail);
-            
             const academy: any = await c.env.DB
               .prepare(`
                 SELECT a.id, a.name 
@@ -545,9 +470,7 @@ webhooks.post('/stripe', async (c) => {
                 .bind(academy.id)
                 .run();
 
-              console.log('[Stripe Webhook] Academy activated via email lookup:', academy.id, academy.name);
             } else {
-              console.log('[Stripe Webhook] No unpaid academy found for email:', customerEmail);
             }
           }
         }
@@ -555,7 +478,6 @@ webhooks.post('/stripe', async (c) => {
     } else if (event === 'invoice.payment_succeeded') {
       // Recurring payment succeeded - add to payment history
       const { subscription, customer_email, amount_paid, lines } = data;
-      console.log('[Stripe Webhook] Recurring payment succeeded for subscription:', subscription);
 
       // Find enrollment by subscription ID
       const enrollment = await c.env.DB
@@ -605,12 +527,10 @@ webhooks.post('/stripe', async (c) => {
           )
           .run();
 
-        console.log('[Stripe Webhook] Recurring payment recorded for enrollment:', enrollment.id);
       }
     } else if (event === 'invoice.payment_failed') {
       // Recurring payment failed - create pending payment
       const { subscription, customer_email, amount_due } = data;
-      console.log('[Stripe Webhook] Recurring payment failed for subscription:', subscription);
 
       const enrollment = await c.env.DB
         .prepare(`
@@ -652,13 +572,11 @@ webhooks.post('/stripe', async (c) => {
           )
           .run();
 
-        console.log('[Stripe Webhook] Pending payment created for failed recurring payment');
       }
     // END DISABLED SUBSCRIPTION HANDLERS */
     } else if (event === 'payment_intent.succeeded') {
       // One-time payment succeeded (for non-recurring enrollments)
       const { id: paymentIntentId, amount, metadata } = data;
-      console.log('[Stripe Webhook] Payment intent succeeded:', paymentIntentId);
 
       if (metadata?.enrollmentId) {
         const enrollment = await c.env.DB
@@ -702,7 +620,6 @@ webhooks.post('/stripe', async (c) => {
             )
             .run();
 
-          console.log('[Stripe Webhook] One-time payment recorded for enrollment:', enrollment.id);
         }
       }
     }

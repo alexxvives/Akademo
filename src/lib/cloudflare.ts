@@ -164,6 +164,7 @@ export interface R2UploadedPart {
 export function getCloudflareContext(): CloudflareEnv | null {
   // In Cloudflare Workers, the env is available via @opennextjs/cloudflare
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { getCloudflareContext: getCtx } = require('@opennextjs/cloudflare');
     const ctx = getCtx();
     return ctx?.env as CloudflareEnv;

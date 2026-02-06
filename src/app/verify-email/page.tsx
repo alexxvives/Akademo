@@ -130,7 +130,6 @@ function VerifyEmailContent() {
         alert('Código de verificación reenviado. Revisa tu email.');
         // For testing: show code in console
         if (result.data.code) {
-          console.log('Verification code:', result.data.code);
         }
       } else {
         setError(result.error || 'Error al reenviar el código');

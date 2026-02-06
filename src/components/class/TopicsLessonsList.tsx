@@ -1,10 +1,28 @@
 'use client';
 
+/**
+ * Shared TopicsLessonsList Component
+ * 
+ * Used by: Academy, Admin, and Teacher class detail pages
+ * 
+ * Features:
+ * - Drag & drop lessons between topics
+ * - Create/delete topics
+ * - Lesson cards with video thumbnails
+ * - Student time management modal
+ * - Release/hide lessons
+ * 
+ * Props differences by role:
+ * - Teacher: Uses onTopicsUpdate/onLessonsUpdate for optimistic updates
+ * - Academy/Admin: Uses paymentStatus to disable actions when NOT PAID
+ */
+
 import { useState, useEffect, useRef, useCallback, DragEvent } from 'react';
 import { getBunnyThumbnailUrl } from '@/lib/bunny-stream';
+import { formatDateWithMonth, isReleased } from '@/lib/formatters';
 import { apiClient } from '@/lib/api-client';
 
-interface Lesson {
+export interface Lesson {
   id: string;
   title: string;
   description: string | null;
@@ -27,7 +45,7 @@ interface Lesson {
   uploadProgress?: number;
 }
 
-interface Topic {
+export interface Topic {
   id: string;
   name: string;
   classId: string;
@@ -35,18 +53,23 @@ interface Topic {
   lessonCount: number;
 }
 
-interface TopicsLessonsListProps {
+export interface TopicsLessonsListProps {
   lessons: Lesson[];
   topics: Topic[];
   classId: string;
   totalStudents: number;
   expandTopicId?: string | null;
+  /** Academy payment status - when 'NOT PAID', editing actions are disabled */
   paymentStatus?: string;
   onSelectLesson: (lesson: Lesson) => void;
   onEditLesson: (lesson: Lesson) => void;
   onDeleteLesson: (lessonId: string) => void;
   onRescheduleLesson: (lesson: Lesson) => void;
   onTopicsChange: () => void;
+  /** Optimistic update for topics (used by Teacher) */
+  onTopicsUpdate?: (topics: Topic[] | ((prev: Topic[]) => Topic[])) => void;
+  /** Optimistic update for lessons (used by Teacher) */
+  onLessonsUpdate?: (lessons: Lesson[] | ((prev: Lesson[]) => Lesson[])) => void;
   onLessonMove: (lessonId: string, topicId: string | null) => void;
   onToggleRelease: (lesson: Lesson) => void;
 }
@@ -63,6 +86,8 @@ export default function TopicsLessonsList({
   onDeleteLesson,
   onRescheduleLesson,
   onTopicsChange,
+  onTopicsUpdate,
+  onLessonsUpdate,
   onLessonMove,
   onToggleRelease,
 }: TopicsLessonsListProps) {
@@ -74,6 +99,9 @@ export default function TopicsLessonsList({
   const [creatingTopic, setCreatingTopic] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollAnimationRef = useRef<number | null>(null);
+  
+  // Check if actions should be disabled (academy not paid)
+  const isDisabled = paymentStatus === 'NOT PAID';
   
   // Auto-expand topic when expandTopicId prop changes
   useEffect(() => {
@@ -108,20 +136,17 @@ export default function TopicsLessonsList({
     if (!container || !draggedLesson) return;
 
     const rect = container.getBoundingClientRect();
-    const scrollThreshold = 80; // pixels from edge to start scrolling
-    const maxScrollSpeed = 15; // pixels per frame
+    const scrollThreshold = 80;
+    const maxScrollSpeed = 15;
 
-    // Calculate distance from edges
     const distanceFromTop = clientY - rect.top;
     const distanceFromBottom = rect.bottom - clientY;
 
     let scrollAmount = 0;
 
     if (distanceFromTop < scrollThreshold && distanceFromTop > 0) {
-      // Scroll up - speed increases as you get closer to edge
       scrollAmount = -maxScrollSpeed * (1 - distanceFromTop / scrollThreshold);
     } else if (distanceFromBottom < scrollThreshold && distanceFromBottom > 0) {
-      // Scroll down - speed increases as you get closer to edge
       scrollAmount = maxScrollSpeed * (1 - distanceFromBottom / scrollThreshold);
     }
 
@@ -162,18 +187,7 @@ export default function TopicsLessonsList({
     };
   }, [draggedLesson, handleDragScroll]);
 
-  const formatDate = (d: string) => {
-    const date = new Date(d);
-    const formatted = date.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
-    const parts = formatted.split(' de ');
-    if (parts.length === 2) {
-      const month = parts[1];
-      return `${parts[0]} de ${month.charAt(0).toUpperCase()}${month.slice(1)}`;
-    }
-    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
-  };
-
-  const isReleased = (d: string) => new Date(d) <= new Date();
+  const formatDate = formatDateWithMonth;
 
   const toggleTopic = (topicId: string) => {
     setExpandedTopics(prev => {
@@ -226,32 +240,81 @@ export default function TopicsLessonsList({
   const handleCreateTopic = async () => {
     if (!newTopicName.trim()) return;
     setCreatingTopic(true);
+    
+    // Generate temporary ID for optimistic update (if callback provided)
+    const tempId = `temp-${Date.now()}`;
+    const tempTopic: Topic = {
+      id: tempId,
+      name: newTopicName.trim(),
+      classId,
+      orderIndex: topics.length,
+      lessonCount: 0
+    };
+    
+    // Optimistic update if callback provided (Teacher flow)
+    if (onTopicsUpdate) {
+      onTopicsUpdate(prev => [...prev, tempTopic]);
+    }
+    setNewTopicName('');
+    setShowNewTopicInput(false);
+    
     try {
       const res = await apiClient('/topics', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ classId, name: newTopicName.trim() }),
+        body: JSON.stringify({ classId, name: tempTopic.name }),
       });
+      
       if (res.ok) {
-        setNewTopicName('');
-        setShowNewTopicInput(false);
+        const result = await res.json();
+        // Replace temp topic with real one from server (if optimistic update was used)
+        if (result.success && result.data && onTopicsUpdate) {
+          onTopicsUpdate(prev => prev.map(t => t.id === tempId ? result.data : t));
+        } else if (!onTopicsUpdate) {
+          // Fallback: reload topics
+          onTopicsChange();
+        }
+      } else {
+        // Remove temp topic on error
+        if (onTopicsUpdate) {
+          onTopicsUpdate(prev => prev.filter(t => t.id !== tempId));
+        }
         onTopicsChange();
       }
     } catch (error) {
       console.error('Failed to create topic:', error);
+      if (onTopicsUpdate) {
+        onTopicsUpdate(prev => prev.filter(t => t.id !== tempId));
+      }
+      onTopicsChange();
     }
     setCreatingTopic(false);
   };
 
   const handleDeleteTopic = async (topicId: string) => {
     if (!confirm('¿Eliminar este tema? Las Clases se moverán a "Sin tema".')) return;
+    
+    // Optimistic update if callbacks provided (Teacher flow)
+    if (onTopicsUpdate) {
+      onTopicsUpdate(prev => prev.filter(t => t.id !== topicId));
+    }
+    if (onLessonsUpdate) {
+      onLessonsUpdate(prev => prev.map(l => 
+        l.topicId === topicId ? { ...l, topicId: null } : l
+      ));
+    }
+    
     try {
       const res = await apiClient(`/topics/${topicId}`, { method: 'DELETE' });
-      if (res.ok) {
+      if (!res.ok) {
+        onTopicsChange();
+      } else if (!onTopicsUpdate) {
+        // Fallback: reload if no optimistic update
         onTopicsChange();
       }
     } catch (error) {
       console.error('Failed to delete topic:', error);
+      onTopicsChange();
     }
   };
   
@@ -262,8 +325,8 @@ export default function TopicsLessonsList({
     setStudentTimesData([]);
     
     try {
-      // If demo academy, load demo data
-      if (paymentStatus === 'NOT PAID') {
+      // If demo academy (NOT PAID), load demo data
+      if (isDisabled) {
         const { generateDemoStudentTimes } = await import('@/lib/demo-data');
         const demoData = generateDemoStudentTimes(lesson.id);
         setStudentTimesData(demoData);
@@ -272,7 +335,7 @@ export default function TopicsLessonsList({
       }
       
       // For real academies, fetch from API
-      const res = await apiClient(`/videos/student-times?lessonId=${lesson.id}`);
+      const res = await apiClient(`/lessons/${lesson.id}/student-times`);
       const result = await res.json();
       if (result.success) {
         setStudentTimesData(result.data || []);
@@ -298,7 +361,6 @@ export default function TopicsLessonsList({
       });
       const result = await res.json();
       if (result.success) {
-        // Reload data
         if (selectedLessonForTime) {
           await handleManageStudentTimes(selectedLessonForTime);
         }
@@ -355,15 +417,15 @@ export default function TopicsLessonsList({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </button>
-                  {/* Reschedule button for all lessons */}
+                  {/* Reschedule button */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (paymentStatus !== 'NOT PAID') onRescheduleLesson(lesson);
+                      if (!isDisabled) onRescheduleLesson(lesson);
                     }}
-                    disabled={paymentStatus === 'NOT PAID'}
+                    disabled={isDisabled}
                     className="p-2 bg-violet-500/20 text-violet-400 rounded-lg hover:bg-violet-500/30 hover:scale-105 transition-all border border-violet-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
-                    title={paymentStatus === 'NOT PAID' ? 'Active su academia para reprogramar lecciones' : 'Reprogramar'}
+                    title={isDisabled ? 'Active su academia para reprogramar lecciones' : 'Reprogramar'}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -372,11 +434,11 @@ export default function TopicsLessonsList({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (!lesson.isUploading && paymentStatus !== 'NOT PAID') onEditLesson(lesson);
+                      if (!lesson.isUploading && !isDisabled) onEditLesson(lesson);
                     }}
-                    disabled={lesson.isUploading || paymentStatus === 'NOT PAID'}
+                    disabled={lesson.isUploading || isDisabled}
                     className="p-2 bg-accent-500/20 text-accent-400 rounded-lg hover:bg-accent-500/30 hover:scale-105 transition-all border border-accent-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
-                    title={paymentStatus === 'NOT PAID' ? 'Active su academia para editar lecciones' : 'Editar lección'}
+                    title={isDisabled ? 'Active su academia para editar lecciones' : 'Editar lección'}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -385,11 +447,11 @@ export default function TopicsLessonsList({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (!lesson.isUploading && paymentStatus !== 'NOT PAID') onDeleteLesson(lesson.id);
+                      if (!lesson.isUploading && !isDisabled) onDeleteLesson(lesson.id);
                     }}
-                    disabled={lesson.isUploading || paymentStatus === 'NOT PAID'}
+                    disabled={lesson.isUploading || isDisabled}
                     className="p-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 hover:scale-105 transition-all border border-red-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
-                    title={paymentStatus === 'NOT PAID' ? 'Active su academia para eliminar lecciones' : 'Eliminar lección'}
+                    title={isDisabled ? 'Active su academia para eliminar lecciones' : 'Eliminar lección'}
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -419,7 +481,7 @@ export default function TopicsLessonsList({
                 )}
                 {/* Date Badge - Top Left */}
                 {released && (
-                  <div className={`absolute top-2 left-2 z-10 flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg backdrop-blur-sm shadow-lg border border-gray-300/50 bg-white/90 text-gray-900`}>
+                  <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg backdrop-blur-sm shadow-lg border border-gray-300/50 bg-white/90 text-gray-900">
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
@@ -463,9 +525,8 @@ export default function TopicsLessonsList({
               </>
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center relative">
-                {/* Date Badge for document-only lessons */}
                 {released && (
-                  <div className={`absolute top-2 left-2 z-10 flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg backdrop-blur-sm shadow-lg border border-gray-300/50 bg-white/90 text-gray-900`}>
+                  <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg backdrop-blur-sm shadow-lg border border-gray-300/50 bg-white/90 text-gray-900">
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
@@ -588,7 +649,7 @@ export default function TopicsLessonsList({
           </div>
           {topicId && (
             <div className="flex items-center gap-1">
-              {/* Hide All Button - Hides all currently released lessons in this topic */}
+              {/* Hide All Button */}
               <div className="relative group/hidetopic">
                 <button
                   onClick={(e) => {
@@ -602,7 +663,6 @@ export default function TopicsLessonsList({
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
                   </svg>
                 </button>
-                {/* Tooltip */}
                 <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 px-3 py-2 bg-slate-800 text-slate-200 text-xs rounded-lg shadow-xl border border-slate-700 opacity-0 invisible group-hover/hidetopic:opacity-100 group-hover/hidetopic:visible transition-all duration-200 whitespace-nowrap z-20">
                   <div className="absolute top-1/2 -translate-y-1/2 -right-1 w-2 h-2 bg-slate-800 border-r border-b border-slate-700 rotate-45"></div>
                   Ocultar todas las Clases de este tema
@@ -610,23 +670,22 @@ export default function TopicsLessonsList({
               </div>
               
               <div className="relative group/delete">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteTopic(topicId);
-                }}
-                className="p-1.5 text-red-500 hover:text-red-600 hover:bg-red-500/15 rounded-lg transition-all duration-200"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
-              {/* Tooltip - positioned to the left */}
-              <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 px-3 py-2 bg-slate-800 text-slate-200 text-xs rounded-lg shadow-xl border border-slate-700 opacity-0 invisible group-hover/delete:opacity-100 group-hover/delete:visible transition-all duration-200 whitespace-nowrap z-20">
-                <div className="absolute top-1/2 -translate-y-1/2 -right-1 w-2 h-2 bg-slate-800 border-r border-b border-slate-700 rotate-45"></div>
-                Las Clases se moverán a &quot;Sin tema&quot;
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteTopic(topicId);
+                  }}
+                  className="p-1.5 text-red-500 hover:text-red-600 hover:bg-red-500/15 rounded-lg transition-all duration-200"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+                <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 px-3 py-2 bg-slate-800 text-slate-200 text-xs rounded-lg shadow-xl border border-slate-700 opacity-0 invisible group-hover/delete:opacity-100 group-hover/delete:visible transition-all duration-200 whitespace-nowrap z-20">
+                  <div className="absolute top-1/2 -translate-y-1/2 -right-1 w-2 h-2 bg-slate-800 border-r border-b border-slate-700 rotate-45"></div>
+                  Las Clases se moverán a &quot;Sin tema&quot;
+                </div>
               </div>
-            </div>
             </div>
           )}
         </div>
@@ -670,7 +729,6 @@ export default function TopicsLessonsList({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
               </svg>
             </button>
-            {/* Tooltip */}
             <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-3 py-2 bg-slate-800 text-slate-200 text-xs rounded-lg shadow-xl border border-slate-700 opacity-0 invisible group-hover/hideall:opacity-100 group-hover/hideall:visible transition-all duration-200 whitespace-nowrap z-20">
               <div className="absolute top-1/2 -translate-y-1/2 -left-1 w-2 h-2 bg-slate-800 border-l border-t border-slate-700 rotate-45"></div>
               Ocultar todas las Clases visibles
@@ -727,10 +785,7 @@ export default function TopicsLessonsList({
         </div>
       ) : (
         <div ref={scrollContainerRef} className="max-h-[700px] overflow-y-auto space-y-3 scroll-smooth py-2">
-          {/* Render topics in order */}
           {topics.map(topic => renderTopicSection(topic.id, topic.name, lessonsByTopic.get(topic.id) || []))}
-          
-          {/* Render uncategorized lessons */}
           {renderTopicSection(null, 'Sin tema', lessonsByTopic.get(null) || [])}
         </div>
       )}
@@ -805,9 +860,9 @@ export default function TopicsLessonsList({
                                 <div className="flex items-center gap-2 flex-wrap justify-end">
                                   <button
                                     onClick={() => handleUpdateStudentTime(studentData.studentId, video.videoId, 0)}
-                                    disabled={paymentStatus === 'NOT PAID'}
+                                    disabled={isDisabled}
                                     className="px-2 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-                                    title={paymentStatus === 'NOT PAID' ? 'Active su academia para modificar tiempos' : 'Reiniciar completamente'}
+                                    title={isDisabled ? 'Active su academia para modificar tiempos' : 'Reiniciar completamente'}
                                   >
                                     Reiniciar
                                   </button>
@@ -816,9 +871,9 @@ export default function TopicsLessonsList({
                                       const newTime = Math.max(0, video.totalWatchTimeSeconds - 900);
                                       handleUpdateStudentTime(studentData.studentId, video.videoId, newTime);
                                     }}
-                                    disabled={paymentStatus === 'NOT PAID'}
+                                    disabled={isDisabled}
                                     className="px-2 py-1 bg-gray-900 text-white rounded text-xs hover:bg-gray-800 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-                                    title={paymentStatus === 'NOT PAID' ? 'Active su academia para modificar tiempos' : 'Reducir 15 minutos'}
+                                    title={isDisabled ? 'Active su academia para modificar tiempos' : 'Reducir 15 minutos'}
                                   >
                                     +15min
                                   </button>
@@ -827,9 +882,9 @@ export default function TopicsLessonsList({
                                       const newTime = Math.max(0, video.totalWatchTimeSeconds - 1800);
                                       handleUpdateStudentTime(studentData.studentId, video.videoId, newTime);
                                     }}
-                                    disabled={paymentStatus === 'NOT PAID'}
+                                    disabled={isDisabled}
                                     className="px-2 py-1 bg-gray-900 text-white rounded text-xs hover:bg-gray-800 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-                                    title={paymentStatus === 'NOT PAID' ? 'Active su academia para modificar tiempos' : 'Reducir 30 minutos'}
+                                    title={isDisabled ? 'Active su academia para modificar tiempos' : 'Reducir 30 minutos'}
                                   >
                                     +30min
                                   </button>
@@ -838,9 +893,9 @@ export default function TopicsLessonsList({
                                       const newTime = Math.max(0, video.totalWatchTimeSeconds - 3600);
                                       handleUpdateStudentTime(studentData.studentId, video.videoId, newTime);
                                     }}
-                                    disabled={paymentStatus === 'NOT PAID'}
+                                    disabled={isDisabled}
                                     className="px-2 py-1 bg-gray-900 text-white rounded text-xs hover:bg-gray-800 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-                                    title={paymentStatus === 'NOT PAID' ? 'Active su academia para modificar tiempos' : 'Reducir 1 hora'}
+                                    title={isDisabled ? 'Active su academia para modificar tiempos' : 'Reducir 1 hora'}
                                   >
                                     +1hr
                                   </button>

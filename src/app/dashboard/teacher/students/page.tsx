@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
+import { formatDuration, formatDate } from '@/lib/formatters';
 
 interface StudentProgress {
   id: string;
@@ -53,24 +54,7 @@ export default function StudentProgressPage() {
     }
   };
 
-  const formatDuration = (seconds: number): string => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    
-    if (hours > 0) {
-      return `${hours}h ${minutes}m`;
-    }
-    return `${minutes}m`;
-  };
-
-  const formatDate = (date: string | null): string => {
-    if (!date) return 'Sin actividad';
-    return new Date(date).toLocaleDateString('es-ES', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
-  };
+  const formatDateWithFallback = (date: string | null) => formatDate(date, 'Sin actividad');
 
   const getProgressColor = (progress: number): string => {
     if (progress >= 80) return 'from-green-500 to-emerald-600';
@@ -227,7 +211,7 @@ export default function StudentProgressPage() {
                       </svg>
                       <span className="text-xs text-gray-600 font-medium">Última</span>
                     </div>
-                    <p className="text-xs font-semibold text-gray-700">{formatDate(student.lastActivity)}</p>
+                    <p className="text-xs font-semibold text-gray-700">{formatDateWithFallback(student.lastActivity)}</p>
                   </div>
                 </div>
 

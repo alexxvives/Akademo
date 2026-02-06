@@ -17,16 +17,12 @@ storage.post('/upload', async (c) => {
       return c.json(errorResponse('Error de autenticación. Intenta cerrar sesión y volver a iniciar.'), 401);
     }
     
-    console.log('[Upload] Session found:', { id: session.id, email: session.email, role: session.role });
-
     // Allow STUDENT for assignment submissions
     if (!['ADMIN', 'TEACHER', 'ACADEMY', 'STUDENT'].includes(session.role)) {
       console.error('[Upload] Role not authorized:', session.role);
       return c.json(errorResponse(`Tu rol (${session.role}) no tiene permiso para subir archivos`), 403);
     }
     
-    console.log('[Upload] Role authorized:', session.role);
-
     const formData = await c.req.formData();
     const file = formData.get('file') as File;
     const type = formData.get('type') as string; // 'assignment', 'document', 'avatar', etc.
@@ -178,8 +174,6 @@ storage.put('/multipart/upload-part', async (c) => {
       return c.json(errorResponse('Failed to read request body'), 400);
     }
     
-    console.log(`[Upload Part] key='${key}', uploadId='${uploadId}', partNumber=${partNumber}, size=${fileData.byteLength}`);
-
     // Get multipart upload instance
     let multipartUpload;
     try {
@@ -197,8 +191,6 @@ storage.put('/multipart/upload-part', async (c) => {
        console.error(`[Upload Part] R2 uploadPart failed. key='${key}' uploadId='${uploadId}' part=${partNumber}`, e);
        return c.json(errorResponse(`R2 uploadPart failed: ${e.message}`), 500);
     }
-
-    console.log('[Upload Part] Success, etag:', uploadedPart.etag);
 
     return c.json(successResponse({
       partNumber,
@@ -223,8 +215,6 @@ storage.post('/multipart/complete', async (c) => {
     }
 
     const { uploadId, key, parts } = await c.req.json();
-
-    console.log(`[Complete Upload] key=${key}, uploadId=${uploadId}, parts=${parts?.length}`);
 
     if (!uploadId || !key || !parts) {
       return c.json(errorResponse('uploadId, key, and parts required'), 400);
@@ -254,8 +244,6 @@ storage.post('/multipart/abort', async (c) => {
 
     const { uploadId, key } = await c.req.json();
     
-    console.log(`[Abort Upload] key=${key}, uploadId=${uploadId}`);
-
     if (!uploadId || !key) {
       return c.json(errorResponse('uploadId and key required'), 400);
     }
@@ -294,10 +282,6 @@ storage.get('/serve/*', async (c) => {
     
     const key = decodeURIComponent(rawKey); // Handle encoded characters
 
-    console.log('[Serve File] rawKey:', rawKey);
-    console.log('[Serve File] decodedKey:', key);
-    console.log('[Serve File] Full URL:', c.req.url);
-
     if (!key || key === 'undefined' || key === 'null') {
       console.error('[Serve File] Invalid key:', key);
       return c.json(errorResponse(`Invalid file path: ${key}`), 400);
@@ -306,11 +290,9 @@ storage.get('/serve/*', async (c) => {
     const object = await c.env.STORAGE.get(key);
 
     if (!object) {
-      console.log('[Serve File] Object not found with decoded key:', key);
       // Try raw key as fallback just in case
       const rawObject = await c.env.STORAGE.get(rawKey);
       if (rawObject) {
-        console.log('[Serve File] Found with raw key:', rawKey);
          return new Response(rawObject.body, {
           headers: {
             'Content-Type': rawObject.httpMetadata?.contentType || 'application/octet-stream',
@@ -323,7 +305,6 @@ storage.get('/serve/*', async (c) => {
       return c.json(errorResponse(`File not found: ${key}`), 404);
     }
 
-    console.log('[Serve File] Successfully serving:', key, 'Size:', object.size);
     return new Response(object.body, {
       headers: {
         'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',

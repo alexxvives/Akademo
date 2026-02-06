@@ -125,9 +125,7 @@ export default function DashboardLayout({
       // Load pending cash/bizum payments count for badge
       const pendingRes = await apiClient('/payments/pending-count');
       const pendingResult = await pendingRes.json();
-      console.log('[DashboardLayout] Pending payments response:', pendingResult);
       if (pendingResult.success && typeof pendingResult.data === 'number') {
-        console.log('[DashboardLayout] Setting pendingEnrollmentsCount to:', pendingResult.data);
         setPendingEnrollmentsCount(pendingResult.data);
       }
     } catch (error) {
@@ -416,7 +414,6 @@ export default function DashboardLayout({
           { label: 'Estudiantes', href: '/dashboard/academy/students', iconType: 'users' as const },
           { label: 'Pagos', href: '/dashboard/academy/payments', iconType: 'handCoins' as const, badge: pendingEnrollmentsCount > 0 ? pendingEnrollmentsCount : undefined, badgeColor: 'bg-[#b0e788]' },
         ];
-        console.log('[DashboardLayout] Academy menu items:', academyMenuItems.find(i => i.label === 'Pagos'));
         
         // Filter out Profesores menu for monoacademies
         if (user?.monoacademy) {

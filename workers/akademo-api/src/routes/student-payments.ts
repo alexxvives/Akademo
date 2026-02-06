@@ -7,7 +7,6 @@ const studentPayments = new Hono<{ Bindings: Bindings }>();
 
 // Test endpoint to verify route works
 studentPayments.get('/test', async (c) => {
-  console.log('[Student Payments] TEST endpoint hit');
   return c.json({ success: true, message: 'Student payments route works' });
 });
 
@@ -15,8 +14,6 @@ studentPayments.get('/test', async (c) => {
 studentPayments.get('/:studentId/class/:classId', async (c) => {
   const session = await requireAuth(c);  // Call inside handler, not as middleware
   const { studentId, classId } = c.req.param();
-
-  console.log(`[Student Payments] Request for studentId=${studentId}, classId=${classId}, role=${session.role}`);
 
   try {
     // Verify the requesting user has permission
@@ -31,8 +28,6 @@ studentPayments.get('/:studentId/class/:classId', async (c) => {
         `)
         .bind(classId)
         .first() as any;
-
-      console.log(`[Student Payments] Class data:`, classData);
 
       if (!classData) {
         return c.json(errorResponse('Class not found'), 404);
@@ -124,9 +119,6 @@ studentPayments.get('/:studentId/class/:classId', async (c) => {
       .bind(...paymentsParams)
       .all();
 
-    console.log(`[Student Payments] Found ${payments.results?.length || 0} payments`);
-    console.log(`[Student Payments] Payments:`, JSON.stringify(payments.results));
-
     // Calculate totals - only count PAID/COMPLETED for totalPaid
     const completedPayments = (payments.results || []).filter((p: any) => 
       p.status === 'COMPLETED' || p.status === 'PAID'
@@ -141,8 +133,6 @@ studentPayments.get('/:studentId/class/:classId', async (c) => {
     
     // But show ALL payments in history (including PENDING)
     const allPayments = payments.results || [];
-
-    console.log(`[Student Payments] Total paid: ${totalPaid}, Total due: ${totalDue}, Completed: ${completedPayments.length}, Pending: ${pendingPayments.length}`);
 
     // Get payment frequency from enrollment (if specific class)
     const paymentFrequency = enrollment?.paymentFrequency || 'ONE_TIME';
@@ -177,8 +167,6 @@ studentPayments.get('/:studentId/class/:classId', async (c) => {
       enrollmentDate: enrollment ? (enrollment.enrolledAt || enrollment.createdAt) : null,
       payments: formattedPayments,
     };
-
-    console.log(`[Student Payments] Returning response:`, JSON.stringify(responseData));
 
     return c.json(successResponse(responseData));
   } catch (error: any) {

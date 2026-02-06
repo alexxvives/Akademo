@@ -661,7 +661,7 @@ export default function TopicsLessonsList({
               {/* Tooltip - positioned to the left */}
               <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 px-3 py-2 bg-slate-800 text-slate-200 text-xs rounded-lg shadow-xl border border-slate-700 opacity-0 invisible group-hover/delete:opacity-100 group-hover/delete:visible transition-all duration-200 whitespace-nowrap z-20">
                 <div className="absolute top-1/2 -translate-y-1/2 -right-1 w-2 h-2 bg-slate-800 border-r border-b border-slate-700 rotate-45"></div>
-                Las Clases se moverán a "Sin tema"
+                Las Clases se moverán a &quot;Sin tema&quot;
               </div>
             </div>
             </div>

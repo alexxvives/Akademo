@@ -48,11 +48,9 @@ export default function PaymentModal({
   // Fetch academy's allowed payment methods
   useEffect(() => {
     if (isOpen && classId) {
-      console.log('[PaymentModal] Fetching allowed payment methods for class:', classId);
       apiClient(`/classes/${classId}`)
         .then(res => res.json())
         .then(result => {
-          console.log('[PaymentModal] Class data:', result);
           if (result.success && result.data?.academyId) {
             // Fetch academy details
             return apiClient(`/academies/${result.data.academyId}`);
@@ -61,16 +59,13 @@ export default function PaymentModal({
         })
         .then(res => res?.json())
         .then(result => {
-          console.log('[PaymentModal] Academy data:', result);
           if (result?.success && result.data) {
             let methods = result.data.allowedPaymentMethods;
-            console.log('[PaymentModal] Raw allowedPaymentMethods:', methods, 'type:', typeof methods);
             
             // Parse if string
             if (typeof methods === 'string') {
               try {
                 methods = JSON.parse(methods);
-                console.log('[PaymentModal] Parsed methods:', methods);
               } catch (e) {
                 console.error('[PaymentModal] Failed to parse allowedPaymentMethods:', e);
                 methods = ['stripe', 'cash', 'bizum'];
@@ -83,10 +78,8 @@ export default function PaymentModal({
               methods = ['stripe', 'cash', 'bizum'];
             }
             
-            console.log('[PaymentModal] Final allowed payment methods:', methods);
             setAllowedPaymentMethods(methods);
           } else {
-            console.log('[PaymentModal] No academy data, using defaults');
           }
         })
         .catch(err => {

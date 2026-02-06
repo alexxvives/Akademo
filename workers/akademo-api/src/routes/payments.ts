@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { requireAuth, requireRole } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
+import { validateBody, initiatePaymentSchema } from '../lib/validation';
 
 const payments = new Hono<{ Bindings: Bindings }>();
 
@@ -72,27 +73,10 @@ function calculateBillingCycle(classStartDate: string, enrollmentDate: string, i
 }
 
 // POST /payments/initiate - Student initiates a payment for a class
-payments.post('/initiate', async (c) => {
+payments.post('/initiate', validateBody(initiatePaymentSchema), async (c) => {
   try {
-    console.log('[Payments] Initiate payment request received');
-    console.log('[Payments] Headers:', Object.fromEntries(c.req.raw.headers));
-    
     const session = await requireAuth(c);
-    console.log('[Payments] Session authenticated:', session.id, session.email);
-    
     const { classId, paymentMethod, paymentFrequency } = await c.req.json();
-
-    if (!classId || !paymentMethod) {
-      return c.json(errorResponse('classId and paymentMethod are required'), 400);
-    }
-
-    if (!['cash', 'stripe', 'bizum'].includes(paymentMethod)) {
-      return c.json(errorResponse('Invalid payment method. Must be: cash, stripe, or bizum'), 400);
-    }
-
-    if (!paymentFrequency || !['monthly', 'one-time'].includes(paymentFrequency)) {
-      return c.json(errorResponse('Valid paymentFrequency is required (monthly or one-time)'), 400);
-    }
 
     // Get class details including price and startDate
     const classData: any = await c.env.DB
@@ -489,13 +473,8 @@ payments.patch('/:enrollmentId/approve-cash', async (c) => {
 // POST /payments/stripe-session - Create Stripe Checkout Session (Stripe Connect)
 payments.post('/stripe-session', async (c) => {
   try {
-    console.log('[Stripe Session] Request received');
     const session = await requireAuth(c);
-    console.log('[Stripe Session] User authenticated:', session.id);
-    
     const { classId, paymentFrequency } = await c.req.json();
-    console.log('[Stripe Session] Request data:', { classId, paymentFrequency });
-
     if (!classId) {
       return c.json(errorResponse('classId is required'), 400);
     }
@@ -514,9 +493,6 @@ payments.post('/stripe-session', async (c) => {
       `)
       .bind(classId)
       .first();
-
-    console.log('[Stripe Session] Class data:', classData);
-
     if (!classData) {
       console.error('[Stripe Session] Class not found:', classId);
       return c.json(errorResponse('Class not found'), 404);
@@ -533,9 +509,6 @@ payments.post('/stripe-session', async (c) => {
     if (!price || price <= 0) {
       return c.json(errorResponse(`${paymentFrequency === 'monthly' ? 'Monthly' : 'One-time'} payment not available for this class`), 400);
     }
-
-    console.log('[Stripe Session] Using price:', price, 'for frequency:', paymentFrequency);
-
     if (!c.env.STRIPE_SECRET_KEY) {
       return c.json(errorResponse('Stripe is not configured on this server'), 500);
     }
@@ -705,8 +678,6 @@ payments.patch('/:id/approve-payment', async (c) => {
 payments.get('/history', async (c) => {
   try {
     const session = await requireAuth(c);
-    console.log('[Payment History] Request from:', session.id, session.role, session.email);
-
     let query = '';
     let params: any[] = [];
 
@@ -740,17 +711,12 @@ payments.get('/history', async (c) => {
         LIMIT 50
       `;
       params = [session.id];
-      console.log('[Payment History] Querying for ownerId:', session.id);
     } else {
-      console.log('[Payment History] Non-academy role attempted access');
       return c.json(errorResponse('Only academy owners can view payment history'), 403);
     }
 
     const result = await c.env.DB.prepare(query).bind(...params).all();
-    console.log('[Payment History] Query returned:', result.results?.length || 0, 'records');
-    
     if (result.results && result.results.length > 0) {
-      console.log('[Payment History] First record:', JSON.stringify(result.results[0]));
     }
 
     return c.json(successResponse(result.results || []));

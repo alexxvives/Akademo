@@ -94,8 +94,6 @@ zoom.post('/signature', async (c) => {
       return c.json(errorResponse('Zoom SDK credentials not configured'), 500);
     }
 
-    console.log('[Zoom Signature] Generating JWT for meeting:', meetingNumber, 'role:', role);
-
     // Generate JWT signature for SDK v5.0+
     const signature = await generateJwtSignature(
       sdkKey,
@@ -103,8 +101,6 @@ zoom.post('/signature', async (c) => {
       String(meetingNumber),
       Number(role)
     );
-
-    console.log('[Zoom Signature] JWT generated successfully, length:', signature.length);
 
     return c.json(successResponse({
       signature,

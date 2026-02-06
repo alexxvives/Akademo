@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <!-- Shield body -->
-  <path d="M32 4L8 14v18c0 14.4 10.4 27.2 24 30 13.6-2.8 24-15.6 24-30V14L32 4z" fill="#22c55e"/>
-  <!-- Shield highlight -->
-  <path d="M32 4L8 14v18c0 14.4 10.4 27.2 24 30V4z" fill="#16a34a"/>
-  <!-- Checkmark -->
-  <path d="M26 32l6 6 12-12" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>

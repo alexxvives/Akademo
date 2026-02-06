@@ -4,6 +4,7 @@ export { LoadingSpinner } from './LoadingSpinner';
 export { PageLoader } from './PageLoader';
 export { EmptyState } from './EmptyState';
 export { default as PasswordInput } from './PasswordInput';
+export { FileInput } from './FileInput';
 export * from './SkeletonLoader';
 export { ChartNoAxesColumnIncreasingIcon } from './ChartNoAxesColumnIncreasingIcon';
 export { BookTextIcon } from './BookTextIcon';

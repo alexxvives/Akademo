@@ -71,7 +71,7 @@ export async function createBunnyVideo(title: string, collectionId?: string): Pr
 export async function uploadToBunnyStream(
   videoGuid: string,
   file: ArrayBuffer | ReadableStream,
-  onProgress?: (percent: number) => void
+  _onProgress?: (percent: number) => void
 ): Promise<void> {
   const config = getConfig();
   
@@ -270,7 +270,6 @@ export async function createBunnyLiveStream(name: string): Promise<BunnyLiveStre
   // Use live-specific API key if available
   const liveApiKey = ctx?.BUNNY_STREAM_LIVE_API_KEY || process.env.BUNNY_STREAM_LIVE_API_KEY || config.BUNNY_STREAM_API_KEY;
   
-  console.log('Creating live stream with library:', config.BUNNY_STREAM_LIBRARY_ID);
   
   const response = await fetch(
     `${BUNNY_API_BASE}/library/${config.BUNNY_STREAM_LIBRARY_ID}/livestreams`,
@@ -312,7 +311,7 @@ export async function getBunnyLiveStreams(): Promise<BunnyLiveStream[]> {
   }
 
   const data = await response.json();
-  return (data.items || []).map((item: any) => formatLiveStream(item, config.BUNNY_STREAM_CDN_HOSTNAME));
+  return (data.items || []).map((item: BunnyLiveStreamApiResponse) => formatLiveStream(item, config.BUNNY_STREAM_CDN_HOSTNAME));
 }
 
 // Get a specific live stream
@@ -355,13 +354,29 @@ export async function deleteBunnyLiveStream(streamId: string): Promise<void> {
   }
 }
 
-function formatLiveStream(data: any, cdnHostname: string): BunnyLiveStream {
+// Internal API response type for Bunny livestreams
+interface BunnyLiveStreamApiResponse {
+  id?: string;
+  guid?: string;
+  name: string;
+  rtmpUrl?: string;
+  streamKey?: string;
+  rtmpKey?: string;
+  hlsUrl?: string;
+  thumbnailUrl?: string;
+  status: number | string;
+  viewerCount?: number;
+  startedAt?: string;
+}
+
+function formatLiveStream(data: BunnyLiveStreamApiResponse, cdnHostname: string): BunnyLiveStream {
+  const streamId = data.id || data.guid || '';
   return {
-    id: data.id || data.guid,
+    id: streamId,
     name: data.name,
     rtmpUrl: data.rtmpUrl || `rtmp://live.bunnycdn.com/live`,
     rtmpKey: data.streamKey || data.rtmpKey || '',
-    hlsUrl: data.hlsUrl || `https://${cdnHostname}/live/${data.id || data.guid}/playlist.m3u8`,
+    hlsUrl: data.hlsUrl || `https://${cdnHostname}/live/${streamId}/playlist.m3u8`,
     thumbnailUrl: data.thumbnailUrl,
     status: mapStreamStatus(data.status),
     viewerCount: data.viewerCount || 0,
@@ -370,7 +385,7 @@ function formatLiveStream(data: any, cdnHostname: string): BunnyLiveStream {
 }
 
 function mapStreamStatus(status: number | string): 'idle' | 'connecting' | 'live' | 'disconnected' {
-  if (typeof status === 'string') return status as any;
+  if (typeof status === 'string') return status as 'idle' | 'connecting' | 'live' | 'disconnected';
   switch (status) {
     case 0: return 'idle';
     case 1: return 'connecting';

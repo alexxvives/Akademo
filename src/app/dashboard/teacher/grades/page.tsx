@@ -59,10 +59,8 @@ export default function TeacherGrades() {
     try {
       const res = await apiClient('/classes');
       const response: any = await res.json();
-      console.log('[Grades] Classes response:', response);
       if (response.success) {
         setClasses(response.data);
-        console.log('[Grades] Classes loaded:', response.data.length);
         if (response.data.length > 0) {
           setSelectedClass('all'); // Default to 'all'
         } else {

@@ -9,15 +9,11 @@ const requests = new Hono<{ Bindings: Bindings }>();
 requests.post('/student', async (c) => {
   try {
     const session = await requireAuth(c);
-    console.log('[Student Request] Session:', { id: session.id, role: session.role });
-
     if (session.role !== 'STUDENT') {
       return c.json(errorResponse('Only students can request to join classes'), 403);
     }
 
     const { classId } = await c.req.json();
-    console.log('[Student Request] ClassId:', classId);
-
     if (!classId) {
       return c.json(errorResponse('classId is required'), 400);
     }
@@ -58,9 +54,6 @@ requests.post('/student', async (c) => {
       .prepare('SELECT * FROM ClassEnrollment WHERE userId = ? AND classId = ?')
       .bind(session.id, classId)
       .first();
-
-    console.log('[Student Request] Existing enrollment:', existing);
-
     if (existing) {
       if (existing.status === 'APPROVED') {
         return c.json(errorResponse('Already enrolled in this class'), 400);

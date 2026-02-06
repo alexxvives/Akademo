@@ -146,7 +146,6 @@ export default function ClassPage() {
   useEffect(() => {
     if (lessons.length === 0) return;
 
-    console.log('[URL Params] Processing - lessonParam:', lessonParam, 'watchVideoId:', watchVideoId);
 
     if (lessonParam) {
       // Reload lesson data to get fresh playStates
@@ -157,7 +156,6 @@ export default function ClassPage() {
           
           if (result.success && result.data) {
             const freshLesson = result.data;
-            console.log('[URL Params] Reloaded lesson with fresh data:', freshLesson.title);
             
             // Update lessons array with fresh data
             setLessons(prev => prev.map(l => l.id === lessonParam ? freshLesson : l));
@@ -173,15 +171,12 @@ export default function ClassPage() {
             if (watchVideoId) {
               const video = freshLesson.videos.find((v: Video) => v.id === watchVideoId);
               if (video) {
-                console.log('[URL Params] Setting selected video from URL:', video.title, 'ID:', video.id);
-                console.log('[URL Params] Video playState:', video.playStates);
                 setSelectedVideo(video);
               } else {
                 console.warn('[URL Params] Video not found in lesson:', watchVideoId);
               }
             } else if (freshLesson.videos.length > 0) {
               // Auto-select first video
-              console.log('[URL Params] Auto-selecting first video:', freshLesson.videos[0].title);
               setSelectedVideo(freshLesson.videos[0]);
             }
           }
@@ -203,7 +198,6 @@ export default function ClassPage() {
       
       reloadLessonData();
     } else {
-      console.log('[URL Params] No lesson selected');
       setSelectedLesson(null);
       setSelectedVideo(null);
       setLessonRating(null);
@@ -213,7 +207,6 @@ export default function ClassPage() {
   const loadData = async () => {
     try {
       // First, load class data to resolve slug to ID
-      console.log('[Student Class] Loading class data for:', classId);
       const classRes = await apiClient(`/classes/${classId}`);
       const classResult = await classRes.json();
 
@@ -223,7 +216,6 @@ export default function ClassPage() {
         return;
       }
 
-      console.log('[Student Class] Class loaded:', classResult.data.name, 'ID:', classResult.data.id);
       setClassData(classResult.data);
       setEnrollmentStatus(classResult.data.enrollmentStatus || 'APPROVED');
 
@@ -253,14 +245,11 @@ export default function ClassPage() {
         topicsRes.json(),
       ]);
 
-      console.log('[Student Class] Topics result:', topicsResult);
       if (topicsResult.success) {
         setTopics(topicsResult.data || []);
       }
 
-      console.log('[Student Class] Lessons result:', lessonsResult);
       if (lessonsResult.success) {
-        console.log('[Student Class] Found', lessonsResult.data.length, 'lessons');
         // Just store the lesson list - don't fetch details yet (will fetch on-demand)
         setLessons(lessonsResult.data);
       }
@@ -319,10 +308,6 @@ export default function ClassPage() {
   const selectVideoInLesson = async (video: Video) => {
     if (!selectedLesson) return;
     
-    console.log('[Video Switch] Starting video switch');
-    console.log('[Video Switch] Current video:', selectedVideo?.id, selectedVideo?.title);
-    console.log('[Video Switch] Target video:', video.id, video.title);
-    console.log('[Video Switch] Lesson:', selectedLesson.id);
     
     // Reload lesson data to get fresh playStates before switching
     try {
@@ -330,7 +315,6 @@ export default function ClassPage() {
       const result = await res.json();
       
       if (result.success && result.data) {
-        console.log('[Video Switch] Reloaded lesson with fresh playStates');
         // Update the lesson in the lessons array
         setLessons(prev => prev.map(l => l.id === selectedLesson.id ? result.data : l));
         // Update selected lesson with fresh data
@@ -339,7 +323,6 @@ export default function ClassPage() {
         // Find the video with updated playState
         const updatedVideo = result.data.videos.find((v: Video) => v.id === video.id);
         if (updatedVideo) {
-          console.log('[Video Switch] Updated video playState:', updatedVideo.playStates);
           setSelectedVideo(updatedVideo);
         }
       }
@@ -349,7 +332,6 @@ export default function ClassPage() {
     
     // Update URL without full page reload
     const newUrl = `/dashboard/student/class/${classId}?lesson=${selectedLesson.id}&watch=${video.id}`;
-    console.log('[Video Switch] Navigating to:', newUrl);
     router.push(newUrl);
   };
 
@@ -378,6 +360,9 @@ export default function ClassPage() {
         setShowRatingSuccess(true);
         setTempRating(null);
         setFeedbackText('');
+        
+        // Trigger event to update teacher/academy sidebar badge (they'll see new/edited review)
+        window.dispatchEvent(new CustomEvent('unreadReviewsChanged'));
         
         // Hide success message after 2 seconds
         setTimeout(() => {

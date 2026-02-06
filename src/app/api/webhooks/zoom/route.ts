@@ -6,7 +6,6 @@ export async function POST(request: NextRequest) {
   try {
     const payload = await request.json();
     
-    console.log('[Zoom Webhook] Received:', payload.event);
     
     const ctx = await getCloudflareContext();
     const env = ctx.env as any;
@@ -17,9 +16,6 @@ export async function POST(request: NextRequest) {
       const plainToken = payload.payload.plainToken;
       const secretToken = process.env.ZOOM_WEBHOOK_SECRET || env.ZOOM_WEBHOOK_SECRET || '';
       
-      console.log('[Zoom Webhook] URL validation request received');
-      console.log('[Zoom Webhook] plainToken:', plainToken);
-      console.log('[Zoom Webhook] secretToken configured:', !!secretToken);
       
       // Use Web Crypto API
       const encoder = new TextEncoder();
@@ -35,21 +31,18 @@ export async function POST(request: NextRequest) {
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
       
-      console.log('[Zoom Webhook] encryptedToken generated:', hashForValidate);
       
       const response = {
         plainToken: plainToken,
         encryptedToken: hashForValidate
       };
       
-      console.log('[Zoom Webhook] Sending validation response:', response);
       return NextResponse.json(response, { status: 200 });
     }
 
     const { event, payload: data } = payload;
     
     // Log full payload for debugging
-    console.log('[Zoom Webhook] Full payload:', JSON.stringify(payload, null, 2));
 
     // Handle different Zoom events
     if (event === 'meeting.started') {
@@ -60,12 +53,10 @@ export async function POST(request: NextRequest) {
         .bind('active', new Date().toISOString(), meetingId.toString())
         .run();
 
-      console.log('[Zoom Webhook] Meeting started:', meetingId);
     } else if (event === 'meeting.ended') {
       const meetingId = data.object.id;
       
       // Log all possible participant count locations
-      console.log('[Zoom Webhook] meeting.ended data.object keys:', Object.keys(data.object || {}));
       
       // Try multiple possible locations for participant count
       const participantCount = 
@@ -80,7 +71,6 @@ export async function POST(request: NextRequest) {
         .bind('ended', new Date().toISOString(), participantCount, new Date().toISOString(), meetingId.toString())
         .run();
 
-      console.log('[Zoom Webhook] Meeting ended:', meetingId, 'participants:', participantCount);
       
       // Try to fetch participants via Zoom API as fallback
       if (participantCount === null || participantCount === 0) {
@@ -123,7 +113,6 @@ export async function POST(request: NextRequest) {
                   .bind(apiParticipantCount, new Date().toISOString(), meetingId.toString())
                   .run();
                 
-                console.log('[Zoom Webhook] Fetched participants via API:', apiParticipantCount);
               }
             }
           }
@@ -137,8 +126,6 @@ export async function POST(request: NextRequest) {
       const recordingFiles = data.object?.recording_files || [];
       const downloadToken = data.download_token; // Zoom provides this for authenticated download
 
-      console.log('[Zoom Webhook] Recording completed for meeting:', meetingId, 'files:', recordingFiles.length);
-      console.log('[Zoom Webhook] Download token present:', !!downloadToken);
 
       // Find MP4 recording (shared_screen_with_speaker_view or speaker_view preferred)
       const mp4Recording = recordingFiles.find((f: any) => 
@@ -157,8 +144,6 @@ export async function POST(request: NextRequest) {
           downloadUrl = `${downloadUrl}?access_token=${downloadToken}`;
         }
         
-        console.log('[Zoom Webhook] Found MP4 recording:', mp4Recording.recording_type);
-        console.log('[Zoom Webhook] Download URL (with token):', downloadUrl.substring(0, 100) + '...');
 
         // Get Zoom access token to fetch the recording with proper auth
         const ZOOM_ACCOUNT_ID = env.ZOOM_ACCOUNT_ID;
@@ -168,7 +153,6 @@ export async function POST(request: NextRequest) {
         // Try both possible env var names for Bunny API key
         const BUNNY_API_KEY = env.BUNNY_STREAM_API_KEY || env.BUNNY_STREAM_LIVE_API_KEY;
         
-        console.log('[Zoom Webhook] Config check - BUNNY_LIBRARY_ID:', BUNNY_LIBRARY_ID, 'BUNNY_API_KEY present:', !!BUNNY_API_KEY, 'key length:', BUNNY_API_KEY?.length);
         
         // Track the token we'll use for Bunny headers
         let authToken = downloadToken; // Start with webhook-provided token
@@ -210,7 +194,6 @@ export async function POST(request: NextRequest) {
                   // Use download_access_token if available (preferred), otherwise use OAuth token
                   authToken = recordingData.download_access_token || accessToken;
                   downloadUrl = `${apiMp4.download_url}?access_token=${authToken}`;
-                  console.log('[Zoom Webhook] Got fresh download URL from API, using download_access_token:', !!recordingData.download_access_token);
                 }
               }
             }
@@ -231,7 +214,6 @@ export async function POST(request: NextRequest) {
           });
 
           const bunnyResponseText = await bunnyResponse.text();
-          console.log('[Zoom Webhook] Bunny response:', bunnyResponse.status, bunnyResponseText);
 
           if (bunnyResponse.ok) {
             const bunnyData = JSON.parse(bunnyResponseText);
@@ -244,7 +226,6 @@ export async function POST(request: NextRequest) {
                 .bind(bunnyGuid, meetingId.toString())
                 .run();
 
-              console.log('[Zoom Webhook] Recording queued in Bunny:', bunnyGuid);
             } else {
               console.error('[Zoom Webhook] Bunny response missing guid/id:', bunnyResponseText);
             }
@@ -255,8 +236,6 @@ export async function POST(request: NextRequest) {
           console.error('[Zoom Webhook] Recording upload error:', bunnyError.message);
         }
       } else {
-        console.log('[Zoom Webhook] No MP4 recording found in', recordingFiles.length, 'files');
-        console.log('[Zoom Webhook] Available file types:', recordingFiles.map((f: any) => f.file_type).join(', '));
       }
     } else if (event === 'meeting.participant_joined' || event === 'meeting.participant_left' || event === 'participant.joined' || event === 'participant.left') {
       const meetingId = data.object.id;
@@ -267,7 +246,6 @@ export async function POST(request: NextRequest) {
         .bind(participantCount, new Date().toISOString(), meetingId.toString())
         .run();
 
-      console.log('[Zoom Webhook] Participant update:', meetingId, participantCount);
     }
 
     return NextResponse.json({ success: true, received: true });

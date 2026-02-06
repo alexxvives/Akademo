@@ -103,7 +103,6 @@ app.route('/zoom', zoomRoutes);
 
 // Cron trigger handler for monthly payment generation
 async function handleScheduled(env: Bindings) {
-  console.log('[Cron] Monthly payment generation triggered at', new Date().toISOString());
 
   try {
     // Find all active monthly cash/bizum enrollments that are due for payment
@@ -129,7 +128,6 @@ async function handleScheduled(env: Bindings) {
       AND c.monthlyPrice IS NOT NULL
     `).all();
 
-    console.log(`[Cron] Found ${enrollments.results.length} enrollments due for payment`);
 
     let created = 0;
     for (const enrollment of enrollments.results as any[]) {
@@ -167,13 +165,11 @@ async function handleScheduled(env: Bindings) {
         `).bind(enrollment.enrollmentId).run();
 
         created++;
-        console.log(`[Cron] Created pending payment for enrollment ${enrollment.enrollmentId}`);
       } catch (error) {
         console.error(`[Cron] Error creating payment for enrollment ${enrollment.enrollmentId}:`, error);
       }
     }
 
-    console.log(`[Cron] Successfully created ${created} pending payments`);
   } catch (error) {
     console.error('[Cron] Error in monthly payment generation:', error);
   }

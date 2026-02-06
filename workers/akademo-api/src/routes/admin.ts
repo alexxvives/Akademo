@@ -39,7 +39,6 @@ admin.get('/academies', async (c) => {
 
     const result = await c.env.DB.prepare(query).all();
     
-    console.log('[Admin Academies] Found', result.results?.length || 0, 'academies');
     
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
@@ -87,7 +86,6 @@ admin.get('/payments', async (c) => {
     
     const result = await c.env.DB.prepare(query).all();
     
-    console.log('[Admin Payments] Found', result.results?.length || 0, 'payments from enrollments');
     
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
@@ -99,12 +97,9 @@ admin.get('/payments', async (c) => {
 // GET /admin/classes - Get all classes across all academies (admin only)
 admin.get('/classes', async (c) => {
   try {
-    console.log('[Admin Classes] Starting request');
     const session = await requireAuth(c);
-    console.log('[Admin Classes] Session:', { id: session.id, role: session.role });
     
     if (session.role !== 'ADMIN') {
-      console.log('[Admin Classes] Forbidden - not admin');
       return c.json(errorResponse('Forbidden'), 403);
     }
 
@@ -135,18 +130,7 @@ admin.get('/classes', async (c) => {
       ORDER BY c.createdAt DESC
     `;
 
-    console.log('[Admin Classes] Executing query');
     const result = await c.env.DB.prepare(query).all();
-    
-    console.log('[Admin Classes] Query result:', {
-      success: result.success,
-      resultsCount: result.results?.length || 0,
-      meta: result.meta
-    });
-
-    if (result.results && result.results.length > 0) {
-      console.log('[Admin Classes] Sample result:', result.results[0]);
-    }
     
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
@@ -190,7 +174,6 @@ admin.get('/lessons', async (c) => {
 
     const result = await c.env.DB.prepare(query).all();
     
-    console.log('[Admin Lessons] Found', result.results?.length || 0, 'lessons');
     
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
@@ -242,7 +225,6 @@ admin.patch('/academy/:id', async (c) => {
     const query = `UPDATE Academy SET ${updates.join(', ')} WHERE id = ?`;
     await c.env.DB.prepare(query).bind(...params).run();
     
-    console.log('[Admin Update Academy] Updated academy', academyId);
     
     return c.json(successResponse({ id: academyId, updated: true }));
   } catch (error: any) {
@@ -283,7 +265,6 @@ admin.get('/teachers', async (c) => {
 
     const result = await c.env.DB.prepare(query).all();
     
-    console.log('[Admin Teachers] Found', result.results?.length || 0, 'teachers');
     
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
@@ -322,7 +303,6 @@ admin.get('/students', async (c) => {
 
     const result = await c.env.DB.prepare(query).all();
     
-    console.log('[Admin Students] Found', result.results?.length || 0, 'students');
     
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
@@ -353,7 +333,6 @@ admin.get('/zoom-accounts', async (c) => {
 
     const result = await c.env.DB.prepare(query).all();
     
-    console.log('[Admin Zoom Accounts] Found', result.results?.length || 0, 'accounts');
     
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
@@ -397,7 +376,6 @@ admin.patch('/classes/:id/assign-zoom', async (c) => {
       'UPDATE Class SET zoomAccountId = ? WHERE id = ?'
     ).bind(zoomAccountId || null, classId).run();
 
-    console.log('[Admin] Assigned Zoom account', zoomAccountId, 'to class', classId);
     
     return c.json(successResponse({ message: 'Zoom account assigned successfully' }));
   } catch (error: any) {
@@ -424,7 +402,6 @@ admin.delete('/users/:id', async (c) => {
       return c.json(errorResponse(`User ${userId} not found`), 404);
     }
 
-    console.log(`[Admin Delete Account] Deleting ${user.role} user: ${user.email} (${userId})`);
 
     // Role-specific deletion logic (same as the user self-delete endpoint)
     if (user.role === 'STUDENT') {
@@ -432,14 +409,12 @@ admin.delete('/users/:id', async (c) => {
       await c.env.DB.prepare('DELETE FROM ClassEnrollment WHERE userId = ?').bind(userId).run();
       await c.env.DB.prepare('DELETE FROM LessonRating WHERE studentId = ?').bind(userId).run();
       await c.env.DB.prepare('DELETE FROM VideoPlayState WHERE studentId = ?').bind(userId).run();
-      console.log('[Admin Delete Account] Deleted STUDENT enrollments, ratings, and video states');
       
     } else if (user.role === 'TEACHER') {
       // Unassign teacher from classes
       await c.env.DB.prepare('UPDATE Class SET teacherId = NULL WHERE teacherId = ?').bind(userId).run();
       await c.env.DB.prepare('DELETE FROM Teacher WHERE userId = ?').bind(userId).run();
       await c.env.DB.prepare('DELETE FROM LiveStream WHERE teacherId = ?').bind(userId).run();
-      console.log('[Admin Delete Account] Deleted TEACHER records and unassigned from classes');
       
     } else if (user.role === 'ACADEMY') {
       // CASCADE DELETE: Delete entire academy
@@ -447,7 +422,6 @@ admin.delete('/users/:id', async (c) => {
       
       for (const academy of (academies.results || [])) {
         const academyId = (academy as any).id;
-        console.log(`[Admin Delete Account] Deleting academy: ${academyId}`);
         
         // Get all classes in this academy
         const classes = await c.env.DB.prepare('SELECT id FROM Class WHERE academyId = ?').bind(academyId).all();
@@ -484,7 +458,6 @@ admin.delete('/users/:id', async (c) => {
         await c.env.DB.prepare('DELETE FROM Academy WHERE id = ?').bind(academyId).run();
       }
       
-      console.log('[Admin Delete Account] CASCADE deleted ACADEMY and all related data');
     }
 
     // Delete device sessions
@@ -496,7 +469,6 @@ admin.delete('/users/:id', async (c) => {
     // Finally, delete the user
     await c.env.DB.prepare('DELETE FROM User WHERE id = ?').bind(userId).run();
     
-    console.log(`[Admin Delete Account] Successfully deleted user ${userId}`);
     
     return c.json(successResponse({ message: `User ${user.email} deleted successfully` }));
   } catch (error: any) {

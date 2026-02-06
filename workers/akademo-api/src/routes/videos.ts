@@ -2,32 +2,18 @@ import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { requireAuth } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
+import { validateBody, videoProgressSchema } from '../lib/validation';
 
 const videos = new Hono<{ Bindings: Bindings }>();
 
 // POST /videos/progress - Update video watch progress
-videos.post('/progress', async (c) => {
+videos.post('/progress', validateBody(videoProgressSchema), async (c) => {
   try {
     const session = await requireAuth(c);
     const { videoId, studentId, currentPositionSeconds, watchTimeElapsed } = await c.req.json();
 
-    console.log('[VideoProgress] Request received:', {
-      sessionId: session.id,
-      sessionRole: session.role,
-      videoId,
-      studentId,
-      currentPositionSeconds,
-      watchTimeElapsed
-    });
-
     if (session.role !== 'STUDENT') {
-      console.log('[VideoProgress] Rejected - not a student role:', session.role);
       return c.json(errorResponse('Only students can track progress'), 403);
-    }
-
-    if (!videoId || watchTimeElapsed === undefined) {
-      console.log('[VideoProgress] Rejected - missing required fields');
-      return c.json(errorResponse('videoId and watchTimeElapsed required'), 400);
     }
 
     // Get video details to check duration and max watch time

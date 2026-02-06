@@ -6,18 +6,17 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import ProtectedVideoPlayer from '@/components/ProtectedVideoPlayer';
 import { SkeletonForm } from '@/components/ui/SkeletonLoader';
+import { FileInput } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
 import { multipartUpload } from '@/lib/multipart-upload';
 import { uploadToBunny } from '@/lib/bunny-upload';
 import { getBunnyThumbnailUrl } from '@/lib/bunny-stream';
 import ConfirmModal from '@/components/ConfirmModal';
+import { useTranscodingPoll } from '@/hooks/useTranscodingPoll';
+import { formatDuration, formatDate, isReleased } from '@/lib/formatters';
 
-// Import components
-import ClassHeader from './components/ClassHeader';
-import PendingEnrollments from './components/PendingEnrollments';
-import LessonsList from './components/LessonsList';
-import TopicsLessonsList from './components/TopicsLessonsList';
-import StudentsList from './components/StudentsList';
+// Import shared components
+import { ClassHeader, PendingEnrollments, LessonsList, TopicsLessonsList, StudentsList } from '@/components/class';
 
 interface Topic {
   id: string;
@@ -185,36 +184,7 @@ export default function TeacherClassPage() {
   }, [classData?.id]);
 
   // Poll for transcoding status updates
-  useEffect(() => {
-    const hasTranscoding = lessons.some(l => l.isTranscoding === 1);
-    if (!hasTranscoding || !classData?.id) return;
-
-    const interval = setInterval(async () => {
-      try {
-        // Use checkTranscoding=true to update Bunny status before returning lessons
-        // Use classData.id (actual UUID) instead of classId from URL (could be slug)
-        const lessonsRes = await apiClient(`/lessons?classId=${classData.id}&checkTranscoding=true`);
-        const lessonsResult = await lessonsRes.json();
-        if (lessonsResult.success && lessonsResult.data) {
-          // Preserve local upload state when updating from server
-          setLessons(prev => {
-            const newLessons = lessonsResult.data.map((serverLesson: Lesson) => {
-              const localLesson = prev.find(l => l.id === serverLesson.id);
-              if (localLesson?.isUploading) {
-                return { ...serverLesson, isUploading: true, uploadProgress: localLesson.uploadProgress };
-              }
-              return serverLesson;
-            });
-            return newLessons;
-          });
-        }
-      } catch (e) {
-        console.error('Failed to poll transcoding status:', e);
-      }
-    }, 10000); // Check every 10 seconds
-
-    return () => clearInterval(interval);
-  }, [lessons, classData?.id]);
+  useTranscodingPoll(lessons, classData?.id, setLessons);
 
   // Handle URL params for lesson/video selection
   useEffect(() => {
@@ -253,14 +223,12 @@ export default function TeacherClassPage() {
           // Find the stream that has this recordingId
           const matchingStream = recordings.find((r: any) => r.recordingId === recordingId);
           if (matchingStream) {
-            console.log('[Debug] Found matching stream:', matchingStream);
             setLessonFormData(prev => ({
               ...prev,
               selectedStreamRecordings: [matchingStream.id], // Use array with stream.id
               title: decodeURIComponent(streamTitle),
             }));
           } else {
-            console.log('[Debug] No matching stream found for recordingId:', recordingId);
           }
         }
       });
@@ -277,8 +245,6 @@ export default function TeacherClassPage() {
         }
       });
       const result = await response.json();
-      console.log('[Debug] History response:', result);
-      console.log('[Debug] Current Class ID:', classId);
       
       if (result.success && result.data) {
         // Filter streams that:
@@ -290,10 +256,8 @@ export default function TeacherClassPage() {
           const matchClass = s.classId === classId || s.classSlug === classId;
           const hasRecording = (s.status === 'ended' || (s.recordingId && s.recordingId.length > 5));
           const notUsedInLesson = !s.validRecordingId; // Backend returns lessonId if already used
-          console.log(`[Debug] Stream ${s.id}: ClassMatch=${matchClass} (${s.classId} vs ${classId}), HasRec=${hasRecording}, NotUsed=${notUsedInLesson}, Status=${s.status}, RecId=${s.recordingId}`);
           return matchClass && hasRecording && notUsedInLesson;
         });
-        console.log('[Debug] Filtered recordings:', recordingsForClass);
         setAvailableStreamRecordings(recordingsForClass);
         return recordingsForClass; // Return the recordings for the useEffect
       }
@@ -569,13 +533,8 @@ export default function TeacherClassPage() {
   const selectVideoInLesson = (video: any) => {
     if (!selectedLesson) return;
     
-    console.log('[Teacher Video Switch] Starting video switch');
-    console.log('[Teacher Video Switch] Current video:', selectedVideo?.id, selectedVideo?.title);
-    console.log('[Teacher Video Switch] Target video:', video.id, video.title);
-    console.log('[Teacher Video Switch] Lesson:', selectedLesson.id);
     
     const newUrl = `/dashboard/teacher/class/${classId}?lesson=${selectedLesson.id}&watch=${video.id}`;
-    console.log('[Teacher Video Switch] Navigating to:', newUrl);
     
     // Use soft navigation with key prop on player to force remount
     router.push(newUrl);
@@ -1247,13 +1206,7 @@ export default function TeacherClassPage() {
     }
   };
 
-  const formatDuration = (s: number) => {
-    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
-    return h > 0 ? `${h}h ${m}m` : `${m}m`;
-  };
 
-  const formatDate = (d: string) => new Date(d).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
-  const isReleased = (d: string) => new Date(d) <= new Date();
 
   if (loading) {
     return (
@@ -1304,9 +1257,7 @@ export default function TeacherClassPage() {
       {!selectedLesson && (
           <ClassHeader 
               classData={classData}
-              classId={classId}
-              lessonsCount={lessons.length}
-              pendingCount={pendingEnrollments.length}
+              backLink="/dashboard/teacher/classes"
               creatingStream={creatingStream}
               showPendingRequests={showPendingRequests}
               onCreateLesson={() => { router.push(`/dashboard/teacher/class/${classId}?action=create`); }}
@@ -1614,7 +1565,6 @@ export default function TeacherClassPage() {
                               method: 'DELETE',
                             });
                             const result = await res.json();
-                            console.log('[Cancel Scheduled Stream] Response:', result);
                             if (result.success) {
                               setLiveClasses([]); // Remove from UI immediately
                             } else {
@@ -1780,40 +1730,14 @@ export default function TeacherClassPage() {
                       <>
                       <div className="grid md:grid-cols-2 gap-4">
                       {/* Videos Field */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1.5">Video/s</label>
-                        <input 
-                          type="file" 
-                          accept="video/mp4" 
-                          multiple 
-                          onChange={e => { if (e.target.files) Array.from(e.target.files).forEach(addVideoToForm); e.target.value = ''; }} 
-                          className="w-full h-[38px] px-3 py-2 pr-10 border border-gray-200 rounded-lg text-sm bg-white appearance-none"
-                        />
-                        {lessonFormData.videos.length > 0 && (
-                          <div className="mt-2 space-y-2">
-                            {lessonFormData.videos.map((v, i) => (
-                              <div key={i} className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-                                  </svg>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <span className="text-sm font-medium text-gray-900 truncate block">{v.file.name}</span>
-                                </div>
-                                <button 
-                                  type="button" 
-                                  onClick={() => setLessonFormData({ ...lessonFormData, videos: lessonFormData.videos.filter((_, j) => j !== i) })} 
-                                  className="text-xs text-red-600 bg-red-100 hover:bg-red-200 px-2 py-1 rounded transition-colors"
-                                  title="Eliminar video"
-                                >
-                                  Eliminar
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                      <FileInput
+                        label="Video/s"
+                        accept="video/mp4"
+                        multiple
+                        value={lessonFormData.videos.map(v => v.file)}
+                        onChange={(files) => files.forEach(addVideoToForm)}
+                        description="Arrastra o selecciona archivos MP4"
+                      />
                       
                       {/* Stream Recording Selection */}
                       <div className="relative">
@@ -1864,34 +1788,14 @@ export default function TeacherClassPage() {
                       </div>
                     </div>
                     
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Documentos (PDF)</label>
-                      <input type="file" accept=".pdf" multiple onChange={e => { if (e.target.files) Array.from(e.target.files).forEach(addDocumentToForm); e.target.value = ''; }} className="w-full h-[38px] px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white appearance-none"/>
-                      {lessonFormData.documents.length > 0 && (
-                        <div className="mt-2 space-y-2">
-                          {lessonFormData.documents.map((d, i) => (
-                            <div key={i} className="flex items-center gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                              <div className="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                                </svg>
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <span className="text-sm font-medium text-gray-900 truncate block">{d.file.name}</span>
-                              </div>
-                              <button 
-                                type="button" 
-                                onClick={() => setLessonFormData({ ...lessonFormData, documents: lessonFormData.documents.filter((_, j) => j !== i) })} 
-                                className="text-xs text-red-600 bg-red-100 hover:bg-red-200 px-2 py-1 rounded transition-colors"
-                                title="Eliminar documento"
-                              >
-                                Eliminar
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    <FileInput
+                      label="Documentos (PDF)"
+                      accept=".pdf"
+                      multiple
+                      value={lessonFormData.documents.map(d => d.file)}
+                      onChange={(files) => files.forEach(addDocumentToForm)}
+                      description="Arrastra o selecciona archivos PDF"
+                    />
                       </>
                     )}
                     

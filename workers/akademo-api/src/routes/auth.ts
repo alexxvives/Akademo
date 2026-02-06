@@ -4,18 +4,16 @@ import bcrypt from 'bcryptjs';
 import { Bindings } from '../types';
 import { getSession } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
+import { loginSchema, validateBody } from '../lib/validation';
 
 const auth = new Hono<{ Bindings: Bindings }>();
 
 // GET /auth/me
 auth.get('/me', async (c) => {
-  console.log('[Auth Me] Request received');
   
   const session = await getSession(c);
-  console.log('[Auth Me] Session result:', session ? 'Found' : 'Not found');
 
   if (!session) {
-    console.log('[Auth Me] Returning 401 - no session');
     return c.json(errorResponse('Not authenticated'), 401);
   }
 
@@ -57,7 +55,6 @@ auth.get('/me', async (c) => {
     }
   }
 
-  console.log('[Auth Me] Returning session for user:', session.id);
   return c.json(successResponse({
     ...session,
     monoacademy,
@@ -67,17 +64,13 @@ auth.get('/me', async (c) => {
 
 // POST /auth/session/check - Check if session is valid
 auth.post('/session/check', async (c) => {
-  console.log('[Session Check] Request received');
   
   const session = await getSession(c);
-  console.log('[Session Check] Session result:', session ? 'Found' : 'Not found');
 
   if (!session) {
-    console.log('[Session Check] Returning 401 - no session');
     return c.json(errorResponse('Not authenticated'), 401);
   }
 
-  console.log('[Session Check] Returning session for user:', session.id);
   return c.json(successResponse(session));
 });
 
@@ -247,17 +240,10 @@ auth.post('/register', async (c) => {
 });
 
 // POST /auth/login
-auth.post('/login', async (c) => {
+auth.post('/login', validateBody(loginSchema), async (c) => {
   try {
-    console.log('[Login] Request received');
     const { email, password } = await c.req.json();
 
-    if (!email || !password) {
-      console.log('[Login] Missing email or password');
-      return c.json(errorResponse('Email and password are required'), 400);
-    }
-
-    console.log('[Login] Looking up user:', email);
     // Find user
     const user = await c.env.DB
       .prepare('SELECT * FROM User WHERE email = ?')
@@ -265,19 +251,15 @@ auth.post('/login', async (c) => {
       .first();
 
     if (!user) {
-      console.log('[Login] User not found');
       return c.json(errorResponse('Invalid credentials'), 401);
     }
 
-    console.log('[Login] User found, verifying password');
     // Verify password
     const isValid = await bcrypt.compare(password, user.password as string);
     if (!isValid) {
-      console.log('[Login] Invalid password');
       return c.json(errorResponse('Invalid credentials'), 401);
     }
 
-    console.log('[Login] Password valid, creating session');
     
     // Update lastLoginAt timestamp
     await c.env.DB
@@ -299,7 +281,6 @@ auth.post('/login', async (c) => {
       domain: '.akademo-edu.com', // Share cookie with frontend
     });
 
-    console.log('[Login] Success for user:', user.id);
     return c.json(successResponse({
       token: sessionId, // Return token for cross-domain auth
       id: user.id,
@@ -420,7 +401,6 @@ auth.post('/send-verification', async (c) => {
     }
 
     // Log code for development/testing
-    console.log(`[Verification Code] ${email}: ${code}`);
 
     return c.json(successResponse({
       message: 'Verification code sent',
@@ -437,7 +417,6 @@ auth.post('/verify-email', async (c) => {
   try {
     const { email, code } = await c.req.json();
 
-    console.log('[Verify Email] Received:', { email, code });
 
     if (!email || !code) {
       return c.json(errorResponse('Email and code are required'), 400);
@@ -454,21 +433,17 @@ auth.post('/verify-email', async (c) => {
       .first() as { code: string; expiresAt: string } | null;
 
     if (!stored) {
-      console.log('[Verify Email] No code found for:', email);
       return c.json(errorResponse('No verification code found. Please request a new one.'), 400);
     }
 
     // Check if expired
     if (Date.now() > new Date(stored.expiresAt).getTime()) {
       await c.env.DB.prepare('DELETE FROM VerificationCode WHERE email = ?').bind(email.toLowerCase()).run();
-      console.log('[Verify Email] Code expired for:', email);
       return c.json(errorResponse('Verification code expired. Please request a new one.'), 400);
     }
 
     // Check if code matches
-    console.log('[Verify Email] Comparing codes:', { received: code, stored: stored.code });
     if (stored.code !== code) {
-      console.log('[Verify Email] Code mismatch for:', email);
       return c.json(errorResponse('Invalid verification code'), 400);
     }
 

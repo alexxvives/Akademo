@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { requireAuth } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
+import { validateBody, createLessonSchema, updateLessonSchema, createRatingSchema } from '../lib/validation';
 
 const lessons = new Hono<{ Bindings: Bindings }>();
 
@@ -367,7 +368,7 @@ lessons.get('/:id', async (c) => {
 });
 
 // PATCH /lessons/:id - Update lesson
-lessons.patch('/:id', async (c) => {
+lessons.patch('/:id', validateBody(updateLessonSchema), async (c) => {
   try {
     const session = await requireAuth(c);
     const lessonId = c.req.param('id');
@@ -473,7 +474,6 @@ lessons.patch('/:id', async (c) => {
             .run();
         }
         
-        console.log(`[Lesson Update] Unblocked videos for lesson ${lessonId} due to multiplier increase`);
       }
     }
     
@@ -496,7 +496,6 @@ lessons.patch('/:id', async (c) => {
             .run();
         }
         
-        console.log(`[Lesson Update] Reset all timers for lesson ${lessonId} due to reschedule to future`);
       }
     }
 
@@ -621,7 +620,6 @@ lessons.delete('/:id', async (c) => {
           if (!response.ok) {
             console.error(`[Delete Lesson] Failed to delete video ${bunnyGuid} from Bunny:`, await response.text());
           } else {
-            console.log(`[Delete Lesson] Deleted video ${bunnyGuid} from Bunny`);
           }
         } catch (err) {
           console.error(`[Delete Lesson] Error deleting video ${bunnyGuid} from Bunny:`, err);
@@ -729,7 +727,7 @@ lessons.delete('/video/:id', async (c) => {
 });
 
 // POST /lessons/create-with-uploaded - Create lesson with pre-uploaded files
-lessons.post('/create-with-uploaded', async (c) => {
+lessons.post('/create-with-uploaded', validateBody(createLessonSchema), async (c) => {
   try {
     const session = await requireAuth(c);
     
@@ -737,15 +735,12 @@ lessons.post('/create-with-uploaded', async (c) => {
       return c.json(errorResponse('Not authorized'), 403);
     }
     
+    const body = await c.req.json();
     const { 
       classId, title, description, releaseDate, 
       maxWatchTimeMultiplier, watermarkIntervalMins,
       videos, documents, topicId 
-    } = await c.req.json();
-
-    if (!classId || !title) {
-      return c.json(errorResponse('classId and title are required'), 400);
-    }
+    } = body;
 
     // Verify access to the class
     const classRecord = await c.env.DB.prepare(`
@@ -845,7 +840,6 @@ lessons.post('/create-with-uploaded', async (c) => {
     // Process documents - create Upload and Document records
     const createdDocuments = [];
     for (const doc of (documents || [])) {
-      console.log('[Create Lesson] Processing document:', doc.title, 'storagePath:', doc.storagePath);
       
       if (!doc.storagePath) {
         console.error('[Create Lesson] Document missing storagePath:', JSON.stringify(doc));
@@ -912,7 +906,7 @@ lessons.post('/create-with-uploaded', async (c) => {
 });
 
 // POST /lessons/:id/rating - Rate a lesson
-lessons.post('/:id/rating', async (c) => {
+lessons.post('/:id/rating', validateBody(createRatingSchema.pick({ rating: true, comment: true })), async (c) => {
   try {
     const session = await requireAuth(c);
     const lessonId = c.req.param('id');
@@ -920,10 +914,6 @@ lessons.post('/:id/rating', async (c) => {
 
     if (session.role !== 'STUDENT') {
       return c.json(errorResponse('Only students can rate lessons'), 403);
-    }
-
-    if (!rating || rating < 1 || rating > 5) {
-      return c.json(errorResponse('Rating must be between 1 and 5'), 400);
     }
 
     // Check if enrolled

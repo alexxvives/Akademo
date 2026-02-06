@@ -71,18 +71,14 @@ export async function getSession(): Promise<SessionUser | null> {
   const cookieStore = await cookies();
   const sessionId = cookieStore.get(SESSION_COOKIE_NAME)?.value;
 
-  console.log('[getSession] Cookie name:', SESSION_COOKIE_NAME);
-  console.log('[getSession] Session ID found:', sessionId ? 'Yes' : 'No');
 
   if (!sessionId) {
-    console.log('[getSession] No session cookie found');
     return null;
   }
 
   // Simple session: decode base64 userId
   try {
     const userId = decodeBase64(sessionId);
-    console.log('[getSession] Decoded userId:', userId);
     
     // Fetch user from worker API instead of direct DB access
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://akademo-api.alexxvives.workers.dev';
@@ -93,7 +89,6 @@ export async function getSession(): Promise<SessionUser | null> {
     });
     
     if (!response.ok) {
-      console.log('[getSession] User not found via API');
       return null;
     }
     
@@ -101,7 +96,6 @@ export async function getSession(): Promise<SessionUser | null> {
     const user = result.data;
 
     if (!user) {
-      console.log('[getSession] User not found in response');
       return null;
     }
     
