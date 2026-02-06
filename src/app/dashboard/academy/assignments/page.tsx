@@ -616,7 +616,7 @@ export default function TeacherAssignments() {
                   multiple 
                   accept=".pdf"
                   onChange={(e) => setUploadFiles(Array.from(e.target.files || []))}
-                  className="w-full h-[38px] px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 file:mr-4 file:py-0.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200" 
+                  className="w-full h-[38px] px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 file:mr-4 file:py-0.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
                 />
                 {uploadFiles.length > 0 && (
                   <div className="mt-2 space-y-1">
@@ -774,13 +774,13 @@ export default function TeacherAssignments() {
             <form onSubmit={handleUpdateAssignment} className="p-6 space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
-                <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
+                <input type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} required
+                  className="w-full h-[38px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
-                <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
+                <textarea value={newDescription} onChange={(e) => setNewDescription(e.target.value)} rows={2}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-y focus:ring-2 focus:ring-brand-500" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de entrega</label>

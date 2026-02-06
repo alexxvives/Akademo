@@ -1617,7 +1617,7 @@ export default function TeacherClassPage() {
                             value={lessonFormData.title} 
                             onChange={e => setLessonFormData({ ...lessonFormData, title: e.target.value })} 
                             className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors" 
-                            placeholder="Título de la lección"
+                            placeholder="Titulo de la clase"
                           />
                         </div>
                         {/* Publish options - Only for CREATE mode */}
@@ -1710,7 +1710,8 @@ export default function TeacherClassPage() {
                         value={lessonFormData.description} 
                         onChange={e => setLessonFormData({ ...lessonFormData, description: e.target.value })} 
                         rows={2} 
-                        className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors resize-none"
+                        className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors resize-y"
+                        placeholder="Descripcion de la clase"
                       />
                     </div>
                     
@@ -1735,7 +1736,7 @@ export default function TeacherClassPage() {
                           accept="video/mp4" 
                           multiple 
                           onChange={e => { if (e.target.files) Array.from(e.target.files).forEach(addVideoToForm); e.target.value = ''; }} 
-                          className="w-full h-[38px] px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 file:mr-4 file:py-0.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+                          className="w-full h-[38px] px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 file:mr-4 file:py-0.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
                         />
                         {lessonFormData.videos.length > 0 && (
                           <div className="mt-2 space-y-1">
@@ -1807,7 +1808,7 @@ export default function TeacherClassPage() {
                         accept=".pdf" 
                         multiple 
                         onChange={e => { if (e.target.files) Array.from(e.target.files).forEach(addDocumentToForm); e.target.value = ''; }} 
-                        className="w-full h-[38px] px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 file:mr-4 file:py-0.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+                        className="w-full h-[38px] px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 file:mr-4 file:py-0.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
                       />
                       {lessonFormData.documents.length > 0 && (
                         <div className="mt-2 space-y-1">
@@ -1909,7 +1910,7 @@ export default function TeacherClassPage() {
                                 accept="video/mp4" 
                                 multiple 
                                 onChange={e => { if (e.target.files) Array.from(e.target.files).forEach(addVideoToForm); e.target.value = ''; }} 
-                                className="w-full h-[38px] px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 file:mr-4 file:py-0.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+                                className="w-full h-[38px] px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 file:mr-4 file:py-0.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
                               />
                               {lessonFormData.videos.length > 0 && (
                                 <div className="mt-2 space-y-1">
@@ -1931,7 +1932,7 @@ export default function TeacherClassPage() {
                                 accept=".pdf" 
                                 multiple 
                                 onChange={e => { if (e.target.files) Array.from(e.target.files).forEach(addDocumentToForm); e.target.value = ''; }} 
-                                className="w-full h-[38px] px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 file:mr-4 file:py-0.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+                                className="w-full h-[38px] px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 file:mr-4 file:py-0.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
                               />
                               {lessonFormData.documents.length > 0 && (
                                 <div className="mt-2 space-y-1">
