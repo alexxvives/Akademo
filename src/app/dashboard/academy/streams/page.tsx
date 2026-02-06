@@ -261,12 +261,12 @@ export default function AcademyStreamsPage() {
   return (
     <div className="space-y-6">
       {/* Header with Filter */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Historial de Streams</h1>
           {academyName && <p className="text-gray-600 text-sm mt-1">{academyName}</p>}
-          </div>
-  {classes.length > 0 && (
+        </div>
+        {classes.length > 0 && (
           <div className="relative">
             <select
               value={selectedClass}

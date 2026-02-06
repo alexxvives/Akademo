@@ -217,7 +217,7 @@ export default function AcademyTeachers() {
   return (
     <>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">Profesores</h1>
             {academyName && <p className="text-sm text-gray-500 mt-1">{academyName}</p>}
@@ -246,7 +246,7 @@ export default function AcademyTeachers() {
             <p className="text-gray-500">Los profesores aparecerán aquí cuando se unan a la academia</p>
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
             <div className="px-6 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

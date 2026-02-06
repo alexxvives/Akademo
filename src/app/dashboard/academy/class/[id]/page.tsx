@@ -1557,7 +1557,7 @@ export default function TeacherClassPage() {
 
             {/* Lesson Form Modal */}
             {showLessonForm && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 !m-0 p-0">
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 !m-0 p-4">
                 <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
                   <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center flex-shrink-0">
                     <h3 className="text-xl font-semibold text-gray-900">
@@ -2105,7 +2105,7 @@ export default function TeacherClassPage() {
 
             {/* Reschedule Modal */}
             {showRescheduleModal && reschedulingLesson && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
                 <div className="bg-white rounded-2xl max-w-md w-full p-6">
                   <h3 className="text-xl font-semibold text-gray-900 mb-4">Reprogramar Lección</h3>
 
@@ -2116,7 +2116,7 @@ export default function TeacherClassPage() {
                     const time = (form.elements.namedItem('rescheduleTime') as HTMLInputElement).value;
                     handleRescheduleSubmit(date, time);
                   }}>
-                    <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">Nueva Fecha</label>
                         <input 

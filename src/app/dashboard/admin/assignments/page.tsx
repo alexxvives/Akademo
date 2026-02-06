@@ -187,12 +187,12 @@ export default function AdminAssignments() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Ejercicios</h1>
           <p className="text-sm text-gray-500 mt-1">Vista general de todos los ejercicios</p>
         </div>
-        <div className="flex gap-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <div className="relative">
             <select
               value={selectedAcademy}
@@ -200,7 +200,7 @@ export default function AdminAssignments() {
                 setSelectedAcademy(e.target.value);
                 setSelectedClass('');
               }}
-              className="appearance-none w-64 pl-4 pr-10 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              className="appearance-none w-full sm:w-48 pl-4 pr-10 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
             >
               <option value="">Todas las academias</option>
               {academies.map((academy) => (
@@ -219,7 +219,7 @@ export default function AdminAssignments() {
               <select
                 value={selectedClass}
                 onChange={(e) => setSelectedClass(e.target.value)}
-                className="appearance-none w-64 pl-4 pr-10 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                className="appearance-none w-full sm:w-48 pl-4 pr-10 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               >
                 <option value="">Todas las asignaturas</option>
                 {filteredClasses.map((cls) => (

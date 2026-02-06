@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { MobileSidebar } from '@/components/layout/MobileSidebar';
@@ -430,7 +431,12 @@ export default function DashboardLayout({
 
   if (loading) {
     return (
-      <div className="dashboard-layout min-h-screen bg-[#111318] flex">
+      <div className="dashboard-layout min-h-screen bg-[#111318] flex flex-col lg:flex-row">
+        {/* Mobile loading header */}
+        <div className="lg:hidden h-14 bg-[#1a1d29] flex items-center px-4">
+          <div className="w-8 h-8 bg-gray-700 rounded animate-pulse" />
+          <div className="ml-3 w-24 h-5 bg-gray-700 rounded animate-pulse" />
+        </div>
         <aside className="hidden lg:flex flex-col bg-[#1a1d29] w-64">
           <div className="h-20 flex items-center px-4">
             <div className="w-12 h-12 bg-gray-700 rounded-xl animate-pulse" />
@@ -440,10 +446,10 @@ export default function DashboardLayout({
           </nav>
         </aside>
         <div className="flex-1 flex flex-col">
-          <header className="h-16 bg-gray-100 border-b" />
-          <main className="flex-1 p-8">
+          <header className="hidden lg:block h-16 bg-gray-100 border-b" />
+          <main className="flex-1 p-4 md:p-8">
             <div className="w-48 h-8 bg-gray-200 rounded animate-pulse mb-4" />
-            <div className="w-96 h-4 bg-gray-200 rounded animate-pulse" />
+            <div className="w-full max-w-sm h-4 bg-gray-200 rounded animate-pulse" />
           </main>
         </div>
       </div>
@@ -485,6 +491,50 @@ export default function DashboardLayout({
       />
 
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+        {/* Mobile Header with hamburger */}
+        <header className="lg:hidden flex items-center justify-between h-14 px-4 bg-white border-b border-gray-200 flex-shrink-0">
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className="p-1.5 -ml-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+            aria-label="Open menu"
+          >
+            <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <Link
+            href={`/dashboard/${role.toLowerCase()}`}
+            className="flex items-center gap-2"
+          >
+            <img
+              src="/logo/AKADEMO_logo_OTHER2.svg"
+              alt="Akademo"
+              className="h-6 w-auto object-contain"
+            />
+            <span className="font-semibold text-gray-900 text-base font-[family-name:var(--font-montserrat)]">
+              AKADEMO
+            </span>
+          </Link>
+          <div className="w-9 flex items-center justify-end">
+            {role === 'STUDENT' && (
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                aria-label="Notifications"
+              >
+                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+            )}
+          </div>
+        </header>
+
         {role === 'STUDENT' && showNotifications && (
           <NotificationPanel
             notifications={notifications}
@@ -497,7 +547,7 @@ export default function DashboardLayout({
         )}
 
         <main className="flex-1 overflow-y-auto bg-gray-100">
-          <div className="py-12 pl-20 pr-20">
+          <div className="py-6 px-4 md:py-8 md:px-10 lg:py-12 lg:pl-20 lg:pr-20">
             {children}
           </div>
         </main>

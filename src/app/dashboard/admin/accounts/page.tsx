@@ -195,14 +195,14 @@ export default function AccountsPage() {
   return (
     <div className="space-y-6">
       {/* Header with Filters */}
-      <div className="flex items-center justify-between gap-4 border-b border-gray-100">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Gestión de Cuentas</h1>
           <p className="text-sm text-gray-500 mt-1">Administrar y eliminar cuentas de usuarios</p>
         </div>
         
         {/* Filters in top-right */}
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <div className="relative">
             <input
               type="text"
@@ -211,7 +211,7 @@ export default function AccountsPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Buscar..."
-              className="appearance-none w-64 pl-3 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="appearance-none w-full sm:w-48 pl-3 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
             />
           </div>
           <div className="relative">

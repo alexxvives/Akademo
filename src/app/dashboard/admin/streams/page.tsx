@@ -212,13 +212,13 @@ export default function AdminStreamsPage() {
   return (
     <div className="space-y-6">
       {/* Header with inline filters */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Historial de Streams</h1>
           <p className="text-gray-600 text-sm mt-1">Todas las academias</p>
         </div>
         
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           {selectedAcademy !== 'all' && filteredClasses.length > 0 && (
             <select
               value={selectedClass}

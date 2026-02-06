@@ -83,7 +83,7 @@ export default function AdminTeachers() {
   return (
     <>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">Profesores</h1>
             <p className="text-sm text-gray-500 mt-1">AKADEMO PLATFORM</p>
@@ -95,7 +95,7 @@ export default function AdminTeachers() {
               <select
                 value={selectedAcademy}
                 onChange={(e) => setSelectedAcademy(e.target.value)}
-                className='appearance-none w-64 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent'
+                className='appearance-none w-full md:w-64 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent'
               >
                 <option value="ALL">Todas las Academias</option>
                 {academies.map(a => (
@@ -122,7 +122,7 @@ export default function AdminTeachers() {
             <p className="text-gray-500">Los profesores aparecerán aquí cuando se registren</p>
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>

@@ -103,19 +103,19 @@ export default function AdminFacturas() {
   return (
     <div className="space-y-6">
       {/* Header with Filters */}
-      <div className="flex items-center justify-between gap-4 border-b border-gray-100">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Facturas y Pagos</h1>
           <p className="text-sm text-gray-500 mt-1">Historial de pagos y transacciones</p>
         </div>
         
         {/* Filters in top-right */}
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <div className="relative">
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value as typeof filter)}
-              className="appearance-none w-64 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="appearance-none w-full sm:w-48 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
               <option value="ALL">Todos</option>
               <option value="STUDENT_TO_ACADEMY">Estudiante → Academia</option>

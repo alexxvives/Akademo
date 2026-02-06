@@ -71,7 +71,7 @@ export default function AdminClassesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Asignaturas</h1>
           <p className="text-sm text-gray-500 mt-1">Gestionar todas las asignaturas de la plataforma</p>
@@ -83,7 +83,7 @@ export default function AdminClassesPage() {
             <select
               value={selectedAcademy}
               onChange={(e) => setSelectedAcademy(e.target.value)}
-              className="appearance-none w-64 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="appearance-none w-full md:w-64 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">Todas las Academias</option>
               {academies.map((academy) => (

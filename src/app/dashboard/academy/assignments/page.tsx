@@ -392,15 +392,15 @@ export default function TeacherAssignments() {
   return (
     <>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">Ejercicios</h1>
             {academyName && <p className="text-sm text-gray-500 mt-1">{academyName}</p>}
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <div className="relative">
               <select value={selectedClassId} onChange={(e) => setSelectedClassId(e.target.value)}
-                className="appearance-none w-64 pl-4 pr-10 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent">
+                className="appearance-none w-full sm:w-48 pl-4 pr-10 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent">
                 <option value="">Todas las asignaturas</option>
                 {classes.map((cls) => (<option key={cls.id} value={cls.id}>{cls.name}</option>))}
               </select>
@@ -431,7 +431,7 @@ export default function TeacherAssignments() {
             <p className="text-gray-500">Crea tu primer ejercicio para esta asignatura</p>
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
             <div className="px-6 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -605,7 +605,7 @@ export default function TeacherAssignments() {
                       now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
                       return now.toISOString().slice(0, 16);
                     })()}
-                    className="w-full h-[38px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 [&::-webkit-datetime-edit]:opacity-0 [&:in-range::-webkit-datetime-edit]:opacity-100" 
+                    className={`w-full h-[38px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 ${!newDueDate ? 'text-transparent' : ''}`}
                   />
                 </div>
               </div>
