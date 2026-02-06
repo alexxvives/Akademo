@@ -605,9 +605,8 @@ export default function TeacherAssignments() {
                       now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
                       return now.toISOString().slice(0, 16);
                     })()}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" 
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" 
                   />
-                  <p className="text-xs text-gray-500 mt-1">La fecha límite no puede estar en el pasado</p>
                 </div>
               </div>
               <div>
@@ -617,7 +616,7 @@ export default function TeacherAssignments() {
                   multiple 
                   accept=".pdf"
                   onChange={(e) => setUploadFiles(Array.from(e.target.files || []))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200" 
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200" 
                 />
                 {uploadFiles.length > 0 && (
                   <div className="mt-2 space-y-1">
