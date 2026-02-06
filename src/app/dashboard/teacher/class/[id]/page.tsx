@@ -6,7 +6,6 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import ProtectedVideoPlayer from '@/components/ProtectedVideoPlayer';
 import { SkeletonForm } from '@/components/ui/SkeletonLoader';
-import { FileInput } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
 import { multipartUpload } from '@/lib/multipart-upload';
 import { uploadToBunny } from '@/lib/bunny-upload';
@@ -1730,14 +1729,28 @@ export default function TeacherClassPage() {
                       <>
                       <div className="grid md:grid-cols-2 gap-4">
                       {/* Videos Field */}
-                      <FileInput
-                        label="Video/s"
-                        accept="video/mp4"
-                        multiple
-                        value={lessonFormData.videos.map(v => v.file)}
-                        onChange={(files) => files.forEach(addVideoToForm)}
-                        description="Arrastra o selecciona archivos MP4"
-                      />
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1.5">Video/s</label>
+                        <input 
+                          type="file" 
+                          accept="video/mp4" 
+                          multiple 
+                          onChange={e => { if (e.target.files) Array.from(e.target.files).forEach(addVideoToForm); e.target.value = ''; }} 
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+                        />
+                        {lessonFormData.videos.length > 0 && (
+                          <div className="mt-2 space-y-1">
+                            {lessonFormData.videos.map((v, i) => (
+                              <div key={i} className="flex items-center gap-2 text-sm text-gray-600">
+                                <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                  <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                                </svg>
+                                <span>{v.file.name}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                       
                       {/* Stream Recording Selection */}
                       <div className="relative">
@@ -1788,14 +1801,28 @@ export default function TeacherClassPage() {
                       </div>
                     </div>
                     
-                    <FileInput
-                      label="Documentos (PDF)"
-                      accept=".pdf"
-                      multiple
-                      value={lessonFormData.documents.map(d => d.file)}
-                      onChange={(files) => files.forEach(addDocumentToForm)}
-                      description="Arrastra o selecciona archivos PDF"
-                    />
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Documentos (PDF)</label>
+                      <input 
+                        type="file" 
+                        accept=".pdf" 
+                        multiple 
+                        onChange={e => { if (e.target.files) Array.from(e.target.files).forEach(addDocumentToForm); e.target.value = ''; }} 
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+                      />
+                      {lessonFormData.documents.length > 0 && (
+                        <div className="mt-2 space-y-1">
+                          {lessonFormData.documents.map((d, i) => (
+                            <div key={i} className="flex items-center gap-2 text-sm text-gray-600">
+                              <svg className="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                              </svg>
+                              <span>{d.file.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                       </>
                     )}
                     
@@ -1883,27 +1910,16 @@ export default function TeacherClassPage() {
                                 accept="video/mp4" 
                                 multiple 
                                 onChange={e => { if (e.target.files) Array.from(e.target.files).forEach(addVideoToForm); e.target.value = ''; }} 
-                                className="w-full h-[38px] px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
                               />
                               {lessonFormData.videos.length > 0 && (
-                                <div className="mt-2 space-y-2">
+                                <div className="mt-2 space-y-1">
                                   {lessonFormData.videos.map((v, i) => (
-                                    <div key={i} className="relative p-2 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
-                                      <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
-                                        </svg>
-                                      </div>
-                                      <span className="text-xs text-gray-700 truncate flex-1">{v.file.name}</span>
-                                      <button 
-                                        type="button" 
-                                        onClick={() => setLessonFormData({ ...lessonFormData, videos: lessonFormData.videos.filter((_, j) => j !== i) })} 
-                                        className="w-5 h-5 flex items-center justify-center text-red-500 hover:text-red-700 rounded"
-                                      >
-                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                      </button>
+                                    <div key={i} className="flex items-center gap-2 text-sm text-gray-600">
+                                      <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                                      </svg>
+                                      <span>{v.file.name}</span>
                                     </div>
                                   ))}
                                 </div>
@@ -1916,27 +1932,16 @@ export default function TeacherClassPage() {
                                 accept=".pdf" 
                                 multiple 
                                 onChange={e => { if (e.target.files) Array.from(e.target.files).forEach(addDocumentToForm); e.target.value = ''; }} 
-                                className="w-full h-[38px] px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white"
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
                               />
                               {lessonFormData.documents.length > 0 && (
-                                <div className="mt-2 space-y-2">
+                                <div className="mt-2 space-y-1">
                                   {lessonFormData.documents.map((d, i) => (
-                                    <div key={i} className="relative p-2 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
-                                      <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
-                                        </svg>
-                                      </div>
-                                      <span className="text-xs text-gray-700 truncate flex-1">{d.file.name}</span>
-                                      <button 
-                                        type="button" 
-                                        onClick={() => setLessonFormData({ ...lessonFormData, documents: lessonFormData.documents.filter((_, j) => j !== i) })} 
-                                        className="w-5 h-5 flex items-center justify-center text-red-500 hover:text-red-700 rounded"
-                                      >
-                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                      </button>
+                                    <div key={i} className="flex items-center gap-2 text-sm text-gray-600">
+                                      <svg className="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                                      </svg>
+                                      <span>{d.file.name}</span>
                                     </div>
                                   ))}
                                 </div>
