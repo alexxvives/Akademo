@@ -156,14 +156,16 @@ export default function AcademyGrades() {
       label: 'Promedio (%)',
       data: top10Averages.map(a => a.averageGrade),
       backgroundColor: top10Averages.map(a => 
-        a.averageGrade >= 70 ? 'rgba(34, 197, 94, 0.8)' :
-        a.averageGrade >= 50 ? 'rgba(234, 179, 8, 0.8)' :
-        'rgba(239, 68, 68, 0.8)'
+        a.averageGrade === 100 ? 'rgba(22, 101, 52, 0.8)' :
+        a.averageGrade >= 70 ? 'rgba(5, 150, 105, 0.8)' :
+        a.averageGrade >= 50 ? 'rgba(249, 115, 22, 0.8)' :
+        'rgba(220, 38, 38, 0.8)'
       ),
       borderColor: top10Averages.map(a => 
-        a.averageGrade >= 70 ? 'rgb(34, 197, 94)' :
-        a.averageGrade >= 50 ? 'rgb(234, 179, 8)' :
-        'rgb(239, 68, 68)'
+        a.averageGrade === 100 ? 'rgb(22, 101, 52)' :
+        a.averageGrade >= 70 ? 'rgb(5, 150, 105)' :
+        a.averageGrade >= 50 ? 'rgb(249, 115, 22)' :
+        'rgb(220, 38, 38)'
       ),
       borderWidth: 2,
       borderRadius: 6,
@@ -204,11 +206,53 @@ export default function AcademyGrades() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="h-64 bg-gray-200 rounded"></div>
-          <div className="h-96 bg-gray-200 rounded"></div>
+      <div className="space-y-6 animate-pulse">
+        {/* Header Skeleton */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="h-8 bg-gray-200 rounded w-48"></div>
+          <div className="h-10 bg-gray-200 rounded w-full md:w-64"></div>
+        </div>
+
+        {/* Chart Card Skeleton */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="h-7 bg-gray-200 rounded w-56"></div>
+            <div className="h-5 bg-gray-200 rounded w-48"></div>
+          </div>
+          <div className="h-80 bg-gray-100 rounded"></div>
+        </div>
+
+        {/* Table Card Skeleton */}
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
+            <div className="h-5 bg-gray-200 rounded w-40"></div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3"><div className="h-4 bg-gray-200 rounded w-20"></div></th>
+                  <th className="px-6 py-3"><div className="h-4 bg-gray-200 rounded w-16"></div></th>
+                  <th className="px-6 py-3"><div className="h-4 bg-gray-200 rounded w-20"></div></th>
+                  <th className="px-6 py-3"><div className="h-4 bg-gray-200 rounded w-16"></div></th>
+                  <th className="px-6 py-3"><div className="h-4 bg-gray-200 rounded w-12"></div></th>
+                  <th className="px-6 py-3 text-right"><div className="h-4 bg-gray-200 rounded w-24 ml-auto"></div></th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {[...Array(5)].map((_, i) => (
+                  <tr key={i}>
+                    <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded w-32"></div></td>
+                    <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded w-40"></div></td>
+                    <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded w-16"></div></td>
+                    <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded w-24"></div></td>
+                    <td className="px-6 py-4"><div className="h-4 bg-gray-200 rounded w-20"></div></td>
+                    <td className="px-6 py-4 text-right"><div className="h-6 bg-gray-200 rounded w-16 ml-auto"></div></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     );
@@ -365,8 +409,9 @@ export default function AcademyGrades() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">
                           <span className={`text-sm font-medium ${
-                            (grade.score / grade.maxScore * 100) >= 70 ? 'text-green-600' :
-                            (grade.score / grade.maxScore * 100) >= 50 ? 'text-yellow-600' :
+                            grade.score === grade.maxScore ? 'text-green-800' :
+                            (grade.score / grade.maxScore) >= 0.7 ? 'text-green-600' :
+                            (grade.score / grade.maxScore) >= 0.5 ? 'text-orange-500' :
                             'text-red-600'
                           }`}>
                             {grade.score} / {grade.maxScore}

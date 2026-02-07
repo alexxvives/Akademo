@@ -156,14 +156,16 @@ export default function TeacherGrades() {
       label: 'Promedio (%)',
       data: top10Averages.map(a => a.averageGrade),
       backgroundColor: top10Averages.map(a => 
-        a.averageGrade >= 70 ? 'rgba(34, 197, 94, 0.8)' :
-        a.averageGrade >= 50 ? 'rgba(234, 179, 8, 0.8)' :
-        'rgba(239, 68, 68, 0.8)'
+        a.averageGrade === 100 ? 'rgba(22, 101, 52, 0.8)' :
+        a.averageGrade >= 70 ? 'rgba(5, 150, 105, 0.8)' :
+        a.averageGrade >= 50 ? 'rgba(249, 115, 22, 0.8)' :
+        'rgba(220, 38, 38, 0.8)'
       ),
       borderColor: top10Averages.map(a => 
-        a.averageGrade >= 70 ? 'rgb(34, 197, 94)' :
-        a.averageGrade >= 50 ? 'rgb(234, 179, 8)' :
-        'rgb(239, 68, 68)'
+        a.averageGrade === 100 ? 'rgb(22, 101, 52)' :
+        a.averageGrade >= 70 ? 'rgb(5, 150, 105)' :
+        a.averageGrade >= 50 ? 'rgb(249, 115, 22)' :
+        'rgb(220, 38, 38)'
       ),
       borderWidth: 2,
       borderRadius: 6,
@@ -398,9 +400,9 @@ export default function TeacherGrades() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">
                           <span className={`text-sm font-medium ${
-                            (grade.score / grade.maxScore * 100) === 100 ? 'text-green-800' :
-                            (grade.score / grade.maxScore * 100) >= 70 ? 'text-green-600' :
-                            (grade.score / grade.maxScore * 100) >= 50 ? 'text-orange-500' :
+                            grade.score === grade.maxScore ? 'text-green-800' :
+                            (grade.score / grade.maxScore) >= 0.7 ? 'text-green-600' :
+                            (grade.score / grade.maxScore) >= 0.5 ? 'text-orange-500' :
                             'text-red-600'
                           }`}>
                             {grade.score} / {grade.maxScore}
