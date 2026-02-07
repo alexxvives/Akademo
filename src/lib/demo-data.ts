@@ -326,14 +326,14 @@ export function generateDemoStudents(count: number = DEMO_STUDENT_COUNT.TOTAL): 
 }
 
 export function generateDemoRatings(count: number = 307): DemoRating[] {
-  // Distribution matching expected totals: 134 five-star, 71 four-star, 36 three-star, 66 two-star, 0 one-star
-  // Total: 307 ratings to match frontend allocation across all lessons
+  // Distribution: 134★★★★★, 71★★★★, 36★★★, 40★★, 26★ (307 total)
+  // Converted 26 two-star to one-star for realistic negative feedback
   const ratings = [
     ...Array(134).fill(5),  // 43.6% - 5 stars
     ...Array(71).fill(4),   // 23.1% - 4 stars  
     ...Array(36).fill(3),   // 11.7% - 3 stars
-    ...Array(66).fill(2),   // 21.5% - 2 stars
-    ...Array(0).fill(1),    // 0% - 1 star (not shown)
+    ...Array(40).fill(2),   // 13.0% - 2 stars (reduced from 66)
+    ...Array(26).fill(1),   // 8.5% - 1 star (converted from 2-star)
   ];
   
   const lessons = [
