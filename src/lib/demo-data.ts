@@ -325,14 +325,15 @@ export function generateDemoStudents(count: number = DEMO_STUDENT_COUNT.TOTAL): 
   return hardcodedStudents.slice(0, count);
 }
 
-export function generateDemoRatings(count: number = 250): DemoRating[] {
-  // More realistic distribution: mostly positive, but some negative feedback
+export function generateDemoRatings(count: number = 307): DemoRating[] {
+  // Distribution matching expected totals: 134 five-star, 71 four-star, 36 three-star, 66 two-star, 0 one-star
+  // Total: 307 ratings to match frontend allocation across all lessons
   const ratings = [
-    ...Array(Math.floor(count * 0.35)).fill(5),  // 35% - 5 stars
-    ...Array(Math.floor(count * 0.30)).fill(4),  // 30% - 4 stars
-    ...Array(Math.floor(count * 0.10)).fill(3),  // 10% - 3 stars
-    ...Array(Math.floor(count * 0.10)).fill(2),  // 10% - 2 stars (reduced from 20%)
-    ...Array(Math.floor(count * 0.15)).fill(1),  // 15% - 1 star (increased from 5%)
+    ...Array(134).fill(5),  // 43.6% - 5 stars
+    ...Array(71).fill(4),   // 23.1% - 4 stars  
+    ...Array(36).fill(3),   // 11.7% - 3 stars
+    ...Array(66).fill(2),   // 21.5% - 2 stars
+    ...Array(0).fill(1),    // 0% - 1 star (not shown)
   ];
   
   const lessons = [
@@ -359,7 +360,8 @@ export function generateDemoRatings(count: number = 250): DemoRating[] {
   const firstNames = ['Juan', 'María', 'Carlos', 'Ana', 'Luis', 'Carmen', 'José', 'Laura', 'Miguel', 'Isabel', 'Pedro', 'Sofía', 'Diego', 'Elena', 'Javier', 'Lucía', 'Pablo', 'Valentina'];
   const lastNames = ['García', 'Rodríguez', 'Martínez', 'López', 'Sánchez', 'Pérez', 'Gómez', 'Fernández', 'Torres', 'Díaz', 'Ramírez', 'Vargas', 'Castro', 'Morales'];
   
-  return shuffle(ratings).slice(0, count).map((rating, i) => ({
+  // Always return all 307 ratings (ignore count parameter to match frontend expectation)
+  return shuffle(ratings).map((rating, i) => ({
     id: `demo-r${i + 1}`,
     rating,
     lessonTitle: lessons[i % lessons.length],
