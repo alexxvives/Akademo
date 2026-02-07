@@ -32,7 +32,7 @@ interface MobileSidebarProps {
     email: string;
     monoacademy?: boolean;
   } | null;
-  academyPaymentStatus?: string;
+  academyPaymentStatus?: string | null;
 }
 
 export function MobileSidebar({
