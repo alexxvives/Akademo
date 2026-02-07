@@ -92,7 +92,7 @@ export default function DashboardLayout({
   
   // Academy state for academy join link and feedbackEnabled
   const [academyId, setAcademyId] = useState<string | null>(null);
-  const [academyPaymentStatus, setAcademyPaymentStatus] = useState<string>('PAID');
+  const [academyPaymentStatus, setAcademyPaymentStatus] = useState<string | null>(null);
   const [academy, setAcademy] = useState<any>(null);
 
   const loadNotifications = useCallback(async () => {
