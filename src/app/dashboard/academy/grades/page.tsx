@@ -145,17 +145,22 @@ export default function AcademyGrades() {
     }
   };
 
+  const top10Averages = averages.slice(0, 10);
+
   const chartData = {
-    labels: averages.map(a => a.studentName.split(' ')[0]),
+    labels: top10Averages.map(a => {
+      const parts = a.studentName.split(' ');
+      return `${parts[0]} ${parts.slice(1).join(' ')}`;
+    }),
     datasets: [{
       label: 'Promedio (%)',
-      data: averages.map(a => a.averageGrade),
-      backgroundColor: averages.map(a => 
+      data: top10Averages.map(a => a.averageGrade),
+      backgroundColor: top10Averages.map(a => 
         a.averageGrade >= 70 ? 'rgba(34, 197, 94, 0.8)' :
         a.averageGrade >= 50 ? 'rgba(234, 179, 8, 0.8)' :
         'rgba(239, 68, 68, 0.8)'
       ),
-      borderColor: averages.map(a => 
+      borderColor: top10Averages.map(a => 
         a.averageGrade >= 70 ? 'rgb(34, 197, 94)' :
         a.averageGrade >= 50 ? 'rgb(234, 179, 8)' :
         'rgb(239, 68, 68)'
@@ -174,7 +179,7 @@ export default function AcademyGrades() {
       tooltip: {
         callbacks: {
           label: (context: any) => {
-            const avg = averages[context.dataIndex];
+            const avg = top10Averages[context.dataIndex];
             return `Promedio: ${avg.averageGrade.toFixed(1)}% (${avg.totalAssignments} ejercicios)`;
           }
         }
@@ -253,7 +258,10 @@ export default function AcademyGrades() {
           <>
             {/* Chart */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <h2 className="text-xl font-semibold mb-4">Promedios por Estudiante</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold">Promedios por Estudiante</h2>
+                <p className="text-sm text-gray-500">Solo muestra los top 10 estudiantes</p>
+              </div>
               <div className="h-80">
                 <Bar data={chartData} options={chartOptions} />
               </div>

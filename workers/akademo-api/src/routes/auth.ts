@@ -326,6 +326,24 @@ auth.post('/logout', async (c) => {
             AND (substr(id, -1) IN ('1', '3', '5', '7', '9'))
           `)
           .run();
+        
+        // Delete requested demo payments (so they reappear as "new" requests)
+        await c.env.DB
+          .prepare(`
+            DELETE FROM Payment 
+            WHERE id IN ('demo-payment-request-1', 'demo-payment-request-2', 'demo-payment-request-3')
+          `)
+          .run();
+        
+        // Re-insert requested payments for fresh demo state
+        await c.env.DB
+          .prepare(`
+            INSERT INTO Payment (id, type, payerId, payerType, payerName, payerEmail, receiverId, receiverName, amount, currency, status, paymentMethod, classId, description, createdAt) VALUES
+            ('demo-payment-request-1', 'enrollment', 'demo-student-07', 'STUDENT', 'José Pérez', 'jose.perez@estudiantes.com', 'demo-academy-01', 'Academia Demo', 39.99, 'EUR', 'PENDING', 'bizum', 'demo-class-math', 'Solicitud de pago pendiente', datetime('now', '-1 day')),
+            ('demo-payment-request-2', 'enrollment', 'demo-student-08', 'STUDENT', 'Laura Gómez', 'laura.gomez@estudiantes.com', 'demo-academy-01', 'Academia Demo', 49.99, 'EUR', 'PENDING', 'cash', 'demo-class-web', 'Solicitud de pago pendiente', datetime('now', '-2 days')),
+            ('demo-payment-request-3', 'enrollment', 'demo-student-09', 'STUDENT', 'Pedro Díaz', 'pedro.diaz@estudiantes.com', 'demo-academy-01', 'Academia Demo', 59.99, 'EUR', 'PENDING', 'bizum', 'demo-class-design', 'Solicitud de pago pendiente', datetime('now', '-3 days'))
+          `)
+          .run();
       }
     }
   } catch (error) {

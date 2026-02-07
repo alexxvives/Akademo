@@ -918,7 +918,7 @@ export default function AcademyPaymentsPage() {
               </button>
               <button
                 onClick={handleRegisterPayment}
-                className="flex-1 px-4 py-2 bg-accent-300 text-gray-900 rounded-lg hover:bg-accent-400"
+                className="flex-1 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800"
               >
                 Registrar
               </button>
