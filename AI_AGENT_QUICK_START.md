@@ -1,6 +1,6 @@
 # AI Agent Quick Start Guide - AKADEMO
 
-**Last Updated:** January 25, 2026  
+**Last Updated:** February 7, 2026  
 **Purpose:** Get an AI agent up to speed on the AKADEMO codebase in minutes
 
 ---
@@ -24,7 +24,7 @@
 
 ---
 
-## 📊 Database Schema (15 Tables)
+## 📊 Database Schema (21 Tables)
 
 ### Core User Roles
 
@@ -45,59 +45,153 @@ Class.academyId → Academy.id (Class.teacherId → User.id)
   ↓
 ClassEnrollment.classId → Class.id (ClassEnrollment.userId → User.id where role = 'STUDENT')
   ↓
-Lesson.classId → Class.id
+Lesson.classId → Class.id (Lesson.topicId → Topic.id)
   ↓
-Video.lessonId → Lesson.id (Video.bunnyGuid → Bunny Stream video)
+Video.lessonId → Lesson.id (Video.uploadId → Upload.id with bunnyGuid)
+Document.lessonId → Lesson.id (Document.uploadId → Upload.id in R2)
+Assignment.lessonId → Lesson.id → AssignmentAttachment, AssignmentSubmission
 ```
 
 ### Key Tables
 
-1. **User** - All users (ADMIN, ACADEMY, TEACHER, STUDENT)
-2. **Academy** - Educational institutions (`ownerId` links to ACADEMY user)
-3. **Teacher** - Links TEACHER users to academies (`userId` + `academyId`)
-4. **Class** - Courses (`academyId`, `teacherId`, `price`, `zoomAccountId`)
-5. **ClassEnrollment** - Student enrollments (`status`: PENDING/APPROVED/REJECTED, `paymentStatus`: PENDING/CASH_PENDING/PAID)
-6. **Lesson** - Class content (`releaseDate`, `maxWatchTimeMultiplier`)
-7. **Video** - Bunny Stream videos (`bunnyGuid`, `durationSeconds`)
-8. **Document** - PDF/document files in R2
-9. **LiveStream** - Zoom meetings (`zoomMeetingId`, `recordingId`, `participantCount`)
-10. **VideoPlayState** - Student watch progress (anti-piracy tracking)
-11. **Upload** - File metadata (`storageType`: r2/bunny, `bunnyGuid`)
-12. **Payment** - Financial transactions (future Stripe payments)
-13. **Notification** - In-app notifications
-14. **DeviceSession** - Session management
-15. **ZoomAccount** - Zoom API credentials per academy
+1. **User** - All users (ADMIN, ACADEMY, TEACHER, STUDENT) - 8 columns
+2. **Academy** - Educational institutions (`ownerId`, `paymentStatus`, `feedbackEnabled`) - 16 columns
+3. **Teacher** - Links TEACHER users to academies (`userId` + `academyId`) - 6 columns
+4. **Class** - Courses (`academyId`, `teacherId`, `monthlyPrice`, `oneTimePrice`, `zoomAccountId`) - 13 columns
+5. **ClassEnrollment** - Student enrollments (`status`: PENDING/APPROVED/REJECTED) - 9 columns
+6. **Lesson** - Class content (`releaseDate`, `maxWatchTimeMultiplier`, `topicId`) - 10 columns
+7. **Video** - Bunny Stream videos (`uploadId` → `bunnyGuid`, `durationSeconds`) - 7 columns
+8. **Document** - PDF/document files (`uploadId` → R2 storage) - 6 columns
+9. **Upload** - File metadata (`storageType`: r2/bunny, `bunnyGuid`, `bunnyStatus`) - 10 columns
+10. **LiveStream** - Zoom meetings (`zoomMeetingId`, `recordingId`, `participantCount`) - 14 columns
+11. **LessonRating** - Student ratings (`rating` 1-5, `comment`, `isRead`) - 7 columns
+12. **VideoPlayState** - Watch progress tracking (`totalWatchTimeSeconds`, `status`) - 10 columns
+13. **Notification** - In-app notifications (`type`, `isRead`) - 8 columns
+14. **DeviceSession** - Session management (`deviceFingerprint`, `isActive`) - 10 columns
+15. **Payment** - Financial transactions (`type`, `status`, `paymentMethod`) - 19 columns
+16. **ZoomAccount** - Zoom API credentials (`academyId`, `zoomAccountId`, `zoomClientId`) - 10 columns
+17. **VerificationCode** - Email verification codes (`code`, `expiresAt`) - 4 columns
+18. **Topic** - Lesson organization/grouping (`classId`, `name`, `order`) - 6 columns
+19. **Assignment** - Homework/tasks (`lessonId`, `dueDate`, `maxScore`) - 10 columns
+20. **AssignmentAttachment** - Assignment files (`assignmentId`, `uploadId`) - 5 columns
+21. **AssignmentSubmission** - Student submissions (`assignmentId`, `userId`, `status`, `score`) - 10 columns
 
 ### Important Columns
 
+**User:**
+- `id`, `email` (UNIQUE), `password` (bcrypt), `firstName`, `lastName`
+- `role` - ADMIN/ACADEMY/TEACHER/STUDENT
+- `createdAt`, `lastLoginAt`
+
 **Academy:**
-- `status` - PENDING/APPROVED/REJECTED (approval workflow - **DEPRECATED**, always APPROVED)
-- `paymentStatus` - NOT PAID/PAID (subscription status)
-- `ownerId` - FK to User.id (ACADEMY role)
-- `stripeAccountId` - Stripe Connect account (future)
+- `id`, `name`, `description`, `ownerId` (FK → User.id)
+- `paymentStatus` - NOT PAID/PAID (controls feature access)
+- `stripeAccountId` - Stripe Connect (future)
+- `feedbackEnabled`, `allowMultipleTeachers`, `feedbackAnonymous`
+- `defaultWatermarkIntervalMins`, `defaultMaxWatchTimeMultiplier`
+- `monoacademy` - Special flag for single-academy mode
+- `address`, `phone`, `email`, `logoUrl`
+- `allowedPaymentMethods` - JSON array
 
-**ClassEnrollment:**
-- `status` - PENDING/APPROVED/REJECTED (enrollment approval)
-- `paymentStatus` - PENDING/CASH_PENDING/PAID (payment status - **DEPRECATED for new payments**)
-- `paymentMethod` - cash/stripe/bizum (**Legacy - use Payment table for new payments**)
-- `paymentAmount` - Class price (**Legacy - use Payment table for new payments**)
-- `documentSigned` - 0/1 (enrollment document)
-
-**Note:** Payment data has been migrated to the dedicated **Payment** table. ClassEnrollment payment fields are legacy and should not be used for new payments.
-
-**Payment:** (Single source of truth for all payments)
-- `type` - STUDENT_TO_ACADEMY, ACADEMY_TO_PLATFORM
-- `status` - PAID, COMPLETED, PENDING, FAILED
-- `paymentMethod` - cash, bizum, stripe
-- `metadata` - JSON with enrollment linkage and approval details
+**Teacher:**
+- `id`, `userId` (FK → User.id), `academyId` (FK → Academy.id)
+- `defaultMaxWatchTimeMultiplier, `createdAt`
 
 **Class:**
-- `price` - Class cost (default 10.00 EUR)
-- `currency` - EUR/USD
-- `teacherId` - Assigned teacher (User.id)
-- `zoomAccountId` - Assigned Zoom account
+- `id`, `name`, `slug`, `description`, `academyId`, `teacherId`
+- `monthlyPrice`, `oneTimePrice` (replaced old `price`/`currency`)
+- `whatsappGroupLink`, `zoomAccountId`, `maxStudents`, `startDate`
+- `createdAt`
 
----
+**ClassEnrollment:**
+- `id`, `classId`, `userId`, `status` (PENDING/APPROVED/REJECTED)
+- `enrolledAt`, `approvedAt`, `documentSigned`
+- `paymentFrequency` (ONE_TIME/MONTHLY), `nextPaymentDue`
+
+**Lesson:**
+- `id`, `title`, `description`, `classId`, `topicId`
+- `maxWatchTimeMultiplier`, `watermarkIntervalMins`
+- `releaseDate`, `createdAt`
+
+**Video:**
+- `id`, `title`, `lessonId`, `uploadId` (FK → Upload)
+- `durationSeconds`, `createdAt`
+
+**Document:**
+- `id`, `title`, `lessonId`, `uploadId` (FK → Upload)
+- `createdAt`
+
+**Upload:**
+- `id`, `fileName`, `fileSize`, `mimeType`, `storagePath`
+- `uploadedById`, `createdAt`
+- `bunnyGuid` - Bunny Stream video ID (when `storageType='bunny'`)
+- `bunnyStatus` - 0=Queued, 1=Processing, 2=Encoding, 3=Finished, 4=Resolution finished, 5=Failed
+- `storageType` - 'r2' or 'bunny'
+
+**LiveStream:**
+- `id`, `classId`, `teacherId`, `title`
+- `zoomMeetingId`, `zoomLink`, `zoomStartUrl`
+- `status` (PENDING/LIVE/ENDED)
+- `startedAt`, `endedAt`, `recordingId` (Bunny video GUID)
+- `participantCount`, `participantsFetchedAt`, `participantsData` (JSON)
+
+**LessonRating:**
+- `id`, `lessonId`, `studentId`, `rating` (1-5)
+- `comment`, `isRead`, `createdAt`
+
+**VideoPlayState:**
+- `id`, `videoId`, `studentId`
+- `totalWatchTimeSeconds`, `lastPositionSeconds`
+- `sessionStartTime`, `lastWatchedAt`
+- `status` (ACTIVE/COMPLETED/BLOCKED)
+- `createdAt`
+
+**Notification:**
+- `id`, `userId`, `type`, `title`, `message`
+- `data` (JSON), `isRead`, `createdAt`
+
+**DeviceSession:**
+- `id`, `userId`, `deviceFingerprint`
+- `userAgent`, `ipHash`, `browser`, `os`
+- `isActive`, `lastActiveAt`, `createdAt`
+
+**Payment:** (Single source of truth for all payments)
+- `id`, `type` (STUDENT_TO_ACADEMY/ACADEMY_TO_PLATFORM)
+- `payerId`, `payerType`, `payerName`, `payerEmail`
+- `receiverId`, `receiverName`
+- `amount`, `currency`
+- `status` (PAID/COMPLETED/PENDING/FAILED/REFUNDED)
+- `stripePaymentId`, `stripeCheckoutSessionId`
+- `paymentMethod` (cash/bizum/stripe)
+- `classId`, `description`, `metadata` (JSON)
+- `createdAt`, `completedAt`
+
+**ZoomAccount:**
+- `id`, `academyId`, `zoomAccountId`, `zoomEmail`
+- `zoomClientId`, `zoomClientSecret`, `zoomAccountNumber`
+- `accessToken`, `refreshToken`, `tokenExpiresAt`
+- `createdAt`
+
+**VerificationCode:**
+- `id`, `email`, `code`, `expiresAt`
+
+**Topic:**
+- `id`, `classId`, `name`, `description`
+- `order`, `createdAt`
+
+**Assignment:**
+- `id`, `lessonId`, `title`, `description`
+- `dueDate`, `maxScore`, `allowLateSubmission`
+- `lateSubmissionPenalty`, `createdAt`, `updatedAt`
+
+**AssignmentAttachment:**
+- `id`, `assignmentId`, `uploadId`, `order`, `createdAt`
+
+**AssignmentSubmission:**
+- `id`, `assignmentId`, `userId`
+- `submittedAt`, `status` (DRAFT/SUBMITTED/GRADED)
+- `score`, `feedback`, `gradedAt`, `gradedBy`
+- `createdAt`, `updatedAt`
 
 ## 🔐 Authentication & Permissions
 

@@ -251,13 +251,13 @@ auth.post('/login', validateBody(loginSchema), async (c) => {
       .first();
 
     if (!user) {
-      return c.json(errorResponse('Invalid credentials'), 401);
+      return c.json(errorResponse('Credenciales incorrectas'), 401);
     }
 
     // Verify password
     const isValid = await bcrypt.compare(password, user.password as string);
     if (!isValid) {
-      return c.json(errorResponse('Invalid credentials'), 401);
+      return c.json(errorResponse('Credenciales incorrectas'), 401);
     }
 
     
