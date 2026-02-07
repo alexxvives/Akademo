@@ -78,11 +78,17 @@ export default function DashboardLayout({
   // Active streams state for students
   const [activeStreams, setActiveStreams] = useState<ActiveStream[]>([]);
   
-  // Pending enrollments count for academy
-  const [pendingEnrollmentsCount, setPendingEnrollmentsCount] = useState(0);
+  // Pending payments count for academy (cash/bizum awaiting approval)
+  const [pendingPaymentsCount, setPendingPaymentsCount] = useState(0);
   
   // Unread valoraciones count for teacher/academy
   const [unreadValoracionesCount, setUnreadValoracionesCount] = useState(0);
+  
+  // Ungraded assignments count for teacher/academy
+  const [ungradedAssignmentsCount, setUngradedAssignmentsCount] = useState(0);
+  
+  // New grades available count for student
+  const [newGradesCount, setNewGradesCount] = useState(0);
   
   // Academy state for academy join link and feedbackEnabled
   const [academyId, setAcademyId] = useState<string | null>(null);
@@ -119,16 +125,24 @@ export default function DashboardLayout({
       const response = await apiClient('/academies');
       const result = await response.json();
       if (result.success && Array.isArray(result.data) && result.data.length > 0) {
-        setAcademyId(result.data[0].id);
-        setAcademyPaymentStatus(result.data[0].paymentStatus || 'PAID');
-        setAcademy(result.data[0]);
-      }
-      
-      // Load pending cash/bizum payments count for badge
-      const pendingRes = await apiClient('/payments/pending-count');
-      const pendingResult = await pendingRes.json();
-      if (pendingResult.success && typeof pendingResult.data === 'number') {
-        setPendingEnrollmentsCount(pendingResult.data);
+        const academyData = result.data[0];
+        setAcademyId(academyData.id);
+        const paymentStatus = academyData.paymentStatus || 'PAID';
+        setAcademyPaymentStatus(paymentStatus);
+        setAcademy(academyData);
+        
+        // Load pending payments count for badge
+        if (paymentStatus === 'NOT PAID') {
+          // Demo mode: hardcoded count from generateDemoPendingPayments()
+          setPendingPaymentsCount(5);
+        } else {
+          // Real mode: query database
+          const pendingRes = await apiClient('/payments/pending-count');
+          const pendingResult = await pendingRes.json();
+          if (pendingResult.success && typeof pendingResult.data === 'number') {
+            setPendingPaymentsCount(pendingResult.data);
+          }
+        }
       }
     } catch (error) {
       console.error('Failed to load academy:', error);
@@ -164,6 +178,30 @@ export default function DashboardLayout({
       console.error('Failed to load unread valoraciones:', error);
     }
   }, []);
+  
+  const loadUngradedAssignments = useCallback(async () => {
+    try {
+      const response = await apiClient('/assignments/ungraded-count');
+      const result = await response.json();
+      if (result.success && typeof result.data === 'number') {
+        setUngradedAssignmentsCount(result.data);
+      }
+    } catch (error) {
+      console.error('Failed to load ungraded assignments:', error);
+    }
+  }, []);
+  
+  const loadNewGrades = useCallback(async () => {
+    try {
+      const response = await apiClient('/assignments/new-grades-count');
+      const result = await response.json();
+      if (result.success && typeof result.data === 'number') {
+        setNewGradesCount(result.data);
+      }
+    } catch (error) {
+      console.error('Failed to load new grades:', error);
+    }
+  }, []);
 
   useEffect(() => {
     checkAuth();
@@ -192,21 +230,34 @@ export default function DashboardLayout({
     if (role === 'ACADEMY') {
       loadAcademy();
       loadUnreadValoraciones();
-      // Poll every 15 seconds for pending enrollments and valoraciones
+      loadUngradedAssignments();
+      // Poll every 15 seconds for pending payments, valoraciones, and assignments
       const academyInterval = setInterval(() => {
         loadAcademy();
         loadUnreadValoraciones();
+        loadUngradedAssignments();
       }, 15000);
       return () => clearInterval(academyInterval);
     }
     
     if (role === 'TEACHER') {
       loadUnreadValoraciones();
-      // Poll every 15 seconds for valoraciones
-      const teacherInterval = setInterval(loadUnreadValoraciones, 15000);
+      loadUngradedAssignments();
+      // Poll every 15 seconds for valoraciones and assignments
+      const teacherInterval = setInterval(() => {
+        loadUnreadValoraciones();
+        loadUngradedAssignments();
+      }, 15000);
       return () => clearInterval(teacherInterval);
     }
-  }, [role, loadNotifications, loadActiveStreams, loadAcademy, loadUnreadValoraciones]);
+    
+    if (role === 'STUDENT') {
+      // Load new grades count
+      loadNewGrades();
+      const studentInterval = setInterval(loadNewGrades, 15000);
+      return () => clearInterval(studentInterval);
+    }
+  }, [role, loadNotifications, loadActiveStreams, loadAcademy, loadUnreadValoraciones, loadUngradedAssignments, loadNewGrades]);
 
   const checkAuth = async () => {
     try {
@@ -395,14 +446,14 @@ export default function DashboardLayout({
           { label: 'Asignaturas', href: '/dashboard/teacher/classes', matchPaths: ['/dashboard/teacher/class'], iconType: 'book' },
           ...(academy?.feedbackEnabled !== 0 ? [{ label: 'Valoraciones', href: '/dashboard/teacher/feedback', iconType: 'message' as const, badge: unreadValoracionesCount > 0 ? unreadValoracionesCount : undefined, badgeColor: 'bg-[#b0e788]' }] : []),
           { label: 'Streams', href: '/dashboard/teacher/streams', iconType: 'clap' },
-          { label: 'Ejercicios', href: '/dashboard/teacher/assignments', iconType: 'fileText' },
+          { label: 'Ejercicios', href: '/dashboard/teacher/assignments', iconType: 'fileText', badge: ungradedAssignmentsCount > 0 ? ungradedAssignmentsCount : undefined, badgeColor: 'bg-[#b0e788]' },
           { label: 'Calificaciones', href: '/dashboard/teacher/grades', iconType: 'star' as const },
           { label: 'Estudiantes', href: '/dashboard/teacher/progress', iconType: 'users' },
         ];
       case 'STUDENT':
         return [
           { label: 'Mis Asignaturas', href: '/dashboard/student/classes', matchPaths: ['/dashboard/student/class'], showPulse: activeStreams.length > 0, icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>) },
-          { label: 'Ejercicios', href: '/dashboard/student/assignments', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>) },
+          { label: 'Ejercicios', href: '/dashboard/student/assignments', badge: newGradesCount > 0 ? newGradesCount : undefined, badgeColor: 'bg-[#b0e788]', icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>) },
         ];
       case 'ACADEMY':
         const academyMenuItems: MenuItem[] = [
@@ -410,11 +461,11 @@ export default function DashboardLayout({
           { label: 'Asignaturas', href: '/dashboard/academy/classes', matchPaths: ['/dashboard/academy/class'], iconType: 'book' as const },
           ...(academy?.feedbackEnabled !== 0 ? [{ label: 'Valoraciones', href: '/dashboard/academy/feedback', iconType: 'message' as const, badge: unreadValoracionesCount > 0 ? unreadValoracionesCount : undefined, badgeColor: 'bg-[#b0e788]' }] : []),
           { label: 'Streams', href: '/dashboard/academy/streams', iconType: 'clap' as const },
-          { label: 'Ejercicios', href: '/dashboard/academy/assignments', iconType: 'fileText' as const },
+          { label: 'Ejercicios', href: '/dashboard/academy/assignments', iconType: 'fileText' as const, badge: ungradedAssignmentsCount > 0 ? ungradedAssignmentsCount : undefined, badgeColor: 'bg-[#b0e788]' },
           { label: 'Calificaciones', href: '/dashboard/academy/grades', iconType: 'star' as const },
           { label: 'Profesores', href: '/dashboard/academy/teachers', iconType: 'botMessage' as const },
           { label: 'Estudiantes', href: '/dashboard/academy/students', iconType: 'users' as const },
-          { label: 'Pagos', href: '/dashboard/academy/payments', iconType: 'handCoins' as const, badge: pendingEnrollmentsCount > 0 ? pendingEnrollmentsCount : undefined, badgeColor: 'bg-[#b0e788]' },
+          { label: 'Pagos', href: '/dashboard/academy/payments', iconType: 'handCoins' as const, badge: pendingPaymentsCount > 0 ? pendingPaymentsCount : undefined, badgeColor: 'bg-[#b0e788]' },
         ];
         
         // Filter out Profesores menu for monoacademies
