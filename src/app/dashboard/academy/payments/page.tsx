@@ -577,23 +577,41 @@ export default function AcademyPaymentsPage() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={(e) => {
+                        if (paymentStatus === 'NOT PAID') {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          return;
+                        }
                         e.stopPropagation();
                         handleReject(payment.enrollmentId);
                       }}
-                      disabled={processingIds.has(payment.enrollmentId)}
-                      className="px-3 py-1.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-xs font-medium disabled:opacity-50"
-                      title="Denegar pago"
+                      disabled={processingIds.has(payment.enrollmentId) || paymentStatus === 'NOT PAID'}
+                      className={`px-3 py-1.5 border border-gray-300 text-gray-700 rounded-lg text-xs font-medium ${
+                        paymentStatus === 'NOT PAID'
+                          ? 'opacity-30 cursor-not-allowed'
+                          : 'hover:bg-gray-50 disabled:opacity-50'
+                      }`}
+                      title={paymentStatus === 'NOT PAID' ? 'Disponible solo en academias activadas' : 'Denegar pago'}
                     >
                       ✕
                     </button>
                     <button
                       onClick={(e) => {
+                        if (paymentStatus === 'NOT PAID') {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          return;
+                        }
                         e.stopPropagation();
                         handleApprove(payment.enrollmentId);
                       }}
-                      disabled={processingIds.has(payment.enrollmentId)}
-                      className="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 text-xs font-medium disabled:opacity-50"
-                      title="Aprobar pago"
+                      disabled={processingIds.has(payment.enrollmentId) || paymentStatus === 'NOT PAID'}
+                      className={`px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium ${
+                        paymentStatus === 'NOT PAID'
+                          ? 'opacity-30 cursor-not-allowed'
+                          : 'hover:bg-green-700 disabled:opacity-50'
+                      }`}
+                      title={paymentStatus === 'NOT PAID' ? 'Disponible solo en academias activadas' : 'Aprobar pago'}
                     >
                       {processingIds.has(payment.enrollmentId) ? '...' : '✓ Aprobar'}
                     </button>
@@ -684,6 +702,11 @@ export default function AcademyPaymentsPage() {
                 <td className="px-3 sm:px-3 sm:px-6 py-4 whitespace-nowrap">
                   <button
                     onClick={async (e) => {
+                      if (paymentStatus === 'NOT PAID') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return;
+                      }
                       e.stopPropagation();
                       if (!confirm('¿Estás seguro de que quieres eliminar este pago? Esta acción no se puede deshacer.')) return;
                       
@@ -717,8 +740,13 @@ export default function AcademyPaymentsPage() {
                         setDeletingPaymentId(null);
                       }
                     }}
-                    disabled={deletingPaymentId === history.paymentId}
-                    className="text-sm text-red-600 hover:text-red-700 font-medium flex items-center gap-1.5 disabled:opacity-50"
+                    disabled={deletingPaymentId === history.paymentId || paymentStatus === 'NOT PAID'}
+                    className={`text-sm text-red-600 font-medium flex items-center gap-1.5 ${
+                      paymentStatus === 'NOT PAID'
+                        ? 'opacity-30 cursor-not-allowed'
+                        : 'hover:text-red-700 disabled:opacity-50'
+                    }`}
+                    title={paymentStatus === 'NOT PAID' ? 'Disponible solo en academias activadas' : 'Eliminar pago'}
                   >
                     {deletingPaymentId === history.paymentId ? (
                       <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

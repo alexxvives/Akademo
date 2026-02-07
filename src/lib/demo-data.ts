@@ -326,14 +326,13 @@ export function generateDemoStudents(count: number = DEMO_STUDENT_COUNT.TOTAL): 
 }
 
 export function generateDemoRatings(count: number = 250): DemoRating[] {
-  // 60% 5-star, 20% 4-star, 10% 3-star, 5% 2-star, 5% 1-star (more realistic)
-  // More varied ratings: mostly 2, 4, and 5 stars, some 1 and 3
+  // More realistic distribution: mostly positive, but some negative feedback
   const ratings = [
     ...Array(Math.floor(count * 0.35)).fill(5),  // 35% - 5 stars
     ...Array(Math.floor(count * 0.30)).fill(4),  // 30% - 4 stars
     ...Array(Math.floor(count * 0.10)).fill(3),  // 10% - 3 stars
-    ...Array(Math.floor(count * 0.20)).fill(2),  // 20% - 2 stars
-    ...Array(Math.floor(count * 0.05)).fill(1),  // 5% - 1 star
+    ...Array(Math.floor(count * 0.10)).fill(2),  // 10% - 2 stars (reduced from 20%)
+    ...Array(Math.floor(count * 0.15)).fill(1),  // 15% - 1 star (increased from 5%)
   ];
   
   const lessons = [
