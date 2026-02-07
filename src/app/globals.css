@@ -44,13 +44,34 @@ body {
 }
 
 /* Dashboard dark background - prevents white flash during navigation */
+/* Also prevents body scrolling/bouncing on mobile */
 body:has(.dashboard-layout) {
   background: #111318;
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 
 /* Smooth scrolling */
 html {
   scroll-behavior: smooth;
+  overscroll-behavior: none;
+}
+
+/* Prevent iOS zoom on input focus (requires 16px minimum) */
+@media screen and (max-width: 767px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="search"],
+  input[type="date"],
+  input[type="datetime-local"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
 }
 
 /* Custom scrollbar */
@@ -132,6 +153,29 @@ html {
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+}
+
+/* Mobile table compaction - makes tables more readable on small screens */
+@media screen and (max-width: 767px) {
+  .dashboard-layout table {
+    font-size: 0.75rem;
+    line-height: 1.25rem;
+  }
+  .dashboard-layout table th,
+  .dashboard-layout table td {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  .dashboard-layout table th {
+    font-size: 0.625rem;
+  }
+  .dashboard-layout table td {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 

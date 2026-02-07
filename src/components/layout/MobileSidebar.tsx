@@ -179,15 +179,38 @@ export function MobileSidebar({
             )}
 
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-9 h-9 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center text-sm font-medium text-gray-700">
-                {user.firstName[0]}{user.lastName[0]}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
-                  {user.firstName} {user.lastName}
-                </p>
-                <p className="text-xs text-gray-500 truncate">{user.email}</p>
-              </div>
+              {role !== 'ADMIN' ? (
+                <Link
+                  href={`/dashboard/${role.toLowerCase()}/profile`}
+                  onClick={onClose}
+                  className="flex items-center gap-3 flex-1 min-w-0 hover:bg-gray-50 rounded-lg p-1.5 -m-1.5 transition-colors group"
+                >
+                  <div className="w-9 h-9 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center text-sm font-medium text-gray-700 flex-shrink-0">
+                    {user.firstName[0]}{user.lastName[0]}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {user.firstName} {user.lastName}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                  </div>
+                  <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </Link>
+              ) : (
+                <div className="flex items-center gap-3 flex-1 min-w-0 p-1.5 -m-1.5">
+                  <div className="w-9 h-9 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center text-sm font-medium text-gray-700 flex-shrink-0">
+                    {user.firstName[0]}{user.lastName[0]}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {user.firstName} {user.lastName}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                  </div>
+                </div>
+              )}
             </div>
             <button
               onClick={onLogout}

@@ -546,8 +546,8 @@ export default function DashboardLayout({
           />
         )}
 
-        <main className="flex-1 overflow-y-auto bg-gray-100">
-          <div className="py-6 px-4 md:py-8 md:px-10 lg:py-12 lg:pl-20 lg:pr-20">
+        <main className="flex-1 overflow-y-auto bg-gray-100 overscroll-contain">
+          <div className="pt-6 pb-4 px-4 md:py-8 md:px-10 lg:py-12 lg:pl-20 lg:pr-20">
             {children}
           </div>
         </main>
