@@ -429,6 +429,18 @@ export function generateDemoRatings(count: number = 307): DemoRating[] {
 }
 
 export function generateDemoStreams(): DemoStream[] {
+  // Base date: 2026-02-10 00:00:00
+  const baseDate = new Date('2026-02-10T00:00:00Z');
+  
+  // Helper to calculate dates relative to base
+  const daysAgo = (days: number, hoursOffset = 0, minutesOffset = 0) => {
+    const date = new Date(baseDate);
+    date.setDate(date.getDate() - days);
+    date.setHours(date.getHours() + hoursOffset);
+    date.setMinutes(date.getMinutes() + minutesOffset);
+    return date.toISOString();
+  };
+  
   return [
     {
       id: 'demo-stream1',
@@ -436,9 +448,9 @@ export function generateDemoStreams(): DemoStream[] {
       className: 'Programación Web',
       teacherName: 'Carlos Rodríguez',
       participantCount: 35,
-      startedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-      endedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 75 * 60 * 1000).toISOString(),
-      createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 - 60 * 60 * 1000).toISOString(),
+      startedAt: daysAgo(7), // Feb 3, 00:00
+      endedAt: daysAgo(7, 1, 15), // Feb 3, 01:15 (75 min duration)
+      createdAt: daysAgo(7, -1), // Feb 2, 23:00 (created 1h before)
       status: 'ended',
       duration: 75,
       recordingId: DEMO_VIDEO_GUID,
@@ -447,9 +459,9 @@ export function generateDemoStreams(): DemoStream[] {
         totalRecords: 35,
         uniqueCount: 35,
         participants: [
-          { name: 'Juan García', email: 'juan@example.com', joinTime: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), duration: 4500 },
-          { name: 'María López', email: 'maria@example.com', joinTime: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 5 * 60 * 1000).toISOString(), duration: 4200 },
-          { name: 'Carlos Martínez', email: 'carlos@example.com', joinTime: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 10 * 60 * 1000).toISOString(), duration: 4100 },
+          { name: 'Juan García', email: 'juan@example.com', joinTime: daysAgo(7), duration: 4500 },
+          { name: 'María López', email: 'maria@example.com', joinTime: daysAgo(7, 0, 5), duration: 4200 },
+          { name: 'Carlos Martínez', email: 'carlos@example.com', joinTime: daysAgo(7, 0, 10), duration: 4100 },
         ]
       }),
     },
@@ -459,9 +471,9 @@ export function generateDemoStreams(): DemoStream[] {
       className: 'Matemáticas Avanzadas',
       teacherName: 'María García',
       participantCount: 22,
-      startedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-      endedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000 + 50 * 60 * 1000).toISOString(),
-      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000 - 30 * 60 * 1000).toISOString(),
+      startedAt: daysAgo(5), // Feb 5, 00:00
+      endedAt: daysAgo(5, 0, 50), // Feb 5, 00:50 (50 min duration)
+      createdAt: daysAgo(5, -0.5), // Feb 4, 23:30 (created 30m before)
       status: 'ended',
       duration: 50,
       recordingId: DEMO_VIDEO_GUID,
@@ -474,8 +486,10 @@ export function generateDemoStreams(): DemoStream[] {
       className: 'Diseño Gráfico',
       teacherName: 'Ana Martínez',
       participantCount: 16,
-      startedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-      endedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 + 120 * 60 * 1000).toISOString(),      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 - 45 * 60 * 1000).toISOString(),      status: 'ended',
+      startedAt: daysAgo(3), // Feb 7, 00:00
+      endedAt: daysAgo(3, 2), // Feb 7, 02:00 (120 min duration)
+      createdAt: daysAgo(3, -0.75), // Feb 6, 23:15 (created 45m before)
+      status: 'ended',
       duration: 120,
       recordingId: DEMO_VIDEO_GUID,
       classId: 'demo-c3',
@@ -487,9 +501,9 @@ export function generateDemoStreams(): DemoStream[] {
       className: 'Programación Web',
       teacherName: 'Carlos Rodríguez',
       participantCount: 28,
-      startedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      endedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 + 45 * 60 * 1000).toISOString(),
-      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 - 20 * 60 * 1000).toISOString(),
+      startedAt: daysAgo(2), // Feb 8, 00:00
+      endedAt: daysAgo(2, 0, 45), // Feb 8, 00:45 (45 min duration)
+      createdAt: daysAgo(2, -0.33), // Feb 7, 23:40 (created 20m before)
       status: 'ended',
       duration: 45,
       recordingId: DEMO_VIDEO_GUID,
@@ -502,9 +516,9 @@ export function generateDemoStreams(): DemoStream[] {
       className: 'Diseño Gráfico',
       teacherName: 'Ana Martínez',
       participantCount: 19,
-      startedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      endedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000 + 65 * 60 * 1000).toISOString(),
-      createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000 - 15 * 60 * 1000).toISOString(),
+      startedAt: daysAgo(1), // Feb 9, 00:00
+      endedAt: daysAgo(1, 1, 5), // Feb 9, 01:05 (65 min duration)
+      createdAt: daysAgo(1, -0.25), // Feb 8, 23:45 (created 15m before)
       status: 'ended',
       duration: 65,
       recordingId: DEMO_VIDEO_GUID,
@@ -735,16 +749,24 @@ export function generateDemoStats() {
 }
 
 export function generateDemoStudentTimes(_lessonId: string) {
-  const firstNames = ['Juan', 'María', 'Carlos', 'Ana', 'Luis', 'Carmen', 'José', 'Laura', 'Pedro', 'Isabel'];
+  const firstNames = ['Juan', 'María', 'Carlos', 'Ana', 'Luis', 'Carmen', 'José', 'Laura', 'Pedro', 'Isabel', 'Miguel', 'Rosa', 'Antonio', 'Elena', 'Francisco', 'Sofía', 'David', 'Marta', 'Javier', 'Patricia'];
   const lastNames = ['García', 'Rodríguez', 'Martínez', 'López', 'Sánchez', 'Pérez', 'Gómez', 'Fernández'];
   
-  // Generate 15-25 students with video watch times
-  const studentCount = 15 + Math.floor(Math.random() * 10);
+  // Generate 20 students with deterministic watch times
+  const studentCount = 20;
+  const videoDuration = 3600; // 1 hour video
+  const maxWatchTime = videoDuration * 2; // 2x multiplier
+  
+  // Deterministic watch time patterns (as percentage of maxWatchTime)
+  const watchTimePatterns = [
+    1.15, 0.95, 1.05, 0.80, 1.20, // Students 1-5
+    0.70, 1.10, 0.85, 0.95, 1.00, // Students 6-10
+    0.90, 1.08, 0.75, 1.12, 0.88, // Students 11-15
+    1.03, 0.92, 1.07, 0.98, 1.01, // Students 16-20
+  ];
   
   return Array.from({ length: studentCount }, (_, i) => {
-    const videoDuration = 3600; // 1 hour video
-    const maxWatchTime = videoDuration * 2; // 2x multiplier
-    const watchedTime = Math.floor(Math.random() * maxWatchTime * 1.2); // Some students may exceed
+    const watchedTime = Math.floor(maxWatchTime * watchTimePatterns[i]);
     
     return {
       studentId: `demo-student-${i + 1}`,
