@@ -8,6 +8,7 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { MobileSidebar } from '@/components/layout/MobileSidebar';
 import { NotificationPanel } from '@/components/layout/NotificationPanel';
 import { DemoDataBanner } from '@/components/academy/DemoDataBanner';
+import { DemoBanner } from '@/components/shared/DemoBanner';
 
 interface User {
   id: string;
@@ -458,6 +459,7 @@ export default function DashboardLayout({
 
   return (
     <div className="h-[100dvh] flex flex-col bg-gray-50">
+      <DemoBanner />
       {(role === 'ACADEMY' && academyPaymentStatus === 'NOT PAID') && (
         <DemoDataBanner />
       )}

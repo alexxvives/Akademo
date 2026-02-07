@@ -299,6 +299,40 @@ auth.post('/login', validateBody(loginSchema), async (c) => {
 
 // POST /auth/logout
 auth.post('/logout', async (c) => {
+  try {
+    // Get current user from token if available
+    const authHeader = c.req.header('Authorization');
+    
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      const userId = Buffer.from(token, 'base64').toString('utf-8');
+      
+      // Check if user is a demo account
+      const user = await c.env.DB
+        .prepare('SELECT email FROM User WHERE id = ?')
+        .bind(userId)
+        .first();
+      
+      if (user && (user.email as string).toLowerCase().includes('demo')) {
+        // Reset some (not all) lesson ratings to unread for realistic demo state
+        // Only reset ratings with IDs ending in certain numbers (e.g., 1, 3, 5, 7, 9)
+        await c.env.DB
+          .prepare(`
+            UPDATE LessonRating 
+            SET is_read = 0 
+            WHERE studentId IN (
+              SELECT id FROM User WHERE email LIKE '%demo%'
+            )
+            AND (substr(id, -1) IN ('1', '3', '5', '7', '9'))
+          `)
+          .run();
+      }
+    }
+  } catch (error) {
+    // Silently fail - logout should always succeed
+    console.error('Error during demo account cleanup:', error);
+  }
+  
   setCookie(c, 'academy_session', '', {
     httpOnly: true,
     secure: true,
