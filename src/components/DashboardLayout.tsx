@@ -459,7 +459,7 @@ export default function DashboardLayout({
 
   return (
     <div className="h-[100dvh] flex flex-col bg-gray-50">
-      <DemoBanner />
+      <DemoBanner userEmail={user?.email} />
       {(role === 'ACADEMY' && academyPaymentStatus === 'NOT PAID') && (
         <DemoDataBanner />
       )}
