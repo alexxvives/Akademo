@@ -25,45 +25,53 @@ export default function AcademyFeedbackPage() {
         const status = academy.paymentStatus || 'NOT PAID';
         setPaymentStatus(status);
         
-        // If NOT PAID, show demo feedback with realistic varied data
+        // If NOT PAID, show demo feedback using actual generated ratings distribution
         if (status === 'NOT PAID') {
           const demoClasses = generateDemoClasses();
-          const demoRatings = generateDemoRatings(250);
+          const demoRatings = generateDemoRatings(); // 307 ratings with distribution: 134★5, 71★4, 36★3, 40★2, 26★1
           
-          // Match the dashboard lesson structure with varied ratings
+          // Allocate ratings across classes and lessons
+          const ratingsPerClass = [77, 77, 77, 76]; // Split 307 ratings: Web=77, Math=77, Design=77, Physics=76
+          let currentIdx = 0;
+          
           const lessonsByClass: Record<string, any[]> = {
-            'demo-c1': [
-              { id: 'demo-l1', title: 'Introducción a React', avgRating: 4.8, ratingCount: 25, startIdx: 0 },
-              { id: 'demo-l2', title: 'Variables y Tipos', avgRating: 3.5, ratingCount: 23, startIdx: 25 },
-              { id: 'demo-l3', title: 'Funciones y Scope', avgRating: 4.7, ratingCount: 22, startIdx: 48 },
-              { id: 'demo-l4', title: 'Arrays y Objetos', avgRating: 2.1, ratingCount: 21, startIdx: 70 },
-              { id: 'demo-l5', title: 'Programación Asíncrona', avgRating: 5.0, ratingCount: 19, startIdx: 91 },
-              { id: 'demo-l6', title: 'React Hooks', avgRating: 4.2, ratingCount: 18, startIdx: 110 },
+            'demo-c1': [ // Programación Web - 77 ratings across 6 lessons
+              { id: 'demo-l1', title: 'Introducción a React', ratingCount: 13, startIdx: currentIdx },
+              { id: 'demo-l2', title: 'Variables y Tipos', ratingCount: 13, startIdx: currentIdx += 13 },
+              { id: 'demo-l3', title: 'Funciones y Scope', ratingCount: 13, startIdx: currentIdx += 13 },
+              { id: 'demo-l4', title: 'Arrays y Objetos', ratingCount: 13, startIdx: currentIdx += 13 },
+              { id: 'demo-l5', title: 'Programación Asíncrona', ratingCount: 13, startIdx: currentIdx += 13 },
+              { id: 'demo-l6', title: 'React Hooks', ratingCount: 12, startIdx: currentIdx += 13 },
             ],
-            'demo-c2': [
-              { id: 'demo-l7', title: 'Límites y Continuidad', avgRating: 4.3, ratingCount: 18, startIdx: 128 },
-              { id: 'demo-l8', title: 'Derivadas', avgRating: 1.8, ratingCount: 17, startIdx: 146 },
-              { id: 'demo-l9', title: 'Integrales Definidas', avgRating: 4.9, ratingCount: 16, startIdx: 163 },
-              { id: 'demo-l10', title: 'Series y Sucesiones', avgRating: 2.4, ratingCount: 15, startIdx: 179 },
+            'demo-c2': [ // Matemáticas - 77 ratings across 4 lessons
+              { id: 'demo-l7', title: 'Límites y Continuidad', ratingCount: 20, startIdx: currentIdx += 12 },
+              { id: 'demo-l8', title: 'Derivadas', ratingCount: 19, startIdx: currentIdx += 20 },
+              { id: 'demo-l9', title: 'Integrales Definidas', ratingCount: 19, startIdx: currentIdx += 19 },
+              { id: 'demo-l10', title: 'Series y Sucesiones', ratingCount: 19, startIdx: currentIdx += 19 },
             ],
-            'demo-c3': [
-              { id: 'demo-l11', title: 'Principios de Diseño', avgRating: 4.9, ratingCount: 20, startIdx: 194 },
-              { id: 'demo-l12', title: 'Photoshop Básico', avgRating: 3.2, ratingCount: 19, startIdx: 214 },
-              { id: 'demo-l13', title: 'Tipografía', avgRating: 5.0, ratingCount: 18, startIdx: 233 },
-              { id: 'demo-l14', title: 'Teoría del Color', avgRating: 2.7, ratingCount: 17, startIdx: 251 },
+            'demo-c3': [ // Diseño Gráfico - 77 ratings across 4 lessons
+              { id: 'demo-l11', title: 'Principios de Diseño', ratingCount: 20, startIdx: currentIdx += 19 },
+              { id: 'demo-l12', title: 'Photoshop Básico', ratingCount: 19, startIdx: currentIdx += 20 },
+              { id: 'demo-l13', title: 'Tipografía', ratingCount: 19, startIdx: currentIdx += 19 },
+              { id: 'demo-l14', title: 'Teoría del Color', ratingCount: 19, startIdx: currentIdx += 19 },
             ],
-            'demo-c4': [
-              { id: 'demo-l15', title: 'Mecánica Cuántica', avgRating: 4.5, ratingCount: 14, startIdx: 268 },
-              { id: 'demo-l16', title: 'Partículas y Ondas', avgRating: 1.9, ratingCount: 13, startIdx: 282 },
-              { id: 'demo-l17', title: 'Dualidad Onda-Partícula', avgRating: 3.8, ratingCount: 12, startIdx: 295 },
+            'demo-c4': [ // Física Cuántica - 76 ratings across 3 lessons
+              { id: 'demo-l15', title: 'Mecánica Cuántica', ratingCount: 26, startIdx: currentIdx += 19 },
+              { id: 'demo-l16', title: 'Partículas y Ondas', ratingCount: 25, startIdx: currentIdx += 26 },
+              { id: 'demo-l17', title: 'Dualidad Onda-Partícula', ratingCount: 25, startIdx: currentIdx += 25 },
             ],
           };
           
           setClasses(demoClasses.map(c => {
             const classLessons = lessonsByClass[c.id] || [];
             const totalRatings = classLessons.reduce((sum, l) => sum + l.ratingCount, 0);
-            const avgRating = classLessons.length > 0 
-              ? classLessons.reduce((sum, l) => sum + l.avgRating * l.ratingCount, 0) / totalRatings 
+            
+            // Calculate actual average from generated ratings
+            const classRatings = classLessons.flatMap(lesson => 
+              demoRatings.slice(lesson.startIdx, lesson.startIdx + lesson.ratingCount)
+            );
+            const avgRating = classRatings.length > 0
+              ? classRatings.reduce((sum, r) => sum + r.rating, 0) / classRatings.length
               : 4.0;
             
             return {
@@ -78,19 +86,24 @@ export default function AcademyFeedbackPage() {
                   name: 'Lecciones',
                   totalRatings: totalRatings,
                   averageRating: avgRating,
-                  lessons: classLessons.map(lesson => ({
-                    id: lesson.id,
-                    title: lesson.title,
-                    totalRatings: lesson.ratingCount,
-                    averageRating: lesson.avgRating,
-                    ratings: demoRatings.slice(lesson.startIdx, lesson.startIdx + lesson.ratingCount).map(r => ({
-                      id: r.id,
-                      rating: r.rating,
-                      studentName: r.studentName,
-                      comment: r.comment,
-                      createdAt: r.createdAt,
-                    })),
-                  })),
+                  lessons: classLessons.map(lesson => {
+                    const lessonRatings = demoRatings.slice(lesson.startIdx, lesson.startIdx + lesson.ratingCount);
+                    const lessonAvg = lessonRatings.reduce((sum, r) => sum + r.rating, 0) / lessonRatings.length;
+                    
+                    return {
+                      id: lesson.id,
+                      title: lesson.title,
+                      totalRatings: lesson.ratingCount,
+                      averageRating: lessonAvg,
+                      ratings: lessonRatings.map(r => ({
+                        id: r.id,
+                        rating: r.rating,
+                        studentName: r.studentName,
+                        comment: r.comment,
+                        createdAt: r.createdAt,
+                      })),
+                    };
+                  }),
                 },
               ],
             };
@@ -102,43 +115,48 @@ export default function AcademyFeedbackPage() {
         // If PAID, load real feedback
         await loadFeedback();
       } else {
-        // If API fails or returns empty, treat as demo account
+        // If API fails or returns empty, treat as demo account - use same logic as NOT PAID
         const demoClasses = generateDemoClasses();
-        const demoRatings = generateDemoRatings(250);
+        const demoRatings = generateDemoRatings();
         
+        let currentIdx = 0;
         const lessonsByClass: Record<string, any[]> = {
           'demo-c1': [
-            { id: 'demo-l1', title: 'Introducción a React', avgRating: 4.8, ratingCount: 25, startIdx: 0 },
-            { id: 'demo-l2', title: 'Variables y Tipos', avgRating: 3.5, ratingCount: 23, startIdx: 25 },
-            { id: 'demo-l3', title: 'Funciones y Scope', avgRating: 4.7, ratingCount: 22, startIdx: 48 },
-            { id: 'demo-l4', title: 'Arrays y Objetos', avgRating: 2.1, ratingCount: 21, startIdx: 70 },
-            { id: 'demo-l5', title: 'Programación Asíncrona', avgRating: 5.0, ratingCount: 19, startIdx: 91 },
-            { id: 'demo-l6', title: 'React Hooks', avgRating: 4.2, ratingCount: 18, startIdx: 110 },
+            { id: 'demo-l1', title: 'Introducción a React', ratingCount: 13, startIdx: currentIdx },
+            { id: 'demo-l2', title: 'Variables y Tipos', ratingCount: 13, startIdx: currentIdx += 13 },
+            { id: 'demo-l3', title: 'Funciones y Scope', ratingCount: 13, startIdx: currentIdx += 13 },
+            { id: 'demo-l4', title: 'Arrays y Objetos', ratingCount: 13, startIdx: currentIdx += 13 },
+            { id: 'demo-l5', title: 'Programación Asíncrona', ratingCount: 13, startIdx: currentIdx += 13 },
+            { id: 'demo-l6', title: 'React Hooks', ratingCount: 12, startIdx: currentIdx += 13 },
           ],
           'demo-c2': [
-            { id: 'demo-l7', title: 'Límites y Continuidad', avgRating: 4.3, ratingCount: 18, startIdx: 128 },
-            { id: 'demo-l8', title: 'Derivadas', avgRating: 1.8, ratingCount: 17, startIdx: 146 },
-            { id: 'demo-l9', title: 'Integrales Definidas', avgRating: 4.9, ratingCount: 16, startIdx: 163 },
-            { id: 'demo-l10', title: 'Series y Sucesiones', avgRating: 2.4, ratingCount: 15, startIdx: 179 },
+            { id: 'demo-l7', title: 'Límites y Continuidad', ratingCount: 20, startIdx: currentIdx += 12 },
+            { id: 'demo-l8', title: 'Derivadas', ratingCount: 19, startIdx: currentIdx += 20 },
+            { id: 'demo-l9', title: 'Integrales Definidas', ratingCount: 19, startIdx: currentIdx += 19 },
+            { id: 'demo-l10', title: 'Series y Sucesiones', ratingCount: 19, startIdx: currentIdx += 19 },
           ],
           'demo-c3': [
-            { id: 'demo-l11', title: 'Principios de Diseño', avgRating: 4.9, ratingCount: 20, startIdx: 194 },
-            { id: 'demo-l12', title: 'Photoshop Básico', avgRating: 3.2, ratingCount: 19, startIdx: 214 },
-            { id: 'demo-l13', title: 'Tipografía', avgRating: 5.0, ratingCount: 18, startIdx: 233 },
-            { id: 'demo-l14', title: 'Teoría del Color', avgRating: 2.7, ratingCount: 17, startIdx: 251 },
+            { id: 'demo-l11', title: 'Principios de Diseño', ratingCount: 20, startIdx: currentIdx += 19 },
+            { id: 'demo-l12', title: 'Photoshop Básico', ratingCount: 19, startIdx: currentIdx += 20 },
+            { id: 'demo-l13', title: 'Tipografía', ratingCount: 19, startIdx: currentIdx += 19 },
+            { id: 'demo-l14', title: 'Teoría del Color', ratingCount: 19, startIdx: currentIdx += 19 },
           ],
           'demo-c4': [
-            { id: 'demo-l15', title: 'Mecánica Cuántica', avgRating: 4.5, ratingCount: 14, startIdx: 268 },
-            { id: 'demo-l16', title: 'Partículas y Ondas', avgRating: 1.9, ratingCount: 13, startIdx: 282 },
-            { id: 'demo-l17', title: 'Dualidad Onda-Partícula', avgRating: 3.8, ratingCount: 12, startIdx: 295 },
+            { id: 'demo-l15', title: 'Mecánica Cuántica', ratingCount: 26, startIdx: currentIdx += 19 },
+            { id: 'demo-l16', title: 'Partículas y Ondas', ratingCount: 25, startIdx: currentIdx += 26 },
+            { id: 'demo-l17', title: 'Dualidad Onda-Partícula', ratingCount: 25, startIdx: currentIdx += 25 },
           ],
         };
         
         setClasses(demoClasses.map(c => {
           const classLessons = lessonsByClass[c.id] || [];
           const totalRatings = classLessons.reduce((sum, l) => sum + l.ratingCount, 0);
-          const avgRating = classLessons.length > 0 
-            ? classLessons.reduce((sum, l) => sum + l.avgRating * l.ratingCount, 0) / totalRatings 
+          
+          const classRatings = classLessons.flatMap(lesson => 
+            demoRatings.slice(lesson.startIdx, lesson.startIdx + lesson.ratingCount)
+          );
+          const avgRating = classRatings.length > 0
+            ? classRatings.reduce((sum, r) => sum + r.rating, 0) / classRatings.length
             : 4.0;
           
           return {
@@ -154,19 +172,24 @@ export default function AcademyFeedbackPage() {
                 name: 'Lecciones',
                 totalRatings: totalRatings,
                 averageRating: avgRating,
-                lessons: classLessons.map(lesson => ({
-                  id: lesson.id,
-                  title: lesson.title,
-                  totalRatings: lesson.ratingCount,
-                  averageRating: lesson.avgRating,
-                  ratings: demoRatings.slice(lesson.startIdx, lesson.startIdx + lesson.ratingCount).map(r => ({
-                    id: r.id,
-                    rating: r.rating,
-                    studentName: r.studentName,
-                    comment: r.comment,
-                    createdAt: r.createdAt,
-                  })),
-                })),
+                lessons: classLessons.map(lesson => {
+                  const lessonRatings = demoRatings.slice(lesson.startIdx, lesson.startIdx + lesson.ratingCount);
+                  const lessonAvg = lessonRatings.reduce((sum, r) => sum + r.rating, 0) / lessonRatings.length;
+                  
+                  return {
+                    id: lesson.id,
+                    title: lesson.title,
+                    totalRatings: lesson.ratingCount,
+                    averageRating: lessonAvg,
+                    ratings: lessonRatings.map(r => ({
+                      id: r.id,
+                      rating: r.rating,
+                      studentName: r.studentName,
+                      comment: r.comment,
+                      createdAt: r.createdAt,
+                    })),
+                  };
+                }),
               },
             ],
           };
@@ -175,43 +198,48 @@ export default function AcademyFeedbackPage() {
       }
     } catch (error) {
       console.error('Failed to load academy name:', error);
-      // On error, also show demo data as fallback
+      // On error, show demo data - use same logic as NOT PAID
       const demoClasses = generateDemoClasses();
-      const demoRatings = generateDemoRatings(250);
+      const demoRatings = generateDemoRatings();
       
+      let currentIdx = 0;
       const lessonsByClass: Record<string, any[]> = {
         'demo-c1': [
-          { id: 'demo-l1', title: 'Introducción a React', avgRating: 4.8, ratingCount: 25, startIdx: 0 },
-          { id: 'demo-l2', title: 'Variables y Tipos', avgRating: 3.5, ratingCount: 23, startIdx: 25 },
-          { id: 'demo-l3', title: 'Funciones y Scope', avgRating: 4.7, ratingCount: 22, startIdx: 48 },
-          { id: 'demo-l4', title: 'Arrays y Objetos', avgRating: 2.1, ratingCount: 21, startIdx: 70 },
-          { id: 'demo-l5', title: 'Programación Asíncrona', avgRating: 5.0, ratingCount: 19, startIdx: 91 },
-          { id: 'demo-l6', title: 'React Hooks', avgRating: 4.2, ratingCount: 18, startIdx: 110 },
+          { id: 'demo-l1', title: 'Introducción a React', ratingCount: 13, startIdx: currentIdx },
+          { id: 'demo-l2', title: 'Variables y Tipos', ratingCount: 13, startIdx: currentIdx += 13 },
+          { id: 'demo-l3', title: 'Funciones y Scope', ratingCount: 13, startIdx: currentIdx += 13 },
+          { id: 'demo-l4', title: 'Arrays y Objetos', ratingCount: 13, startIdx: currentIdx += 13 },
+          { id: 'demo-l5', title: 'Programación Asíncrona', ratingCount: 13, startIdx: currentIdx += 13 },
+          { id: 'demo-l6', title: 'React Hooks', ratingCount: 12, startIdx: currentIdx += 13 },
         ],
         'demo-c2': [
-          { id: 'demo-l7', title: 'Límites y Continuidad', avgRating: 4.3, ratingCount: 18, startIdx: 128 },
-          { id: 'demo-l8', title: 'Derivadas', avgRating: 1.8, ratingCount: 17, startIdx: 146 },
-          { id: 'demo-l9', title: 'Integrales Definidas', avgRating: 4.9, ratingCount: 16, startIdx: 163 },
-          { id: 'demo-l10', title: 'Series y Sucesiones', avgRating: 2.4, ratingCount: 15, startIdx: 179 },
+          { id: 'demo-l7', title: 'Límites y Continuidad', ratingCount: 20, startIdx: currentIdx += 12 },
+          { id: 'demo-l8', title: 'Derivadas', ratingCount: 19, startIdx: currentIdx += 20 },
+          { id: 'demo-l9', title: 'Integrales Definidas', ratingCount: 19, startIdx: currentIdx += 19 },
+          { id: 'demo-l10', title: 'Series y Sucesiones', ratingCount: 19, startIdx: currentIdx += 19 },
         ],
         'demo-c3': [
-          { id: 'demo-l11', title: 'Principios de Diseño', avgRating: 4.9, ratingCount: 20, startIdx: 194 },
-          { id: 'demo-l12', title: 'Photoshop Básico', avgRating: 3.2, ratingCount: 19, startIdx: 214 },
-          { id: 'demo-l13', title: 'Tipografía', avgRating: 5.0, ratingCount: 18, startIdx: 233 },
-          { id: 'demo-l14', title: 'Teoría del Color', avgRating: 2.7, ratingCount: 17, startIdx: 251 },
+          { id: 'demo-l11', title: 'Principios de Diseño', ratingCount: 20, startIdx: currentIdx += 19 },
+          { id: 'demo-l12', title: 'Photoshop Básico', ratingCount: 19, startIdx: currentIdx += 20 },
+          { id: 'demo-l13', title: 'Tipografía', ratingCount: 19, startIdx: currentIdx += 19 },
+          { id: 'demo-l14', title: 'Teoría del Color', ratingCount: 19, startIdx: currentIdx += 19 },
         ],
         'demo-c4': [
-          { id: 'demo-l15', title: 'Mecánica Cuántica', avgRating: 4.5, ratingCount: 14, startIdx: 268 },
-          { id: 'demo-l16', title: 'Partículas y Ondas', avgRating: 1.9, ratingCount: 13, startIdx: 282 },
-          { id: 'demo-l17', title: 'Dualidad Onda-Partícula', avgRating: 3.8, ratingCount: 12, startIdx: 295 },
+          { id: 'demo-l15', title: 'Mecánica Cuántica', ratingCount: 26, startIdx: currentIdx += 19 },
+          { id: 'demo-l16', title: 'Partículas y Ondas', ratingCount: 25, startIdx: currentIdx += 26 },
+          { id: 'demo-l17', title: 'Dualidad Onda-Partícula', ratingCount: 25, startIdx: currentIdx += 25 },
         ],
       };
       
       setClasses(demoClasses.map(c => {
         const classLessons = lessonsByClass[c.id] || [];
         const totalRatings = classLessons.reduce((sum, l) => sum + l.ratingCount, 0);
-        const avgRating = classLessons.length > 0 
-          ? classLessons.reduce((sum, l) => sum + l.avgRating * l.ratingCount, 0) / totalRatings 
+        
+        const classRatings = classLessons.flatMap(lesson => 
+          demoRatings.slice(lesson.startIdx, lesson.startIdx + lesson.ratingCount)
+        );
+        const avgRating = classRatings.length > 0
+          ? classRatings.reduce((sum, r) => sum + r.rating, 0) / classRatings.length
           : 4.0;
         
         return {
@@ -226,19 +254,24 @@ export default function AcademyFeedbackPage() {
               name: 'Lecciones',
               totalRatings: totalRatings,
               averageRating: avgRating,
-              lessons: classLessons.map(lesson => ({
-                id: lesson.id,
-                title: lesson.title,
-                totalRatings: lesson.ratingCount,
-                averageRating: lesson.avgRating,
-                ratings: demoRatings.slice(lesson.startIdx, lesson.startIdx + lesson.ratingCount).map(r => ({
-                  id: r.id,
-                  rating: r.rating,
-                  studentName: r.studentName,
-                  comment: r.comment,
-                  createdAt: r.createdAt,
-                })),
-              })),
+              lessons: classLessons.map(lesson => {
+                const lessonRatings = demoRatings.slice(lesson.startIdx, lesson.startIdx + lesson.ratingCount);
+                const lessonAvg = lessonRatings.reduce((sum, r) => sum + r.rating, 0) / lessonRatings.length;
+                
+                return {
+                  id: lesson.id,
+                  title: lesson.title,
+                  totalRatings: lesson.ratingCount,
+                  averageRating: lessonAvg,
+                  ratings: lessonRatings.map(r => ({
+                    id: r.id,
+                    rating: r.rating,
+                    studentName: r.studentName,
+                    comment: r.comment,
+                    createdAt: r.createdAt,
+                  })),
+                };
+              }),
             },
           ],
         };
