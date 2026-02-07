@@ -539,8 +539,8 @@ export default function AcademyDashboard() {
         {/* Visual Analytics Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Engagement Metrics - TOP LEFT */}
-          <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm h-full animate-fade-in">
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">Participación</h3>
+          <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm h-full animate-fade-in order-4 lg:order-1">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3 sm:mb-6">Participación</h3>
             {filteredStudents.length > 0 ? (
               <div className="space-y-4">
                 <div>
@@ -614,8 +614,8 @@ export default function AcademyDashboard() {
           </div>
 
           {/* Student Summary - TOP RIGHT */}
-          <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm h-full">
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">Estudiantes</h3>
+          <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm h-full order-1 lg:order-2">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3 sm:mb-6">Estudiantes</h3>
             {filteredStudents.length > 0 || pendingEnrollments.length > 0 || rejectedCount > 0 ? (
               <div className="space-y-6">
                 <div className="text-center">
@@ -662,8 +662,8 @@ export default function AcademyDashboard() {
           </div>
 
           {/* Star Ratings Distribution - BOTTOM LEFT (Bar Chart) */}
-          <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm h-full">
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">Valoraciones</h3>
+          <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm h-full order-3 lg:order-3">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3 sm:mb-6">Valoraciones</h3>
             {(() => {
               if (!ratingsData || !ratingsData.lessons) {
                 return (
@@ -720,8 +720,8 @@ export default function AcademyDashboard() {
           </div>
 
           {/* Activity Pie Chart - BOTTOM RIGHT */}
-          <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm h-full flex flex-col">
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">Actividad</h3>
+          <div className="bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm h-full flex flex-col order-2 lg:order-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3 sm:mb-6">Actividad</h3>
             {filteredStudents.length > 0 ? (
               <div className="flex-1 flex items-center justify-center min-h-40">
                 <DonutChart

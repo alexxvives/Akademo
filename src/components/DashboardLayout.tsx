@@ -457,7 +457,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
+    <div className="h-[100dvh] flex flex-col bg-gray-50">
       {(role === 'ACADEMY' && academyPaymentStatus === 'NOT PAID') && (
         <DemoDataBanner />
       )}
@@ -490,7 +490,7 @@ export default function DashboardLayout({
         academyPaymentStatus={academyPaymentStatus}
       />
 
-      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Mobile Header with hamburger */}
         <header className="lg:hidden flex items-center justify-between h-14 px-4 bg-white border-b border-gray-200 flex-shrink-0">
           <button
@@ -547,7 +547,7 @@ export default function DashboardLayout({
         )}
 
         <main className="flex-1 overflow-y-auto bg-gray-100 overscroll-contain">
-          <div className="pt-6 pb-4 px-4 md:py-8 md:px-10 lg:py-12 lg:pl-20 lg:pr-20">
+          <div className="pt-4 pb-2 px-4 md:py-8 md:px-10 lg:py-12 lg:pl-20 lg:pr-20">
             {children}
           </div>
         </main>

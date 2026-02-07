@@ -156,6 +156,35 @@ html {
   }
 }
 
+/* Mobile responsive font scaling - prevents text overflow on small screens */
+@media screen and (max-width: 639px) {
+  .dashboard-layout h1 {
+    font-size: 1.25rem !important;
+    line-height: 1.75rem !important;
+  }
+  .dashboard-layout h2 {
+    font-size: 1.125rem !important;
+    line-height: 1.5rem !important;
+  }
+  .dashboard-layout h3 {
+    font-size: 1rem !important;
+    line-height: 1.375rem !important;
+  }
+  /* Card titles and section headings */
+  .dashboard-layout .text-2xl {
+    font-size: 1.25rem !important;
+    line-height: 1.75rem !important;
+  }
+  .dashboard-layout .text-xl {
+    font-size: 1.125rem !important;
+    line-height: 1.5rem !important;
+  }
+  .dashboard-layout .text-lg {
+    font-size: 0.9375rem !important;
+    line-height: 1.375rem !important;
+  }
+}
+
 /* Mobile table compaction - makes tables more readable on small screens */
 @media screen and (max-width: 767px) {
   .dashboard-layout table {

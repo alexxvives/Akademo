@@ -379,10 +379,10 @@ export default function ProfilePage() {
       {academy && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
           {/* Card Header */}
-          <div className="px-8 py-6 bg-gray-50 border-b border-gray-200">
-            <div className="flex items-center justify-between">
+          <div className="px-4 sm:px-8 py-4 sm:py-6 bg-gray-50 border-b border-gray-200">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
-                <h2 className="text-xl font-semibold text-gray-900">Información General</h2>
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Información General</h2>
                 <p className="text-sm text-gray-600 mt-1">Datos principales de tu academia</p>
               </div>
               {!editing ? (
@@ -450,7 +450,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Card Body */}
-          <div className="px-8 py-6">
+          <div className="px-4 sm:px-8 py-4 sm:py-6">
             {/* Nombre y Logo - Side by Side */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 pb-6 border-b border-gray-200">
               {/* Nombre de la academia */}
@@ -641,17 +641,17 @@ export default function ProfilePage() {
 
       {/* Settings Cards - Side by Side */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-8 py-5 bg-gray-50 border-b border-gray-200">
+        <div className="px-4 sm:px-8 py-5 bg-gray-50 border-b border-gray-200">
           <div className="flex items-center gap-3">
             {/* Removed icon next to Configuración Avanzada */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">Configuración Avanzada</h3>
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900">Configuración Avanzada</h3>
               <p className="text-sm text-gray-600">Feedback y reproducción de videos</p>
             </div>
           </div>
         </div>
 
-        <div className="px-8 py-6">
+        <div className="px-4 sm:px-8 py-4 sm:py-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Feedback Toggle */}
             <div className="lg:col-span-1">
@@ -742,8 +742,8 @@ export default function ProfilePage() {
 
       {/* Payment Methods */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-8 py-5 bg-gray-50 border-b border-gray-200">
-          <div className="flex items-center justify-between">
+        <div className="px-4 sm:px-8 py-5 bg-gray-50 border-b border-gray-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <h3 className="text-lg font-semibold text-gray-900">Métodos de Pago Permitidos</h3>
               <p className="text-sm text-gray-600">Selecciona los métodos de pago que aceptará tu academia</p>
@@ -759,7 +759,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="px-8 py-6">
+        <div className="px-4 sm:px-8 py-4 sm:py-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Stripe */}
             <button
@@ -929,17 +929,17 @@ export default function ProfilePage() {
 
       {/* Zoom Accounts */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-12">
-        <div className="px-8 py-6 bg-gray-900 text-white">
-          <div className="flex items-center justify-between">
+        <div className="px-4 sm:px-8 py-4 sm:py-6 bg-gray-900 text-white">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h2 className="text-xl font-semibold">Cuentas de Zoom</h2>
+              <h2 className="text-lg sm:text-xl font-semibold">Cuentas de Zoom</h2>
               <p className="text-gray-300 mt-1">Gestiona tus cuentas de Zoom para clases en vivo</p>
             </div>
             <ZoomConnectButton onClick={handleConnectZoom} />
           </div>
         </div>
 
-        <div className="px-8 py-6">
+        <div className="px-4 sm:px-8 py-4 sm:py-6">
           {zoomAccounts.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -953,7 +953,7 @@ export default function ProfilePage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {zoomAccounts.map(account => (
-                <div key={account.id} className="group relative bg-white border border-gray-200 rounded-xl p-6 hover:border-brand-500 hover:shadow-lg transition-all">
+                <div key={account.id} className="group relative bg-white border border-gray-200 rounded-xl p-4 sm:p-6 hover:border-brand-500 hover:shadow-lg transition-all">
                   {/* Delete button - top right corner (shown on hover) */}
                   <button
                     onClick={() => handleDisconnectZoom(account.id)}
@@ -969,7 +969,7 @@ export default function ProfilePage() {
                     <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center shadow-sm flex-shrink-0 overflow-hidden p-2">
                       <img src="/zoom_logo.png" alt="Zoom" className="w-full h-full object-contain" />
                     </div>
-                    <div className="flex-1 min-w-0 flex items-center justify-between">
+                    <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
                       <div>
                         <div className="flex items-center gap-2">
                           <p className="font-semibold text-gray-900 truncate">{account.accountName}</p>
@@ -1021,10 +1021,10 @@ export default function ProfilePage() {
 
       {/* Stripe Connect */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-12">
-        <div className="px-8 py-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
-          <div className="flex items-center justify-between">
+        <div className="px-4 sm:px-8 py-4 sm:py-6 bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h2 className="text-xl font-semibold">Cuenta de Stripe</h2>
+              <h2 className="text-lg sm:text-xl font-semibold">Cuenta de Stripe</h2>
               <p className="text-indigo-100 mt-1">Recibe pagos de estudiantes directamente en tu cuenta bancaria</p>
             </div>
             {!stripeStatus?.connected && (
@@ -1033,7 +1033,7 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="px-8 py-6">
+        <div className="px-4 sm:px-8 py-4 sm:py-6">
           {!stripeStatus?.connected ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -1080,12 +1080,12 @@ export default function ProfilePage() {
             </div>
           ) : stripeStatus.charges_enabled ? (
             <>
-              <div className="bg-white border border-gray-200 rounded-xl p-6 hover:border-brand-500 hover:shadow-lg transition-all">
+              <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 hover:border-brand-500 hover:shadow-lg transition-all">
                 <div className="flex items-start gap-4">
                   <div className="w-14 h-14 bg-white border border-gray-200 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0 overflow-hidden">
                     <img src="/Stripe_logo.svg" alt="Stripe" className="w-full h-full object-cover" />
                   </div>
-                  <div className="flex-1 min-w-0 flex items-center justify-between">
+                  <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
                     <div>
                       <div className="flex items-center gap-2">
                         <p className="font-semibold text-gray-900 truncate">{stripeStatus.email || 'Cuenta de Stripe'}</p>
