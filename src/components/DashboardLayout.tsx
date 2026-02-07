@@ -220,10 +220,15 @@ export default function DashboardLayout({
       loadActiveStreams();
       const streamInterval = setInterval(loadActiveStreams, 10000);
       
+      // Load new grades count and poll for updates
+      loadNewGrades();
+      const gradesInterval = setInterval(loadNewGrades, 15000);
+      
       return () => {
         clearInterval(interval);
         clearInterval(notificationInterval);
         clearInterval(streamInterval);
+        clearInterval(gradesInterval);
       };
     }
     
@@ -249,13 +254,6 @@ export default function DashboardLayout({
         loadUngradedAssignments();
       }, 15000);
       return () => clearInterval(teacherInterval);
-    }
-    
-    if (role === 'STUDENT') {
-      // Load new grades count
-      loadNewGrades();
-      const studentInterval = setInterval(loadNewGrades, 15000);
-      return () => clearInterval(studentInterval);
     }
   }, [role, loadNotifications, loadActiveStreams, loadAcademy, loadUnreadValoraciones, loadUngradedAssignments, loadNewGrades]);
 
