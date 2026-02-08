@@ -46,6 +46,7 @@ export default function AcademyGrades() {
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [classes, setClasses] = useState<{id: string; name: string}[]>([]);
   const [paymentStatus, setPaymentStatus] = useState<string>('NOT PAID');
+  const [userEmail, setUserEmail] = useState<string>('');
 
   useEffect(() => {
     loadClasses();
@@ -59,16 +60,29 @@ export default function AcademyGrades() {
 
   const loadClasses = async () => {
     try {
-      // Check payment status first
-      const academyRes = await apiClient('/academies');
+      // Check payment status and user email
+      const [academyRes, userRes] = await Promise.all([
+        apiClient('/academies'),
+        apiClient('/auth/me')
+      ]);
+      
       const academyResult = await academyRes.json();
+      const userResult = await userRes.json();
+      
+      if (userResult.success && userResult.data?.email) {
+        setUserEmail(userResult.data.email);
+      }
+      
       if (academyResult.success && Array.isArray(academyResult.data) && academyResult.data.length > 0) {
         const academy = academyResult.data[0];
         const status = academy.paymentStatus || 'NOT PAID';
         setPaymentStatus(status);
         
-        // If NOT PAID, use demo data
-        if (status === 'NOT PAID') {
+        // Only show demo data if: (1) NOT PAID AND (2) user email contains "demo" or academy ends with "%"
+        const isDemoUser = userResult.data?.email?.toLowerCase().includes('demo') || 
+                          academy.name?.endsWith('%');
+        
+        if (status === 'NOT PAID' && isDemoUser) {
           const demoClasses = generateDemoClasses();
           setClasses(demoClasses.map(c => ({ id: c.id, name: c.name })));
           setSelectedClass('all');
@@ -77,7 +91,7 @@ export default function AcademyGrades() {
         }
       }
       
-      // If PAID, load real classes
+      // If PAID or real unpaid academy, load real classes
       const res = await apiClient('/classes');
       const response: any = await res.json();
       if (response.success) {
@@ -101,8 +115,11 @@ export default function AcademyGrades() {
   const loadGrades = async () => {
     setLoading(true);
     try {
-      // If demo mode, generate demo grades
-      if (paymentStatus === 'NOT PAID') {
+      // Check if demo user
+      const isDemoUser = userEmail.toLowerCase().includes('demo');
+      
+      // Only show demo grades if: (1) NOT PAID AND (2) demo user
+      if (paymentStatus === 'NOT PAID' && isDemoUser) {
         const demoAssignments = generateDemoAssignments();
         const filtered = selectedClass === 'all' 
           ? demoAssignments 

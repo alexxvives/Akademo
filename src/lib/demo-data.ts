@@ -98,6 +98,7 @@ export interface DemoRating {
   studentLastName: string;
   comment: string;
   createdAt: string;
+  viewed: boolean; // Track if rating has been viewed by academy
 }
 
 export interface DemoStream {
@@ -325,29 +326,6 @@ export function generateDemoStudents(count: number = DEMO_STUDENT_COUNT.TOTAL): 
   return hardcodedStudents.slice(0, count);
 }
 
-// HARDCODED demo ratings - generated once, never changes (like demo students)
-// Distribution: 134★★★★★ (43.6%), 71★★★★ (23.1%), 36★★★ (11.7%), 40★★ (13%), 26★ (8.5%) = 307 total
-const DEMO_RATINGS_HARDCODED: DemoRating[] = [
-  // Five-star ratings (134) - lessons 1-6 for Web class (13+13+13+13+13+12=77)
-  { id: 'demo-r1', rating: 5, lessonTitle: 'Introducción a React', studentName: 'Juan García', studentFirstName: 'Juan', studentLastName: 'García', comment: '¡Excelente clase!', createdAt: '2026-01-15T10:30:00.000Z' },
-  { id: 'demo-r2', rating: 5, lessonTitle: 'Introducción a React', studentName: 'María López', studentFirstName: 'María', studentLastName: 'López', comment: 'Muy bien explicado', createdAt: '2026-01-16T14:20:00.000Z' },
-  { id: 'demo-r3', rating: 5, lessonTitle: 'Introducción a React', studentName: 'Carlos Pérez', studentFirstName: 'Carlos', studentLastName: 'Pérez', comment: 'Perfecto, lo entendí todo', createdAt: '2026-01-17T09:15:00.000Z' },
-  { id: 'demo-r4', rating: 5, lessonTitle: 'Introducción a React', studentName: 'Ana Martínez', studentFirstName: 'Ana', studentLastName: 'Martínez', comment: 'Gran profesor', createdAt: '2026-01-18T16:45:00.000Z' },
-  { id: 'demo-r5', rating: 5, lessonTitle: 'Introducción a React', studentName: 'Luis Sánchez', studentFirstName: 'Luis', studentLastName: 'Sánchez', comment: '¡Increíble contenido!', createdAt: '2026-01-19T11:30:00.000Z' },
-  { id: 'demo-r6', rating: 4, lessonTitle: 'Introducción a React', studentName: 'Carmen Díaz', studentFirstName: 'Carmen', studentLastName: 'Díaz', comment: 'Muy buena clase', createdAt: '2026-01-20T13:00:00.000Z' },
-  { id: 'demo-r7', rating: 4, lessonTitle: 'Introducción a React', studentName: 'José Gómez', studentFirstName: 'José', studentLastName: 'Gómez', comment: 'Bien explicado', createdAt: '2026-01-21T08:30:00.000Z' },
-  { id: 'demo-r8', rating: 3, lessonTitle: 'Introducción a React', studentName: 'Laura Torres', studentFirstName: 'Laura', studentLastName: 'Torres', comment: 'Buena clase', createdAt: '2026-01-22T15:20:00.000Z' },
-  { id: 'demo-r9', rating: 2, lessonTitle: 'Introducción a React', studentName: 'Miguel Ruiz', studentFirstName: 'Miguel', studentLastName: 'Ruiz', comment: 'Regular', createdAt: '2026-01-23T10:10:00.000Z' },
-  { id: 'demo-r10', rating: 2, lessonTitle: 'Introducción a React', studentName: 'Isabel Castro', studentFirstName: 'Isabel', studentLastName: 'Castro', comment: 'Un poco confuso', createdAt: '2026-01-24T14:50:00.000Z' },
-  { id: 'demo-r11', rating: 1, lessonTitle: 'Introducción a React', studentName: 'Pedro Moreno', studentFirstName: 'Pedro', studentLastName: 'Moreno', comment: 'Muy decepcionante', createdAt: '2026-01-25T09:40:00.000Z' },
-  { id: 'demo-r12', rating: 1, lessonTitle: 'Introducción a React', studentName: 'Sofía Romero', studentFirstName: 'Sofía', studentLastName: 'Romero', comment: 'No entendí nada', createdAt: '2026-01-26T16:30:00.000Z' },
-  { id: 'demo-r13', rating: 5, lessonTitle: 'Introducción a React', studentName: 'Diego Navarro', studentFirstName: 'Diego', studentLastName: 'Navarro', comment: '¡Excelente clase!', createdAt: '2026-01-27T11:20:00.000Z' },
-  
-  // Continue with more ratings to reach 307 total...
-  // For brevity, I'll create a pattern that frontend can use consistently
-  // This ensures SAME ratings every time, no randomness
-]
-
 export function generateDemoRatings(count: number = 307): DemoRating[] {
   // Return hardcoded ratings - always the same, fast, reliable
   // Distribution: 134★5, 71★4, 36★3, 40★2, 26★1 = 307 total
@@ -380,7 +358,7 @@ export function generateDemoRatings(count: number = 307): DemoRating[] {
   let id = 1;
   
   // Helper to create deterministic ratings (same every time)
-  const addRating = (rating: number, lessonIndex: number, studentIndex: number, daysAgo: number) => {
+  const addRating = (rating: number, lessonIndex: number, studentIndex: number, daysAgo: number, viewed: boolean = true) => {
     const student = students[studentIndex % students.length];
     const [firstName, lastName] = student.split(' ');
     const commentList = comments[rating as keyof typeof comments];
@@ -396,33 +374,34 @@ export function generateDemoRatings(count: number = 307): DemoRating[] {
       studentLastName: lastName,
       comment,
       createdAt,
+      viewed, // Add viewed status
     });
     id++;
   };
   
-  // Generate 134 five-star ratings
+  // Generate 134 five-star ratings (40 unviewed)
   for (let i = 0; i < 134; i++) {
-    addRating(5, Math.floor(i / 8), i, 60 - Math.floor(i / 3));
+    addRating(5, Math.floor(i / 8), i, 60 - Math.floor(i / 3), i < 40); // First 40 are unviewed
   }
   
-  // Generate 71 four-star ratings
+  // Generate 71 four-star ratings (22 unviewed)
   for (let i = 0; i < 71; i++) {
-    addRating(4, Math.floor(i / 4), i + 5, 50 - Math.floor(i / 2));
+    addRating(4, Math.floor(i / 4), i + 5, 50 - Math.floor(i / 2), i < 22); // First 22 are unviewed
   }
   
-  // Generate 36 three-star ratings
+  // Generate 36 three-star ratings (12 unviewed)
   for (let i = 0; i < 36; i++) {
-    addRating(3, Math.floor(i / 2), i + 10, 40 - i);
+    addRating(3, Math.floor(i / 2), i + 10, 40 - i, i < 12); // First 12 are unviewed
   }
   
-  // Generate 40 two-star ratings
+  // Generate 40 two-star ratings (13 unviewed)
   for (let i = 0; i < 40; i++) {
-    addRating(2, Math.floor(i / 3), i + 15, 30 - Math.floor(i / 2));
+    addRating(2, Math.floor(i / 3), i + 15, 30 - Math.floor(i / 2), i < 13); // First 13 are unviewed
   }
   
-  // Generate 26 one-star ratings
+  // Generate 26 one-star ratings (8 unviewed)
   for (let i = 0; i < 26; i++) {
-    addRating(1, Math.floor(i / 2), i, 20 - i);
+    addRating(1, Math.floor(i / 2), i, 20 - i, i < 8); // First 8 are unviewed
   }
   
   return ratings.slice(0, count);
@@ -799,6 +778,8 @@ export interface DemoAssignment {
   className: string;
   classId: string;
   createdAt: string;
+  attachmentIds?: string; // Comma-separated upload IDs
+  attachmentName?: string; // Display name for attachment
 }
 
 export interface DemoSubmission {
@@ -812,6 +793,8 @@ export interface DemoSubmission {
   score?: number;
   feedback?: string;
   gradedAt?: string;
+  downloadedAt?: string; // Track if teacher has seen/downloaded submission
+  version: number; // Submission version (if student resubmitted)
 }
 
 export function generateDemoAssignments(): DemoAssignment[] {
@@ -830,6 +813,8 @@ export function generateDemoAssignments(): DemoAssignment[] {
       className: 'Programación Web',
       classId: 'demo-c1',
       createdAt: new Date(Date.UTC(2026, 1, 8)).toISOString(),
+      attachmentIds: 'demo-upload-1',
+      attachmentName: 'Instrucciones_Componente.pdf',
     },
     {
       id: 'demo-a2',
@@ -842,6 +827,8 @@ export function generateDemoAssignments(): DemoAssignment[] {
       className: 'Programación Web',
       classId: 'demo-c1',
       createdAt: new Date(Date.UTC(2026, 1, 12)).toISOString(),
+      attachmentIds: 'demo-upload-2,demo-upload-3',
+      attachmentName: 'Hooks_Guia.pdf',
     },
     {
       id: 'demo-a3',
@@ -854,6 +841,8 @@ export function generateDemoAssignments(): DemoAssignment[] {
       className: 'Programación Web',
       classId: 'demo-c1',
       createdAt: new Date(Date.UTC(2026, 1, 18)).toISOString(),
+      attachmentIds: 'demo-upload-4',
+      attachmentName: 'Proyecto_Requisitos.pdf',
     },
     // Matemáticas Avanzadas (demo-c2) - 2 assignments
     {
@@ -867,6 +856,8 @@ export function generateDemoAssignments(): DemoAssignment[] {
       className: 'Matemáticas Avanzadas',
       classId: 'demo-c2',
       createdAt: new Date(Date.UTC(2026, 1, 10)).toISOString(),
+      attachmentIds: 'demo-upload-5',
+      attachmentName: 'Ejercicios_Derivadas.pdf',
     },
     {
       id: 'demo-a5',
@@ -879,6 +870,8 @@ export function generateDemoAssignments(): DemoAssignment[] {
       className: 'Matemáticas Avanzadas',
       classId: 'demo-c2',
       createdAt: new Date(Date.UTC(2026, 1, 14)).toISOString(),
+      attachmentIds: 'demo-upload-6',
+      attachmentName: 'Integrales_Teoria.pdf',
     },
     // Diseño Gráfico (demo-c3) - 3 assignments
     {
@@ -892,6 +885,8 @@ export function generateDemoAssignments(): DemoAssignment[] {
       className: 'Diseño Gráfico',
       classId: 'demo-c3',
       createdAt: new Date(Date.UTC(2026, 1, 9)).toISOString(),
+      attachmentIds: 'demo-upload-7,demo-upload-8',
+      attachmentName: 'Brief_Logo.pdf',
     },
     {
       id: 'demo-a7',
@@ -904,6 +899,8 @@ export function generateDemoAssignments(): DemoAssignment[] {
       className: 'Diseño Gráfico',
       classId: 'demo-c3',
       createdAt: new Date(Date.UTC(2026, 1, 11)).toISOString(),
+      attachmentIds: 'demo-upload-9',
+      attachmentName: 'Tipografia_Ejemplos.pdf',
     },
     {
       id: 'demo-a8',
@@ -916,6 +913,8 @@ export function generateDemoAssignments(): DemoAssignment[] {
       className: 'Diseño Gráfico',
       classId: 'demo-c3',
       createdAt: new Date(Date.UTC(2026, 1, 16)).toISOString(),
+      attachmentIds: 'demo-upload-10',
+      attachmentName: 'Color_Teoria.pdf',
     },
     // Física Cuántica (demo-c4) - 2 assignments
     {
@@ -929,6 +928,8 @@ export function generateDemoAssignments(): DemoAssignment[] {
       className: 'Física Cuántica',
       classId: 'demo-c4',
       createdAt: new Date(Date.UTC(2026, 1, 11)).toISOString(),
+      attachmentIds: 'demo-upload-11',
+      attachmentName: 'Schrodinger_Problemas.pdf',
     },
     {
       id: 'demo-a10',
@@ -941,6 +942,8 @@ export function generateDemoAssignments(): DemoAssignment[] {
       className: 'Física Cuántica',
       classId: 'demo-c4',
       createdAt: new Date(Date.UTC(2026, 1, 15)).toISOString(),
+      attachmentIds: 'demo-upload-12',
+      attachmentName: 'Heisenberg_Ejercicios.pdf',
     },
   ];
 }
@@ -974,20 +977,35 @@ export function generateDemoSubmissions(assignmentId: string): DemoSubmission[] 
     
     const submittedAt = new Date(new Date(assignment.dueDate).getTime() - (Math.random() * 5 * 24 * 60 * 60 * 1000)); // Random time up to 5 days before due date
     
+    // Track new submissions (about 30% not downloaded)
+    const isDownloaded = i >= Math.floor(submissionCount * 0.3); // First 30% are new
+    const downloadedAt = isDownloaded ? new Date(submittedAt.getTime() + (Math.random() * 24 * 60 * 60 * 1000)).toISOString() : undefined;
+    
+    // Some students submitted multiple versions (version 2 or 3)
+    const version = i % 8 === 0 ? 3 : i % 5 === 0 ? 2 : 1; // Most are version 1, some 2, few 3
+    
     submissions.push({
       id: `demo-sub-${assignmentId}-${i + 1}`,
       assignmentId,
       studentName,
       studentEmail: `${studentName.toLowerCase().replace(' ', '.')}@demo.com`,
-      submissionFileName: `${studentName.replace(' ', '_')}_tarea.pdf`,
+      submissionFileName: `${studentName.replace(' ', '_')}_tarea${version > 1 ? `_v${version}` : ''}.pdf`,
       submissionFileSize: Math.floor(Math.random() * 2000000) + 500000, // 500KB - 2.5MB
       submittedAt: submittedAt.toISOString(),
       score: isGraded ? Math.round(score!) : undefined,
       feedback: isGraded ? (score! >= assignment.maxScore * 0.9 ? 'Excelente trabajo, sigue así!' : score! >= assignment.maxScore * 0.8 ? 'Buen esfuerzo, revisa los comentarios' : 'Necesita mejorar, por favor estudia más el material') : undefined,
       gradedAt: isGraded ? new Date(submittedAt.getTime() + (Math.random() * 3 * 24 * 60 * 60 * 1000)).toISOString() : undefined,
+      downloadedAt,
+      version,
     });
   }
   
   return submissions;
+}
+
+// Helper to count new (undownloaded) submissions for an assignment
+export function countNewDemoSubmissions(assignmentId: string): number {
+  const submissions = generateDemoSubmissions(assignmentId);
+  return submissions.filter(s => !s.downloadedAt).length;
 }
 

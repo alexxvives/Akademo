@@ -25,8 +25,9 @@ export function DemoBanner({ userEmail }: DemoBannerProps) {
     fetchPaymentStatus();
   }, []);
 
-  // Only show for demo accounts that are PAID (NOT PAID academies show DemoDataBanner instead)
-  if (!userEmail?.toLowerCase().includes("demo") || paymentStatus === 'NOT PAID') {
+  // Show for all demo% accounts (regardless of payment status)
+  // Demo% users never see DemoDataBanner
+  if (!userEmail?.toLowerCase().includes("demo")) {
     return null;
   }
 

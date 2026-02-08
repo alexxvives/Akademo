@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { apiClient, apiPost } from '@/lib/api-client';
-import { generateDemoAssignments, generateDemoSubmissions, generateDemoClasses, type DemoAssignment, type DemoSubmission } from '@/lib/demo-data';
+import { generateDemoAssignments, generateDemoSubmissions, generateDemoClasses, countNewDemoSubmissions, type DemoAssignment, type DemoSubmission } from '@/lib/demo-data';
 
 interface Class { id: string; name: string; }
 interface Assignment {
@@ -49,6 +49,7 @@ export default function TeacherAssignments() {
   const [editUploadFile, setEditUploadFile] = useState<File | null>(null);
   const [editUploadFiles, setEditUploadFiles] = useState<File[]>([]); // Multiple files for edit
   const [paymentStatus, setPaymentStatus] = useState<string>('NOT PAID');
+  const [userEmail, setUserEmail] = useState<string>('');
 
   // Helper to check if assignment is past due
   const isPastDue = (dueDate?: string) => {
@@ -80,17 +81,30 @@ export default function TeacherAssignments() {
     try {
       setLoading(true);
       
-      // Check payment status first
-      const academyRes = await apiClient('/academies');
+      // Check payment status and user email
+      const [academyRes, userRes] = await Promise.all([
+        apiClient('/academies'),
+        apiClient('/auth/me')
+      ]);
+      
       const academyResult = await academyRes.json();
+      const userResult = await userRes.json();
+      
+      if (userResult.success && userResult.data?.email) {
+        setUserEmail(userResult.data.email);
+      }
+      
       if (academyResult.success && Array.isArray(academyResult.data) && academyResult.data.length > 0) {
         const academy = academyResult.data[0];
         setAcademyName(academy.name || '');
         const status = academy.paymentStatus || 'NOT PAID';
         setPaymentStatus(status);
         
-        // If NOT PAID, use demo data
-        if (status === 'NOT PAID') {
+        // Only show demo data if: (1) NOT PAID AND (2) user email contains "demo" or ends with "%"
+        const isDemoUser = userResult.data?.email?.toLowerCase().includes('demo') || 
+                          academy.name?.endsWith('%');
+        
+        if (status === 'NOT PAID' && isDemoUser) {
           const demoClasses = generateDemoClasses();
           setClasses(demoClasses.map(c => ({ id: c.id, name: c.name })));
           setLoading(false);
@@ -98,7 +112,7 @@ export default function TeacherAssignments() {
         }
       }
       
-      // If PAID, load real data
+      // If PAID or real unpaid academy, load real data
       const teacherRes = await apiClient('/requests/teacher');
       const teacherResult = await teacherRes.json();
       if (Array.isArray(teacherResult) && teacherResult.length > 0) {
@@ -118,8 +132,11 @@ export default function TeacherAssignments() {
 
   const loadAssignments = async () => {
     try {
-      // If demo mode, show demo assignments
-      if (paymentStatus === 'NOT PAID') {
+      // Check if demo user (email contains "demo" or academy name ends with "%")
+      const isDemoUser = userEmail.toLowerCase().includes('demo');
+      
+      // Only show demo assignments if: (1) NOT PAID AND (2) demo user
+      if (paymentStatus === 'NOT PAID' && isDemoUser) {
         const demoAssignments = generateDemoAssignments();
         const filtered = selectedClassId
           ? demoAssignments.filter(a => a.classId === selectedClassId)
@@ -128,7 +145,7 @@ export default function TeacherAssignments() {
         return;
       }
       
-      // If PAID, load real assignments
+      // If PAID or real unpaid academy, load real assignments
       const url = selectedClassId 
         ? `/assignments?classId=${selectedClassId}`
         : '/assignments/all';
@@ -142,14 +159,17 @@ export default function TeacherAssignments() {
 
   const loadSubmissions = async (assignmentId: string) => {
     try {
-      // If demo mode, show demo submissions
-      if (paymentStatus === 'NOT PAID') {
+      // Check if demo user
+      const isDemoUser = userEmail.toLowerCase().includes('demo');
+      
+      // Only show demo submissions if: (1) NOT PAID AND (2) demo user
+      if (paymentStatus === 'NOT PAID' && isDemoUser) {
         const demoSubs = generateDemoSubmissions(assignmentId);
         setSubmissions(demoSubs as any);
         return;
       }
       
-      // If PAID, load real submissions
+      // If PAID or real unpaid academy, load real submissions
       const res = await apiClient(`/assignments/${assignmentId}`);
       const result = await res.json();
       if (result.success) setSubmissions(result.data.submissions || []);
@@ -582,9 +602,23 @@ export default function TeacherAssignments() {
                           e.stopPropagation();
                           openSubmissions(assignment);
                         }}
-                        className="text-brand-600 hover:text-brand-900"
+                        className="inline-flex items-center gap-2 text-brand-600 hover:text-brand-900"
                       >
                         Ver entregas
+                        {(() => {
+                          // Count new submissions (not downloaded)
+                          const newCount = paymentStatus === 'NOT PAID' 
+                            ? countNewDemoSubmissions(assignment.id)
+                            : 0; // For real mode, would need API call
+                          if (newCount > 0) {
+                            return (
+                              <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-green-800 bg-green-200 rounded-full">
+                                +{newCount}
+                              </span>
+                            );
+                          }
+                          return null;
+                        })()}
                       </button>
                     </td>
                   </tr>
@@ -697,8 +731,8 @@ export default function TeacherAssignments() {
           <div className="bg-white rounded-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
               <div>
-                <h2 className="text-xl sm:text-2xl font-semibold">{selectedAssignment.title}</h2>
-                <p className="text-sm text-gray-500 mt-1">{submissions.length} entregas</p>
+                <h2 className="text-xl sm:text-2xl font-semibold">Entregas</h2>
+                <p className="text-sm text-gray-500 mt-1">{submissions.length} entregas para "{selectedAssignment.title}"</p>
               </div>
               <div className="flex gap-2">
                 <button onClick={() => handleBulkDownload(true)}
@@ -723,6 +757,7 @@ export default function TeacherAssignments() {
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estudiante</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Archivo</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Versión</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nota</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
@@ -730,7 +765,7 @@ export default function TeacherAssignments() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {submissions.map((sub) => (
-                    <tr key={sub.id} className="hover:bg-gray-50">
+                    <tr key={sub.id} className={`hover:bg-gray-50 ${!(sub as any).downloadedAt ? 'bg-green-50' : ''}`}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{sub.studentName}</div>
                         <div className="text-sm text-gray-500">{sub.studentEmail}</div>
@@ -740,6 +775,9 @@ export default function TeacherAssignments() {
                           className="text-sm text-brand-600 hover:text-brand-900 underline">
                           {sub.submissionFileName}
                         </button>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        v{(sub as any).version || 1}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {new Date(sub.submittedAt).toLocaleDateString('es-ES')}

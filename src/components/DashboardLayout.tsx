@@ -169,6 +169,13 @@ export default function DashboardLayout({
 
   const loadUnreadValoraciones = useCallback(async () => {
     try {
+      // If demo mode, return hardcoded count of unviewed ratings
+      if (academyPaymentStatus === 'NOT PAID') {
+        setUnreadValoracionesCount(95); // 95 unviewed ratings in demo data
+        return;
+      }
+      
+      // If PAID, load real count
       const response = await apiClient('/lessons/ratings/unread-count');
       const result = await response.json();
       if (result.success && result.data) {
@@ -177,7 +184,7 @@ export default function DashboardLayout({
     } catch (error) {
       console.error('Failed to load unread valoraciones:', error);
     }
-  }, []);
+  }, [academyPaymentStatus]);
   
   const loadUngradedAssignments = useCallback(async () => {
     try {
@@ -509,7 +516,7 @@ export default function DashboardLayout({
   return (
     <div className="h-[100dvh] flex flex-col bg-gray-50">
       <DemoBanner userEmail={user?.email} />
-      {(role === 'ACADEMY' && academyPaymentStatus === 'NOT PAID') && (
+      {(role === 'ACADEMY' && academyPaymentStatus === 'NOT PAID' && !user?.email?.toLowerCase().includes("demo")) && (
         <DemoDataBanner />
       )}
       <div className="dashboard-layout flex-1 flex overflow-hidden">
