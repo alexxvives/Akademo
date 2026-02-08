@@ -48,7 +48,7 @@ export default function TeacherAssignments() {
   const [creating, setCreating] = useState(false);
   const [editUploadFile, setEditUploadFile] = useState<File | null>(null);
   const [editUploadFiles, setEditUploadFiles] = useState<File[]>([]); // Multiple files for edit
-  const [paymentStatus, setPaymentStatus] = useState<string>('NOT PAID');
+  const [paymentStatus, setPaymentStatus] = useState<string>(''); // Empty until loaded
   const [userEmail, setUserEmail] = useState<string>('');
 
   // Helper to check if assignment is past due
@@ -76,8 +76,9 @@ export default function TeacherAssignments() {
 
   useEffect(() => { loadData(); }, []);
   useEffect(() => { 
-    // Only load assignments after we have user data
-    if (userEmail || paymentStatus) {
+    // Only load assignments after we have user data loaded (userEmail will be set)
+    if (userEmail) {
+      console.log('🔄 [ACADEMY] Triggering loadAssignments because data is ready');
       loadAssignments(); 
     }
   }, [selectedClassId, userEmail, paymentStatus]);

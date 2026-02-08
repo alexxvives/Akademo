@@ -59,7 +59,7 @@ export default function TeacherAssignments() {
   const [editUploadFile, setEditUploadFile] = useState<File | null>(null);
   const [editUploadFiles, setEditUploadFiles] = useState<File[]>([]); // Multiple files for edit
   const [userEmail, setUserEmail] = useState<string>('');
-  const [paymentStatus, setPaymentStatus] = useState<string>('PAID');
+  const [paymentStatus, setPaymentStatus] = useState<string>(''); // Empty until loaded
 
   // Helper to check if assignment is past due
   const isPastDue = (dueDate?: string) => {
@@ -86,8 +86,9 @@ export default function TeacherAssignments() {
 
   useEffect(() => { loadData(); }, []);
   useEffect(() => { 
-    // Only load assignments after we have user data
-    if (userEmail || paymentStatus) {
+    // Only load assignments after we have user data loaded (userEmail will be set)
+    if (userEmail) {
+      console.log('🔄 [TEACHER] Triggering loadAssignments because data is ready');
       loadAssignments(); 
     }
   }, [selectedClassId, userEmail, paymentStatus]);
