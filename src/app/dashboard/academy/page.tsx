@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { BarChart, DonutChart } from '@/components/Charts';
 import { apiClient } from '@/lib/api-client';
 import { useAnimatedNumber } from '@/hooks';
-import { generateDemoStudents, generateDemoStats, generateDemoStreams, generateDemoClasses, generateDemoPendingPayments, generateDemoPaymentHistory } from '@/lib/demo-data';
+import { generateDemoStudents, generateDemoStats, generateDemoStreams, generateDemoClasses, generateDemoPendingPayments, generateDemoPaymentHistory, generateDemoRatings } from '@/lib/demo-data';
 import { SkeletonDashboard } from '@/components/ui/SkeletonLoader';
 
 interface Class {
@@ -692,18 +692,26 @@ export default function AcademyDashboard() {
                 );
               }
               
-              // Calculate actual distribution from lesson ratings
+              // Calculate actual distribution from individual ratings (not averages)
               const ratingCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-              filteredLessons.forEach(lesson => {
-                // Estimate distribution based on average rating
-                // This is an approximation since we don't have individual rating breakdown per lesson
-                if (lesson.averageRating !== null && lesson.averageRating !== undefined) {
-                  const avgRating = Math.round(lesson.averageRating);
-                  if (avgRating >= 1 && avgRating <= 5) {
-                    ratingCounts[avgRating as 1|2|3|4|5] += lesson.ratingCount;
+              
+              if (paymentStatus === 'NOT PAID') {
+                // Use actual demo ratings distribution: 134★5, 71★4, 36★3, 40★2, 26★1
+                const allDemoRatings = generateDemoRatings();
+                allDemoRatings.forEach(rating => {
+                  ratingCounts[rating.rating as 1|2|3|4|5]++;
+                });
+              } else {
+                // For real data, estimate from averages (we don't have individual rating access here)
+                filteredLessons.forEach(lesson => {
+                  if (lesson.averageRating !== null && lesson.averageRating !== undefined) {
+                    const avgRating = Math.round(lesson.averageRating);
+                    if (avgRating >= 1 && avgRating <= 5) {
+                      ratingCounts[avgRating as 1|2|3|4|5] += lesson.ratingCount;
+                    }
                   }
-                }
-              });
+                });
+              }
               
               return (
                 <BarChart
