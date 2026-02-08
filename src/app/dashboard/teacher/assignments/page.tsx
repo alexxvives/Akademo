@@ -101,12 +101,25 @@ export default function TeacherAssignments() {
       // Get user email
       const userRes = await apiClient('/auth/me');
       const userResult: any = await userRes.json();
-      if (userResult.success && userResult.data) {
-        console.log('👤 User email:', userResult.data.email);
-        setUserEmail(userResult.data.email || '');
+      const email = userResult.success && userResult.data ? userResult.data.email || '' : '';
+      console.log('👤 User email:', email);
+      setUserEmail(email);
+      
+      // Check if demo user
+      const isDemoUser = email.toLowerCase().includes('demo');
+      
+      // If demo user, load demo data immediately
+      if (isDemoUser) {
+        console.log('✅ Demo user detected, loading demo data...');
+        setPaymentStatus('NOT PAID');
+        const demoClasses = generateDemoClasses();
+        console.log('📦 Demo classes loaded:', demoClasses.length);
+        setClasses(demoClasses.map(c => ({ id: c.id, name: c.name })) as any[]);
+        setLoading(false);
+        return;
       }
       
-      // Get academy info and payment status
+      // For real users, get academy info and payment status
       const academyRes = await apiClient('/teacher/academy');
       if (academyRes.ok) {
         const academyResult: any = await academyRes.json();
@@ -114,24 +127,10 @@ export default function TeacherAssignments() {
           console.log('🏫 Academy:', academyResult.data.academy.name, 'Payment:', academyResult.data.academy.paymentStatus);
           setAcademyName(academyResult.data.academy.name || '');
           setPaymentStatus(academyResult.data.academy.paymentStatus || 'PAID');
-          
-          // Check if demo user
-          const isDemoUser = userResult.data?.email?.toLowerCase().includes('demo') || 
-                            academyResult.data.academy.name?.endsWith('%');
-          
-          // If NOT PAID and demo user, load demo classes
-          if (academyResult.data.academy.paymentStatus === 'NOT PAID' && isDemoUser) {
-            console.log('✅ Loading DEMO classes...');
-            const demoClasses = generateDemoClasses();
-            console.log('📦 Demo classes loaded:', demoClasses.length);
-            setClasses(demoClasses.map(c => ({ id: c.id, name: c.name })) as any[]);
-            setLoading(false);
-            return;
-          }
         }
       }
       
-      // If PAID or real unpaid, load real classes
+      // Load real classes
       const classRes = await apiClient('/classes');
       const classResult = await classRes.json();
       if (classResult.success && classResult.data) {

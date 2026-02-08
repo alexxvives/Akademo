@@ -88,42 +88,40 @@ export default function TeacherAssignments() {
       setLoading(true);
       console.log('🚀 [ACADEMY] loadData started...');
       
-      // Check payment status and user email
-      const [academyRes, userRes] = await Promise.all([
-        apiClient('/academies'),
-        apiClient('/auth/me')
-      ]);
-      
-      const academyResult = await academyRes.json();
+      // Get user email
+      const userRes = await apiClient('/auth/me');
       const userResult = await userRes.json();
+      const email = userResult.success && userResult.data ? userResult.data.email || '' : '';
+      console.log('👤 [ACADEMY] User email:', email);
+      setUserEmail(email);
       
-      if (userResult.success && userResult.data?.email) {
-        console.log('👤 [ACADEMY] User email:', userResult.data.email);
-        setUserEmail(userResult.data.email);
+      // Check if demo user
+      const isDemoUser = email.toLowerCase().includes('demo');
+      
+      // If demo user, load demo data immediately
+      if (isDemoUser) {
+        console.log('✅ [ACADEMY] Demo user detected, loading demo data...');
+        setPaymentStatus('NOT PAID');
+        const demoClasses = generateDemoClasses();
+        console.log('📦 [ACADEMY] Demo classes loaded:', demoClasses.length);
+        setClasses(demoClasses.map(c => ({ id: c.id, name: c.name })));
+        setLoading(false);
+        return;
       }
+      
+      // For real users, check payment status and user email
+      const academyRes = await apiClient('/academies');
+      const academyResult = await academyRes.json();
       
       if (academyResult.success && Array.isArray(academyResult.data) && academyResult.data.length > 0) {
         const academy = academyResult.data[0];
         console.log('🏫 [ACADEMY] Academy:', academy.name, 'Payment:', academy.paymentStatus);
         setAcademyName(academy.name || '');
-        const status = academy.paymentStatus || 'NOT PAID';
+        const status = academy.paymentStatus || 'PAID';
         setPaymentStatus(status);
-        
-        // Only show demo data if: (1) NOT PAID AND (2) user email contains "demo" or ends with "%"
-        const isDemoUser = userResult.data?.email?.toLowerCase().includes('demo') || 
-                          academy.name?.endsWith('%');
-        
-        if (status === 'NOT PAID' && isDemoUser) {
-          console.log('✅ [ACADEMY] Loading DEMO classes...');
-          const demoClasses = generateDemoClasses();
-          console.log('📦 [ACADEMY] Demo classes loaded:', demoClasses.length);
-          setClasses(demoClasses.map(c => ({ id: c.id, name: c.name })));
-          setLoading(false);
-          return;
-        }
       }
       
-      // If PAID or real unpaid academy, load real data
+      // Load real data
       const teacherRes = await apiClient('/requests/teacher');
       const teacherResult = await teacherRes.json();
       if (Array.isArray(teacherResult) && teacherResult.length > 0) {
