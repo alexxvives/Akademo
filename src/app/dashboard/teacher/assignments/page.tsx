@@ -124,7 +124,13 @@ export default function TeacherAssignments() {
       if (assignmentId.startsWith('demo-')) {
         const { generateDemoSubmissions } = await import('@/lib/demo-data');
         const demoSubs = generateDemoSubmissions(assignmentId);
-        setSubmissions(demoSubs);
+        // Map to Submission type with required uploadId field
+        const mappedSubs: Submission[] = demoSubs.map(sub => ({
+          ...sub,
+          uploadId: `demo-upload-${sub.id}`, // Add required uploadId field
+          studentId: sub.id, // Use submission ID as student ID for demo
+        }));
+        setSubmissions(mappedSubs);
         return;
       }
       

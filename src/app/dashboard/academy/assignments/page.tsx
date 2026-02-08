@@ -165,7 +165,13 @@ export default function TeacherAssignments() {
       // Only show demo submissions if: (1) NOT PAID AND (2) demo user
       if (paymentStatus === 'NOT PAID' && isDemoUser) {
         const demoSubs = generateDemoSubmissions(assignmentId);
-        setSubmissions(demoSubs as any);
+        // Map to Submission type with required uploadId field
+        const mappedSubs: Submission[] = demoSubs.map(sub => ({
+          ...sub,
+          uploadId: `demo-upload-${sub.id}`, // Add required uploadId field
+          studentId: sub.id, // Use submission ID as student ID for demo
+        }));
+        setSubmissions(mappedSubs);
         return;
       }
       
