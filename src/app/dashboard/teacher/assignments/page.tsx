@@ -99,7 +99,7 @@ export default function TeacherAssignments() {
       console.log('🚀 loadData started...');
       
       // Get user email
-      const userRes = await apiClient('/user');
+      const userRes = await apiClient('/auth/me');
       const userResult: any = await userRes.json();
       if (userResult.success && userResult.data) {
         console.log('👤 User email:', userResult.data.email);

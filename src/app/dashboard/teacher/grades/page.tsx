@@ -61,7 +61,7 @@ export default function TeacherGrades() {
   const loadClasses = async () => {
     try {
       // Check if demo user
-      const userRes = await apiClient('/user');
+      const userRes = await apiClient('/auth/me');
       const userResult: any = await userRes.json();
       if (userResult.success && userResult.data) {
         setUserEmail(userResult.data.email || '');
@@ -112,7 +112,7 @@ export default function TeacherGrades() {
     setLoading(true);
     try {
       // Re-fetch user data to check if demo (avoid state race condition)
-      const userRes = await apiClient('/user');
+      const userRes = await apiClient('/auth/me');
       const userResult: any = await userRes.json();
       const email = userResult.success && userResult.data ? userResult.data.email || '' : '';
       
