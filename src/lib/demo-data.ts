@@ -382,22 +382,22 @@ export function generateDemoRatings(count: number = 35): DemoRating[] {
   
   // Generate 15 five-star ratings (5 unviewed)
   for (let i = 0; i < 15; i++) {
-    addRating(5, Math.floor(i / 3), i, 30 - i, i >= 10); // Last 5 are unviewed (recent)
+    addRating(5, Math.floor(i / 3), i, 30 - i, i < 10); // First 10 viewed, last 5 unviewed
   }
   
   // Generate 10 four-star ratings (4 unviewed)
   for (let i = 0; i < 10; i++) {
-    addRating(4, Math.floor(i / 2), i + 5, 25 - i, i >= 6); // Last 4 are unviewed
+    addRating(4, Math.floor(i / 2), i + 5, 25 - i, i < 6); // First 6 viewed, last 4 unviewed
   }
   
   // Generate 6 three-star ratings (2 unviewed)
   for (let i = 0; i < 6; i++) {
-    addRating(3, i % 3, i + 10, 20 - i * 2, i >= 4); // Last 2 are unviewed
+    addRating(3, i % 3, i + 10, 20 - i * 2, i < 4); // First 4 viewed, last 2 unviewed
   }
   
   // Generate 3 two-star ratings (1 unviewed)
   for (let i = 0; i < 3; i++) {
-    addRating(2, i, i + 15, 15 - i * 3, i >= 2); // Last 1 is unviewed
+    addRating(2, i, i + 15, 15 - i * 3, i < 2); // First 2 viewed, last 1 unviewed
   }
   
   // Generate 1 one-star rating (0 unviewed - all old ratings are viewed)

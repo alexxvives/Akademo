@@ -111,11 +111,26 @@ export default function TeacherGrades() {
   const loadGrades = async () => {
     setLoading(true);
     try {
-      // Check if demo user
-      const isDemoUser = userEmail.toLowerCase().includes('demo');
+      // Re-fetch user data to check if demo (avoid state race condition)
+      const userRes = await apiClient('/user');
+      const userResult: any = await userRes.json();
+      const email = userResult.success && userResult.data ? userResult.data.email || '' : '';
+      
+      // Get academy payment status through teacher relationship
+      const academyRes = await apiClient('/teacher/academy');
+      let status = 'PAID';
+      let academyName = '';
+      if (academyRes.ok) {
+        const academyResult: any = await academyRes.json();
+        status = academyResult.data?.academy?.paymentStatus || 'PAID';
+        academyName = academyResult.data?.academy?.name || '';
+      }
+      
+      // Check if demo user: email contains "demo" OR academy name ends with "%"
+      const isDemoUser = email.toLowerCase().includes('demo') || academyName.endsWith('%');
       
       // Only show demo grades if: (1) NOT PAID AND (2) demo user
-      if (paymentStatus === 'NOT PAID' && isDemoUser) {
+      if (status === 'NOT PAID' && isDemoUser) {
         const demoAssignments = generateDemoAssignments();
         const filtered = selectedClass === 'all' 
           ? demoAssignments 
@@ -443,8 +458,8 @@ export default function TeacherGrades() {
                             }
                             
                             const handleDownload = (storagePath: string) => {
-                              // Check if this is a demo file (demo grade storage paths are just file names)
-                              if (storagePath && !storagePath.includes('/') && paymentStatus === 'NOT PAID') {
+                              // Check if this is a demo file (demo storage paths are just filenames without slashes)
+                              if (storagePath && !storagePath.includes('/')) {
                                 window.open('/demo/Documento.pdf', '_blank');
                               } else {
                                 window.open(`/api/documents/assignment/${storagePath}`, '_blank');
@@ -472,8 +487,8 @@ export default function TeacherGrades() {
                           {grade.submissionStoragePath ? (
                             <button
                               onClick={() => {
-                                // Check if this is a demo file (demo submission paths are just file names)
-                                if (grade.submissionStoragePath && !grade.submissionStoragePath.includes('/') && paymentStatus === 'NOT PAID') {
+                                // Check if this is a demo file (demo storage paths are just filenames without slashes)
+                                if (grade.submissionStoragePath && !grade.submissionStoragePath.includes('/')) {
                                   window.open('/demo/Documento.pdf', '_blank');
                                 } else {
                                   window.open(`/api/documents/assignment/${grade.submissionStoragePath}`, '_blank');
