@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { SkeletonFeedback } from '@/components/ui/SkeletonLoader';
@@ -59,6 +59,16 @@ export function FeedbackView({
   onRatingsViewed,
 }: FeedbackViewProps) {
   const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set());
+  const viewedRatingsRef = useRef<Set<string>>(new Set());
+
+  // Mark ratings as read when component unmounts or user leaves page
+  useEffect(() => {
+    return () => {
+      if (viewedRatingsRef.current.size > 0 && onRatingsViewed) {
+        onRatingsViewed(Array.from(viewedRatingsRef.current));
+      }
+    };
+  }, [onRatingsViewed]);
 
   const toggleTopic = (topicId: string, topic: Topic) => {
     setExpandedTopics(prev => {
@@ -70,17 +80,13 @@ export function FeedbackView({
       } else {
         newSet.add(topicId);
         
-        // If expanding and we have a callback, collect all rating IDs from this topic's lessons
-        if (isExpanding && onRatingsViewed) {
-          const ratingIds: string[] = [];
+        // If expanding, collect rating IDs to be marked as read on unmount
+        if (isExpanding) {
           topic.lessons.forEach(lesson => {
             lesson.ratings.forEach(rating => {
-              ratingIds.push(rating.id);
+              viewedRatingsRef.current.add(rating.id);
             });
           });
-          if (ratingIds.length > 0) {
-            onRatingsViewed(ratingIds);
-          }
         }
       }
       return newSet;
@@ -92,6 +98,20 @@ export function FeedbackView({
     return topic.lessons.some(lesson => 
       lesson.ratings.some(rating => rating.isRead === false)
     );
+  };
+
+  // Helper to count unread ratings for a topic
+  const countUnreadRatings = (topic: Topic) => {
+    return topic.lessons.reduce((count, lesson) => {
+      return count + lesson.ratings.filter(rating => rating.isRead === false).length;
+    }, 0);
+  };
+
+  // Helper to count unread ratings for a class
+  const countClassUnreadRatings = (classItem: ClassFeedback) => {
+    return classItem.topics.reduce((count, topic) => {
+      return count + countUnreadRatings(topic);
+    }, 0);
   };
 
   const renderStars = (rating: number) => {
@@ -166,23 +186,22 @@ export function FeedbackView({
       {/* Classes */}
       <div className="space-y-4">
         {filteredClasses.map((classItem) => {
-          const classHasUnread = classItem.topics.some(hasUnreadRatings);
+          const classUnreadCount = countClassUnreadRatings(classItem);
           return (
           <div key={classItem.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden relative">
-            {classHasUnread && (
-              <div className="absolute top-4 right-4 w-2.5 h-2.5 bg-red-500 rounded-full shadow-lg shadow-red-500/50 ring-2 ring-red-100" />
-            )}
             <div className="p-4 sm:p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                     <h3 className="text-xl font-bold text-gray-900">{classItem.name}</h3>
-                    {classItem.teacherName && (
-                      <span className="text-sm text-gray-500">• {classItem.teacherName}</span>
+                    {classUnreadCount > 0 && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-red-100 text-red-800">
+                        {classUnreadCount} {classUnreadCount === 1 ? 'nueva' : 'nuevas'}
+                      </span>
                     )}
                   </div>
-                  {classItem.academyName && (
-                    <p className="text-sm text-gray-500 mt-1">{classItem.academyName}</p>
+                  {classItem.teacherName && (
+                    <p className="text-sm text-gray-500 mt-1">{classItem.teacherName}</p>
                   )}
                 </div>
                 <div className="flex items-center gap-4">
@@ -200,7 +219,7 @@ export function FeedbackView({
             {/* Topics */}
             <div className="divide-y divide-gray-200">
               {classItem.topics.map((topic) => {
-                const topicHasUnread = hasUnreadRatings(topic);
+                const topicUnreadCount = countUnreadRatings(topic);
                 return (
                 <div key={topic.id}>
                   <button
@@ -216,10 +235,12 @@ export function FeedbackView({
                       >
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
-                      {topicHasUnread && (
-                        <div className="w-2 h-2 bg-red-500 rounded-full shadow-sm shadow-red-500/50" />
-                      )}
                       <span className="font-semibold text-gray-900">{topic.name}</span>
+                      {topicUnreadCount > 0 && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-red-100 text-red-800">
+                          {topicUnreadCount} {topicUnreadCount === 1 ? 'nueva' : 'nuevas'}
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
                       <div className="flex items-center gap-2">
