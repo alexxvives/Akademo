@@ -57,6 +57,8 @@ export default function TeacherAssignments() {
   const [creating, setCreating] = useState(false);
   const [editUploadFile, setEditUploadFile] = useState<File | null>(null);
   const [editUploadFiles, setEditUploadFiles] = useState<File[]>([]); // Multiple files for edit
+  const [userEmail, setUserEmail] = useState<string>('');
+  const [paymentStatus, setPaymentStatus] = useState<string>('PAID');
 
   // Helper to check if assignment is past due
   const isPastDue = (dueDate?: string) => {
@@ -87,16 +89,41 @@ export default function TeacherAssignments() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const academyRes = await apiClient('/requests/teacher');
-      const academyResult = await academyRes.json();
-      if (Array.isArray(academyResult) && academyResult.length > 0) {
-        setAcademyName(academyResult[0].academyName || '');
+      
+      // Get user email
+      const userRes = await apiClient('/user');
+      const userResult: any = await userRes.json();
+      if (userResult.success && userResult.data) {
+        setUserEmail(userResult.data.email || '');
       }
+      
+      // Get academy info and payment status
+      const academyRes = await apiClient('/teacher/academy');
+      if (academyRes.ok) {
+        const academyResult: any = await academyRes.json();
+        if (academyResult.data?.academy) {
+          setAcademyName(academyResult.data.academy.name || '');
+          setPaymentStatus(academyResult.data.academy.paymentStatus || 'PAID');
+          
+          // Check if demo user
+          const isDemoUser = userResult.data?.email?.toLowerCase().includes('demo') || 
+                            academyResult.data.academy.name?.endsWith('%');
+          
+          // If NOT PAID and demo user, load demo classes
+          if (academyResult.data.academy.paymentStatus === 'NOT PAID' && isDemoUser) {
+            const demoClasses = generateDemoClasses();
+            setClasses(demoClasses.map(c => ({ id: c.id, name: c.name })) as any[]);
+            setLoading(false);
+            return;
+          }
+        }
+      }
+      
+      // If PAID or real unpaid, load real classes
       const classRes = await apiClient('/classes');
       const classResult = await classRes.json();
       if (classResult.success && classResult.data) {
         setClasses(classResult.data);
-        // Don't set default - let it show all assignments
       }
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -107,6 +134,20 @@ export default function TeacherAssignments() {
 
   const loadAssignments = async () => {
     try {
+      // Check if demo user
+      const isDemoUser = userEmail.toLowerCase().includes('demo');
+      
+      // Only show demo assignments if: (1) NOT PAID AND (2) demo user
+      if (paymentStatus === 'NOT PAID' && isDemoUser) {
+        const demoAssignments = generateDemoAssignments();
+        const filtered = selectedClassId
+          ? demoAssignments.filter(a => a.classId === selectedClassId)
+          : demoAssignments;
+        setAssignments(filtered as any);
+        return;
+      }
+      
+      // If PAID or real unpaid, load real assignments
       const url = selectedClassId 
         ? `/assignments?classId=${selectedClassId}`
         : '/assignments/all'; // Fetch all assignments
