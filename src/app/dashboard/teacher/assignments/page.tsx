@@ -120,6 +120,14 @@ export default function TeacherAssignments() {
 
   const loadSubmissions = async (assignmentId: string) => {
     try {
+      // Handle demo assignments
+      if (assignmentId.startsWith('demo-')) {
+        const { generateDemoSubmissions } = await import('@/lib/demo-data');
+        const demoSubs = generateDemoSubmissions(assignmentId);
+        setSubmissions(demoSubs);
+        return;
+      }
+      
       const res = await apiClient(`/assignments/${assignmentId}`);
       const result = await res.json();
       if (result.success) setSubmissions(result.data.submissions || []);
@@ -274,6 +282,12 @@ export default function TeacherAssignments() {
   };
 
   const openAssignmentFiles = async (assignment: Assignment) => {
+    // Handle demo assignments - they have fake upload IDs but real files
+    if (assignment.id.startsWith('demo-')) {
+      window.open('/demo/Documento.pdf', '_blank');
+      return;
+    }
+    
     // Parse attachmentIds (GROUP_CONCAT returns comma-separated string)
     let uploadIds: string[] = [];
     if (assignment.attachmentIds && assignment.attachmentIds.trim()) {
@@ -548,11 +562,14 @@ export default function TeacherAssignments() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDeleteAssignment(assignment.id, assignment.title);
+                            // Disable delete for demo assignments
+                            if (!assignment.id.startsWith('demo-')) {
+                              handleDeleteAssignment(assignment.id, assignment.title);
+                            }
                           }}
-                          disabled={deletingAssignmentId === assignment.id}
-                          className="text-red-600 hover:text-red-700 transition-colors disabled:opacity-50 flex-shrink-0"
-                          title="Eliminar ejercicio"
+                          disabled={deletingAssignmentId === assignment.id || assignment.id.startsWith('demo-')}
+                          className="text-red-600 hover:text-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                          title={assignment.id.startsWith('demo-') ? 'No se pueden eliminar ejercicios de demostración' : 'Eliminar ejercicio'}
                         >
                           {deletingAssignmentId === assignment.id ? (
                             <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>

@@ -327,8 +327,8 @@ export function generateDemoStudents(count: number = DEMO_STUDENT_COUNT.TOTAL): 
 }
 
 export function generateDemoRatings(count: number = 35): DemoRating[] {
-  // Return hardcoded ratings - always the same, fast, reliable
-  // Distribution: 134★5, 71★4, 36★3, 40★2, 26★1 = 307 total
+  // Return hardcoded ratings for realistic demo - 35 total with 12 unviewed
+  // Distribution: 15★5, 10★4, 6★3, 3★2, 1★1 = 35 total
   const baseDate = new Date('2026-01-01T00:00:00.000Z');
   const students = [
     'Juan García', 'María López', 'Carlos Pérez', 'Ana Martínez', 'Luis Sánchez',
@@ -353,7 +353,8 @@ export function generateDemoRatings(count: number = 35): DemoRating[] {
     1: ['Muy decepcionante', 'No entendí nada', 'Pérdida de tiempo', 'Necesita mejorar mucho'],
   };
   
-  // Hardcoded distribution: 134★5, 71★4, 36★3, 40★2, 26★1
+  // New realistic distribution: 15★5, 10★4, 6★3, 3★2, 1★1 = 35 total
+  // 12 unviewed: 5 from 5★, 4 from 4★, 2 from 3★, 1 from 2★
   const ratings: DemoRating[] = [];
   let id = 1;
   
@@ -379,29 +380,29 @@ export function generateDemoRatings(count: number = 35): DemoRating[] {
     id++;
   };
   
-  // Generate 134 five-star ratings (40 unviewed)
-  for (let i = 0; i < 134; i++) {
-    addRating(5, Math.floor(i / 8), i, 60 - Math.floor(i / 3), i < 40); // First 40 are unviewed
+  // Generate 15 five-star ratings (5 unviewed)
+  for (let i = 0; i < 15; i++) {
+    addRating(5, Math.floor(i / 3), i, 30 - i, i >= 10); // Last 5 are unviewed (recent)
   }
   
-  // Generate 71 four-star ratings (22 unviewed)
-  for (let i = 0; i < 71; i++) {
-    addRating(4, Math.floor(i / 4), i + 5, 50 - Math.floor(i / 2), i < 22); // First 22 are unviewed
+  // Generate 10 four-star ratings (4 unviewed)
+  for (let i = 0; i < 10; i++) {
+    addRating(4, Math.floor(i / 2), i + 5, 25 - i, i >= 6); // Last 4 are unviewed
   }
   
-  // Generate 36 three-star ratings (12 unviewed)
-  for (let i = 0; i < 36; i++) {
-    addRating(3, Math.floor(i / 2), i + 10, 40 - i, i < 12); // First 12 are unviewed
+  // Generate 6 three-star ratings (2 unviewed)
+  for (let i = 0; i < 6; i++) {
+    addRating(3, i % 3, i + 10, 20 - i * 2, i >= 4); // Last 2 are unviewed
   }
   
-  // Generate 40 two-star ratings (13 unviewed)
-  for (let i = 0; i < 40; i++) {
-    addRating(2, Math.floor(i / 3), i + 15, 30 - Math.floor(i / 2), i < 13); // First 13 are unviewed
+  // Generate 3 two-star ratings (1 unviewed)
+  for (let i = 0; i < 3; i++) {
+    addRating(2, i, i + 15, 15 - i * 3, i >= 2); // Last 1 is unviewed
   }
   
-  // Generate 26 one-star ratings (8 unviewed)
-  for (let i = 0; i < 26; i++) {
-    addRating(1, Math.floor(i / 2), i, 20 - i, i < 8); // First 8 are unviewed
+  // Generate 1 one-star rating (0 unviewed - all old ratings are viewed)
+  for (let i = 0; i < 1; i++) {
+    addRating(1, 0, i, 10, true); // Viewed
   }
   
   return ratings.slice(0, count);

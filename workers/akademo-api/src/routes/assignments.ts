@@ -293,6 +293,78 @@ assignments.post('/', validateBody(createAssignmentSchema), async (c) => {
   }
 });
 
+// GET /assignments/ungraded-count - Count of ungraded submissions for teacher/academy
+// IMPORTANT: Must be before /:id route to avoid matching "ungraded-count" as an ID
+assignments.get('/ungraded-count', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    
+    let count = 0;
+    
+    if (session.role === 'TEACHER') {
+      const result: any = await c.env.DB.prepare(`
+        SELECT COUNT(*) as count
+        FROM AssignmentSubmission s
+        JOIN Assignment a ON s.assignmentId = a.id
+        WHERE a.teacherId = ?
+        AND s.gradedAt IS NULL
+      `).bind(session.id).first();
+      count = result?.count || 0;
+    } else if (session.role === 'ACADEMY') {
+      const result: any = await c.env.DB.prepare(`
+        SELECT COUNT(*) as count
+        FROM AssignmentSubmission s
+        JOIN Assignment a ON s.assignmentId = a.id
+        JOIN Class c ON a.classId = c.id
+        JOIN Academy ac ON c.academyId = ac.id
+        WHERE ac.ownerId = ?
+        AND s.gradedAt IS NULL
+      `).bind(session.id).first();
+      count = result?.count || 0;
+    } else if (session.role === 'ADMIN') {
+      const result: any = await c.env.DB.prepare(`
+        SELECT COUNT(*) as count
+        FROM AssignmentSubmission
+        WHERE gradedAt IS NULL
+      `).first();
+      count = result?.count || 0;
+    }
+    
+    return c.json(successResponse(count));
+  } catch (error: any) {
+    console.error('[Assignments ungraded-count] Error:', error);
+    return c.json(errorResponse(error.message || 'Failed to fetch ungraded count'), 500);
+  }
+});
+
+// GET /assignments/new-grades-count - Count of recently graded submissions for student
+// IMPORTANT: Must be before /:id route to avoid matching "new-grades-count" as an ID
+assignments.get('/new-grades-count', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    
+    if (session.role !== 'STUDENT') {
+      return c.json(errorResponse('Only students can view new grades count'), 403);
+    }
+    
+    // Count graded submissions from last 30 days
+    const result: any = await c.env.DB.prepare(`
+      SELECT COUNT(*) as count
+      FROM AssignmentSubmission
+      WHERE studentId = ?
+      AND gradedAt IS NOT NULL
+      AND gradedAt >= datetime('now', '-30 days')
+    `).bind(session.id).first();
+    
+    const count = result?.count || 0;
+    
+    return c.json(successResponse(count));
+  } catch (error: any) {
+    console.error('[Assignments new-grades-count] Error:', error);
+    return c.json(errorResponse(error.message || 'Failed to fetch new grades count'), 500);
+  }
+});
+
 // GET /assignments/:id - Get single assignment with submissions (teachers) or own submission (students)
 assignments.get('/:id', async (c) => {
   try {
@@ -707,76 +779,6 @@ assignments.delete('/:id', async (c) => {
   } catch (error: any) {
     console.error('[Assignments/:id DELETE] Error:', error);
     return c.json(errorResponse(error.message || 'Internal server error'), 500);
-  }
-});
-
-// GET /assignments/ungraded-count - Count of ungraded submissions for teacher/academy
-assignments.get('/ungraded-count', async (c) => {
-  try {
-    const session = await requireAuth(c);
-    
-    let count = 0;
-    
-    if (session.role === 'TEACHER') {
-      const result: any = await c.env.DB.prepare(`
-        SELECT COUNT(*) as count
-        FROM AssignmentSubmission s
-        JOIN Assignment a ON s.assignmentId = a.id
-        WHERE a.teacherId = ?
-        AND s.gradedAt IS NULL
-      `).bind(session.id).first();
-      count = result?.count || 0;
-    } else if (session.role === 'ACADEMY') {
-      const result: any = await c.env.DB.prepare(`
-        SELECT COUNT(*) as count
-        FROM AssignmentSubmission s
-        JOIN Assignment a ON s.assignmentId = a.id
-        JOIN Class c ON a.classId = c.id
-        JOIN Academy ac ON c.academyId = ac.id
-        WHERE ac.ownerId = ?
-        AND s.gradedAt IS NULL
-      `).bind(session.id).first();
-      count = result?.count || 0;
-    } else if (session.role === 'ADMIN') {
-      const result: any = await c.env.DB.prepare(`
-        SELECT COUNT(*) as count
-        FROM AssignmentSubmission
-        WHERE gradedAt IS NULL
-      `).first();
-      count = result?.count || 0;
-    }
-    
-    return c.json(successResponse(count));
-  } catch (error: any) {
-    console.error('[Assignments ungraded-count] Error:', error);
-    return c.json(errorResponse(error.message || 'Failed to fetch ungraded count'), 500);
-  }
-});
-
-// GET /assignments/new-grades-count - Count of recently graded submissions for student
-assignments.get('/new-grades-count', async (c) => {
-  try {
-    const session = await requireAuth(c);
-    
-    if (session.role !== 'STUDENT') {
-      return c.json(errorResponse('Only students can view new grades count'), 403);
-    }
-    
-    // Count graded submissions from last 30 days
-    const result: any = await c.env.DB.prepare(`
-      SELECT COUNT(*) as count
-      FROM AssignmentSubmission
-      WHERE studentId = ?
-      AND gradedAt IS NOT NULL
-      AND gradedAt >= datetime('now', '-30 days')
-    `).bind(session.id).first();
-    
-    const count = result?.count || 0;
-    
-    return c.json(successResponse(count));
-  } catch (error: any) {
-    console.error('[Assignments new-grades-count] Error:', error);
-    return c.json(errorResponse(error.message || 'Failed to fetch new grades count'), 500);
   }
 });
 

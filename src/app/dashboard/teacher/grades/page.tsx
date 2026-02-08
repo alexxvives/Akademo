@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
+import { generateDemoAssignments, generateDemoSubmissions, generateDemoClasses } from '@/lib/demo-data';
 import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -44,6 +45,8 @@ export default function TeacherGrades() {
   const [loading, setLoading] = useState(true);
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [classes, setClasses] = useState<{id: string; name: string}[]>([]);
+  const [userEmail, setUserEmail] = useState<string>('');
+  const [paymentStatus, setPaymentStatus] = useState<string>('');
 
   useEffect(() => {
     loadClasses();
@@ -57,6 +60,34 @@ export default function TeacherGrades() {
 
   const loadClasses = async () => {
     try {
+      // Check if demo user
+      const userRes = await apiClient('/user');
+      const userResult: any = await userRes.json();
+      if (userResult.success && userResult.data) {
+        setUserEmail(userResult.data.email || '');
+        
+        // Get academy payment status through teacher relationship
+        const academyRes = await apiClient('/teacher/academy');
+        if (academyRes.ok) {
+          const academyResult: any = await academyRes.json();
+          const status = academyResult.data?.academy?.paymentStatus || 'PAID';
+          setPaymentStatus(status);
+          
+          // Only show demo data if: (1) NOT PAID AND (2) user email contains "demo" or academy name ends with "%"
+          const isDemoUser = userResult.data?.email?.toLowerCase().includes('demo') || 
+                            academyResult.data?.academy?.name?.endsWith('%');
+          
+          if (status === 'NOT PAID' && isDemoUser) {
+            const demoClasses = generateDemoClasses();
+            setClasses(demoClasses.map(c => ({ id: c.id, name: c.name })));
+            setSelectedClass('all');
+            setLoading(false);
+            return;
+          }
+        }
+      }
+      
+      // If PAID or real unpaid academy, load real classes
       const res = await apiClient('/classes');
       const response: any = await res.json();
       if (response.success) {
@@ -80,8 +111,66 @@ export default function TeacherGrades() {
   const loadGrades = async () => {
     setLoading(true);
     try {
+      // Check if demo user
+      const isDemoUser = userEmail.toLowerCase().includes('demo');
+      
+      // Only show demo grades if: (1) NOT PAID AND (2) demo user
+      if (paymentStatus === 'NOT PAID' && isDemoUser) {
+        const demoAssignments = generateDemoAssignments();
+        const filtered = selectedClass === 'all' 
+          ? demoAssignments 
+          : demoAssignments.filter(a => a.classId === selectedClass);
+        
+        const allGrades: StudentGrade[] = [];
+        for (const assignment of filtered) {
+          const submissions = generateDemoSubmissions(assignment.id);
+          submissions.forEach(sub => {
+            if (sub.gradedAt && sub.score !== undefined) {
+              allGrades.push({
+                studentId: `demo-student-${sub.id}`,
+                studentName: sub.studentName,
+                studentEmail: sub.studentEmail,
+                assignmentTitle: assignment.title,
+                score: sub.score,
+                maxScore: assignment.maxScore,
+                gradedAt: sub.gradedAt,
+                className: assignment.className,
+                // Map demo file URLs to storage paths for display
+                assignmentUploadIds: 'demo-file', // Placeholder so file count > 0
+                assignmentStoragePath: assignment.attachmentName || undefined,
+                submissionStoragePath: sub.submissionFileName || undefined,
+              });
+            }
+          });
+        }
+        
+        setGrades(allGrades);
+        
+        // Calculate averages
+        const studentMap = new Map<string, {totalScore: number; totalMax: number; count: number; name: string}>();
+        allGrades.forEach(grade => {
+          const existing = studentMap.get(grade.studentId) || {totalScore: 0, totalMax: 0, count: 0, name: grade.studentName};
+          existing.totalScore += grade.score;
+          existing.totalMax += grade.maxScore;
+          existing.count++;
+          studentMap.set(grade.studentId, existing);
+        });
+
+        const avgArray: StudentAverage[] = Array.from(studentMap.entries()).map(([id, data]) => ({
+          studentId: id,
+          studentName: data.name,
+          averageGrade: (data.totalScore / data.totalMax) * 100,
+          totalAssignments: data.count
+        }));
+
+        setAverages(avgArray.sort((a, b) => b.averageGrade - a.averageGrade));
+        setLoading(false);
+        return;
+      }
+      
+      // If PAID or real unpaid academy, load real data
       // Get all assignments for the class (or all classes if 'all' is selected)
-      const endpoint = selectedClass === 'all' ? '/assignments/all' : `/assignments?classId=${selectedClass}`;
+      const endpoint = selectedClass === ' all' ? '/assignments/all' : `/assignments?classId=${selectedClass}`;
       const assignmentsRaw = await apiClient(endpoint);
       const assignmentsRes: any = await assignmentsRaw.json();
       
@@ -354,7 +443,12 @@ export default function TeacherGrades() {
                             }
                             
                             const handleDownload = (storagePath: string) => {
-                              window.open(`/api/documents/assignment/${storagePath}`, '_blank');
+                              // Check if this is a demo file (demo grade storage paths are just file names)
+                              if (storagePath && !storagePath.includes('/') && paymentStatus === 'NOT PAID') {
+                                window.open('/demo/Documento.pdf', '_blank');
+                              } else {
+                                window.open(`/api/documents/assignment/${storagePath}`, '_blank');
+                              }
                             };
                             
                             return fileCount > 0 && grade.assignmentStoragePath ? (
@@ -377,7 +471,14 @@ export default function TeacherGrades() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           {grade.submissionStoragePath ? (
                             <button
-                              onClick={() => window.open(`/api/documents/assignment/${grade.submissionStoragePath}`, '_blank')}
+                              onClick={() => {
+                                // Check if this is a demo file (demo submission paths are just file names)
+                                if (grade.submissionStoragePath && !grade.submissionStoragePath.includes('/') && paymentStatus === 'NOT PAID') {
+                                  window.open('/demo/Documento.pdf', '_blank');
+                                } else {
+                                  window.open(`/api/documents/assignment/${grade.submissionStoragePath}`, '_blank');
+                                }
+                              }}
                               className="flex items-center gap-2 text-sm text-gray-900 hover:bg-gray-50 rounded px-2 py-1 -mx-2 transition-colors"
                             >
                               <div className="w-8 h-10 flex items-center justify-center bg-green-50 rounded border border-green-200">
