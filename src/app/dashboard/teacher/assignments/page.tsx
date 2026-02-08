@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { apiClient, apiPost } from '@/lib/api-client';
+import { generateDemoAssignments, generateDemoSubmissions, generateDemoClasses } from '@/lib/demo-data';
 
 interface Class { id: string; name: string; }
 interface Assignment {
