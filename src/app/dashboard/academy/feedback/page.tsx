@@ -329,6 +329,12 @@ export default function AcademyFeedbackPage() {
 
   const handleRatingsViewed = async (ratingIds: string[]) => {
     if (ratingIds.length === 0) return;
+    
+    // Skip marking as read for demo mode
+    if (paymentStatus === 'NOT PAID') {
+      return;
+    }
+    
     try {
       await apiClient('/lessons/ratings/mark-read', {
         method: 'POST',
