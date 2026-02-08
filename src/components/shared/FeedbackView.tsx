@@ -168,7 +168,10 @@ export function FeedbackView({
         {filteredClasses.map((classItem) => {
           const classHasUnread = classItem.topics.some(hasUnreadRatings);
           return (
-          <div key={classItem.id} className={`bg-white rounded-xl border overflow-hidden ${classHasUnread ? 'border-green-400 ring-2 ring-green-100' : 'border-gray-200'}`}>
+          <div key={classItem.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden relative">
+            {classHasUnread && (
+              <div className="absolute top-4 right-4 w-2.5 h-2.5 bg-red-500 rounded-full shadow-lg shadow-red-500/50 ring-2 ring-red-100" />
+            )}
             <div className="p-4 sm:p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
@@ -202,7 +205,7 @@ export function FeedbackView({
                 <div key={topic.id}>
                   <button
                     onClick={() => toggleTopic(topic.id, topic)}
-                    className={`w-full px-3 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition-colors ${topicHasUnread ? 'bg-green-50 hover:bg-green-100' : 'hover:bg-gray-50'}`}
+                    className="w-full px-3 sm:px-6 py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition-colors hover:bg-gray-50 relative"
                   >
                     <div className="flex items-center gap-3">
                       <svg
@@ -213,6 +216,9 @@ export function FeedbackView({
                       >
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
+                      {topicHasUnread && (
+                        <div className="w-2 h-2 bg-red-500 rounded-full shadow-sm shadow-red-500/50" />
+                      )}
                       <span className="font-semibold text-gray-900">{topic.name}</span>
                     </div>
                     <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
@@ -237,7 +243,7 @@ export function FeedbackView({
                               lessonRating: lesson.averageRating
                             }))
                           ).map((rating) => (
-                            <div key={rating.id} className={`bg-white rounded-lg p-3 border transition-all ${rating.isRead === false ? 'shadow-lg shadow-amber-200/80 border-amber-400 ring-2 ring-amber-300/50 bg-gradient-to-br from-amber-50 via-yellow-50/30 to-white animate-pulse' : 'shadow-sm border-gray-200'}`}>
+                            <div key={rating.id} className={`bg-white rounded-lg p-3 border shadow-sm transition-all ${rating.isRead === false ? 'border-l-4 border-l-red-500 border-t-gray-200 border-r-gray-200 border-b-gray-200' : 'border-gray-200'}`}>
                               <div className="flex items-start justify-between mb-1.5">
                                 <div className="flex items-center gap-3 flex-wrap">
                                   <span className="font-medium text-gray-900">{rating.studentName}</span>

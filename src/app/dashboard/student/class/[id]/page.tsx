@@ -15,6 +15,7 @@ interface Video {
   title: string;
   description: string | null;
   durationSeconds: number | null;
+  bunnyGuid?: string; // For demo videos
   playStates: Array<{
     totalWatchTimeSeconds: number;
     sessionStartTime: string | null;
@@ -585,7 +586,7 @@ export default function ClassPage() {
                   <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
                     <ProtectedVideoPlayer
                       key={selectedVideo.id}
-                      videoUrl={selectedVideo.upload?.storageType === 'bunny' ? '' : `/api/video/stream/${selectedVideo.id}`}
+                      videoUrl={(selectedVideo.upload?.storageType === 'bunny' || selectedVideo.bunnyGuid) ? '' : `/api/video/stream/${selectedVideo.id}`}
                       videoId={selectedVideo.id}
                       studentId={user.id}
                       studentName={`${user.firstName} ${user.lastName}`}
@@ -595,7 +596,7 @@ export default function ClassPage() {
                       initialPlayState={selectedVideo.playStates?.[0] || { totalWatchTimeSeconds: 0, sessionStartTime: null }}
                       userRole={user.role}
                       watermarkIntervalMins={selectedLesson.watermarkIntervalMins}
-                      bunnyGuid={selectedVideo.upload?.storageType === 'bunny' ? selectedVideo.upload?.bunnyGuid : undefined}
+                      bunnyGuid={(selectedVideo.upload?.storageType === 'bunny' ? selectedVideo.upload?.bunnyGuid : selectedVideo.bunnyGuid) || undefined}
                     />
                   </div>
                 )}

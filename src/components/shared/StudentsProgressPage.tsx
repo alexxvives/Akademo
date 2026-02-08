@@ -27,6 +27,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
   const [loading, setLoading] = useState(true);
   const [academyName, setAcademyName] = useState<string>('');
   const [paymentStatus, setPaymentStatus] = useState<string>('PAID');
+  const [userEmail, setUserEmail] = useState<string>('');
   
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -52,8 +53,17 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
   const loadAcademyName = async () => {
     try {
       const endpoint = role === 'ADMIN' ? '/admin/academies' : role === 'TEACHER' ? '/requests/teacher' : '/academies';
-      const res = await apiClient(endpoint);
+      const [res, userRes] = await Promise.all([
+        apiClient(endpoint),
+        apiClient('/auth/me')
+      ]);
       const result = await res.json();
+      const userResult = await userRes.json();
+      
+      // Load user email
+      if (userResult.success && userResult.data?.email) {
+        setUserEmail(userResult.data.email);
+      }
       
       if (Array.isArray(result)) {
         // Teacher endpoint returns array directly
@@ -369,6 +379,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
         showClassFilter={false}
         showTeacherColumn={role === 'ACADEMY'}
         showBanButton={role === 'ACADEMY'}
+        disableBanButton={paymentStatus === 'NOT PAID' && userEmail.toLowerCase().includes('demo')}
         onBanStudent={role === 'ACADEMY' ? handleBanStudent : undefined}
       />
     </div>

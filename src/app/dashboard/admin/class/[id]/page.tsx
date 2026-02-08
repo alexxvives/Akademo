@@ -1407,14 +1407,14 @@ export default function TeacherClassPage() {
                     </div>
                     <ProtectedVideoPlayer
                       key={selectedVideo.id}
-                      videoUrl={selectedVideo.upload?.storageType === 'bunny' ? '' : `/api/video/stream/${selectedVideo.id}`}
+                      videoUrl={(selectedVideo.upload?.storageType === 'bunny' || selectedVideo.bunnyGuid) ? '' : `/api/video/stream/${selectedVideo.id}`}
                       videoId={selectedVideo.id}
                       studentId={currentUser.id}
                       maxWatchTimeMultiplier={selectedLesson.maxWatchTimeMultiplier}
                       durationSeconds={selectedVideo.durationSeconds || 0}
                       initialPlayState={{ totalWatchTimeSeconds: 0, sessionStartTime: null }}
                       userRole="TEACHER"
-                      bunnyGuid={selectedVideo.upload?.storageType === 'bunny' ? selectedVideo.upload?.bunnyGuid : undefined}
+                      bunnyGuid={(selectedVideo.upload?.storageType === 'bunny' ? selectedVideo.upload?.bunnyGuid : selectedVideo.bunnyGuid) || undefined}
                     />
                   </div>
                 )}

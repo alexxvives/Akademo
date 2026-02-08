@@ -101,6 +101,7 @@ export default function AcademyFeedbackPage() {
                         studentName: r.studentName,
                         comment: r.comment,
                         createdAt: r.createdAt,
+                        isRead: r.viewed, // Map viewed to isRead for highlighting
                       })),
                     };
                   }),

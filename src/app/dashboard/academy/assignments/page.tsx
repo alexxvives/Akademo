@@ -474,7 +474,14 @@ export default function TeacherAssignments() {
               setSelectedClassForCreate(selectedClassId);
               setShowCreateModal(true);
             }}
-              className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors">
+              disabled={paymentStatus === 'NOT PAID' && userEmail.toLowerCase().includes('demo')}
+              className={`px-6 py-2 rounded-lg transition-colors ${
+                paymentStatus === 'NOT PAID' && userEmail.toLowerCase().includes('demo')
+                  ? 'bg-gray-400 text-white cursor-not-allowed'
+                  : 'bg-black text-white hover:bg-gray-800'
+              }`}
+              title={paymentStatus === 'NOT PAID' && userEmail.toLowerCase().includes('demo') ? 'No disponible en modo demostración' : 'Crear nuevo ejercicio'}
+            >
               + Crear Ejercicio
             </button>
           </div>
@@ -526,11 +533,17 @@ export default function TeacherAssignments() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDeleteAssignment(assignment.id, assignment.title);
+                            if (!(paymentStatus === 'NOT PAID' && userEmail.toLowerCase().includes('demo'))) {
+                              handleDeleteAssignment(assignment.id, assignment.title);
+                            }
                           }}
-                          disabled={deletingAssignmentId === assignment.id}
-                          className="text-red-600 hover:text-red-700 transition-colors disabled:opacity-50 flex-shrink-0"
-                          title="Eliminar ejercicio"
+                          disabled={deletingAssignmentId === assignment.id || (paymentStatus === 'NOT PAID' && userEmail.toLowerCase().includes('demo'))}
+                          className={`transition-colors disabled:opacity-50 flex-shrink-0 ${
+                            paymentStatus === 'NOT PAID' && userEmail.toLowerCase().includes('demo')
+                              ? 'text-gray-400 cursor-not-allowed'
+                              : 'text-red-600 hover:text-red-700'
+                          }`}
+                          title={paymentStatus === 'NOT PAID' && userEmail.toLowerCase().includes('demo') ? 'No disponible en modo demostración' : 'Eliminar ejercicio'}
                         >
                           {deletingAssignmentId === assignment.id ? (
                             <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
@@ -594,7 +607,26 @@ export default function TeacherAssignments() {
                         </>
                       ) : 'Sin fecha'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">{assignment.submissionCount}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <div className="inline-flex items-center gap-2">
+                        <span>{assignment.submissionCount}</span>
+                        {(() => {
+                          // Show +X for new submissions in demo mode
+                          const isDemoUser = userEmail.toLowerCase().includes('demo');
+                          if (paymentStatus === 'NOT PAID' && isDemoUser) {
+                            const newCount = countNewDemoSubmissions(assignment.id);
+                            if (newCount > 0) {
+                              return (
+                                <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-green-800 bg-green-200 rounded">
+                                  +{newCount}
+                                </span>
+                              );
+                            }
+                          }
+                          return null;
+                        })()}
+                      </div>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">{assignment.gradedCount} / {assignment.submissionCount}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                       <button 

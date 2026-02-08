@@ -790,6 +790,7 @@ export interface DemoSubmission {
   submissionFileName: string;
   submissionFileSize: number;
   submittedAt: string;
+  fileUrl?: string; // URL to demo PDF file
   score?: number;
   feedback?: string;
   gradedAt?: string;
@@ -992,6 +993,7 @@ export function generateDemoSubmissions(assignmentId: string): DemoSubmission[] 
       submissionFileName: `${studentName.replace(' ', '_')}_tarea${version > 1 ? `_v${version}` : ''}.pdf`,
       submissionFileSize: Math.floor(Math.random() * 2000000) + 500000, // 500KB - 2.5MB
       submittedAt: submittedAt.toISOString(),
+      fileUrl: '/demo/Documento.pdf', // Always include PDF file for demo
       score: isGraded ? Math.round(score!) : undefined,
       feedback: isGraded ? (score! >= assignment.maxScore * 0.9 ? 'Excelente trabajo, sigue así!' : score! >= assignment.maxScore * 0.8 ? 'Buen esfuerzo, revisa los comentarios' : 'Necesita mejorar, por favor estudia más el material') : undefined,
       gradedAt: isGraded ? new Date(submittedAt.getTime() + (Math.random() * 3 * 24 * 60 * 60 * 1000)).toISOString() : undefined,
@@ -1007,5 +1009,31 @@ export function generateDemoSubmissions(assignmentId: string): DemoSubmission[] 
 export function countNewDemoSubmissions(assignmentId: string): number {
   const submissions = generateDemoSubmissions(assignmentId);
   return submissions.filter(s => !s.downloadedAt).length;
+}
+
+// Helper to count total new submissions across all demo assignments
+export function countTotalNewDemoSubmissions(): number {
+  const assignments = generateDemoAssignments();
+  let total = 0;
+  for (const assignment of assignments) {
+    total += countNewDemoSubmissions(assignment.id);
+  }
+  return total;
+}
+
+// Helper to count ungraded (not yet scored) submissions for a single assignment
+export function countUngradedDemoSubmissions(assignmentId: string): number {
+  const submissions = generateDemoSubmissions(assignmentId);
+  return submissions.filter(s => s.score === undefined).length;
+}
+
+// Helper to count total ungraded submissions across all demo assignments
+export function countTotalUngradedDemoSubmissions(): number {
+  const assignments = generateDemoAssignments();
+  let total = 0;
+  for (const assignment of assignments) {
+    total += countUngradedDemoSubmissions(assignment.id);
+  }
+  return total;
 }
 

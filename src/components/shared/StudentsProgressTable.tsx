@@ -29,6 +29,7 @@ interface StudentsProgressTableProps {
   showClassFilter?: boolean;
   showTeacherColumn?: boolean;
   showBanButton?: boolean;
+  disableBanButton?: boolean;
   onBanStudent?: (enrollmentId: string) => void;
 }
 
@@ -43,6 +44,7 @@ export function StudentsProgressTable({
   showClassFilter = true,
   showTeacherColumn = false,
   showBanButton = false,
+  disableBanButton = false,
   onBanStudent,
 }: StudentsProgressTableProps) {
   const formatTime = (totalSeconds: number) => {
@@ -293,11 +295,17 @@ export function StudentsProgressTable({
                       <td className="py-4 px-6">
                         <button
                           onClick={() => {
-                            if (window.confirm(`¿Estás seguro de que deseas expulsar a ${student.name} de ${student.className}? Esta acción no se puede deshacer.`)) {
+                            if (!disableBanButton && window.confirm(`¿Estás seguro de que deseas expulsar a ${student.name} de ${student.className}? Esta acción no se puede deshacer.`)) {
                               onBanStudent?.(student.enrollmentId!);
                             }
                           }}
-                          className="px-3 py-1.5 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                          disabled={disableBanButton}
+                          className={`px-3 py-1.5 text-xs font-medium text-white rounded-lg transition-colors ${
+                            disableBanButton 
+                              ? 'bg-gray-400 cursor-not-allowed' 
+                              : 'bg-red-600 hover:bg-red-700'
+                          }`}
+                          title={disableBanButton ? 'No disponible en modo demostración' : 'Expulsar estudiante'}
                         >
                           Expulsar
                         </button>

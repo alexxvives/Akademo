@@ -87,6 +87,9 @@ export default function DashboardLayout({
   // Ungraded assignments count for teacher/academy
   const [ungradedAssignmentsCount, setUngradedAssignmentsCount] = useState(0);
   
+  // New submissions count (not yet downloaded) for academy
+  const [newSubmissionsCount, setNewSubmissionsCount] = useState(0);
+  
   // New grades available count for student
   const [newGradesCount, setNewGradesCount] = useState(0);
   
@@ -94,6 +97,7 @@ export default function DashboardLayout({
   const [academyId, setAcademyId] = useState<string | null>(null);
   const [academyPaymentStatus, setAcademyPaymentStatus] = useState<string | null>(null);
   const [academy, setAcademy] = useState<any>(null);
+  const [userEmail, setUserEmail] = useState<string>('');
 
   const loadNotifications = useCallback(async () => {
     try {
@@ -122,8 +126,20 @@ export default function DashboardLayout({
 
   const loadAcademy = useCallback(async () => {
     try {
-      const response = await apiClient('/academies');
-      const result = await response.json();
+      // Load both academy and user data
+      const [academyResponse, userResponse] = await Promise.all([
+        apiClient('/academies'),
+        apiClient('/auth/me')
+      ]);
+      
+      // Set user email
+      const userResult = await userResponse.json();
+      if (userResult.success && userResult.data?.email) {
+        setUserEmail(userResult.data.email);
+      }
+      
+      // Set academy data
+      const result = await academyResponse.json();
       if (result.success && Array.isArray(result.data) && result.data.length > 0) {
         const academyData = result.data[0];
         setAcademyId(academyData.id);
@@ -131,8 +147,11 @@ export default function DashboardLayout({
         setAcademyPaymentStatus(paymentStatus);
         setAcademy(academyData);
         
+        // Check if demo user
+        const isDemoUser = userResult.data?.email?.toLowerCase().includes('demo');
+        
         // Load pending payments count for badge
-        if (paymentStatus === 'NOT PAID') {
+        if (paymentStatus === 'NOT PAID' && isDemoUser) {
           // Demo mode: hardcoded count from generateDemoPendingPayments()
           setPendingPaymentsCount(5);
         } else {
@@ -169,13 +188,15 @@ export default function DashboardLayout({
 
   const loadUnreadValoraciones = useCallback(async () => {
     try {
-      // If demo mode, return hardcoded count of unviewed ratings
-      if (academyPaymentStatus === 'NOT PAID') {
+      // Check if demo user: NOT PAID AND email contains "demo"
+      const isDemoUser = userEmail.toLowerCase().includes('demo');
+      
+      if (academyPaymentStatus === 'NOT PAID' && isDemoUser) {
         setUnreadValoracionesCount(95); // 95 unviewed ratings in demo data
         return;
       }
       
-      // If PAID, load real count
+      // If PAID or real unpaid academy, load real count
       const response = await apiClient('/lessons/ratings/unread-count');
       const result = await response.json();
       if (result.success && result.data) {
@@ -184,10 +205,24 @@ export default function DashboardLayout({
     } catch (error) {
       console.error('Failed to load unread valoraciones:', error);
     }
-  }, [academyPaymentStatus]);
+  }, [academyPaymentStatus, userEmail]);
   
   const loadUngradedAssignments = useCallback(async () => {
     try {
+      // Check if demo user: NOT PAID AND email contains "demo"
+      const isDemoUser = userEmail.toLowerCase().includes('demo');
+      
+      if (academyPaymentStatus === 'NOT PAID' && isDemoUser) {
+        // Demo mode: count actual ungraded demo submissions
+        const { countTotalNewDemoSubmissions, countTotalUngradedDemoSubmissions } = await import('@/lib/demo-data');
+        const newCount = countTotalNewDemoSubmissions();
+        const ungradedCount = countTotalUngradedDemoSubmissions();
+        setNewSubmissionsCount(newCount);
+        setUngradedAssignmentsCount(ungradedCount);
+        return;
+      }
+      
+      // If PAID or real unpaid academy, load real count from API
       const response = await apiClient('/assignments/ungraded-count');
       const result = await response.json();
       if (result.success && typeof result.data === 'number') {
@@ -196,7 +231,7 @@ export default function DashboardLayout({
     } catch (error) {
       console.error('Failed to load ungraded assignments:', error);
     }
-  }, []);
+  }, [academyPaymentStatus, userEmail]);
   
   const loadNewGrades = useCallback(async () => {
     try {
@@ -466,7 +501,7 @@ export default function DashboardLayout({
           { label: 'Asignaturas', href: '/dashboard/academy/classes', matchPaths: ['/dashboard/academy/class'], iconType: 'book' as const },
           ...(academy?.feedbackEnabled !== 0 ? [{ label: 'Valoraciones', href: '/dashboard/academy/feedback', iconType: 'message' as const, badge: unreadValoracionesCount > 0 ? unreadValoracionesCount : undefined, badgeColor: 'bg-[#b0e788]' }] : []),
           { label: 'Streams', href: '/dashboard/academy/streams', iconType: 'clap' as const },
-          { label: 'Ejercicios', href: '/dashboard/academy/assignments', iconType: 'fileText' as const, badge: ungradedAssignmentsCount > 0 ? ungradedAssignmentsCount : undefined, badgeColor: 'bg-[#b0e788]' },
+          { label: 'Ejercicios', href: '/dashboard/academy/assignments', iconType: 'fileText' as const, badge: newSubmissionsCount > 0 ? newSubmissionsCount : undefined, badgeColor: 'bg-[#b0e788]' },
           { label: 'Calificaciones', href: '/dashboard/academy/grades', iconType: 'star' as const },
           { label: 'Profesores', href: '/dashboard/academy/teachers', iconType: 'botMessage' as const },
           { label: 'Estudiantes', href: '/dashboard/academy/students', iconType: 'users' as const },
