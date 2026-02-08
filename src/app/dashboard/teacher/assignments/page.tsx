@@ -95,11 +95,13 @@ export default function TeacherAssignments() {
   const loadData = async () => {
     try {
       setLoading(true);
+      console.log('🚀 loadData started...');
       
       // Get user email
       const userRes = await apiClient('/user');
       const userResult: any = await userRes.json();
       if (userResult.success && userResult.data) {
+        console.log('👤 User email:', userResult.data.email);
         setUserEmail(userResult.data.email || '');
       }
       
@@ -108,6 +110,7 @@ export default function TeacherAssignments() {
       if (academyRes.ok) {
         const academyResult: any = await academyRes.json();
         if (academyResult.data?.academy) {
+          console.log('🏫 Academy:', academyResult.data.academy.name, 'Payment:', academyResult.data.academy.paymentStatus);
           setAcademyName(academyResult.data.academy.name || '');
           setPaymentStatus(academyResult.data.academy.paymentStatus || 'PAID');
           
@@ -117,7 +120,9 @@ export default function TeacherAssignments() {
           
           // If NOT PAID and demo user, load demo classes
           if (academyResult.data.academy.paymentStatus === 'NOT PAID' && isDemoUser) {
+            console.log('✅ Loading DEMO classes...');
             const demoClasses = generateDemoClasses();
+            console.log('📦 Demo classes loaded:', demoClasses.length);
             setClasses(demoClasses.map(c => ({ id: c.id, name: c.name })) as any[]);
             setLoading(false);
             return;
@@ -142,18 +147,23 @@ export default function TeacherAssignments() {
     try {
       // Check if demo user
       const isDemoUser = userEmail.toLowerCase().includes('demo');
+      console.log('🔍 loadAssignments - userEmail:', userEmail, 'paymentStatus:', paymentStatus, 'isDemoUser:', isDemoUser);
       
       // Only show demo assignments if: (1) NOT PAID AND (2) demo user
       if (paymentStatus === 'NOT PAID' && isDemoUser) {
+        console.log('✅ Loading DEMO assignments...');
         const demoAssignments = generateDemoAssignments();
+        console.log('📦 Total demo assignments:', demoAssignments.length);
         const filtered = selectedClassId
           ? demoAssignments.filter(a => a.classId === selectedClassId)
           : demoAssignments;
+        console.log('✅ Filtered assignments:', filtered.length, 'for classId:', selectedClassId || 'all');
         setAssignments(filtered as any);
         return;
       }
       
       // If PAID or real unpaid, load real assignments
+      console.log('🌐 Loading assignments from API...');
       const url = selectedClassId 
         ? `/assignments?classId=${selectedClassId}`
         : '/assignments/all'; // Fetch all assignments
@@ -161,31 +171,38 @@ export default function TeacherAssignments() {
       const result = await res.json();
       if (result.success) setAssignments(result.data);
     } catch (error) {
-      console.error('Failed to load assignments:', error);
+      console.error('❌ Failed to load assignments:', error);
     }
   };
 
   const loadSubmissions = async (assignmentId: string) => {
     try {
+      console.log('🔍 loadSubmissions called with assignmentId:', assignmentId);
+      
       // Handle demo assignments
       if (assignmentId.startsWith('demo-')) {
+        console.log('✅ Detected demo assignment, loading demo submissions...');
         const { generateDemoSubmissions } = await import('@/lib/demo-data');
         const demoSubs = generateDemoSubmissions(assignmentId);
+        console.log('📦 Generated demo submissions:', demoSubs.length, 'submissions');
+        
         // Map to Submission type with required uploadId field
         const mappedSubs: Submission[] = demoSubs.map(sub => ({
           ...sub,
           uploadId: `demo-upload-${sub.id}`, // Add required uploadId field
           studentId: sub.id, // Use submission ID as student ID for demo
         }));
+        console.log('✅ Mapped submissions, setting state with', mappedSubs.length, 'submissions');
         setSubmissions(mappedSubs);
         return;
       }
       
+      console.log('🌐 Loading submissions from API...');
       const res = await apiClient(`/assignments/${assignmentId}`);
       const result = await res.json();
       if (result.success) setSubmissions(result.data.submissions || []);
     } catch (error) {
-      console.error('Failed to load submissions:', error);
+      console.error('❌ Failed to load submissions:', error);
     }
   };
 
@@ -442,6 +459,7 @@ export default function TeacherAssignments() {
   };
 
   const openSubmissions = async (assignment: Assignment) => {
+    console.log('🔓 Opening submissions modal for assignment:', assignment.id, assignment.title);
     setSelectedAssignment(assignment);
     await loadSubmissions(assignment.id);
     setShowSubmissionsModal(true);
