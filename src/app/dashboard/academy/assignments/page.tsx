@@ -75,11 +75,17 @@ export default function TeacherAssignments() {
   };
 
   useEffect(() => { loadData(); }, []);
-  useEffect(() => { loadAssignments(); }, [selectedClassId]);
+  useEffect(() => { 
+    // Only load assignments after we have user data
+    if (userEmail || paymentStatus) {
+      loadAssignments(); 
+    }
+  }, [selectedClassId, userEmail, paymentStatus]);
 
   const loadData = async () => {
     try {
       setLoading(true);
+      console.log('🚀 [ACADEMY] loadData started...');
       
       // Check payment status and user email
       const [academyRes, userRes] = await Promise.all([
@@ -91,11 +97,13 @@ export default function TeacherAssignments() {
       const userResult = await userRes.json();
       
       if (userResult.success && userResult.data?.email) {
+        console.log('👤 [ACADEMY] User email:', userResult.data.email);
         setUserEmail(userResult.data.email);
       }
       
       if (academyResult.success && Array.isArray(academyResult.data) && academyResult.data.length > 0) {
         const academy = academyResult.data[0];
+        console.log('🏫 [ACADEMY] Academy:', academy.name, 'Payment:', academy.paymentStatus);
         setAcademyName(academy.name || '');
         const status = academy.paymentStatus || 'NOT PAID';
         setPaymentStatus(status);
@@ -105,7 +113,9 @@ export default function TeacherAssignments() {
                           academy.name?.endsWith('%');
         
         if (status === 'NOT PAID' && isDemoUser) {
+          console.log('✅ [ACADEMY] Loading DEMO classes...');
           const demoClasses = generateDemoClasses();
+          console.log('📦 [ACADEMY] Demo classes loaded:', demoClasses.length);
           setClasses(demoClasses.map(c => ({ id: c.id, name: c.name })));
           setLoading(false);
           return;
@@ -134,13 +144,17 @@ export default function TeacherAssignments() {
     try {
       // Check if demo user (email contains "demo" or academy name ends with "%")
       const isDemoUser = userEmail.toLowerCase().includes('demo');
+      console.log('🔍 [ACADEMY] loadAssignments - userEmail:', userEmail, 'paymentStatus:', paymentStatus, 'isDemoUser:', isDemoUser);
       
       // Only show demo assignments if: (1) NOT PAID AND (2) demo user
       if (paymentStatus === 'NOT PAID' && isDemoUser) {
+        console.log('✅ [ACADEMY] Loading DEMO assignments...');
         const demoAssignments = generateDemoAssignments();
+        console.log('📦 [ACADEMY] Total demo assignments:', demoAssignments.length);
         const filtered = selectedClassId
           ? demoAssignments.filter(a => a.classId === selectedClassId)
           : demoAssignments;
+        console.log('✅ [ACADEMY] Filtered assignments:', filtered.length, 'for classId:', selectedClassId || 'all');
         setAssignments(filtered as any);
         return;
       }
@@ -159,18 +173,22 @@ export default function TeacherAssignments() {
 
   const loadSubmissions = async (assignmentId: string) => {
     try {
+      console.log('🔍 [ACADEMY] loadSubmissions called with assignmentId:', assignmentId);
       // Check if demo user
       const isDemoUser = userEmail.toLowerCase().includes('demo');
       
       // Only show demo submissions if: (1) NOT PAID AND (2) demo user
       if (paymentStatus === 'NOT PAID' && isDemoUser) {
+        console.log('✅ [ACADEMY] Detected demo user, loading demo submissions...');
         const demoSubs = generateDemoSubmissions(assignmentId);
+        console.log('📦 [ACADEMY] Generated demo submissions:', demoSubs.length, 'submissions');
         // Map to Submission type with required uploadId field
         const mappedSubs: Submission[] = demoSubs.map(sub => ({
           ...sub,
           uploadId: `demo-upload-${sub.id}`, // Add required uploadId field
           studentId: sub.id, // Use submission ID as student ID for demo
         }));
+        console.log('✅ [ACADEMY] Mapped submissions, setting state with', mappedSubs.length, 'submissions');
         setSubmissions(mappedSubs);
         return;
       }
@@ -432,6 +450,7 @@ export default function TeacherAssignments() {
   };
 
   const openSubmissions = async (assignment: Assignment) => {
+    console.log('🔓 [ACADEMY] Opening submissions modal for assignment:', assignment.id, assignment.title);
     setSelectedAssignment(assignment);
     await loadSubmissions(assignment.id);
     setShowSubmissionsModal(true);
