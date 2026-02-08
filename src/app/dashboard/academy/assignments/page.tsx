@@ -658,23 +658,9 @@ export default function TeacherAssignments() {
                           e.stopPropagation();
                           openSubmissions(assignment);
                         }}
-                        className="inline-flex items-center gap-2 text-brand-600 hover:text-brand-900"
+                        className="text-brand-600 hover:text-brand-900"
                       >
                         Ver entregas
-                        {(() => {
-                          // Count new submissions (not downloaded)
-                          const newCount = paymentStatus === 'NOT PAID' 
-                            ? countNewDemoSubmissions(assignment.id)
-                            : 0; // For real mode, would need API call
-                          if (newCount > 0) {
-                            return (
-                              <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold leading-none text-green-800 bg-green-200 rounded-full">
-                                +{newCount}
-                              </span>
-                            );
-                          }
-                          return null;
-                        })()}
                       </button>
                     </td>
                   </tr>
@@ -827,13 +813,20 @@ export default function TeacherAssignments() {
                         <div className="text-sm text-gray-500">{sub.studentEmail}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <button onClick={() => downloadSingleSubmission(sub)}
-                          className="text-sm text-brand-600 hover:text-brand-900 underline">
-                          {sub.submissionFileName}
+                        <button
+                          onClick={() => downloadSingleSubmission(sub)}
+                          className="flex items-center gap-2 text-sm text-gray-900 hover:bg-gray-50 rounded px-2 py-1 -mx-2 transition-colors"
+                        >
+                          <div className="w-8 h-10 flex items-center justify-center bg-red-50 rounded border border-red-200">
+                            <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <span className="text-xs">{sub.submissionFileName}</span>
                         </button>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        v{(sub as any).version || 1}
+                        {(sub as any).version || 1}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {new Date(sub.submittedAt).toLocaleDateString('es-ES')}

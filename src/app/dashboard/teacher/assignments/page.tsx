@@ -903,8 +903,10 @@ export default function TeacherAssignments() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <button onClick={() => downloadSingleSubmission(latest)}
-                              className="text-sm text-brand-600 hover:text-brand-900 underline">
-                              {latest.submissionFileName}
+                              className="inline-flex items-center justify-center w-8 h-10 bg-red-50 hover:bg-red-100 rounded transition-colors">
+                              <svg className="w-4 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"/>
+                              </svg>
                             </button>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -931,7 +933,7 @@ export default function TeacherAssignments() {
                         {isExpanded && hasMultipleVersions && group.submissions.slice(1).map((sub) => (
                           <tr key={sub.id} className="bg-gray-50">
                             <td className="px-6 py-4 whitespace-nowrap pl-16">
-                              <span className="text-xs text-gray-500">Versión #{sub.version || 1}</span>
+                              <span className="text-xs text-gray-500">Versión {sub.version || 1}</span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-700">
@@ -940,8 +942,10 @@ export default function TeacherAssignments() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <button onClick={() => downloadSingleSubmission(sub)}
-                                className="text-sm text-gray-600 hover:text-gray-900 underline">
-                                {sub.submissionFileName}
+                                className="inline-flex items-center justify-center w-8 h-10 bg-red-50 hover:bg-red-100 rounded transition-colors">
+                                <svg className="w-4 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                  <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"/>
+                                </svg>
                               </button>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
