@@ -784,3 +784,210 @@ export function generateDemoStudentTimes(_lessonId: string) {
   });
 }
 
+// ============================================
+// DEMO ASSIGNMENTS & SUBMISSIONS
+// ============================================
+
+export interface DemoAssignment {
+  id: string;
+  title: string;
+  description: string;
+  dueDate: string;
+  maxScore: number;
+  submissionCount: number;
+  gradedCount: number;
+  className: string;
+  classId: string;
+  createdAt: string;
+}
+
+export interface DemoSubmission {
+  id: string;
+  assignmentId: string;
+  studentName: string;
+  studentEmail: string;
+  submissionFileName: string;
+  submissionFileSize: number;
+  submittedAt: string;
+  score?: number;
+  feedback?: string;
+  gradedAt?: string;
+}
+
+export function generateDemoAssignments(): DemoAssignment[] {
+  const baseDate = new Date('2026-02-10T00:00:00Z');
+  
+  return [
+    // Programación Web (demo-c1) - 3 assignments
+    {
+      id: 'demo-a1',
+      title: 'Crear Componente React',
+      description: 'Desarrollar un componente de tarjeta reutilizable con props',
+      dueDate: new Date(Date.UTC(2026, 1, 15, 23, 59)).toISOString(),
+      maxScore: 100,
+      submissionCount: 18,
+      gradedCount: 15,
+      className: 'Programación Web',
+      classId: 'demo-c1',
+      createdAt: new Date(Date.UTC(2026, 1, 8)).toISOString(),
+    },
+    {
+      id: 'demo-a2',
+      title: 'Hooks y Estado',
+      description: 'Implementar useState y useEffect en una aplicación práctica',
+      dueDate: new Date(Date.UTC(2026, 1, 20, 23, 59)).toISOString(),
+      maxScore: 100,
+      submissionCount: 12,
+      gradedCount: 12,
+      className: 'Programación Web',
+      classId: 'demo-c1',
+      createdAt: new Date(Date.UTC(2026, 1, 12)).toISOString(),
+    },
+    {
+      id: 'demo-a3',
+      title: 'Proyecto Final React',
+      description: 'Aplicación completa con routing y gestión de estado',
+      dueDate: new Date(Date.UTC(2026, 1, 28, 23, 59)).toISOString(),
+      maxScore: 200,
+      submissionCount: 8,
+      gradedCount: 0,
+      className: 'Programación Web',
+      classId: 'demo-c1',
+      createdAt: new Date(Date.UTC(2026, 1, 18)).toISOString(),
+    },
+    // Matemáticas Avanzadas (demo-c2) - 2 assignments
+    {
+      id: 'demo-a4',
+      title: 'Derivadas Parciales',
+      description: 'Resolver problemas de optimización con derivadas',
+      dueDate: new Date(Date.UTC(2026, 1, 17, 23, 59)).toISOString(),
+      maxScore: 100,
+      submissionCount: 15,
+      gradedCount: 15,
+      className: 'Matemáticas Avanzadas',
+      classId: 'demo-c2',
+      createdAt: new Date(Date.UTC(2026, 1, 10)).toISOString(),
+    },
+    {
+      id: 'demo-a5',
+      title: 'Integrales Dobles',
+      description: 'Calcular volúmenes usando integrales múltiples',
+      dueDate: new Date(Date.UTC(2026, 1, 22, 23, 59)).toISOString(),
+      maxScore: 100,
+      submissionCount: 10,
+      gradedCount: 7,
+      className: 'Matemáticas Avanzadas',
+      classId: 'demo-c2',
+      createdAt: new Date(Date.UTC(2026, 1, 14)).toISOString(),
+    },
+    // Diseño Gráfico (demo-c3) - 3 assignments
+    {
+      id: 'demo-a6',
+      title: 'Diseño de Logo',
+      description: 'Crear identidad visual para marca ficticia',
+      dueDate: new Date(Date.UTC(2026, 1, 16, 23, 59)).toISOString(),
+      maxScore: 100,
+      submissionCount: 25,
+      gradedCount: 20,
+      className: 'Diseño Gráfico',
+      classId: 'demo-c3',
+      createdAt: new Date(Date.UTC(2026, 1, 9)).toISOString(),
+    },
+    {
+      id: 'demo-a7',
+      title: 'Composición Tipográfica',
+      description: 'Poster usando principios de jerarquía y contraste',
+      dueDate: new Date(Date.UTC(2026, 1, 19, 23, 59)).toISOString(),
+      maxScore: 100,
+      submissionCount: 20,
+      gradedCount: 18,
+      className: 'Diseño Gráfico',
+      classId: 'demo-c3',
+      createdAt: new Date(Date.UTC(2026, 1, 11)).toISOString(),
+    },
+    {
+      id: 'demo-a8',
+      title: 'Paleta de Colores',
+      description: 'Desarrollo de esquema cromático basado en teoría del color',
+      dueDate: new Date(Date.UTC(2026, 1, 25, 23, 59)).toISOString(),
+      maxScore: 100,
+      submissionCount: 15,
+      gradedCount: 10,
+      className: 'Diseño Gráfico',
+      classId: 'demo-c3',
+      createdAt: new Date(Date.UTC(2026, 1, 16)).toISOString(),
+    },
+    // Física Cuántica (demo-c4) - 2 assignments
+    {
+      id: 'demo-a9',
+      title: 'Ecuación de Schrödinger',
+      description: 'Resolver casos básicos de partícula en una caja',
+      dueDate: new Date(Date.UTC(2026, 1, 18, 23, 59)).toISOString(),
+      maxScore: 100,
+      submissionCount: 12,
+      gradedCount: 12,
+      className: 'Física Cuántica',
+      classId: 'demo-c4',
+      createdAt: new Date(Date.UTC(2026, 1, 11)).toISOString(),
+    },
+    {
+      id: 'demo-a10',
+      title: 'Principio de Incertidumbre',
+      description: 'Aplicar principio de Heisenberg en problemas prácticos',
+      dueDate: new Date(Date.UTC(2026, 1, 24, 23, 59)).toISOString(),
+      maxScore: 100,
+      submissionCount: 8,
+      gradedCount: 5,
+      className: 'Física Cuántica',
+      classId: 'demo-c4',
+      createdAt: new Date(Date.UTC(2026, 1, 15)).toISOString(),
+    },
+  ];
+}
+
+export function generateDemoSubmissions(assignmentId: string): DemoSubmission[] {
+  const firstNames = ['Juan', 'María', 'Carlos', 'Ana', 'Luis', 'Carmen', 'José', 'Laura', 'Pedro', 'Isabel', 'Miguel', 'Rosa', 'Antonio', 'Elena', 'Francisco', 'Sofía', 'David', 'Marta', 'Javier', 'Patricia', 'Diego', 'Lucía', 'Rafael', 'Beatriz', 'Alberto'];
+  const lastNames = ['García', 'Rodríguez', 'Martínez', 'López', 'Sánchez', 'Pérez', 'Gómez', 'Fernández'];
+  
+  const assignments = generateDemoAssignments();
+  const assignment = assignments.find(a => a.id === assignmentId);
+  if (!assignment) return [];
+  
+  const submissions: DemoSubmission[] = [];
+  const submissionCount = assignment.submissionCount;
+  const gradedCount = assignment.gradedCount;
+  
+  // Generate submissions
+  for (let i = 0; i < submissionCount; i++) {
+    const studentName = `${firstNames[i % firstNames.length]} ${lastNames[i % lastNames.length]}`;
+    const isGraded = i < gradedCount;
+    
+    // Score distribution for graded submissions: mostly high scores with some variation
+    let score: number | undefined;
+    if (isGraded) {
+      if (i % 10 === 0) score = assignment.maxScore * 0.65; // 65% - needs improvement
+      else if (i % 7 === 0) score = assignment.maxScore * 0.75; // 75% - fair
+      else if (i % 5 === 0) score = assignment.maxScore * 0.85; // 85% - good
+      else if (i % 3 === 0) score = assignment.maxScore * 0.95; // 95% - excellent
+      else score = assignment.maxScore * 0.90; // 90% - very good (most common)
+    }
+    
+    const submittedAt = new Date(new Date(assignment.dueDate).getTime() - (Math.random() * 5 * 24 * 60 * 60 * 1000)); // Random time up to 5 days before due date
+    
+    submissions.push({
+      id: `demo-sub-${assignmentId}-${i + 1}`,
+      assignmentId,
+      studentName,
+      studentEmail: `${studentName.toLowerCase().replace(' ', '.')}@demo.com`,
+      submissionFileName: `${studentName.replace(' ', '_')}_tarea.pdf`,
+      submissionFileSize: Math.floor(Math.random() * 2000000) + 500000, // 500KB - 2.5MB
+      submittedAt: submittedAt.toISOString(),
+      score: isGraded ? Math.round(score!) : undefined,
+      feedback: isGraded ? (score! >= assignment.maxScore * 0.9 ? 'Excelente trabajo, sigue así!' : score! >= assignment.maxScore * 0.8 ? 'Buen esfuerzo, revisa los comentarios' : 'Necesita mejorar, por favor estudia más el material') : undefined,
+      gradedAt: isGraded ? new Date(submittedAt.getTime() + (Math.random() * 3 * 24 * 60 * 60 * 1000)).toISOString() : undefined,
+    });
+  }
+  
+  return submissions;
+}
+

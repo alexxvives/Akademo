@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { apiClient, apiPost } from '@/lib/api-client';
+import { generateDemoAssignments, generateDemoSubmissions, generateDemoClasses, type DemoAssignment, type DemoSubmission } from '@/lib/demo-data';
 
 interface Class { id: string; name: string; }
 interface Assignment {
@@ -47,6 +48,7 @@ export default function TeacherAssignments() {
   const [creating, setCreating] = useState(false);
   const [editUploadFile, setEditUploadFile] = useState<File | null>(null);
   const [editUploadFiles, setEditUploadFiles] = useState<File[]>([]); // Multiple files for edit
+  const [paymentStatus, setPaymentStatus] = useState<string>('NOT PAID');
 
   // Helper to check if assignment is past due
   const isPastDue = (dueDate?: string) => {
@@ -77,16 +79,35 @@ export default function TeacherAssignments() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const academyRes = await apiClient('/requests/teacher');
+      
+      // Check payment status first
+      const academyRes = await apiClient('/academies');
       const academyResult = await academyRes.json();
-      if (Array.isArray(academyResult) && academyResult.length > 0) {
-        setAcademyName(academyResult[0].academyName || '');
+      if (academyResult.success && Array.isArray(academyResult.data) && academyResult.data.length > 0) {
+        const academy = academyResult.data[0];
+        setAcademyName(academy.name || '');
+        const status = academy.paymentStatus || 'NOT PAID';
+        setPaymentStatus(status);
+        
+        // If NOT PAID, use demo data
+        if (status === 'NOT PAID') {
+          const demoClasses = generateDemoClasses();
+          setClasses(demoClasses.map(c => ({ id: c.id, name: c.name })));
+          setLoading(false);
+          return;
+        }
+      }
+      
+      // If PAID, load real data
+      const teacherRes = await apiClient('/requests/teacher');
+      const teacherResult = await teacherRes.json();
+      if (Array.isArray(teacherResult) && teacherResult.length > 0) {
+        setAcademyName(teacherResult[0].academyName || '');
       }
       const classRes = await apiClient('/classes');
       const classResult = await classRes.json();
       if (classResult.success && classResult.data) {
         setClasses(classResult.data);
-        // Don't set default - let it show all assignments
       }
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -97,9 +118,20 @@ export default function TeacherAssignments() {
 
   const loadAssignments = async () => {
     try {
+      // If demo mode, show demo assignments
+      if (paymentStatus === 'NOT PAID') {
+        const demoAssignments = generateDemoAssignments();
+        const filtered = selectedClassId
+          ? demoAssignments.filter(a => a.classId === selectedClassId)
+          : demoAssignments;
+        setAssignments(filtered as any);
+        return;
+      }
+      
+      // If PAID, load real assignments
       const url = selectedClassId 
         ? `/assignments?classId=${selectedClassId}`
-        : '/assignments/all'; // Fetch all assignments
+        : '/assignments/all';
       const res = await apiClient(url);
       const result = await res.json();
       if (result.success) setAssignments(result.data);
@@ -110,6 +142,14 @@ export default function TeacherAssignments() {
 
   const loadSubmissions = async (assignmentId: string) => {
     try {
+      // If demo mode, show demo submissions
+      if (paymentStatus === 'NOT PAID') {
+        const demoSubs = generateDemoSubmissions(assignmentId);
+        setSubmissions(demoSubs as any);
+        return;
+      }
+      
+      // If PAID, load real submissions
       const res = await apiClient(`/assignments/${assignmentId}`);
       const result = await res.json();
       if (result.success) setSubmissions(result.data.submissions || []);

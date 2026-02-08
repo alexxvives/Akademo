@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { Bar } from 'react-chartjs-2';
+import { generateDemoAssignments, generateDemoSubmissions, generateDemoClasses } from '@/lib/demo-data';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -44,6 +45,7 @@ export default function AcademyGrades() {
   const [loading, setLoading] = useState(true);
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [classes, setClasses] = useState<{id: string; name: string}[]>([]);
+  const [paymentStatus, setPaymentStatus] = useState<string>('NOT PAID');
 
   useEffect(() => {
     loadClasses();
@@ -57,30 +59,99 @@ export default function AcademyGrades() {
 
   const loadClasses = async () => {
     try {
+      // Check payment status first
+      const academyRes = await apiClient('/academies');
+      const academyResult = await academyRes.json();
+      if (academyResult.success && Array.isArray(academyResult.data) && academyResult.data.length > 0) {
+        const academy = academyResult.data[0];
+        const status = academy.paymentStatus || 'NOT PAID';
+        setPaymentStatus(status);
+        
+        // If NOT PAID, use demo data
+        if (status === 'NOT PAID') {
+          const demoClasses = generateDemoClasses();
+          setClasses(demoClasses.map(c => ({ id: c.id, name: c.name })));
+          setSelectedClass('all');
+          setLoading(false);
+          return;
+        }
+      }
+      
+      // If PAID, load real classes
       const res = await apiClient('/classes');
       const response: any = await res.json();
       if (response.success) {
         setClasses(response.data);
         if (response.data.length > 0) {
-          setSelectedClass('all'); // Default to 'all'
+          setSelectedClass('all');
         } else {
           console.warn('[Grades] No classes found');
-          setLoading(false); // No classes, stop loading
+          setLoading(false);
         }
       } else {
         console.error('[Grades] API error:', response.error);
-        setLoading(false); // API error, stop loading
+        setLoading(false);
       }
     } catch (error) {
       console.error('[Grades] Error loading classes:', error);
-      setLoading(false); // Exception, stop loading
+      setLoading(false);
     }
   };
 
   const loadGrades = async () => {
     setLoading(true);
     try {
-      // Get all assignments for the class (or all classes if 'all' is selected)
+      // If demo mode, generate demo grades
+      if (paymentStatus === 'NOT PAID') {
+        const demoAssignments = generateDemoAssignments();
+        const filtered = selectedClass === 'all' 
+          ? demoAssignments 
+          : demoAssignments.filter(a => a.classId === selectedClass);
+        
+        const allGrades: StudentGrade[] = [];
+        for (const assignment of filtered) {
+          const submissions = generateDemoSubmissions(assignment.id);
+          submissions.forEach(sub => {
+            if (sub.gradedAt && sub.score !== undefined) {
+              allGrades.push({
+                studentId: `demo-student-${sub.id}`,
+                studentName: sub.studentName,
+                studentEmail: sub.studentEmail,
+                assignmentTitle: assignment.title,
+                score: sub.score,
+                maxScore: assignment.maxScore,
+                gradedAt: sub.gradedAt,
+                className: assignment.className,
+              });
+            }
+          });
+        }
+        
+        setGrades(allGrades);
+        
+        // Calculate averages
+        const studentMap = new Map<string, {totalScore: number; totalMax: number; count: number; name: string}>();
+        allGrades.forEach(grade => {
+          const existing = studentMap.get(grade.studentId) || {totalScore: 0, totalMax: 0, count: 0, name: grade.studentName};
+          existing.totalScore += grade.score;
+          existing.totalMax += grade.maxScore;
+          existing.count++;
+          studentMap.set(grade.studentId, existing);
+        });
+        
+        const avgArray: StudentAverage[] = Array.from(studentMap.entries()).map(([id, data]) => ({
+          studentId: id,
+          studentName: data.name,
+          averageGrade: (data.totalScore / data.totalMax) * 100,
+          totalAssignments: data.count
+        }));
+        
+        setAverages(avgArray.sort((a, b) => b.averageGrade - a.averageGrade));
+        setLoading(false);
+        return;
+      }
+      
+      // If PAID, load real grades
       const endpoint = selectedClass === 'all' ? '/assignments/all' : `/assignments?classId=${selectedClass}`;
       const assignmentsRaw = await apiClient(endpoint);
       const assignmentsRes: any = await assignmentsRaw.json();
