@@ -192,7 +192,7 @@ export default function DashboardLayout({
       const isDemoUser = userEmail.toLowerCase().includes('demo');
       
       if (academyPaymentStatus === 'NOT PAID' && isDemoUser) {
-        setUnreadValoracionesCount(95); // 95 unviewed ratings in demo data
+        setUnreadValoracionesCount(12); // 12 unread out of 35 total ratings in demo data
         return;
       }
       

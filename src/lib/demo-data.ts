@@ -17,13 +17,13 @@ export const DEMO_STUDENT_COUNT = {
   TOTAL: 164
 };
 
-// Ratings per class (total: 164 - one per student)
+// Ratings per class (total: 35 - realistic distribution across select lessons)
 export const DEMO_RATINGS_COUNT = {
-  'Programación Web': 40,
-  'Matemáticas Avanzadas': 32,
-  'Diseño Gráfico': 60,
-  'Física Cuántica': 32,
-  TOTAL: 164
+  'Programación Web': 10,  // 2 lessons with 5 ratings each
+  'Matemáticas Avanzadas': 9,  // 3 lessons with 3 ratings each
+  'Diseño Gráfico': 12,  // 3 lessons with 4 ratings each
+  'Física Cuántica': 4,  // 1 lesson with 4 ratings
+  TOTAL: 35
 };
 
 // Lessons per class (total: 8 lessons)
@@ -326,7 +326,7 @@ export function generateDemoStudents(count: number = DEMO_STUDENT_COUNT.TOTAL): 
   return hardcodedStudents.slice(0, count);
 }
 
-export function generateDemoRatings(count: number = 307): DemoRating[] {
+export function generateDemoRatings(count: number = 35): DemoRating[] {
   // Return hardcoded ratings - always the same, fast, reliable
   // Distribution: 134★5, 71★4, 36★3, 40★2, 26★1 = 307 total
   const baseDate = new Date('2026-01-01T00:00:00.000Z');
@@ -978,8 +978,8 @@ export function generateDemoSubmissions(assignmentId: string): DemoSubmission[] 
     
     const submittedAt = new Date(new Date(assignment.dueDate).getTime() - (Math.random() * 5 * 24 * 60 * 60 * 1000)); // Random time up to 5 days before due date
     
-    // Track new submissions (about 30% not downloaded)
-    const isDownloaded = i >= Math.floor(submissionCount * 0.3); // First 30% are new
+    // Track new submissions (about 15% not downloaded yet - more realistic)
+    const isDownloaded = i >= Math.floor(submissionCount * 0.15); // First 15% are new
     const downloadedAt = isDownloaded ? new Date(submittedAt.getTime() + (Math.random() * 24 * 60 * 60 * 1000)).toISOString() : undefined;
     
     // Some students submitted multiple versions (version 2 or 3)
