@@ -85,7 +85,12 @@ export default function TeacherAssignments() {
   };
 
   useEffect(() => { loadData(); }, []);
-  useEffect(() => { loadAssignments(); }, [selectedClassId]);
+  useEffect(() => { 
+    // Only load assignments after we have user data
+    if (userEmail || paymentStatus) {
+      loadAssignments(); 
+    }
+  }, [selectedClassId, userEmail, paymentStatus]);
 
   const loadData = async () => {
     try {
