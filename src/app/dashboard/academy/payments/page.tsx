@@ -769,9 +769,7 @@ export default function AcademyPaymentsPage() {
                   {new Date((history as any).createdAt || (history as any).updatedAt || history.approvedAt).toLocaleDateString('es-ES', {
                     day: 'numeric',
                     month: 'long',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
+                    year: 'numeric'
                   })}
                 </td>
                 <td className="px-3 sm:px-3 sm:px-6 py-4 whitespace-nowrap">
