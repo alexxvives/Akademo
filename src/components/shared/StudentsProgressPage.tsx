@@ -88,14 +88,19 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
             'Física Cuántica': 'demo-c4',
             'Diseño Gráfico': 'demo-c3',
           };
-          setStudents(demoStudents.map(s => ({
+          setStudents(demoStudents.map((s, index) => ({
             id: s.id,
             name: `${s.firstName} ${s.lastName}`,
             email: s.email,
             className: s.className,
             classId: classNameToId[s.className] || 'demo-c1',
             teacherName: ['Carlos Rodríguez', 'María García', 'Ana Martínez'][Math.floor(Math.random() * 3)],
-            totalWatchTime: Math.floor(Math.random() * 7200),
+            // More varied watch times: range from 0 to 25 hours (90000 seconds)
+            totalWatchTime: index === 0 ? 90000 : // First student watched everything (25h)
+                           index % 3 === 0 ? Math.floor(Math.random() * 3600) : // ~1h
+                           index % 5 === 0 ? Math.floor(Math.random() * 18000) : // ~5h
+                           index % 7 === 0 ? Math.floor(Math.random() * 36000) : // ~10h
+                           Math.floor(Math.random() * 7200), // ~2h (most common)
             videosWatched: Math.floor(Math.random() * 15),
             totalVideos: 20,
             lastActive: s.lastLoginAt, // Use the properly distributed lastLoginAt from generateDemoStudents
@@ -121,14 +126,19 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
             'Física Cuántica': 'demo-c4',
             'Diseño Gráfico': 'demo-c3',
           };
-          setStudents(demoStudents.map(s => ({
+          setStudents(demoStudents.map((s, index) => ({
             id: s.id,
             name: `${s.firstName} ${s.lastName}`,
             email: s.email,
             className: s.className,
             classId: classNameToId[s.className] || 'demo-c1',
             teacherName: ['Carlos Rodríguez', 'María García', 'Ana Martínez'][Math.floor(Math.random() * 3)],
-            totalWatchTime: Math.floor(Math.random() * 7200),
+            // More varied watch times: range from 0 to 25 hours (90000 seconds)
+            totalWatchTime: index === 0 ? 90000 : // First student watched everything (25h)
+                           index % 3 === 0 ? Math.floor(Math.random() * 3600) : // ~1h
+                           index % 5 === 0 ? Math.floor(Math.random() * 18000) : // ~5h
+                           index % 7 === 0 ? Math.floor(Math.random() * 36000) : // ~10h
+                           Math.floor(Math.random() * 7200), // ~2h (most common)
             videosWatched: Math.floor(Math.random() * 15),
             totalVideos: 20,
             lastActive: s.lastLoginAt,
@@ -155,14 +165,19 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
           'Física Cuántica': 'demo-c4',
           'Diseño Gráfico': 'demo-c3',
         };
-        setStudents(demoStudents.map(s => ({
+        setStudents(demoStudents.map((s, index) => ({
           id: s.id,
           name: `${s.firstName} ${s.lastName}`,
           email: s.email,
           className: s.className,
           classId: classNameToId[s.className] || 'demo-c1',
           teacherName: ['Carlos Rodríguez', 'María García', 'Ana Martínez'][Math.floor(Math.random() * 3)],
-          totalWatchTime: Math.floor(Math.random() * 7200),
+          // More varied watch times: range from 0 to 25 hours (90000 seconds)
+          totalWatchTime: index === 0 ? 90000 : // First student watched everything (25h)
+                         index % 3 === 0 ? Math.floor(Math.random() * 3600) : // ~1h
+                         index % 5 === 0 ? Math.floor(Math.random() * 18000) : // ~5h
+                         index % 7 === 0 ? Math.floor(Math.random() * 36000) : // ~10h
+                         Math.floor(Math.random() * 7200), // ~2h (most common)
           videosWatched: Math.floor(Math.random() * 15),
           totalVideos: 20,
           lastActive: s.lastLoginAt,

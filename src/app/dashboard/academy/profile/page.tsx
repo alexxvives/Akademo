@@ -533,6 +533,8 @@ export default function ProfilePage() {
                               });
                               if (response.ok) {
                                 setAcademy({ ...academy, logoUrl: undefined });
+                                // Refresh to update sidebar logo immediately
+                                window.location.reload();
                               } else {
                                 const errorData = await response.json();
                                 alert(`Error: ${errorData.error || 'Error al eliminar el logo'}`);

@@ -475,6 +475,22 @@ export function generateDemoStreams(): DemoStream[] {
       classId: 'demo-c3',
       participantsData: JSON.stringify({ totalRecords: 16, uniqueCount: 16, participants: [{ name: 'Luis Fernández', email: 'luis@example.com', duration: 7200 }] }),
     },
+    // Live stream - EN VIVO right now
+    {
+      id: 'demo-stream-live',
+      title: 'Clase En Vivo - Programación Avanzada',
+      className: 'Programación Web',
+      teacherName: 'Carlos Rodríguez',
+      participantCount: 12,
+      startedAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(), // Started 15 minutes ago
+      endedAt: '', // Empty for live stream
+      createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // Created 30 minutes ago
+      status: 'active',
+      duration: 0,
+      recordingId: '',
+      classId: 'demo-c1',
+      participantsData: JSON.stringify({ totalRecords: 12, uniqueCount: 12, participants: [{ name: 'Pedro Sánchez', email: 'pedro@example.com', duration: 900 }] }),
+    },
     {
       id: 'demo-stream4',
       title: 'Sesión de Consultas',
@@ -967,14 +983,18 @@ export function generateDemoSubmissions(assignmentId: string): DemoSubmission[] 
     const studentName = `${firstNames[i % firstNames.length]} ${lastNames[i % lastNames.length]}`;
     const isGraded = i < gradedCount;
     
-    // Score distribution for graded submissions: mostly high scores with some variation
+    // Score distribution for graded submissions: more varied - include perfect scores
     let score: number | undefined;
     if (isGraded) {
-      if (i % 10 === 0) score = assignment.maxScore * 0.65; // 65% - needs improvement
+      // Create more variety including some perfect scores
+      if (i === 0) score = assignment.maxScore; // 100% - first student is perfect
+      else if (i % 15 === 0) score = assignment.maxScore * 0.50; // 50% - struggling
+      else if (i % 10 === 0) score = assignment.maxScore * 0.65; // 65% - needs improvement
       else if (i % 7 === 0) score = assignment.maxScore * 0.75; // 75% - fair
       else if (i % 5 === 0) score = assignment.maxScore * 0.85; // 85% - good
       else if (i % 3 === 0) score = assignment.maxScore * 0.95; // 95% - excellent
-      else score = assignment.maxScore * 0.90; // 90% - very good (most common)
+      else if (i % 2 === 0) score = assignment.maxScore * 0.90; // 90% - very good
+      else score = assignment.maxScore * 0.80; // 80% - good (default)
     }
     
     const submittedAt = new Date(new Date(assignment.dueDate).getTime() - (Math.random() * 5 * 24 * 60 * 60 * 1000)); // Random time up to 5 days before due date
