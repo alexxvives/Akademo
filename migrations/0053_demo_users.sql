@@ -1,9 +1,9 @@
 -- ============================================================
 -- Demo Users Migration
 -- Creates 3 demo accounts for platform showcasing:
---   academiaDEMO@akademo-edu.com (ACADEMY)
---   profesorDEMO@akademo-edu.com (TEACHER)
---   estudianteDEMO@akademo-edu.com (STUDENT)
+--   academia@akademo-edu.com (ACADEMY)
+--   profesor@akademo-edu.com (TEACHER)
+--   estudiante@akademo-edu.com (STUDENT)
 -- Password for all: @Akademo1z2x
 -- ============================================================
 
@@ -11,9 +11,9 @@
 -- Password hash: bcrypt('Akademo1z2x', 10)
 INSERT OR IGNORE INTO User (id, email, password, firstName, lastName, role, createdAt)
 VALUES
-  ('demo-academy-user', 'academiaDEMO@akademo-edu.com', '$2a$10$/drerRLNqXW6gmOCBRVuhekw5iHYZcLC1.zqMxlTEGUQrq1C65f8e', 'Academia', 'Demo', 'ACADEMY', datetime('now')),
-  ('demo-teacher-user', 'profesorDEMO@akademo-edu.com', '$2a$10$/drerRLNqXW6gmOCBRVuhekw5iHYZcLC1.zqMxlTEGUQrq1C65f8e', 'Profesor', 'Demo', 'TEACHER', datetime('now')),
-  ('demo-student-user', 'estudianteDEMO@akademo-edu.com', '$2a$10$/drerRLNqXW6gmOCBRVuhekw5iHYZcLC1.zqMxlTEGUQrq1C65f8e', 'Estudiante', 'Demo', 'STUDENT', datetime('now'));
+  ('demo-academy-user', 'academia@akademo-edu.com', '$2a$10$/drerRLNqXW6gmOCBRVuhekw5iHYZcLC1.zqMxlTEGUQrq1C65f8e', 'Academia', 'Demo', 'ACADEMY', datetime('now')),
+  ('demo-teacher-user', 'profesor@akademo-edu.com', '$2a$10$/drerRLNqXW6gmOCBRVuhekw5iHYZcLC1.zqMxlTEGUQrq1C65f8e', 'Profesor', 'Demo', 'TEACHER', datetime('now')),
+  ('demo-student-user', 'estudiante@akademo-edu.com', '$2a$10$/drerRLNqXW6gmOCBRVuhekw5iHYZcLC1.zqMxlTEGUQrq1C65f8e', 'Estudiante', 'Demo', 'STUDENT', datetime('now'));
 
 -- 2. Create Demo Academy (PAID so all features are visible)
 INSERT OR IGNORE INTO Academy (id, name, description, ownerId, createdAt, paymentStatus, feedbackEnabled, allowMultipleTeachers)

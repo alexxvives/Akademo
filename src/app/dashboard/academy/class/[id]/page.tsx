@@ -146,6 +146,14 @@ export default function TeacherClassPage() {
     title: '',
   });
   const [paymentStatus, setPaymentStatus] = useState<string>('PAID');
+  const [feedbackEnabled, setFeedbackEnabled] = useState<boolean>(true);
+
+  // Set global uploading flag for logout warning
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).akademoUploading = uploading;
+    }
+  }, [uploading]);
 
   useEffect(() => {
     if (classId) {
@@ -283,14 +291,17 @@ export default function TeacherClassPage() {
 
   const loadData = async () => {
     try {
-      // Check payment status first
+      // Check payment status and feedback settings first
       const academiesRes = await apiClient('/academies');
       const academiesResult = await academiesRes.json();
       let currentPaymentStatus = 'NOT PAID';
+      let currentFeedbackEnabled = true;
       if (academiesResult.success && Array.isArray(academiesResult.data) && academiesResult.data.length > 0) {
         currentPaymentStatus = academiesResult.data[0].paymentStatus || 'NOT PAID';
+        currentFeedbackEnabled = academiesResult.data[0].feedbackEnabled !== 0;
       }
       setPaymentStatus(currentPaymentStatus);
+      setFeedbackEnabled(currentFeedbackEnabled);
 
       // If NOT PAID and this is a demo class, load demo data
       if (currentPaymentStatus === 'NOT PAID') {
@@ -1384,7 +1395,8 @@ export default function TeacherClassPage() {
               </div>
             </div>
 
-            {/* Feedback Section - Full Width Below */}
+            {/* Feedback Section - Full Width Below (only if feedback is enabled) */}
+            {feedbackEnabled && (
             <div className="pt-6">
               <h3 className="font-semibold text-gray-900 mb-3 text-lg text-center">FEEDBACK</h3>
               <div className="rounded-xl border border-gray-200 p-3 sm:p-6 animate-in slide-in-from-top-2 shadow-sm">
@@ -1446,8 +1458,9 @@ export default function TeacherClassPage() {
                 )}
               </div>
             </div>
+            </div>
+            )}
           </div>
-        </div>
         )}
 
         {/* Main View - No Lesson Selected */}

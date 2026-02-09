@@ -337,6 +337,15 @@ export default function DashboardLayout({
   };
 
   const handleLogout = async () => {
+    // Check if there's an active upload
+    if (typeof window !== 'undefined' && (window as any).akademoUploading) {
+      const confirmLogout = window.confirm(
+        '⚠️ ADVERTENCIA: Hay un video subiendo. Si cierras sesión, se cancelará la subida.\n\n¿Estás seguro de que quieres cerrar sesión?'
+      );
+      if (!confirmLogout) {
+        return;
+      }
+    }
     await apiClient('/auth/logout', { method: 'POST' });
     router.push('/');
   };
