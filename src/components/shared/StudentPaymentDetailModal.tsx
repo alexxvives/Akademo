@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment } from 'react';
+import React, { Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 
 interface StudentPayment {
@@ -45,9 +45,25 @@ export function StudentPaymentDetailModal({
   paymentFrequency,
   enrollmentDate,
   availableClasses = [],
-  currentClassId,
+  currentClassId: externalClassId,
   onClassChange,
 }: StudentPaymentDetailModalProps) {
+  // Internal state for class filtering
+  const [internalClassId, setInternalClassId] = React.useState<string>(externalClassId || 'all');
+  
+  // Use internal state for filtering
+  const currentClassId = internalClassId;
+  
+  // Update internal state when external prop changes
+  React.useEffect(() => {
+    setInternalClassId(externalClassId || 'all');
+  }, [externalClassId]);
+  
+  // Handle class change with internal state
+  const handleClassChange = (classId: string) => {
+    setInternalClassId(classId);
+    onClassChange?.(classId);
+  };
   const formatCurrency = (amount: number, currency: string = 'EUR') => {
     return new Intl.NumberFormat('es-ES', {
       style: 'currency',
@@ -79,7 +95,7 @@ export function StudentPaymentDetailModal({
           <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
           </svg>
-          Por Pagar
+          Pendiente
         </span>
       );
     }
@@ -190,7 +206,7 @@ export function StudentPaymentDetailModal({
                             </button>
                             <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
                               <button
-                                onClick={() => onClassChange?.('all')}
+                                onClick={() => handleClassChange('all')}
                                 className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${
                                   currentClassId === 'all' ? 'bg-accent-50 text-accent-700 font-medium' : 'text-gray-700'
                                 }`}
@@ -200,7 +216,7 @@ export function StudentPaymentDetailModal({
                               {availableClasses.map(cls => (
                                 <button
                                   key={cls.id}
-                                  onClick={() => onClassChange?.(cls.id)}
+                                  onClick={() => handleClassChange(cls.id)}
                                   className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${
                                     cls.id === currentClassId ? 'bg-accent-50 text-accent-700 font-medium' : 'text-gray-700'
                                   }`}
@@ -243,13 +259,13 @@ export function StudentPaymentDetailModal({
                 <div className="p-6 bg-gray-50 border-b border-gray-200">
                   <div className="grid grid-cols-2 gap-4">
                     {/* Total Pagado */}
-                    <div className="bg-white rounded-xl p-5 border-2 border-gray-200 shadow-sm">
+                    <div className="bg-white rounded-xl p-5 border-2 border-gray-200 shadow-sm text-center">
                       <div className="text-sm font-medium text-gray-600 mb-2">Total Pagado</div>
                       <div className="text-3xl font-bold text-green-600">{formatCurrency(totalPaid)}</div>
                     </div>
 
                     {/* Pendiente a Pagar */}
-                    <div className="bg-white rounded-xl p-5 border-2 border-gray-200 shadow-sm">
+                    <div className="bg-white rounded-xl p-5 border-2 border-gray-200 shadow-sm text-center">
                       <div className="text-sm font-medium text-gray-600 mb-2">Pendiente a Pagar</div>
                       <div className="text-3xl font-bold text-orange-600">{formatCurrency(totalDue)}</div>
                     </div>
