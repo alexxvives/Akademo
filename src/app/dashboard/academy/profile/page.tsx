@@ -456,7 +456,7 @@ export default function ProfilePage() {
               {/* Nombre de la academia */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nombre de la academia <span className="text-red-500">*</span>
+                  Nombre de la academia
                 </label>
                 {editing ? (
                   <input
@@ -1044,41 +1044,9 @@ export default function ProfilePage() {
                 </svg>
               </div>
               <p className="text-gray-900 font-medium mb-2">Cuenta no conectada</p>
-              <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">
+              <p className="text-sm text-gray-500 max-w-md mx-auto">
                 Conecta tu cuenta de Stripe para recibir pagos de estudiantes directamente en tu cuenta bancaria. Los estudiantes podrán pagar con tarjeta, transferencia bancaria o Bizum.
               </p>
-              
-              {/* Setup Instructions */}
-              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 max-w-2xl mx-auto text-left">
-                <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Cómo crear una cuenta de Stripe
-                </h3>
-                <ol className="space-y-2 text-sm text-blue-900">
-                  <li className="flex items-start gap-2">
-                    <span className="font-bold min-w-[20px]">1.</span>
-                    <span>Haz clic en &quot;Conectar Stripe&quot; arriba</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="font-bold min-w-[20px]">2.</span>
-                    <span>Si no tienes cuenta, selecciona &quot;Crear una cuenta&quot; en Stripe</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="font-bold min-w-[20px]">3.</span>
-                    <span>Completa la información de tu academia (nombre, dirección, datos bancarios)</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="font-bold min-w-[20px]">4.</span>
-                    <span>Verifica tu identidad (DNI/NIE/CIF)</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="font-bold min-w-[20px]">5.</span>
-                    <span>¡Listo! Tus estudiantes podrán pagar instantáneamente</span>
-                  </li>
-                </ol>
-              </div>
             </div>
           ) : stripeStatus.charges_enabled ? (
             <>
