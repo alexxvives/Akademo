@@ -2143,7 +2143,7 @@ export default function TeacherClassPage() {
                       >
                         {uploading ? 'Creando...' : editingLessonId ? 'Actualizar Lección' : 'Crear Lección'}
                       </button>
-                      <button type="button" onClick={() => { setShowLessonForm(false); setEditingLessonId(null); setEditingLessonMedia(null); }} className="px-6 py-2.5 text-gray-600 hover:text-gray-900 font-medium text-sm">
+                      <button type="button" onClick={() => { setShowLessonForm(false); setEditingLessonId(null); setEditingLessonMedia(null); router.push(`/dashboard/admin/class/${classId}`); }} className="px-6 py-2.5 text-gray-600 hover:text-gray-900 font-medium text-sm">
                         Cancelar
                       </button>
                     </div>

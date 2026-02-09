@@ -230,59 +230,59 @@ export default function StudentTopicsLessonsList({
                 </svg>
               </div>
             )}
-            {/* Content Badges or PROXIMAMENTE */}
+            {/* Content Badges */}
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
-              {!released ? (
-                <div className="flex items-center justify-center">
-                  <div className="bg-amber-500/95 backdrop-blur-sm px-4 py-2 rounded-lg shadow-lg border border-amber-400/30">
-                    <span className="text-white font-bold text-2xl">PRÓXIMAMENTE</span>
+              <div className="flex items-center gap-2">
+                {videoCount > 0 && (
+                  <div className="flex items-center gap-1.5 bg-blue-500/90 px-2.5 py-1 rounded-lg border border-blue-400/50">
+                    <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                    </svg>
+                    <span className="text-white font-bold text-xs">{videoCount}</span>
                   </div>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  {videoCount > 0 && (
-                    <div className="flex items-center gap-1.5 bg-blue-500/90 px-2.5 py-1 rounded-lg border border-blue-400/50">
-                      <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-                      </svg>
-                      <span className="text-white font-bold text-xs">{videoCount}</span>
-                    </div>
-                  )}
-                  {docCount > 0 && (
-                    <div className="flex items-center gap-1.5 bg-purple-500/90 px-2.5 py-1 rounded-lg border border-purple-400/50">
-                      <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                      </svg>
-                      <span className="text-white font-bold text-xs">{docCount}</span>
-                    </div>
-                  )}
-                </div>
-              )}
+                )}
+                {docCount > 0 && (
+                  <div className="flex items-center gap-1.5 bg-purple-500/90 px-2.5 py-1 rounded-lg border border-purple-400/50">
+                    <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-white font-bold text-xs">{docCount}</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Card Body - Progress */}
+          {/* Card Body - Progress or PROXIMAMENTE */}
           <div className="p-4">
-            {released && videoCount > 0 && (
-              <>
-                <div className="flex items-center justify-between text-sm mb-2">
-                  <span className="text-gray-400 text-xs">Progreso</span>
-                  <span className="text-gray-300 font-bold text-sm">
-                    {Math.round(overallProgress)}%
-                    {remainingMinutes > 0 && (
-                      <span className="text-xs font-normal text-gray-500 ml-1">
-                        ({remainingMinutes}m restantes)
-                      </span>
-                    )}
-                  </span>
+            {!released ? (
+              <div className="flex items-center justify-center py-2">
+                <div className="border-2 border-white/40 rounded-lg px-4 py-2">
+                  <span className="text-white font-bold text-lg tracking-wide">PRÓXIMAMENTE</span>
                 </div>
-                <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-accent-500 to-green-500 transition-all"
-                    style={{ width: `${overallProgress}%` }}
-                  />
-                </div>
-              </>
+              </div>
+            ) : (
+              videoCount > 0 && (
+                <>
+                  <div className="flex items-center justify-between text-sm mb-2">
+                    <span className="text-gray-400 text-xs">Progreso</span>
+                    <span className="text-gray-300 font-bold text-sm">
+                      {Math.round(overallProgress)}%
+                      {remainingMinutes > 0 && (
+                        <span className="text-xs font-normal text-gray-500 ml-1">
+                          ({remainingMinutes}m restantes)
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                  <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-accent-500 to-green-500 transition-all"
+                      style={{ width: `${overallProgress}%` }}
+                    />
+                  </div>
+                </>
+              )
             )}
           </div>
         </div>

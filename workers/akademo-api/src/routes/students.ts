@@ -29,6 +29,7 @@ students.get('/progress', async (c) => {
           c.name as className,
           c.id as classId,
           c.academyId,
+          e.id as enrollmentId,
           ut.firstName || ' ' || ut.lastName as teacherName,
           COUNT(DISTINCT CASE 
             WHEN vps.videoId IS NOT NULL AND v.id IS NOT NULL THEN vps.videoId 
@@ -49,7 +50,7 @@ students.get('/progress', async (c) => {
         LEFT JOIN Video v ON v.lessonId = l.id
         LEFT JOIN VideoPlayState vps ON vps.videoId = v.id AND vps.studentId = u.id
         LEFT JOIN LessonRating lr ON lr.studentId = u.id AND lr.lessonId = l.id
-        GROUP BY u.id, u.firstName, u.lastName, u.email, u.lastLoginAt, c.id, c.name, c.academyId, ut.firstName, ut.lastName
+        GROUP BY u.id, u.firstName, u.lastName, u.email, u.lastLoginAt, c.id, c.name, c.academyId, e.id, ut.firstName, ut.lastName
         ORDER BY u.lastName, u.firstName, c.name
       `;
       params = [];
@@ -64,6 +65,7 @@ students.get('/progress', async (c) => {
           COALESCE(u.lastLoginAt, u.createdAt) as lastActive,
           c.name as className,
           c.id as classId,
+          e.id as enrollmentId,
           COUNT(DISTINCT CASE 
             WHEN vps.videoId IS NOT NULL AND v.id IS NOT NULL THEN vps.videoId 
           END) as lessonsCompleted,
@@ -82,7 +84,7 @@ students.get('/progress', async (c) => {
         LEFT JOIN Video v ON v.lessonId = l.id
         LEFT JOIN VideoPlayState vps ON vps.videoId = v.id AND vps.studentId = u.id
         LEFT JOIN LessonRating lr ON lr.studentId = u.id AND lr.lessonId = l.id
-        GROUP BY u.id, u.firstName, u.lastName, u.email, u.lastLoginAt, c.id, c.name
+        GROUP BY u.id, u.firstName, u.lastName, u.email, u.lastLoginAt, c.id, c.name, e.id
         ORDER BY u.lastName, u.firstName, c.name
       `;
       params = [session.id];
@@ -97,6 +99,7 @@ students.get('/progress', async (c) => {
           COALESCE(u.lastLoginAt, u.createdAt) as lastActive,
           c.name as className,
           c.id as classId,
+          e.id as enrollmentId,
           ut.firstName || ' ' || ut.lastName as teacherName,
           COUNT(DISTINCT CASE 
             WHEN vps.videoId IS NOT NULL AND v.id IS NOT NULL THEN vps.videoId 
@@ -118,7 +121,7 @@ students.get('/progress', async (c) => {
         LEFT JOIN Video v ON v.lessonId = l.id
         LEFT JOIN VideoPlayState vps ON vps.videoId = v.id AND vps.studentId = u.id
         LEFT JOIN LessonRating lr ON lr.studentId = u.id AND lr.lessonId = l.id
-        GROUP BY u.id, u.firstName, u.lastName, u.email, u.lastLoginAt, c.id, c.name, ut.firstName, ut.lastName
+        GROUP BY u.id, u.firstName, u.lastName, u.email, u.lastLoginAt, c.id, c.name, e.id, ut.firstName, ut.lastName
         ORDER BY u.lastName, u.firstName, c.name
       `;
       params = [session.id];
