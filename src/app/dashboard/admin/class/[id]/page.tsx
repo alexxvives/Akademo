@@ -116,8 +116,11 @@ export default function TeacherClassPage() {
     title: '',
     description: '',
     externalUrl: '',
-    releaseDate: new Date().toISOString().split('T')[0],
-    releaseTime: '00:00',
+    releaseDate: (() => {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    })(),
+    releaseTime: new Date().toTimeString().slice(0, 5),
     publishImmediately: true,
     maxWatchTimeMultiplier: 2.0,
     watermarkIntervalMins: 5,
@@ -2214,8 +2217,14 @@ export default function TeacherClassPage() {
                         <input 
                           type="date" 
                           name="rescheduleDate"
-                          defaultValue={new Date().toISOString().split('T')[0]}
-                          min={new Date().toISOString().split('T')[0]}
+                          defaultValue={(() => {
+                            const d = new Date();
+                            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                          })()}
+                          min={(() => {
+                            const d = new Date();
+                            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                          })()}
                           className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
                           required
                         />

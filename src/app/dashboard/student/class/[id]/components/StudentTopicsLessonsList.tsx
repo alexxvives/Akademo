@@ -167,13 +167,6 @@ export default function StudentTopicsLessonsList({
         <div className="flex flex-col h-full">
           {/* Header with Title */}
           <div className="px-4 pt-4 pb-3 relative">
-            {/* Status Badge */}
-            {!released && (
-              <span className="absolute top-3 right-3 px-2 py-1 bg-amber-500/20 text-amber-400 text-[10px] font-bold rounded border border-amber-500/30 z-10 shadow-sm">
-                PRÓXIMAMENTE
-              </span>
-            )}
-            
             <h3 
               className="text-lg font-bold text-white line-clamp-2"
               title={lesson.description || undefined}
@@ -237,26 +230,34 @@ export default function StudentTopicsLessonsList({
                 </svg>
               </div>
             )}
-            {/* Content Badges */}
+            {/* Content Badges or PROXIMAMENTE */}
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
-              <div className="flex items-center gap-2">
-                {videoCount > 0 && (
-                  <div className="flex items-center gap-1.5 bg-blue-500/90 px-2.5 py-1 rounded-lg border border-blue-400/50">
-                    <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-                    </svg>
-                    <span className="text-white font-bold text-xs">{videoCount}</span>
+              {!released ? (
+                <div className="flex items-center justify-center">
+                  <div className="bg-amber-500/95 backdrop-blur-sm px-4 py-2 rounded-lg shadow-lg border border-amber-400/30">
+                    <span className="text-white font-bold text-2xl">PRÓXIMAMENTE</span>
                   </div>
-                )}
-                {docCount > 0 && (
-                  <div className="flex items-center gap-1.5 bg-purple-500/90 px-2.5 py-1 rounded-lg border border-purple-400/50">
-                    <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-white font-bold text-xs">{docCount}</span>
-                  </div>
-                )}
-              </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  {videoCount > 0 && (
+                    <div className="flex items-center gap-1.5 bg-blue-500/90 px-2.5 py-1 rounded-lg border border-blue-400/50">
+                      <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                      </svg>
+                      <span className="text-white font-bold text-xs">{videoCount}</span>
+                    </div>
+                  )}
+                  {docCount > 0 && (
+                    <div className="flex items-center gap-1.5 bg-purple-500/90 px-2.5 py-1 rounded-lg border border-purple-400/50">
+                      <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                      </svg>
+                      <span className="text-white font-bold text-xs">{docCount}</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 

@@ -43,6 +43,8 @@ classes.get('/', async (c) => {
           c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
           a.feedbackEnabled, c.whatsappGroupLink, c.monthlyPrice, c.oneTimePrice, c.zoomAccountId, c.maxStudents, c.startDate,
           a.name as academyName,
+          u.firstName as teacherFirstName,
+          u.lastName as teacherLastName,
           ce.status as enrollmentStatus,
           ce.documentSigned,
           p.status as paymentStatus,
@@ -54,6 +56,7 @@ classes.get('/', async (c) => {
         FROM ClassEnrollment ce
         JOIN Class c ON ce.classId = c.id
         JOIN Academy a ON c.academyId = a.id
+        LEFT JOIN User u ON c.teacherId = u.id
         LEFT JOIN Payment p ON p.id = (
           SELECT id FROM Payment 
           WHERE payerId = ce.userId AND classId = c.id 

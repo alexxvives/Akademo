@@ -15,6 +15,8 @@ interface EnrolledClass {
   name: string;
   description?: string;
   academyName: string;
+  teacherFirstName?: string;
+  teacherLastName?: string;
   videoCount: number;
   documentCount: number;
   lessonCount: number;
@@ -87,6 +89,8 @@ export default function StudentClassesPage() {
           name: c.name,
           description: c.description,
           academyName: c.academyName || 'Academia',
+          teacherFirstName: c.teacherFirstName,
+          teacherLastName: c.teacherLastName,
           videoCount: c.videoCount || 0,
           documentCount: c.documentCount || 0,
           lessonCount: c.lessonCount || 0,
@@ -363,6 +367,19 @@ export default function StudentClassesPage() {
                   ) : (
                     <p className="text-sm text-gray-400 italic mb-4">Sin descripción</p>
                   )}
+                  
+                  {/* Teacher Info and Stats */}
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-3">
+                    <div className="flex items-center gap-2 text-sm text-gray-700">
+                      <span className="font-medium">Profesor:</span>
+                      <span>
+                        {classItem.teacherFirstName && classItem.teacherLastName 
+                          ? `${classItem.teacherFirstName} ${classItem.teacherLastName}` 
+                          : 'Sin asignar'
+                        }
+                      </span>
+                    </div>
+                  </div>
                   
                   <div className="flex flex-wrap items-center gap-3 sm:gap-6 text-sm text-gray-500">
                     <span className="flex items-center gap-1">
