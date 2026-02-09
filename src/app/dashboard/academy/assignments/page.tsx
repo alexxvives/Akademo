@@ -76,8 +76,8 @@ export default function TeacherAssignments() {
 
   useEffect(() => { loadData(); }, []);
   useEffect(() => { 
-    // Only load assignments after we have user data loaded (userEmail will be set)
-    if (userEmail) {
+    // Only load assignments after we have BOTH user data AND payment status
+    if (userEmail && paymentStatus) {
       console.log('🔄 [ACADEMY] Triggering loadAssignments because data is ready');
       loadAssignments(); 
     }
