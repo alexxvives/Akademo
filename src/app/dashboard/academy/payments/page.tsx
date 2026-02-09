@@ -602,7 +602,7 @@ export default function AcademyPaymentsPage() {
             </span>
           </div>
         </div>
-        <div className="max-h-[648px] overflow-y-auto overflow-x-auto">
+        <div className="max-h-[713px] overflow-y-auto overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>

@@ -2032,7 +2032,7 @@ export default function TeacherClassPage() {
                       </div>
                     )}
 
-                    <div className="flex gap-3">
+                    <div className="flex gap-3 justify-center">
                       <button type="submit" className="px-6 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium text-sm">
                         {uploading ? 'Creando...' : editingLessonId ? 'Actualizar Lección' : 'Crear Lección'}
                       </button>
@@ -2111,7 +2111,7 @@ export default function TeacherClassPage() {
                         <input 
                           type="date" 
                           name="rescheduleDate"
-                          defaultValue={reschedulingLesson.releaseDate.split('T')[0]}
+                          defaultValue={new Date().toISOString().split('T')[0]}
                           min={new Date().toISOString().split('T')[0]}
                           className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
                           required
@@ -2122,7 +2122,7 @@ export default function TeacherClassPage() {
                         <input 
                           type="time"
                           name="rescheduleTime"
-                          defaultValue={new Date(reschedulingLesson.releaseDate).toTimeString().slice(0, 5)}
+                          defaultValue={new Date().toTimeString().slice(0, 5)}
                           className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
                           required
                         />
