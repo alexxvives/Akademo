@@ -223,10 +223,8 @@ export default function AcademyTeachers() {
             {academyName && <p className="text-sm text-gray-500 mt-1">{academyName}</p>}
           </div>
           <button
-            onClick={paymentStatus === 'NOT PAID' ? () => window.location.href = '/dashboard/academy/facturas' : () => setShowCreateModal(true)}
-            disabled={paymentStatus === 'NOT PAID'}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg transition-colors font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed"
-            title={paymentStatus === 'NOT PAID' ? 'Debes comprar un plan para crear profesores' : ''}
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg transition-colors font-semibold"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -422,10 +420,11 @@ export default function AcademyTeachers() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-                  disabled={creating}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={creating || paymentStatus === 'NOT PAID'}
+                  title={paymentStatus === 'NOT PAID' ? 'Función no disponible en modo demo' : ''}
                 >
-                  {creating ? 'Creando...' : 'Crear'}
+                  {creating ? 'Creando...' : paymentStatus === 'NOT PAID' ? 'No disponible (Demo)' : 'Crear'}
                 </button>
               </div>
             </form>

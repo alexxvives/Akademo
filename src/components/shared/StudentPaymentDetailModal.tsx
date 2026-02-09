@@ -154,6 +154,10 @@ export function StudentPaymentDetailModal({
   const completedPayments = filteredPayments.filter(p => p.status === 'COMPLETED' || p.status === 'PAID');
   const onTimePayments = completedPayments.filter(p => !p.isLate).length;
   const latePayments = completedPayments.filter(p => p.isLate).length;
+  
+  // Calculate filtered totals based on current class filter
+  const filteredTotalPaid = completedPayments.reduce((sum, p) => sum + p.amount, 0);
+  const filteredTotalDue = pendingPayments.reduce((sum, p) => sum + p.amount, 0);
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
@@ -261,13 +265,13 @@ export function StudentPaymentDetailModal({
                     {/* Total Pagado */}
                     <div className="bg-white rounded-xl p-5 border-2 border-gray-200 shadow-sm text-center">
                       <div className="text-sm font-medium text-gray-600 mb-2">Total Pagado</div>
-                      <div className="text-3xl font-bold text-green-600">{formatCurrency(totalPaid)}</div>
+                      <div className="text-3xl font-bold text-green-600">{formatCurrency(filteredTotalPaid)}</div>
                     </div>
 
                     {/* Pendiente a Pagar */}
                     <div className="bg-white rounded-xl p-5 border-2 border-gray-200 shadow-sm text-center">
                       <div className="text-sm font-medium text-gray-600 mb-2">Pendiente a Pagar</div>
-                      <div className="text-3xl font-bold text-orange-600">{formatCurrency(totalDue)}</div>
+                      <div className="text-3xl font-bold text-orange-600">{formatCurrency(filteredTotalDue)}</div>
                     </div>
                   </div>
                 </div>
