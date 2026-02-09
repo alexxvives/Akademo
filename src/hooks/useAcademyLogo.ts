@@ -4,16 +4,17 @@ import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import { apiClient } from '@/lib/api-client';
 
-const LOGO_CACHE_KEY = 'akademo_academy_logo';
+const LOGO_CACHE_KEY_PREFIX = 'akademo_academy_logo_';
 const LOGO_CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
 
 export function useAcademyLogo() {
   const { user } = useAuth();
   // Try to load from cache immediately
   const getCachedLogo = () => {
-    if (typeof window === 'undefined') return null;
+    if (typeof window === 'undefined' || !user) return null;
+const cacheKey = `${LOGO_CACHE_KEY_PREFIX}${user.id}`;
     try {
-      const cached = localStorage.getItem(LOGO_CACHE_KEY);
+      const cached = localStorage.getItem(cacheKey);
       if (cached) {
         const { logoUrl, academyName, timestamp } = JSON.parse(cached);
         if (Date.now() - timestamp < LOGO_CACHE_EXPIRY) {
@@ -80,9 +81,10 @@ export function useAcademyLogo() {
           setAcademyName(fetchedName);
 
           // Cache the logo
-          if (fetchedLogoUrl && fetchedName) {
+          if (fetchedLogoUrl && fetchedName && user) {
+            const cacheKey = `${LOGO_CACHE_KEY_PREFIX}${user.id}`;
             try {
-              localStorage.setItem(LOGO_CACHE_KEY, JSON.stringify({
+              localStorage.setItem(cacheKey, JSON.stringify({
                 logoUrl: fetchedLogoUrl,
                 academyName: fetchedName,
                 timestamp: Date.now(),

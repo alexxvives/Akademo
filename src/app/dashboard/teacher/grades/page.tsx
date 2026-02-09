@@ -73,11 +73,8 @@ export default function TeacherGrades() {
           const status = academyResult.data?.academy?.paymentStatus || 'PAID';
           setPaymentStatus(status);
           
-          // Only show demo data if: (1) NOT PAID AND (2) user email contains "demo" or academy name ends with "%"
-          const isDemoUser = userResult.data?.email?.toLowerCase().includes('demo') || 
-                            academyResult.data?.academy?.name?.endsWith('%');
-          
-          if (status === 'NOT PAID' && isDemoUser) {
+          // Show demo data if NOT PAID
+          if (status === 'NOT PAID') {
             const demoClasses = generateDemoClasses();
             setClasses(demoClasses.map(c => ({ id: c.id, name: c.name })));
             setSelectedClass('all');
@@ -111,26 +108,16 @@ export default function TeacherGrades() {
   const loadGrades = async () => {
     setLoading(true);
     try {
-      // Re-fetch user data to check if demo (avoid state race condition)
-      const userRes = await apiClient('/auth/me');
-      const userResult: any = await userRes.json();
-      const email = userResult.success && userResult.data ? userResult.data.email || '' : '';
-      
       // Get academy payment status through teacher relationship
       const academyRes = await apiClient('/teacher/academy');
       let status = 'PAID';
-      let academyName = '';
       if (academyRes.ok) {
         const academyResult: any = await academyRes.json();
         status = academyResult.data?.academy?.paymentStatus || 'PAID';
-        academyName = academyResult.data?.academy?.name || '';
       }
       
-      // Check if demo user: email contains "demo" OR academy name ends with "%"
-      const isDemoUser = email.toLowerCase().includes('demo') || academyName.endsWith('%');
-      
-      // Only show demo grades if: (1) NOT PAID AND (2) demo user
-      if (status === 'NOT PAID' && isDemoUser) {
+      // Show demo grades if NOT PAID
+      if (status === 'NOT PAID') {
         const demoAssignments = generateDemoAssignments();
         const filtered = selectedClass === 'all' 
           ? demoAssignments 

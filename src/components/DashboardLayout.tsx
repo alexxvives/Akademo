@@ -147,11 +147,8 @@ export default function DashboardLayout({
         setAcademyPaymentStatus(paymentStatus);
         setAcademy(academyData);
         
-        // Check if demo user
-        const isDemoUser = userResult.data?.email?.toLowerCase().includes('demo');
-        
         // Load pending payments count for badge
-        if (paymentStatus === 'NOT PAID' && isDemoUser) {
+        if (paymentStatus === 'NOT PAID') {
           // Demo mode: hardcoded count from generateDemoPendingPayments()
           setPendingPaymentsCount(5);
         } else {
@@ -188,10 +185,8 @@ export default function DashboardLayout({
 
   const loadUnreadValoraciones = useCallback(async () => {
     try {
-      // Check if demo user: NOT PAID AND email contains "demo"
-      const isDemoUser = userEmail.toLowerCase().includes('demo');
-      
-      if (academyPaymentStatus === 'NOT PAID' && isDemoUser) {
+      // Show demo unread count if NOT PAID
+      if (academyPaymentStatus === 'NOT PAID') {
         setUnreadValoracionesCount(12); // 12 unread out of 35 total ratings in demo data
         return;
       }
@@ -209,10 +204,8 @@ export default function DashboardLayout({
   
   const loadUngradedAssignments = useCallback(async () => {
     try {
-      // Check if demo user: NOT PAID AND email contains "demo"
-      const isDemoUser = userEmail.toLowerCase().includes('demo');
-      
-      if (academyPaymentStatus === 'NOT PAID' && isDemoUser) {
+      // Show demo counts if NOT PAID
+      if (academyPaymentStatus === 'NOT PAID') {
         // Demo mode: count actual ungraded demo submissions
         const { countTotalNewDemoSubmissions, countTotalUngradedDemoSubmissions } = await import('@/lib/demo-data');
         const newCount = countTotalNewDemoSubmissions();

@@ -73,7 +73,7 @@ export function StudentPaymentDetailModal({
           Pagado
         </span>
       );
-    } else if (payment.status === 'PENDING') {
+    } else if (payment.status === 'PENDING' || payment.status === 'CASH_PENDING') {
       return (
         <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
           <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
@@ -125,8 +125,17 @@ export function StudentPaymentDetailModal({
     }
   };
 
-  const pendingPayments = payments.filter(p => p.status === 'PENDING');
-  const completedPayments = payments.filter(p => p.status === 'COMPLETED' || p.status === 'PAID');
+  // Filter payments by selected class if not 'all'
+  const filteredPayments = currentClassId && currentClassId !== 'all' 
+    ? payments.filter(p => {
+        // Match by className from the payment
+        const matchingClass = availableClasses.find(c => c.id === currentClassId);
+        return matchingClass && p.className === matchingClass.name;
+      })
+    : payments;
+
+  const pendingPayments = filteredPayments.filter(p => p.status === 'PENDING' || p.status === 'CASH_PENDING');
+  const completedPayments = filteredPayments.filter(p => p.status === 'COMPLETED' || p.status === 'PAID');
   const onTimePayments = completedPayments.filter(p => !p.isLate).length;
   const latePayments = completedPayments.filter(p => p.isLate).length;
 
@@ -253,7 +262,7 @@ export function StudentPaymentDetailModal({
                     Historial de Pagos
                   </h3>
                   
-                  {payments.length === 0 ? (
+                  {filteredPayments.length === 0 ? (
                     <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
                       <svg className="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -262,7 +271,7 @@ export function StudentPaymentDetailModal({
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {payments.map((payment, index) => {
+                      {filteredPayments.map((payment, index) => {
                         const isPaid = payment.status === 'PAID' || payment.status === 'COMPLETED';
                         const isPending = payment.status === 'PENDING';
                         

@@ -437,21 +437,19 @@ export default function AcademyClassesPage() {
                       <p className="text-sm text-gray-400 italic mb-4">Sin descripción</p>
                     )}
                     
-                    {/* Teacher Info */}
-                    <div className="flex items-center gap-2 text-sm mb-4 text-gray-700">
-                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                      <span className="font-medium">Profesor:</span>
-                      <span>
-                        {cls.teacherFirstName && cls.teacherLastName 
-                          ? `${cls.teacherFirstName} ${cls.teacherLastName}` 
-                          : 'Sin asignar'
-                        }
-                      </span>
-                    </div>
+                    {/* Teacher Info and Stats */}
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                      <div className="flex items-center gap-2 text-sm text-gray-700">
+                        <span className="font-medium">Profesor:</span>
+                        <span>
+                          {cls.teacherFirstName && cls.teacherLastName 
+                            ? `${cls.teacherFirstName} ${cls.teacherLastName}` 
+                            : 'Sin asignar'
+                          }
+                        </span>
+                      </div>
 
-                    <div className="flex flex-wrap items-center gap-3 sm:gap-6 text-sm text-gray-500">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-gray-500">
                       <span className="flex items-center gap-1">
                         <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -462,7 +460,7 @@ export default function AcademyClassesPage() {
                         <svg className="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                         </svg>
-                        <span className="font-semibold text-gray-700">{cls.lessonCount}</span> Lección{cls.lessonCount !== 1 ? 'es' : ''}
+                        <span className="font-semibold text-gray-700">{cls.lessonCount}</span> Clase{cls.lessonCount !== 1 ? 's' : ''}
                       </span>
                       <span className="flex items-center gap-1">
                         <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -476,6 +474,7 @@ export default function AcademyClassesPage() {
                         </svg>
                         <span className="font-semibold text-gray-700">{cls.documentCount || 0}</span> Documento{(cls.documentCount || 0) !== 1 ? 's' : ''}
                       </span>
+                      </div>
                     </div>
                   </div>
                   <button

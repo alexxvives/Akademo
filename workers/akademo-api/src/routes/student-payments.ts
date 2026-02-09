@@ -46,20 +46,31 @@ studentPayments.get('/:studentId/class/:classId', async (c) => {
       // For 'all' classes, just verify academy owner or admin
       // We'll check if they own any academy this student is enrolled in
       if (session.role === 'ACADEMY') {
-        const studentEnrollments = await c.env.DB
-          .prepare(`
-            SELECT e.classId
-            FROM ClassEnrollment e
-            JOIN Class c ON e.classId = c.id
-            JOIN Academy a ON c.academyId = a.id
-            WHERE e.userId = ? AND a.ownerId = ?
-            LIMIT 1
-          `)
-          .bind(studentId, session.id)
-          .first();
+        // Check if this is a demo user by looking up academy payment status
+        const academyData = await c.env.DB
+          .prepare('SELECT paymentStatus FROM Academy WHERE ownerId = ?')
+          .bind(session.id)
+          .first() as any;
         
-        if (!studentEnrollments) {
-          return c.json(errorResponse('Not authorized to view this student'), 403);
+        const isDemoUser = academyData?.paymentStatus === 'NOT PAID';
+        
+        // Skip authorization check for demo users (they use demo data anyway)
+        if (!isDemoUser) {
+          const studentEnrollments = await c.env.DB
+            .prepare(`
+              SELECT e.classId
+              FROM ClassEnrollment e
+              JOIN Class c ON e.classId = c.id
+              JOIN Academy a ON c.academyId = a.id
+              WHERE e.userId = ? AND a.ownerId = ?
+              LIMIT 1
+            `)
+            .bind(studentId, session.id)
+            .first();
+          
+          if (!studentEnrollments) {
+            return c.json(errorResponse('Not authorized to view this student'), 403);
+          }
         }
       } else if (session.role !== 'ADMIN' && (session.role !== 'STUDENT' || studentId !== session.id)) {
         return c.json(errorResponse('Not authorized to view payment history'), 403);

@@ -95,21 +95,7 @@ export default function TeacherAssignments() {
       console.log('👤 [ACADEMY] User email:', email);
       setUserEmail(email);
       
-      // Check if demo user
-      const isDemoUser = email.toLowerCase().includes('demo');
-      
-      // If demo user, load demo data immediately
-      if (isDemoUser) {
-        console.log('✅ [ACADEMY] Demo user detected, loading demo data...');
-        setPaymentStatus('NOT PAID');
-        const demoClasses = generateDemoClasses();
-        console.log('📦 [ACADEMY] Demo classes loaded:', demoClasses.length);
-        setClasses(demoClasses.map(c => ({ id: c.id, name: c.name })));
-        setLoading(false);
-        return;
-      }
-      
-      // For real users, check payment status and user email
+      // Check payment status first
       const academyRes = await apiClient('/academies');
       const academyResult = await academyRes.json();
       
@@ -119,9 +105,19 @@ export default function TeacherAssignments() {
         setAcademyName(academy.name || '');
         const status = academy.paymentStatus || 'PAID';
         setPaymentStatus(status);
+        
+        // If NOT PAID, load demo data
+        if (status === 'NOT PAID') {
+          console.log('✅ [ACADEMY] Unpaid academy detected, loading demo data...');
+          const demoClasses = generateDemoClasses();
+          console.log('📦 [ACADEMY] Demo classes loaded:', demoClasses.length);
+          setClasses(demoClasses.map(c => ({ id: c.id, name: c.name })));
+          setLoading(false);
+          return;
+        }
       }
       
-      // Load real data
+      // Load real data for paid academy
       const teacherRes = await apiClient('/requests/teacher');
       const teacherResult = await teacherRes.json();
       if (Array.isArray(teacherResult) && teacherResult.length > 0) {
@@ -141,12 +137,11 @@ export default function TeacherAssignments() {
 
   const loadAssignments = async () => {
     try {
-      // Check if demo user (email contains "demo" or academy name ends with "%")
-      const isDemoUser = userEmail.toLowerCase().includes('demo');
-      console.log('🔍 [ACADEMY] loadAssignments - userEmail:', userEmail, 'paymentStatus:', paymentStatus, 'isDemoUser:', isDemoUser);
+      // All unpaid academies use demo data
+      console.log('🔍 [ACADEMY] loadAssignments - userEmail:', userEmail, 'paymentStatus:', paymentStatus);
       
-      // Only show demo assignments if: (1) NOT PAID AND (2) demo user
-      if (paymentStatus === 'NOT PAID' && isDemoUser) {
+      // Show demo assignments if NOT PAID
+      if (paymentStatus === 'NOT PAID') {
         console.log('✅ [ACADEMY] Loading DEMO assignments...');
         const demoAssignments = generateDemoAssignments();
         console.log('📦 [ACADEMY] Total demo assignments:', demoAssignments.length);
@@ -173,11 +168,9 @@ export default function TeacherAssignments() {
   const loadSubmissions = async (assignmentId: string) => {
     try {
       console.log('🔍 [ACADEMY] loadSubmissions called with assignmentId:', assignmentId);
-      // Check if demo user
-      const isDemoUser = userEmail.toLowerCase().includes('demo');
       
-      // Only show demo submissions if: (1) NOT PAID AND (2) demo user
-      if (paymentStatus === 'NOT PAID' && isDemoUser) {
+      // Show demo submissions if NOT PAID
+      if (paymentStatus === 'NOT PAID') {
         console.log('✅ [ACADEMY] Detected demo user, loading demo submissions...');
         const demoSubs = generateDemoSubmissions(assignmentId);
         console.log('📦 [ACADEMY] Generated demo submissions:', demoSubs.length, 'submissions');
@@ -631,9 +624,8 @@ export default function TeacherAssignments() {
                       <div className="inline-flex items-center gap-2">
                         <span>{assignment.submissionCount}</span>
                         {(() => {
-                          // Show +X for new submissions in demo mode
-                          const isDemoUser = userEmail.toLowerCase().includes('demo');
-                          if (paymentStatus === 'NOT PAID' && isDemoUser) {
+                          // Show +X for new submissions in unpaid mode
+                          if (paymentStatus === 'NOT PAID') {
                             const newCount = countNewDemoSubmissions(assignment.id);
                             if (newCount > 0) {
                               return (

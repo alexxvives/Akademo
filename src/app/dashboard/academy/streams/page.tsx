@@ -116,8 +116,12 @@ export default function AcademyStreamsPage() {
   };
 
   const filteredStreams = useMemo(() => {
-    if (selectedClass === 'all') return streams;
-    return streams.filter(s => s.classId === selectedClass);
+    const filtered = selectedClass === 'all' ? streams : streams.filter(s => s.classId === selectedClass);
+    return filtered.sort((a, b) => {
+      const dateA = a.startedAt ? new Date(a.startedAt).getTime() : 0;
+      const dateB = b.startedAt ? new Date(b.startedAt).getTime() : 0;
+      return dateB - dateA;
+    });
   }, [streams, selectedClass]);
 
   const handleEditTitle = (streamId: string, currentTitle: string) => {

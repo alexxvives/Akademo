@@ -630,6 +630,8 @@ export interface DemoPendingEnrollment {
 
 export interface DemoPayment {
   enrollmentId: string;
+  studentId?: string;
+  classId?: string;
   studentFirstName: string;
   studentLastName: string;
   studentEmail: string;
@@ -638,6 +640,7 @@ export interface DemoPayment {
   currency: string;
   paymentMethod: string;
   paymentStatus: string;
+  enrolledAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -668,11 +671,11 @@ export function generateDemoPendingPayments(): DemoPayment[] {
   // Hardcoded 5 pending payments (deterministic dates)
   const baseDate = new Date('2026-02-05T00:00:00.000Z');
   return [
-    { enrollmentId: 'demo-payment-pending-1', studentFirstName: 'Ana', studentLastName: 'Torres', studentEmail: 'ana.torres@demo.com', className: 'Programación Web', paymentAmount: 49.99, currency: 'EUR', paymentMethod: 'cash', paymentStatus: 'CASH_PENDING', createdAt: new Date(baseDate.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString(), updatedAt: new Date(baseDate.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString() },
-    { enrollmentId: 'demo-payment-pending-2', studentFirstName: 'Carlos', studentLastName: 'Ruiz', studentEmail: 'carlos.ruiz@demo.com', className: 'Programación Web', paymentAmount: 49.99, currency: 'EUR', paymentMethod: 'cash', paymentStatus: 'CASH_PENDING', createdAt: new Date(baseDate.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString(), updatedAt: new Date(baseDate.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString() },
-    { enrollmentId: 'demo-payment-pending-3', studentFirstName: 'María', studentLastName: 'Morales', studentEmail: 'maría.morales@demo.com', className: 'Matemáticas Avanzadas', paymentAmount: 39.99, currency: 'EUR', paymentMethod: 'cash', paymentStatus: 'CASH_PENDING', createdAt: new Date(baseDate.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString(), updatedAt: new Date(baseDate.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString() },
-    { enrollmentId: 'demo-payment-pending-4', studentFirstName: 'Luis', studentLastName: 'Hernández', studentEmail: 'luis.hernández@demo.com', className: 'Diseño Gráfico', paymentAmount: 59.99, currency: 'EUR', paymentMethod: 'cash', paymentStatus: 'CASH_PENDING', createdAt: new Date(baseDate.getTime() - 4 * 24 * 60 * 60 * 1000).toISOString(), updatedAt: new Date(baseDate.getTime() - 4 * 24 * 60 * 60 * 1000).toISOString() },
-    { enrollmentId: 'demo-payment-pending-5', studentFirstName: 'Carmen', studentLastName: 'Jiménez', studentEmail: 'carmen.jiménez@demo.com', className: 'Física Cuántica', paymentAmount: 44.99, currency: 'EUR', paymentMethod: 'cash', paymentStatus: 'CASH_PENDING', createdAt: new Date(baseDate.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString(), updatedAt: new Date(baseDate.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString() },
+    { enrollmentId: 'demo-payment-pending-1', studentId: 'demo-s1', studentFirstName: 'Ana', studentLastName: 'Torres', studentEmail: 'ana.torres@demo.com', className: 'Programación Web', paymentAmount: 49.99, currency: 'EUR', paymentMethod: 'cash', paymentStatus: 'CASH_PENDING', enrolledAt: new Date(baseDate.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString(), createdAt: new Date(baseDate.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString(), updatedAt: new Date(baseDate.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString() },
+    { enrollmentId: 'demo-payment-pending-2', studentId: 'demo-s1', studentFirstName: 'Carlos', studentLastName: 'Ruiz', studentEmail: 'carlos.ruiz@demo.com', className: 'Programación Web', paymentAmount: 49.99, currency: 'EUR', paymentMethod: 'cash', paymentStatus: 'CASH_PENDING', enrolledAt: new Date(baseDate.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString(), createdAt: new Date(baseDate.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString(), updatedAt: new Date(baseDate.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString() },
+    { enrollmentId: 'demo-payment-pending-3', studentId: 'demo-s1', studentFirstName: 'María', studentLastName: 'Morales', studentEmail: 'maría.morales@demo.com', className: 'Matemáticas Avanzadas', paymentAmount: 39.99, currency: 'EUR', paymentMethod: 'cash', paymentStatus: 'CASH_PENDING', enrolledAt: new Date(baseDate.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString(), createdAt: new Date(baseDate.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString(), updatedAt: new Date(baseDate.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString() },
+    { enrollmentId: 'demo-payment-pending-4', studentId: 'demo-s1', studentFirstName: 'Luis', studentLastName: 'Hernández', studentEmail: 'luis.hernández@demo.com', className: 'Diseño Gráfico', paymentAmount: 59.99, currency: 'EUR', paymentMethod: 'cash', paymentStatus: 'CASH_PENDING', enrolledAt: new Date(baseDate.getTime() - 4 * 24 * 60 * 60 * 1000).toISOString(), createdAt: new Date(baseDate.getTime() - 4 * 24 * 60 * 60 * 1000).toISOString(), updatedAt: new Date(baseDate.getTime() - 4 * 24 * 60 * 60 * 1000).toISOString() },
+    { enrollmentId: 'demo-payment-pending-5', studentId: 'demo-s1', studentFirstName: 'Carmen', studentLastName: 'Jiménez', studentEmail: 'carmen.jiménez@demo.com', className: 'Física Cuántica', paymentAmount: 44.99, currency: 'EUR', paymentMethod: 'cash', paymentStatus: 'CASH_PENDING', enrolledAt: new Date(baseDate.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString(), createdAt: new Date(baseDate.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString(), updatedAt: new Date(baseDate.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString() },
   ];
 }
 
@@ -704,6 +707,10 @@ export function generateDemoPaymentHistory(): DemoPayment[] {
   
   return records.map((r, i) => ({
     enrollmentId: `demo-payment-history-${i + 1}`,
+    studentId: 'demo-s1',
+    classId: r.className === 'Programación Web' ? 'demo-c1' :
+              r.className === 'Matemáticas Avanzadas' ? 'demo-c2' :
+              r.className === 'Diseño Gráfico' ? 'demo-c3' : 'demo-c4',
     studentFirstName: r.firstName,
     studentLastName: r.lastName,
     studentEmail: `${r.firstName.toLowerCase()}.${r.lastName.toLowerCase()}@demo.com`,
@@ -714,6 +721,7 @@ export function generateDemoPaymentHistory(): DemoPayment[] {
     currency: 'EUR',
     paymentMethod: i % 3 === 0 ? 'cash' : 'stripe',
     paymentStatus: r.status,
+    enrolledAt: new Date(baseDate.getTime() - r.daysAgo * 24 * 60 * 60 * 1000).toISOString(),
     createdAt: new Date(baseDate.getTime() - r.daysAgo * 24 * 60 * 60 * 1000).toISOString(),
     updatedAt: new Date(baseDate.getTime() - r.daysAgo * 24 * 60 * 60 * 1000).toISOString(),
   }));
@@ -983,18 +991,17 @@ export function generateDemoSubmissions(assignmentId: string): DemoSubmission[] 
     const studentName = `${firstNames[i % firstNames.length]} ${lastNames[i % lastNames.length]}`;
     const isGraded = i < gradedCount;
     
-    // Score distribution for graded submissions: more varied - include perfect scores
+    // Score distribution for graded submissions: 1 @ 100%, 4 @ ~90%, 3 @ ~70%, rest below 60%
     let score: number | undefined;
     if (isGraded) {
-      // Create more variety including some perfect scores
-      if (i === 0) score = assignment.maxScore; // 100% - first student is perfect
-      else if (i % 15 === 0) score = assignment.maxScore * 0.50; // 50% - struggling
-      else if (i % 10 === 0) score = assignment.maxScore * 0.65; // 65% - needs improvement
-      else if (i % 7 === 0) score = assignment.maxScore * 0.75; // 75% - fair
-      else if (i % 5 === 0) score = assignment.maxScore * 0.85; // 85% - good
-      else if (i % 3 === 0) score = assignment.maxScore * 0.95; // 95% - excellent
-      else if (i % 2 === 0) score = assignment.maxScore * 0.90; // 90% - very good
-      else score = assignment.maxScore * 0.80; // 80% - good (default)
+      // Only 1 student with 100%
+      if (i === 0) score = assignment.maxScore; // 100% - only one perfect score
+      // Next 4 students around 90%
+      else if (i >= 1 && i <= 4) score = Math.round(assignment.maxScore * (0.88 + Math.random() * 0.06)); // 88-94%
+      // Next 3 students around 70%
+      else if (i >= 5 && i <= 7) score = Math.round(assignment.maxScore * (0.68 + Math.random() * 0.06)); // 68-74%
+      // Rest below 60%
+      else score = Math.round(assignment.maxScore * (0.35 + Math.random() * 0.23)); // 35-58%
     }
     
     const submittedAt = new Date(new Date(assignment.dueDate).getTime() - (Math.random() * 5 * 24 * 60 * 60 * 1000)); // Random time up to 5 days before due date
@@ -1028,6 +1035,10 @@ export function generateDemoSubmissions(assignmentId: string): DemoSubmission[] 
 
 // Helper to count new (undownloaded) submissions for an assignment
 export function countNewDemoSubmissions(assignmentId: string): number {
+  // Only show new submissions for last 2 assignments
+  if (assignmentId !== 'demo-a1' && assignmentId !== 'demo-a2') {
+    return 0;
+  }
   const submissions = generateDemoSubmissions(assignmentId);
   return submissions.filter(s => !s.downloadedAt).length;
 }

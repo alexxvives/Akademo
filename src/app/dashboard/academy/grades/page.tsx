@@ -78,11 +78,8 @@ export default function AcademyGrades() {
         const status = academy.paymentStatus || 'NOT PAID';
         setPaymentStatus(status);
         
-        // Only show demo data if: (1) NOT PAID AND (2) user email contains "demo" or academy ends with "%"
-        const isDemoUser = userResult.data?.email?.toLowerCase().includes('demo') || 
-                          academy.name?.endsWith('%');
-        
-        if (status === 'NOT PAID' && isDemoUser) {
+        // Show demo data if NOT PAID
+        if (status === 'NOT PAID') {
           const demoClasses = generateDemoClasses();
           setClasses(demoClasses.map(c => ({ id: c.id, name: c.name })));
           setSelectedClass('all');
@@ -115,11 +112,8 @@ export default function AcademyGrades() {
   const loadGrades = async () => {
     setLoading(true);
     try {
-      // Check if demo user
-      const isDemoUser = userEmail.toLowerCase().includes('demo');
-      
-      // Only show demo grades if: (1) NOT PAID AND (2) demo user
-      if (paymentStatus === 'NOT PAID' && isDemoUser) {
+      // Show demo grades if NOT PAID
+      if (paymentStatus === 'NOT PAID') {
         const demoAssignments = generateDemoAssignments();
         const filtered = selectedClass === 'all' 
           ? demoAssignments 
@@ -407,7 +401,7 @@ export default function AcademyGrades() {
               <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
                 <span className="text-sm text-gray-600">Mostrando <span className="font-semibold">{averages.length}</span> estudiante{averages.length !== 1 ? 's' : ''}</span>
               </div>
-              <div className="overflow-x-auto">
+              <div className="max-h-[600px] overflow-y-auto overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>

@@ -766,7 +766,7 @@ export default function AcademyPaymentsPage() {
                   </div>
                 </td>
                 <td className="px-3 sm:px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {new Date(history.approvedAt).toLocaleDateString('es-ES', {
+                  {new Date((history as any).createdAt || (history as any).updatedAt || history.approvedAt).toLocaleDateString('es-ES', {
                     day: 'numeric',
                     month: 'long',
                     year: 'numeric',
@@ -783,7 +783,7 @@ export default function AcademyPaymentsPage() {
                         `${history.studentFirstName} ${history.studentLastName}`,
                         history.studentEmail,
                         'Todas las clases',
-                        history.approvedAt,
+                        (history as any).createdAt || (history as any).updatedAt || history.approvedAt,
                         'all'
                       );
                     }}
