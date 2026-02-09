@@ -79,8 +79,78 @@ export default function AcademyPaymentsPage() {
 
   const showStudentPaymentHistory = async (studentId: string, studentName: string, studentEmail: string, className: string, enrollmentDate: string, classId: string) => {
     try {
+      // For unpaid academies, use demo data
+      if (paymentStatus === 'NOT PAID') {
+        // Generate demo payment data for this student
+        const demoHistory = generateDemoPaymentHistory();
+        const demoPending = generateDemoPendingPayments();
+        
+        // Filter by student email (since all demo data has same studentId)
+        const studentHistoryPayments = demoHistory.filter(p => p.studentEmail === studentEmail);
+        const studentPendingPayments = demoPending.filter(p => p.studentEmail === studentEmail);
+        
+        // Combine pending and history payments
+        const allStudentPayments = [
+          ...studentPendingPayments.map(p => ({
+            ...p,
+            paymentStatus: p.paymentStatus,
+          })),
+          ...studentHistoryPayments,
+        ];
+        
+        const studentPayments = allStudentPayments;
+        
+        if (studentPayments.length > 0) {
+          // Calculate totals
+          const totalPaid = studentPayments
+            .filter(p => p.paymentStatus === 'PAID')
+            .reduce((sum, p) => sum + p.paymentAmount, 0);
+          const totalDue = studentPayments
+            .filter(p => p.paymentStatus === 'CASH_PENDING' || p.paymentStatus === 'PENDING')
+            .reduce((sum, p) => sum + p.paymentAmount, 0);
+          
+          setSelectedStudent({
+            studentId,
+            name: studentName,
+            email: studentEmail,
+            className,
+            enrollmentDate,
+            paymentData: {
+              payments: studentPayments.map(p => ({
+                id: p.enrollmentId,
+                amount: p.paymentAmount,
+                currency: p.currency,
+                paymentMethod: p.paymentMethod,
+                status: p.paymentStatus,
+                paymentDate: p.createdAt,
+                dueDate: p.createdAt,
+                className: p.className, // Map the payment's specific className
+              })),
+              totalPaid,
+              totalDue,
+              paymentFrequency: 'MONTHLY' as const,
+              enrollmentDate,
+              classId,
+            },
+            classId,
+          });
+        } else {
+          // No payments found for this student
+          setSelectedStudent({
+            studentId,
+            name: studentName,
+            email: studentEmail,
+            className,
+            enrollmentDate,
+            paymentData: null,
+            classId,
+          });
+        }
+        return;
+      }
+      
+      // For paid academies, fetch real data from API
       const url = `/student-payments/${studentId}/class/${classId}`;
-      // Fetch real payment history from API
       const res = await apiClient(url);
       
       // Check if response is OK before parsing JSON
@@ -168,6 +238,36 @@ export default function AcademyPaymentsPage() {
             { id: 'demo-c3', name: 'Diseño Gráfico' },
             { id: 'demo-c4', name: 'Física Cuántica' },
           ]);
+          
+          // Build enrollment map for demo data to enable class dropdown in modal
+          const enrollmentMap: {[key: string]: {classId: string; className: string}[]} = {};
+          const addToEnrollmentMap = (studentId: string, classId: string, className: string) => {
+            if (!enrollmentMap[studentId]) {
+              enrollmentMap[studentId] = [];
+            }
+            const exists = enrollmentMap[studentId].some(e => e.classId === classId);
+            if (!exists) {
+              enrollmentMap[studentId].push({ classId, className });
+            }
+          };
+          
+          // Process demo pending payments
+          demoPending.forEach((p: any) => {
+            const classId = p.className === 'Programación Web' ? 'demo-c1' :
+                           p.className === 'Matemáticas Avanzadas' ? 'demo-c2' :
+                           p.className === 'Diseño Gráfico' ? 'demo-c3' : 'demo-c4';
+            addToEnrollmentMap(p.studentId, classId, p.className);
+          });
+          
+          // Process demo history payments
+          demoHistory.forEach((p: any) => {
+            const classId = p.classId || (p.className === 'Programación Web' ? 'demo-c1' :
+                           p.className === 'Matemáticas Avanzadas' ? 'demo-c2' :
+                           p.className === 'Diseño Gráfico' ? 'demo-c3' : 'demo-c4');
+            addToEnrollmentMap(p.studentId, classId, p.className);
+          });
+          
+          setStudentEnrollments(enrollmentMap);
           setLoading(false);
           return;
         }
@@ -420,7 +520,10 @@ export default function AcademyPaymentsPage() {
     const matchesSearch = searchQuery === '' || 
       `${p.studentFirstName} ${p.studentLastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.studentEmail.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesClass = selectedClass === 'all' || p.className === classes.find(c => c.id === selectedClass)?.name;
+    // Fixed: Use classId for both real and demo data
+    const matchesClass = selectedClass === 'all' || 
+                         (p.classId && p.classId === selectedClass) ||
+                         (!p.classId && p.className === classes.find(c => c.id === selectedClass)?.name);
     return matchesSearch && matchesClass;
   });
 
@@ -488,7 +591,7 @@ export default function AcademyPaymentsPage() {
       </div>
 
       {/* Unified Payments Table with hover hint */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
         <div className="px-3 sm:px-3 sm:px-6 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -499,6 +602,7 @@ export default function AcademyPaymentsPage() {
             </span>
           </div>
         </div>
+        <div className="max-h-[600px] overflow-y-auto overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
@@ -772,6 +876,7 @@ export default function AcademyPaymentsPage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Remove the old separate Payment History section - now integrated above */}

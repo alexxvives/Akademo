@@ -14,6 +14,7 @@ interface StudentPayment {
   isLate?: boolean;
   approvedBy?: string;
   monthNumber?: number; // For monthly payments (Month 1, 2, 3...)
+  className?: string; // Payment's specific class, if available
 }
 
 interface StudentPaymentDetailModalProps {
@@ -174,7 +175,7 @@ export function StudentPaymentDetailModal({
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                               </svg>
                               <span className="text-white text-sm font-medium">{className}</span>
-                              <svg className="w-3 h-3 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                               </svg>
                             </button>
@@ -279,7 +280,7 @@ export function StudentPaymentDetailModal({
                               
                               {/* Center: Class & Date */}
                               <div className="flex flex-col items-center gap-0.5 min-w-0 flex-1">
-                                <span className="text-xs font-semibold text-gray-700 truncate max-w-full">{className}</span>
+                                <span className="text-xs font-semibold text-gray-700 truncate max-w-full">{payment.className || className}</span>
                                 <span className="text-xs text-gray-500">{formatDate(payment.paymentDate)}</span>
                               </div>
                               
