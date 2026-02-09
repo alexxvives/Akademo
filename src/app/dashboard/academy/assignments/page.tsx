@@ -515,7 +515,8 @@ export default function TeacherAssignments() {
             <p className="text-gray-500">Crea tu primer ejercicio para esta asignatura</p>
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+            <div className="overflow-x-auto max-h-[750px] overflow-y-auto">
             <div className="px-6 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -655,6 +656,7 @@ export default function TeacherAssignments() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
       </div>

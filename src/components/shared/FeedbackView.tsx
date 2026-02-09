@@ -238,7 +238,7 @@ export function FeedbackView({
                       <span className="font-semibold text-gray-900">{topic.name}</span>
                       {topicUnreadCount > 0 && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-red-100 text-red-800">
-                          {topicUnreadCount} {topicUnreadCount === 1 ? 'nueva' : 'nuevas'}
+                          {topicUnreadCount}
                         </span>
                       )}
                     </div>

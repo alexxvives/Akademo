@@ -150,7 +150,7 @@ export default function DashboardLayout({
         // Load pending payments count for badge
         if (paymentStatus === 'NOT PAID') {
           // Demo mode: hardcoded count from generateDemoPendingPayments()
-          setPendingPaymentsCount(5);
+          setPendingPaymentsCount(3);
         } else {
           // Real mode: query database
           const pendingRes = await apiClient('/payments/pending-count');

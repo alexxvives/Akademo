@@ -438,7 +438,7 @@ export default function AcademyClassesPage() {
                     )}
                     
                     {/* Teacher Info and Stats */}
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                    <div className="flex flex-col gap-2">
                       <div className="flex items-center gap-2 text-sm text-gray-700">
                         <span className="font-medium">Profesor:</span>
                         <span>
