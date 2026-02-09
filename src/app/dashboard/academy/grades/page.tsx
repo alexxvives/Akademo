@@ -139,6 +139,9 @@ export default function AcademyGrades() {
                 maxScore: assignment.maxScore,
                 gradedAt: sub.gradedAt,
                 className: assignment.className,
+                assignmentUploadIds: assignment.attachmentIds,
+                assignmentStoragePath: '/demo/Documento.pdf',
+                submissionStoragePath: sub.fileUrl,
               });
             }
           });

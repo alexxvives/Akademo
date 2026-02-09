@@ -121,6 +121,11 @@ export default function AcademyStreamsPage() {
   }, [streams, selectedClass]);
 
   const handleEditTitle = (streamId: string, currentTitle: string) => {
+    // Disable editing for demo users
+    if (paymentStatus === 'NOT PAID') {
+      alert('Esta función no está disponible en modo demostración');
+      return;
+    }
     setEditingTitleId(streamId);
     setEditingTitleValue(currentTitle);
   };
@@ -157,6 +162,11 @@ export default function AcademyStreamsPage() {
   };
 
   const handleDeleteClick = (streamId: string, streamTitle: string) => {
+    // Disable deleting for demo users
+    if (paymentStatus === 'NOT PAID') {
+      alert('Esta función no está disponible en modo demostración');
+      return;
+    }
     if (!confirm(`¿Estás seguro que deseas eliminar el stream "${streamTitle}"? Esta acción no se puede deshacer.`)) {
       return;
     }
