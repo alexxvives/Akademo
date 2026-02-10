@@ -99,7 +99,7 @@ export default function AcademyGrades() {
           submissions.forEach(sub => {
             if (sub.gradedAt && sub.score !== undefined) {
               gradesData.push({
-                studentId: `demo-student-${sub.id}`,
+                studentId: sub.studentEmail, // Use email as ID so same student across assignments is aggregated
                 studentName: sub.studentName,
                 studentEmail: sub.studentEmail,
                 assignmentTitle: assignment.title,
@@ -107,6 +107,9 @@ export default function AcademyGrades() {
                 maxScore: assignment.maxScore,
                 gradedAt: sub.gradedAt,
                 className: assignment.className,
+                assignmentUploadIds: assignment.attachmentIds,
+                assignmentStoragePath: `/demo/Documento.pdf`,
+                submissionStoragePath: sub.fileUrl,
               });
             }
           });

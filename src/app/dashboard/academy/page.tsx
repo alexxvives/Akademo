@@ -591,7 +591,7 @@ export default function AcademyDashboard() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col items-center justify-center">
                     <div className="text-xs text-gray-500 mb-1">Total Cobrado</div>
-                    <div>
+                    <div className="flex items-baseline whitespace-nowrap">
                       <AnimatedNumber value={paymentStats.totalPaid} className="text-2xl font-bold text-green-600" />
                       <span className="text-lg text-gray-600 ml-1">€</span>
                     </div>

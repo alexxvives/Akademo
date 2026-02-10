@@ -324,6 +324,19 @@ export function generateDemoStudents(count: number = DEMO_STUDENT_COUNT.TOTAL): 
     { id: 'demo-s154', firstName: 'Blanca', lastName: 'López', email: 'estudiante154@demo.com', enrolledAt: new Date(baseDate.getTime() - 74 * 24 * 60 * 60 * 1000).toISOString(), className: 'Física Cuántica', lastLoginAt: new Date(baseDate.getTime() - 22 * 24 * 60 * 60 * 1000).toISOString() },
   ];
 
+  // Normalize emails: same firstName+lastName = same email across all enrollments
+  // This ensures dedup by email works correctly (e.g. "Juan García" in 4 classes = 1 unique student)
+  const nameToEmail = new Map<string, string>();
+  hardcodedStudents.forEach(s => {
+    const key = `${s.firstName}-${s.lastName}`;
+    if (!nameToEmail.has(key)) {
+      const emailBase = `${s.firstName.toLowerCase()}.${s.lastName.toLowerCase()}`
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, ''); // Remove accents
+      nameToEmail.set(key, `${emailBase}@demo.com`);
+    }
+    s.email = nameToEmail.get(key)!;
+  });
+
   return hardcodedStudents.slice(0, count);
 }
 
