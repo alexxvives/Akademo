@@ -381,10 +381,10 @@ export default function AcademyDashboard() {
     return enrolledStudents.filter(s => s.classId === selectedClass);
   }, [enrolledStudents, selectedClass]);
 
-  // Calculate unique student count
+  // Calculate unique student count (deduplicate by email to handle same student in multiple classes)
   const uniqueStudentCount = useMemo(() => {
-    const uniqueStudentIds = new Set(filteredStudents.map(s => s.id));
-    return uniqueStudentIds.size;
+    const uniqueEmails = new Set(filteredStudents.map(s => s.email));
+    return uniqueEmails.size;
   }, [filteredStudents]);
 
   // Calculate average lesson progress for filtered students
@@ -587,29 +587,27 @@ export default function AcademyDashboard() {
                     <div className="text-xs text-gray-500">Matriculados</div>
                   </div>
                 </div>
-                {/* Payment statistics - Total left, methods right with reduced spacing */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="text-left">
-                      <div className="text-xs text-gray-500 mb-1">Total Cobrado</div>
-                      <div>
-                        <AnimatedNumber value={paymentStats.totalPaid} className="text-2xl font-bold text-green-600" />
-                        <span className="text-lg text-gray-600 ml-1">€</span>
-                      </div>
+                {/* Payment statistics - Total left, methods right */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col items-center justify-center">
+                    <div className="text-xs text-gray-500 mb-1">Total Cobrado</div>
+                    <div>
+                      <AnimatedNumber value={paymentStats.totalPaid} className="text-2xl font-bold text-green-600" />
+                      <span className="text-lg text-gray-600 ml-1">€</span>
                     </div>
-                    <div className="flex gap-3">
-                      <div className="text-center">
-                        <AnimatedNumber value={paymentStats.bizumCount} className="text-lg font-bold text-purple-600" />
-                        <div className="text-xs text-gray-500">Bizum</div>
-                      </div>
-                      <div className="text-center">
-                        <AnimatedNumber value={paymentStats.cashCount} className="text-lg font-bold text-amber-600" />
-                        <div className="text-xs text-gray-500">Efectivo</div>
-                      </div>
-                      <div className="text-center">
-                        <AnimatedNumber value={paymentStats.stripeCount} className="text-lg font-bold text-blue-600" />
-                        <div className="text-xs text-gray-500">Stripe</div>
-                      </div>
+                  </div>
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="text-center">
+                      <AnimatedNumber value={paymentStats.bizumCount} className="text-lg font-bold text-purple-600" />
+                      <div className="text-xs text-gray-500">Bizum</div>
+                    </div>
+                    <div className="text-center">
+                      <AnimatedNumber value={paymentStats.cashCount} className="text-lg font-bold text-amber-600" />
+                      <div className="text-xs text-gray-500">Efectivo</div>
+                    </div>
+                    <div className="text-center">
+                      <AnimatedNumber value={paymentStats.stripeCount} className="text-lg font-bold text-blue-600" />
+                      <div className="text-xs text-gray-500">Stripe</div>
                     </div>
                   </div>
                 </div>

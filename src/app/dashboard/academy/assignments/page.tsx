@@ -47,7 +47,7 @@ export default function TeacherAssignments() {
   const [creating, setCreating] = useState(false);
   const [editUploadFile, setEditUploadFile] = useState<File | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<string>(''); // Empty until loaded
-  const [userEmail, _setUserEmail] = useState<string>('');
+  const [userEmail, setUserEmail] = useState<string>('');
 
   // Helper function to determine due date color
   const getDueDateColor = (dueDate?: string) => {
@@ -120,6 +120,12 @@ export default function TeacherAssignments() {
     try {
       setLoading(true);
       console.log('🚀 [ACADEMY] loadData started...');
+      
+      // Load user email first
+      const userRes = await apiClient('/auth/me');
+      const userResult = await userRes.json();
+      const email = userResult.success && userResult.data ? userResult.data.email || '' : '';
+      setUserEmail(email);
       
       // Check payment status first
       const academyRes = await apiClient('/academies');

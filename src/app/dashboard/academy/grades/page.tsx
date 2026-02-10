@@ -266,10 +266,10 @@ export default function AcademyGrades() {
       label: 'Promedio',
       data: top10Averages.map(a => Math.round(a.averageGrade)),
       backgroundColor: top10Averages.map(a => (
-        a.averageGrade === 100 ? 'rgba(22, 101, 52, 0.2)' :
-        a.averageGrade >= 70 ? 'rgba(5, 150, 105, 0.2)' :
-        a.averageGrade >= 50 ? 'rgba(249, 115, 22, 0.2)' :
-        'rgba(220, 38, 38, 0.2)'
+        a.averageGrade === 100 ? 'rgba(22, 101, 52, 0.8)' :
+        a.averageGrade >= 70 ? 'rgba(5, 150, 105, 0.8)' :
+        a.averageGrade >= 50 ? 'rgba(249, 115, 22, 0.8)' :
+        'rgba(220, 38, 38, 0.8)'
       )),
       borderColor: top10Averages.map(a => (
         a.averageGrade === 100 ? 'rgb(22, 101, 52)' :

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { FeedbackView, type ClassFeedback } from '@/components/shared';
 import { generateDemoRatings, generateDemoClasses } from '@/lib/demo-data';
@@ -43,43 +43,54 @@ export default function AcademyFeedbackPage() {
   const [academyName, setAcademyName] = useState<string>('');
   const [paymentStatus, setPaymentStatus] = useState<string>('NOT PAID');
 
-  const loadFeedback = useCallback(async () => {
+  const loadFeedback = async () => {
     try {
       // Load all academy classes first
       const classesRes = await apiClient('/academies/classes');
       const classesData = await classesRes.json();
       
+      // Load ratings
+      const ratingsRes = await apiClient('/ratings/teacher');
+      const ratingsData = await ratingsRes.json();
+      
+      const allClasses: ClassFeedback[] = [];
+      
       if (classesData.success && Array.isArray(classesData.data)) {
-        const classesList = classesData.data;
-        
-        // Load all feedback for academy
-        const feedbackRes = await apiClient('/academies/feedback');
-        const feedbackData = await feedbackRes.json();
-        
-        if (feedbackData.success && feedbackData.data) {
-          setClasses(feedbackData.data);
-        } else {
-          // If no feedback, create empty class structure
-          const emptyClasses = classesList.map((cls: { id: string; name: string; teacherName?: string | null }) => ({
-            id: cls.id,
-            name: cls.name,
-            teacherName: cls.teacherName || '',
-            totalRatings: 0,
-            averageRating: 0,
-            topics: [],
-          }));
-          setClasses(emptyClasses);
+        for (const cls of classesData.data) {
+          // Find matching ratings class
+          const ratingClass = ratingsData.success && Array.isArray(ratingsData.data)
+            ? ratingsData.data.find((rc: ClassFeedback) => rc.id === cls.id)
+            : null;
+          
+          if (ratingClass) {
+            // Use the rating class with data
+            allClasses.push(ratingClass);
+          } else {
+            // Create empty class structure
+            allClasses.push({
+              id: cls.id,
+              name: cls.name,
+              teacherName: cls.teacherName || `${cls.teacherFirstName || ''} ${cls.teacherLastName || ''}`.trim(),
+              totalRatings: 0,
+              averageRating: 0,
+              topics: []
+            });
+          }
         }
       }
+      
+      // Sort classes by average rating (highest first)
+      allClasses.sort((a, b) => b.averageRating - a.averageRating);
+      
+      setClasses(allClasses);
     } catch (error) {
-      console.error('Error loading feedback:', error);
-      setClasses([]);
+      console.error('Failed to load feedback:', error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
-  const loadAcademyName = useCallback(async () => {
+  const loadAcademyName = async () => {
     try {
       const res = await apiClient('/academies');
       const result = await res.json();
@@ -285,19 +296,25 @@ export default function AcademyFeedbackPage() {
           setLoading(false);
           return;
         }
+        
+        // If PAID, load real feedback
+        await loadFeedback();
+      } else {
+        // If API fails or returns empty, treat as demo account - no data to show
+        setClasses([]);
+        setLoading(false);
       }
     } catch (error) {
-      console.error('Error loading academy:', error);
+      console.error('Failed to load academy name:', error);
+      setClasses([]);
+      setLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    loadFeedback();
-  }, [loadFeedback]);
+  };
 
   useEffect(() => {
     loadAcademyName();
-  }, [loadAcademyName]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleRatingsViewed = async (ratingIds: string[]) => {
     if (ratingIds.length === 0) return;
