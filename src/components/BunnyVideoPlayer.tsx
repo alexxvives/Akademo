@@ -27,8 +27,8 @@ export default function BunnyVideoPlayer({
         if (!res.ok) throw new Error('Failed to load video');
         const { data } = await res.json();
         setEmbedUrl(data.embedUrl);
-      } catch (err: any) {
-        setError(err.message || 'Failed to load video');
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Failed to load video');
       } finally {
         setLoading(false);
       }
@@ -82,8 +82,6 @@ export function BunnyVideoStatus({ videoGuid }: { videoGuid: string }) {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-
     async function checkStatus() {
       try {
         const res = await fetch(`/api/bunny/video/${videoGuid}`);
@@ -103,7 +101,7 @@ export function BunnyVideoStatus({ videoGuid }: { videoGuid: string }) {
     }
 
     checkStatus();
-    interval = setInterval(checkStatus, 5000); // Poll every 5 seconds
+    const interval = setInterval(checkStatus, 5000); // Poll every 5 seconds
 
     return () => clearInterval(interval);
   }, [videoGuid]);

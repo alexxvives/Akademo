@@ -1,6 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 
+interface WebhookEnv {
+  DB: {
+    prepare(sql: string): {
+      bind(...params: unknown[]): {
+        run(): Promise<unknown>;
+      };
+    };
+  };
+  ZOOM_WEBHOOK_SECRET: string;
+  ZOOM_ACCOUNT_ID: string;
+  ZOOM_CLIENT_ID: string;
+  ZOOM_CLIENT_SECRET: string;
+  BUNNY_STREAM_LIBRARY_ID: string;
+  BUNNY_STREAM_API_KEY: string;
+  BUNNY_STREAM_LIVE_API_KEY: string;
+}
+
+interface ZoomRecordingFile {
+  file_type: string;
+  recording_type?: string;
+  download_url?: string;
+}
+
 // Zoom webhook handler
 export async function POST(request: NextRequest) {
   try {
@@ -8,7 +31,7 @@ export async function POST(request: NextRequest) {
     
     
     const ctx = await getCloudflareContext();
-    const env = ctx.env as any;
+    const env = ctx.env as WebhookEnv;
     const db = env.DB;
     
     // Handle Zoom URL validation (required for webhook setup)
@@ -116,8 +139,8 @@ export async function POST(request: NextRequest) {
               }
             }
           }
-        } catch (apiError: any) {
-          console.error('[Zoom Webhook] Failed to fetch participants via API:', apiError.message);
+        } catch (apiError: unknown) {
+          console.error('[Zoom Webhook] Failed to fetch participants via API:', apiError instanceof Error ? apiError.message : String(apiError));
         }
       }
     } else if (event === 'recording.completed') {
@@ -128,11 +151,11 @@ export async function POST(request: NextRequest) {
 
 
       // Find MP4 recording (shared_screen_with_speaker_view or speaker_view preferred)
-      const mp4Recording = recordingFiles.find((f: any) => 
+      const mp4Recording = recordingFiles.find((f: ZoomRecordingFile) => 
         f.file_type === 'MP4' && f.recording_type === 'shared_screen_with_speaker_view'
-      ) || recordingFiles.find((f: any) => 
+      ) || recordingFiles.find((f: ZoomRecordingFile) => 
         f.file_type === 'MP4' && f.recording_type === 'speaker_view'
-      ) || recordingFiles.find((f: any) => 
+      ) || recordingFiles.find((f: ZoomRecordingFile) => 
         f.file_type === 'MP4'
       );
 
@@ -188,7 +211,7 @@ export async function POST(request: NextRequest) {
                 const apiRecordingFiles = recordingData.recording_files || [];
                 
                 // Find MP4 in API response (has fresh download URL)
-                const apiMp4 = apiRecordingFiles.find((f: any) => f.file_type === 'MP4');
+                const apiMp4 = apiRecordingFiles.find((f: ZoomRecordingFile) => f.file_type === 'MP4');
                 
                 if (apiMp4 && apiMp4.download_url) {
                   // Use download_access_token if available (preferred), otherwise use OAuth token
@@ -232,8 +255,8 @@ export async function POST(request: NextRequest) {
           } else {
             console.error('[Zoom Webhook] Bunny fetch failed:', bunnyResponseText);
           }
-        } catch (bunnyError: any) {
-          console.error('[Zoom Webhook] Recording upload error:', bunnyError.message);
+        } catch (bunnyError: unknown) {
+          console.error('[Zoom Webhook] Recording upload error:', bunnyError instanceof Error ? bunnyError.message : String(bunnyError));
         }
       } else {
       }
@@ -249,10 +272,10 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true, received: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Zoom Webhook] Error:', error);
     // Return 200 even on error to avoid Zoom retries
-    return NextResponse.json({ success: true, received: true, error: error.message });
+    return NextResponse.json({ success: true, received: true, error: error instanceof Error ? error.message : String(error) });
   }
 }
 

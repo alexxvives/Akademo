@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { apiClient, apiPost } from '@/lib/api-client';
-import { generateDemoAssignments, generateDemoSubmissions, generateDemoClasses, countNewDemoSubmissions, type DemoAssignment, type DemoSubmission } from '@/lib/demo-data';
+import { generateDemoAssignments, generateDemoSubmissions, generateDemoClasses, countNewDemoSubmissions } from '@/lib/demo-data';
 
 interface Class { id: string; name: string; }
 interface Assignment {
@@ -15,7 +15,7 @@ interface Assignment {
 interface Submission {
   id: string; studentName: string; studentEmail: string; submissionFileName: string;
   submissionFileSize: number; submittedAt: string; score?: number; feedback?: string;
-  gradedAt?: string; downloadedAt?: string; uploadId: string;
+  gradedAt?: string; downloadedAt?: string; uploadId: string; version?: number;
 }
 
 export default function TeacherAssignments() {
@@ -40,22 +40,14 @@ export default function TeacherAssignments() {
   const [newTitle, setNewTitle] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [newDueDate, setNewDueDate] = useState('');
-  const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadFiles, setUploadFiles] = useState<File[]>([]); // Multiple files
   const [uploadProgress, setUploadProgress] = useState(0);
   const [gradeScore, setGradeScore] = useState(0);
   const [gradeFeedback, setGradeFeedback] = useState('');
   const [creating, setCreating] = useState(false);
   const [editUploadFile, setEditUploadFile] = useState<File | null>(null);
-  const [editUploadFiles, setEditUploadFiles] = useState<File[]>([]); // Multiple files for edit
   const [paymentStatus, setPaymentStatus] = useState<string>(''); // Empty until loaded
-  const [userEmail, setUserEmail] = useState<string>('');
-
-  // Helper to check if assignment is past due
-  const isPastDue = (dueDate?: string) => {
-    if (!dueDate) return false;
-    return new Date(dueDate) < new Date();
-  };
+  const [userEmail, _setUserEmail] = useState<string>('');
 
   // Helper function to determine due date color
   const getDueDateColor = (dueDate?: string) => {
@@ -74,26 +66,60 @@ export default function TeacherAssignments() {
     return 'text-gray-900'; // 6+ days - black
   };
 
-  useEffect(() => { loadData(); }, []);
-  useEffect(() => { 
+  const loadAssignments = useCallback(async () => {
+    try {
+      // All unpaid academies use demo data
+      console.log('🔍 [ACADEMY] loadAssignments - userEmail:', userEmail, 'paymentStatus:', paymentStatus);
+
+      // Show demo assignments if NOT PAID
+      if (paymentStatus === 'NOT PAID') {
+        console.log('✅ [ACADEMY] Loading DEMO assignments...');
+        const demoAssignments = generateDemoAssignments();
+        console.log('📦 [ACADEMY] Total demo assignments:', demoAssignments.length);
+        const filtered = selectedClassId
+          ? demoAssignments.filter(a => a.classId === selectedClassId)
+          : demoAssignments;
+        console.log('✅ [ACADEMY] Filtered assignments:', filtered.length, 'for classId:', selectedClassId || 'all');
+        setAssignments(filtered.map((assignment) => ({
+          id: assignment.id,
+          title: assignment.title,
+          description: assignment.description,
+          dueDate: assignment.dueDate,
+          maxScore: assignment.maxScore,
+          submissionCount: assignment.submissionCount,
+          gradedCount: assignment.gradedCount,
+          attachmentName: assignment.attachmentName,
+          createdAt: assignment.createdAt,
+          className: assignment.className,
+          attachmentIds: assignment.attachmentIds,
+        })));
+        return;
+      }
+
+      // If PAID or real unpaid academy, load real assignments
+      const url = selectedClassId 
+        ? `/assignments?classId=${selectedClassId}`
+        : '/assignments/all';
+      const res = await apiClient(url);
+      const result = await res.json();
+      if (result.success) setAssignments(result.data);
+    } catch (error) {
+      console.error('Failed to load assignments:', error);
+    }
+  }, [paymentStatus, selectedClassId, userEmail]);
+
+  useEffect(() => {
     // Only load assignments after we have BOTH user data AND payment status
     if (userEmail && paymentStatus) {
       console.log('🔄 [ACADEMY] Triggering loadAssignments because data is ready');
-      loadAssignments(); 
+      loadAssignments();
     }
-  }, [selectedClassId, userEmail, paymentStatus]);
+  }, [loadAssignments, userEmail, paymentStatus]);
 
   const loadData = async () => {
     try {
       setLoading(true);
       console.log('🚀 [ACADEMY] loadData started...');
-      
-      // Get user email
-      const userRes = await apiClient('/auth/me');
-      const userResult = await userRes.json();
-      const email = userResult.success && userResult.data ? userResult.data.email || '' : '';
-      console.log('👤 [ACADEMY] User email:', email);
-      setUserEmail(email);
       
       // Check payment status first
       const academyRes = await apiClient('/academies');
@@ -135,35 +161,7 @@ export default function TeacherAssignments() {
     }
   };
 
-  const loadAssignments = async () => {
-    try {
-      // All unpaid academies use demo data
-      console.log('🔍 [ACADEMY] loadAssignments - userEmail:', userEmail, 'paymentStatus:', paymentStatus);
-      
-      // Show demo assignments if NOT PAID
-      if (paymentStatus === 'NOT PAID') {
-        console.log('✅ [ACADEMY] Loading DEMO assignments...');
-        const demoAssignments = generateDemoAssignments();
-        console.log('📦 [ACADEMY] Total demo assignments:', demoAssignments.length);
-        const filtered = selectedClassId
-          ? demoAssignments.filter(a => a.classId === selectedClassId)
-          : demoAssignments;
-        console.log('✅ [ACADEMY] Filtered assignments:', filtered.length, 'for classId:', selectedClassId || 'all');
-        setAssignments(filtered as any);
-        return;
-      }
-      
-      // If PAID or real unpaid academy, load real assignments
-      const url = selectedClassId 
-        ? `/assignments?classId=${selectedClassId}`
-        : '/assignments/all';
-      const res = await apiClient(url);
-      const result = await res.json();
-      if (result.success) setAssignments(result.data);
-    } catch (error) {
-      console.error('Failed to load assignments:', error);
-    }
-  };
+  useEffect(() => { loadData(); }, []);
 
   const loadSubmissions = async (assignmentId: string) => {
     try {
@@ -178,7 +176,6 @@ export default function TeacherAssignments() {
         const mappedSubs: Submission[] = demoSubs.map(sub => ({
           ...sub,
           uploadId: `demo-upload-${sub.id}`, // Add required uploadId field
-          studentId: sub.id, // Use submission ID as student ID for demo
         }));
         console.log('✅ [ACADEMY] Mapped submissions, setting state with', mappedSubs.length, 'submissions');
         setSubmissions(mappedSubs);
@@ -224,7 +221,7 @@ export default function TeacherAssignments() {
     }
     setCreating(true);
     try {
-      let uploadIds: string[] = [];
+      const uploadIds: string[] = [];
       
       // Upload all selected files
       if (uploadFiles.length > 0) {
@@ -378,7 +375,7 @@ export default function TeacherAssignments() {
 
   const resetForm = () => {
     setNewTitle(''); setNewDescription(''); setNewDueDate('');
-    setUploadFile(null); setUploadProgress(0);
+    setUploadFiles([]); setUploadProgress(0);
     setSelectedClassForCreate('');
   };
 
@@ -764,7 +761,7 @@ export default function TeacherAssignments() {
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
               <div>
                 <h2 className="text-xl sm:text-2xl font-semibold">Entregas</h2>
-                <p className="text-sm text-gray-500 mt-1">{submissions.length} entregas para "{selectedAssignment.title}"</p>
+                <p className="text-sm text-gray-500 mt-1">{submissions.length} entregas para &quot;{selectedAssignment.title}&quot;</p>
               </div>
               <div className="flex gap-2">
                 <button onClick={() => handleBulkDownload(true)}
@@ -797,7 +794,7 @@ export default function TeacherAssignments() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {submissions.map((sub) => (
-                    <tr key={sub.id} className={`hover:bg-gray-50 ${!(sub as any).downloadedAt ? 'bg-green-50' : ''}`}>
+                    <tr key={sub.id} className={`hover:bg-gray-50 ${!sub.downloadedAt ? 'bg-green-50' : ''}`}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{sub.studentName}</div>
                         <div className="text-sm text-gray-500">{sub.studentEmail}</div>
@@ -813,7 +810,7 @@ export default function TeacherAssignments() {
                         </button>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {(sub as any).version || 1}
+                        {sub.version || 1}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {new Date(sub.submittedAt).toLocaleDateString('es-ES')}

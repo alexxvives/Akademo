@@ -41,8 +41,8 @@ export default function PaymentModal({
   
   const [paymentFrequency, setPaymentFrequency] = useState<'monthly' | 'one-time' | null>(null);
   const [processing, setProcessing] = useState(false);
-  const [confirmingCash, setConfirmingCash] = useState(false);
-  const [confirmingBizum, setConfirmingBizum] = useState(false);
+  const [_confirmingCash, _setConfirmingCash] = useState(false);
+  const [_confirmingBizum, _setConfirmingBizum] = useState(false);
   const [allowedPaymentMethods, setAllowedPaymentMethods] = useState<string[]>(['stripe', 'cash', 'bizum']);
 
   // Fetch academy's allowed payment methods
@@ -142,9 +142,10 @@ export default function PaymentModal({
       } else {
         throw new Error(result.error || 'Error al registrar pago');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Error al registrar pago';
       console.error('[PaymentModal] Cash payment error:', error);
-      alert('Error: ' + error.message);
+      alert('Error: ' + message);
     } finally {
       setProcessing(false);
     }
@@ -174,9 +175,10 @@ export default function PaymentModal({
       } else {
         throw new Error(result.error || 'Error al crear sesión de pago');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Error al crear sesión de pago';
       console.error('Stripe payment error:', error);
-      alert('Error: ' + error.message);
+      alert('Error: ' + message);
       setProcessing(false);
     }
   };
@@ -203,8 +205,9 @@ export default function PaymentModal({
       } else {
         throw new Error(result.error || 'Error al registrar pago por Bizum');
       }
-    } catch (error: any) {
-      alert('Error: ' + error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Error al registrar pago por Bizum';
+      alert('Error: ' + message);
     } finally {
       setProcessing(false);
     }

@@ -28,6 +28,7 @@ export default function AccountsPage() {
 
   useEffect(() => {
     filterUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [users, searchTerm, roleFilter]);
 
   const loadUsers = async () => {
@@ -51,7 +52,7 @@ export default function AccountsPage() {
 
       // Process students
       if (studentsData.success && Array.isArray(studentsData.data)) {
-        allUsers.push(...studentsData.data.map((s: any) => ({
+        allUsers.push(...studentsData.data.map((s: { id: string; email: string; firstName: string; lastName: string; createdAt: string; academyNames?: string }) => ({
           id: s.id,
           email: s.email,
           firstName: s.firstName,
@@ -64,7 +65,7 @@ export default function AccountsPage() {
 
       // Process teachers
       if (teachersData.success && Array.isArray(teachersData.data)) {
-        allUsers.push(...teachersData.data.map((t: any) => ({
+        allUsers.push(...teachersData.data.map((t: { id: string; email: string; firstName: string; lastName: string; createdAt: string; academyName?: string }) => ({
           id: t.id,
           email: t.email,
           firstName: t.firstName,
@@ -77,7 +78,7 @@ export default function AccountsPage() {
 
       // Process academies
       if (academiesData.success && Array.isArray(academiesData.data)) {
-        allUsers.push(...academiesData.data.map((a: any) => ({
+        allUsers.push(...academiesData.data.map((a: { id: string; ownerId: string; ownerEmail?: string; ownerFirstName?: string; name: string; createdAt: string }) => ({
           id: a.ownerId,
           email: a.ownerEmail || 'N/A',
           firstName: a.ownerFirstName || 'Academia',

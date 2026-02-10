@@ -23,7 +23,7 @@ export default function AdminAssignments() {
   const [deletingAssignmentId, setDeletingAssignmentId] = useState<string | null>(null);
 
   // Helper to check if assignment is past due
-  const isPastDue = (dueDate?: string) => {
+  const _isPastDue = (dueDate?: string) => {
     if (!dueDate) return false;
     return new Date(dueDate) < new Date();
   };
@@ -43,7 +43,9 @@ export default function AdminAssignments() {
   };
 
   useEffect(() => { loadData(); }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadClasses(); }, [selectedAcademy]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadAssignments(); }, [selectedAcademy, selectedClass]);
 
   const loadData = async () => {

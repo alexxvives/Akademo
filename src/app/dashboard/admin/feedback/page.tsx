@@ -26,6 +26,7 @@ export default function AdminFeedbackPage() {
 
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadData = async () => {
@@ -90,7 +91,7 @@ export default function AdminFeedbackPage() {
   }, [allClasses, selectedAcademy]);
 
   const totalRatings = filteredClasses.reduce((sum, c) => sum + (c.totalRatings || 0), 0);
-  const avgRating = filteredClasses.length > 0
+  const _avgRating = filteredClasses.length > 0
     ? filteredClasses.reduce((sum, c) => sum + (c.averageRating || 0) * (c.totalRatings || 0), 0) / (totalRatings || 1)
     : 0;
 

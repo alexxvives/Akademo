@@ -38,7 +38,7 @@ export default function StudentLessons() {
           const classRes = await apiClient(`/classes/${cls.id}`);
           const classData = await classRes.json();
           if (classData.success && classData.data.lessons) {
-            classData.data.lessons.forEach((lesson: any) => {
+            classData.data.lessons.forEach((lesson: { id: string; title: string; description: string | null; releaseDate: string | null; videoCount?: number; documentCount?: number }) => {
               allLessons.push({
                 id: lesson.id,
                 title: lesson.title,

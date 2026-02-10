@@ -104,6 +104,7 @@ export default function ProtectedVideoPlayer({
   useEffect(() => {
     setPlayState(initialPlayState);
     setIsLocked(initialPlayState?.status === 'BLOCKED');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoId]); // Only re-run when video changes, not when playState object reference changes
 
   // Fetch signed URL for Bunny videos
@@ -407,6 +408,7 @@ export default function ProtectedVideoPlayer({
         hlsRef.current = null;
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hlsUrl, videoUrl, signedHlsUrl, bunnyGuid, triggerWatermark]);
 
   // Watermark timer - shows periodically to prevent screen recording

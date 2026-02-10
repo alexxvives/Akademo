@@ -1,21 +1,19 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { apiClient, API_BASE_URL } from '@/lib/api-client';
+import { apiClient } from '@/lib/api-client';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import ProtectedVideoPlayer from '@/components/ProtectedVideoPlayer';
-import { PageLoader } from '@/components/ui';
 import { useAuth } from '@/hooks/useAuth';
 import { multipartUpload } from '@/lib/multipart-upload';
 import { uploadToBunny } from '@/lib/bunny-upload';
-import { getBunnyThumbnailUrl } from '@/lib/bunny-stream';
-import ConfirmModal from '@/components/ConfirmModal';
+
 import { useTranscodingPoll } from '@/hooks/useTranscodingPoll';
-import { formatDuration, formatDate, isReleased } from '@/lib/formatters';
+import { formatDuration } from '@/lib/formatters';
 
 // Import shared components
-import { ClassHeader, PendingEnrollments, LessonsList, TopicsLessonsList, StudentsList } from '@/components/class';
+import { ClassHeader, PendingEnrollments, TopicsLessonsList, StudentsList } from '@/components/class';
 
 interface Topic {
   id: string;
@@ -82,13 +80,13 @@ export default function TeacherClassPage() {
   const actionParam = searchParams.get('action');
   
   // Use cached auth hook instead of fetching /auth/me manually
-  const { user: currentUser, isAcademy } = useAuth();
+  const { user: currentUser, isAcademy: _isAcademy } = useAuth();
 
   const [classData, setClassData] = useState<ClassData | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);
   const [selectedLesson, setSelectedLesson] = useState<LessonDetail | null>(null);
-  const [selectedVideo, setSelectedVideo] = useState<any>(null);
+  const [selectedVideo, setSelectedVideo] = useState<{ id: string; title?: string; durationSeconds?: number | null; bunnyGuid?: string; upload?: { storageType?: string; bunnyGuid?: string; storagePath?: string; fileName?: string; mimeType?: string } } | null>(null);
   const [loading, setLoading] = useState(true);
   const [lessonFeedback, setLessonFeedback] = useState<Array<{ id: string; rating: number; comment: string; studentName: string; createdAt: string }>>([]);
 
@@ -132,19 +130,19 @@ export default function TeacherClassPage() {
   const [availableStreamRecordings, setAvailableStreamRecordings] = useState<Array<{id: string; title: string; createdAt: string}>>([]);
 
   // Analytics
-  const [showAnalytics, setShowAnalytics] = useState(false);
-  const [analyticsData, setAnalyticsData] = useState<any>(null);
+  const [showAnalytics, _setShowAnalytics] = useState(false);
+  const [analyticsData, setAnalyticsData] = useState<{ videos?: unknown[]; studentEngagement?: Array<{ totalWatchTime?: number }> } | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
 
   // Pending Enrollments
-  const [pendingEnrollments, setPendingEnrollments] = useState<any[]>([]);
+  const [pendingEnrollments, setPendingEnrollments] = useState<Array<{ id: string; classId: string; enrolledAt: string; student: { firstName: string; lastName: string; email: string }; [key: string]: unknown }>>([]);
   const [showPendingRequests, setShowPendingRequests] = useState(false);
 
   // Live Classes (Zoom)
-  const [showStreamModal, setShowStreamModal] = useState(false);
-  const [liveClasses, setLiveClasses] = useState<any[]>([]);
+  const [_showStreamModal, _setShowStreamModal] = useState(false);
+  const [liveClasses, setLiveClasses] = useState<Array<{ id: string; status: string; title?: string; zoomStartUrl?: string; zoomLink?: string; [key: string]: unknown }>>([]);
   const [creatingStream, setCreatingStream] = useState(false);
-  const [streamFormData, setStreamFormData] = useState({
+  const [_streamFormData, _setStreamFormData] = useState({
     title: '',
   });
   const [paymentStatus, setPaymentStatus] = useState<string>('PAID');
@@ -154,6 +152,7 @@ export default function TeacherClassPage() {
       loadData();
       loadLiveClasses();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [classId]);
 
   // Poll for transcoding status updates
@@ -167,7 +166,7 @@ export default function TeacherClassPage() {
       loadLessonDetail(lessonParam).then(lesson => {
         if (lesson) {
           if (watchVideoId) {
-            const video = lesson.videos.find((v: any) => v.id === watchVideoId);
+            const video = lesson.videos.find((v: { id: string }) => v.id === watchVideoId);
             if (video) {
               setSelectedVideo(video);
             }
@@ -180,6 +179,7 @@ export default function TeacherClassPage() {
       setSelectedLesson(null);
       setSelectedVideo(null);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lessonParam, watchVideoId, lessons]);
 
   // Handle createFromStream param from streams table
@@ -192,7 +192,7 @@ export default function TeacherClassPage() {
         setEditingLessonId(null);
         // Auto-select the recording from this stream
         if (recordings && recordings.length > 0) {
-          const matchingStream = recordings.find((r: any) => r.id === createFromStreamId);
+          const matchingStream = recordings.find((r: { id: string; title?: string }) => r.id === createFromStreamId);
           if (matchingStream) {
             setLessonFormData(prev => ({
               ...prev,
@@ -203,6 +203,7 @@ export default function TeacherClassPage() {
         }
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   // Handle action param for create lesson modal
@@ -217,7 +218,7 @@ export default function TeacherClassPage() {
         // If recordingId and streamTitle are provided, find the stream by recordingId and pre-select it
         if (recordingId && streamTitle && recordings) {
           // Find the stream that has this recordingId
-          const matchingStream = recordings.find((r: any) => r.recordingId === recordingId);
+          const matchingStream = recordings.find((r: { id: string; recordingId?: string }) => r.recordingId === recordingId);
           if (matchingStream) {
             setLessonFormData(prev => ({
               ...prev,
@@ -229,6 +230,7 @@ export default function TeacherClassPage() {
         }
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [actionParam]);
 
   const loadAvailableStreamRecordings = async () => {
@@ -246,7 +248,7 @@ export default function TeacherClassPage() {
         // Filter streams that:
         // 1. Belong to this class
         // 2. Have ended status OR have a valid recording ID (even if status is weird)
-        const recordingsForClass = result.data.filter((s: any) => {
+        const recordingsForClass = result.data.filter((s: { classId?: string; classSlug?: string; status?: string; recordingId?: string }) => {
           // Check both classId and classSlug
           const matchClass = s.classId === classId || s.classSlug === classId;
           const hasRecording = (s.status === 'ended' || (s.recordingId && s.recordingId.length > 5));
@@ -280,7 +282,7 @@ export default function TeacherClassPage() {
     if (!uploading) return;
 
     // Intercept browser back/forward buttons
-    const handlePopState = (e: PopStateEvent) => {
+    const handlePopState = (_e: PopStateEvent) => {
       if (uploading) {
         const confirmLeave = window.confirm(
           '⚠️ ADVERTENCIA: Hay un video subiendo.\n\n' +
@@ -525,7 +527,7 @@ export default function TeacherClassPage() {
       if (topicsResult.success) setTopics(topicsResult.data || []);
       if (pendingResult.success) {
         // Filter to only show enrollments for this class
-        const classPending = (pendingResult.data || []).filter((e: any) => e.classId === actualClassId);
+        const classPending = (pendingResult.data || []).filter((e: { classId: string }) => e.classId === actualClassId);
         setPendingEnrollments(classPending);
       }
     } catch (e) {
@@ -541,7 +543,7 @@ export default function TeacherClassPage() {
       const result = await res.json();
       if (result.success) {
         // Only show active streams (scheduled = not started yet, ended = finished)
-        setLiveClasses((result.data || []).filter((s: any) => s.status === 'active'));
+        setLiveClasses((result.data || []).filter((s: { status: string }) => s.status === 'active'));
       }
     } catch (e) {
       console.error('Failed to load live classes:', e);
@@ -590,9 +592,10 @@ export default function TeacherClassPage() {
         console.error('Live class creation error:', result);
         alert(`Error: ${result.error || 'No se pudo crear la reunión de Zoom'}`);
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error('Live class creation exception:', e);
-      alert(`Error de conexión: ${e.message || 'No se pudo conectar al servidor'}`);
+      const error = e instanceof Error ? e : null;
+      alert(`Error de conexión: ${error?.message || 'No se pudo conectar al servidor'}`);
     } finally {
       setCreatingStream(false);
     }
@@ -625,8 +628,8 @@ export default function TeacherClassPage() {
           releaseDate: lesson.releaseDate,
           maxWatchTimeMultiplier: lesson.maxWatchTimeMultiplier,
           watermarkIntervalMins: lesson.watermarkIntervalMins,
-          videos: (lesson as any).videos || [],
-          documents: (lesson as any).documents || [],
+          videos: (lesson as unknown as Record<string, unknown>).videos as LessonDetail['videos'] || [],
+          documents: (lesson as unknown as Record<string, unknown>).documents as LessonDetail['documents'] || [],
         };
         setSelectedLesson(detailLesson);
         loadLessonFeedback(lessonId);
@@ -660,7 +663,7 @@ export default function TeacherClassPage() {
     loadData();
   };
 
-  const selectVideoInLesson = (video: any) => {
+  const selectVideoInLesson = (video: { id: string }) => {
     if (!selectedLesson) return;
     
     
@@ -670,7 +673,7 @@ export default function TeacherClassPage() {
     router.push(newUrl);
   };
 
-  const isPdfDocument = (doc: any) => {
+  const _isPdfDocument = (doc: { upload?: { mimeType?: string; fileName?: string } }) => {
     return doc.upload?.mimeType?.includes('pdf') || doc.upload?.fileName?.toLowerCase().endsWith('.pdf');
   };
 
@@ -885,7 +888,7 @@ export default function TeacherClassPage() {
     }
     
     const abortController = new AbortController();
-    activeUploadRef.current = abortController as any; // Store abort controller for cancellation
+    activeUploadRef.current = abortController as unknown as XMLHttpRequest; // Store abort controller for cancellation
     
     try {
       // Upload files using optimized multipart upload
@@ -944,11 +947,12 @@ export default function TeacherClassPage() {
         setLessons(prev => prev.filter(l => l.id !== tempLessonId));
         alert(result.error || 'Failed to create lesson');
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
       // Remove temp lesson on error
       setLessons(prev => prev.filter(l => l.id !== tempLessonId));
-      if (e.name !== 'AbortError') {
+      const error = e instanceof Error ? e : null;
+      if (error?.name !== 'AbortError') {
         alert('Error uploading files. Please check your connection and try again.');
       }
     } finally {
@@ -1155,13 +1159,13 @@ export default function TeacherClassPage() {
       
       // Store current media for display in edit modal
       setEditingLessonMedia({
-        videos: (detail.videos || []).map((v: any) => ({
+        videos: (detail.videos || []).map((v: { id: string; title?: string; durationSeconds?: number | null; upload?: { bunnyGuid?: string } }) => ({
           id: v.id,
           title: v.title || 'Video',
           durationSeconds: v.durationSeconds,
           bunnyGuid: v.upload?.bunnyGuid,
         })),
-        documents: (detail.documents || []).map((d: any) => ({
+        documents: (detail.documents || []).map((d: { id: string; title?: string; upload?: { fileName?: string; storagePath?: string } }) => ({
           id: d.id,
           title: d.title || d.upload?.fileName || 'Document',
           fileName: d.upload?.fileName || 'Unknown',
@@ -1277,7 +1281,7 @@ export default function TeacherClassPage() {
     }
   };
 
-  const loadAnalytics = async () => {
+  const _loadAnalytics = async () => {
     try {
       const res = await fetch(`/api/analytics?classId=${classId}`);
       const result = await res.json();
@@ -1583,7 +1587,7 @@ export default function TeacherClassPage() {
                     </a>
                     <button
                       onClick={() => {
-                        navigator.clipboard.writeText(liveClasses[0].zoomLink);
+                        navigator.clipboard.writeText(liveClasses[0].zoomLink ?? '');
                         setCopiedLink(true);
                         setTimeout(() => setCopiedLink(false), 2000);
                       }}
@@ -1953,7 +1957,7 @@ export default function TeacherClassPage() {
                           </label>
                           {editingLessonMedia.documents.length > 0 ? (
                             <div className="space-y-2">
-                              {editingLessonMedia.documents.map((d, i) => (
+                              {editingLessonMedia.documents.map((d, _i) => (
                                 <div key={d.id} className="flex items-center gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
                                   <div className="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center flex-shrink-0">
                                     <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
@@ -2168,7 +2172,7 @@ export default function TeacherClassPage() {
                     </div>
                     <div className="bg-gray-50 rounded-lg p-4 text-center">
                       <div className="text-2xl font-bold text-gray-900">
-                        {formatDuration(analyticsData.studentEngagement?.reduce((s: number, x: any) => s + (x.totalWatchTime || 0), 0) || 0)}
+                        {formatDuration(analyticsData.studentEngagement?.reduce((s: number, x: { totalWatchTime?: number }) => s + (x.totalWatchTime || 0), 0) || 0)}
                       </div>
                       <div className="text-sm text-gray-600">Total Watch Time</div>
                     </div>

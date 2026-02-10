@@ -90,8 +90,8 @@ export default function AdminDashboard() {
   const [ratingsData, setRatingsData] = useState<RatingsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [rejectedCount, setRejectedCount] = useState(0);
-  const [streamStats, setStreamStats] = useState({ total: 0, avgParticipants: 0, thisMonth: 0, totalHours: 0, totalMinutes: 0 });
-  const [allStreams, setAllStreams] = useState<any[]>([]);
+  const [_streamStats, setStreamStats] = useState({ total: 0, avgParticipants: 0, thisMonth: 0, totalHours: 0, totalMinutes: 0 });
+  const [allStreams, setAllStreams] = useState<Array<{ createdAt: string; participantCount?: number | null; startedAt?: string | null; endedAt?: string | null; academyId?: string; classId?: string }>>([]);
   const [classWatchTime, setClassWatchTime] = useState({ hours: 0, minutes: 0 });
   const [selectedAcademy, setSelectedAcademy] = useState('all');
   const [selectedClass, setSelectedClass] = useState('all');
@@ -148,10 +148,10 @@ export default function AdminDashboard() {
         setAllStreams(streams);
         const now = new Date();
         const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-        const thisMonthStreams = streams.filter((s: any) => new Date(s.createdAt) >= thisMonthStart);
+        const thisMonthStreams = streams.filter((s: { createdAt: string }) => new Date(s.createdAt) >= thisMonthStart);
         
-        const totalParticipants = streams.reduce((sum: number, s: any) => sum + (s.participantCount || 0), 0);
-        const totalDurationMs = streams.reduce((sum: number, s: any) => {
+        const totalParticipants = streams.reduce((sum: number, s: { participantCount?: number | null }) => sum + (s.participantCount || 0), 0);
+        const totalDurationMs = streams.reduce((sum: number, s: { startedAt?: string | null; endedAt?: string | null }) => {
           if (s.startedAt && s.endedAt) {
             const start = new Date(s.startedAt).getTime();
             const end = new Date(s.endedAt).getTime();
@@ -173,7 +173,7 @@ export default function AdminDashboard() {
       }
 
       if (progressResult.success && Array.isArray(progressResult.data)) {
-        const totalSeconds = progressResult.data.reduce((sum: number, student: any) => sum + (student.totalWatchTime || 0), 0);
+        const totalSeconds = progressResult.data.reduce((sum: number, student: { totalWatchTime?: number }) => sum + (student.totalWatchTime || 0), 0);
         const totalMinutes = Math.floor(totalSeconds / 60);
         setClassWatchTime({
           hours: Math.floor(totalMinutes / 60),
@@ -203,7 +203,7 @@ export default function AdminDashboard() {
 
       // Process student progress data - much faster without nested API calls
       if (progressResult.success && Array.isArray(progressResult.data)) {
-        const allStudents: EnrolledStudent[] = progressResult.data.map((student: any) => ({
+        const allStudents: EnrolledStudent[] = progressResult.data.map((student: { id: string; firstName: string; lastName: string; email: string; classId: string; className?: string; academyId?: string; lessonsCompleted?: number; totalLessons?: number; lastActive?: string | null }) => ({
           id: student.id,
           name: `${student.firstName} ${student.lastName}`,
           email: student.email,
@@ -223,7 +223,7 @@ export default function AdminDashboard() {
     }
   };
   
-  const handleEnrollmentAction = async (enrollmentId: string, action: 'approve' | 'reject') => {
+  const _handleEnrollmentAction = async (enrollmentId: string, action: 'approve' | 'reject') => {
     try {
       const response = await apiClient('/enrollments/pending', {
         method: 'POST',
@@ -311,6 +311,7 @@ export default function AdminDashboard() {
   // Calculate filtered class watch time
   const filteredClassWatchTime = useMemo(() => {
     return classWatchTime;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedAcademy, selectedClass, classWatchTime]);
 
   if (loading) {

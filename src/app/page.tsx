@@ -1,7 +1,7 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useState, useEffect, Suspense, useRef } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import AuthModal from '@/components/AuthModal';
 import { SkeletonForm } from '@/components/ui/SkeletonLoader';
 import { Navbar } from '@/components/landing/Navbar';

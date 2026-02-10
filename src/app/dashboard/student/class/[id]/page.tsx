@@ -6,8 +6,7 @@ import Link from 'next/link';
 import ProtectedVideoPlayer from '@/components/ProtectedVideoPlayer';
 import { SkeletonStudentClass } from '@/components/ui/SkeletonLoader';
 import { useAuth } from '@/hooks/useAuth';
-import { getBunnyThumbnailUrl } from '@/lib/bunny-stream';
-import { apiClient, apiPost, API_BASE_URL } from '@/lib/api-client';
+import { apiClient } from '@/lib/api-client';
 import StudentTopicsLessonsList from './components/StudentTopicsLessonsList';
 
 interface Video {
@@ -115,6 +114,7 @@ export default function ClassPage() {
 
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [classId]);
 
   // Poll for active streams - must use classData.id (resolved UUID) not classId (could be slug)
@@ -203,6 +203,7 @@ export default function ClassPage() {
       setSelectedVideo(null);
       setLessonRating(null);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lessonParam, watchVideoId, lessons.length]);
 
   const loadData = async () => {
@@ -336,7 +337,7 @@ export default function ClassPage() {
     router.push(newUrl);
   };
 
-  const isPdfDocument = (doc: Document) => {
+  const _isPdfDocument = (doc: Document) => {
     return doc.upload.mimeType?.includes('pdf') || doc.upload.fileName.toLowerCase().endsWith('.pdf');
   };
 
@@ -382,7 +383,7 @@ export default function ClassPage() {
     setTempRating(rating);
   };
 
-  const submitFeedback = () => {
+  const _submitFeedback = () => {
     if (tempRating) {
       submitRating(tempRating);
     }

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { apiClient } from '@/lib/api-client';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { MobileSidebar } from '@/components/layout/MobileSidebar';
@@ -57,6 +58,12 @@ interface ActiveStream {
   teacherName: string;
 }
 
+interface Academy {
+  id: string;
+  paymentStatus?: string | null;
+  feedbackEnabled?: number | null;
+}
+
 export default function DashboardLayout({
   children,
   role,
@@ -96,8 +103,7 @@ export default function DashboardLayout({
   // Academy state for academy join link and feedbackEnabled
   const [academyId, setAcademyId] = useState<string | null>(null);
   const [academyPaymentStatus, setAcademyPaymentStatus] = useState<string | null>(null);
-  const [academy, setAcademy] = useState<any>(null);
-  const [userEmail, setUserEmail] = useState<string>('');
+  const [academy, setAcademy] = useState<Academy | null>(null);
 
   const loadNotifications = useCallback(async () => {
     try {
@@ -126,22 +132,10 @@ export default function DashboardLayout({
 
   const loadAcademy = useCallback(async () => {
     try {
-      // Load both academy and user data
-      const [academyResponse, userResponse] = await Promise.all([
-        apiClient('/academies'),
-        apiClient('/auth/me')
-      ]);
-      
-      // Set user email
-      const userResult = await userResponse.json();
-      if (userResult.success && userResult.data?.email) {
-        setUserEmail(userResult.data.email);
-      }
-      
-      // Set academy data
+      const academyResponse = await apiClient('/academies');
       const result = await academyResponse.json();
       if (result.success && Array.isArray(result.data) && result.data.length > 0) {
-        const academyData = result.data[0];
+        const academyData: Academy = result.data[0];
         setAcademyId(academyData.id);
         const paymentStatus = academyData.paymentStatus || 'PAID';
         setAcademyPaymentStatus(paymentStatus);
@@ -200,7 +194,7 @@ export default function DashboardLayout({
     } catch (error) {
       console.error('Failed to load unread valoraciones:', error);
     }
-  }, [academyPaymentStatus, userEmail]);
+  }, [academyPaymentStatus]);
   
   const loadUngradedAssignments = useCallback(async () => {
     try {
@@ -224,7 +218,65 @@ export default function DashboardLayout({
     } catch (error) {
       console.error('Failed to load ungraded assignments:', error);
     }
-  }, [academyPaymentStatus, userEmail]);
+  }, [academyPaymentStatus]);
+
+  const handleLogout = useCallback(async () => {
+    // Check if there's an active upload
+    if (typeof window !== 'undefined' && (window as { akademoUploading?: boolean }).akademoUploading) {
+      const confirmLogout = window.confirm(
+        '⚠️ ADVERTENCIA: Hay un video subiendo. Si cierras sesión, se cancelará la subida.\n\n¿Estás seguro de que quieres cerrar sesión?'
+      );
+      if (!confirmLogout) {
+        return;
+      }
+    }
+    await apiClient('/auth/logout', { method: 'POST' });
+    router.push('/');
+  }, [router]);
+
+  const checkSession = useCallback(async () => {
+    try {
+      const response = await apiClient('/auth/session/check', { method: 'POST' });
+      const result = await response.json();
+
+      if (!result.success || !result.data?.id) {
+        if (result.data?.message) {
+          alert(result.data.message);
+        }
+        handleLogout();
+      }
+    } catch (error) {
+      console.error('Session check error:', error);
+    }
+  }, [handleLogout]);
+
+  const checkAuth = useCallback(async () => {
+    try {
+      const response = await apiClient('/auth/me');
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        const userRole = result.data.role;
+
+        const hasAccess = 
+          userRole === role || 
+          (userRole === 'ACADEMY' && role === 'TEACHER') ||
+          userRole === 'ADMIN';
+
+        if (hasAccess) {
+          setUser(result.data);
+        } else {
+          router.push('/?modal=login');
+        }
+      } else {
+        router.push('/?modal=login');
+      }
+    } catch {
+      router.push('/?modal=login');
+    } finally {
+      setLoading(false);
+    }
+  }, [role, router]);
   
   const loadNewGrades = useCallback(async () => {
     try {
@@ -290,65 +342,7 @@ export default function DashboardLayout({
       }, 15000);
       return () => clearInterval(teacherInterval);
     }
-  }, [role, loadNotifications, loadActiveStreams, loadAcademy, loadUnreadValoraciones, loadUngradedAssignments, loadNewGrades]);
-
-  const checkAuth = async () => {
-    try {
-      const response = await apiClient('/auth/me');
-      const result = await response.json();
-
-      if (result.success && result.data) {
-        const userRole = result.data.role;
-        
-        const hasAccess = 
-          userRole === role || 
-          (userRole === 'ACADEMY' && role === 'TEACHER') ||
-          userRole === 'ADMIN';
-        
-        if (hasAccess) {
-          setUser(result.data);
-        } else {
-          router.push('/?modal=login');
-        }
-      } else {
-        router.push('/?modal=login');
-      }
-    } catch {
-      router.push('/?modal=login');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const checkSession = async () => {
-    try {
-      const response = await apiClient('/auth/session/check', { method: 'POST' });
-      const result = await response.json();
-
-      if (!result.success || !result.data?.id) {
-        if (result.data?.message) {
-          alert(result.data.message);
-        }
-        handleLogout();
-      }
-    } catch (error) {
-      console.error('Session check error:', error);
-    }
-  };
-
-  const handleLogout = async () => {
-    // Check if there's an active upload
-    if (typeof window !== 'undefined' && (window as any).akademoUploading) {
-      const confirmLogout = window.confirm(
-        '⚠️ ADVERTENCIA: Hay un video subiendo. Si cierras sesión, se cancelará la subida.\n\n¿Estás seguro de que quieres cerrar sesión?'
-      );
-      if (!confirmLogout) {
-        return;
-      }
-    }
-    await apiClient('/auth/logout', { method: 'POST' });
-    router.push('/');
-  };
+  }, [checkAuth, checkSession, role, loadNotifications, loadActiveStreams, loadAcademy, loadUnreadValoraciones, loadUngradedAssignments, loadNewGrades]);
 
   const handleSwitchRole = async () => {
     try {
@@ -560,7 +554,6 @@ export default function DashboardLayout({
       <Sidebar
         role={role}
         menuItems={menuItems}
-        activeStreams={activeStreams}
         academyId={academyId}
         linkCopied={linkCopied}
         onCopyJoinLink={copyJoinLink}
@@ -575,7 +568,6 @@ export default function DashboardLayout({
         isOpen={mobileMenuOpen}
         role={role}
         menuItems={menuItems}
-        activeStreams={activeStreams}
         linkCopied={linkCopied}
         onClose={() => setMobileMenuOpen(false)}
         onCopyJoinLink={copyJoinLink}
@@ -601,9 +593,11 @@ export default function DashboardLayout({
             href={`/dashboard/${role.toLowerCase()}`}
             className="flex items-center gap-2"
           >
-            <img
+            <Image
               src="/logo/AKADEMO_logo_OTHER2.svg"
               alt="Akademo"
+              width={120}
+              height={24}
               className="h-6 w-auto object-contain"
             />
             <span className="font-semibold text-gray-900 text-base font-[family-name:var(--font-montserrat)]">

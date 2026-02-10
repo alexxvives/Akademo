@@ -48,6 +48,7 @@ export default function StudentAssignments() {
   };
 
   useEffect(() => { loadClasses(); }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadAssignments(); }, [selectedClassId]); // Load even when empty
 
   const loadClasses = async () => {
@@ -57,8 +58,8 @@ export default function StudentAssignments() {
       const result = await res.json();
       if (result.success && result.data) {
         const enrolledClasses = result.data
-          .filter((e: any) => e.status === 'APPROVED')
-          .map((e: any) => ({ id: e.classId, name: e.className }));
+          .filter((e: { status: string; classId: string; className: string }) => e.status === 'APPROVED')
+          .map((e: { status: string; classId: string; className: string }) => ({ id: e.classId, name: e.className }));
         setClasses(enrolledClasses);
         // Don't set default - show all assignments
       }
@@ -141,9 +142,9 @@ export default function StudentAssignments() {
       } else {
         throw new Error(result.error || 'Error al entregar ejercicio');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to submit assignment:', error);
-      alert(error.message || 'Error al entregar ejercicio');
+      alert(error instanceof Error ? error.message : 'Error al entregar ejercicio');
     } finally {
       setUploading(false);
     }

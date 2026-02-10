@@ -122,14 +122,14 @@ export function useTeacherDashboard() {
         const streams = streamsResult.data;
         const now = new Date();
         const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-        const thisMonthStreams = streams.filter((s: any) => new Date(s.createdAt) >= thisMonthStart);
+        const thisMonthStreams = streams.filter((s: { createdAt: string }) => new Date(s.createdAt) >= thisMonthStart);
         
         // Only count streams that have participants (exclude 0 and null)
-        const streamsWithParticipants = streams.filter((s: any) => s.participantCount != null && s.participantCount > 0);
-        const totalParticipants = streamsWithParticipants.reduce((sum: number, s: any) => sum + (s.participantCount || 0), 0);
+        const streamsWithParticipants = streams.filter((s: { participantCount?: number | null }) => s.participantCount != null && s.participantCount > 0);
+        const totalParticipants = streamsWithParticipants.reduce((sum: number, s: { participantCount?: number | null }) => sum + (s.participantCount || 0), 0);
         
         // Calculate total stream duration from startedAt/endedAt
-        const totalDurationMinutes = streams.reduce((sum: number, s: any) => {
+        const totalDurationMinutes = streams.reduce((sum: number, s: { startedAt?: string | null; endedAt?: string | null }) => {
           if (s.startedAt && s.endedAt) {
             const start = new Date(s.startedAt).getTime();
             const end = new Date(s.endedAt).getTime();
@@ -152,7 +152,7 @@ export function useTeacherDashboard() {
 
       // Calculate total class watch time from progress data (already fetched in parallel)
       if (progressResult.success && Array.isArray(progressResult.data)) {
-        const totalSeconds = progressResult.data.reduce((sum: number, student: any) => sum + (student.totalWatchTime || 0), 0);
+        const totalSeconds = progressResult.data.reduce((sum: number, student: { totalWatchTime?: number }) => sum + (student.totalWatchTime || 0), 0);
         const totalMinutes = Math.floor(totalSeconds / 60);
         setClassWatchTime({
           hours: Math.floor(totalMinutes / 60),

@@ -3,7 +3,10 @@
 import { useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { LinkIcon, LogoutIcon } from '@/components/ui';
+import type { LinkIconHandle } from '@/components/ui/LinkIcon';
+import type { LogoutIconHandle } from '@/components/ui/LogoutIcon';
 
 interface MenuItem {
   label: string;
@@ -13,13 +16,13 @@ interface MenuItem {
   badge?: number;
   badgeColor?: string;
   matchPaths?: string[];
+  showPulse?: boolean;
 }
 
 interface MobileSidebarProps {
   isOpen: boolean;
   role: 'ADMIN' | 'TEACHER' | 'STUDENT' | 'ACADEMY';
   menuItems: MenuItem[];
-  activeStreams: any[];
   linkCopied: boolean;
   onClose: () => void;
   onCopyJoinLink: () => void;
@@ -39,7 +42,6 @@ export function MobileSidebar({
   isOpen,
   role,
   menuItems,
-  activeStreams,
   linkCopied,
   onClose,
   onCopyJoinLink,
@@ -49,8 +51,8 @@ export function MobileSidebar({
   academyPaymentStatus,
 }: MobileSidebarProps) {
   const pathname = usePathname();
-  const linkIconRef = useRef<any>(null);
-  const logoutIconRef = useRef<any>(null);
+  const linkIconRef = useRef<LinkIconHandle | null>(null);
+  const logoutIconRef = useRef<LogoutIconHandle | null>(null);
 
   return (
     <>
@@ -75,9 +77,11 @@ export function MobileSidebar({
             className="flex items-center gap-2"
             onClick={onClose}
           >
-            <img
+            <Image
               src="/logo/AKADEMO_logo_OTHER2.svg"
               alt="Akademo"
+              width={120}
+              height={28}
               className="h-7 w-auto object-contain"
             />
             <span className="font-semibold text-gray-900 text-lg font-[family-name:var(--font-montserrat)]">
@@ -103,7 +107,7 @@ export function MobileSidebar({
               ? pathname === item.href
               : pathname === item.href || pathname.startsWith(item.href + '/');
 
-            const showPulse = (item as any).showPulse === true;
+            const showPulse = item.showPulse === true;
 
             return (
               <Link

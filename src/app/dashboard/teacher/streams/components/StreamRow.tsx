@@ -204,9 +204,9 @@ export function StreamRow({ stream, onDelete, onUpdateStream, deletingStreamId }
         )}
       </td>
       <td className="py-4 px-4">
-        {(stream as any).validRecordingId ? (
+        {(stream as {validRecordingId?: string}).validRecordingId ? (
           <Link
-            href={`/dashboard/teacher/class/${stream.classSlug || stream.classId}?lesson=${(stream as any).validRecordingId}`}
+            href={`/dashboard/teacher/class/${stream.classSlug || stream.classId}?lesson=${(stream as {validRecordingId?: string}).validRecordingId}`}
             className="inline-flex items-center gap-1 px-3 py-1.5 text-blue-600 hover:text-blue-700 border-2 border-blue-200 hover:border-blue-300 rounded-lg text-xs font-semibold transition-all"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

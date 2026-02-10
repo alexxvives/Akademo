@@ -5,6 +5,7 @@ import { SkeletonForm } from '@/components/ui/SkeletonLoader';
 import { useParams, useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
 import { PasswordInput } from '@/components/ui';
+import Image from 'next/image';
 
 interface Teacher {
   id: string;
@@ -20,6 +21,8 @@ interface Class {
   academyName: string;
 }
 
+type AuthUser = Record<string, unknown>;
+
 export default function JoinPage() {
   const params = useParams();
   const router = useRouter();
@@ -32,7 +35,7 @@ export default function JoinPage() {
   
   // Auth state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [, setCurrentUser] = useState<AuthUser | null>(null);
   const [showLogin, setShowLogin] = useState(false);
   
   // Form state
@@ -55,16 +58,17 @@ export default function JoinPage() {
   
   // Selected class
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
-  const [requestSent, setRequestSent] = useState(false);
+  const [requestSent, _setRequestSent] = useState(false);
 
   useEffect(() => {
     if (teacherId) {
       loadTeacherData();
       // Don't check auth - this is a public registration page
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [teacherId]);
 
-  const checkAuth = async () => {
+  const _checkAuth = async () => {
     try {
       const response = await apiClient('/auth/me');
       const result = await response.json();
@@ -351,9 +355,11 @@ export default function JoinPage() {
         {/* Header with Logo */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <img 
+            <Image 
               src="/logo/AKADEMO_logo_OTHER2.svg" 
               alt="AKADEMO" 
+              width={160}
+              height={48}
               className="h-12 w-auto"
             />
           </div>

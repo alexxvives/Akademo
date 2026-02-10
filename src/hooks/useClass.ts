@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { apiClient } from '@/lib/api-client';
-import type { Class, ClassWithEnrollment, ApiResponse } from '@/types';
+import type { ClassWithEnrollment, ApiResponse } from '@/types';
 
 interface UseClassOptions {
   classId: string;

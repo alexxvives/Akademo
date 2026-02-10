@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
 import { SkeletonClasses } from '@/components/ui/SkeletonLoader';
@@ -19,12 +19,18 @@ interface Class {
   zoomAccountName?: string | null;
 }
 
-interface LessonFeedback {
-  lessonId: string;
-  lessonTitle: string;
+interface RatingRecord {
+  id: string;
   rating: number;
-  comment: string | null;
+  comment: string;
+  lessonTitle: string;
+  topicName: string;
   createdAt: string;
+}
+
+interface RatingsLesson {
+  className: string;
+  averageRating: number | null;
 }
 
 export default function TeacherClasses() {
@@ -33,7 +39,7 @@ export default function TeacherClasses() {
   const [openFeedbackDropdown, setOpenFeedbackDropdown] = useState<string | null>(null);
   const [feedbackComments, setFeedbackComments] = useState<Array<{ id: string; rating: number; comment: string; lessonTitle: string; topicName: string; createdAt: string }>>([]);
   const [loadingFeedback, setLoadingFeedback] = useState(false);
-  const [ratingsData, setRatingsData] = useState<{ overall: any, lessons: any[] } | null>(null);
+  const [ratingsData, setRatingsData] = useState<{ overall: { averageRating: number; totalRatings: number } | null; lessons: RatingsLesson[] } | null>(null);
 
   useEffect(() => {
     loadClasses();
@@ -47,9 +53,9 @@ export default function TeacherClasses() {
       if (result.success && result.data) {
         // Extract only comments, filter and sort by rating (5 stars first)
         const comments = (result.data.recent || [])
-          .filter((r: any) => r.comment && r.comment.trim())
-          .sort((a: any, b: any) => b.rating - a.rating || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-          .map((r: any) => ({
+          .filter((r: RatingRecord) => r.comment && r.comment.trim())
+          .sort((a: RatingRecord, b: RatingRecord) => b.rating - a.rating || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          .map((r: RatingRecord) => ({
             id: r.id,
             rating: r.rating,
             comment: r.comment,
@@ -66,7 +72,7 @@ export default function TeacherClasses() {
     }
   };
 
-  const handleToggleFeedback = async (classId: string) => {
+  const _handleToggleFeedback = async (classId: string) => {
     if (openFeedbackDropdown === classId) {
       setOpenFeedbackDropdown(null);
     } else {

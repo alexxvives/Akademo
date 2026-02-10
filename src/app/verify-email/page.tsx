@@ -4,7 +4,10 @@ import { useEffect, useState, Suspense } from 'react';
 import { SkeletonForm } from '@/components/ui/SkeletonLoader';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { apiClient } from '@/lib/api-client';
+
+type RegistrationData = Record<string, unknown>;
 
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
@@ -14,7 +17,7 @@ function VerifyEmailContent() {
   const [verificationCode, setVerificationCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [registrationData, setRegistrationData] = useState<any>(null);
+  const [registrationData, setRegistrationData] = useState<RegistrationData | null>(null);
   const [returnUrl, setReturnUrl] = useState<string | null>(null);
 
   // Extract teacherId from returnUrl (e.g., /join/teacher1 -> teacher1)
@@ -146,9 +149,11 @@ function VerifyEmailContent() {
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <img 
+            <Image 
               src="/logo/AKADEMO_logo_OTHER2.svg" 
               alt="AKADEMO" 
+              width={160}
+              height={48}
               className="h-12 w-auto"
             />
           </div>

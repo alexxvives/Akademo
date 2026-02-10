@@ -16,7 +16,7 @@ interface User {
 }
 
 export default function StudentProfile() {
-  const router = useRouter();
+  const _router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);

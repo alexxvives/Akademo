@@ -42,6 +42,7 @@ export default function AcademyClassesPage() {
 
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [academyId]);
 
   const loadData = async () => {

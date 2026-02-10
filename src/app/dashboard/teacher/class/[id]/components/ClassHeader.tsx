@@ -19,16 +19,16 @@ interface ClassHeaderProps {
 
 export default function ClassHeader({
   classData,
-  classId,
-  lessonsCount,
-  pendingCount,
+  classId: _classId,
+  lessonsCount: _lessonsCount,
+  pendingCount: _pendingCount,
   creatingStream,
-  showPendingRequests,
+  showPendingRequests: _showPendingRequests,
   onCreateLesson,
   onCreateStream,
-  onTogglePendingRequests,
+  onTogglePendingRequests: _onTogglePendingRequests,
 }: ClassHeaderProps) {
-  const approvedCount = (classData.enrollments || []).filter((e) => e.status === 'APPROVED').length;
+  const _approvedCount = (classData.enrollments || []).filter((e) => e.status === 'APPROVED').length;
 
   return (
     <>

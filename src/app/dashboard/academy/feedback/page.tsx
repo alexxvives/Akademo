@@ -1,9 +1,41 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { FeedbackView, type ClassFeedback } from '@/components/shared';
 import { generateDemoRatings, generateDemoClasses } from '@/lib/demo-data';
+
+type DemoRating = ReturnType<typeof generateDemoRatings>[number];
+
+interface DemoLesson {
+  id: string;
+  title: string;
+  ratingCount: number;
+  startIdx: number;
+}
+
+interface DemoTopic {
+  id: string;
+  name: string;
+  lessons: DemoLesson[];
+}
+
+interface LessonRatingItem {
+  id: string;
+  rating: number;
+  studentName: string;
+  comment: string | null;
+  createdAt: string;
+  isRead: boolean;
+}
+
+interface LessonFeedbackItem {
+  id: string;
+  title: string;
+  totalRatings: number;
+  averageRating: number;
+  ratings: LessonRatingItem[];
+}
 
 export default function AcademyFeedbackPage() {
   const [loading, setLoading] = useState(true);
@@ -11,11 +43,43 @@ export default function AcademyFeedbackPage() {
   const [academyName, setAcademyName] = useState<string>('');
   const [paymentStatus, setPaymentStatus] = useState<string>('NOT PAID');
 
-  useEffect(() => {
-    loadAcademyName();
+  const loadFeedback = useCallback(async () => {
+    try {
+      // Load all academy classes first
+      const classesRes = await apiClient('/academies/classes');
+      const classesData = await classesRes.json();
+      
+      if (classesData.success && Array.isArray(classesData.data)) {
+        const classesList = classesData.data;
+        
+        // Load all feedback for academy
+        const feedbackRes = await apiClient('/academies/feedback');
+        const feedbackData = await feedbackRes.json();
+        
+        if (feedbackData.success && feedbackData.data) {
+          setClasses(feedbackData.data);
+        } else {
+          // If no feedback, create empty class structure
+          const emptyClasses = classesList.map((cls: { id: string; name: string; teacherName?: string | null }) => ({
+            id: cls.id,
+            name: cls.name,
+            teacherName: cls.teacherName || '',
+            totalRatings: 0,
+            averageRating: 0,
+            topics: [],
+          }));
+          setClasses(emptyClasses);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading feedback:', error);
+      setClasses([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const loadAcademyName = async () => {
+  const loadAcademyName = useCallback(async () => {
     try {
       const res = await apiClient('/academies');
       const result = await res.json();
@@ -33,7 +97,7 @@ export default function AcademyFeedbackPage() {
           // Topics and lessons by class with realistic rating distribution
           let currentIdx = 0;
           
-          const topicsByClass: Record<string, any[]> = {
+          const topicsByClass: Record<string, DemoTopic[]> = {
             'demo-c1': [ // Programación Web - 10 ratings across 2 of 8 lessons
               {
                 id: 'demo-c1-t1',
@@ -156,7 +220,7 @@ export default function AcademyFeedbackPage() {
             let totalScore = 0;
             
             const topics = classTopics.map(topic => {
-              const lessonsWithRatings = topic.lessons.map((lesson: any) => {
+              const lessonsWithRatings: LessonFeedbackItem[] = topic.lessons.map((lesson) => {
                 if (lesson.ratingCount === 0 || lesson.startIdx === -1) {
                   // Lesson has no ratings
                   return {
@@ -168,7 +232,7 @@ export default function AcademyFeedbackPage() {
                   };
                 }
                 
-                const lessonRatings = demoRatings.slice(lesson.startIdx, lesson.startIdx + lesson.ratingCount);
+                const lessonRatings: DemoRating[] = demoRatings.slice(lesson.startIdx, lesson.startIdx + lesson.ratingCount);
                 const lessonScore = lessonRatings.reduce((sum, r) => sum + r.rating, 0);
                 const lessonAvg = lessonScore / lessonRatings.length;
                 
@@ -180,7 +244,7 @@ export default function AcademyFeedbackPage() {
                   title: lesson.title,
                   totalRatings: lesson.ratingCount,
                   averageRating: lessonAvg,
-                  ratings: lessonRatings.map(r => ({
+                  ratings: lessonRatings.map((r) => ({
                     id: r.id,
                     rating: r.rating,
                     studentName: r.studentName,
@@ -192,9 +256,9 @@ export default function AcademyFeedbackPage() {
               });
               
               // Calculate topic average (only from lessons with ratings)
-              const topicRatings = lessonsWithRatings.filter((l: any) => l.totalRatings > 0);
-              const topicTotalRatings = topicRatings.reduce((sum: number, l: any) => sum + l.totalRatings, 0);
-              const topicTotalScore = topicRatings.reduce((sum: number, l: any) => sum + (l.averageRating * l.totalRatings), 0);
+              const topicRatings = lessonsWithRatings.filter((l) => l.totalRatings > 0);
+              const topicTotalRatings = topicRatings.reduce((sum, l) => sum + l.totalRatings, 0);
+              const topicTotalScore = topicRatings.reduce((sum, l) => sum + (l.averageRating * l.totalRatings), 0);
               const topicAvg = topicTotalRatings > 0 ? topicTotalScore / topicTotalRatings : 0;
               
               return {
@@ -205,82 +269,35 @@ export default function AcademyFeedbackPage() {
                 lessons: lessonsWithRatings,
               };
             });
-            
-            const avgRating = totalRatings > 0 ? totalScore / totalRatings : 4.0;
-            
+
+            const classAvg = totalRatings > 0 ? totalScore / totalRatings : 0;
+
             return {
               id: c.id,
               name: c.name,
-              teacherName: c.teacherName,
-              totalRatings: totalRatings,
-              averageRating: avgRating,
-              topics: topics,
+              teacherName: c.teacherName || '',
+              totalRatings,
+              averageRating: classAvg,
+              topics,
             };
           }));
+
           setLoading(false);
           return;
         }
-        
-        // If PAID, load real feedback
-        await loadFeedback();
-      } else {
-        // If API fails or returns empty, treat as demo account - no data to show
-        setClasses([]);
-        setLoading(false);
       }
     } catch (error) {
-      console.error('Failed to load academy name:', error);
-      setClasses([]);
-      setLoading(false);
+      console.error('Error loading academy:', error);
     }
-  };
+  }, []);
 
-  const loadFeedback = async () => {
-    try {
-      // Load all academy classes first
-      const classesRes = await apiClient('/academies/classes');
-      const classesData = await classesRes.json();
-      
-      // Load ratings
-      const ratingsRes = await apiClient('/ratings/teacher');
-      const ratingsData = await ratingsRes.json();
-      
-      const allClasses: ClassFeedback[] = [];
-      
-      if (classesData.success && Array.isArray(classesData.data)) {
-        for (const cls of classesData.data) {
-          // Find matching ratings class
-          const ratingClass = ratingsData.success && Array.isArray(ratingsData.data)
-            ? ratingsData.data.find((rc: ClassFeedback) => rc.id === cls.id)
-            : null;
-          
-          if (ratingClass) {
-            // Use the rating class with data
-            allClasses.push(ratingClass);
-          } else {
-            // Create empty class structure
-            allClasses.push({
-              id: cls.id,
-              name: cls.name,
-              teacherName: cls.teacherName || `${cls.teacherFirstName || ''} ${cls.teacherLastName || ''}`.trim(),
-              totalRatings: 0,
-              averageRating: 0,
-              topics: []
-            });
-          }
-        }
-      }
-      
-      // Sort classes by average rating (highest first)
-      allClasses.sort((a, b) => b.averageRating - a.averageRating);
-      
-      setClasses(allClasses);
-    } catch (error) {
-      console.error('Failed to load feedback:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    loadFeedback();
+  }, [loadFeedback]);
+
+  useEffect(() => {
+    loadAcademyName();
+  }, [loadAcademyName]);
 
   const handleRatingsViewed = async (ratingIds: string[]) => {
     if (ratingIds.length === 0) return;

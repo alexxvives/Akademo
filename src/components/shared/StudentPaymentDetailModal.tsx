@@ -24,8 +24,6 @@ interface StudentPaymentDetailModalProps {
   studentEmail: string;
   className: string;
   payments: StudentPayment[];
-  totalPaid: number;
-  totalDue: number;
   paymentFrequency: 'ONE_TIME' | 'MONTHLY';
   enrollmentDate: string;
   availableClasses?: {id: string; name: string}[];
@@ -40,8 +38,6 @@ export function StudentPaymentDetailModal({
   studentEmail,
   className,
   payments,
-  totalPaid,
-  totalDue,
   paymentFrequency,
   enrollmentDate,
   availableClasses = [],
@@ -152,8 +148,8 @@ export function StudentPaymentDetailModal({
 
   const pendingPayments = filteredPayments.filter(p => p.status === 'PENDING' || p.status === 'CASH_PENDING');
   const completedPayments = filteredPayments.filter(p => p.status === 'COMPLETED' || p.status === 'PAID');
-  const onTimePayments = completedPayments.filter(p => !p.isLate).length;
-  const latePayments = completedPayments.filter(p => p.isLate).length;
+  const _onTimePayments = completedPayments.filter(p => !p.isLate).length;
+  const _latePayments = completedPayments.filter(p => p.isLate).length;
   
   // Calculate filtered totals based on current class filter
   const filteredTotalPaid = completedPayments.reduce((sum, p) => sum + p.amount, 0);
@@ -291,10 +287,7 @@ export function StudentPaymentDetailModal({
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {filteredPayments.map((payment, index) => {
-                        const isPaid = payment.status === 'PAID' || payment.status === 'COMPLETED';
-                        const isPending = payment.status === 'PENDING';
-                        
+                      {filteredPayments.map((payment) => {
                         return (
                           <div key={payment.id} className="bg-white border border-gray-200 rounded-lg px-4 py-2.5 hover:border-gray-300 hover:shadow-sm transition-all">
                             <div className="flex items-center justify-between gap-4">

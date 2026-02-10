@@ -8,6 +8,7 @@
 import { getBunnyThumbnailUrl } from '@/lib/bunny-stream';
 import { formatDateWithMonth, isReleased } from '@/lib/formatters';
 import { LoaderPinwheelIcon } from '@/components/ui/LoaderPinwheelIcon';
+import Image from 'next/image';
 
 export interface Lesson {
   id: string;
@@ -166,10 +167,13 @@ export default function LessonsList({
 
                     {(lesson.firstVideoBunnyGuid || lesson.firstVideoUpload?.bunnyGuid) ? (
                       <>
-                        <img
+                        <Image
                           src={getBunnyThumbnailUrl(lesson.firstVideoBunnyGuid || lesson.firstVideoUpload?.bunnyGuid || '')}
                           alt={lesson.title}
-                          className={`w-full h-full object-cover ${lesson.isUploading || lesson.isTranscoding ? 'opacity-50' : ''}`}
+                          fill
+                          sizes="(max-width: 768px) 100vw, 600px"
+                          unoptimized
+                          className={`object-cover ${lesson.isUploading || lesson.isTranscoding ? 'opacity-50' : ''}`}
                         />
                         {(lesson.isUploading || lesson.isTranscoding) && (
                           <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60">

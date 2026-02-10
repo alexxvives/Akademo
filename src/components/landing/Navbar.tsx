@@ -1,7 +1,14 @@
 'use client';
 
+import Image from 'next/image';
+
+interface NavbarTranslations {
+  login: string;
+  getStarted: string;
+}
+
 interface NavbarProps {
-  t: any;
+  t: NavbarTranslations;
   isScrolled: boolean;
   lang: 'es' | 'en';
   onLangChange: (lang: 'es' | 'en') => void;
@@ -16,9 +23,11 @@ export function Navbar({ t, isScrolled, lang, onLangChange, onOpenModal }: Navba
           <div className="max-w-6xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-lg bg-white/10 border border-white/20">
             <div className="flex justify-between items-center relative">
               <div className="flex items-center gap-2">
-                <img 
+                <Image 
                   src="/logo/AKADEMO_logo_OTHER2.svg"
                   alt="AKADEMO" 
+                  width={140}
+                  height={36}
                   className="h-7 sm:h-9 w-auto transition-all"
                 />
                 <span className={`text-lg sm:text-xl font-bold transition-colors font-[family-name:var(--font-montserrat)] ${
@@ -60,9 +69,12 @@ export function Navbar({ t, isScrolled, lang, onLangChange, onOpenModal }: Navba
             }`}
             title="Español"
           >
-            <img 
+            <Image 
               src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 900 600'%3E%3Cpath fill='%23c60b1e' d='M0 0h900v600H0z'/%3E%3Cpath fill='%23ffc400' d='M0 150h900v300H0z'/%3E%3C/svg%3E" 
               alt="ES" 
+              width={24}
+              height={24}
+              unoptimized
               className="w-5 h-5 sm:w-6 sm:h-6"
             />
           </button>
@@ -75,9 +87,12 @@ export function Navbar({ t, isScrolled, lang, onLangChange, onOpenModal }: Navba
             }`}
             title="English"
           >
-            <img 
+            <Image 
               src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30'%3E%3Cpath fill='%23012169' d='M0 0h60v30H0z'/%3E%3Cpath stroke='%23fff' stroke-width='6' d='M0 0l60 30m0-30L0 30'/%3E%3Cpath stroke='%23C8102E' stroke-width='4' d='M0 0l60 30m0-30L0 30'/%3E%3Cpath stroke='%23fff' stroke-width='10' d='M30 0v30M0 15h60'/%3E%3Cpath stroke='%23C8102E' stroke-width='6' d='M30 0v30M0 15h60'/%3E%3C/svg%3E" 
               alt="EN" 
+              width={24}
+              height={24}
+              unoptimized
               className="w-5 h-5 sm:w-6 sm:h-6"
             />
           </button>

@@ -63,9 +63,10 @@ export function FeedbackView({
 
   // Mark ratings as read when component unmounts or user leaves page
   useEffect(() => {
+    const currentViewedRatings = viewedRatingsRef.current;
     return () => {
-      if (viewedRatingsRef.current.size > 0 && onRatingsViewed) {
-        onRatingsViewed(Array.from(viewedRatingsRef.current));
+      if (currentViewedRatings.size > 0 && onRatingsViewed) {
+        onRatingsViewed(Array.from(currentViewedRatings));
       }
     };
   }, [onRatingsViewed]);
@@ -91,13 +92,6 @@ export function FeedbackView({
       }
       return newSet;
     });
-  };
-
-  // Helper to check if topic has unread ratings
-  const hasUnreadRatings = (topic: Topic) => {
-    return topic.lessons.some(lesson => 
-      lesson.ratings.some(rating => rating.isRead === false)
-    );
   };
 
   // Helper to count unread ratings for a topic
@@ -152,7 +146,7 @@ export function FeedbackView({
   }
 
   const totalRatings = classes.reduce((sum, c) => sum + c.totalRatings, 0);
-  const avgRating = totalRatings > 0
+  const _avgRating = totalRatings > 0
     ? classes.reduce((sum, c) => sum + (c.averageRating * c.totalRatings), 0) / totalRatings
     : 0;
 

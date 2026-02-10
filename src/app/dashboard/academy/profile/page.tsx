@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import Image from 'next/image';
 import { apiClient } from '@/lib/api-client';
 import { useAuth } from '@/hooks/useAuth';
-import { CctvIcon, CctvIconHandle } from '@/components/icons/CctvIcon';
 import { SkeletonProfile } from '@/components/ui/SkeletonLoader';
 import { ZoomConnectButton, StripeConnectButton } from '@/components/profile';
 
@@ -82,11 +82,7 @@ export default function ProfilePage() {
     allowMultipleTeachers: false
   });
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [academyRes, zoomRes, stripeRes] = await Promise.all([
         apiClient('/academies'),
@@ -148,7 +144,11 @@ export default function ProfilePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.email]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleConnectZoom = () => {
     // Redirect to Zoom OAuth in new tab
@@ -214,12 +214,17 @@ export default function ProfilePage() {
     }
   };
 
-  const handleSettingChange = async (field: string, value: any) => {
+  type SettingField = keyof typeof formData;
+  type SettingValue = string | number | boolean;
+
+  const handleSettingChange = async (field: SettingField, value: SettingValue) => {
     if (!academy) return;
 
 
     // For allowedPaymentMethods, value is a JSON string but we need an array for the state
-    const stateValue = field === 'allowedPaymentMethods' ? JSON.parse(value) : value;
+    const stateValue = field === 'allowedPaymentMethods'
+      ? (JSON.parse(String(value)) as string[])
+      : value;
     
     // Update local state immediately
     const newFormData = { ...formData, [field]: stateValue };
@@ -353,7 +358,7 @@ export default function ProfilePage() {
       } else {
         throw new Error('Failed to update academy');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error uploading logo:', error);
       alert('Error al subir el logo');
     } finally {
@@ -484,7 +489,13 @@ export default function ProfilePage() {
                 <div className="flex items-center justify-center gap-3">
                   {academy.logoUrl ? (
                     <div className="w-16 h-16 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
-                      <img src={`/api/storage/serve/${academy.logoUrl}`} alt="Logo" className="w-full h-full" style={{objectFit: 'contain'}} />
+                      <Image
+                        src={`/api/storage/serve/${academy.logoUrl}`}
+                        alt="Logo"
+                        width={64}
+                        height={64}
+                        className="w-full h-full object-contain"
+                      />
                     </div>
                   ) : (
                     <div className="w-16 h-16 bg-gray-100 border border-gray-300 border-dashed rounded-lg flex items-center justify-center flex-shrink-0">
@@ -969,7 +980,13 @@ export default function ProfilePage() {
                   
                   <div className="flex items-start gap-4">
                     <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center shadow-sm flex-shrink-0 overflow-hidden p-2">
-                      <img src="/zoom_logo.png" alt="Zoom" className="w-full h-full object-contain" />
+                      <Image
+                        src="/zoom_logo.png"
+                        alt="Zoom"
+                        width={56}
+                        height={56}
+                        className="w-full h-full object-contain"
+                      />
                     </div>
                     <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
                       <div>
@@ -992,7 +1009,7 @@ export default function ProfilePage() {
                       <div className="mt-2">
                         <p className="text-xs font-medium text-gray-700 mb-1">Clases asignadas:</p>
                         <div className="flex flex-wrap gap-1">
-                          {account.classes.map((cls: any) => (
+                          {account.classes.map((cls) => (
                             <span key={cls.id} className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-blue-50 text-blue-700">
                               {cls.name}
                             </span>
@@ -1053,7 +1070,13 @@ export default function ProfilePage() {
               <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 hover:border-brand-500 hover:shadow-lg transition-all">
                 <div className="flex items-start gap-4">
                   <div className="w-14 h-14 bg-white border border-gray-200 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0 overflow-hidden">
-                    <img src="/Stripe_logo.svg" alt="Stripe" className="w-full h-full object-cover" />
+                    <Image
+                      src="/Stripe_logo.svg"
+                      alt="Stripe"
+                      width={56}
+                      height={56}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
                     <div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
 import { SkeletonList } from '@/components/ui/SkeletonLoader';
@@ -20,35 +20,32 @@ interface Lesson {
   createdAt: string;
 }
 
+interface ClassSummary {
+  id: string;
+  name: string;
+  teacherFirstName?: string | null;
+  teacherLastName?: string | null;
+}
+
 export default function AcademyLessonsPage() {
   const [lessons, setLessons] = useState<Lesson[]>([]);
-  const [classes, setClasses] = useState<any[]>([]);
+  const [classes, setClasses] = useState<ClassSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterClass, setFilterClass] = useState<string>('all');
 
-  useEffect(() => {
-    loadClasses();
-  }, []);
-
-  useEffect(() => {
-    if (classes.length > 0) {
-      loadLessons();
-    }
-  }, [classes]);
-
-  const loadClasses = async () => {
+  const loadClasses = useCallback(async () => {
     try {
       const response = await apiClient('/academies/classes');
       const result = await response.json();
       if (result.success && Array.isArray(result.data)) {
-        setClasses(result.data);
+        setClasses(result.data as ClassSummary[]);
       }
     } catch (error) {
       console.error('Error loading classes:', error);
     }
-  };
+  }, []);
 
-  const loadLessons = async () => {
+  const loadLessons = useCallback(async () => {
     try {
       // Load lessons for all classes
       const allLessons = await Promise.all(
@@ -56,7 +53,7 @@ export default function AcademyLessonsPage() {
           const response = await apiClient(`/lessons?classId=${cls.id}`);
           const result = await response.json();
           if (result.success && Array.isArray(result.data)) {
-            return result.data.map((lesson: any) => ({
+            return (result.data as Lesson[]).map((lesson) => ({
               ...lesson,
               className: cls.name,
               teacherName: cls.teacherFirstName && cls.teacherLastName 
@@ -73,11 +70,21 @@ export default function AcademyLessonsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [classes]);
+
+  useEffect(() => {
+    loadClasses();
+  }, [loadClasses]);
+
+  useEffect(() => {
+    if (classes.length > 0) {
+      loadLessons();
+    }
+  }, [classes, loadLessons]);
 
   const uniqueClasses = Array.from(new Set(classes.map(c => c.id)))
     .map(id => classes.find(c => c.id === id))
-    .filter(Boolean);
+    .filter((cls): cls is ClassSummary => Boolean(cls));
 
   const filteredLessons = lessons.filter(lesson => {
     const matchesClass = filterClass === 'all' || lesson.classId === filterClass;
@@ -117,7 +124,7 @@ export default function AcademyLessonsPage() {
               className="w-full h-[38px] px-3 py-2 pr-10 border border-gray-200 rounded-lg text-sm bg-white appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20fill%3D%27none%27%20viewBox%3D%270%200%2020%2020%27%3E%3Cpath%20stroke%3D%27%236b7280%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%20stroke-width%3D%271.5%27%20d%3D%27M6%208l4%204%204-4%27%2F%3E%3C%2Fsvg%3E')] bg-[length:1.5em] bg-[right_0.5rem_center] bg-no-repeat"
             >
               <option value="all">Todas las clases</option>
-              {uniqueClasses.map((cls: any) => (
+              {uniqueClasses.map((cls) => (
                 <option key={cls.id} value={cls.id}>
                   {cls.name}
                 </option>

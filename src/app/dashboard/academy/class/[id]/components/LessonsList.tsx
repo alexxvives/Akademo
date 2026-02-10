@@ -1,5 +1,6 @@
 import { getBunnyThumbnailUrl } from '@/lib/bunny-stream';
 import { LoaderPinwheelIcon } from '@/components/ui/LoaderPinwheelIcon';
+import Image from 'next/image';
 
 interface Lesson {
   id: string;
@@ -19,6 +20,7 @@ interface Lesson {
   isTranscoding?: number;
   isUploading?: boolean;
   uploadProgress?: number;
+  totalStudentsInClass?: number;
 }
 
 interface LessonsListProps {
@@ -177,10 +179,13 @@ export default function LessonsList({
 
                     {(lesson.firstVideoBunnyGuid || lesson.firstVideoUpload?.bunnyGuid) ? (
                       <>
-                        <img
+                        <Image
                           src={getBunnyThumbnailUrl(lesson.firstVideoBunnyGuid || lesson.firstVideoUpload?.bunnyGuid || '')}
                           alt={lesson.title}
-                          className={`w-full h-full object-cover ${lesson.isUploading || lesson.isTranscoding ? 'opacity-50' : ''}`}
+                          fill
+                          sizes="(max-width: 768px) 100vw, 600px"
+                          unoptimized
+                          className={`object-cover ${lesson.isUploading || lesson.isTranscoding ? 'opacity-50' : ''}`}
                         />
                         {/* Transcoding/Uploading Overlay */}
                         {(lesson.isUploading || lesson.isTranscoding) && (
@@ -271,7 +276,7 @@ export default function LessonsList({
                             <div className="flex items-center justify-between text-xs mb-1.5">
                               <span className="text-gray-600 font-medium">Estudiantes que accedieron</span>
                               <span className="text-gray-900 font-bold">
-                                {lesson.studentsWatching || 0}/{(lesson as any).totalStudentsInClass || 0}
+                                {lesson.studentsWatching || 0}/{lesson.totalStudentsInClass || 0}
                               </span>
                             </div>
                             <div className="h-2 bg-gray-200 rounded-full overflow-hidden">

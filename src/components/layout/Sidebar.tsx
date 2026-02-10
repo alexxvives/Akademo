@@ -1,8 +1,9 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, type RefObject } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   ChartNoAxesColumnIncreasingIcon,
   BookTextIcon,
@@ -29,12 +30,17 @@ interface MenuItem {
   badge?: number;
   badgeColor?: string;
   matchPaths?: string[];
+  showPulse?: boolean;
+}
+
+interface IconHandle {
+  startAnimation: () => void;
+  stopAnimation: () => void;
 }
 
 interface SidebarProps {
   role: 'ADMIN' | 'TEACHER' | 'STUDENT' | 'ACADEMY';
   menuItems: MenuItem[];
-  activeStreams: any[];
   academyId: string | null;
   linkCopied: boolean;
   onCopyJoinLink: () => void;
@@ -54,7 +60,6 @@ interface SidebarProps {
 export function Sidebar({
   role,
   menuItems,
-  activeStreams,
   academyId,
   linkCopied,
   onCopyJoinLink,
@@ -65,13 +70,13 @@ export function Sidebar({
   academyPaymentStatus,
 }: SidebarProps) {
   const pathname = usePathname();
-  const iconRefs = useRef<{ [key: string]: any }>({});
-  const logoutIconRef = useRef<any>(null);
-  const linkIconRef = useRef<any>(null);
+  const iconRefs = useRef<Record<string, { current: IconHandle | null }>>({});
+  const logoutIconRef = useRef<IconHandle | null>(null);
+  const linkIconRef = useRef<IconHandle | null>(null);
   const { logoUrl, academyName, loading } = useAcademyLogo();
 
   const renderIcon = (item: MenuItem) => {
-    const iconType = (item as any).iconType;
+    const iconType = item.iconType;
     
     if (!iconRefs.current[item.href]) {
       iconRefs.current[item.href] = { current: null };
@@ -101,7 +106,7 @@ export function Sidebar({
     } else if (iconType === 'handCoins') {
       return <HandCoinsIcon ref={iconRef} size={20} />;
     } else if (iconType === 'star') {
-      return <PenToolIcon ref={iconRef as any} size={20} />;
+      return <PenToolIcon ref={iconRef as RefObject<PenToolIconHandle>} size={20} />;
     } else if (item.icon) {
       return item.icon;
     }
@@ -115,12 +120,13 @@ export function Sidebar({
         <Link href={`/dashboard/${role.toLowerCase()}`} className="flex items-center gap-2">
           {logoUrl ? (
             <>
-              <img
+              <Image
                 src={`/api/storage/serve/${logoUrl}`}
                 alt="Academy Logo"
+                width={40}
+                height={40}
                 className="h-10 w-10 object-contain"
-                loading="eager"
-                fetchPriority="high"
+                priority
               />
               {academyName && (
                 <span className="text-lg font-bold text-gray-400 font-[family-name:var(--font-montserrat)]">
@@ -135,9 +141,11 @@ export function Sidebar({
             </div>
           ) : (
             <>
-              <img
+              <Image
                 src="/logo/AKADEMO_logo_OTHER2.svg"
                 alt="Akademo"
+                width={120}
+                height={32}
                 className="h-8 w-auto object-contain"
               />
               <span className="text-lg font-bold text-gray-400 font-[family-name:var(--font-montserrat)]">
@@ -154,12 +162,12 @@ export function Sidebar({
         <nav className="px-3 py-6 space-y-2">
           {menuItems.map((item) => {
             const isDashboardRoute = item.href === `/dashboard/${role.toLowerCase()}`;
-            const matchesPath = (item as any).matchPaths && (item as any).matchPaths.some((p: string) => pathname.startsWith(p));
+            const matchesPath = item.matchPaths?.some((p: string) => pathname.startsWith(p));
             const isActive = isDashboardRoute
               ? pathname === item.href
               : pathname === item.href || pathname.startsWith(item.href + '/') || matchesPath;
 
-            const showPulse = (item as any).showPulse === true;
+            const showPulse = item.showPulse === true;
             const iconRef = iconRefs.current[item.href];
 
             const handleMouseEnter = () => {

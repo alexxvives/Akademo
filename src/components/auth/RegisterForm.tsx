@@ -58,7 +58,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, onClose }: RegisterFo
       if (!data.success) {
         throw new Error(data.error || 'Failed to send verification code');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       throw err;
     }
   };
@@ -130,9 +130,9 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, onClose }: RegisterFo
         try {
           await sendVerificationCode();
           setShowVerification(true);
-        } catch (err: any) {
+        } catch (err: unknown) {
           // Parse error response properly
-          const errorMessage = err.message || 'Failed to send verification code';
+          const errorMessage = err instanceof Error ? err.message : 'Failed to send verification code';
           setError(errorMessage);
           console.error('Verification error:', err);
         }

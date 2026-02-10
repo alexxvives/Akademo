@@ -1,30 +1,11 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { apiClient } from '@/lib/api-client';
 
 interface DemoBannerProps {
   userEmail?: string | null;
 }
 
 export function DemoBanner({ userEmail }: DemoBannerProps) {
-  const [paymentStatus, setPaymentStatus] = useState<string>('');
-
-  useEffect(() => {
-    const fetchPaymentStatus = async () => {
-      try {
-        const res = await apiClient('/academies');
-        const result = await res.json();
-        if (result.success && result.data?.[0]?.paymentStatus) {
-          setPaymentStatus(result.data[0].paymentStatus);
-        }
-      } catch (error) {
-        console.error('Error fetching payment status:', error);
-      }
-    };
-    fetchPaymentStatus();
-  }, []);
-
   // Show for all demo% accounts (regardless of payment status)
   // Demo% users never see DemoDataBanner
   if (!userEmail?.toLowerCase().includes("demo")) {

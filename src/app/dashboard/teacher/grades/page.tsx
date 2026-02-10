@@ -45,8 +45,8 @@ export default function TeacherGrades() {
   const [loading, setLoading] = useState(true);
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [classes, setClasses] = useState<{id: string; name: string}[]>([]);
-  const [userEmail, setUserEmail] = useState<string>('');
-  const [paymentStatus, setPaymentStatus] = useState<string>('');
+  const [_userEmail, setUserEmail] = useState<string>('');
+  const [_paymentStatus, setPaymentStatus] = useState<string>('');
 
   useEffect(() => {
     loadClasses();
@@ -56,20 +56,21 @@ export default function TeacherGrades() {
     if (selectedClass) {
       loadGrades();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedClass]);
 
   const loadClasses = async () => {
     try {
       // Check if demo user
       const userRes = await apiClient('/auth/me');
-      const userResult: any = await userRes.json();
+      const userResult = await userRes.json() as { success: boolean; data?: { email?: string } };
       if (userResult.success && userResult.data) {
         setUserEmail(userResult.data.email || '');
         
         // Get academy payment status through teacher relationship
         const academyRes = await apiClient('/teacher/academy');
         if (academyRes.ok) {
-          const academyResult: any = await academyRes.json();
+          const academyResult = await academyRes.json() as { data?: { academy?: { paymentStatus?: string } } };
           const status = academyResult.data?.academy?.paymentStatus || 'PAID';
           setPaymentStatus(status);
           
@@ -86,7 +87,7 @@ export default function TeacherGrades() {
       
       // If PAID or real unpaid academy, load real classes
       const res = await apiClient('/classes');
-      const response: any = await res.json();
+      const response = await res.json() as { success: boolean; data: {id: string; name: string}[]; error?: string };
       if (response.success) {
         setClasses(response.data);
         if (response.data.length > 0) {
@@ -112,7 +113,7 @@ export default function TeacherGrades() {
       const academyRes = await apiClient('/teacher/academy');
       let status = 'PAID';
       if (academyRes.ok) {
-        const academyResult: any = await academyRes.json();
+        const academyResult = await academyRes.json() as { data?: { academy?: { paymentStatus?: string } } };
         status = academyResult.data?.academy?.paymentStatus || 'PAID';
       }
       
@@ -174,7 +175,7 @@ export default function TeacherGrades() {
       // Get all assignments for the class (or all classes if 'all' is selected)
       const endpoint = selectedClass === ' all' ? '/assignments/all' : `/assignments?classId=${selectedClass}`;
       const assignmentsRaw = await apiClient(endpoint);
-      const assignmentsRes: any = await assignmentsRaw.json();
+      const assignmentsRes = await assignmentsRaw.json() as { success: boolean; data: { id: string; title: string; maxScore: number; attachmentIds?: string; uploadId?: string; className?: string }[] };
       
       if (!assignmentsRes.success) {
         setLoading(false);
@@ -185,9 +186,9 @@ export default function TeacherGrades() {
       const allGrades: StudentGrade[] = [];
       for (const assignment of assignmentsRes.data) {
         const assignmentRaw = await apiClient(`/assignments/${assignment.id}`);
-        const assignmentRes: any = await assignmentRaw.json();
+        const assignmentRes = await assignmentRaw.json() as { success: boolean; data: { submissions: { studentId: string; studentName: string; studentEmail: string; score: number; gradedAt: string; uploadId: string; submissionStoragePath?: string }[]; attachmentStoragePath?: string } };
         if (assignmentRes.success && assignmentRes.data.submissions) {
-          assignmentRes.data.submissions.forEach((sub: any) => {
+          assignmentRes.data.submissions.forEach((sub) => {
             if (sub.gradedAt) {
               allGrades.push({
                 studentId: sub.studentId,
@@ -271,7 +272,7 @@ export default function TeacherGrades() {
       title: { display: false },
       tooltip: {
         callbacks: {
-          label: (context: any) => {
+          label: (context: { dataIndex: number }) => {
             const avg = top10Averages[context.dataIndex];
             return `Promedio: ${avg.averageGrade.toFixed(1)}% (${avg.totalAssignments} ejercicios)`;
           }
@@ -283,7 +284,7 @@ export default function TeacherGrades() {
         beginAtZero: true,
         max: 100,
         ticks: {
-          callback: (value: any) => value + '%'
+          callback: (value: string | number) => value + '%'
         },
         grid: {
           color: 'rgba(0, 0, 0, 0.05)'

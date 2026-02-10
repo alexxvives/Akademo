@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
 import { generateDemoClasses, generateDemoTeachers } from '@/lib/demo-data';
@@ -20,6 +20,12 @@ interface ZoomAccount {
   accountId: string;
 }
 
+interface TeacherApiItem {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+}
+
 interface Class {
   id: string;
   name: string;
@@ -36,6 +42,12 @@ interface Class {
   documentCount: number;
   avgRating?: number | null;
   createdAt?: string;
+  monthlyPrice?: number | null;
+  oneTimePrice?: number | null;
+  zoomAccountId?: string | null;
+  whatsappGroupLink?: string | null;
+  maxStudents?: number | null;
+  startDate?: string | null;
 }
 
 export default function AcademyClassesPage() {
@@ -66,11 +78,7 @@ export default function AcademyClassesPage() {
   const [error, setError] = useState('');
   const [paymentOptionsError, setPaymentOptionsError] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [classesRes, teachersRes, academiesRes, zoomRes] = await Promise.all([
         apiClient('/academies/classes'),
@@ -137,12 +145,12 @@ export default function AcademyClassesPage() {
         const json = await teachersRes.json();
         // API returns { success: true, data: [...] }
         const teacherData = json.success && json.data ? json.data : json;
-        setTeachers(Array.isArray(teacherData) ? teacherData.map((t: any) => ({
+        setTeachers(Array.isArray(teacherData) ? teacherData.map((t: TeacherApiItem) => ({
           id: t.id,
           userId: t.id, // The teacher user id
           firstName: t.name?.split(' ')[0] || '',
           lastName: t.name?.split(' ').slice(1).join(' ') || '',
-          email: t.email
+          email: t.email || ''
         })) : []);
       }
       
@@ -157,7 +165,11 @@ export default function AcademyClassesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleCreateClass = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -242,8 +254,8 @@ export default function AcademyClassesPage() {
         startDate: ''
       });
       loadData();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al crear la clase');
     } finally {
       setSaving(false);
     }
@@ -317,8 +329,8 @@ export default function AcademyClassesPage() {
       });
       setPaymentOptionsError(false);  // Reset validation error
       await loadData();  // Wait for data to refresh before allowing next edit
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error al actualizar la clase');
     } finally {
       setSaving(false);
     }
@@ -326,8 +338,8 @@ export default function AcademyClassesPage() {
 
   const openEditModal = (cls: Class) => {
     setEditingClass(cls);
-    const monthlyPriceValue = (cls as any).monthlyPrice;
-    const oneTimePriceValue = (cls as any).oneTimePrice;
+    const monthlyPriceValue = cls.monthlyPrice;
+    const oneTimePriceValue = cls.oneTimePrice;
     
     setFormData({
       name: cls.name,
@@ -338,10 +350,10 @@ export default function AcademyClassesPage() {
       // Determine active payment options based on whether prices exist
       allowMonthly: monthlyPriceValue != null && monthlyPriceValue > 0,
       allowOneTime: oneTimePriceValue != null && oneTimePriceValue > 0,
-      zoomAccountId: (cls as any).zoomAccountId || '',
-      whatsappGroupLink: (cls as any).whatsappGroupLink || '',
-      maxStudents: (cls as any).maxStudents?.toString() || '',
-      startDate: (cls as any).startDate || ''
+      zoomAccountId: cls.zoomAccountId || '',
+      whatsappGroupLink: cls.whatsappGroupLink || '',
+      maxStudents: cls.maxStudents?.toString() || '',
+      startDate: cls.startDate || ''
     });
     setError('');
     setShowEditModal(true);

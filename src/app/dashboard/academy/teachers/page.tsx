@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { generateDemoTeachers } from '@/lib/demo-data';
 import { SkeletonList } from '@/components/ui/SkeletonLoader';
@@ -14,9 +14,14 @@ interface Teacher {
   createdAt: string;
 }
 
+interface ClassSummary {
+  id: string;
+  name: string;
+}
+
 export default function AcademyTeachers() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
-  const [classes, setClasses] = useState<any[]>([]);
+  const [classes, setClasses] = useState<ClassSummary[]>([]);
   const [academyName, setAcademyName] = useState<string>('');
   const [paymentStatus, setPaymentStatus] = useState<string>('NOT PAID');
   const [loading, setLoading] = useState(true);
@@ -30,12 +35,7 @@ export default function AcademyTeachers() {
   const [editFormData, setEditFormData] = useState({ fullName: '', email: '', classId: '' });
   const [updating, setUpdating] = useState(false);
 
-  useEffect(() => {
-    loadTeachers();
-    loadClasses();
-  }, []);
-
-  const loadTeachers = async () => {
+  const loadTeachers = useCallback(async () => {
     try {
       const [teachersRes, academiesRes] = await Promise.all([
         apiClient('/academies/teachers'),
@@ -73,18 +73,24 @@ export default function AcademyTeachers() {
     } finally {
       setLoading(false);
     }
-  };
-  const loadClasses = async () => {
+  }, []);
+
+  const loadClasses = useCallback(async () => {
     try {
       const res = await apiClient('/academies/classes');
       const result = await res.json();
       if (result.success && Array.isArray(result.data)) {
-        setClasses(result.data);
+        setClasses(result.data as ClassSummary[]);
       }
     } catch (error) {
       console.error('Error loading classes:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadTeachers();
+    loadClasses();
+  }, [loadTeachers, loadClasses]);
 
   const handleDeleteTeacher = async (teacherId: string, teacherName: string) => {
     if (!confirm(`¿Estás seguro de que quieres eliminar a ${teacherName}?`)) {
@@ -169,7 +175,7 @@ export default function AcademyTeachers() {
       // Generate random password (8 characters)
       const randomPassword = generateRandomPassword();
       
-      const requestBody: any = {
+      const requestBody: { email: string; fullName: string; password: string; classId?: string } = {
         email: formData.email,
         fullName: formData.fullName,
         password: randomPassword,
@@ -203,7 +209,7 @@ export default function AcademyTeachers() {
     }
   };
 
-  const copyJoinLink = (teacherId: string, teacherName: string) => {
+  const copyJoinLink = (teacherId: string) => {
     const link = `${window.location.origin}/join/${teacherId}`;
     navigator.clipboard.writeText(link);
     setCopiedId(teacherId);
@@ -323,7 +329,7 @@ export default function AcademyTeachers() {
                     </td>
                     <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                       <button
-                        onClick={() => copyJoinLink(teacher.id, teacher.name)}
+                        onClick={() => copyJoinLink(teacher.id)}
                         className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                           copiedId === teacher.id
                             ? 'bg-green-100 text-green-700'

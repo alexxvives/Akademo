@@ -7,31 +7,19 @@ interface ClassHeaderProps {
     description?: string | null;
     enrollments: Array<{ status: string }>;
   };
-  classId: string;
-  lessonsCount: number;
-  pendingCount: number;
   creatingStream: boolean;
-  showPendingRequests: boolean;
   paymentStatus?: string;
   onCreateLesson: () => void;
   onCreateStream: () => void;
-  onTogglePendingRequests: () => void;
 }
 
 export default function ClassHeader({
   classData,
-  classId,
-  lessonsCount,
-  pendingCount,
   creatingStream,
-  showPendingRequests,
   paymentStatus = 'PAID',
   onCreateLesson,
   onCreateStream,
-  onTogglePendingRequests,
 }: ClassHeaderProps) {
-  const approvedCount = (classData.enrollments || []).filter((e) => e.status === 'APPROVED').length;
-
   return (
     <>
       {/* Back to classes link */}

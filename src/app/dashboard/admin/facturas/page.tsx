@@ -32,6 +32,7 @@ export default function AdminFacturas() {
 
   useEffect(() => {
     loadPayments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filter]);
 
   const loadPayments = async () => {
@@ -50,15 +51,15 @@ export default function AdminFacturas() {
     }
   };
 
-  const totalAmount = payments
+  const _totalAmount = payments
     .filter(p => p.status === 'COMPLETED')
     .reduce((sum, p) => sum + p.amount, 0);
 
-  const studentPaymentsTotal = payments
+  const _studentPaymentsTotal = payments
     .filter(p => p.type === 'STUDENT_TO_ACADEMY' && p.status === 'COMPLETED')
     .reduce((sum, p) => sum + p.amount, 0);
 
-  const academyPaymentsTotal = payments
+  const _academyPaymentsTotal = payments
     .filter(p => p.type === 'ACADEMY_TO_PLATFORM' && p.status === 'COMPLETED')
     .reduce((sum, p) => sum + p.amount, 0);
 

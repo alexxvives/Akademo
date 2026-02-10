@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback, DragEvent } from 'react';
 import { getBunnyThumbnailUrl } from '@/lib/bunny-stream';
 import { apiClient } from '@/lib/api-client';
+import Image from 'next/image';
 
 interface Lesson {
   id: string;
@@ -72,6 +73,7 @@ export default function TopicsLessonsList({
   const [showNewTopicInput, setShowNewTopicInput] = useState(false);
   const [newTopicName, setNewTopicName] = useState('');
   const [creatingTopic, setCreatingTopic] = useState(false);
+  const [thumbnailErrors, setThumbnailErrors] = useState<Record<string, boolean>>({});
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollAnimationRef = useRef<number | null>(null);
   
@@ -404,22 +406,23 @@ export default function TopicsLessonsList({
           <div className="relative" style={{ height: '160px' }}>
             {(lesson.firstVideoBunnyGuid || lesson.firstVideoUpload?.bunnyGuid) ? (
               <>
-                <img
-                  src={getBunnyThumbnailUrl(lesson.firstVideoBunnyGuid || lesson.firstVideoUpload?.bunnyGuid || '')}
-                  alt={lesson.title}
-                  className={`w-full h-full object-cover ${lesson.isUploading || lesson.isTranscoding ? 'opacity-50' : ''}`}
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                    const parent = target.parentElement;
-                    if (parent && !parent.querySelector('.thumbnail-fallback')) {
-                      const fallback = document.createElement('div');
-                      fallback.className = 'thumbnail-fallback w-full h-full bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center';
-                      fallback.innerHTML = '<svg class="w-16 h-16 text-gray-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" /></svg>';
-                      parent.insertBefore(fallback, target);
-                    }
-                  }}
-                />
+                {thumbnailErrors[lesson.id] ? (
+                  <div className="thumbnail-fallback w-full h-full bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center">
+                    <svg className="w-16 h-16 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                    </svg>
+                  </div>
+                ) : (
+                  <Image
+                    src={getBunnyThumbnailUrl(lesson.firstVideoBunnyGuid || lesson.firstVideoUpload?.bunnyGuid || '')}
+                    alt={lesson.title}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 600px"
+                    unoptimized
+                    className={`object-cover ${lesson.isUploading || lesson.isTranscoding ? 'opacity-50' : ''}`}
+                    onError={() => setThumbnailErrors(prev => ({ ...prev, [lesson.id]: true }))}
+                  />
+                )}
                 {(lesson.isUploading || lesson.isTranscoding) && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60">
                     <div className="w-8 h-8 animate-spin rounded-full border-2 border-white/30 border-t-purple-400 mb-2" />

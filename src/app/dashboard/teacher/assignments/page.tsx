@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { apiClient, apiPost } from '@/lib/api-client';
-import { generateDemoAssignments, generateDemoSubmissions, generateDemoClasses } from '@/lib/demo-data';
+import { generateDemoAssignments, generateDemoClasses } from '@/lib/demo-data';
 
 interface Class { id: string; name: string; }
 interface Assignment {
@@ -50,19 +50,19 @@ export default function TeacherAssignments() {
   const [newTitle, setNewTitle] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [newDueDate, setNewDueDate] = useState('');
-  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [_uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadFiles, setUploadFiles] = useState<File[]>([]); // Multiple files
   const [uploadProgress, setUploadProgress] = useState(0);
   const [gradeScore, setGradeScore] = useState(0);
   const [gradeFeedback, setGradeFeedback] = useState('');
   const [creating, setCreating] = useState(false);
   const [editUploadFile, setEditUploadFile] = useState<File | null>(null);
-  const [editUploadFiles, setEditUploadFiles] = useState<File[]>([]); // Multiple files for edit
+  const [_editUploadFiles, _setEditUploadFiles] = useState<File[]>([]); // Multiple files for edit
   const [userEmail, setUserEmail] = useState<string>('');
   const [paymentStatus, setPaymentStatus] = useState<string>(''); // Empty until loaded
 
   // Helper to check if assignment is past due
-  const isPastDue = (dueDate?: string) => {
+  const _isPastDue = (dueDate?: string) => {
     if (!dueDate) return false;
     return new Date(dueDate) < new Date();
   };
@@ -91,6 +91,7 @@ export default function TeacherAssignments() {
       console.log('🔄 [TEACHER] Triggering loadAssignments because data is ready');
       loadAssignments(); 
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedClassId, userEmail, paymentStatus]);
 
   const loadData = async () => {
@@ -100,7 +101,7 @@ export default function TeacherAssignments() {
       
       // Get user email
       const userRes = await apiClient('/auth/me');
-      const userResult: any = await userRes.json();
+      const userResult = await userRes.json() as { success: boolean; data?: { email?: string } };
       const email = userResult.success && userResult.data ? userResult.data.email || '' : '';
       console.log('👤 User email:', email);
       setUserEmail(email);
@@ -109,7 +110,7 @@ export default function TeacherAssignments() {
       const academyRes = await apiClient('/teacher/academy');
       let currentPaymentStatus = 'PAID';
       if (academyRes.ok) {
-        const academyResult: any = await academyRes.json();
+        const academyResult = await academyRes.json() as { data?: { academy?: { name?: string; paymentStatus?: string } } };
         if (academyResult.data?.academy) {
           console.log('🏫 Academy:', academyResult.data.academy.name, 'Payment:', academyResult.data.academy.paymentStatus);
           setAcademyName(academyResult.data.academy.name || '');
@@ -123,7 +124,7 @@ export default function TeacherAssignments() {
         console.log('✅ Unpaid academy detected, loading demo data...');
         const demoClasses = generateDemoClasses();
         console.log('📦 Demo classes loaded:', demoClasses.length);
-        setClasses(demoClasses.map(c => ({ id: c.id, name: c.name })) as any[]);
+        setClasses(demoClasses.map(c => ({ id: c.id, name: c.name })) as Class[]);
         setLoading(false);
         return;
       }
@@ -155,7 +156,7 @@ export default function TeacherAssignments() {
           ? demoAssignments.filter(a => a.classId === selectedClassId)
           : demoAssignments;
         console.log('✅ Filtered assignments:', filtered.length, 'for classId:', selectedClassId || 'all');
-        setAssignments(filtered as any);
+        setAssignments(filtered as Assignment[]);
         return;
       }
       
@@ -233,7 +234,7 @@ export default function TeacherAssignments() {
     }
     setCreating(true);
     try {
-      let uploadIds: string[] = [];
+      const uploadIds: string[] = [];
       
       // Upload all selected files
       if (uploadFiles.length > 0) {

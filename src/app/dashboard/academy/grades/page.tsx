@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { Bar } from 'react-chartjs-2';
 import { generateDemoAssignments, generateDemoSubmissions, generateDemoClasses } from '@/lib/demo-data';
@@ -39,77 +39,50 @@ interface StudentAverage {
   totalAssignments: number;
 }
 
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  error?: string;
+}
+
+interface ClassSummary {
+  id: string;
+  name: string;
+}
+
+interface AssignmentSummary {
+  id: string;
+  title: string;
+  maxScore: number;
+  className?: string | null;
+  attachmentIds?: string;
+  uploadId?: string | null;
+}
+
+interface AssignmentDetail {
+  attachmentStoragePath?: string | null;
+  submissions?: AssignmentSubmission[];
+}
+
+interface AssignmentSubmission {
+  gradedAt?: string | null;
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  score: number;
+  uploadId?: string | null;
+  submissionStoragePath?: string | null;
+}
+
 export default function AcademyGrades() {
   const [grades, setGrades] = useState<StudentGrade[]>([]);
   const [averages, setAverages] = useState<StudentAverage[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedClass, setSelectedClass] = useState<string>('');
-  const [classes, setClasses] = useState<{id: string; name: string}[]>([]);
+  const [classes, setClasses] = useState<ClassSummary[]>([]);
   const [paymentStatus, setPaymentStatus] = useState<string>('NOT PAID');
-  const [userEmail, setUserEmail] = useState<string>('');
 
-  useEffect(() => {
-    loadClasses();
-  }, []);
-
-  useEffect(() => {
-    if (selectedClass) {
-      loadGrades();
-    }
-  }, [selectedClass]);
-
-  const loadClasses = async () => {
-    try {
-      // Check payment status and user email
-      const [academyRes, userRes] = await Promise.all([
-        apiClient('/academies'),
-        apiClient('/auth/me')
-      ]);
-      
-      const academyResult = await academyRes.json();
-      const userResult = await userRes.json();
-      
-      if (userResult.success && userResult.data?.email) {
-        setUserEmail(userResult.data.email);
-      }
-      
-      if (academyResult.success && Array.isArray(academyResult.data) && academyResult.data.length > 0) {
-        const academy = academyResult.data[0];
-        const status = academy.paymentStatus || 'NOT PAID';
-        setPaymentStatus(status);
-        
-        // Show demo data if NOT PAID
-        if (status === 'NOT PAID') {
-          const demoClasses = generateDemoClasses();
-          setClasses(demoClasses.map(c => ({ id: c.id, name: c.name })));
-          setSelectedClass('all');
-          setLoading(false);
-          return;
-        }
-      }
-      
-      // If PAID or real unpaid academy, load real classes
-      const res = await apiClient('/classes');
-      const response: any = await res.json();
-      if (response.success) {
-        setClasses(response.data);
-        if (response.data.length > 0) {
-          setSelectedClass('all');
-        } else {
-          console.warn('[Grades] No classes found');
-          setLoading(false);
-        }
-      } else {
-        console.error('[Grades] API error:', response.error);
-        setLoading(false);
-      }
-    } catch (error) {
-      console.error('[Grades] Error loading classes:', error);
-      setLoading(false);
-    }
-  };
-
-  const loadGrades = async () => {
+  const loadGrades = useCallback(async () => {
     setLoading(true);
     try {
       // Show demo grades if NOT PAID
@@ -118,13 +91,14 @@ export default function AcademyGrades() {
         const filtered = selectedClass === 'all' 
           ? demoAssignments 
           : demoAssignments.filter(a => a.classId === selectedClass);
-        
-        const allGrades: StudentGrade[] = [];
-        for (const assignment of filtered) {
+
+        // Build grades data from submissions for each assignment
+        const gradesData: StudentGrade[] = [];
+        filtered.forEach(assignment => {
           const submissions = generateDemoSubmissions(assignment.id);
           submissions.forEach(sub => {
             if (sub.gradedAt && sub.score !== undefined) {
-              allGrades.push({
+              gradesData.push({
                 studentId: `demo-student-${sub.id}`,
                 studentName: sub.studentName,
                 studentEmail: sub.studentEmail,
@@ -133,19 +107,16 @@ export default function AcademyGrades() {
                 maxScore: assignment.maxScore,
                 gradedAt: sub.gradedAt,
                 className: assignment.className,
-                assignmentUploadIds: assignment.attachmentIds,
-                assignmentStoragePath: '/demo/Documento.pdf',
-                submissionStoragePath: sub.fileUrl,
               });
             }
           });
-        }
-        
-        setGrades(allGrades);
-        
+        });
+
+        setGrades(gradesData);
+
         // Calculate averages
         const studentMap = new Map<string, {totalScore: number; totalMax: number; count: number; name: string}>();
-        allGrades.forEach(grade => {
+        gradesData.forEach(grade => {
           const existing = studentMap.get(grade.studentId) || {totalScore: 0, totalMax: 0, count: 0, name: grade.studentName};
           existing.totalScore += grade.score;
           existing.totalMax += grade.maxScore;
@@ -168,7 +139,7 @@ export default function AcademyGrades() {
       // If PAID, load real grades
       const endpoint = selectedClass === 'all' ? '/assignments/all' : `/assignments?classId=${selectedClass}`;
       const assignmentsRaw = await apiClient(endpoint);
-      const assignmentsRes: any = await assignmentsRaw.json();
+      const assignmentsRes = await assignmentsRaw.json() as ApiResponse<AssignmentSummary[]>;
       
       if (!assignmentsRes.success) {
         setLoading(false);
@@ -179,9 +150,9 @@ export default function AcademyGrades() {
       const allGrades: StudentGrade[] = [];
       for (const assignment of assignmentsRes.data) {
         const assignmentRaw = await apiClient(`/assignments/${assignment.id}`);
-        const assignmentRes: any = await assignmentRaw.json();
+        const assignmentRes = await assignmentRaw.json() as ApiResponse<AssignmentDetail>;
         if (assignmentRes.success && assignmentRes.data.submissions) {
-          assignmentRes.data.submissions.forEach((sub: any) => {
+          assignmentRes.data.submissions.forEach((sub) => {
             if (sub.gradedAt) {
               allGrades.push({
                 studentId: sub.studentId,
@@ -193,10 +164,10 @@ export default function AcademyGrades() {
                 gradedAt: sub.gradedAt,
                 className: assignment.className || '',
                 assignmentUploadIds: assignment.attachmentIds,
-                assignmentUploadId: assignment.uploadId,
-                submissionUploadId: sub.uploadId,
-                assignmentStoragePath: assignmentRes.data.attachmentStoragePath,
-                submissionStoragePath: sub.submissionStoragePath
+                assignmentUploadId: assignment.uploadId ?? undefined,
+                submissionUploadId: sub.uploadId ?? undefined,
+                assignmentStoragePath: assignmentRes.data.attachmentStoragePath ?? undefined,
+                submissionStoragePath: sub.submissionStoragePath ?? undefined
               });
             }
           });
@@ -228,30 +199,84 @@ export default function AcademyGrades() {
       console.error('Error loading grades:', error);
       setLoading(false);
     }
-  };
+  }, [paymentStatus, selectedClass]);
+
+  const loadClasses = useCallback(async () => {
+    try {
+      // Check payment status and user email
+      const [academyRes, userRes] = await Promise.all([
+        apiClient('/academies'),
+        apiClient('/auth/me')
+      ]);
+      
+      const academyResult = await academyRes.json();
+      const _userResult = await userRes.json();
+      
+      if (academyResult.success && Array.isArray(academyResult.data) && academyResult.data.length > 0) {
+        const academy = academyResult.data[0];
+        const status = academy.paymentStatus || 'NOT PAID';
+        setPaymentStatus(status);
+        
+        // Show demo data if NOT PAID
+        if (status === 'NOT PAID') {
+          const demoClasses = generateDemoClasses();
+          setClasses(demoClasses.map(c => ({ id: c.id, name: c.name })));
+          setSelectedClass('all');
+          setLoading(false);
+          return;
+        }
+      }
+      
+      // If PAID or real unpaid academy, load real classes
+      const res = await apiClient('/classes');
+      const response = await res.json() as ApiResponse<ClassSummary[]>;
+      if (response.success) {
+        setClasses(response.data);
+        if (response.data.length > 0) {
+          setSelectedClass('all');
+        } else {
+          console.warn('[Grades] No classes found');
+          setLoading(false);
+        }
+      } else {
+        console.error('[Grades] API error:', response.error);
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error('[Grades] Error loading classes:', error);
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadClasses();
+  }, [loadClasses]);
+
+  useEffect(() => {
+    if (selectedClass) {
+      loadGrades();
+    }
+  }, [selectedClass, loadGrades]);
 
   const top10Averages = averages.slice(0, 10);
 
   const chartData = {
-    labels: top10Averages.map(a => {
-      const parts = a.studentName.split(' ');
-      return `${parts[0]} ${parts.slice(1).join(' ')}`;
-    }),
+    labels: top10Averages.map(a => a.studentName),
     datasets: [{
-      label: 'Promedio (%)',
-      data: top10Averages.map(a => a.averageGrade),
-      backgroundColor: top10Averages.map(a => 
-        a.averageGrade === 100 ? 'rgba(22, 101, 52, 0.8)' :
-        a.averageGrade >= 70 ? 'rgba(5, 150, 105, 0.8)' :
-        a.averageGrade >= 50 ? 'rgba(249, 115, 22, 0.8)' :
-        'rgba(220, 38, 38, 0.8)'
-      ),
-      borderColor: top10Averages.map(a => 
+      label: 'Promedio',
+      data: top10Averages.map(a => Math.round(a.averageGrade)),
+      backgroundColor: top10Averages.map(a => (
+        a.averageGrade === 100 ? 'rgba(22, 101, 52, 0.2)' :
+        a.averageGrade >= 70 ? 'rgba(5, 150, 105, 0.2)' :
+        a.averageGrade >= 50 ? 'rgba(249, 115, 22, 0.2)' :
+        'rgba(220, 38, 38, 0.2)'
+      )),
+      borderColor: top10Averages.map(a => (
         a.averageGrade === 100 ? 'rgb(22, 101, 52)' :
         a.averageGrade >= 70 ? 'rgb(5, 150, 105)' :
         a.averageGrade >= 50 ? 'rgb(249, 115, 22)' :
         'rgb(220, 38, 38)'
-      ),
+      )),
       borderWidth: 2,
       borderRadius: 6,
     }]
@@ -265,7 +290,7 @@ export default function AcademyGrades() {
       title: { display: false },
       tooltip: {
         callbacks: {
-          label: (context: any) => {
+          label: (context: { dataIndex: number }) => {
             const avg = top10Averages[context.dataIndex];
             return `Promedio: ${avg.averageGrade.toFixed(1)}% (${avg.totalAssignments} ejercicios)`;
           }
@@ -277,7 +302,7 @@ export default function AcademyGrades() {
         beginAtZero: true,
         max: 100,
         ticks: {
-          callback: (value: any) => value + '%'
+          callback: (value: number | string) => `${value}%`
         },
         grid: {
           color: 'rgba(0, 0, 0, 0.05)'

@@ -16,7 +16,7 @@ export default function AuthModal({ mode, onClose }: AuthModalProps) {
     setIsLogin(mode === 'login');
   }, [mode]);
 
-  const handleSuccess = (role: string) => {
+  const handleSuccess = (_role: string) => {
     // Navigation handled by form components
   };
 

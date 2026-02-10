@@ -33,11 +33,11 @@ export default function ClassHeader({
   classData,
   backLink,
   creatingStream,
-  showPendingRequests,
+  showPendingRequests: _showPendingRequests,
   paymentStatus = 'PAID',
   onCreateLesson,
   onCreateStream,
-  onTogglePendingRequests,
+  onTogglePendingRequests: _onTogglePendingRequests,
 }: ClassHeaderProps) {
   const isStreamDisabled = creatingStream || paymentStatus === 'NOT PAID';
 

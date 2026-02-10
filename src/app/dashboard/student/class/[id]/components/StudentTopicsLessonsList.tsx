@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { getBunnyThumbnailUrl } from '@/lib/bunny-stream';
+import Image from 'next/image';
 
 interface Video {
   id: string;
@@ -73,6 +74,7 @@ export default function StudentTopicsLessonsList({
   setExpandedTopics,
   onSelectLesson,
 }: StudentTopicsLessonsListProps) {
+  const [thumbnailErrors, setThumbnailErrors] = useState<Record<string, boolean>>({});
 
   const formatDate = (d: string) => {
     const date = new Date(d);
@@ -179,14 +181,23 @@ export default function StudentTopicsLessonsList({
           <div className="relative" style={{ height: '160px' }}>
             {thumbnailUrl && videoCount > 0 ? (
               <>
-                <img 
-                  src={thumbnailUrl} 
-                  alt={lesson.title}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
+                {thumbnailErrors[lesson.id] ? (
+                  <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center">
+                    <svg className="w-12 h-12 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                    </svg>
+                  </div>
+                ) : (
+                  <Image 
+                    src={thumbnailUrl} 
+                    alt={lesson.title}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 600px"
+                    unoptimized
+                    className="object-cover"
+                    onError={() => setThumbnailErrors(prev => ({ ...prev, [lesson.id]: true }))}
+                  />
+                )}
                 {/* Transcoding Badge - Show when video is still processing */}
                 {lesson.isTranscoding === 1 && (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/60">

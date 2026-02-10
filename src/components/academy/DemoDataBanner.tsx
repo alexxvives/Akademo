@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 
 export function DemoDataBanner() {
-  const [academyId, setAcademyId] = useState<string>('');
+  const [_academyId, setAcademyId] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
   const [showModal, setShowModal] = useState(false);
   const [copied, setCopied] = useState(false);

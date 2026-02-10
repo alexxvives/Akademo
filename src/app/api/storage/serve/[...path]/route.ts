@@ -36,10 +36,10 @@ export async function GET(
         'Cache-Control': response.headers.get('Cache-Control') || 'public, max-age=31536000',
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Storage Proxy] Error:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to serve file' },
+      { success: false, error: error instanceof Error ? error.message : 'Failed to serve file' },
       { status: 500 }
     );
   }

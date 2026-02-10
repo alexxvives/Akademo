@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { generateDemoPendingPayments, generateDemoPaymentHistory } from '@/lib/demo-data';
 import { SkeletonTable } from '@/components/ui/SkeletonLoader';
@@ -40,6 +40,29 @@ interface PaymentHistory {
   approvedByName?: string;
   approvedAt: string;
   teacherName?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+type DemoPendingPayment = ReturnType<typeof generateDemoPendingPayments>[number];
+type DemoHistoryPayment = ReturnType<typeof generateDemoPaymentHistory>[number];
+
+interface PaymentHistoryResponse {
+  payments: Array<{
+    id: string;
+    amount: number;
+    currency: string;
+    paymentMethod: string;
+    status: string;
+    paymentDate: string;
+    dueDate: string;
+    className: string;
+  }>;
+  totalPaid: number;
+  totalDue: number;
+  paymentFrequency: 'MONTHLY' | 'ONE_TIME';
+  enrollmentDate: string;
+  classId?: string;
 }
 
 export default function AcademyPaymentsPage() {
@@ -51,7 +74,6 @@ export default function AcademyPaymentsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
-  const [reversingIds, setReversingIds] = useState<Set<string>>(new Set());
   const [paymentStatus, setPaymentStatus] = useState<string>('PAID');
   const [selectedStudent, setSelectedStudent] = useState<{
     studentId: string;
@@ -59,7 +81,7 @@ export default function AcademyPaymentsPage() {
     email: string;
     className: string;
     enrollmentDate: string;
-    paymentData?: any;
+    paymentData?: PaymentHistoryResponse | null;
     classId?: string;
   } | null>(null);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
@@ -82,8 +104,8 @@ export default function AcademyPaymentsPage() {
       // For unpaid academies, use demo data
       if (paymentStatus === 'NOT PAID') {
         // Generate demo payment data for this student
-        const demoHistory = generateDemoPaymentHistory();
-        const demoPending = generateDemoPendingPayments();
+        const demoHistory: DemoHistoryPayment[] = generateDemoPaymentHistory();
+        const demoPending: DemoPendingPayment[] = generateDemoPendingPayments();
         
         // Filter by student email (since all demo data has same studentId)
         const studentHistoryPayments = demoHistory.filter(p => p.studentEmail === studentEmail);
@@ -128,7 +150,7 @@ export default function AcademyPaymentsPage() {
               })),
               totalPaid,
               totalDue,
-              paymentFrequency: 'MONTHLY' as const,
+              paymentFrequency: 'MONTHLY',
               enrollmentDate,
               classId,
             },
@@ -195,7 +217,7 @@ export default function AcademyPaymentsPage() {
           classId,
         });
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error fetching payment history:', error);
       // Still open modal on error, will show empty state
       setSelectedStudent({
@@ -210,11 +232,7 @@ export default function AcademyPaymentsPage() {
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       // Check academy payment status first
       const academyRes = await apiClient('/academies');
@@ -228,10 +246,10 @@ export default function AcademyPaymentsPage() {
         
         // If NOT PAID, show demo payments
         if (status === 'NOT PAID') {
-          const demoPending = generateDemoPendingPayments();
-          const demoHistory = generateDemoPaymentHistory();
-          setPendingPayments(demoPending as any[]);
-          setPaymentHistory(demoHistory as any[]);
+          const demoPending: DemoPendingPayment[] = generateDemoPendingPayments();
+          const demoHistory: DemoHistoryPayment[] = generateDemoPaymentHistory();
+          setPendingPayments(demoPending as unknown as PendingPayment[]);
+          setPaymentHistory(demoHistory as unknown as PaymentHistory[]);
           setClasses([
             { id: 'demo-c1', name: 'Programación Web' },
             { id: 'demo-c2', name: 'Matemáticas Avanzadas' },
@@ -252,19 +270,19 @@ export default function AcademyPaymentsPage() {
           };
           
           // Process demo pending payments
-          demoPending.forEach((p: any) => {
+          demoPending.forEach((p) => {
             const classId = p.className === 'Programación Web' ? 'demo-c1' :
                            p.className === 'Matemáticas Avanzadas' ? 'demo-c2' :
                            p.className === 'Diseño Gráfico' ? 'demo-c3' : 'demo-c4';
-            addToEnrollmentMap(p.studentId, classId, p.className);
+            addToEnrollmentMap(p.studentId ?? '', classId, p.className);
           });
           
           // Process demo history payments
-          demoHistory.forEach((p: any) => {
+          demoHistory.forEach((p) => {
             const classId = p.classId || (p.className === 'Programación Web' ? 'demo-c1' :
                            p.className === 'Matemáticas Avanzadas' ? 'demo-c2' :
                            p.className === 'Diseño Gráfico' ? 'demo-c3' : 'demo-c4');
-            addToEnrollmentMap(p.studentId, classId, p.className);
+            addToEnrollmentMap(p.studentId ?? '', classId, p.className);
           });
           
           setStudentEnrollments(enrollmentMap);
@@ -317,12 +335,12 @@ export default function AcademyPaymentsPage() {
         };
         
         if (pendingResult.success && Array.isArray(pendingResult.data)) {
-          pendingResult.data.forEach((p: any) => {
+          pendingResult.data.forEach((p: PendingPayment) => {
             addToEnrollmentMap(p.studentId, p.classId, p.className);
           });
         }
         if (historyResult.success && Array.isArray(historyResult.data)) {
-          historyResult.data.forEach((p: any) => {
+          historyResult.data.forEach((p: PaymentHistory) => {
             addToEnrollmentMap(p.studentId, p.classId, p.className);
           });
         }
@@ -333,7 +351,11 @@ export default function AcademyPaymentsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleApprove = async (enrollmentId: string) => {
     setProcessingIds(prev => new Set(prev).add(enrollmentId));
@@ -354,8 +376,8 @@ export default function AcademyPaymentsPage() {
       } else {
         alert(result.error || 'Error al confirmar pago');
       }
-    } catch (error: any) {
-      alert('Error: ' + error.message);
+    } catch (error: unknown) {
+      alert('Error: ' + (error instanceof Error ? error.message : 'Error desconocido'));
     } finally {
       setProcessingIds(prev => {
         const next = new Set(prev);
@@ -382,40 +404,10 @@ export default function AcademyPaymentsPage() {
       } else {
         alert(result.error || 'Error al denegar pago');
       }
-    } catch (error: any) {
-      alert('Error: ' + error.message);
+    } catch (error: unknown) {
+      alert('Error: ' + (error instanceof Error ? error.message : 'Error desconocido'));
     } finally {
       setProcessingIds(prev => {
-        const next = new Set(prev);
-        next.delete(enrollmentId);
-        return next;
-      });
-    }
-  };
-
-  const handleReversePayment = async (enrollmentId: string, currentStatus: string) => {
-    const newStatus = currentStatus === 'PAID' ? 'denegado' : 'confirmado';
-    if (!confirm(`¿Estás seguro de revertir este estado a ${newStatus}?`)) {
-      return;
-    }
-
-    setReversingIds(prev => new Set(prev).add(enrollmentId));
-    try {
-      const response = await apiClient(`/payments/history/${enrollmentId}/reverse`, {
-        method: 'PUT',
-      });
-
-      const result = await response.json();
-      if (result.success) {
-        loadData(); // Reload to update history
-      } else {
-        alert(result.error || 'Failed to reverse payment status');
-      }
-    } catch (error) {
-      console.error('Error reversing payment status:', error);
-      alert('An error occurred');
-    } finally {
-      setReversingIds(prev => {
         const next = new Set(prev);
         next.delete(enrollmentId);
         return next;
@@ -476,35 +468,12 @@ export default function AcademyPaymentsPage() {
         // Reload data to show updated payment
         await loadData();
         setShowStudentDropdown(false);
-        loadData();
       } else {
         alert(result.error || 'Error al registrar pago');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error registering payment:', error);
-      alert('Error: ' + error.message);
-    }
-  };
-
-  const handleDeletePayment = async (paymentId: string) => {
-    if (!confirm('¿Eliminar este pago permanentemente?')) return;
-    
-    setDeletingPaymentId(paymentId);
-    try {
-      const res = await apiClient(`/payments/${paymentId}`, {
-        method: 'DELETE',
-      });
-
-      const result = await res.json();
-      if (result.success) {
-        loadData();
-      } else {
-        alert(result.error || 'Error al eliminar pago');
-      }
-    } catch (error: any) {
-      alert('Error: ' + error.message);
-    } finally {
-      setDeletingPaymentId(null);
+      alert('Error: ' + (error instanceof Error ? error.message : 'Error desconocido'));
     }
   };
   
@@ -722,7 +691,7 @@ export default function AcademyPaymentsPage() {
                 key={`history-${history.enrollmentId}-${index}`}
                 onClick={() => {
                   setRegisterForm({
-                    studentId: (history as any).studentId || '',
+                    studentId: history.studentId || '',
                     classId: history.classId || '',
                     amount: history.paymentAmount.toString(),
                     paymentMethod: (history.paymentMethod.toLowerCase() === 'cash' || history.paymentMethod === 'CASH') ? 'cash' : 'bizum',
@@ -766,7 +735,7 @@ export default function AcademyPaymentsPage() {
                   </div>
                 </td>
                 <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {new Date((history as any).createdAt || (history as any).updatedAt || history.approvedAt).toLocaleDateString('es-ES', {
+                  {new Date(history.createdAt || history.updatedAt || history.approvedAt).toLocaleDateString('es-ES', {
                     day: 'numeric',
                     month: 'long',
                     year: 'numeric'
@@ -777,11 +746,11 @@ export default function AcademyPaymentsPage() {
                     onClick={(e) => {
                       e.stopPropagation();
                       showStudentPaymentHistory(
-                        (history as any).studentId || '',
+                        history.studentId || '',
                         `${history.studentFirstName} ${history.studentLastName}`,
                         history.studentEmail,
                         'Todas las clases',
-                        (history as any).createdAt || (history as any).updatedAt || history.approvedAt,
+                        history.createdAt || history.updatedAt || history.approvedAt,
                         'all'
                       );
                     }}
@@ -1057,8 +1026,6 @@ export default function AcademyPaymentsPage() {
           studentEmail={selectedStudent.email}
           className={selectedStudent.className}
           payments={selectedStudent.paymentData?.payments || []}
-          totalPaid={selectedStudent.paymentData?.totalPaid || 0}
-          totalDue={selectedStudent.paymentData?.totalDue || 0}
           paymentFrequency={selectedStudent.paymentData?.paymentFrequency || 'ONE_TIME'}
           enrollmentDate={selectedStudent.paymentData?.enrollmentDate || selectedStudent.enrollmentDate}
           availableClasses={(studentEnrollments[selectedStudent.studentId] || []).map(e => ({

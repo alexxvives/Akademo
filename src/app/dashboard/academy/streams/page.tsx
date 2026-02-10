@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
 import { generateDemoStreams } from '@/lib/demo-data';
@@ -43,11 +43,21 @@ export default function AcademyStreamsPage() {
   const [editingTitleValue, setEditingTitleValue] = useState<string>('');
   const [deletingStreamId, setDeletingStreamId] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadAcademyInfo();
+  const loadStreams = useCallback(async () => {
+    try {
+      const response = await apiClient('/live/history');
+      const result = await response.json();
+      if (result.success) {
+        setStreams(result.data || []);
+      }
+    } catch (error) {
+      console.error('Error loading streams:', error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const loadAcademyInfo = async () => {
+  const loadAcademyInfo = useCallback(async () => {
     try {
       const [academiesRes, classesRes] = await Promise.all([
         apiClient('/academies'),
@@ -66,10 +76,10 @@ export default function AcademyStreamsPage() {
         
         // If NOT PAID, show demo streams
         if (status === 'NOT PAID') {
-          const demoStreams = generateDemoStreams();
-          setStreams(demoStreams.map((s: any) => ({
-            ...s,
-            classSlug: s.className.toLowerCase().replace(/\s+/g, '-'),
+          const demoStreams = generateDemoStreams() as Stream[];
+          setStreams(demoStreams.map((stream) => ({
+            ...stream,
+            classSlug: stream.className.toLowerCase().replace(/\s+/g, '-'),
           })));
           // Load demo classes for filter
           setClasses([
@@ -99,21 +109,11 @@ export default function AcademyStreamsPage() {
       console.error('Error loading academy info:', error);
       setLoading(false);
     }
-  };
+  }, [loadStreams]);
 
-  const loadStreams = async () => {
-    try {
-      const response = await apiClient('/live/history');
-      const result = await response.json();
-      if (result.success) {
-        setStreams(result.data || []);
-      }
-    } catch (error) {
-      console.error('Error loading streams:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    loadAcademyInfo();
+  }, [loadAcademyInfo]);
 
   const filteredStreams = useMemo(() => {
     const filtered = selectedClass === 'all' ? streams : streams.filter(s => s.classId === selectedClass);
@@ -252,23 +252,6 @@ export default function AcademyStreamsPage() {
         );
     }
   };
-
-  const activeCount = streams.filter(s => s.status === 'active' || s.status === 'scheduled').length;
-  const endedCount = streams.filter(s => s.status === 'ended').length;
-  
-  const streamsWithParticipants = streams.filter(s => s.participantCount != null);
-  const avgParticipants = streamsWithParticipants.length > 0
-    ? Math.round(streamsWithParticipants.reduce((acc, s) => acc + (s.participantCount || 0), 0) / streamsWithParticipants.length)
-    : 0;
-  
-  const totalDurationMs = streams.reduce((acc, stream) => {
-    if (!stream.startedAt && !stream.createdAt) return acc;
-    const start = stream.startedAt || stream.createdAt;
-    const end = stream.endedAt || (stream.status === 'active' ? new Date().toISOString() : stream.createdAt);
-    return acc + (new Date(end).getTime() - new Date(start).getTime());
-  }, 0);
-  const totalHours = Math.floor(totalDurationMs / (1000 * 60 * 60));
-  const totalMinutes = Math.floor((totalDurationMs % (1000 * 60 * 60)) / (1000 * 60));
 
   return (
     <div className="space-y-6">

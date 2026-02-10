@@ -60,18 +60,20 @@ export default function AdminGrades() {
     if (selectedAcademy) {
       loadClasses();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedAcademy]);
 
   useEffect(() => {
     if (selectedClass && selectedAcademy) {
       loadGrades();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedClass, selectedAcademy]);
 
   const loadAcademies = async () => {
     try {
       const res = await apiClient('/academies');
-      const response: any = await res.json();
+      const response: { success: boolean; data: Academy[] } = await res.json();
       if (response.success) {
         setAcademies(response.data);
         if (response.data.length > 0) {
@@ -92,7 +94,7 @@ export default function AdminGrades() {
     try {
       const endpoint = selectedAcademy === 'all' ? '/classes' : `/classes?academyId=${selectedAcademy}`;
       const res = await apiClient(endpoint);
-      const response: any = await res.json();
+      const response: { success: boolean; data: Array<{ id: string; name: string }> } = await res.json();
       if (response.success) {
         setClasses(response.data);
         if (response.data.length > 0) {
@@ -122,7 +124,7 @@ export default function AdminGrades() {
       }
       
       const assignmentsRaw = await apiClient(endpoint);
-      const assignmentsRes: any = await assignmentsRaw.json();
+      const assignmentsRes: { success: boolean; data: Array<{ id: string; title: string; maxScore: number; className?: string; attachmentIds?: string; uploadId?: string }> } = await assignmentsRaw.json();
       
       if (!assignmentsRes.success) {
         setLoading(false);
@@ -133,9 +135,9 @@ export default function AdminGrades() {
       const allGrades: StudentGrade[] = [];
       for (const assignment of assignmentsRes.data) {
         const assignmentRaw = await apiClient(`/assignments/${assignment.id}`);
-        const assignmentRes: any = await assignmentRaw.json();
+        const assignmentRes: { success: boolean; data: { submissions?: Array<{ studentId: string; studentName: string; studentEmail: string; score: number; gradedAt?: string; uploadId?: string; submissionStoragePath?: string }>; attachmentStoragePath?: string } } = await assignmentRaw.json();
         if (assignmentRes.success && assignmentRes.data.submissions) {
-          assignmentRes.data.submissions.forEach((sub: any) => {
+          assignmentRes.data.submissions.forEach((sub) => {
             if (sub.gradedAt) {
               allGrades.push({
                 studentId: sub.studentId,
@@ -219,7 +221,7 @@ export default function AdminGrades() {
       title: { display: false },
       tooltip: {
         callbacks: {
-          label: (context: any) => {
+          label: (context: { dataIndex: number }) => {
             const avg = top10Averages[context.dataIndex];
             return `Promedio: ${avg.averageGrade.toFixed(1)}% (${avg.totalAssignments} ejercicios)`;
           }
@@ -231,7 +233,7 @@ export default function AdminGrades() {
         beginAtZero: true,
         max: 100,
         ticks: {
-          callback: (value: any) => value + '%'
+          callback: (value: string | number) => value + '%'
         },
         grid: {
           color: 'rgba(0, 0, 0, 0.05)'

@@ -23,10 +23,6 @@ interface StudentsProgressTableProps {
   loading: boolean;
   searchQuery: string;
   selectedClass: string;
-  onSearchChange: (query: string) => void;
-  onClassFilterChange: (classId: string) => void;
-  uniqueClasses: string[];
-  showClassFilter?: boolean;
   showTeacherColumn?: boolean;
   showBanButton?: boolean;
   disableBanButton?: boolean;
@@ -38,10 +34,6 @@ export function StudentsProgressTable({
   loading,
   searchQuery,
   selectedClass,
-  onSearchChange,
-  onClassFilterChange,
-  uniqueClasses,
-  showClassFilter = true,
   showTeacherColumn = false,
   showBanButton = false,
   disableBanButton = false,

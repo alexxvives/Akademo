@@ -1,8 +1,13 @@
 'use client';
 
 // Footer component
+interface FooterTranslations {
+  footerTagline: string;
+  footerRights: string;
+}
+
 interface FooterProps {
-  t: any;
+  t: FooterTranslations;
   lang: 'es' | 'en';
 }
 

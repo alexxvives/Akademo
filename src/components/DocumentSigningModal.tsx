@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { SkeletonForm } from '@/components/ui/SkeletonLoader';
 
 interface DocumentSigningModalProps {
   isOpen: boolean;
@@ -15,7 +14,7 @@ export default function DocumentSigningModal({
   isOpen,
   onClose,
   onSign,
-  classId,
+  classId: _classId,
   className,
 }: DocumentSigningModalProps) {
   const [agreed, setAgreed] = useState(false);

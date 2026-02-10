@@ -100,7 +100,7 @@ export function EmailVerificationInput({ email, onVerified, onChangeEmail }: Ema
       if (!data.success) {
         throw new Error(data.error || 'Failed to send verification code');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       throw err;
     }
   };

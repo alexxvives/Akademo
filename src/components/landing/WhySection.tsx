@@ -1,5 +1,3 @@
-import { Language } from '@/lib/translations';
-
 interface WhySectionProps {
   t: Record<string, string>;
 }

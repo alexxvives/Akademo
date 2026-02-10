@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import Link from 'next/link';
 import { BarChart, DonutChart } from '@/components/Charts';
 import { apiClient } from '@/lib/api-client';
 import { useAnimatedNumber } from '@/hooks';
@@ -61,6 +60,43 @@ interface RatingsData {
   }>;
 }
 
+interface StreamRecord {
+  classId?: string | null;
+  participantCount?: number | null;
+  startedAt?: string | null;
+  endedAt?: string | null;
+  createdAt?: string | null;
+}
+
+interface ProgressRecord {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  classId: string;
+  className: string;
+  lessonsCompleted?: number | null;
+  totalLessons?: number | null;
+  lastActive?: string | null;
+  totalWatchTime?: number | null;
+}
+
+interface PaymentHistoryItem {
+  status?: string | null;
+  amount?: number | null;
+  paymentMethod?: string | null;
+}
+
+interface EnrollmentRecord {
+  student: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  };
+}
+
+
 // Animated Number Component
 function AnimatedNumber({ value, className }: { value: number; className?: string }) {
   const animatedValue = useAnimatedNumber(value);
@@ -75,8 +111,7 @@ export default function AcademyDashboard() {
   const [academyInfo, setAcademyInfo] = useState<{ id: string; name: string; paymentStatus?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [rejectedCount, setRejectedCount] = useState(0);
-  const [streamStats, setStreamStats] = useState({ total: 0, avgParticipants: 0, thisMonth: 0, totalHours: 0, totalMinutes: 0 });
-  const [allStreams, setAllStreams] = useState<any[]>([]);
+  const [allStreams, setAllStreams] = useState<StreamRecord[]>([]);
   const [classWatchTime, setClassWatchTime] = useState({ hours: 0, minutes: 0 });
   const [selectedClass, setSelectedClass] = useState('all');
   const [paymentStatus, setPaymentStatus] = useState<string>('NOT PAID');
@@ -192,15 +227,6 @@ export default function AcademyDashboard() {
           };
           setRatingsData(ratingsDataObj);
           
-          setAllStreams(demoStreams);
-          setStreamStats({
-            total: demoStats.totalStreams,
-            avgParticipants: demoStats.avgParticipants,
-            thisMonth: demoStats.streamsThisMonth,
-            totalHours: demoStats.totalStreamHours,
-            totalMinutes: demoStats.totalStreamMinutes,
-          });
-          
           // Demo class watch time per class (will be filtered)
           const demoClassWatchData = [
             { classId: 'demo-c1', hours: 15, minutes: 45 },  // Programación Web
@@ -208,15 +234,6 @@ export default function AcademyDashboard() {
             { classId: 'demo-c3', hours: 10, minutes: 15 },  // Diseño Gráfico
             { classId: 'demo-c4', hours: 7, minutes: 0 },    // Física Cuántica
           ];
-          
-          // Store raw class watch data for filtering
-          const allClassWatchData: any[] = [];
-          mappedStudents.forEach(s => {
-            const classData = demoClassWatchData.find(d => d.classId === s.classId);
-            if (classData) {
-              allClassWatchData.push({ ...s, watchHours: classData.hours, watchMinutes: classData.minutes });
-            }
-          });
           
           // Calculate initial total (all classes)
           const totalMinutes = demoClassWatchData.reduce((sum, d) => sum + d.hours * 60 + d.minutes, 0);
@@ -227,7 +244,15 @@ export default function AcademyDashboard() {
           
           // Get payment data for enrollment stats
           const demoPendingPayments = generateDemoPendingPayments(); // 5 pending
-          const demoHistoryPayments = generateDemoPaymentHistory(); // 20 total: 18 paid, 2 rejected
+          const demoHistoryPayments = generateDemoPaymentHistory(); // 23 total: 21 paid, 2 rejected
+          
+          // Calculate demo payment statistics
+          const paidPayments = demoHistoryPayments.filter(p => p.paymentStatus === 'PAID');
+          const totalPaid = paidPayments.reduce((sum, p) => sum + p.paymentAmount, 0);
+          const bizumCount = paidPayments.filter(p => p.paymentMethod === 'bizum').length;
+          const cashCount = paidPayments.filter(p => p.paymentMethod === 'cash').length;
+          const stripeCount = paidPayments.filter(p => p.paymentMethod === 'stripe').length;
+          setPaymentStats({ totalPaid, bizumCount, cashCount, stripeCount });
           
           // Map payments to enrollments (pending)
           const demoPending = demoPendingPayments.map((payment, i) => ({
@@ -255,30 +280,6 @@ export default function AcademyDashboard() {
           // Set demo streams data
           setAllStreams(demoStreams);
           
-          // Calculate stream stats from demo data
-          const streamsWithParticipants = demoStreams.filter((s: any) => s.participantCount != null && s.participantCount > 0);
-          const totalParticipants = streamsWithParticipants.reduce((sum: number, s: any) => sum + (s.participantCount || 0), 0);
-          
-          const totalDurationMs = demoStreams.reduce((sum: number, s: any) => {
-            if (s.startedAt && s.endedAt) {
-              const start = new Date(s.startedAt).getTime();
-              const end = new Date(s.endedAt).getTime();
-              return sum + (end - start);
-            }
-            return sum;
-          }, 0);
-          const totalStreamDuration = Math.floor(totalDurationMs / (1000 * 60));
-          const totalStreamHours = Math.floor(totalStreamDuration / 60);
-          const totalStreamMinutes = totalStreamDuration % 60;
-          
-          setStreamStats({
-            total: demoStreams.length,
-            avgParticipants: streamsWithParticipants.length > 0 ? Math.round(totalParticipants / streamsWithParticipants.length) : 0,
-            thisMonth: demoStreams.length, // All demo streams count as "this month"
-            totalHours: totalStreamHours,
-            totalMinutes: totalStreamMinutes,
-          });
-          
           setLoading(false);
           return;
         }
@@ -290,52 +291,24 @@ export default function AcademyDashboard() {
 
       // Calculate payment statistics from completed/paid payments
       if (paymentsResult.success && Array.isArray(paymentsResult.data)) {
-        const completedPayments = paymentsResult.data.filter((p: any) => 
-          p.status === 'COMPLETED' || p.status === 'PAID'
-        );
-        const totalPaid = completedPayments.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
-        const bizumCount = completedPayments.filter((p: any) => p.paymentMethod === 'bizum').length;
-        const cashCount = completedPayments.filter((p: any) => p.paymentMethod === 'cash').length;
-        const stripeCount = completedPayments.filter((p: any) => p.paymentMethod === 'stripe').length;
+        const paymentsData = paymentsResult.data as PaymentHistoryItem[];
+        const completedPayments = paymentsData.filter((p) => p.status === 'COMPLETED' || p.status === 'PAID');
+        const totalPaid = completedPayments.reduce((sum, p) => sum + (p.amount ?? 0), 0);
+        const bizumCount = completedPayments.filter((p) => p.paymentMethod === 'bizum').length;
+        const cashCount = completedPayments.filter((p) => p.paymentMethod === 'cash').length;
+        const stripeCount = completedPayments.filter((p) => p.paymentMethod === 'stripe').length;
         setPaymentStats({ totalPaid, bizumCount, cashCount, stripeCount });
       }
 
       if (streamsResult.success && Array.isArray(streamsResult.data)) {
         const streams = streamsResult.data;
         setAllStreams(streams);
-        const now = new Date();
-        const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-        const thisMonthStreams = streams.filter((s: any) => new Date(s.createdAt) >= thisMonthStart);
-        
-        // Only count streams that have participants (exclude 0 and null)
-        const streamsWithParticipants = streams.filter((s: any) => s.participantCount != null && s.participantCount > 0);
-        const totalParticipants = streamsWithParticipants.reduce((sum: number, s: any) => sum + (s.participantCount || 0), 0);
-        
-        // Calculate duration from startedAt and endedAt timestamps
-        const totalDurationMs = streams.reduce((sum: number, s: any) => {
-          if (s.startedAt && s.endedAt) {
-            const start = new Date(s.startedAt).getTime();
-            const end = new Date(s.endedAt).getTime();
-            return sum + (end - start);
-          }
-          return sum;
-        }, 0);
-        const totalDuration = Math.floor(totalDurationMs / (1000 * 60)); // Convert to minutes
-        const totalHours = Math.floor(totalDuration / 60);
-        const totalMinutes = totalDuration % 60;
-        
-        setStreamStats({
-          total: streams.length,
-          avgParticipants: streamsWithParticipants.length > 0 ? Math.round(totalParticipants / streamsWithParticipants.length) : 0,
-          thisMonth: thisMonthStreams.length,
-          totalHours: totalHours,
-          totalMinutes: totalMinutes,
-        });
       }
 
       // Calculate total class watch time from progress data
       if (progressResult.success && Array.isArray(progressResult.data)) {
-        const totalSeconds = progressResult.data.reduce((sum: number, student: any) => sum + (student.totalWatchTime || 0), 0);
+        const progressData = progressResult.data as ProgressRecord[];
+        const totalSeconds = progressData.reduce((sum, student) => sum + (student.totalWatchTime ?? 0), 0);
         const totalMinutes = Math.floor(totalSeconds / 60);
         setClassWatchTime({
           hours: Math.floor(totalMinutes / 60),
@@ -357,15 +330,16 @@ export default function AcademyDashboard() {
         
         // FIXED: Progress API already returns one row per student per class
         if (progressResult.success && Array.isArray(progressResult.data)) {
+          const progressData = progressResult.data as ProgressRecord[];
           // Transform progress data directly - no need to query enrollments again
-          const allStudents: EnrolledStudent[] = progressResult.data.map((student: any) => ({
+          const allStudents: EnrolledStudent[] = progressData.map((student) => ({
             id: student.id,
             name: `${student.firstName} ${student.lastName}`,
             email: student.email,
             classId: student.classId,
             className: student.className,
-            lessonsCompleted: student.lessonsCompleted || 0,
-            totalLessons: student.totalLessons || 0,
+            lessonsCompleted: student.lessonsCompleted ?? 0,
+            totalLessons: student.totalLessons ?? 0,
             lastActive: student.lastActive,
           }));
           setEnrolledStudents(allStudents);
@@ -377,9 +351,9 @@ export default function AcademyDashboard() {
           
           const allStudents: EnrolledStudent[] = [];
           classList.forEach((cls: Class, idx: number) => {
-            const enrollData = enrollmentResponses[idx];
+            const enrollData = enrollmentResponses[idx] as { success?: boolean; data?: EnrollmentRecord[] };
             if (enrollData.success && Array.isArray(enrollData.data)) {
-              const studentsInClass = enrollData.data.map((e: any) => ({
+              const studentsInClass = enrollData.data.map((e) => ({
                 id: e.student.id,
                 name: `${e.student.firstName} ${e.student.lastName}`,
                 email: e.student.email,
@@ -399,26 +373,6 @@ export default function AcademyDashboard() {
       console.error('❌ Failed to load data:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleEnrollmentAction = async (enrollmentId: string, action: 'approve' | 'reject') => {
-    try {
-      const response = await apiClient('/enrollments/pending', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enrollmentId, action }),
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        loadData();
-      } else {
-        alert(result.error || 'Failed to process request');
-      }
-    } catch (error) {
-      alert('An error occurred');
     }
   };
 
@@ -622,31 +576,38 @@ export default function AcademyDashboard() {
             <h3 className="text-lg font-semibold text-gray-900 mb-3 sm:mb-6">Estudiantes</h3>
             {filteredStudents.length > 0 || pendingEnrollments.length > 0 || rejectedCount > 0 ? (
               <div className="space-y-4">
-                {/* Main metric: Unique student count */}
-                <div className="text-center pb-4 border-b border-gray-100">
-                  <AnimatedNumber value={uniqueStudentCount} className="text-4xl sm:text-5xl font-bold text-brand-600 mb-2" />
-                  <div className="text-sm font-medium text-gray-700">Estudiantes Únicos</div>
-                  <div className="text-xs text-gray-500 mt-1">{filteredStudents.length} matriculaciones totales</div>
+                {/* Side by side: Estudiantes and Matriculados */}
+                <div className="grid grid-cols-2 gap-4 pb-4 border-b border-gray-100">
+                  <div className="text-center">
+                    <AnimatedNumber value={uniqueStudentCount} className="text-3xl sm:text-4xl font-bold text-brand-600 mb-1" />
+                    <div className="text-xs text-gray-500">Estudiantes</div>
+                  </div>
+                  <div className="text-center">
+                    <AnimatedNumber value={filteredStudents.length} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1" />
+                    <div className="text-xs text-gray-500">Matriculados</div>
+                  </div>
                 </div>
-                {/* Payment statistics - Total left, methods right */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+                {/* Payment statistics - Total left, methods right with reduced spacing */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-3">
                     <div className="text-left">
                       <div className="text-xs text-gray-500 mb-1">Total Cobrado</div>
-                      <AnimatedNumber value={paymentStats.totalPaid} className="text-2xl font-bold text-green-600" />
-                      <span className="text-lg text-gray-600 ml-1">€</span>
+                      <div>
+                        <AnimatedNumber value={paymentStats.totalPaid} className="text-2xl font-bold text-green-600" />
+                        <span className="text-lg text-gray-600 ml-1">€</span>
+                      </div>
                     </div>
-                    <div className="flex gap-4">
+                    <div className="flex gap-3">
                       <div className="text-center">
-                        <AnimatedNumber value={paymentStats.bizumCount} className="text-xl font-bold text-purple-600" />
+                        <AnimatedNumber value={paymentStats.bizumCount} className="text-lg font-bold text-purple-600" />
                         <div className="text-xs text-gray-500">Bizum</div>
                       </div>
                       <div className="text-center">
-                        <AnimatedNumber value={paymentStats.cashCount} className="text-xl font-bold text-amber-600" />
+                        <AnimatedNumber value={paymentStats.cashCount} className="text-lg font-bold text-amber-600" />
                         <div className="text-xs text-gray-500">Efectivo</div>
                       </div>
                       <div className="text-center">
-                        <AnimatedNumber value={paymentStats.stripeCount} className="text-xl font-bold text-blue-600" />
+                        <AnimatedNumber value={paymentStats.stripeCount} className="text-lg font-bold text-blue-600" />
                         <div className="text-xs text-gray-500">Stripe</div>
                       </div>
                     </div>

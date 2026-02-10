@@ -50,6 +50,7 @@ export default function AcademyManagePage() {
 
   useEffect(() => {
     if (academyId) loadAcademy();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [academyId]);
 
   const loadAcademy = async () => {

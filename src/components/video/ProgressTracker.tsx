@@ -142,6 +142,7 @@ export function useProgressTracker({
         watchTimeInterval.current = null;
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPlaying, isUnlimitedUser]); // Removed saveProgress and onPlayStateUpdate to prevent infinite recreation
 
   // Save remaining progress when unmounting

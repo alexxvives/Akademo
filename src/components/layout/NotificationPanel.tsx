@@ -29,7 +29,7 @@ export function NotificationPanel({
   notifications,
   unreadCount,
   onClose,
-  onMarkAsRead,
+  onMarkAsRead: _onMarkAsRead,
   onMarkAllAsRead,
   onJoinLiveClass,
 }: NotificationPanelProps) {

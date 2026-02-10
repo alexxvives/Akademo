@@ -43,7 +43,7 @@ export default function AdminTeachers() {
         setTeachers(teachersResult.data || []);
       }
       if (academiesResult.success) {
-        setAcademies((academiesResult.data || []).map((a: any) => ({
+        setAcademies((academiesResult.data || []).map((a: { id: string; name: string }) => ({
           id: a.id,
           name: a.name
         })));
@@ -55,7 +55,7 @@ export default function AdminTeachers() {
     }
   };
 
-  const loadTeachers = async () => {
+  const _loadTeachers = async () => {
     try {
       const res = await apiClient('/admin/teachers');
       const result = await res.json();

@@ -5,6 +5,7 @@ import { SkeletonForm } from '@/components/ui/SkeletonLoader';
 import { useParams, useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
 import { PasswordInput } from '@/components/ui';
+import Image from 'next/image';
 
 interface Academy {
   id: string;
@@ -21,6 +22,8 @@ interface Class {
   teacherName: string;
 }
 
+type AuthUser = Record<string, unknown>;
+
 export default function AcademyJoinPage() {
   const params = useParams();
   const router = useRouter();
@@ -33,7 +36,7 @@ export default function AcademyJoinPage() {
   
   // Auth state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [, setCurrentUser] = useState<AuthUser | null>(null);
   const [showLogin, setShowLogin] = useState(false);
   
   // Form state
@@ -61,6 +64,7 @@ export default function AcademyJoinPage() {
     if (academyId) {
       loadAcademyData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [academyId]);
 
   const loadAcademyData = async () => {
@@ -301,9 +305,11 @@ export default function AcademyJoinPage() {
         {/* Header with Logo */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <img 
+            <Image 
               src="/logo/AKADEMO_logo_OTHER2.svg" 
               alt="AKADEMO" 
+              width={160}
+              height={48}
               className="h-12 w-auto"
             />
           </div>

@@ -55,7 +55,7 @@ export async function apiGet(path: string, options?: ApiClientOptions): Promise<
 /**
  * Make a POST request
  */
-export async function apiPost(path: string, body?: any, options?: ApiClientOptions): Promise<Response> {
+export async function apiPost(path: string, body?: unknown, options?: ApiClientOptions): Promise<Response> {
   return apiClient(path, {
     ...options,
     method: 'POST',
@@ -66,7 +66,7 @@ export async function apiPost(path: string, body?: any, options?: ApiClientOptio
 /**
  * Make a PATCH request
  */
-export async function apiPatch(path: string, body?: any, options?: ApiClientOptions): Promise<Response> {
+export async function apiPatch(path: string, body?: unknown, options?: ApiClientOptions): Promise<Response> {
   return apiClient(path, {
     ...options,
     method: 'PATCH',
@@ -84,7 +84,7 @@ export async function apiDelete(path: string, options?: ApiClientOptions): Promi
 /**
  * Make a PUT request
  */
-export async function apiPut(path: string, body?: any, options?: ApiClientOptions): Promise<Response> {
+export async function apiPut(path: string, body?: unknown, options?: ApiClientOptions): Promise<Response> {
   return apiClient(path, {
     ...options,
     method: 'PUT',

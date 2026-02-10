@@ -839,7 +839,7 @@ export interface DemoSubmission {
 }
 
 export function generateDemoAssignments(): DemoAssignment[] {
-  const baseDate = new Date('2026-02-10T00:00:00Z');
+  const _baseDate = new Date('2026-02-10T00:00:00Z');
   
   return [
     // Programación Web (demo-c1) - 3 assignments
