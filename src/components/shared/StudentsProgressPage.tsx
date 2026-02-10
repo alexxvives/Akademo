@@ -218,18 +218,58 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
       const data = await response.json();
       
       if (data.success && data.data) {
-        const progressData: StudentProgress[] = data.data.map((student: any) => ({
+        // Group by unique student ID to show each student once (aggregate across all classes)
+        const studentMap = new Map<string, any>();
+        
+        data.data.forEach((student: any) => {
+          if (!studentMap.has(student.id)) {
+            // First time seeing this student
+            studentMap.set(student.id, {
+              id: student.id,
+              firstName: student.firstName,
+              lastName: student.lastName,
+              email: student.email,
+              classes: [student.className],
+              classIds: [student.classId],
+              teacherNames: student.teacherName ? [student.teacherName] : [],
+              totalWatchTime: student.totalWatchTime || 0,
+              lessonsCompleted: student.lessonsCompleted || 0,
+              totalLessons: student.totalLessons || 0,
+              lastActive: student.lastActive,
+              enrollmentIds: [student.enrollmentId],
+            });
+          } else {
+            // Add this class to existing student
+            const existing = studentMap.get(student.id);
+            existing.classes.push(student.className);
+            existing.classIds.push(student.classId);
+            if (student.teacherName && !existing.teacherNames.includes(student.teacherName)) {
+              existing.teacherNames.push(student.teacherName);
+            }
+            existing.totalWatchTime += student.totalWatchTime || 0;
+            existing.lessonsCompleted += student.lessonsCompleted || 0;
+            existing.totalLessons += student.totalLessons || 0;
+            existing.enrollmentIds.push(student.enrollmentId);
+            // Keep most recent lastActive
+            if (student.lastActive && (!existing.lastActive || new Date(student.lastActive) > new Date(existing.lastActive))) {
+              existing.lastActive = student.lastActive;
+            }
+          }
+        });
+        
+        // Convert map to array with aggregated data
+        const progressData: StudentProgress[] = Array.from(studentMap.values()).map(student => ({
           id: student.id,
           name: `${student.firstName} ${student.lastName}`,
           email: student.email,
-          className: student.className || `${student.classCount} ${student.classCount === 1 ? 'clase' : 'clases'}`,
-          classId: student.classId, // Include classId for filtering
-          teacherName: student.teacherName,
-          totalWatchTime: student.totalWatchTime || 0, // Already in seconds - formatTime expects seconds
-          videosWatched: student.lessonsCompleted || 0,
-          totalVideos: student.totalLessons || 0,
+          className: student.classes.length === 1 ? student.classes[0] : `${student.classes.length} clases`,
+          classId: student.classIds[0], // Use first class for filtering
+          teacherName: student.teacherNames.join(', '),
+          totalWatchTime: student.totalWatchTime,
+          videosWatched: student.lessonsCompleted,
+          totalVideos: student.totalLessons,
           lastActive: student.lastActive,
-          enrollmentId: student.enrollmentId,
+          enrollmentId: student.enrollmentIds[0], // Use first enrollment for actions
         }));
         
         setStudents(progressData);
