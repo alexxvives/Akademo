@@ -261,12 +261,33 @@ auth.post('/login', validateBody(loginSchema), async (c) => {
       return c.json(errorResponse('Credenciales incorrectas'), 401);
     }
 
+    // PREVENT CONCURRENT LOGINS FOR STUDENTS ONLY
+    // Deactivate all previous sessions for this user (only for STUDENT role)
+    if (user.role === 'STUDENT') {
+      await c.env.DB
+        .prepare('UPDATE DeviceSession SET isActive = 0 WHERE userId = ? AND isActive = 1')
+        .bind(user.id)
+        .run();
+    }
     
     // Update lastLoginAt timestamp
     await c.env.DB
       .prepare('UPDATE User SET lastLoginAt = ? WHERE id = ?')
       .bind(new Date().toISOString(), user.id)
       .run();
+    
+    // Create device session record (only for students)
+    if (user.role === 'STUDENT') {
+      const deviceSessionId = crypto.randomUUID();
+      const now = new Date().toISOString();
+      const userAgent = c.req.header('User-Agent') || 'Unknown';
+      const deviceFingerprint = btoa(`${user.id}-${Date.now()}`);
+      
+      await c.env.DB
+        .prepare('INSERT INTO DeviceSession (id, userId, deviceFingerprint, userAgent, isActive, lastActiveAt, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)')
+        .bind(deviceSessionId, user.id, deviceFingerprint, userAgent, 1, now, now)
+        .run();
+    }
     
     // Create session (use btoa for base64 encoding in Workers)
     // We use lib/auth createSession if we imported it, but here we can just do it manually or import it.
@@ -307,12 +328,16 @@ auth.post('/logout', async (c) => {
       const token = authHeader.substring(7);
       const userId = Buffer.from(token, 'base64').toString('utf-8');
       
+      // Deactivate all device sessions for this user
+      await c.env.DB
+        .prepare('UPDATE DeviceSession SET isActive = 0 WHERE userId = ? AND isActive = 1')\n        .bind(userId)\n        .run();
+      
       // Demo data reset removed - all demo data is now hardcoded in src/lib/demo-data.ts
       // Demo accounts (paymentStatus='NOT PAID') automatically see fresh generated data on every login
     }
   } catch (error) {
     // Silently fail - logout should always succeed
-    console.error('Error during demo account cleanup:', error);
+    console.error('Error during logout:', error);
   }
   
   setCookie(c, 'academy_session', '', {

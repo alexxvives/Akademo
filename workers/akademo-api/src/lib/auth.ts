@@ -86,6 +86,20 @@ export async function getSession(c: Context<{ Bindings: Bindings }>): Promise<Se
       return null;
     }
     
+    // CONCURRENT LOGIN PREVENTION FOR STUDENTS
+    // Check if this session is active (only for STUDENT role)
+    if (user.role === 'STUDENT') {
+      const activeSession = await c.env.DB
+        .prepare('SELECT id FROM DeviceSession WHERE userId = ? AND isActive = 1 LIMIT 1')
+        .bind(user.id)
+        .first();
+      
+      if (!activeSession) {
+        // No active session found - user has been logged out elsewhere
+        return null;
+      }
+    }
+    
     return {
       id: user.id,
       email: user.email,
