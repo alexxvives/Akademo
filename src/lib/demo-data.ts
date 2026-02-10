@@ -117,6 +117,12 @@ export interface DemoStream {
   participantsData?: string; // JSON string with participant details
 }
 
+export interface DemoZoomAccount {
+  id: string;
+  accountName: string;
+  accountId: string;
+}
+
 export interface DemoClass {
   id: string;
   name: string;
@@ -133,6 +139,10 @@ export interface DemoClass {
   createdAt: string;
   startDate?: string;
   avgRating?: number; // Average rating to match valoraciones page
+  zoomAccountId?: string | null;
+  zoomAccountName?: string | null;
+  whatsappGroupLink?: string | null;
+  maxStudents?: number | null;
 }
 
 export interface DemoLesson {
@@ -528,6 +538,16 @@ export function generateDemoStreams(): DemoStream[] {
   ];
 }
 
+export function generateDemoZoomAccounts(): DemoZoomAccount[] {
+  return [
+    {
+      id: 'demo-zoom-1',
+      accountName: 'info@akademo-edu.com',
+      accountId: 'demo-zoom-account-1',
+    },
+  ];
+}
+
 export function generateDemoClasses(): DemoClass[] {
   const now = new Date().toISOString();
   
@@ -567,6 +587,10 @@ export function generateDemoClasses(): DemoClass[] {
       createdAt: now,
       startDate: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       avgRating: demoAvgRating,
+      zoomAccountId: 'demo-zoom-1',
+      zoomAccountName: 'info@akademo-edu.com',
+      whatsappGroupLink: 'https://chat.whatsapp.com/EVwr6bNsKng5Rk965ZuM4U',
+      maxStudents: 50,
     },
     {
       id: 'demo-c2',
@@ -584,6 +608,10 @@ export function generateDemoClasses(): DemoClass[] {
       createdAt: now,
       startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       avgRating: demoAvgRating,
+      zoomAccountId: 'demo-zoom-1',
+      zoomAccountName: 'info@akademo-edu.com',
+      whatsappGroupLink: 'https://chat.whatsapp.com/EVwr6bNsKng5Rk965ZuM4U',
+      maxStudents: 40,
     },
     {
       id: 'demo-c3',
@@ -601,6 +629,10 @@ export function generateDemoClasses(): DemoClass[] {
       createdAt: now,
       startDate: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       avgRating: demoAvgRating,
+      zoomAccountId: 'demo-zoom-1',
+      zoomAccountName: 'info@akademo-edu.com',
+      whatsappGroupLink: 'https://chat.whatsapp.com/EVwr6bNsKng5Rk965ZuM4U',
+      maxStudents: 70,
     },
     {
       id: 'demo-c4',
@@ -612,12 +644,16 @@ export function generateDemoClasses(): DemoClass[] {
       videoCount: 6,
       documentCount: 4,
       price: 44.99,
-      monthlyPrice: null,
-      oneTimePrice: 44.99,
+      monthlyPrice: 44.99,
+      oneTimePrice: null,
       currency: 'EUR',
       createdAt: now,
       startDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       avgRating: demoAvgRating,
+      zoomAccountId: null,
+      zoomAccountName: null,
+      whatsappGroupLink: null,
+      maxStudents: 35,
     },
   ];
 }

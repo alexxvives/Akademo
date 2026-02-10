@@ -470,6 +470,8 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
             id: demoClass.id,
             name: demoClass.name,
             description: demoClass.description,
+            whatsappGroupLink: demoClass.whatsappGroupLink || null,
+            feedbackEnabled: 1,
             academy: { id: 'demo-academy', name: 'Mi Academia Demo' },
             enrollments: demoStudentsForClass,
           });

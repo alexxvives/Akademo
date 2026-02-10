@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
-import { generateDemoClasses, generateDemoTeachers } from '@/lib/demo-data';
+import { generateDemoClasses, generateDemoTeachers, generateDemoZoomAccounts } from '@/lib/demo-data';
 import { SkeletonClasses } from '@/components/ui/SkeletonLoader';
 
 interface Teacher {
@@ -118,8 +118,17 @@ export default function AcademyClassesPage() {
               videoCount: c.videoCount,
               lessonCount: c.videoCount,
               documentCount: c.documentCount,
-              avgRating: c.avgRating, // Use avgRating from demo data to match valoraciones page
+              avgRating: c.avgRating,
+              monthlyPrice: c.monthlyPrice,
+              oneTimePrice: c.oneTimePrice,
+              zoomAccountId: c.zoomAccountId,
+              whatsappGroupLink: c.whatsappGroupLink,
+              maxStudents: c.maxStudents,
+              startDate: c.startDate,
             })));
+            
+            // Load demo zoom accounts so the edit modal can show them
+            setZoomAccounts(generateDemoZoomAccounts());
             
             setTeachers(demoTeachers.map(t => ({
               id: t.id,
@@ -201,6 +210,12 @@ export default function AcademyClassesPage() {
     if (formData.allowOneTime && (!formData.oneTimePrice || parseFloat(formData.oneTimePrice) <= 0)) {
       setPaymentOptionsError(true);
       setError('Debes ingresar el precio del pago único');
+      return;
+    }
+    
+    // Validation: start date is required
+    if (!formData.startDate) {
+      setError('Debes ingresar la fecha de inicio');
       return;
     }
     
@@ -292,6 +307,12 @@ export default function AcademyClassesPage() {
     if (formData.allowOneTime && (!formData.oneTimePrice || parseFloat(formData.oneTimePrice) <= 0)) {
       setPaymentOptionsError(true);
       setError('Debes ingresar el precio del pago único');
+      return;
+    }
+    
+    // Validation: start date is required
+    if (!formData.startDate) {
+      setError('Debes ingresar la fecha de inicio');
       return;
     }
     
@@ -1079,10 +1100,11 @@ export default function AcademyClassesPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Fecha de inicio (opcional)
+                    Fecha de inicio *
                   </label>
                   <input
                     type="date"
+                    required
                     value={formData.startDate}
                     onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
