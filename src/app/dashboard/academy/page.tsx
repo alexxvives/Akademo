@@ -340,36 +340,19 @@ export default function AcademyDashboard() {
         const classList = classesResult.data;
         setClasses(classList);
         
-        // FIXED: Parallelize enrollment API calls for all classes at once
+        // FIXED: Progress API already returns one row per student per class
         if (progressResult.success && Array.isArray(progressResult.data)) {
-          // Load ALL enrollments in parallel
-          const enrollmentResponses = await Promise.all(
-            classList.map((cls: Class) => apiClient(`/enrollments?classId=${cls.id}`).then(r => r.json()))
-          );
-          
-          // Create student map with progress data
-          const allStudents: EnrolledStudent[] = [];
-          progressResult.data.forEach((student: any) => {
-            // Find which classes this student is in
-            classList.forEach((cls: Class, idx: number) => {
-              const enrollData = enrollmentResponses[idx];
-              if (enrollData.success && Array.isArray(enrollData.data)) {
-                const studentInClass = enrollData.data.find((e: any) => e.student.id === student.id);
-                if (studentInClass) {
-                  allStudents.push({
-                    id: student.id,
-                    name: `${student.firstName} ${student.lastName}`,
-                    email: student.email,
-                    classId: cls.id,
-                    className: cls.name,
-                    lessonsCompleted: student.lessonsCompleted || 0,
-                    totalLessons: student.totalLessons || 0,
-                    lastActive: student.lastActive,
-                  });
-                }
-              }
-            });
-          });
+          // Transform progress data directly - no need to query enrollments again
+          const allStudents: EnrolledStudent[] = progressResult.data.map((student: any) => ({
+            id: student.id,
+            name: `${student.firstName} ${student.lastName}`,
+            email: student.email,
+            classId: student.classId,
+            className: student.className,
+            lessonsCompleted: student.lessonsCompleted || 0,
+            totalLessons: student.totalLessons || 0,
+            lastActive: student.lastActive,
+          }));
           setEnrolledStudents(allStudents);
         } else {
           // Fallback: Parallelize enrollment loading
