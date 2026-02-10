@@ -330,7 +330,9 @@ auth.post('/logout', async (c) => {
       
       // Deactivate all device sessions for this user
       await c.env.DB
-        .prepare('UPDATE DeviceSession SET isActive = 0 WHERE userId = ? AND isActive = 1')\n        .bind(userId)\n        .run();
+        .prepare('UPDATE DeviceSession SET isActive = 0 WHERE userId = ? AND isActive = 1')
+        .bind(userId)
+        .run();
       
       // Demo data reset removed - all demo data is now hardcoded in src/lib/demo-data.ts
       // Demo accounts (paymentStatus='NOT PAID') automatically see fresh generated data on every login

@@ -65,7 +65,23 @@ npx wrangler tail akademo --format pretty
 ### 0. DEPLOYMENT WORKFLOW
 **CRITICAL**: We are NOT working locally - changes only work after deployment!
 
-**PRIMARY METHOD (99% of the time)**:
+**ALWAYS TEST BEFORE COMMITTING**:
+```powershell
+# 1. FIRST - Test deployment to catch syntax errors
+npx wrangler deploy --config ./wrangler.toml
+
+# 2. ONLY THEN - Commit and push if deployment succeeds
+git add .
+git commit -m "Description"
+git push
+```
+
+**Why this order?**
+- Wrangler catches TypeScript/build errors before they break CI/CD
+- Prevents failed GitHub Actions runs
+- Saves time by catching issues locally
+
+**PRIMARY METHOD (after testing)**:
 ```powershell
 git add .
 git commit -m "Description"
@@ -83,6 +99,7 @@ git push
 - ❌ Running `npx @opennextjs/cloudflare build` from subdirectories
 - ❌ Manually deploying when git push would work
 - ❌ Not checking current directory before build commands
+- ❌ **Committing before testing with `npx wrangler deploy`** (catches syntax errors!)
 
 ### 1. Search Before You Code
 
@@ -96,9 +113,11 @@ git push
 
 ### 1B. Prevent Broken Deployments (Build Before Commit)
 **ALWAYS**:
-- Run `npm run build` locally before every commit and push. Only commit if the build succeeds with no errors.
-- Never commit or push code that fails to build locally.
-- If you cannot build locally, use a CI or pre-commit hook to verify the build before pushing.
+- Run `npx wrangler deploy --config ./wrangler.toml` FIRST to test the build
+- ONLY commit and push if wrangler deployment succeeds with no errors
+- Never commit or push code that fails to build or deploy
+- If you cannot build locally, use a CI or pre-commit hook to verify the build before pushing
+
 Always verify current state before changes:
 - Use `grep_search` or `semantic_search` to find existing patterns
 - Check file size: `(Get-Content path/to/file.tsx).Count`
