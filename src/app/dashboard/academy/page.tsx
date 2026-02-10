@@ -587,28 +587,19 @@ export default function AcademyDashboard() {
                     <div className="text-xs text-gray-500">Matriculados</div>
                   </div>
                 </div>
-                {/* Payment statistics - Total left, methods right */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex flex-col items-center justify-center">
-                    <div className="text-xs text-gray-500 mb-1">Total Cobrado</div>
-                    <div className="flex items-baseline whitespace-nowrap">
-                      <AnimatedNumber value={paymentStats.totalPaid} className="text-2xl font-bold text-green-600" />
-                      <span className="text-2xl font-bold text-green-600 ml-1">€</span>
-                    </div>
+                {/* Payment statistics - methods */}
+                <div className="flex items-center justify-center gap-4">
+                  <div className="text-center">
+                    <div className="text-xs text-gray-500 mb-0.5">Bizum</div>
+                    <AnimatedNumber value={paymentStats.bizumCount} className="text-lg font-bold text-purple-600" />
                   </div>
-                  <div className="flex items-center justify-center gap-3">
-                    <div className="text-center">
-                      <div className="text-xs text-gray-500 mb-0.5">Bizum</div>
-                      <AnimatedNumber value={paymentStats.bizumCount} className="text-lg font-bold text-purple-600" />
-                    </div>
-                    <div className="text-center">
-                      <div className="text-xs text-gray-500 mb-0.5">Efectivo</div>
-                      <AnimatedNumber value={paymentStats.cashCount} className="text-lg font-bold text-amber-600" />
-                    </div>
-                    <div className="text-center">
-                      <div className="text-xs text-gray-500 mb-0.5">Stripe</div>
-                      <AnimatedNumber value={paymentStats.stripeCount} className="text-lg font-bold text-blue-600" />
-                    </div>
+                  <div className="text-center">
+                    <div className="text-xs text-gray-500 mb-0.5">Efectivo</div>
+                    <AnimatedNumber value={paymentStats.cashCount} className="text-lg font-bold text-amber-600" />
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xs text-gray-500 mb-0.5">Stripe</div>
+                    <AnimatedNumber value={paymentStats.stripeCount} className="text-lg font-bold text-blue-600" />
                   </div>
                 </div>
               </div>

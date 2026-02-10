@@ -96,6 +96,7 @@ classes.get('/', async (c) => {
           a.name as academyName,
           u.firstName as teacherFirstName,
           u.lastName as teacherLastName,
+          za.accountName as zoomAccountName,
           (SELECT COUNT(*) FROM ClassEnrollment WHERE classId = c.id AND status = 'APPROVED') as studentCount,
           (SELECT COUNT(*) FROM Lesson WHERE classId = c.id) as lessonCount,
           (SELECT COUNT(*) FROM Video v JOIN Lesson l ON v.lessonId = l.id WHERE l.classId = c.id) as videoCount,
@@ -104,6 +105,7 @@ classes.get('/', async (c) => {
         FROM Class c
         JOIN Academy a ON c.academyId = a.id
         LEFT JOIN User u ON c.teacherId = u.id
+        LEFT JOIN ZoomAccount za ON c.zoomAccountId = za.id
         WHERE a.ownerId = ?
         ORDER BY c.createdAt DESC
       `;
@@ -405,6 +407,14 @@ classes.patch('/:id', validateBody(updateClassSchema), async (c) => {
     if (body.oneTimePrice !== undefined) {
       updates.push('oneTimePrice = ?');
       params.push(body.oneTimePrice || null);
+    }
+    if (body.maxStudents !== undefined) {
+      updates.push('maxStudents = ?');
+      params.push(body.maxStudents === '' || body.maxStudents === null ? null : body.maxStudents);
+    }
+    if (body.startDate !== undefined) {
+      updates.push('startDate = ?');
+      params.push(body.startDate || null);
     }
 
     if (updates.length === 0) {
