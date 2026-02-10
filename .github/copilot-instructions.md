@@ -67,17 +67,18 @@ npx wrangler tail akademo --format pretty
 
 **ALWAYS TEST BEFORE COMMITTING**:
 ```powershell
-# 1. FIRST - Test deployment to catch syntax errors
-npx wrangler deploy --config ./wrangler.toml
+# 1. FIRST - Full build to catch ALL errors (TypeScript, syntax, etc.)
+npx @opennextjs/cloudflare build
 
-# 2. ONLY THEN - Commit and push if deployment succeeds
+# 2. ONLY THEN - Commit and push if build succeeds
 git add .
 git commit -m "Description"
 git push
 ```
 
 **Why this order?**
-- Wrangler catches TypeScript/build errors before they break CI/CD
+- Full build includes Next.js TypeScript type checking that catches errors
+- `npx wrangler deploy` only redeploys pre-built code without type checking
 - Prevents failed GitHub Actions runs
 - Saves time by catching issues locally
 
@@ -96,10 +97,11 @@ git push
 - Testing deployment process
 
 **COMMON MISTAKES TO AVOID**:
+- ❌ Using `npx wrangler deploy` for testing (doesn't run TypeScript checks!)
 - ❌ Running `npx @opennextjs/cloudflare build` from subdirectories
 - ❌ Manually deploying when git push would work
 - ❌ Not checking current directory before build commands
-- ❌ **Committing before testing with `npx wrangler deploy`** (catches syntax errors!)
+- ❌ **Committing before testing with `npx @opennextjs/cloudflare build`** (catches type errors!)
 
 ### 1. Search Before You Code
 
@@ -111,12 +113,7 @@ git push
 - If you see a JSX or parse error, review the last 20 lines above and below the error for missing/extra braces or parentheses
 - Never commit code with a known syntax error or failed build
 
-### 1B. Prevent Broken Deployments (Build Before Commit)
-**ALWAYS**:
-- Run `npx wrangler deploy --config ./wrangler.toml` FIRST to test the build
-- ONLY commit and push if wrangler deployment succeeds with no errors
-- Never commit or push code that fails to build or deploy
-- If you cannot build locally, use a CI or pre-commit hook to verify the build before pushing
+### 1. Search Before You Code
 
 Always verify current state before changes:
 - Use `grep_search` or `semantic_search` to find existing patterns
