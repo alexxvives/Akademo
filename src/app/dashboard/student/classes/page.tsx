@@ -368,9 +368,9 @@ export default function StudentClassesPage() {
                     <p className="text-sm text-gray-400 italic mb-4">Sin descripción</p>
                   )}
                   
-                  {/* Teacher Info and Stats */}
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-3">
-                    <div className="flex items-center gap-2 text-sm text-gray-700">
+                  {/* Teacher Info and Stats on Same Line */}
+                  <div className="flex items-center gap-4 mb-3 text-sm">
+                    <div className="flex items-center gap-2 text-gray-700">
                       <span className="font-medium">Profesor:</span>
                       <span>
                         {classItem.teacherFirstName && classItem.teacherLastName 
@@ -379,10 +379,9 @@ export default function StudentClassesPage() {
                         }
                       </span>
                     </div>
-                  </div>
                   
-                  <div className="flex flex-wrap items-center gap-3 sm:gap-6 text-sm text-gray-500">
-                    <span className="flex items-center gap-1">
+                    <div className="flex flex-wrap items-center gap-3 text-gray-500">
+                      <span className="flex items-center gap-1">
                       <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                       </svg>
@@ -412,6 +411,7 @@ export default function StudentClassesPage() {
                       </svg>
                       Creada el {new Date(classItem.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </span>
+                  </div>
                   </div>
                 </div>
               </div>

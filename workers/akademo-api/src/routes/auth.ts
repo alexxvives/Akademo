@@ -214,8 +214,25 @@ auth.post('/register', async (c) => {
       }
     }
 
-    // Create session (use btoa for base64 encoding in Workers)
-    const sessionId = btoa(userId);
+    // Create device session for students to prevent account sharing
+    let deviceSessionId = null;
+    if (role === 'STUDENT') {
+      deviceSessionId = crypto.randomUUID();
+      const now = new Date().toISOString();
+      const userAgent = c.req.header('User-Agent') || 'Unknown';
+      const deviceFingerprint = btoa(`${userId}-${Date.now()}`);
+      
+      await c.env.DB
+        .prepare('INSERT INTO DeviceSession (id, userId, deviceFingerprint, userAgent, isActive, lastActiveAt, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)')
+        .bind(deviceSessionId, userId, deviceFingerprint, userAgent, 1, now, now)
+        .run();
+    }
+
+    // Create session token - include deviceSessionId for students
+    const sessionData = deviceSessionId 
+      ? JSON.stringify({ userId, deviceSessionId }) 
+      : userId;
+    const sessionId = btoa(sessionData);
     setCookie(c, 'academy_session', sessionId, {
       httpOnly: true,
       secure: true,
@@ -276,9 +293,10 @@ auth.post('/login', validateBody(loginSchema), async (c) => {
       .bind(new Date().toISOString(), user.id)
       .run();
     
-    // Create device session record (only for students)
+    // Create device session record (only for students) and include in token
+    let deviceSessionId = null;
     if (user.role === 'STUDENT') {
-      const deviceSessionId = crypto.randomUUID();
+      deviceSessionId = crypto.randomUUID();
       const now = new Date().toISOString();
       const userAgent = c.req.header('User-Agent') || 'Unknown';
       const deviceFingerprint = btoa(`${user.id}-${Date.now()}`);
@@ -289,10 +307,11 @@ auth.post('/login', validateBody(loginSchema), async (c) => {
         .run();
     }
     
-    // Create session (use btoa for base64 encoding in Workers)
-    // We use lib/auth createSession if we imported it, but here we can just do it manually or import it.
-    // For now, let's keep it manual but add the token to response.
-    const sessionId = btoa(user.id as string);
+    // Create session token - include deviceSessionId for students to track specific session
+    const sessionData = deviceSessionId 
+      ? JSON.stringify({ userId: user.id, deviceSessionId }) 
+      : user.id as string;
+    const sessionId = btoa(sessionData);
     
     setCookie(c, 'academy_session', sessionId, {
       httpOnly: true,

@@ -68,9 +68,21 @@ export async function getSession(c: Context<{ Bindings: Bindings }>): Promise<Se
 
   try {
     let userId: string;
+    let deviceSessionId: string | null = null;
+    
     try {
-        // Decode base64 session ID to get user ID
-        userId = atob(sessionId);
+        // Decode base64 session ID to get user ID (and deviceSessionId for students)
+        const decoded = atob(sessionId);
+        
+        // Try to parse as JSON (new format with deviceSessionId)
+        try {
+          const parsed = JSON.parse(decoded);
+          userId = parsed.userId;
+          deviceSessionId = parsed.deviceSessionId || null;
+        } catch {
+          // Old format - just userId
+          userId = decoded;
+        }
     } catch (e) {
         console.error('[getSession] FAILED to decode session ID:', e);
         console.error('[getSession] Invalid sessionId format:', sessionId);
@@ -87,15 +99,15 @@ export async function getSession(c: Context<{ Bindings: Bindings }>): Promise<Se
     }
     
     // CONCURRENT LOGIN PREVENTION FOR STUDENTS
-    // Check if this session is active (only for STUDENT role)
-    if (user.role === 'STUDENT') {
+    // Check if THIS SPECIFIC device session is active (only for STUDENT role)
+    if (user.role === 'STUDENT' && deviceSessionId) {
       const activeSession = await c.env.DB
-        .prepare('SELECT id FROM DeviceSession WHERE userId = ? AND isActive = 1 LIMIT 1')
-        .bind(user.id)
+        .prepare('SELECT id FROM DeviceSession WHERE id = ? AND userId = ? AND isActive = 1 LIMIT 1')
+        .bind(deviceSessionId, user.id)
         .first();
       
       if (!activeSession) {
-        // No active session found - user has been logged out elsewhere
+        // This specific session has been deactivated - user logged in elsewhere
         return null;
       }
     }
