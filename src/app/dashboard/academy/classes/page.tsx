@@ -35,6 +35,7 @@ interface Class {
   lessonCount: number;
   documentCount: number;
   avgRating?: number | null;
+  createdAt?: string;
 }
 
 export default function AcademyClassesPage() {
