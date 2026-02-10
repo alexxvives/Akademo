@@ -1,18 +1,36 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import { apiClient } from '@/lib/api-client';
 
 const LOGO_CACHE_KEY_PREFIX = 'akademo_academy_logo_';
 const LOGO_CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
 
+// Global listeners so any component using this hook can trigger a refresh
+const listeners = new Set<() => void>();
+
+/** Call this from anywhere to force all sidebar logos to refresh */
+export function refreshAcademyLogo() {
+  // Clear all logo caches
+  if (typeof window !== 'undefined') {
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith(LOGO_CACHE_KEY_PREFIX)) {
+        localStorage.removeItem(key);
+      }
+    });
+  }
+  listeners.forEach(fn => fn());
+}
+
 export function useAcademyLogo() {
   const { user } = useAuth();
+  const [refreshCounter, setRefreshCounter] = useState(0);
+
   // Try to load from cache immediately
   const getCachedLogo = () => {
     if (typeof window === 'undefined' || !user) return null;
-const cacheKey = `${LOGO_CACHE_KEY_PREFIX}${user.id}`;
+    const cacheKey = `${LOGO_CACHE_KEY_PREFIX}${user.id}`;
     try {
       const cached = localStorage.getItem(cacheKey);
       if (cached) {
@@ -31,6 +49,16 @@ const cacheKey = `${LOGO_CACHE_KEY_PREFIX}${user.id}`;
   const [logoUrl, setLogoUrl] = useState<string | null>(cached?.logoUrl || null);
   const [academyName, setAcademyName] = useState<string | null>(cached?.academyName || null);
   const [loading, setLoading] = useState(!cached);
+
+  // Register this instance as a listener for global refresh events
+  const triggerRefresh = useCallback(() => {
+    setRefreshCounter(c => c + 1);
+  }, []);
+
+  useEffect(() => {
+    listeners.add(triggerRefresh);
+    return () => { listeners.delete(triggerRefresh); };
+  }, [triggerRefresh]);
 
   useEffect(() => {
     let isMounted = true;
@@ -81,7 +109,7 @@ const cacheKey = `${LOGO_CACHE_KEY_PREFIX}${user.id}`;
           setAcademyName(fetchedName);
 
           // Cache the logo
-          if (fetchedLogoUrl && fetchedName && user) {
+          if (user) {
             const cacheKey = `${LOGO_CACHE_KEY_PREFIX}${user.id}`;
             try {
               localStorage.setItem(cacheKey, JSON.stringify({
@@ -106,7 +134,7 @@ const cacheKey = `${LOGO_CACHE_KEY_PREFIX}${user.id}`;
     return () => {
       isMounted = false;
     };
-  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user, refreshCounter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return { logoUrl, academyName, loading };
 }

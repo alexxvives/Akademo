@@ -145,9 +145,15 @@ export function DashboardChartsGrid({
       <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full">
         <h3 className="text-lg font-semibold text-gray-900 mb-6">Estudiantes</h3>
         <div className="space-y-6">
-          <div className="text-center">
-            <AnimatedNumber value={filteredStudents.length} className="text-3xl sm:text-5xl font-bold text-gray-900 mb-2" />
-            <div className="text-sm text-gray-500">estudiantes {selectedClass === 'all' ? 'totales' : 'en esta clase'}</div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center p-3 bg-gray-50 rounded-lg">
+              <AnimatedNumber value={new Set(filteredStudents.map(s => s.id)).size} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1" />
+              <div className="text-xs text-gray-500">Estudiantes</div>
+            </div>
+            <div className="text-center p-3 bg-gray-50 rounded-lg">
+              <AnimatedNumber value={filteredStudents.length} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1" />
+              <div className="text-xs text-gray-500">Matriculados</div>
+            </div>
           </div>
           <div className="flex justify-between gap-4 pt-4 border-t border-gray-100">
             <div className="flex-1 text-center group/accepted relative cursor-help">

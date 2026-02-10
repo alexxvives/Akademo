@@ -576,30 +576,38 @@ export default function AcademyDashboard() {
             <h3 className="text-lg font-semibold text-gray-900 mb-3 sm:mb-6">Estudiantes</h3>
             {filteredStudents.length > 0 || pendingEnrollments.length > 0 || rejectedCount > 0 ? (
               <div className="space-y-4">
-                {/* Side by side: Estudiantes and Matriculados */}
-                <div className="grid grid-cols-2 gap-4 pb-4 border-b border-gray-100">
-                  <div className="text-center">
-                    <AnimatedNumber value={uniqueStudentCount} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1" />
-                    <div className="text-xs text-gray-500">Estudiantes</div>
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Left side: Estudiantes and Matriculados stacked */}
+                  <div className="space-y-3">
+                    <div className="text-center p-3 bg-gray-50 rounded-lg">
+                      <AnimatedNumber value={uniqueStudentCount} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1" />
+                      <div className="text-xs text-gray-500">Estudiantes</div>
+                    </div>
+                    <div className="text-center p-3 bg-gray-50 rounded-lg">
+                      <AnimatedNumber value={filteredStudents.length} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1" />
+                      <div className="text-xs text-gray-500">Matriculados</div>
+                    </div>
                   </div>
-                  <div className="text-center">
-                    <AnimatedNumber value={filteredStudents.length} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1" />
-                    <div className="text-xs text-gray-500">Matriculados</div>
-                  </div>
-                </div>
-                {/* Payment statistics - methods */}
-                <div className="flex items-center justify-center gap-4">
-                  <div className="text-center">
-                    <div className="text-xs text-gray-500 mb-0.5">Bizum</div>
-                    <AnimatedNumber value={paymentStats.bizumCount} className="text-lg font-bold text-purple-600" />
-                  </div>
-                  <div className="text-center">
-                    <div className="text-xs text-gray-500 mb-0.5">Efectivo</div>
-                    <AnimatedNumber value={paymentStats.cashCount} className="text-lg font-bold text-amber-600" />
-                  </div>
-                  <div className="text-center">
-                    <div className="text-xs text-gray-500 mb-0.5">Stripe</div>
-                    <AnimatedNumber value={paymentStats.stripeCount} className="text-lg font-bold text-blue-600" />
+                  {/* Right side: Total Cobrado on top, payment methods below */}
+                  <div className="space-y-3">
+                    <div className="text-center p-3 bg-green-50 rounded-lg">
+                      <div className="text-3xl sm:text-4xl font-bold text-green-700 mb-1">{paymentStats.totalPaid.toFixed(2)}€</div>
+                      <div className="text-xs text-gray-500">Total Cobrado</div>
+                    </div>
+                    <div className="flex items-center justify-center gap-3">
+                      <div className="text-center">
+                        <div className="text-xs text-gray-500 mb-0.5">Bizum</div>
+                        <AnimatedNumber value={paymentStats.bizumCount} className="text-lg font-bold text-purple-600" />
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xs text-gray-500 mb-0.5">Efectivo</div>
+                        <AnimatedNumber value={paymentStats.cashCount} className="text-lg font-bold text-amber-600" />
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xs text-gray-500 mb-0.5">Stripe</div>
+                        <AnimatedNumber value={paymentStats.stripeCount} className="text-lg font-bold text-blue-600" />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

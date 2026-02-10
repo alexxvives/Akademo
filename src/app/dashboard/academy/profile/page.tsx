@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
 import { apiClient } from '@/lib/api-client';
 import { useAuth } from '@/hooks/useAuth';
+import { refreshAcademyLogo } from '@/hooks/useAcademyLogo';
 import { SkeletonProfile } from '@/components/ui/SkeletonLoader';
 import { ZoomConnectButton, StripeConnectButton } from '@/components/profile';
 
@@ -353,8 +354,8 @@ export default function ProfilePage() {
       const updateResult = await updateRes.json();
       if (updateResult.success) {
         await loadData();
-        // Refresh page to update sidebar logo immediately
-        window.location.reload();
+        // Update sidebar logo immediately without page reload
+        refreshAcademyLogo();
       } else {
         throw new Error('Failed to update academy');
       }
@@ -544,8 +545,8 @@ export default function ProfilePage() {
                               });
                               if (response.ok) {
                                 setAcademy({ ...academy, logoUrl: undefined });
-                                // Refresh to update sidebar logo immediately
-                                window.location.reload();
+                                // Update sidebar logo immediately without page reload
+                                refreshAcademyLogo();
                               } else {
                                 const errorData = await response.json();
                                 alert(`Error: ${errorData.error || 'Error al eliminar el logo'}`);
