@@ -397,7 +397,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
   const loadData = async () => {
     try {
       // Academy role: Check payment status and feedback settings first
-      if (role === 'academy') {
+      if (role === 'academy' || role === 'teacher') {
         const academiesRes = await apiClient('/academies');
         const academiesResult = await academiesRes.json();
         let currentPaymentStatus = 'NOT PAID';
@@ -479,37 +479,64 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
           // Filter lessons for this class and map to Lesson interface
           const classLessons = demoLessons
             .filter(l => l.classId === demoClass.id)
-            .map(l => ({
-              id: l.id,
-              title: l.title,
-              description: 'Lección de demostración con video de 1 hora',
-              releaseDate: l.createdAt,
-              topicId: null,
-              maxWatchTimeMultiplier: 2.0,
-              watermarkIntervalMins: 5,
-              videoCount: 1,
-              documentCount: l.documents?.length || 0,
-              avgRating: 4.5 + Math.random() * 0.5,
-              ratingCount: Math.floor(Math.random() * 20) + 5,
-              firstVideoBunnyGuid: l.videoGuid,
-              videos: [{
-                id: `${l.id}-video`,
+            .map(l => {
+              // Assign topicId based on class and lesson
+              let topicId: string | null = null;
+              if (demoClass.id === 'demo-c1') {
+                topicId = (l.id === 'demo-l1' || l.id === 'demo-l2') ? 'demo-c1-t1' : 'demo-c1-t2';
+              } else if (demoClass.id === 'demo-c2') {
+                topicId = (l.id === 'demo-l5') ? 'demo-c2-t1' : (l.id === 'demo-l6') ? 'demo-c2-t1' : 'demo-c2-t2';
+              } else if (demoClass.id === 'demo-c3') {
+                topicId = 'demo-c3-t1';
+              }
+              return {
+                id: l.id,
                 title: l.title,
-                bunnyGuid: l.videoGuid,
-                durationSeconds: l.duration,
-                createdAt: l.createdAt,
-              }],
-              documents: l.documents || [],
-            } as unknown as Lesson));
+                description: 'Lección de demostración con video de 1 hora',
+                releaseDate: l.createdAt,
+                topicId,
+                maxWatchTimeMultiplier: 2.0,
+                watermarkIntervalMins: 5,
+                videoCount: 1,
+                documentCount: l.documents?.length || 0,
+                avgRating: 4.5 + Math.random() * 0.5,
+                ratingCount: Math.floor(Math.random() * 20) + 5,
+                firstVideoBunnyGuid: l.videoGuid,
+                videos: [{
+                  id: `${l.id}-video`,
+                  title: l.title,
+                  bunnyGuid: l.videoGuid,
+                  durationSeconds: l.duration,
+                  createdAt: l.createdAt,
+                }],
+                documents: l.documents || [],
+              } as unknown as Lesson;
+            });
           
           setLessons(classLessons);
-          setTopics([]); // No topics for demo
+
+          // Set demo topics per class
+          const demoTopicsMap: Record<string, Topic[]> = {
+            'demo-c1': [
+              { id: 'demo-c1-t1', name: 'Fundamentos', classId: 'demo-c1', orderIndex: 0, lessonCount: 2 },
+              { id: 'demo-c1-t2', name: 'Hooks y Estado', classId: 'demo-c1', orderIndex: 1, lessonCount: 2 },
+            ],
+            'demo-c2': [
+              { id: 'demo-c2-t1', name: 'Cálculo Diferencial', classId: 'demo-c2', orderIndex: 0, lessonCount: 2 },
+              { id: 'demo-c2-t2', name: 'Cálculo Integral', classId: 'demo-c2', orderIndex: 1, lessonCount: 1 },
+            ],
+            'demo-c3': [
+              { id: 'demo-c3-t1', name: 'Teoría del Diseño', classId: 'demo-c3', orderIndex: 0, lessonCount: 1 },
+            ],
+            'demo-c4': [],
+          };
+          setTopics(demoTopicsMap[demoClass.id] || []);
           setPendingEnrollments([]);
           setLoading(false);
           return;
         }
       }
-      } // end academy role demo check
+      } // end academy/teacher role demo check
       
       // Normal flow: fetch class data (both roles)
       const classRes = await apiClient(`/classes/${classId}`);

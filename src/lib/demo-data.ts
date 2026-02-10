@@ -732,9 +732,11 @@ export function generateDemoPendingPayments(): DemoPayment[] {
   // These 3 students also have paid payments in the history
   const baseDate = new Date('2026-02-05T00:00:00.000Z');
   return [
-    { enrollmentId: 'demo-payment-pending-1', studentId: 'demo-s1', studentFirstName: 'Juan', studentLastName: 'García', studentEmail: 'juan.garcía@demo.com', className: 'Diseño Gráfico', paymentAmount: 59.99, currency: 'EUR', paymentMethod: 'cash', paymentStatus: 'CASH_PENDING', enrolledAt: new Date(baseDate.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString(), createdAt: new Date(baseDate.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString(), updatedAt: new Date(baseDate.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString() },
-    { enrollmentId: 'demo-payment-pending-2', studentId: 'demo-s1', studentFirstName: 'María', studentLastName: 'Rodríguez', studentEmail: 'maría.rodríguez@demo.com', className: 'Matemáticas Avanzadas', paymentAmount: 39.99, currency: 'EUR', paymentMethod: 'cash', paymentStatus: 'CASH_PENDING', enrolledAt: new Date(baseDate.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString(), createdAt: new Date(baseDate.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString(), updatedAt: new Date(baseDate.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString() },
-    { enrollmentId: 'demo-payment-pending-3', studentId: 'demo-s1', studentFirstName: 'Pedro', studentLastName: 'Martínez', studentEmail: 'pedro.martínez@demo.com', className: 'Programación Web', paymentAmount: 49.99, currency: 'EUR', paymentMethod: 'cash', paymentStatus: 'CASH_PENDING', enrolledAt: new Date(baseDate.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString(), createdAt: new Date(baseDate.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString(), updatedAt: new Date(baseDate.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString() },
+    { enrollmentId: 'demo-payment-pending-1', studentId: 'demo-s1', studentFirstName: 'Juan', studentLastName: 'García', studentEmail: 'juan.garcía@demo.com', className: 'Diseño Gráfico', paymentAmount: 89.99, currency: 'EUR', paymentMethod: 'cash', paymentStatus: 'CASH_PENDING', enrolledAt: new Date(baseDate.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString(), createdAt: new Date(baseDate.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString(), updatedAt: new Date(baseDate.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString() },
+    { enrollmentId: 'demo-payment-pending-2', studentId: 'demo-s1', studentFirstName: 'María', studentLastName: 'Rodríguez', studentEmail: 'maría.rodríguez@demo.com', className: 'Matemáticas Avanzadas', paymentAmount: 59.99, currency: 'EUR', paymentMethod: 'cash', paymentStatus: 'CASH_PENDING', enrolledAt: new Date(baseDate.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString(), createdAt: new Date(baseDate.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString(), updatedAt: new Date(baseDate.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString() },
+    { enrollmentId: 'demo-payment-pending-3', studentId: 'demo-s1', studentFirstName: 'Pedro', studentLastName: 'Martínez', studentEmail: 'pedro.martínez@demo.com', className: 'Programación Web', paymentAmount: 79.99, currency: 'EUR', paymentMethod: 'cash', paymentStatus: 'CASH_PENDING', enrolledAt: new Date(baseDate.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString(), createdAt: new Date(baseDate.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString(), updatedAt: new Date(baseDate.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString() },
+    { enrollmentId: 'demo-payment-pending-4', studentId: 'demo-s113', studentFirstName: 'Marta', studentLastName: 'Martínez', studentEmail: 'marta.martínez@demo.com', className: 'Diseño Gráfico', paymentAmount: 89.99, currency: 'EUR', paymentMethod: 'cash', paymentStatus: 'CASH_PENDING', enrolledAt: new Date(baseDate.getTime() - 15 * 24 * 60 * 60 * 1000).toISOString(), createdAt: new Date(baseDate.getTime() - 15 * 24 * 60 * 60 * 1000).toISOString(), updatedAt: new Date(baseDate.getTime() - 15 * 24 * 60 * 60 * 1000).toISOString() },
+    { enrollmentId: 'demo-payment-pending-5', studentId: 'demo-s113', studentFirstName: 'Marta', studentLastName: 'Martínez', studentEmail: 'marta.martínez@demo.com', className: 'Diseño Gráfico', paymentAmount: 89.99, currency: 'EUR', paymentMethod: 'cash', paymentStatus: 'CASH_PENDING', enrolledAt: new Date(baseDate.getTime() - 45 * 24 * 60 * 60 * 1000).toISOString(), createdAt: new Date(baseDate.getTime() - 45 * 24 * 60 * 60 * 1000).toISOString(), updatedAt: new Date(baseDate.getTime() - 45 * 24 * 60 * 60 * 1000).toISOString() },
   ];
 }
 
@@ -743,32 +745,32 @@ export function generateDemoPaymentHistory(): DemoPayment[] {
   const baseDate = new Date('2026-01-01T00:00:00.000Z');
   const records = [
     // Juan García - 3 paid payments (also has 1 pending)
-    { firstName: 'Juan', lastName: 'García', className: 'Programación Web', amount: 49.99, teacher: 'Carlos Rodríguez', approver: 'Carlos Rodríguez', status: 'PAID', daysAgo: 45 },
-    { firstName: 'Juan', lastName: 'García', className: 'Diseño Gráfico', amount: 59.99, teacher: 'Carlos Rodríguez', approver: 'Ana Martínez', status: 'PAID', daysAgo: 20 },
-    { firstName: 'Juan', lastName: 'García', className: 'Física Cuántica', amount: 44.99, teacher: 'Luis Fernández', approver: 'Pedro Administrador', status: 'PAID', daysAgo: 7 },
+    { firstName: 'Juan', lastName: 'García', className: 'Programación Web', amount: 79.99, teacher: 'Carlos Rodríguez', approver: 'Carlos Rodríguez', status: 'PAID', daysAgo: 45 },
+    { firstName: 'Juan', lastName: 'García', className: 'Diseño Gráfico', amount: 89.99, teacher: 'Carlos Rodríguez', approver: 'Ana Martínez', status: 'PAID', daysAgo: 20 },
+    { firstName: 'Juan', lastName: 'García', className: 'Física Cuántica', amount: 64.99, teacher: 'Luis Fernández', approver: 'Pedro Administrador', status: 'PAID', daysAgo: 7 },
     // María Rodríguez - 3 paid payments (also has 1 pending)
-    { firstName: 'María', lastName: 'Rodríguez', className: 'Matemáticas Avanzadas', amount: 39.99, teacher: 'María García', approver: 'María García', status: 'PAID', daysAgo: 42 },
-    { firstName: 'María', lastName: 'Rodríguez', className: 'Física Cuántica', amount: 44.99, teacher: 'María García', approver: 'Pedro Administrador', status: 'PAID', daysAgo: 18 },
-    { firstName: 'María', lastName: 'Rodríguez', className: 'Programación Web', amount: 49.99, teacher: 'Carlos Rodríguez', approver: 'Carlos Rodríguez', status: 'PAID', daysAgo: 5 },
+    { firstName: 'María', lastName: 'Rodríguez', className: 'Matemáticas Avanzadas', amount: 59.99, teacher: 'María García', approver: 'María García', status: 'PAID', daysAgo: 42 },
+    { firstName: 'María', lastName: 'Rodríguez', className: 'Física Cuántica', amount: 64.99, teacher: 'María García', approver: 'Pedro Administrador', status: 'PAID', daysAgo: 18 },
+    { firstName: 'María', lastName: 'Rodríguez', className: 'Programación Web', amount: 79.99, teacher: 'Carlos Rodríguez', approver: 'Carlos Rodríguez', status: 'PAID', daysAgo: 5 },
     // Pedro Martínez - 3 paid payments (also has 1 pending)
-    { firstName: 'Pedro', lastName: 'Martínez', className: 'Diseño Gráfico', amount: 59.99, teacher: 'Ana Martínez', approver: 'Ana Martínez', status: 'PAID', daysAgo: 40 },
-    { firstName: 'Pedro', lastName: 'Martínez', className: 'Programación Web', amount: 49.99, teacher: 'Ana Martínez', approver: 'Carlos Rodríguez', status: 'PAID', daysAgo: 15 },
-    { firstName: 'Pedro', lastName: 'Martínez', className: 'Matemáticas Avanzadas', amount: 39.99, teacher: 'María García', approver: 'María García', status: 'PAID', daysAgo: 3 },
+    { firstName: 'Pedro', lastName: 'Martínez', className: 'Diseño Gráfico', amount: 89.99, teacher: 'Ana Martínez', approver: 'Ana Martínez', status: 'PAID', daysAgo: 40 },
+    { firstName: 'Pedro', lastName: 'Martínez', className: 'Programación Web', amount: 79.99, teacher: 'Ana Martínez', approver: 'Carlos Rodríguez', status: 'PAID', daysAgo: 15 },
+    { firstName: 'Pedro', lastName: 'Martínez', className: 'Matemáticas Avanzadas', amount: 59.99, teacher: 'María García', approver: 'María García', status: 'PAID', daysAgo: 3 },
     // Other students
-    { firstName: 'Laura', lastName: 'López', className: 'Física Cuántica', amount: 44.99, teacher: 'Luis Fernández', approver: 'Pedro Administrador', status: 'PAID', daysAgo: 38 },
-    { firstName: 'Diego', lastName: 'Sánchez', className: 'Programación Web', amount: 49.99, teacher: 'Carmen López', approver: 'Carlos Rodríguez', status: 'PAID', daysAgo: 35 },
-    { firstName: 'Carmen', lastName: 'García', className: 'Matemáticas Avanzadas', amount: 39.99, teacher: 'Carlos Rodríguez', approver: 'María García', status: 'PAID', daysAgo: 32 },
-    { firstName: 'Luis', lastName: 'Rodríguez', className: 'Diseño Gráfico', amount: 59.99, teacher: 'María García', approver: 'Ana Martínez', status: 'PAID', daysAgo: 30 },
-    { firstName: 'Ana', lastName: 'Martínez', className: 'Física Cuántica', amount: 44.99, teacher: 'Ana Martínez', approver: 'Pedro Administrador', status: 'REJECTED', daysAgo: 28 },
-    { firstName: 'José', lastName: 'López', className: 'Programación Web', amount: 49.99, teacher: 'Luis Fernández', approver: 'Carlos Rodríguez', status: 'PAID', daysAgo: 25 },
-    { firstName: 'Isabel', lastName: 'Sánchez', className: 'Matemáticas Avanzadas', amount: 39.99, teacher: 'Carmen López', approver: 'María García', status: 'PAID', daysAgo: 22 },
-    { firstName: 'Laura', lastName: 'López', className: 'Matemáticas Avanzadas', amount: 39.99, teacher: 'Luis Fernández', approver: 'María García', status: 'PAID', daysAgo: 12 },
-    { firstName: 'Diego', lastName: 'Sánchez', className: 'Diseño Gráfico', amount: 59.99, teacher: 'Carmen López', approver: 'Ana Martínez', status: 'REJECTED', daysAgo: 10 },
-    { firstName: 'Carmen', lastName: 'García', className: 'Física Cuántica', amount: 44.99, teacher: 'Carlos Rodríguez', approver: 'Pedro Administrador', status: 'PAID', daysAgo: 8 },
-    { firstName: 'Luis', lastName: 'Rodríguez', className: 'Programación Web', amount: 49.99, teacher: 'María García', approver: 'Carlos Rodríguez', status: 'PAID', daysAgo: 6 },
-    { firstName: 'Ana', lastName: 'Martínez', className: 'Matemáticas Avanzadas', amount: 39.99, teacher: 'Ana Martínez', approver: 'María García', status: 'PAID', daysAgo: 4 },
-    { firstName: 'José', lastName: 'López', className: 'Diseño Gráfico', amount: 59.99, teacher: 'Luis Fernández', approver: 'Ana Martínez', status: 'PAID', daysAgo: 2 },
-    { firstName: 'Isabel', lastName: 'Sánchez', className: 'Física Cuántica', amount: 44.99, teacher: 'Carmen López', approver: 'Pedro Administrador', status: 'PAID', daysAgo: 1 },
+    { firstName: 'Laura', lastName: 'López', className: 'Física Cuántica', amount: 64.99, teacher: 'Luis Fernández', approver: 'Pedro Administrador', status: 'PAID', daysAgo: 38 },
+    { firstName: 'Diego', lastName: 'Sánchez', className: 'Programación Web', amount: 79.99, teacher: 'Carmen López', approver: 'Carlos Rodríguez', status: 'PAID', daysAgo: 35 },
+    { firstName: 'Carmen', lastName: 'García', className: 'Matemáticas Avanzadas', amount: 59.99, teacher: 'Carlos Rodríguez', approver: 'María García', status: 'PAID', daysAgo: 32 },
+    { firstName: 'Luis', lastName: 'Rodríguez', className: 'Diseño Gráfico', amount: 89.99, teacher: 'María García', approver: 'Ana Martínez', status: 'PAID', daysAgo: 30 },
+    { firstName: 'Ana', lastName: 'Martínez', className: 'Física Cuántica', amount: 64.99, teacher: 'Ana Martínez', approver: 'Pedro Administrador', status: 'REJECTED', daysAgo: 28 },
+    { firstName: 'José', lastName: 'López', className: 'Programación Web', amount: 79.99, teacher: 'Luis Fernández', approver: 'Carlos Rodríguez', status: 'PAID', daysAgo: 25 },
+    { firstName: 'Isabel', lastName: 'Sánchez', className: 'Matemáticas Avanzadas', amount: 59.99, teacher: 'Carmen López', approver: 'María García', status: 'PAID', daysAgo: 22 },
+    { firstName: 'Laura', lastName: 'López', className: 'Matemáticas Avanzadas', amount: 59.99, teacher: 'Luis Fernández', approver: 'María García', status: 'PAID', daysAgo: 12 },
+    { firstName: 'Diego', lastName: 'Sánchez', className: 'Diseño Gráfico', amount: 89.99, teacher: 'Carmen López', approver: 'Ana Martínez', status: 'REJECTED', daysAgo: 10 },
+    { firstName: 'Carmen', lastName: 'García', className: 'Física Cuántica', amount: 64.99, teacher: 'Carlos Rodríguez', approver: 'Pedro Administrador', status: 'PAID', daysAgo: 8 },
+    { firstName: 'Luis', lastName: 'Rodríguez', className: 'Programación Web', amount: 79.99, teacher: 'María García', approver: 'Carlos Rodríguez', status: 'PAID', daysAgo: 6 },
+    { firstName: 'Ana', lastName: 'Martínez', className: 'Matemáticas Avanzadas', amount: 59.99, teacher: 'Ana Martínez', approver: 'María García', status: 'PAID', daysAgo: 4 },
+    { firstName: 'José', lastName: 'López', className: 'Diseño Gráfico', amount: 89.99, teacher: 'Luis Fernández', approver: 'Ana Martínez', status: 'PAID', daysAgo: 2 },
+    { firstName: 'Isabel', lastName: 'Sánchez', className: 'Física Cuántica', amount: 64.99, teacher: 'Carmen López', approver: 'Pedro Administrador', status: 'PAID', daysAgo: 1 },
   ];
   
   return records.map((r, i) => ({

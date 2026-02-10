@@ -139,7 +139,7 @@ export default function AcademyPaymentsPage() {
             .reduce((sum, p) => sum + p.paymentAmount, 0);
           
           setSelectedStudent({
-            studentId,
+            studentId: studentEmail, // Use email as ID for demo (studentId is same for all demo students)
             name: studentName,
             email: studentEmail,
             className,
@@ -166,7 +166,7 @@ export default function AcademyPaymentsPage() {
         } else {
           // No payments found for this student
           setSelectedStudent({
-            studentId,
+            studentId: studentEmail, // Use email as ID for demo
             name: studentName,
             email: studentEmail,
             className,
