@@ -747,6 +747,10 @@ export default function TopicsLessonsList({
           <h3 className="text-base font-semibold text-gray-900 mb-1">Aún no hay Clases</h3>
           <p className="text-gray-500 text-sm">Crea tu primera lección para comenzar</p>
         </div>
+      ) : lessons.length === 0 && topics.length > 0 ? (
+        <div ref={scrollContainerRef} className="max-h-[700px] overflow-y-auto space-y-3 scroll-smooth py-2">
+          {topics.map(topic => renderTopicSection(topic.id, topic.name, []))}
+        </div>
       ) : (
         <div ref={scrollContainerRef} className="max-h-[700px] overflow-y-auto space-y-3 scroll-smooth py-2">
           {/* Render topics in order */}

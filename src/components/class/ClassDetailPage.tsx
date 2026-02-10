@@ -515,20 +515,29 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
           
           setLessons(classLessons);
 
-          // Set demo topics per class
+          // Set demo topics per class (must match feedback page topics)
           const demoTopicsMap: Record<string, Topic[]> = {
             'demo-c1': [
               { id: 'demo-c1-t1', name: 'Fundamentos', classId: 'demo-c1', orderIndex: 0, lessonCount: 2 },
               { id: 'demo-c1-t2', name: 'Hooks y Estado', classId: 'demo-c1', orderIndex: 1, lessonCount: 2 },
+              { id: 'demo-c1-t3', name: 'Routing', classId: 'demo-c1', orderIndex: 2, lessonCount: 0 },
             ],
             'demo-c2': [
               { id: 'demo-c2-t1', name: 'Cálculo Diferencial', classId: 'demo-c2', orderIndex: 0, lessonCount: 2 },
               { id: 'demo-c2-t2', name: 'Cálculo Integral', classId: 'demo-c2', orderIndex: 1, lessonCount: 1 },
+              { id: 'demo-c2-t3', name: 'Series', classId: 'demo-c2', orderIndex: 2, lessonCount: 0 },
+              { id: 'demo-c2-t4', name: 'Aplicaciones', classId: 'demo-c2', orderIndex: 3, lessonCount: 0 },
             ],
             'demo-c3': [
               { id: 'demo-c3-t1', name: 'Teoría del Diseño', classId: 'demo-c3', orderIndex: 0, lessonCount: 1 },
+              { id: 'demo-c3-t2', name: 'Herramientas', classId: 'demo-c3', orderIndex: 1, lessonCount: 0 },
+              { id: 'demo-c3-t3', name: 'Tipografía y Color', classId: 'demo-c3', orderIndex: 2, lessonCount: 0 },
             ],
-            'demo-c4': [],
+            'demo-c4': [
+              { id: 'demo-c4-t1', name: 'Fundamentos Cuánticos', classId: 'demo-c4', orderIndex: 0, lessonCount: 0 },
+              { id: 'demo-c4-t2', name: 'Principios', classId: 'demo-c4', orderIndex: 1, lessonCount: 0 },
+              { id: 'demo-c4-t3', name: 'Aplicaciones', classId: 'demo-c4', orderIndex: 2, lessonCount: 0 },
+            ],
           };
           setTopics(demoTopicsMap[demoClass.id] || []);
           setPendingEnrollments([]);

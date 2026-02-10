@@ -210,7 +210,11 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
       }
 
       // Demo payment status for aggregate
+      // If any class in breakdown is BEHIND, aggregate should be BEHIND
       const demoPaymentOptions: ('UP_TO_DATE' | 'BEHIND')[] = ['UP_TO_DATE', 'UP_TO_DATE', 'BEHIND', 'UP_TO_DATE', 'UP_TO_DATE'];
+      const aggregateStatus = classBreakdown && classBreakdown.some(cb => cb.paymentStatus === 'BEHIND')
+        ? 'BEHIND' as const
+        : demoPaymentOptions[index % 5];
 
       return {
         id: student.id,
@@ -224,7 +228,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
         totalVideos,
         lastActive: student.lastLoginAt ?? null,
         classBreakdown,
-        paymentStatus: demoPaymentOptions[index % 5],
+        paymentStatus: aggregateStatus,
       };
     });
   }, []);

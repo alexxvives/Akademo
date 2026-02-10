@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { apiClient } from '@/lib/api-client';
+import { generateDemoPendingPayments } from '@/lib/demo-data';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { MobileSidebar } from '@/components/layout/MobileSidebar';
 import { NotificationPanel } from '@/components/layout/NotificationPanel';
@@ -146,8 +147,8 @@ export default function DashboardLayout({
         
         // Load pending payments count for badge
         if (paymentStatus === 'NOT PAID') {
-          // Demo mode: hardcoded count from generateDemoPendingPayments()
-          setPendingPaymentsCount(3);
+          // Demo mode: dynamic count from generateDemoPendingPayments()
+          setPendingPaymentsCount(generateDemoPendingPayments().length);
         } else {
           // Real mode: query database
           const pendingRes = await apiClient('/payments/pending-count');
