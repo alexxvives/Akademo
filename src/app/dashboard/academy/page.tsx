@@ -598,16 +598,16 @@ export default function AcademyDashboard() {
                   </div>
                   <div className="flex items-center justify-center gap-3">
                     <div className="text-center">
+                      <div className="text-xs text-gray-500 mb-0.5">Bizum</div>
                       <AnimatedNumber value={paymentStats.bizumCount} className="text-lg font-bold text-purple-600" />
-                      <div className="text-xs text-gray-500">Bizum</div>
                     </div>
                     <div className="text-center">
+                      <div className="text-xs text-gray-500 mb-0.5">Efectivo</div>
                       <AnimatedNumber value={paymentStats.cashCount} className="text-lg font-bold text-amber-600" />
-                      <div className="text-xs text-gray-500">Efectivo</div>
                     </div>
                     <div className="text-center">
+                      <div className="text-xs text-gray-500 mb-0.5">Stripe</div>
                       <AnimatedNumber value={paymentStats.stripeCount} className="text-lg font-bold text-blue-600" />
-                      <div className="text-xs text-gray-500">Stripe</div>
                     </div>
                   </div>
                 </div>

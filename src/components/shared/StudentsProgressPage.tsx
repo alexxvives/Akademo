@@ -195,7 +195,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
         classBreakdown = student.classes.map((cls, ci) => {
           const clsVideos = Math.floor(Math.random() * (totalVideos / student.classes.length + 2));
           const clsTime = Math.floor(totalWatchTime / student.classes.length) + Math.floor(Math.random() * 600);
-          const demoStatuses: ('UP_TO_DATE' | 'BEHIND' | 'FREE')[] = ['UP_TO_DATE', 'BEHIND', 'FREE'];
+          const demoStatuses: ('UP_TO_DATE' | 'BEHIND')[] = ['UP_TO_DATE', 'UP_TO_DATE', 'BEHIND'];
           return {
             className: cls,
             classId: student.classIds[ci],
@@ -210,7 +210,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
       }
 
       // Demo payment status for aggregate
-      const demoPaymentOptions: ('UP_TO_DATE' | 'BEHIND' | 'FREE')[] = ['UP_TO_DATE', 'UP_TO_DATE', 'BEHIND', 'FREE', 'UP_TO_DATE'];
+      const demoPaymentOptions: ('UP_TO_DATE' | 'BEHIND')[] = ['UP_TO_DATE', 'UP_TO_DATE', 'BEHIND', 'UP_TO_DATE', 'UP_TO_DATE'];
 
       return {
         id: student.id,

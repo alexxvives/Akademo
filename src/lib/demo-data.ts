@@ -127,8 +127,11 @@ export interface DemoClass {
   videoCount: number;
   documentCount: number;
   price: number;
+  monthlyPrice?: number | null;
+  oneTimePrice?: number | null;
   currency: string;
   createdAt: string;
+  startDate?: string;
   avgRating?: number; // Average rating to match valoraciones page
 }
 
@@ -558,8 +561,11 @@ export function generateDemoClasses(): DemoClass[] {
       videoCount: 8,
       documentCount: 5,
       price: 49.99,
+      monthlyPrice: 49.99,
+      oneTimePrice: null,
       currency: 'EUR',
       createdAt: now,
+      startDate: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       avgRating: demoAvgRating,
     },
     {
@@ -572,8 +578,11 @@ export function generateDemoClasses(): DemoClass[] {
       videoCount: 12,
       documentCount: 8,
       price: 39.99,
+      monthlyPrice: null,
+      oneTimePrice: 39.99,
       currency: 'EUR',
       createdAt: now,
+      startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       avgRating: demoAvgRating,
     },
     {
@@ -586,8 +595,11 @@ export function generateDemoClasses(): DemoClass[] {
       videoCount: 15,
       documentCount: 10,
       price: 59.99,
+      monthlyPrice: 59.99,
+      oneTimePrice: null,
       currency: 'EUR',
       createdAt: now,
+      startDate: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       avgRating: demoAvgRating,
     },
     {
@@ -600,8 +612,11 @@ export function generateDemoClasses(): DemoClass[] {
       videoCount: 6,
       documentCount: 4,
       price: 44.99,
+      monthlyPrice: null,
+      oneTimePrice: 44.99,
       currency: 'EUR',
       createdAt: now,
+      startDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       avgRating: demoAvgRating,
     },
   ];

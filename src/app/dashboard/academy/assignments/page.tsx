@@ -537,7 +537,7 @@ export default function TeacherAssignments() {
               </div>
             </div>
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+              <thead className="bg-gray-50 sticky top-0 z-10">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Título</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Asignatura</th>
@@ -794,7 +794,7 @@ export default function TeacherAssignments() {
               <div className="text-center py-12 text-gray-500">No hay entregas aún</div>
             ) : (
               <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-50 sticky top-0 z-10">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estudiante</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Archivo</th>

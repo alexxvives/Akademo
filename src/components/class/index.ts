@@ -19,3 +19,6 @@ export type { PendingEnrollmentsProps } from './PendingEnrollments';
 
 export { default as ClassHeader } from './ClassHeader';
 export type { ClassHeaderProps } from './ClassHeader';
+
+export { default as ClassDetailPage } from './ClassDetailPage';
+export type { ClassDetailPageProps } from './ClassDetailPage';
