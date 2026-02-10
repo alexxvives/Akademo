@@ -13,6 +13,7 @@ export interface ClassBreakdownItem {
   totalVideos: number;
   lastActive: string | null;
   enrollmentId?: string;
+  paymentStatus?: 'UP_TO_DATE' | 'BEHIND' | 'FREE';
 }
 
 export interface StudentProgress {
@@ -28,6 +29,7 @@ export interface StudentProgress {
   lastActive: string | null;
   enrollmentId?: string;
   classBreakdown?: ClassBreakdownItem[];
+  paymentStatus?: 'UP_TO_DATE' | 'BEHIND' | 'FREE';
 }
 
 interface StudentsProgressTableProps {
@@ -72,16 +74,8 @@ export function StudentsProgressTable({
     return hours > 0 ? `${hours}h ${minutes}m ${seconds}s` : minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
   };
 
-  const getProgressBarColor = (lastActive: string | null) => {
-    if (!lastActive) return 'bg-gray-400';
-    
-    const now = new Date();
-    const lastActiveDate = new Date(lastActive);
-    const hoursSinceActive = (now.getTime() - lastActiveDate.getTime()) / (1000 * 60 * 60);
-    
-    if (hoursSinceActive <= 24) return 'bg-green-500';
-    if (hoursSinceActive <= 168) return 'bg-yellow-500'; // 7 days
-    return 'bg-red-500';
+  const getProgressBarColor = (_lastActive: string | null) => {
+    return 'bg-blue-500';
   };
 
   const getActivityStatus = (lastActive: string | null) => {
@@ -234,6 +228,9 @@ export function StudentsProgressTable({
                 <th className="text-left py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Última Actividad
                 </th>
+                <th className="text-left py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Pagos
+                </th>
                 {showBanButton && (
                   <th className="text-left py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     Acciones
@@ -244,7 +241,7 @@ export function StudentsProgressTable({
             <tbody className="divide-y divide-gray-200">
               {filteredStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={(showTeacherColumn ? 6 : 5) + (showBanButton ? 1 : 0)} className="py-12 text-center">
+                  <td colSpan={(showTeacherColumn ? 7 : 6) + (showBanButton ? 1 : 0)} className="py-12 text-center">
                     <svg className="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
@@ -258,7 +255,7 @@ export function StudentsProgressTable({
                 const activityStatus = getActivityStatus(student.lastActive);
                 const hasBreakdown = student.classBreakdown && student.classBreakdown.length > 1;
                 const isExpanded = expandedStudents.has(student.id);
-                const colCount = (showTeacherColumn ? 6 : 5) + (showBanButton ? 1 : 0);
+                const colCount = (showTeacherColumn ? 7 : 6) + (showBanButton ? 1 : 0);
                 return (
                   <React.Fragment key={`${student.id}-${student.classId}`}>
                     <tr
@@ -322,6 +319,25 @@ export function StudentsProgressTable({
                               : 'Sin actividad'}
                           </span>
                         </div>
+                      </td>
+                      <td className="py-4 px-6">
+                        {student.paymentStatus === 'FREE' ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                            Gratis
+                          </span>
+                        ) : student.paymentStatus === 'UP_TO_DATE' ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                            Al día
+                          </span>
+                        ) : student.paymentStatus === 'BEHIND' ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                            Atrasado
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-400">
+                            —
+                          </span>
+                        )}
                       </td>
                       {showBanButton && (
                         <td className="py-4 px-6">
@@ -393,6 +409,23 @@ export function StudentsProgressTable({
                                   })()
                                 : 'Sin actividad'}
                             </span>
+                          </td>
+                          <td className="py-3 px-6">
+                            {cls.paymentStatus === 'FREE' ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+                                Gratis
+                              </span>
+                            ) : cls.paymentStatus === 'UP_TO_DATE' ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-600">
+                                Al día
+                              </span>
+                            ) : cls.paymentStatus === 'BEHIND' ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-600">
+                                Atrasado
+                              </span>
+                            ) : (
+                              <span className="text-xs text-gray-400">—</span>
+                            )}
                           </td>
                           {showBanButton && (
                             <td className="py-3 px-6">

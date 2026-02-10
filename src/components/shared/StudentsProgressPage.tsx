@@ -46,6 +46,12 @@ interface StudentProgressApiRecord {
   totalLessons?: number | null;
   lastActive?: string | null;
   enrollmentId?: string | null;
+  paymentFrequency?: string | null;
+  monthlyPrice?: number | null;
+  oneTimePrice?: number | null;
+  classStartDate?: string | null;
+  enrolledAt?: string | null;
+  totalPaid?: number | null;
 }
 
 interface StudentProgressAggregate {
@@ -62,6 +68,38 @@ interface StudentProgressAggregate {
   lastActive?: string | null;
   enrollmentIds: string[];
   perClassRecords: ClassBreakdownItem[];
+}
+
+function computePaymentStatus(
+  paymentFrequency: string | null | undefined,
+  monthlyPrice: number | null | undefined,
+  oneTimePrice: number | null | undefined,
+  classStartDate: string | null | undefined,
+  enrolledAt: string | null | undefined,
+  totalPaid: number | null | undefined,
+): 'UP_TO_DATE' | 'BEHIND' | 'FREE' {
+  // Free class: no prices set or both zero
+  const hasMonthly = monthlyPrice != null && monthlyPrice > 0;
+  const hasOneTime = oneTimePrice != null && oneTimePrice > 0;
+  if (!hasMonthly && !hasOneTime) return 'FREE';
+
+  const paid = totalPaid ?? 0;
+
+  if (paymentFrequency === 'MONTHLY' && hasMonthly) {
+    // Calculate expected months from class start (or enrollment) to now
+    const startStr = classStartDate || enrolledAt;
+    if (!startStr) return paid >= monthlyPrice ? 'UP_TO_DATE' : 'BEHIND';
+    const start = new Date(startStr);
+    const now = new Date();
+    const monthsDiff = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+    const expectedMonths = Math.max(1, monthsDiff + 1); // At least 1 month due
+    const expectedAmount = expectedMonths * monthlyPrice;
+    return paid >= expectedAmount ? 'UP_TO_DATE' : 'BEHIND';
+  }
+
+  // One-time payment or default
+  const price = hasOneTime ? oneTimePrice! : monthlyPrice!;
+  return paid >= price ? 'UP_TO_DATE' : 'BEHIND';
 }
 
 export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
@@ -157,6 +195,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
         classBreakdown = student.classes.map((cls, ci) => {
           const clsVideos = Math.floor(Math.random() * (totalVideos / student.classes.length + 2));
           const clsTime = Math.floor(totalWatchTime / student.classes.length) + Math.floor(Math.random() * 600);
+          const demoStatuses: ('UP_TO_DATE' | 'BEHIND' | 'FREE')[] = ['UP_TO_DATE', 'BEHIND', 'FREE'];
           return {
             className: cls,
             classId: student.classIds[ci],
@@ -165,9 +204,13 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
             videosWatched: clsVideos,
             totalVideos: Math.floor(totalVideos / student.classes.length),
             lastActive: student.lastLoginAt ?? null,
+            paymentStatus: demoStatuses[(index + ci) % 3],
           };
         });
       }
+
+      // Demo payment status for aggregate
+      const demoPaymentOptions: ('UP_TO_DATE' | 'BEHIND' | 'FREE')[] = ['UP_TO_DATE', 'UP_TO_DATE', 'BEHIND', 'FREE', 'UP_TO_DATE'];
 
       return {
         id: student.id,
@@ -181,6 +224,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
         totalVideos,
         lastActive: student.lastLoginAt ?? null,
         classBreakdown,
+        paymentStatus: demoPaymentOptions[index % 5],
       };
     });
   }, []);
@@ -214,6 +258,14 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
         const studentMap = new Map<string, StudentProgressAggregate>();
         
         data.data.forEach((student: StudentProgressApiRecord) => {
+          const classPaymentStatus = computePaymentStatus(
+            student.paymentFrequency,
+            student.monthlyPrice,
+            student.oneTimePrice,
+            student.classStartDate,
+            student.enrolledAt,
+            student.totalPaid,
+          );
           const classRecord: ClassBreakdownItem = {
             className: student.className,
             classId: student.classId,
@@ -223,6 +275,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
             totalVideos: student.totalLessons ?? 0,
             lastActive: student.lastActive ?? null,
             enrollmentId: student.enrollmentId ?? undefined,
+            paymentStatus: classPaymentStatus,
           };
 
           if (!studentMap.has(student.id)) {
@@ -267,20 +320,33 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
         });
         
         // Convert map to array with aggregated data
-        const progressData: StudentProgress[] = Array.from(studentMap.values()).map(student => ({
-          id: student.id,
-          name: `${student.firstName} ${student.lastName}`,
-          email: student.email,
-          className: student.classes.length === 1 ? student.classes[0] : `${student.classes.length} clases`,
-          classId: student.classIds[0], // Use first class for filtering
-          teacherName: student.teacherNames.join(', '),
-          totalWatchTime: student.totalWatchTime,
-          videosWatched: student.lessonsCompleted,
-          totalVideos: student.totalLessons,
-          lastActive: student.lastActive ?? null,
-          enrollmentId: student.enrollmentIds[0], // Use first enrollment for actions
-          classBreakdown: student.perClassRecords.length > 1 ? student.perClassRecords : undefined,
-        }));
+        const progressData: StudentProgress[] = Array.from(studentMap.values()).map(student => {
+          // Aggregate payment status: if ANY class is BEHIND, student is BEHIND overall
+          // If all FREE, student is FREE. Otherwise UP_TO_DATE.
+          const statuses = student.perClassRecords.map(r => r.paymentStatus);
+          let aggregatePaymentStatus: 'UP_TO_DATE' | 'BEHIND' | 'FREE' = 'FREE';
+          if (statuses.some(s => s === 'BEHIND')) {
+            aggregatePaymentStatus = 'BEHIND';
+          } else if (statuses.some(s => s === 'UP_TO_DATE')) {
+            aggregatePaymentStatus = 'UP_TO_DATE';
+          }
+
+          return {
+            id: student.id,
+            name: `${student.firstName} ${student.lastName}`,
+            email: student.email,
+            className: student.classes.length === 1 ? student.classes[0] : `${student.classes.length} clases`,
+            classId: student.classIds[0], // Use first class for filtering
+            teacherName: student.teacherNames.join(', '),
+            totalWatchTime: student.totalWatchTime,
+            videosWatched: student.lessonsCompleted,
+            totalVideos: student.totalLessons,
+            lastActive: student.lastActive ?? null,
+            enrollmentId: student.enrollmentIds[0], // Use first enrollment for actions
+            classBreakdown: student.perClassRecords.length > 1 ? student.perClassRecords : undefined,
+            paymentStatus: aggregatePaymentStatus,
+          };
+        });
         
         setStudents(progressData);
       }

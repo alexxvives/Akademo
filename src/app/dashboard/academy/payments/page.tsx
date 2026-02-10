@@ -5,6 +5,7 @@ import { apiClient } from '@/lib/api-client';
 import { generateDemoPendingPayments, generateDemoPaymentHistory } from '@/lib/demo-data';
 import { SkeletonTable } from '@/components/ui/SkeletonLoader';
 import { StudentPaymentDetailModal } from '@/components/shared';
+import { ModalPortal } from '@/components/ui/ModalPortal';
 
 interface PendingPayment {
   enrollmentId: string;
@@ -864,6 +865,7 @@ export default function AcademyPaymentsPage() {
 
       {/* Register Payment Modal */}
       {showRegisterModal && (
+        <ModalPortal>
         <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-[9999] overflow-y-auto py-8 px-4">
           <div className="bg-white rounded-2xl w-full max-w-md p-6 my-auto">
             <h2 className="text-xl font-bold text-gray-900 mb-4">
@@ -1032,6 +1034,7 @@ export default function AcademyPaymentsPage() {
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* Student Payment Detail Modal */}

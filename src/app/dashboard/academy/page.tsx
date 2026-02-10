@@ -100,7 +100,7 @@ interface EnrollmentRecord {
 // Animated Number Component
 function AnimatedNumber({ value, className }: { value: number; className?: string }) {
   const animatedValue = useAnimatedNumber(value);
-  return <div className={className}>{animatedValue}</div>;
+  return <div className={className}>{animatedValue.toLocaleString('es-ES')}</div>;
 }
 
 export default function AcademyDashboard() {

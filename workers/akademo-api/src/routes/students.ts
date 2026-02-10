@@ -31,6 +31,12 @@ students.get('/progress', async (c) => {
           c.academyId,
           e.id as enrollmentId,
           ut.firstName || ' ' || ut.lastName as teacherName,
+          e.paymentFrequency,
+          c.monthlyPrice,
+          c.oneTimePrice,
+          c.startDate as classStartDate,
+          e.enrolledAt,
+          (SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.payerId = u.id AND p.classId = c.id AND p.status IN ('PAID', 'COMPLETED')) as totalPaid,
           COUNT(DISTINCT CASE 
             WHEN vps.videoId IS NOT NULL AND v.id IS NOT NULL THEN vps.videoId 
           END) as lessonsCompleted,
@@ -66,6 +72,12 @@ students.get('/progress', async (c) => {
           c.name as className,
           c.id as classId,
           e.id as enrollmentId,
+          e.paymentFrequency,
+          c.monthlyPrice,
+          c.oneTimePrice,
+          c.startDate as classStartDate,
+          e.enrolledAt,
+          (SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.payerId = u.id AND p.classId = c.id AND p.status IN ('PAID', 'COMPLETED')) as totalPaid,
           COUNT(DISTINCT CASE 
             WHEN vps.videoId IS NOT NULL AND v.id IS NOT NULL THEN vps.videoId 
           END) as lessonsCompleted,
@@ -101,6 +113,12 @@ students.get('/progress', async (c) => {
           c.id as classId,
           e.id as enrollmentId,
           ut.firstName || ' ' || ut.lastName as teacherName,
+          e.paymentFrequency,
+          c.monthlyPrice,
+          c.oneTimePrice,
+          c.startDate as classStartDate,
+          e.enrolledAt,
+          (SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.payerId = u.id AND p.classId = c.id AND p.status IN ('PAID', 'COMPLETED')) as totalPaid,
           COUNT(DISTINCT CASE 
             WHEN vps.videoId IS NOT NULL AND v.id IS NOT NULL THEN vps.videoId 
           END) as lessonsCompleted,

@@ -133,7 +133,7 @@ export default function DashboardLayout({
     }
   }, []);
 
-  const loadAcademy = useCallback(async () => {
+  const loadAcademy = useCallback(async (): Promise<string> => {
     try {
       const academyResponse = await apiClient('/academies');
       const result = await academyResponse.json();
@@ -156,10 +156,12 @@ export default function DashboardLayout({
             setPendingPaymentsCount(pendingResult.data);
           }
         }
+        return paymentStatus;
       }
     } catch (error) {
       console.error('Failed to load academy:', error);
     }
+    return 'PAID';
   }, []);
 
   // Listen for payment changes and update badge immediately
@@ -180,10 +182,11 @@ export default function DashboardLayout({
     return () => window.removeEventListener('feedbackToggled', handleFeedbackToggle);
   }, [loadAcademy]);
 
-  const loadUnreadValoraciones = useCallback(async () => {
+  const loadUnreadValoraciones = useCallback(async (overridePaymentStatus?: string) => {
     try {
+      const status = overridePaymentStatus || academyPaymentStatus;
       // Show demo unread count if NOT PAID
-      if (academyPaymentStatus === 'NOT PAID') {
+      if (status === 'NOT PAID') {
         setUnreadValoracionesCount(12); // 12 unread out of 35 total ratings in demo data
         return;
       }
@@ -199,10 +202,11 @@ export default function DashboardLayout({
     }
   }, [academyPaymentStatus]);
   
-  const loadUngradedAssignments = useCallback(async () => {
+  const loadUngradedAssignments = useCallback(async (overridePaymentStatus?: string) => {
     try {
+      const status = overridePaymentStatus || academyPaymentStatus;
       // Show demo counts if NOT PAID
-      if (academyPaymentStatus === 'NOT PAID') {
+      if (status === 'NOT PAID') {
         // Demo mode: count actual ungraded demo submissions
         const { countTotalNewDemoSubmissions, countTotalUngradedDemoSubmissions } = await import('@/lib/demo-data');
         const newCount = countTotalNewDemoSubmissions();
@@ -324,15 +328,15 @@ export default function DashboardLayout({
     
     if (role === 'ACADEMY') {
       // Load academy first (sets paymentStatus), THEN load badges that depend on it
-      loadAcademy().then(() => {
-        loadUnreadValoraciones();
-        loadUngradedAssignments();
+      loadAcademy().then((status) => {
+        loadUnreadValoraciones(status);
+        loadUngradedAssignments(status);
       });
       // Poll every 15 seconds for pending payments, valoraciones, and assignments
       const academyInterval = setInterval(() => {
-        loadAcademy().then(() => {
-          loadUnreadValoraciones();
-          loadUngradedAssignments();
+        loadAcademy().then((status) => {
+          loadUnreadValoraciones(status);
+          loadUngradedAssignments(status);
         });
       }, 15000);
       return () => clearInterval(academyInterval);

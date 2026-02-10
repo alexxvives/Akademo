@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { ModalPortal } from '@/components/ui/ModalPortal';
 import Link from 'next/link';
 import ProtectedVideoPlayer from '@/components/ProtectedVideoPlayer';
 import { SkeletonClassDetail } from '@/components/ui/SkeletonLoader';
@@ -14,7 +15,7 @@ import { uploadToBunny } from '@/lib/bunny-upload';
 import { formatDuration } from '@/lib/formatters';
 
 // Import shared components
-import { ClassHeader, PendingEnrollments, TopicsLessonsList, StudentsList } from '@/components/class';
+import { ClassHeader, PendingEnrollments, TopicsLessonsList } from '@/components/class';
 
 interface Topic {
   id: string;
@@ -580,6 +581,25 @@ export default function TeacherClassPage() {
     setShowStreamNameModal(false);
     setCreatingStream(true);
     try {
+      // Demo mode: create a fake stream entry locally
+      if (paymentStatus === 'NOT PAID') {
+        const demoStream = {
+          id: `demo-stream-${Date.now()}`,
+          classId: classData.id,
+          teacherId: 'demo-teacher',
+          status: 'scheduled',
+          title: streamTitle,
+          createdAt: new Date().toISOString(),
+          zoomLink: '#',
+          zoomStartUrl: '#',
+          zoomMeetingId: 'demo',
+          participantCount: 0,
+        };
+        setLiveClasses(prev => [demoStream, ...prev]);
+        setCreatingStream(false);
+        return;
+      }
+
       // Use classData.id (actual UUID) instead of classId from URL (could be slug)
       const res = await apiClient('/live', {
         method: 'POST',
@@ -2248,15 +2268,12 @@ export default function TeacherClassPage() {
               </div>
             )}
 
-            {/* Students - Component */}
-            {!selectedLesson && (
-              <StudentsList enrollments={classData.enrollments} />
-            )}
           </>
         )}
 
         {/* Custom Stream Name Modal */}
         {showStreamNameModal && (
+          <ModalPortal>
           <div className="fixed top-0 left-0 right-0 bottom-0 bg-black/50 flex items-center justify-center z-[9999] overflow-y-auto">
             <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl m-4">
               <h3 className="text-xl font-semibold text-gray-900 mb-4">Nombre del Stream</h3>
@@ -2298,6 +2315,7 @@ export default function TeacherClassPage() {
               </div>
             </div>
           </div>
+          </ModalPortal>
         )}
     </div>
   );
