@@ -111,9 +111,12 @@ export default function DashboardLayout({
       const result = await response.json();
       if (result.success && Array.isArray(result.data)) {
         setNotifications(result.data);
-        setUnreadCount(result.data.filter((n: Notification) => !n.isRead).length);
+        const newCount = result.data.filter((n: Notification) => !n.isRead).length;
+        setUnreadCount(newCount);
       }
+      // On failure, keep previous count to avoid flickering
     } catch (error) {
+      // Silently keep previous state - don't reset count on network errors
       console.error('Failed to load notifications:', error);
     }
   }, []);

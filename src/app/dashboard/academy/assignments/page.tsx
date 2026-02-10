@@ -357,6 +357,12 @@ export default function TeacherAssignments() {
       return;
     }
 
+    // Demo mode: open demo PDF directly instead of fetching from API
+    if (paymentStatus === 'NOT PAID') {
+      window.open('/demo/Documento.pdf', '_blank');
+      return;
+    }
+
     try {
       // Fetch Upload records to get storagePath for each uploadId
       for (const uploadId of uploadIds) {

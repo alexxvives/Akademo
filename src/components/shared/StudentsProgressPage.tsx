@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { StudentsProgressTable, type StudentProgress } from '@/components/shared';
+import type { ClassBreakdownItem } from './StudentsProgressTable';
 import { generateDemoStudents } from '@/lib/demo-data';
 
 interface Class {
@@ -29,6 +30,7 @@ interface DemoStudentAggregate {
   classIds: string[];
   lastLoginAt?: string | null;
   watchTimeBase: number;
+  perClassTeachers: string[];
 }
 
 interface StudentProgressApiRecord {
@@ -59,6 +61,7 @@ interface StudentProgressAggregate {
   totalLessons: number;
   lastActive?: string | null;
   enrollmentIds: string[];
+  perClassRecords: ClassBreakdownItem[];
 }
 
 export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
@@ -86,6 +89,101 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
       setFilteredClasses(classes);
     }
   }, [selectedAcademy, classes, role]);
+
+  const DEMO_CLASS_NAME_TO_ID: Record<string, string> = {
+    'Programación Web': 'demo-c1',
+    'Matemáticas Avanzadas': 'demo-c2',
+    'Física Cuántica': 'demo-c4',
+    'Diseño Gráfico': 'demo-c3',
+  };
+
+  const DEMO_CLASSES = [
+    { id: 'demo-c1', name: 'Programación Web' },
+    { id: 'demo-c2', name: 'Matemáticas Avanzadas' },
+    { id: 'demo-c3', name: 'Diseño Gráfico' },
+    { id: 'demo-c4', name: 'Física Cuántica' },
+  ];
+
+  const DEMO_TEACHERS = ['Carlos Rodríguez', 'María García', 'Ana Martínez'];
+
+  const buildDemoStudentProgress = useCallback((): StudentProgress[] => {
+    const demoStudents = generateDemoStudents();
+    const studentMap = new Map<string, DemoStudentAggregate>();
+
+    demoStudents.forEach((s, index) => {
+      const key = `${s.firstName}-${s.lastName}`;
+      const classId = DEMO_CLASS_NAME_TO_ID[s.className] || 'demo-c1';
+
+      if (!studentMap.has(key)) {
+        studentMap.set(key, {
+          id: s.id,
+          firstName: s.firstName,
+          lastName: s.lastName,
+          email: s.email,
+          classes: [s.className],
+          classIds: [classId],
+          lastLoginAt: s.lastLoginAt,
+          watchTimeBase: index,
+          perClassTeachers: [DEMO_TEACHERS[index % 3]],
+        });
+      } else {
+        const existing = studentMap.get(key);
+        if (existing) {
+          if (!existing.classes.includes(s.className)) {
+            existing.classes.push(s.className);
+            existing.classIds.push(classId);
+            existing.perClassTeachers.push(DEMO_TEACHERS[(existing.classes.length - 1) % 3]);
+          }
+          if (s.lastLoginAt && (!existing.lastLoginAt || new Date(s.lastLoginAt) > new Date(existing.lastLoginAt))) {
+            existing.lastLoginAt = s.lastLoginAt;
+          }
+        }
+      }
+    });
+
+    return Array.from(studentMap.values()).map((student, index) => {
+      const teacherName = DEMO_TEACHERS[Math.floor(index / 3) % 3];
+      const totalWatchTime = student.watchTimeBase === 0 ? 90000 :
+        student.watchTimeBase % 3 === 0 ? Math.floor(Math.random() * 3600) :
+        student.watchTimeBase % 5 === 0 ? Math.floor(Math.random() * 18000) :
+        student.watchTimeBase % 7 === 0 ? Math.floor(Math.random() * 36000) :
+        Math.floor(Math.random() * 7200);
+      const videosWatched = Math.floor(Math.random() * 15);
+      const totalVideos = 20;
+
+      // Build per-class breakdown if student is in multiple classes
+      let classBreakdown: ClassBreakdownItem[] | undefined;
+      if (student.classes.length > 1) {
+        classBreakdown = student.classes.map((cls, ci) => {
+          const clsVideos = Math.floor(Math.random() * (totalVideos / student.classes.length + 2));
+          const clsTime = Math.floor(totalWatchTime / student.classes.length) + Math.floor(Math.random() * 600);
+          return {
+            className: cls,
+            classId: student.classIds[ci],
+            teacherName: student.perClassTeachers[ci] || DEMO_TEACHERS[ci % 3],
+            totalWatchTime: clsTime,
+            videosWatched: clsVideos,
+            totalVideos: Math.floor(totalVideos / student.classes.length),
+            lastActive: student.lastLoginAt ?? null,
+          };
+        });
+      }
+
+      return {
+        id: student.id,
+        name: `${student.firstName} ${student.lastName}`,
+        email: student.email,
+        className: student.classes.length === 1 ? student.classes[0] : `${student.classes.length} clases`,
+        classId: student.classIds[0],
+        teacherName,
+        totalWatchTime,
+        videosWatched,
+        totalVideos,
+        lastActive: student.lastLoginAt ?? null,
+        classBreakdown,
+      };
+    });
+  }, []);
 
   const loadProgress = useCallback(async () => {
     try {
@@ -116,6 +214,17 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
         const studentMap = new Map<string, StudentProgressAggregate>();
         
         data.data.forEach((student: StudentProgressApiRecord) => {
+          const classRecord: ClassBreakdownItem = {
+            className: student.className,
+            classId: student.classId,
+            teacherName: student.teacherName ?? undefined,
+            totalWatchTime: student.totalWatchTime ?? 0,
+            videosWatched: student.lessonsCompleted ?? 0,
+            totalVideos: student.totalLessons ?? 0,
+            lastActive: student.lastActive ?? null,
+            enrollmentId: student.enrollmentId ?? undefined,
+          };
+
           if (!studentMap.has(student.id)) {
             // First time seeing this student
             studentMap.set(student.id, {
@@ -131,6 +240,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
               totalLessons: student.totalLessons ?? 0,
               lastActive: student.lastActive ?? undefined,
               enrollmentIds: student.enrollmentId ? [student.enrollmentId] : [],
+              perClassRecords: [classRecord],
             });
           } else {
             // Add this class to existing student
@@ -147,6 +257,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
               if (student.enrollmentId) {
                 existing.enrollmentIds.push(student.enrollmentId);
               }
+              existing.perClassRecords.push(classRecord);
               // Keep most recent lastActive
               if (student.lastActive && (!existing.lastActive || new Date(student.lastActive) > new Date(existing.lastActive))) {
                 existing.lastActive = student.lastActive;
@@ -168,6 +279,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
           totalVideos: student.totalLessons,
           lastActive: student.lastActive ?? null,
           enrollmentId: student.enrollmentIds[0], // Use first enrollment for actions
+          classBreakdown: student.perClassRecords.length > 1 ? student.perClassRecords : undefined,
         }));
         
         setStudents(progressData);
@@ -209,75 +321,8 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
         
         // If NOT PAID, show demo students
         if (status === 'NOT PAID' && role === 'ACADEMY') {
-          const demoStudents = generateDemoStudents(); // Uses DEMO_STUDENT_COUNT.TOTAL (164)
-          // Map class names to demo class IDs
-          const classNameToId: Record<string, string> = {
-            'Programación Web': 'demo-c1',
-            'Matemáticas Avanzadas': 'demo-c2',
-            'Física Cuántica': 'demo-c4',
-            'Diseño Gráfico': 'demo-c3',
-          };
-          
-          // Group demo students by firstName+lastName to ensure unique students
-          const studentMap = new Map<string, DemoStudentAggregate>();
-          
-          demoStudents.forEach((s, index) => {
-            const key = `${s.firstName}-${s.lastName}`;
-            const classId = classNameToId[s.className] || 'demo-c1';
-            
-            if (!studentMap.has(key)) {
-              // First time seeing this student name
-              studentMap.set(key, {
-                id: s.id, // Use first ID encountered
-                firstName: s.firstName,
-                lastName: s.lastName,
-                email: s.email, // Use first email encountered
-                classes: [s.className],
-                classIds: [classId],
-                lastLoginAt: s.lastLoginAt,
-                watchTimeBase: index,
-              });
-            } else {
-              // Add this class to existing student
-              const existing = studentMap.get(key);
-              if (existing) {
-                if (!existing.classes.includes(s.className)) {
-                  existing.classes.push(s.className);
-                  existing.classIds.push(classId);
-                }
-                // Keep most recent lastLoginAt
-                if (s.lastLoginAt && (!existing.lastLoginAt || new Date(s.lastLoginAt) > new Date(existing.lastLoginAt))) {
-                  existing.lastLoginAt = s.lastLoginAt;
-                }
-              }
-            }
-          });
-          
-          // Convert map to unique students array
-          setStudents(Array.from(studentMap.values()).map((student, index) => ({
-            id: student.id,
-            name: `${student.firstName} ${student.lastName}`,
-            email: student.email,
-            className: student.classes.length === 1 ? student.classes[0] : `${student.classes.length} clases`,
-            classId: student.classIds[0], // Use first class for filtering
-            teacherName: ['Carlos Rodríguez', 'María García', 'Ana Martínez'][Math.floor(index / 3) % 3],
-            // More varied watch times: range from 0 to 25 hours(90000 seconds)
-            totalWatchTime: student.watchTimeBase === 0 ? 90000 : // First student watched everything (25h)
-                           student.watchTimeBase % 3 === 0 ? Math.floor(Math.random() * 3600) : // ~1h
-                           student.watchTimeBase % 5 === 0 ? Math.floor(Math.random() * 18000) : // ~5h
-                           student.watchTimeBase % 7 === 0 ? Math.floor(Math.random() * 36000) : // ~10h
-                           Math.floor(Math.random() * 7200), // ~2h (most common)
-            videosWatched: Math.floor(Math.random() * 15),
-            totalVideos: 20,
-            lastActive: student.lastLoginAt ?? null,
-          })));
-          // Load demo classes for filter
-          setClasses([
-            { id: 'demo-c1', name: 'Programación Web' },
-            { id: 'demo-c2', name: 'Matemáticas Avanzadas' },
-            { id: 'demo-c3', name: 'Diseño Gráfico' },
-            { id: 'demo-c4', name: 'Física Cuántica' },
-          ]);
+          setStudents(buildDemoStudentProgress());
+          setClasses(DEMO_CLASSES);
           setLoading(false);
           return;
         }
@@ -285,73 +330,8 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
       } else {
         // If API returns unexpected format, show demo data as fallback
         if (role === 'ACADEMY') {
-          const demoStudents = generateDemoStudents(); // Uses DEMO_STUDENT_COUNT.TOTAL (164)
-          const classNameToId: Record<string, string> = {
-            'Programación Web': 'demo-c1',
-            'Matemáticas Avanzadas': 'demo-c2',
-            'Física Cuántica': 'demo-c4',
-            'Diseño Gráfico': 'demo-c3',
-          };
-
-          // Group demo students by firstName+lastName to ensure unique students
-          const studentMap = new Map<string, DemoStudentAggregate>();
-
-          demoStudents.forEach((s, index) => {
-            const key = `${s.firstName}-${s.lastName}`;
-            const classId = classNameToId[s.className] || 'demo-c1';
-
-            if (!studentMap.has(key)) {
-              // First time seeing this student name
-              studentMap.set(key, {
-                id: s.id, // Use first ID encountered
-                firstName: s.firstName,
-                lastName: s.lastName,
-                email: s.email, // Use first email encountered
-                classes: [s.className],
-                classIds: [classId],
-                lastLoginAt: s.lastLoginAt,
-                watchTimeBase: index,
-              });
-            } else {
-              // Add this class to existing student
-              const existing = studentMap.get(key);
-              if (existing) {
-                if (!existing.classes.includes(s.className)) {
-                  existing.classes.push(s.className);
-                  existing.classIds.push(classId);
-                }
-                // Keep most recent lastLoginAt
-                if (s.lastLoginAt && (!existing.lastLoginAt || new Date(s.lastLoginAt) > new Date(existing.lastLoginAt))) {
-                  existing.lastLoginAt = s.lastLoginAt;
-                }
-              }
-            }
-          });
-
-          // Convert map to unique students array
-          setStudents(Array.from(studentMap.values()).map((student, index) => ({
-            id: student.id,
-            name: `${student.firstName} ${student.lastName}`,
-            email: student.email,
-            className: student.classes.length === 1 ? student.classes[0] : `${student.classes.length} clases`,
-            classId: student.classIds[0], // Use first class for filtering
-            teacherName: ['Carlos Rodríguez', 'María García', 'Ana Martínez'][Math.floor(index / 3) % 3],
-            // More varied watch times: range from 0 to 25 hours (90000 seconds)
-            totalWatchTime: student.watchTimeBase === 0 ? 90000 : // First student watched everything (25h)
-                           student.watchTimeBase % 3 === 0 ? Math.floor(Math.random() * 3600) : // ~1h
-                           student.watchTimeBase % 5 === 0 ? Math.floor(Math.random() * 18000) : // ~5h
-                           student.watchTimeBase % 7 === 0 ? Math.floor(Math.random() * 36000) : // ~10h
-                           Math.floor(Math.random() * 7200), // ~2h (most common)
-            videosWatched: Math.floor(Math.random() * 15),
-            totalVideos: 20,
-            lastActive: student.lastLoginAt ?? null,
-          })));
-          setClasses([
-            { id: 'demo-c1', name: 'Programación Web' },
-            { id: 'demo-c2', name: 'Matemáticas Avanzadas' },
-            { id: 'demo-c3', name: 'Diseño Gráfico' },
-            { id: 'demo-c4', name: 'Física Cuántica' },
-          ]);
+          setStudents(buildDemoStudentProgress());
+          setClasses(DEMO_CLASSES);
           setLoading(false);
         } else {
           await loadProgress();
@@ -361,77 +341,12 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
       console.error('Failed to load academy name:', error);
       // On error, show demo data for academy role
       if (role === 'ACADEMY') {
-        const demoStudents = generateDemoStudents(); // Uses DEMO_STUDENT_COUNT.TOTAL (164)
-        const classNameToId: Record<string, string> = {
-          'Programación Web': 'demo-c1',
-          'Matemáticas Avanzadas': 'demo-c2',
-          'Física Cuántica': 'demo-c4',
-          'Diseño Gráfico': 'demo-c3',
-        };
-
-        // Group demo students by firstName+lastName to ensure unique students
-        const studentMap = new Map<string, DemoStudentAggregate>();
-
-        demoStudents.forEach((s, index) => {
-          const key = `${s.firstName}-${s.lastName}`;
-          const classId = classNameToId[s.className] || 'demo-c1';
-
-          if (!studentMap.has(key)) {
-            // First time seeing this student name
-            studentMap.set(key, {
-              id: s.id, // Use first ID encountered
-              firstName: s.firstName,
-              lastName: s.lastName,
-              email: s.email, // Use first email encountered
-              classes: [s.className],
-              classIds: [classId],
-              lastLoginAt: s.lastLoginAt,
-              watchTimeBase: index,
-            });
-          } else {
-            // Add this class to existing student
-            const existing = studentMap.get(key);
-            if (existing) {
-              if (!existing.classes.includes(s.className)) {
-                existing.classes.push(s.className);
-                existing.classIds.push(classId);
-              }
-              // Keep most recent lastLoginAt
-              if (s.lastLoginAt && (!existing.lastLoginAt || new Date(s.lastLoginAt) > new Date(existing.lastLoginAt))) {
-                existing.lastLoginAt = s.lastLoginAt;
-              }
-            }
-          }
-        });
-
-        // Convert map to unique students array
-        setStudents(Array.from(studentMap.values()).map((student, index) => ({
-          id: student.id,
-          name: `${student.firstName} ${student.lastName}`,
-          email: student.email,
-          className: student.classes.length === 1 ? student.classes[0] : `${student.classes.length} clases`,
-          classId: student.classIds[0], // Use first class for filtering
-          teacherName: ['Carlos Rodríguez', 'María García', 'Ana Martínez'][Math.floor(index / 3) % 3],
-          // More varied watch times: range from 0 to 25 hours (90000 seconds)
-          totalWatchTime: student.watchTimeBase === 0 ? 90000 : // First student watched everything (25h)
-                         student.watchTimeBase % 3 === 0 ? Math.floor(Math.random() * 3600) : // ~1h
-                         student.watchTimeBase % 5 === 0 ? Math.floor(Math.random() * 18000) : // ~5h
-                         student.watchTimeBase % 7 === 0 ? Math.floor(Math.random() * 36000) : // ~10h
-                         Math.floor(Math.random() * 7200), // ~2h (most common)
-          videosWatched: Math.floor(Math.random() * 15),
-          totalVideos: 20,
-          lastActive: student.lastLoginAt ?? null,
-        })));
-        setClasses([
-          { id: 'demo-c1', name: 'Programación Web' },
-          { id: 'demo-c2', name: 'Matemáticas Avanzadas' },
-          { id: 'demo-c3', name: 'Diseño Gráfico' },
-          { id: 'demo-c4', name: 'Física Cuántica' },
-        ]);
+        setStudents(buildDemoStudentProgress());
+        setClasses(DEMO_CLASSES);
       }
       setLoading(false);
     }
-  }, [loadProgress, role]);
+  }, [loadProgress, role, buildDemoStudentProgress]);
 
   useEffect(() => {
     loadAcademyName();

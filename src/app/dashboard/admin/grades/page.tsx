@@ -385,7 +385,7 @@ export default function AdminGrades() {
                             }
                             
                             const handleDownload = (storagePath: string) => {
-                              window.open(`/api/documents/assignment/${storagePath}`, '_blank');
+                              window.open(`/api/documents/${storagePath}`, '_blank');
                             };
                             
                             return fileCount > 0 && grade.assignmentStoragePath ? (
@@ -408,7 +408,7 @@ export default function AdminGrades() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           {grade.submissionStoragePath ? (
                             <button
-                              onClick={() => window.open(`/api/documents/assignment/${grade.submissionStoragePath}`, '_blank')}
+                              onClick={() => window.open(`/api/documents/${grade.submissionStoragePath}`, '_blank')}
                               className="flex items-center gap-2 text-sm text-gray-900 hover:bg-gray-50 rounded px-2 py-1 -mx-2 transition-colors"
                             >
                               <div className="w-8 h-10 flex items-center justify-center bg-green-50 rounded border border-green-200">

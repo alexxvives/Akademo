@@ -257,8 +257,9 @@ export default function AcademyPaymentsPage() {
             { id: 'demo-c4', name: 'Física Cuántica' },
           ]);
           
-          // Build enrollment map for demo data to enable class dropdown in modal
+          // Build unique students list and enrollment map for demo data
           const enrollmentMap: {[key: string]: {classId: string; className: string}[]} = {};
+          const studentMap = new Map<string, {id: string; firstName: string; lastName: string; email: string}>();
           const addToEnrollmentMap = (studentId: string, classId: string, className: string) => {
             if (!enrollmentMap[studentId]) {
               enrollmentMap[studentId] = [];
@@ -271,20 +272,29 @@ export default function AcademyPaymentsPage() {
           
           // Process demo pending payments
           demoPending.forEach((p) => {
+            const sId = p.studentEmail; // Use email as unique ID since studentId is same for all
             const classId = p.className === 'Programación Web' ? 'demo-c1' :
                            p.className === 'Matemáticas Avanzadas' ? 'demo-c2' :
                            p.className === 'Diseño Gráfico' ? 'demo-c3' : 'demo-c4';
-            addToEnrollmentMap(p.studentId ?? '', classId, p.className);
+            addToEnrollmentMap(sId, classId, p.className);
+            if (!studentMap.has(sId)) {
+              studentMap.set(sId, { id: sId, firstName: p.studentFirstName, lastName: p.studentLastName, email: p.studentEmail });
+            }
           });
           
           // Process demo history payments
           demoHistory.forEach((p) => {
+            const sId = p.studentEmail; // Use email as unique ID
             const classId = p.classId || (p.className === 'Programación Web' ? 'demo-c1' :
                            p.className === 'Matemáticas Avanzadas' ? 'demo-c2' :
                            p.className === 'Diseño Gráfico' ? 'demo-c3' : 'demo-c4');
-            addToEnrollmentMap(p.studentId ?? '', classId, p.className);
+            addToEnrollmentMap(sId, classId, p.className);
+            if (!studentMap.has(sId)) {
+              studentMap.set(sId, { id: sId, firstName: p.studentFirstName, lastName: p.studentLastName, email: p.studentEmail });
+            }
           });
           
+          setStudents(Array.from(studentMap.values()));
           setStudentEnrollments(enrollmentMap);
           setLoading(false);
           return;
@@ -874,7 +884,7 @@ export default function AcademyPaymentsPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                   {showStudentDropdown && studentSearchTerm.length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                       {students
                         .filter(s => 
                           `${s.firstName} ${s.lastName}`.toLowerCase().includes(studentSearchTerm.toLowerCase()) ||
@@ -926,51 +936,54 @@ export default function AcademyPaymentsPage() {
                   </div>
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Monto *</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={registerForm.amount}
-                  onChange={(e) => setRegisterForm({ ...registerForm, amount: e.target.value })}
-                  placeholder="0.00"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Estado *</label>
-                <button
-                  type="button"
-                  onClick={() => setRegisterForm({ ...registerForm, status: registerForm.status === 'PAID' ? 'PENDING' : 'PAID' })}
-                  className="w-full relative h-12 rounded-lg overflow-hidden border-2 border-gray-200 transition-all hover:border-gray-300"
-                >
-                  {/* Sliding background */}
-                  <div
-                    className={`absolute inset-0 transition-transform duration-300 ease-in-out ${
-                      registerForm.status === 'PAID' ? 'translate-x-0' : 'translate-x-1/2'
-                    }`}
+              {/* Monto and Estado side by side */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Monto *</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={registerForm.amount}
+                    onChange={(e) => setRegisterForm({ ...registerForm, amount: e.target.value })}
+                    placeholder="0.00"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Estado *</label>
+                  <button
+                    type="button"
+                    onClick={() => setRegisterForm({ ...registerForm, status: registerForm.status === 'PAID' ? 'PENDING' : 'PAID' })}
+                    className="w-full relative h-[42px] rounded-lg overflow-hidden border-2 border-gray-200 transition-all hover:border-gray-300"
                   >
-                    <div className="w-1/2 h-full bg-gray-900"></div>
-                  </div>
-                  
-                  {/* Labels */}
-                  <div className="relative z-10 flex h-full">
-                    <div className="flex-1 flex items-center justify-center">
-                      <span className={`font-semibold transition-colors ${
-                        registerForm.status === 'PAID' ? 'text-white' : 'text-gray-600'
-                      }`}>
-                        Pagado
-                      </span>
+                    {/* Sliding background */}
+                    <div
+                      className={`absolute inset-0 transition-transform duration-300 ease-in-out ${
+                        registerForm.status === 'PAID' ? 'translate-x-0' : 'translate-x-1/2'
+                      }`}
+                    >
+                      <div className="w-1/2 h-full bg-gray-900"></div>
                     </div>
-                    <div className="flex-1 flex items-center justify-center">
-                      <span className={`font-semibold transition-colors ${
-                        registerForm.status === 'PENDING' ? 'text-white' : 'text-gray-600'
-                      }`}>
-                        Por Pagar
-                      </span>
+                    
+                    {/* Labels */}
+                    <div className="relative flex h-full">
+                      <div className="flex-1 flex items-center justify-center">
+                        <span className={`text-sm font-semibold transition-colors ${
+                          registerForm.status === 'PAID' ? 'text-white' : 'text-gray-600'
+                        }`}>
+                          Pagado
+                        </span>
+                      </div>
+                      <div className="flex-1 flex items-center justify-center">
+                        <span className={`text-sm font-semibold transition-colors ${
+                          registerForm.status === 'PENDING' ? 'text-white' : 'text-gray-600'
+                        }`}>
+                          Por Pagar
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                </button>
+                  </button>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Método de Pago *</label>

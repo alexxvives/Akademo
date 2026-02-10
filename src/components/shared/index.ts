@@ -1,5 +1,5 @@
 export { StudentsProgressTable } from './StudentsProgressTable';
-export type { StudentProgress } from './StudentsProgressTable';
+export type { StudentProgress, ClassBreakdownItem } from './StudentsProgressTable';
 export { StudentsProgressPage } from './StudentsProgressPage';
 
 export { StudentPaymentDetailModal } from './StudentPaymentDetailModal';

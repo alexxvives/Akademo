@@ -1,8 +1,19 @@
 'use client';
 
-import { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { SkeletonTable } from '@/components/ui/SkeletonLoader';
+
+export interface ClassBreakdownItem {
+  className: string;
+  classId: string;
+  teacherName?: string;
+  totalWatchTime: number;
+  videosWatched: number;
+  totalVideos: number;
+  lastActive: string | null;
+  enrollmentId?: string;
+}
 
 export interface StudentProgress {
   id: string;
@@ -16,6 +27,7 @@ export interface StudentProgress {
   totalVideos: number;
   lastActive: string | null;
   enrollmentId?: string;
+  classBreakdown?: ClassBreakdownItem[];
 }
 
 interface StudentsProgressTableProps {
@@ -39,6 +51,20 @@ export function StudentsProgressTable({
   disableBanButton = false,
   onBanStudent,
 }: StudentsProgressTableProps) {
+  const [expandedStudents, setExpandedStudents] = useState<Set<string>>(new Set());
+
+  const toggleExpand = (studentId: string) => {
+    setExpandedStudents(prev => {
+      const next = new Set(prev);
+      if (next.has(studentId)) {
+        next.delete(studentId);
+      } else {
+        next.add(studentId);
+      }
+      return next;
+    });
+  };
+
   const formatTime = (totalSeconds: number) => {
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -230,80 +256,174 @@ export function StudentsProgressTable({
                 filteredStudents.map((student) => {
                 const progress = student.totalVideos > 0 ? (student.videosWatched / student.totalVideos) * 100 : 0;
                 const activityStatus = getActivityStatus(student.lastActive);
+                const hasBreakdown = student.classBreakdown && student.classBreakdown.length > 1;
+                const isExpanded = expandedStudents.has(student.id);
+                const colCount = (showTeacherColumn ? 6 : 5) + (showBanButton ? 1 : 0);
                 return (
-                  <tr key={`${student.id}-${student.classId}`} className="hover:bg-gray-50 transition-colors">
-                    <td className="py-4 px-6">
-                      <div className="flex items-center gap-3">
-                        <div className="relative">
-                          <div className={`w-3 h-3 rounded-full ${activityStatus.color}`} title={activityStatus.label}></div>
-                        </div>
-                        <div>
-                          <p className="text-xs font-medium text-gray-900">{student.name}</p>
-                          <p className="text-xs text-gray-500">{student.email}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-4 px-6">
-                      <span className="text-xs text-gray-900">{student.className}</span>
-                    </td>
-                    {showTeacherColumn && (
+                  <React.Fragment key={`${student.id}-${student.classId}`}>
+                    <tr
+                      className={`hover:bg-gray-50 transition-colors ${hasBreakdown ? 'cursor-pointer' : ''}`}
+                      onClick={() => hasBreakdown && toggleExpand(student.id)}
+                    >
                       <td className="py-4 px-6">
-                        <span className="text-xs text-gray-900">{student.teacherName || '-'}</span>
-                      </td>
-                    )}
-                    <td className="py-4 px-6">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-gray-900">{student.videosWatched} / {student.totalVideos}</span>
-                        <div className="flex-1 max-w-[100px]">
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div
-                              className={`h-2 rounded-full transition-all ${getProgressBarColor(student.lastActive)}`}
-                              style={{ width: `${progress}%` }}
-                            />
+                        <div className="flex items-center gap-3">
+                          {hasBreakdown && (
+                            <svg
+                              className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${isExpanded ? 'rotate-90' : ''}`}
+                              fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          )}
+                          <div className="relative">
+                            <div className={`w-3 h-3 rounded-full ${activityStatus.color}`} title={activityStatus.label}></div>
+                          </div>
+                          <div>
+                            <p className="text-xs font-medium text-gray-900">{student.name}</p>
+                            <p className="text-xs text-gray-500">{student.email}</p>
                           </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="py-4 px-6">
-                      <span className="text-xs text-gray-900">{formatTime(student.totalWatchTime)}</span>
-                    </td>
-                    <td className="py-4 px-6">
-                      <div className="flex items-center gap-2">
-                        <span className={`text-sm font-medium ${activityStatus.textColor}`}>
-                          {student.lastActive
-                            ? (() => {
-                                const date = new Date(student.lastActive);
-                                const day = date.getDate();
-                                const month = date.toLocaleDateString('es-ES', { month: 'long' });
-                                const year = date.getFullYear();
-                                const time = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
-                                return `${day} ${month.charAt(0).toUpperCase() + month.slice(1)} ${year} a las ${time}`;
-                              })()
-                            : 'Sin actividad'}
-                        </span>
-                      </div>
-                    </td>
-                    {showBanButton && (
-                      <td className="py-4 px-6">
-                        <button
-                          onClick={() => {
-                            if (!disableBanButton && window.confirm(`¿Estás seguro de que deseas expulsar a ${student.name} de ${student.className}? Esta acción no se puede deshacer.`)) {
-                              onBanStudent?.(student.enrollmentId!);
-                            }
-                          }}
-                          disabled={disableBanButton}
-                          className={`px-3 py-1.5 text-xs font-medium text-white rounded-lg transition-colors ${
-                            disableBanButton 
-                              ? 'bg-gray-400 cursor-not-allowed' 
-                              : 'bg-red-600 hover:bg-red-700'
-                          }`}
-                          title={disableBanButton ? 'No disponible en modo demostración' : 'Expulsar estudiante'}
-                        >
-                          Expulsar
-                        </button>
                       </td>
-                    )}
-                  </tr>
+                      <td className="py-4 px-6">
+                        <span className="text-xs text-gray-900">{student.className}</span>
+                      </td>
+                      {showTeacherColumn && (
+                        <td className="py-4 px-6">
+                          <span className="text-xs text-gray-900">{student.teacherName || '-'}</span>
+                        </td>
+                      )}
+                      <td className="py-4 px-6">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-medium text-gray-900">{student.videosWatched} / {student.totalVideos}</span>
+                          <div className="flex-1 max-w-[100px]">
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div
+                                className={`h-2 rounded-full transition-all ${getProgressBarColor(student.lastActive)}`}
+                                style={{ width: `${progress}%` }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-4 px-6">
+                        <span className="text-xs text-gray-900">{formatTime(student.totalWatchTime)}</span>
+                      </td>
+                      <td className="py-4 px-6">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-sm font-medium ${activityStatus.textColor}`}>
+                            {student.lastActive
+                              ? (() => {
+                                  const date = new Date(student.lastActive);
+                                  const day = date.getDate();
+                                  const month = date.toLocaleDateString('es-ES', { month: 'long' });
+                                  const year = date.getFullYear();
+                                  const time = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
+                                  return `${day} ${month.charAt(0).toUpperCase() + month.slice(1)} ${year} a las ${time}`;
+                                })()
+                              : 'Sin actividad'}
+                          </span>
+                        </div>
+                      </td>
+                      {showBanButton && (
+                        <td className="py-4 px-6">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!disableBanButton && window.confirm(`¿Estás seguro de que deseas expulsar a ${student.name} de ${student.className}? Esta acción no se puede deshacer.`)) {
+                                onBanStudent?.(student.enrollmentId!);
+                              }
+                            }}
+                            disabled={disableBanButton}
+                            className={`px-3 py-1.5 text-xs font-medium text-white rounded-lg transition-colors ${
+                              disableBanButton 
+                                ? 'bg-gray-400 cursor-not-allowed' 
+                                : 'bg-red-600 hover:bg-red-700'
+                            }`}
+                            title={disableBanButton ? 'No disponible en modo demostración' : 'Expulsar estudiante'}
+                          >
+                            Expulsar
+                          </button>
+                        </td>
+                      )}
+                    </tr>
+                    {/* Per-class breakdown sub-rows */}
+                    {hasBreakdown && isExpanded && student.classBreakdown!.map((cls) => {
+                      const clsProgress = cls.totalVideos > 0 ? (cls.videosWatched / cls.totalVideos) * 100 : 0;
+                      const clsActivity = getActivityStatus(cls.lastActive);
+                      return (
+                        <tr key={`${student.id}-breakdown-${cls.classId}`} className="bg-gray-50/70">
+                          <td className="py-3 px-6">
+                            <div className="flex items-center gap-3 pl-10">
+                              <div className="relative">
+                                <div className={`w-2 h-2 rounded-full ${clsActivity.color}`} title={clsActivity.label}></div>
+                              </div>
+                              <span className="text-xs text-gray-500 italic">↳ detalle por clase</span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-6">
+                            <span className="text-xs font-medium text-indigo-600">{cls.className}</span>
+                          </td>
+                          {showTeacherColumn && (
+                            <td className="py-3 px-6">
+                              <span className="text-xs text-gray-600">{cls.teacherName || '-'}</span>
+                            </td>
+                          )}
+                          <td className="py-3 px-6">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-medium text-gray-700">{cls.videosWatched} / {cls.totalVideos}</span>
+                              <div className="flex-1 max-w-[100px]">
+                                <div className="w-full bg-gray-200 rounded-full h-1.5">
+                                  <div
+                                    className={`h-1.5 rounded-full transition-all ${getProgressBarColor(cls.lastActive)}`}
+                                    style={{ width: `${clsProgress}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-6">
+                            <span className="text-xs text-gray-600">{formatTime(cls.totalWatchTime)}</span>
+                          </td>
+                          <td className="py-3 px-6">
+                            <span className={`text-xs ${clsActivity.textColor}`}>
+                              {cls.lastActive
+                                ? (() => {
+                                    const date = new Date(cls.lastActive);
+                                    const day = date.getDate();
+                                    const month = date.toLocaleDateString('es-ES', { month: 'long' });
+                                    const year = date.getFullYear();
+                                    const time = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
+                                    return `${day} ${month.charAt(0).toUpperCase() + month.slice(1)} ${year} a las ${time}`;
+                                  })()
+                                : 'Sin actividad'}
+                            </span>
+                          </td>
+                          {showBanButton && (
+                            <td className="py-3 px-6">
+                              {cls.enrollmentId && (
+                                <button
+                                  onClick={() => {
+                                    if (!disableBanButton && window.confirm(`¿Estás seguro de que deseas expulsar a ${student.name} de ${cls.className}? Esta acción no se puede deshacer.`)) {
+                                      onBanStudent?.(cls.enrollmentId!);
+                                    }
+                                  }}
+                                  disabled={disableBanButton}
+                                  className={`px-2 py-1 text-xs font-medium text-white rounded-lg transition-colors ${
+                                    disableBanButton 
+                                      ? 'bg-gray-400 cursor-not-allowed' 
+                                      : 'bg-red-500 hover:bg-red-600'
+                                  }`}
+                                  title={disableBanButton ? 'No disponible en modo demostración' : `Expulsar de ${cls.className}`}
+                                >
+                                  Expulsar
+                                </button>
+                              )}
+                            </td>
+                          )}
+                        </tr>
+                      );
+                    })}
+                  </React.Fragment>
                 );
               })
               )}

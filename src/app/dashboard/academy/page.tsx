@@ -579,7 +579,7 @@ export default function AcademyDashboard() {
                 {/* Side by side: Estudiantes and Matriculados */}
                 <div className="grid grid-cols-2 gap-4 pb-4 border-b border-gray-100">
                   <div className="text-center">
-                    <AnimatedNumber value={uniqueStudentCount} className="text-3xl sm:text-4xl font-bold text-brand-600 mb-1" />
+                    <AnimatedNumber value={uniqueStudentCount} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1" />
                     <div className="text-xs text-gray-500">Estudiantes</div>
                   </div>
                   <div className="text-center">
@@ -593,7 +593,7 @@ export default function AcademyDashboard() {
                     <div className="text-xs text-gray-500 mb-1">Total Cobrado</div>
                     <div className="flex items-baseline whitespace-nowrap">
                       <AnimatedNumber value={paymentStats.totalPaid} className="text-2xl font-bold text-green-600" />
-                      <span className="text-lg text-gray-600 ml-1">€</span>
+                      <span className="text-2xl font-bold text-green-600 ml-1">€</span>
                     </div>
                   </div>
                   <div className="flex items-center justify-center gap-3">

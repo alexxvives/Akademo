@@ -450,7 +450,7 @@ export default function TeacherGrades() {
                               if (storagePath && !storagePath.includes('/')) {
                                 window.open('/demo/Documento.pdf', '_blank');
                               } else {
-                                window.open(`/api/documents/assignment/${storagePath}`, '_blank');
+                                window.open(`/api/documents/${storagePath}`, '_blank');
                               }
                             };
                             
@@ -479,7 +479,7 @@ export default function TeacherGrades() {
                                 if (grade.submissionStoragePath && !grade.submissionStoragePath.includes('/')) {
                                   window.open('/demo/Documento.pdf', '_blank');
                                 } else {
-                                  window.open(`/api/documents/assignment/${grade.submissionStoragePath}`, '_blank');
+                                  window.open(`/api/documents/${grade.submissionStoragePath}`, '_blank');
                                 }
                               }}
                               className="flex items-center gap-2 text-sm text-gray-900 hover:bg-gray-50 rounded px-2 py-1 -mx-2 transition-colors"
