@@ -2413,8 +2413,9 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
               <div className="flex gap-3">
                 <button
                   onClick={confirmCreateStream}
-                  disabled={!streamNameInput.trim()}
+                  disabled={!streamNameInput.trim() || paymentStatus === 'NOT PAID'}
                   className="flex-1 px-6 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  title={paymentStatus === 'NOT PAID' ? 'No disponible en modo demo' : undefined}
                 >
                   Crear Stream
                 </button>

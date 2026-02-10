@@ -728,17 +728,114 @@ export function generateDemoPendingEnrollments(): DemoPendingEnrollment[] {
 }
 
 export function generateDemoPendingPayments(): DemoPayment[] {
-  // Hardcoded 3 pending payments (deterministic dates)
-  // These 3 students also have paid payments in the history
+  // Dynamically generate pending payments from students that are BEHIND
+  // Uses the SAME logic as StudentsProgressPage.buildDemoStudentProgress()
+  // so every "Atrasado" student always has a corresponding pending payment
+  const demoStudents = generateDemoStudents();
+
+  const CLASS_NAME_TO_ID: Record<string, string> = {
+    'Programación Web': 'demo-c1',
+    'Matemáticas Avanzadas': 'demo-c2',
+    'Física Cuántica': 'demo-c4',
+    'Diseño Gráfico': 'demo-c3',
+  };
+
+  const CLASS_PRICES: Record<string, number> = {
+    'Programación Web': 49.99,
+    'Matemáticas Avanzadas': 39.99,
+    'Diseño Gráfico': 59.99,
+    'Física Cuántica': 44.99,
+  };
+
+  // Deduplicate students by name (same logic as StudentsProgressPage)
+  interface AggStudent {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    classes: string[];
+    classIds: string[];
+  }
+  const studentMap = new Map<string, AggStudent>();
+  demoStudents.forEach((s) => {
+    const key = `${s.firstName}-${s.lastName}`;
+    const classId = CLASS_NAME_TO_ID[s.className] || 'demo-c1';
+    if (!studentMap.has(key)) {
+      studentMap.set(key, {
+        id: s.id,
+        firstName: s.firstName,
+        lastName: s.lastName,
+        email: s.email,
+        classes: [s.className],
+        classIds: [classId],
+      });
+    } else {
+      const existing = studentMap.get(key);
+      if (existing && !existing.classes.includes(s.className)) {
+        existing.classes.push(s.className);
+        existing.classIds.push(classId);
+      }
+    }
+  });
+
   const baseDate = new Date('2026-02-05T00:00:00.000Z');
-  return [
-    { enrollmentId: 'demo-payment-pending-1', studentId: 'demo-s1', studentFirstName: 'Juan', studentLastName: 'García', studentEmail: 'juan.garcía@demo.com', className: 'Diseño Gráfico', paymentAmount: 89.99, currency: 'EUR', paymentMethod: 'cash', paymentStatus: 'CASH_PENDING', enrolledAt: new Date(baseDate.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString(), createdAt: new Date(baseDate.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString(), updatedAt: new Date(baseDate.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString() },
-    { enrollmentId: 'demo-payment-pending-2', studentId: 'demo-s1', studentFirstName: 'María', studentLastName: 'Rodríguez', studentEmail: 'maría.rodríguez@demo.com', className: 'Matemáticas Avanzadas', paymentAmount: 59.99, currency: 'EUR', paymentMethod: 'cash', paymentStatus: 'CASH_PENDING', enrolledAt: new Date(baseDate.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString(), createdAt: new Date(baseDate.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString(), updatedAt: new Date(baseDate.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString() },
-    { enrollmentId: 'demo-payment-pending-3', studentId: 'demo-s1', studentFirstName: 'Pedro', studentLastName: 'Martínez', studentEmail: 'pedro.martínez@demo.com', className: 'Programación Web', paymentAmount: 79.99, currency: 'EUR', paymentMethod: 'cash', paymentStatus: 'CASH_PENDING', enrolledAt: new Date(baseDate.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString(), createdAt: new Date(baseDate.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString(), updatedAt: new Date(baseDate.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString() },
-    { enrollmentId: 'demo-payment-pending-4', studentId: 'demo-s113', studentFirstName: 'Marta', studentLastName: 'Martínez', studentEmail: 'marta.martínez@demo.com', className: 'Diseño Gráfico', paymentAmount: 89.99, currency: 'EUR', paymentMethod: 'cash', paymentStatus: 'CASH_PENDING', enrolledAt: new Date(baseDate.getTime() - 15 * 24 * 60 * 60 * 1000).toISOString(), createdAt: new Date(baseDate.getTime() - 15 * 24 * 60 * 60 * 1000).toISOString(), updatedAt: new Date(baseDate.getTime() - 15 * 24 * 60 * 60 * 1000).toISOString() },
-    { enrollmentId: 'demo-payment-pending-5', studentId: 'demo-s113', studentFirstName: 'Marta', studentLastName: 'Martínez', studentEmail: 'marta.martínez@demo.com', className: 'Diseño Gráfico', paymentAmount: 89.99, currency: 'EUR', paymentMethod: 'cash', paymentStatus: 'CASH_PENDING', enrolledAt: new Date(baseDate.getTime() - 45 * 24 * 60 * 60 * 1000).toISOString(), createdAt: new Date(baseDate.getTime() - 45 * 24 * 60 * 60 * 1000).toISOString(), updatedAt: new Date(baseDate.getTime() - 45 * 24 * 60 * 60 * 1000).toISOString() },
-    { enrollmentId: 'demo-payment-pending-6', studentId: 'demo-s29', studentFirstName: 'Elena', studentLastName: 'Torres', studentEmail: 'elena.torres@demo.com', className: 'Física Cuántica', paymentAmount: 64.99, currency: 'EUR', paymentMethod: 'bizum', paymentStatus: 'CASH_PENDING', enrolledAt: new Date(baseDate.getTime() - 10 * 24 * 60 * 60 * 1000).toISOString(), createdAt: new Date(baseDate.getTime() - 10 * 24 * 60 * 60 * 1000).toISOString(), updatedAt: new Date(baseDate.getTime() - 10 * 24 * 60 * 60 * 1000).toISOString() },
-  ];
+  const payments: DemoPayment[] = [];
+  let paymentIdx = 0;
+
+  // Same BEHIND logic as StudentsProgressPage
+  const demoPaymentOptions: ('UP_TO_DATE' | 'BEHIND')[] = ['UP_TO_DATE', 'UP_TO_DATE', 'BEHIND', 'UP_TO_DATE', 'UP_TO_DATE'];
+  const demoStatuses: ('UP_TO_DATE' | 'BEHIND')[] = ['UP_TO_DATE', 'UP_TO_DATE', 'BEHIND'];
+
+  Array.from(studentMap.values()).forEach((student, index) => {
+    if (student.classes.length > 1) {
+      // Multi-class students: check each class individually
+      student.classes.forEach((cls, ci) => {
+        const classStatus = demoStatuses[(index + ci) % 3];
+        if (classStatus === 'BEHIND') {
+          paymentIdx++;
+          payments.push({
+            enrollmentId: `demo-payment-pending-${paymentIdx}`,
+            studentId: student.id,
+            studentFirstName: student.firstName,
+            studentLastName: student.lastName,
+            studentEmail: `${student.firstName.toLowerCase()}.${student.lastName.toLowerCase()}@demo.com`,
+            className: cls,
+            paymentAmount: CLASS_PRICES[cls] || 49.99,
+            currency: 'EUR',
+            paymentMethod: paymentIdx % 3 === 0 ? 'bizum' : 'cash',
+            paymentStatus: 'CASH_PENDING',
+            enrolledAt: new Date(baseDate.getTime() - paymentIdx * 3 * 24 * 60 * 60 * 1000).toISOString(),
+            createdAt: new Date(baseDate.getTime() - paymentIdx * 3 * 24 * 60 * 60 * 1000).toISOString(),
+            updatedAt: new Date(baseDate.getTime() - paymentIdx * 3 * 24 * 60 * 60 * 1000).toISOString(),
+          });
+        }
+      });
+    } else {
+      // Single-class students: use aggregate status
+      const aggregateStatus = demoPaymentOptions[index % 5];
+      if (aggregateStatus === 'BEHIND') {
+        paymentIdx++;
+        const cls = student.classes[0];
+        payments.push({
+          enrollmentId: `demo-payment-pending-${paymentIdx}`,
+          studentId: student.id,
+          studentFirstName: student.firstName,
+          studentLastName: student.lastName,
+          studentEmail: `${student.firstName.toLowerCase()}.${student.lastName.toLowerCase()}@demo.com`,
+          className: cls,
+          paymentAmount: CLASS_PRICES[cls] || 49.99,
+          currency: 'EUR',
+          paymentMethod: paymentIdx % 3 === 0 ? 'bizum' : 'cash',
+          paymentStatus: 'CASH_PENDING',
+          enrolledAt: new Date(baseDate.getTime() - paymentIdx * 3 * 24 * 60 * 60 * 1000).toISOString(),
+          createdAt: new Date(baseDate.getTime() - paymentIdx * 3 * 24 * 60 * 60 * 1000).toISOString(),
+          updatedAt: new Date(baseDate.getTime() - paymentIdx * 3 * 24 * 60 * 60 * 1000).toISOString(),
+        });
+      }
+    }
+  });
+
+  return payments;
 }
 
 export function generateDemoPaymentHistory(): DemoPayment[] {

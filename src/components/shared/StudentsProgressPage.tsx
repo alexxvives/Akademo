@@ -181,20 +181,22 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
 
     return Array.from(studentMap.values()).map((student, index) => {
       const teacherName = DEMO_TEACHERS[Math.floor(index / 3) % 3];
+      // Deterministic watch time based on index (no Math.random)
       const totalWatchTime = student.watchTimeBase === 0 ? 90000 :
-        student.watchTimeBase % 3 === 0 ? Math.floor(Math.random() * 3600) :
-        student.watchTimeBase % 5 === 0 ? Math.floor(Math.random() * 18000) :
-        student.watchTimeBase % 7 === 0 ? Math.floor(Math.random() * 36000) :
-        Math.floor(Math.random() * 7200);
-      const videosWatched = Math.floor(Math.random() * 15);
+        student.watchTimeBase % 3 === 0 ? ((index * 1234 + 567) % 3600) :
+        student.watchTimeBase % 5 === 0 ? ((index * 2345 + 678) % 18000) :
+        student.watchTimeBase % 7 === 0 ? ((index * 3456 + 789) % 36000) :
+        ((index * 4567 + 890) % 7200);
+      const videosWatched = (index * 7 + 3) % 15;
       const totalVideos = 20;
 
       // Build per-class breakdown if student is in multiple classes
       let classBreakdown: ClassBreakdownItem[] | undefined;
       if (student.classes.length > 1) {
         classBreakdown = student.classes.map((cls, ci) => {
-          const clsVideos = Math.floor(Math.random() * (totalVideos / student.classes.length + 2));
-          const clsTime = Math.floor(totalWatchTime / student.classes.length) + Math.floor(Math.random() * 600);
+          const maxClsVideos = Math.floor(totalVideos / student.classes.length + 2);
+          const clsVideos = maxClsVideos > 0 ? ((index * 3 + ci * 5 + 2) % maxClsVideos) : 0;
+          const clsTime = Math.floor(totalWatchTime / student.classes.length) + ((index * 137 + ci * 89) % 600);
           const demoStatuses: ('UP_TO_DATE' | 'BEHIND')[] = ['UP_TO_DATE', 'UP_TO_DATE', 'BEHIND'];
           return {
             className: cls,
