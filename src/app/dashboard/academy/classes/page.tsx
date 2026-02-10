@@ -432,7 +432,7 @@ export default function AcademyClassesPage() {
                         </div>
                       )}
                       {/* Profesor next to title */}
-                      <div className="flex items-center gap-2 text-sm text-gray-600 ml-auto">
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
                         <span className="font-medium">Profesor:</span>
                         <span>
                           {cls.teacherFirstName && cls.teacherLastName 
