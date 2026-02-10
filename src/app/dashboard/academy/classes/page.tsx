@@ -431,23 +431,22 @@ export default function AcademyClassesPage() {
                           <span className="text-sm font-bold text-gray-900">{cls.avgRating.toFixed(1)}</span>
                         </div>
                       )}
+                      {/* Profesor next to title */}
+                      <div className="flex items-center gap-2 text-sm text-gray-600 ml-auto">
+                        <span className="font-medium">Profesor:</span>
+                        <span>
+                          {cls.teacherFirstName && cls.teacherLastName 
+                            ? `${cls.teacherFirstName} ${cls.teacherLastName}` 
+                            : 'Sin asignar'
+                          }
+                        </span>
+                      </div>
                     </div>
                     {cls.description ? (
                       <p className="text-sm text-gray-600 mb-4 line-clamp-2">{cls.description}</p>
                     ) : (
                       <p className="text-sm text-gray-400 italic mb-4">Sin descripción</p>
                     )}
-                    
-                    {/* Teacher Info */}
-                    <div className="flex items-center gap-2 text-sm text-gray-700 mb-2">
-                      <span className="font-medium">Profesor:</span>
-                      <span>
-                        {cls.teacherFirstName && cls.teacherLastName 
-                          ? `${cls.teacherFirstName} ${cls.teacherLastName}` 
-                          : 'Sin asignar'
-                        }
-                      </span>
-                    </div>
 
                     {/* Stats - Date first, then reordered */}
                     <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-gray-500">
@@ -455,7 +454,7 @@ export default function AcademyClassesPage() {
                         <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
-                        <span className="font-semibold text-gray-700">{new Date(cls.createdAt || Date.now()).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                        Creada en {new Date(cls.createdAt || Date.now()).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
                       </span>
                       <span className="flex items-center gap-1">
                         <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
