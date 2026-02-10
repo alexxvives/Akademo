@@ -267,17 +267,16 @@ export function StudentsProgressTable({
                     >
                       <td className="py-4 px-6">
                         <div className="flex items-center gap-3">
-                          {hasBreakdown && (
+                          {hasBreakdown ? (
                             <svg
                               className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${isExpanded ? 'rotate-90' : ''}`}
                               fill="none" stroke="currentColor" viewBox="0 0 24 24"
                             >
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                             </svg>
+                          ) : (
+                            <div className="w-4 h-4 flex-shrink-0" />
                           )}
-                          <div className="relative">
-                            <div className={`w-3 h-3 rounded-full ${activityStatus.color}`} title={activityStatus.label}></div>
-                          </div>
                           <div>
                             <p className="text-xs font-medium text-gray-900">{student.name}</p>
                             <p className="text-xs text-gray-500">{student.email}</p>
@@ -354,9 +353,6 @@ export function StudentsProgressTable({
                         <tr key={`${student.id}-breakdown-${cls.classId}`} className="bg-gray-50/70">
                           <td className="py-3 px-6">
                             <div className="flex items-center gap-3 pl-10">
-                              <div className="relative">
-                                <div className={`w-2 h-2 rounded-full ${clsActivity.color}`} title={clsActivity.label}></div>
-                              </div>
                               <span className="text-xs text-gray-500 italic">↳ detalle por clase</span>
                             </div>
                           </td>

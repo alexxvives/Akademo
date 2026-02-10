@@ -40,6 +40,7 @@ export default function TeacherClasses() {
   const [feedbackComments, setFeedbackComments] = useState<Array<{ id: string; rating: number; comment: string; lessonTitle: string; topicName: string; createdAt: string }>>([]);
   const [loadingFeedback, setLoadingFeedback] = useState(false);
   const [ratingsData, setRatingsData] = useState<{ overall: { averageRating: number; totalRatings: number } | null; lessons: RatingsLesson[] } | null>(null);
+  const [feedbackEnabled, setFeedbackEnabled] = useState<boolean>(true);
 
   useEffect(() => {
     loadClasses();
@@ -98,6 +99,16 @@ export default function TeacherClasses() {
       const membershipResult = await membershipRes.json();
       if (Array.isArray(membershipResult) && membershipResult.length > 0) {
         setAcademyName(membershipResult[0].academyName);
+        // Load feedbackEnabled from academy
+        try {
+          const academyRes = await apiClient('/academies');
+          const academyResult = await academyRes.json();
+          if (academyResult.success && Array.isArray(academyResult.data) && academyResult.data.length > 0) {
+            setFeedbackEnabled(academyResult.data[0].feedbackEnabled !== 0);
+          }
+        } catch (e) {
+          console.error('Failed to load academy settings:', e);
+        }
       }
 
       // Get ratings summary
@@ -157,7 +168,7 @@ export default function TeacherClasses() {
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-3">
                           <h3 className="text-xl font-bold text-gray-900 group-hover:text-brand-600 transition-colors">{cls.name}</h3>
-                          {avgClassRating && (
+                          {feedbackEnabled && avgClassRating && (
                             <div className="flex items-center gap-1.5 px-2 py-1">
                               <svg className="w-5 h-5 text-amber-500 fill-current" viewBox="0 0 20 20">
                                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
@@ -229,7 +240,7 @@ export default function TeacherClasses() {
                 </Link>
 
                 {/* Feedback Dropdown */}
-                {openFeedbackDropdown === cls.id && (
+                {feedbackEnabled && openFeedbackDropdown === cls.id && (
                 <div className="mt-4 bg-white/95 backdrop-blur-md border-2 border-brand-200 rounded-xl shadow-2xl overflow-hidden animate-in slide-in-from-top-2">
                   <div className="bg-gradient-to-r from-brand-50/80 to-purple-50/80 px-4 py-3 border-b border-brand-200">
                     <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">

@@ -476,7 +476,12 @@ export default function AcademyGrades() {
                             }
                             
                             const handleDownload = (storagePath: string) => {
-                              window.open(`/api/documents/${storagePath}`, '_blank');
+                              // Demo files are in /public/demo/ - don't proxy through API
+                              if (storagePath.startsWith('/demo/') || storagePath.startsWith('demo/')) {
+                                window.open(storagePath.startsWith('/') ? storagePath : `/${storagePath}`, '_blank');
+                              } else {
+                                window.open(`/api/documents/${storagePath}`, '_blank');
+                              }
                             };
                             
                             return fileCount > 0 && grade.assignmentStoragePath ? (
@@ -499,7 +504,14 @@ export default function AcademyGrades() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           {grade.submissionStoragePath ? (
                             <button
-                              onClick={() => window.open(`/api/documents/${grade.submissionStoragePath}`, '_blank')}
+                              onClick={() => {
+                                const sp = grade.submissionStoragePath!;
+                                if (sp.startsWith('/demo/') || sp.startsWith('demo/')) {
+                                  window.open(sp.startsWith('/') ? sp : `/${sp}`, '_blank');
+                                } else {
+                                  window.open(`/api/documents/${sp}`, '_blank');
+                                }
+                              }}
                               className="flex items-center gap-2 text-sm text-gray-900 hover:bg-gray-50 rounded px-2 py-1 -mx-2 transition-colors"
                             >
                               <div className="w-8 h-10 flex items-center justify-center bg-green-50 rounded border border-green-200">

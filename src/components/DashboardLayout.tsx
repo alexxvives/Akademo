@@ -323,14 +323,17 @@ export default function DashboardLayout({
     }
     
     if (role === 'ACADEMY') {
-      loadAcademy();
-      loadUnreadValoraciones();
-      loadUngradedAssignments();
-      // Poll every 15 seconds for pending payments, valoraciones, and assignments
-      const academyInterval = setInterval(() => {
-        loadAcademy();
+      // Load academy first (sets paymentStatus), THEN load badges that depend on it
+      loadAcademy().then(() => {
         loadUnreadValoraciones();
         loadUngradedAssignments();
+      });
+      // Poll every 15 seconds for pending payments, valoraciones, and assignments
+      const academyInterval = setInterval(() => {
+        loadAcademy().then(() => {
+          loadUnreadValoraciones();
+          loadUngradedAssignments();
+        });
       }, 15000);
       return () => clearInterval(academyInterval);
     }

@@ -107,9 +107,13 @@ export default function AcademyPaymentsPage() {
         const demoHistory: DemoHistoryPayment[] = generateDemoPaymentHistory();
         const demoPending: DemoPendingPayment[] = generateDemoPendingPayments();
         
-        // Filter by student email (since all demo data has same studentId)
-        const studentHistoryPayments = demoHistory.filter(p => p.studentEmail === studentEmail);
-        const studentPendingPayments = demoPending.filter(p => p.studentEmail === studentEmail);
+        // Filter by student email and optionally by classId
+        const studentHistoryPayments = demoHistory.filter(p => 
+          p.studentEmail === studentEmail && (classId === 'all' || p.classId === classId)
+        );
+        const studentPendingPayments = demoPending.filter(p => 
+          p.studentEmail === studentEmail && (classId === 'all' || p.classId === classId)
+        );
         
         // Combine pending and history payments
         const allStudentPayments = [
@@ -643,9 +647,9 @@ export default function AcademyPaymentsPage() {
                         payment.studentId,
                         `${payment.studentFirstName} ${payment.studentLastName}`,
                         payment.studentEmail,
-                        'Todas las clases',
+                        payment.className,
                         payment.enrolledAt,
-                        'all'
+                        payment.classId
                       );
                     }}
                     className="text-sm text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1.5"
@@ -759,9 +763,9 @@ export default function AcademyPaymentsPage() {
                         history.studentId || '',
                         `${history.studentFirstName} ${history.studentLastName}`,
                         history.studentEmail,
-                        'Todas las clases',
+                        history.className,
                         history.createdAt || history.updatedAt || history.approvedAt,
-                        'all'
+                        history.classId
                       );
                     }}
                     className="text-sm text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1.5"

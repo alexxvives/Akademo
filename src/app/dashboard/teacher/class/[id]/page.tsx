@@ -62,6 +62,7 @@ interface ClassData {
   name: string;
   description: string | null;
   whatsappGroupLink?: string | null;
+  feedbackEnabled?: number;
   academy: { id: string; name: string };
   enrollments: Array<{
     id: string;
@@ -1386,8 +1387,9 @@ export default function TeacherClassPage() {
             </div>
 
             {/* Feedback Section - Full Width Below */}
+            {classData?.feedbackEnabled !== 0 && (
             <div className="pt-6">
-              <h3 className="font-semibold text-gray-900 mb-3 text-lg text-center">FEEDBACK</h3>
+              <h3 className="font-semibold text-gray-900 mb-3 text-lg text-center">VALORACIONES</h3>
               <div className="rounded-xl border border-gray-200 p-3 sm:p-6 animate-in slide-in-from-top-2 shadow-sm">
                 <div>
                 {lessonFeedback.filter(f => f.comment && f.comment.trim().length > 0).length > 0 ? (
@@ -1448,6 +1450,7 @@ export default function TeacherClassPage() {
               </div>
             </div>
           </div>
+          )}
         </div>
         )}
 
