@@ -80,6 +80,7 @@ export default function AcademyDashboard() {
   const [classWatchTime, setClassWatchTime] = useState({ hours: 0, minutes: 0 });
   const [selectedClass, setSelectedClass] = useState('all');
   const [paymentStatus, setPaymentStatus] = useState<string>('NOT PAID');
+  const [paymentStats, setPaymentStats] = useState({ totalPaid: 0, bizumCount: 0, cashCount: 0, stripeCount: 0 });
 
   useEffect(() => {
     loadData();
@@ -87,7 +88,7 @@ export default function AcademyDashboard() {
 
   const loadData = async () => {
     try {
-      const [academiesRes, classesRes, pendingRes, ratingsRes, rejectedRes, streamsRes, progressRes] = await Promise.all([
+      const [academiesRes, classesRes, pendingRes, ratingsRes, rejectedRes, streamsRes, progressRes, paymentsRes] = await Promise.all([
         apiClient('/academies'),
         apiClient('/academies/classes'),
         apiClient('/enrollments/pending'),
@@ -95,9 +96,10 @@ export default function AcademyDashboard() {
         apiClient('/enrollments/rejected'),
         apiClient('/live/history'),
         apiClient('/students/progress'), // Load student progress data
+        apiClient('/payments/history'), // Load payment history
       ]);
 
-      const [academiesResult, classesResult, pendingResult, ratingsResult, rejectedResult, streamsResult, progressResult] = await Promise.all([
+      const [academiesResult, classesResult, pendingResult, ratingsResult, rejectedResult, streamsResult, progressResult, paymentsResult] = await Promise.all([
         academiesRes.json(),
         classesRes.json(),
         pendingRes.json(),
@@ -105,6 +107,7 @@ export default function AcademyDashboard() {
         rejectedRes.json(),
         streamsRes.json(),
         progressRes.json(),
+        paymentsRes.json(),
       ]);
 
       if (academiesResult.success && Array.isArray(academiesResult.data) && academiesResult.data.length > 0) {
@@ -285,6 +288,18 @@ export default function AcademyDashboard() {
         setRejectedCount(rejectedResult.data.count || 0);
       }
 
+      // Calculate payment statistics from completed/paid payments
+      if (paymentsResult.success && Array.isArray(paymentsResult.data)) {
+        const completedPayments = paymentsResult.data.filter((p: any) => 
+          p.status === 'COMPLETED' || p.status === 'PAID'
+        );
+        const totalPaid = completedPayments.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
+        const bizumCount = completedPayments.filter((p: any) => p.paymentMethod === 'bizum').length;
+        const cashCount = completedPayments.filter((p: any) => p.paymentMethod === 'cash').length;
+        const stripeCount = completedPayments.filter((p: any) => p.paymentMethod === 'stripe').length;
+        setPaymentStats({ totalPaid, bizumCount, cashCount, stripeCount });
+      }
+
       if (streamsResult.success && Array.isArray(streamsResult.data)) {
         const streams = streamsResult.data;
         setAllStreams(streams);
@@ -411,6 +426,12 @@ export default function AcademyDashboard() {
     if (selectedClass === 'all') return enrolledStudents;
     return enrolledStudents.filter(s => s.classId === selectedClass);
   }, [enrolledStudents, selectedClass]);
+
+  // Calculate unique student count
+  const uniqueStudentCount = useMemo(() => {
+    const uniqueStudentIds = new Set(filteredStudents.map(s => s.id));
+    return uniqueStudentIds.size;
+  }, [filteredStudents]);
 
   // Calculate average lesson progress for filtered students
   const avgLessonProgress = useMemo(() => {
@@ -601,36 +622,35 @@ export default function AcademyDashboard() {
             <h3 className="text-lg font-semibold text-gray-900 mb-3 sm:mb-6">Estudiantes</h3>
             {filteredStudents.length > 0 || pendingEnrollments.length > 0 || rejectedCount > 0 ? (
               <div className="space-y-6">
-                <div className="text-center">
-                  <AnimatedNumber value={filteredStudents.length} className="text-3xl sm:text-3xl sm:text-5xl font-bold text-gray-900 mb-2" />
-                  <div className="text-sm text-gray-500">{selectedClass === 'all' ? 'Número de matriculados' : 'matriculados en esta clase'}</div>
+                {/* Side by side: Matriculados and Unique Students */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center">
+                    <AnimatedNumber value={filteredStudents.length} className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1" />
+                    <div className="text-xs text-gray-500">Matriculados</div>
+                  </div>
+                  <div className="text-center">
+                    <AnimatedNumber value={uniqueStudentCount} className="text-2xl sm:text-3xl font-bold text-brand-600 mb-1" />
+                    <div className="text-xs text-gray-500">Estudiantes</div>
+                  </div>
                 </div>
-                <div className="flex justify-between gap-4 pt-4 border-t border-gray-100">
-                  <div className="flex-1 text-center group/accepted relative cursor-help">
-                    <AnimatedNumber value={Math.ceil(filteredStudents.length * 1.05)} className="text-lg sm:text-lg sm:text-2xl font-bold text-green-600" />
-                    <div className="text-xs text-gray-500">aceptados</div>
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800 text-slate-200 text-xs rounded-lg shadow-xl border border-slate-700 opacity-0 invisible group-hover/accepted:opacity-100 group-hover/accepted:visible transition-all duration-200 whitespace-nowrap z-20">
-                      <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-2 h-2 bg-slate-800 border-b border-r border-slate-700 rotate-45"></div>
-                      Estudiantes aprobados (5% más que matriculados)
-                    </div>
+                {/* Payment statistics */}
+                <div className="grid grid-cols-2 gap-3 pt-4 border-t border-gray-100">
+                  <div className="col-span-2 text-center pb-2">
+                    <AnimatedNumber value={paymentStats.totalPaid} className="text-2xl sm:text-3xl font-bold text-green-600" />
+                    <div className="text-xs text-gray-500 mt-1">Total Cobrado (€)</div>
                   </div>
-                  <div className="flex-1 text-center group/pending relative cursor-help">
-                    <AnimatedNumber value={selectedClass === 'all' ? pendingEnrollments.length : pendingEnrollments.filter(p => p.class.id === selectedClass).length} className="text-lg sm:text-lg sm:text-2xl font-bold text-amber-600" />
-                    <div className="text-xs text-gray-500">pendientes</div>
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800 text-slate-200 text-xs rounded-lg shadow-xl border border-slate-700 opacity-0 invisible group-hover/pending:opacity-100 group-hover/pending:visible transition-all duration-200 whitespace-nowrap z-20">
-                      <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-2 h-2 bg-slate-800 border-b border-r border-slate-700 rotate-45"></div>
-                      Esperando aprobación
-                    </div>
+                  <div className="text-center">
+                    <AnimatedNumber value={paymentStats.bizumCount} className="text-lg font-bold text-purple-600" />
+                    <div className="text-xs text-gray-500">Bizum</div>
                   </div>
-                  <div className="flex-1 text-center group/rejected relative cursor-help">
-                    <AnimatedNumber value={selectedClass === 'all' ? rejectedCount : Math.round(rejectedCount * (filteredStudents.length / enrolledStudents.length))} className="text-lg sm:text-lg sm:text-2xl font-bold text-red-600" />
-                    <div className="text-xs text-gray-500">rechazados</div>
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800 text-slate-200 text-xs rounded-lg shadow-xl border border-slate-700 opacity-0 invisible group-hover/rejected:opacity-100 group-hover/rejected:visible transition-all duration-200 whitespace-nowrap z-20">
-                      <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-2 h-2 bg-slate-800 border-b border-r border-slate-700 rotate-45"></div>
-                      Solicitudes rechazadas
-                    </div>
+                  <div className="text-center">
+                    <AnimatedNumber value={paymentStats.cashCount} className="text-lg font-bold text-amber-600" />
+                    <div className="text-xs text-gray-500">Efectivo</div>
                   </div>
-
+                  <div className="text-center col-span-2">
+                    <AnimatedNumber value={paymentStats.stripeCount} className="text-lg font-bold text-blue-600" />
+                    <div className="text-xs text-gray-500">Stripe</div>
+                  </div>
                 </div>
               </div>
             ) : (

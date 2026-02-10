@@ -129,6 +129,7 @@ export interface DemoClass {
   price: number;
   currency: string;
   createdAt: string;
+  avgRating?: number; // Average rating to match valoraciones page
 }
 
 export interface DemoLesson {
@@ -542,6 +543,10 @@ export function generateDemoClasses(): DemoClass[] {
     counts[classId] = (counts[classId] || 0) + 1;
   });
   
+  // Use the same rating average (4.0) from generateDemoRatings distribution
+  // 15★5, 10★4, 6★3, 3★2, 1★1 = (75+40+18+6+1)/35 = 4.0
+  const demoAvgRating = 4.0;
+  
   return [
     {
       id: 'demo-c1',
@@ -555,6 +560,7 @@ export function generateDemoClasses(): DemoClass[] {
       price: 49.99,
       currency: 'EUR',
       createdAt: now,
+      avgRating: demoAvgRating,
     },
     {
       id: 'demo-c2',
@@ -568,6 +574,7 @@ export function generateDemoClasses(): DemoClass[] {
       price: 39.99,
       currency: 'EUR',
       createdAt: now,
+      avgRating: demoAvgRating,
     },
     {
       id: 'demo-c3',
@@ -581,6 +588,7 @@ export function generateDemoClasses(): DemoClass[] {
       price: 59.99,
       currency: 'EUR',
       createdAt: now,
+      avgRating: demoAvgRating,
     },
     {
       id: 'demo-c4',
@@ -594,6 +602,7 @@ export function generateDemoClasses(): DemoClass[] {
       price: 44.99,
       currency: 'EUR',
       createdAt: now,
+      avgRating: demoAvgRating,
     },
   ];
 }

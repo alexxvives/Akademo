@@ -108,7 +108,7 @@ export default function AcademyClassesPage() {
               videoCount: c.videoCount,
               lessonCount: c.videoCount,
               documentCount: c.documentCount,
-              avgRating: 4.5 + Math.random() * 0.5,
+              avgRating: c.avgRating, // Use avgRating from demo data to match valoraciones page
             })));
             
             setTeachers(demoTeachers.map(t => ({
@@ -431,22 +431,23 @@ export default function AcademyClassesPage() {
                           <span className="text-sm font-bold text-gray-900">{cls.avgRating.toFixed(1)}</span>
                         </div>
                       )}
-                      {/* Profesor next to title */}
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <span className="font-medium">Profesor:</span>
-                        <span>
-                          {cls.teacherFirstName && cls.teacherLastName 
-                            ? `${cls.teacherFirstName} ${cls.teacherLastName}` 
-                            : 'Sin asignar'
-                          }
-                        </span>
-                      </div>
                     </div>
                     {cls.description ? (
                       <p className="text-sm text-gray-600 mb-4 line-clamp-2">{cls.description}</p>
                     ) : (
                       <p className="text-sm text-gray-400 italic mb-4">Sin descripción</p>
                     )}
+
+                    {/* Profesor at top of stats */}
+                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
+                      <span className="font-medium">Profesor:</span>
+                      <span>
+                        {cls.teacherFirstName && cls.teacherLastName 
+                          ? `${cls.teacherFirstName} ${cls.teacherLastName}` 
+                          : 'Sin asignar'
+                        }
+                      </span>
+                    </div>
 
                     {/* Stats - Date first, then reordered */}
                     <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-gray-500">
