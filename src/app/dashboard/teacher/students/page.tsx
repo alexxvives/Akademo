@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { formatDuration, formatDate } from '@/lib/formatters';
+import { generateDemoStudents, generateDemoClasses } from '@/lib/demo-data';
 
 interface StudentProgress {
   id: string;
@@ -23,23 +24,81 @@ export default function StudentProgressPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadStudentProgress();
-    loadAcademyName();
+    loadData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const loadAcademyName = async () => {
+  const loadData = async () => {
     try {
-      const response = await apiClient('/requests/teacher');
-      const result = await response.json();
-      if (Array.isArray(result) && result.length > 0) {
-        setAcademyName(result[0].academyName);
-      }
-    } catch (error) {
-      console.error('Error loading academy name:', error);
-    }
-  };
+      // Check if teacher is in a demo (NOT PAID) academy
+      const academyRes = await apiClient('/teacher/academy');
+      if (academyRes.ok) {
+        const academyResult = await academyRes.json();
+        const name = academyResult.data?.academy?.name || '';
+        const status = academyResult.data?.academy?.paymentStatus || 'PAID';
+        setAcademyName(name);
 
-  const loadStudentProgress = async () => {
+        if (status === 'NOT PAID') {
+          // Use shared demo data (same source as academy dashboard)
+          const demoStudentsRaw = generateDemoStudents();
+          const demoClasses = generateDemoClasses();
+          const classNameToId: Record<string, string> = {
+            'Programación Web': 'demo-c1',
+            'Matemáticas Avanzadas': 'demo-c2',
+            'Física Cuántica': 'demo-c4',
+            'Diseño Gráfico': 'demo-c3',
+          };
+          // Aggregate students across classes
+          const studentMap = new Map<string, StudentProgress>();
+          for (const s of demoStudentsRaw) {
+            const classId = classNameToId[s.className] || 'demo-c1';
+            const key = s.email;
+            const existing = studentMap.get(key);
+            const lessonsCompleted = Math.floor(Math.random() * 5) + 2;
+            const totalLessons = 10;
+            if (existing) {
+              existing.classCount += 1;
+              existing.lessonsCompleted += lessonsCompleted;
+              existing.totalLessons += totalLessons;
+              existing.totalWatchTime += Math.floor(Math.random() * 3600) + 600;
+              existing.averageProgress = Math.round((existing.lessonsCompleted / existing.totalLessons) * 100);
+              if (s.lastLoginAt && (!existing.lastActivity || s.lastLoginAt > existing.lastActivity)) {
+                existing.lastActivity = s.lastLoginAt;
+              }
+            } else {
+              const watchTime = Math.floor(Math.random() * 3600) + 600;
+              studentMap.set(key, {
+                id: s.id,
+                firstName: s.firstName,
+                lastName: s.lastName,
+                email: s.email,
+                classCount: 1,
+                lessonsCompleted,
+                totalLessons,
+                totalWatchTime: watchTime,
+                averageProgress: Math.round((lessonsCompleted / totalLessons) * 100),
+                lastActivity: s.lastLoginAt,
+              });
+            }
+          }
+          // Deduplicate by email (same as academy does)
+          setStudents(Array.from(studentMap.values()).slice(0, 60));
+          setLoading(false);
+          return;
+        }
+      }
+    } catch {
+      // Fallback: try getting academy name from requests
+      try {
+        const response = await apiClient('/requests/teacher');
+        const result = await response.json();
+        if (Array.isArray(result) && result.length > 0) {
+          setAcademyName(result[0].academyName);
+        }
+      } catch { /* ignore */ }
+    }
+
+    // Load real student progress
     try {
       const response = await apiClient('/students/progress');
       const result = await response.json();

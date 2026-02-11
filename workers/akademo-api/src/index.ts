@@ -29,6 +29,9 @@ import assignmentsRoutes from './routes/assignments';
 import zoomRoutes from './routes/zoom';
 import { Bindings } from './types';
 
+import { requireAuth } from './lib/auth';
+import { successResponse, errorResponse } from './lib/utils';
+
 const app = new Hono<{ Bindings: Bindings }>();
 
 // Global error handler - provides detailed errors for debugging
@@ -100,6 +103,29 @@ app.route('/storage', storageRoutes);
 app.route('/webhooks', webhookRoutes);
 app.route('/zoom-accounts', zoomAccounts);
 app.route('/zoom', zoomRoutes);
+
+// GET /teacher/academy - Get teacher's academy with paymentStatus (for demo mode detection)
+app.get('/teacher/academy', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    if (session.role !== 'TEACHER') {
+      return c.json(errorResponse('Only teachers can use this endpoint'), 403);
+    }
+    const result = await c.env.DB.prepare(`
+      SELECT a.id, a.name, a.logoUrl, a.paymentStatus
+      FROM Academy a
+      JOIN Teacher t ON t.academyId = a.id
+      WHERE t.userId = ?
+    `).bind(session.id).first<{ id: string; name: string; logoUrl: string | null; paymentStatus: string | null }>();
+    if (!result) {
+      return c.json(errorResponse('Academy not found'), 404);
+    }
+    return c.json(successResponse({ academy: result }));
+  } catch (error: unknown) {
+    console.error('[Teacher Academy] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
 
 // Cron trigger handler for monthly payment generation
 // Uses calculation-based approach: compares expected payments vs actual payments made
