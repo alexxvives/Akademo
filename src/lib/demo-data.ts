@@ -778,65 +778,35 @@ export function generateDemoPendingPayments(): DemoPayment[] {
     }
   });
 
-  const MAX_PENDING = 4;
+  // Only these 4 student indices are BEHIND — must match StudentsProgressPage BEHIND_INDICES
+  const BEHIND_INDICES = new Set([2, 7, 15, 22]);
+
   const baseDate = new Date('2026-02-05T00:00:00.000Z');
   const payments: DemoPayment[] = [];
   let paymentIdx = 0;
 
-  // Same BEHIND logic as StudentsProgressPage
-  const demoPaymentOptions: ('UP_TO_DATE' | 'BEHIND')[] = ['UP_TO_DATE', 'UP_TO_DATE', 'BEHIND', 'UP_TO_DATE', 'UP_TO_DATE'];
-  const demoStatuses: ('UP_TO_DATE' | 'BEHIND')[] = ['UP_TO_DATE', 'UP_TO_DATE', 'BEHIND'];
-
   const students = Array.from(studentMap.values());
-  for (let index = 0; index < students.length && payments.length < MAX_PENDING; index++) {
+  for (let index = 0; index < students.length; index++) {
+    if (!BEHIND_INDICES.has(index)) continue;
     const student = students[index];
-    if (student.classes.length > 1) {
-      // Multi-class students: check each class individually
-      for (let ci = 0; ci < student.classes.length && payments.length < MAX_PENDING; ci++) {
-        const cls = student.classes[ci];
-        const classStatus = demoStatuses[(index + ci) % 3];
-        if (classStatus === 'BEHIND') {
-          paymentIdx++;
-          payments.push({
-            enrollmentId: `demo-payment-pending-${paymentIdx}`,
-            studentId: student.id,
-            studentFirstName: student.firstName,
-            studentLastName: student.lastName,
-            studentEmail: `${student.firstName.toLowerCase()}.${student.lastName.toLowerCase()}@demo.com`,
-            className: cls,
-            paymentAmount: CLASS_PRICES[cls] || 49.99,
-            currency: 'EUR',
-            paymentMethod: paymentIdx % 3 === 0 ? 'bizum' : 'cash',
-            paymentStatus: 'CASH_PENDING',
-            enrolledAt: new Date(baseDate.getTime() - paymentIdx * 3 * 24 * 60 * 60 * 1000).toISOString(),
-            createdAt: new Date(baseDate.getTime() - paymentIdx * 3 * 24 * 60 * 60 * 1000).toISOString(),
-            updatedAt: new Date(baseDate.getTime() - paymentIdx * 3 * 24 * 60 * 60 * 1000).toISOString(),
-          });
-        }
-      }
-    } else {
-      // Single-class students: use aggregate status
-      const aggregateStatus = demoPaymentOptions[index % 5];
-      if (aggregateStatus === 'BEHIND') {
-        paymentIdx++;
-        const cls = student.classes[0];
-        payments.push({
-          enrollmentId: `demo-payment-pending-${paymentIdx}`,
-          studentId: student.id,
-          studentFirstName: student.firstName,
-          studentLastName: student.lastName,
-          studentEmail: `${student.firstName.toLowerCase()}.${student.lastName.toLowerCase()}@demo.com`,
-          className: cls,
-          paymentAmount: CLASS_PRICES[cls] || 49.99,
-          currency: 'EUR',
-          paymentMethod: paymentIdx % 3 === 0 ? 'bizum' : 'cash',
-          paymentStatus: 'CASH_PENDING',
-          enrolledAt: new Date(baseDate.getTime() - paymentIdx * 3 * 24 * 60 * 60 * 1000).toISOString(),
-          createdAt: new Date(baseDate.getTime() - paymentIdx * 3 * 24 * 60 * 60 * 1000).toISOString(),
-          updatedAt: new Date(baseDate.getTime() - paymentIdx * 3 * 24 * 60 * 60 * 1000).toISOString(),
-        });
-      }
-    }
+    paymentIdx++;
+    // For multi-class students, the pending payment is for their first class
+    const cls = student.classes[0];
+    payments.push({
+      enrollmentId: `demo-payment-pending-${paymentIdx}`,
+      studentId: student.id,
+      studentFirstName: student.firstName,
+      studentLastName: student.lastName,
+      studentEmail: `${student.firstName.toLowerCase()}.${student.lastName.toLowerCase()}@demo.com`,
+      className: cls,
+      paymentAmount: CLASS_PRICES[cls] || 49.99,
+      currency: 'EUR',
+      paymentMethod: paymentIdx % 3 === 0 ? 'bizum' : 'cash',
+      paymentStatus: 'CASH_PENDING',
+      enrolledAt: new Date(baseDate.getTime() - paymentIdx * 3 * 24 * 60 * 60 * 1000).toISOString(),
+      createdAt: new Date(baseDate.getTime() - paymentIdx * 3 * 24 * 60 * 60 * 1000).toISOString(),
+      updatedAt: new Date(baseDate.getTime() - paymentIdx * 3 * 24 * 60 * 60 * 1000).toISOString(),
+    });
   }
 
   return payments;

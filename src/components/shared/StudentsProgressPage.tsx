@@ -190,6 +190,11 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
       const videosWatched = (index * 7 + 3) % 15;
       const totalVideos = 20;
 
+      // Only these 4 student indices are BEHIND (everyone else is UP_TO_DATE)
+      // This must match the same set in demo-data.ts generateDemoPendingPayments()
+      const BEHIND_INDICES = new Set([2, 7, 15, 22]);
+      const isBehind = BEHIND_INDICES.has(index);
+
       // Build per-class breakdown if student is in multiple classes
       let classBreakdown: ClassBreakdownItem[] | undefined;
       if (student.classes.length > 1) {
@@ -197,7 +202,8 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
           const maxClsVideos = Math.floor(totalVideos / student.classes.length + 2);
           const clsVideos = maxClsVideos > 0 ? ((index * 3 + ci * 5 + 2) % maxClsVideos) : 0;
           const clsTime = Math.floor(totalWatchTime / student.classes.length) + ((index * 137 + ci * 89) % 600);
-          const demoStatuses: ('UP_TO_DATE' | 'BEHIND')[] = ['UP_TO_DATE', 'UP_TO_DATE', 'BEHIND'];
+          // For BEHIND students, mark their first class as BEHIND
+          const classPaymentStatus: 'UP_TO_DATE' | 'BEHIND' = (isBehind && ci === 0) ? 'BEHIND' : 'UP_TO_DATE';
           return {
             className: cls,
             classId: student.classIds[ci],
@@ -206,17 +212,13 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
             videosWatched: clsVideos,
             totalVideos: Math.floor(totalVideos / student.classes.length),
             lastActive: student.lastLoginAt ?? null,
-            paymentStatus: demoStatuses[(index + ci) % 3],
+            paymentStatus: classPaymentStatus,
           };
         });
       }
 
       // Demo payment status for aggregate
-      // If any class in breakdown is BEHIND, aggregate should be BEHIND
-      const demoPaymentOptions: ('UP_TO_DATE' | 'BEHIND')[] = ['UP_TO_DATE', 'UP_TO_DATE', 'BEHIND', 'UP_TO_DATE', 'UP_TO_DATE'];
-      const aggregateStatus = classBreakdown && classBreakdown.some(cb => cb.paymentStatus === 'BEHIND')
-        ? 'BEHIND' as const
-        : demoPaymentOptions[index % 5];
+      const aggregateStatus: 'UP_TO_DATE' | 'BEHIND' = isBehind ? 'BEHIND' : 'UP_TO_DATE';
 
       return {
         id: student.id,
