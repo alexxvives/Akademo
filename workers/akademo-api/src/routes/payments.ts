@@ -6,13 +6,40 @@ import { validateBody, initiatePaymentSchema } from '../lib/validation';
 
 const payments = new Hono<{ Bindings: Bindings }>();
 
+// Helper: add N calendar months to a date (clamps day to month end)
+function addMonths(date: Date, months: number): Date {
+  const result = new Date(date);
+  const targetMonth = result.getMonth() + months;
+  result.setMonth(targetMonth);
+  // If the day overflowed (e.g. Jan 31 + 1 month → Mar 3), clamp to last day of target month
+  if (result.getMonth() !== ((targetMonth % 12) + 12) % 12) {
+    result.setDate(0); // sets to last day of previous month
+  }
+  return result;
+}
+
+// Count how many full calendar months have elapsed from `start` up to (and including) `today`.
+// Cycle 1 = classStart → classStart + 1 month, Cycle 2 = +1 month → +2 months, etc.
+// Returns 0 if class hasn't started yet.
+function countElapsedCycles(classStart: Date, today: Date): number {
+  if (today < classStart) return 0;
+  // Calculate month difference
+  let months = (today.getFullYear() - classStart.getFullYear()) * 12
+             + (today.getMonth() - classStart.getMonth());
+  // If today's day-of-month is before classStart's day, we haven't completed that cycle
+  if (today.getDate() < classStart.getDate()) {
+    months = Math.max(0, months - 1);
+  }
+  // +1 because the current (possibly partial) cycle still counts as owed
+  return months + 1;
+}
+
 // Helper function to calculate billing cycles based on class start date
 // Returns: amount to charge (including catch-up cycles) + billing cycle info + missed cycles count
-function calculateBillingCycle(classStartDate: string, enrollmentDate: string, isMonthly: boolean, monthlyPrice: number) {
+function calculateBillingCycle(classStartDate: string, _enrollmentDate: string, isMonthly: boolean, monthlyPrice: number) {
   const classStart = new Date(classStartDate);
-  const enrollment = new Date(enrollmentDate);
   const today = new Date();
-  
+
   // For one-time payments, no next payment
   if (!isMonthly) {
     return {
@@ -24,51 +51,37 @@ function calculateBillingCycle(classStartDate: string, enrollmentDate: string, i
       totalAmount: monthlyPrice // Just regular price for one-time
     };
   }
-  
+
   // If class hasn't started yet (early joiner)
   if (today < classStart) {
-    // First payment covers first cycle: classStart to classStart+30 days
-    const cycleEnd = new Date(classStart);
-    cycleEnd.setDate(cycleEnd.getDate() + 30);
-    
+    const cycleEnd = addMonths(classStart, 1);
     return {
       billingCycleStart: classStart.toISOString(),
       billingCycleEnd: cycleEnd.toISOString(),
-      nextPaymentDue: cycleEnd.toISOString(), // Charged at end of cycle for next cycle
+      nextPaymentDue: cycleEnd.toISOString(),
       missedCycles: 0,
       catchUpAmount: 0,
       totalAmount: monthlyPrice // Just one cycle
     };
   }
-  
-  // Class has already started (late joiner) - CHARGE FOR ALL MISSED CYCLES
-  // Find which cycle we're currently in
-  const daysSinceStart = Math.floor((today.getTime() - classStart.getTime()) / (1000 * 60 * 60 * 24));
-  const currentCycleNumber = Math.floor(daysSinceStart / 30);
-  const missedCycles = currentCycleNumber + 1; // +1 for current cycle
-  
-  // Current cycle start = classStart + (cycleNumber * 30 days)
-  const currentCycleStart = new Date(classStart);
-  currentCycleStart.setDate(currentCycleStart.getDate() + (currentCycleNumber * 30));
-  
-  const currentCycleEnd = new Date(currentCycleStart);
-  currentCycleEnd.setDate(currentCycleEnd.getDate() + 30);
-  
-  // Next billing cycle starts after current cycle ends
-  const nextCycleStart = currentCycleEnd;
-  const nextCycleEnd = new Date(nextCycleStart);
-  nextCycleEnd.setDate(nextCycleEnd.getDate() + 30);
-  
-  // Calculate catch-up payment: charge for all missed cycles
-  const catchUpAmount = missedCycles * monthlyPrice;
-  
+
+  // Class has already started — charge for all elapsed cycles (calendar-month based)
+  const elapsedCycles = countElapsedCycles(classStart, today);
+
+  // Current cycle boundaries
+  const currentCycleStart = addMonths(classStart, elapsedCycles - 1);
+  const currentCycleEnd   = addMonths(classStart, elapsedCycles);
+  const nextCycleEnd      = addMonths(classStart, elapsedCycles + 1);
+
+  const catchUpAmount = elapsedCycles * monthlyPrice;
+
   return {
-    billingCycleStart: classStart.toISOString(), // Billing starts from class start
-    billingCycleEnd: currentCycleEnd.toISOString(), // Covers up to end of current cycle
-    nextPaymentDue: nextCycleEnd.toISOString(), // Next regular payment due
-    missedCycles: missedCycles,
+    billingCycleStart: classStart.toISOString(),
+    billingCycleEnd: currentCycleEnd.toISOString(),
+    nextPaymentDue: nextCycleEnd.toISOString(),
+    missedCycles: elapsedCycles,
     catchUpAmount: catchUpAmount,
-    totalAmount: catchUpAmount // Total to charge NOW (all missed cycles)
+    totalAmount: catchUpAmount // Total to charge NOW (all elapsed cycles)
   };
 }
 

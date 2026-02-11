@@ -496,7 +496,7 @@ export default function AcademyDashboard() {
                 onChange={(e) => setSelectedClass(e.target.value)}
                 className='appearance-none w-full md:w-56 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent'
               >
-                <option value='all'>Todas las clases</option>
+                <option value='all'>Todas las asignaturas</option>
                 {classes.map((cls) => (
                   <option key={cls.id} value={cls.id}>{cls.name}</option>
                 ))}
@@ -593,7 +593,7 @@ export default function AcademyDashboard() {
             {filteredStudents.length > 0 || pendingEnrollments.length > 0 || rejectedCount > 0 ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  {/* Left side: Estudiantes and Matriculados stacked */}
+                  {/* Left side: Estudiantes and Matrículas stacked */}
                   <div className="space-y-3">
                     <div className="text-center p-3 bg-gray-50 rounded-lg">
                       <AnimatedNumber value={uniqueStudentCount} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1" />
@@ -601,7 +601,7 @@ export default function AcademyDashboard() {
                     </div>
                     <div className="text-center p-3 bg-gray-50 rounded-lg">
                       <AnimatedNumber value={filteredStudents.length} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1" />
-                      <div className="text-xs text-gray-500">Matriculados</div>
+                      <div className="text-xs text-gray-500">Matrículas</div>
                     </div>
                   </div>
                   {/* Right side: Total Cobrado on top, payment methods below */}

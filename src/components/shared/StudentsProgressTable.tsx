@@ -212,7 +212,7 @@ export function StudentsProgressTable({
                   Estudiante
                 </th>
                 <th className="text-left py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  Clase
+                  Asignatura
                 </th>
                 {showTeacherColumn && (
                   <th className="text-left py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -246,7 +246,7 @@ export function StudentsProgressTable({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
                     <p className="text-sm font-medium text-gray-900">No hay estudiantes</p>
-                    <p className="text-xs text-gray-500 mt-1">Los estudiantes aparecerán aquí cuando se inscriban en las clases</p>
+                    <p className="text-xs text-gray-500 mt-1">Los estudiantes aparecerán aquí cuando se inscriban en las asignaturas</p>
                   </td>
                 </tr>
               ) : (
@@ -285,7 +285,17 @@ export function StudentsProgressTable({
                       </td>
                       {showTeacherColumn && (
                         <td className="py-4 px-6">
-                          <span className="text-xs text-gray-900">{student.teacherName || '-'}</span>
+                          {hasBreakdown ? (() => {
+                            const teacherNames = student.classBreakdown!.map(c => c.teacherName).filter((t): t is string => !!t);
+                            const uniqueTeachers = Array.from(new Set(teacherNames));
+                            return (
+                              <span className="text-xs text-gray-900">
+                                {uniqueTeachers.length === 1 ? uniqueTeachers[0] : `${uniqueTeachers.length} profesores`}
+                              </span>
+                            );
+                          })() : (
+                            <span className="text-xs text-gray-900">{student.teacherName || '-'}</span>
+                          )}
                         </td>
                       )}
                       <td className="py-4 px-6">
@@ -341,23 +351,27 @@ export function StudentsProgressTable({
                       </td>
                       {showBanButton && (
                         <td className="py-4 px-6">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (!disableBanButton && window.confirm(`¿Estás seguro de que deseas expulsar a ${student.name} de ${student.className}? Esta acción no se puede deshacer.`)) {
-                                onBanStudent?.(student.enrollmentId!);
-                              }
-                            }}
-                            disabled={disableBanButton}
-                            className={`px-3 py-1.5 text-xs font-medium text-white rounded-lg transition-colors ${
-                              disableBanButton 
-                                ? 'bg-gray-400 cursor-not-allowed' 
-                                : 'bg-red-600 hover:bg-red-700'
-                            }`}
-                            title={disableBanButton ? 'No disponible en modo demostración' : 'Expulsar estudiante'}
-                          >
-                            Expulsar
-                          </button>
+                          {!hasBreakdown ? (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (!disableBanButton && window.confirm(`¿Estás seguro de que deseas expulsar a ${student.name} de ${student.className}? Esta acción no se puede deshacer.`)) {
+                                  onBanStudent?.(student.enrollmentId!);
+                                }
+                              }}
+                              disabled={disableBanButton}
+                              className={`px-3 py-1.5 text-xs font-medium text-white rounded-lg transition-colors ${
+                                disableBanButton 
+                                  ? 'bg-gray-400 cursor-not-allowed' 
+                                  : 'bg-red-600 hover:bg-red-700'
+                              }`}
+                              title={disableBanButton ? 'No disponible en modo demostración' : 'Expulsar estudiante'}
+                            >
+                              Expulsar
+                            </button>
+                          ) : (
+                            <span className="text-xs text-gray-400 italic">Ver detalle ↓</span>
+                          )}
                         </td>
                       )}
                     </tr>
@@ -369,7 +383,7 @@ export function StudentsProgressTable({
                         <tr key={`${student.id}-breakdown-${cls.classId}`} className="bg-gray-50/70">
                           <td className="py-3 px-6">
                             <div className="flex items-center gap-3 pl-10">
-                              <span className="text-xs text-gray-500 italic">↳ detalle por clase</span>
+                              <span className="text-xs text-gray-500 italic">↳ detalle por asignatura</span>
                             </div>
                           </td>
                           <td className="py-3 px-6">

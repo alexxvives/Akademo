@@ -191,7 +191,7 @@ export default function AcademyClassesPage() {
     
     // Block creation for demo academy (NOT PAID status)
     if (paymentStatus === 'NOT PAID') {
-      setError('Activa tu academia para crear clases reales');
+      setError('Activa tu academia para crear asignaturas reales');
       return;
     }
     
@@ -287,7 +287,7 @@ export default function AcademyClassesPage() {
     
     // Block editing for demo academy (NOT PAID status)
     if (paymentStatus === 'NOT PAID') {
-      setError('Activa tu academia para editar clases reales');
+      setError('Activa tu academia para editar asignaturas reales');
       return;
     }
     
@@ -424,12 +424,12 @@ export default function AcademyClassesPage() {
             onClick={openCreateModal}
             disabled={teachers.length === 0}
             className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-            title={teachers.length === 0 ? 'Debes tener al menos un profesor para crear clases' : ''}
+            title={teachers.length === 0 ? 'Debes tener al menos un profesor para crear asignaturas' : ''}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            Nueva Clase
+            Nueva Asignatura
           </button>
         </div>
 
@@ -442,8 +442,8 @@ export default function AcademyClassesPage() {
             <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay clases registradas</h3>
-            <p className="text-gray-600 mb-4">Crea tu primera clase y asigna un profesor.</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay asignaturas registradas</h3>
+            <p className="text-gray-600 mb-4">Crea tu primera asignatura y asigna un profesor.</p>
             {teachers.length > 0 && (
               <button
                 onClick={openCreateModal}
@@ -452,7 +452,7 @@ export default function AcademyClassesPage() {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                Crear Primera Clase
+                Crear Primera Asignatura
               </button>
             )}
           </div>
@@ -524,7 +524,7 @@ export default function AcademyClassesPage() {
                         openEditModal(cls);
                       }}
                       className="p-2 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
-                      title="Editar clase"
+                      title="Editar asignatura"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -557,14 +557,14 @@ export default function AcademyClassesPage() {
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl w-full max-w-3xl p-6 my-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Nueva Clase</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Nueva Asignatura</h2>
             
             <form onSubmit={handleCreateClass} className="space-y-4">
               {/* Row 1: Name and Teacher */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nombre de la clase *
+                    Nombre de la asignatura *
                   </label>
                   <input
                     type="text"
@@ -840,10 +840,11 @@ export default function AcademyClassesPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={saving}
-                  className="flex-1 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-400 transition-colors"
+                  disabled={saving || paymentStatus === 'NOT PAID'}
+                  className="flex-1 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                  title={paymentStatus === 'NOT PAID' ? 'No disponible en modo demostración' : ''}
                 >
-                  {saving ? 'Creando...' : 'Crear Clase'}
+                  {saving ? 'Creando...' : 'Crear Asignatura'}
                 </button>
               </div>
             </form>
@@ -855,14 +856,14 @@ export default function AcademyClassesPage() {
       {showEditModal && editingClass && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-white rounded-2xl w-full max-w-3xl p-6 my-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Editar Clase</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Editar Asignatura</h2>
             
             <form onSubmit={handleEditClass} className="space-y-4">
               {/* Row 1: Name and Teacher */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nombre de la clase *
+                    Nombre de la asignatura *
                   </label>
                   <input
                     type="text"

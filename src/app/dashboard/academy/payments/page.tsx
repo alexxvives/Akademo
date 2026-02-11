@@ -23,8 +23,6 @@ interface PendingPayment {
   academyId: string;
   academyName: string;
   teacherName?: string;
-  isOverdue?: boolean;
-  overdueLabel?: string;
 }
 
 interface PaymentHistory {
@@ -308,120 +306,24 @@ export default function AcademyPaymentsPage() {
         }
       }
       
-      // If PAID, load real payments + student progress for overdue detection
-      const [pendingRes, historyRes, classesRes, studentsRes, progressRes] = await Promise.all([
+      // If PAID, load real payments
+      const [pendingRes, historyRes, classesRes, studentsRes] = await Promise.all([
         apiClient('/payments/pending-cash'),
         apiClient('/payments/history'),
         apiClient('/academies/classes'),
         apiClient('/academies/students'),
-        apiClient('/students/progress'),
       ]);
 
-      const [pendingResult, historyResult, classesResult, studentsResult, progressResult] = await Promise.all([
+      const [pendingResult, historyResult, classesResult, studentsResult] = await Promise.all([
         pendingRes.json(),
         historyRes.json(),
         classesRes.json(),
         studentsRes.json(),
-        progressRes.json(),
       ]);
 
       const realPending: PendingPayment[] = pendingResult.success ? (pendingResult.data || []) : [];
 
-      if (historyResult.success) {
-        setPaymentHistory(historyResult.data || []);
-      }
-      
-      if (classesResult.success && Array.isArray(classesResult.data)) {
-        setClasses(classesResult.data);
-      }
-
-      // Compute overdue entries from student progress
-      const overdueEntries: PendingPayment[] = [];
-      if (progressResult.success && Array.isArray(progressResult.data)) {
-        // Sum pending amounts per student+class to avoid double counting
-        const pendingAmountMap: Record<string, number> = {};
-        realPending.forEach((p: PendingPayment) => {
-          const key = `${p.studentId}::${p.classId}`;
-          pendingAmountMap[key] = (pendingAmountMap[key] || 0) + p.paymentAmount;
-        });
-
-        progressResult.data.forEach((sp: {
-          id: string; firstName: string; lastName: string; email: string;
-          className: string; classId: string; enrollmentId: string;
-          paymentFrequency: string | null; monthlyPrice: number | null;
-          oneTimePrice: number | null; classStartDate: string | null;
-          enrolledAt: string | null; totalPaid: number;
-        }) => {
-          const hasMonthly = sp.monthlyPrice != null && sp.monthlyPrice > 0;
-          const hasOneTime = sp.oneTimePrice != null && sp.oneTimePrice > 0;
-          if (!hasMonthly && !hasOneTime) return; // Free class
-
-          const paid = sp.totalPaid ?? 0;
-          const pendingKey = `${sp.id}::${sp.classId}`;
-          const pendingAmount = pendingAmountMap[pendingKey] || 0;
-
-          if (sp.paymentFrequency === 'MONTHLY' && hasMonthly) {
-            const startStr = sp.classStartDate || sp.enrolledAt;
-            if (!startStr) return;
-            const start = new Date(startStr);
-            const now = new Date();
-            const monthsDiff = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
-            const expectedMonths = Math.max(1, monthsDiff + 1);
-            const expectedAmount = expectedMonths * sp.monthlyPrice!;
-            const overdueAmount = expectedAmount - paid - pendingAmount;
-            const overdueMonths = Math.floor(overdueAmount / sp.monthlyPrice!);
-
-            for (let i = 0; i < overdueMonths; i++) {
-              const dueDate = new Date(start);
-              dueDate.setMonth(dueDate.getMonth() + (expectedMonths - overdueMonths + i));
-              overdueEntries.push({
-                enrollmentId: `overdue-${sp.id}-${sp.classId}-${i}`,
-                paymentStatus: 'OVERDUE',
-                paymentMethod: '',
-                paymentAmount: sp.monthlyPrice!,
-                currency: 'EUR',
-                enrolledAt: dueDate.toISOString(),
-                studentId: sp.id,
-                studentFirstName: sp.firstName,
-                studentLastName: sp.lastName,
-                studentEmail: sp.email,
-                classId: sp.classId,
-                className: sp.className,
-                academyId: '',
-                academyName: '',
-                isOverdue: true,
-                overdueLabel: `Mes ${expectedMonths - overdueMonths + i + 1}`,
-              });
-            }
-          } else {
-            // One-time payment: if not fully paid and no pending covering it
-            const price = hasOneTime ? sp.oneTimePrice! : sp.monthlyPrice!;
-            if (paid + pendingAmount < price) {
-              overdueEntries.push({
-                enrollmentId: `overdue-${sp.id}-${sp.classId}-onetime`,
-                paymentStatus: 'OVERDUE',
-                paymentMethod: '',
-                paymentAmount: price - paid - pendingAmount,
-                currency: 'EUR',
-                enrolledAt: sp.enrolledAt || new Date().toISOString(),
-                studentId: sp.id,
-                studentFirstName: sp.firstName,
-                studentLastName: sp.lastName,
-                studentEmail: sp.email,
-                classId: sp.classId,
-                className: sp.className,
-                academyId: '',
-                academyName: '',
-                isOverdue: true,
-                overdueLabel: 'Pago único',
-              });
-            }
-          }
-        });
-      }
-
-      // Merge real pending + overdue entries
-      setPendingPayments([...realPending, ...overdueEntries]);
+      setPendingPayments(realPending);
 
       if (historyResult.success) {
         setPaymentHistory(historyResult.data || []);
@@ -703,21 +605,12 @@ export default function AcademyPaymentsPage() {
             {filteredPendingPayments.map((payment) => (
               <tr
                 key={`pending-${payment.enrollmentId}`}
-                className={payment.isOverdue 
-                  ? "bg-red-50 hover:bg-red-100 border-l-4 border-red-400 transition-colors"
-                  : "bg-amber-50 hover:bg-amber-100 border-l-4 border-amber-400 transition-colors"
-                }
+                className="bg-amber-50 hover:bg-amber-100 border-l-4 border-amber-400 transition-colors"
               >
                 <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                  {payment.isOverdue ? (
-                    <span className="px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800 border border-red-200">
-                      Atrasado
-                    </span>
-                  ) : (
-                    <span className="px-3 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
-                      Pendiente
-                    </span>
-                  )}
+                  <span className="px-3 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                    Pendiente
+                  </span>
                 </td>
                 <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                   <div>
@@ -737,10 +630,7 @@ export default function AcademyPaymentsPage() {
                 </td>
                 <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-700 capitalize">
-                    {payment.isOverdue 
-                      ? <span className="text-red-600 font-medium">{payment.overdueLabel}</span>
-                      : (payment.paymentMethod?.toUpperCase() === 'CASH' ? 'Efectivo' : payment.paymentMethod)
-                    }
+                    {payment.paymentMethod?.toUpperCase() === 'CASH' ? 'Efectivo' : payment.paymentMethod}
                   </div>
                 </td>
                 <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -773,27 +663,6 @@ export default function AcademyPaymentsPage() {
                 </td>
                 <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center gap-2">
-                    {payment.isOverdue ? (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingPaymentId(null);
-                          setRegisterForm({
-                            studentId: payment.studentId,
-                            classId: payment.classId,
-                            amount: payment.paymentAmount.toString(),
-                            paymentMethod: 'cash',
-                            status: 'PAID',
-                          });
-                          setStudentSearchTerm(`${payment.studentFirstName} ${payment.studentLastName}`);
-                          setShowRegisterModal(true);
-                        }}
-                        className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700"
-                        title="Registrar pago atrasado"
-                      >
-                        Registrar
-                      </button>
-                    ) : (
                     <button
                       onClick={(e) => {
                         if (paymentStatus === 'NOT PAID') {
@@ -810,7 +679,6 @@ export default function AcademyPaymentsPage() {
                     >
                       {processingIds.has(payment.enrollmentId) ? '...' : '✓ Aprobar'}
                     </button>
-                    )}
                   </div>
                 </td>
               </tr>

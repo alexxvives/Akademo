@@ -152,7 +152,7 @@ export function DashboardChartsGrid({
             </div>
             <div className="text-center p-3 bg-gray-50 rounded-lg">
               <AnimatedNumber value={filteredStudents.length} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1" />
-              <div className="text-xs text-gray-500">Matriculados</div>
+              <div className="text-xs text-gray-500">Matrículas</div>
             </div>
           </div>
           <div className="flex justify-between gap-4 pt-4 border-t border-gray-100">

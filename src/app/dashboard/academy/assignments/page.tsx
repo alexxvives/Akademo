@@ -500,13 +500,7 @@ export default function TeacherAssignments() {
               setSelectedClassForCreate(selectedClassId);
               setShowCreateModal(true);
             }}
-              disabled={paymentStatus === 'NOT PAID' && userEmail.toLowerCase().includes('demo')}
-              className={`px-6 py-2 rounded-lg transition-colors ${
-                paymentStatus === 'NOT PAID' && userEmail.toLowerCase().includes('demo')
-                  ? 'bg-gray-400 text-white cursor-not-allowed'
-                  : 'bg-black text-white hover:bg-gray-800'
-              }`}
-              title={paymentStatus === 'NOT PAID' && userEmail.toLowerCase().includes('demo') ? 'No disponible en modo demostración' : 'Crear nuevo ejercicio'}
+              className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
             >
               + Crear Ejercicio
             </button>
@@ -756,8 +750,9 @@ export default function TeacherAssignments() {
                   className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
                   Cancelar
                 </button>
-                <button type="submit" disabled={creating}
-                  className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 transition-colors">
+                <button type="submit" disabled={creating || paymentStatus === 'NOT PAID'}
+                  className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  title={paymentStatus === 'NOT PAID' ? 'No disponible en modo demostración' : ''}>
                   {creating ? 'Creando...' : 'Crear Ejercicio'}
                 </button>
               </div>

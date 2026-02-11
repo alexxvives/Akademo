@@ -509,7 +509,12 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
                   durationSeconds: l.duration,
                   createdAt: l.createdAt,
                 }],
-                documents: l.documents || [],
+                documents: (l.documents || []).map((doc: { title: string; url: string }, di: number) => ({
+                  id: `${l.id}-doc-${di}`,
+                  title: doc.title,
+                  description: null,
+                  upload: { storagePath: doc.url, fileName: doc.title + '.pdf', mimeType: 'application/pdf' },
+                })),
               } as unknown as Lesson;
             });
           
@@ -1563,10 +1568,13 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
                   <div className="space-y-2">
                     {selectedLesson.documents
                       .filter(doc => doc.upload?.storagePath)
-                      .map((doc) => (
+                      .map((doc) => {
+                      const isDemo = doc.upload!.storagePath.startsWith('/demo/');
+                      const docHref = isDemo ? doc.upload!.storagePath : `/api/documents/${doc.upload!.storagePath.split('/').map(encodeURIComponent).join('/')}`;
+                      return (
                       <a
                         key={doc.id}
-                        href={`/api/documents/${doc.upload!.storagePath.split('/').map(encodeURIComponent).join('/')}`}
+                        href={docHref}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-3 p-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors group"
@@ -1583,7 +1591,8 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                         </svg>
                       </a>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <p className="text-gray-400 italic text-sm text-center">No documentos</p>

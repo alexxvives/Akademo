@@ -224,7 +224,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
         id: student.id,
         name: `${student.firstName} ${student.lastName}`,
         email: student.email,
-        className: student.classes.length === 1 ? student.classes[0] : `${student.classes.length} clases`,
+        className: student.classes.length === 1 ? student.classes[0] : `${student.classes.length} asignaturas`,
         classId: student.classIds[0],
         teacherName,
         totalWatchTime,
@@ -343,8 +343,8 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
             id: student.id,
             name: `${student.firstName} ${student.lastName}`,
             email: student.email,
-            className: student.classes.length === 1 ? student.classes[0] : `${student.classes.length} clases`,
-            classId: student.classIds[0], // Use first class for filtering
+            className: student.classes.length === 1 ? student.classes[0] : `${student.classes.length} asignaturas`,
+            classId: student.classIds[0],
             teacherName: student.teacherNames.join(', '),
             totalWatchTime: student.totalWatchTime,
             videosWatched: student.lessonsCompleted,
@@ -526,7 +526,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
                 onChange={(e) => setSelectedClass(e.target.value)}
                 className="appearance-none w-full sm:w-48 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
               >
-                <option value="all">Todas las clases</option>
+                <option value="all">Todas las asignaturas</option>
                 {filteredClasses.map((cls) => (
                   <option key={cls.id} value={cls.id}>{cls.name}</option>
                 ))}

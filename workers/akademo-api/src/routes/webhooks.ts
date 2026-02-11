@@ -4,12 +4,22 @@ import { successResponse, errorResponse } from '../lib/utils';
 
 const webhooks = new Hono<{ Bindings: Bindings }>();
 
+// Helper: add N calendar months to a date (clamps day to month end)
+function addMonths(date: Date, months: number): Date {
+  const result = new Date(date);
+  const targetMonth = result.getMonth() + months;
+  result.setMonth(targetMonth);
+  if (result.getMonth() !== ((targetMonth % 12) + 12) % 12) {
+    result.setDate(0);
+  }
+  return result;
+}
+
 // Helper function to calculate billing cycles based on class start date
-function calculateBillingCycle(classStartDate: string, enrollmentDate: string, isMonthly: boolean) {
+function calculateBillingCycle(classStartDate: string, _enrollmentDate: string, isMonthly: boolean) {
   const classStart = new Date(classStartDate);
-  const enrollment = new Date(enrollmentDate);
   const today = new Date();
-  
+
   // For one-time payments, no next payment
   if (!isMonthly) {
     return {
@@ -18,41 +28,32 @@ function calculateBillingCycle(classStartDate: string, enrollmentDate: string, i
       nextPaymentDue: null
     };
   }
-  
+
   // If class hasn't started yet (early joiner)
   if (today < classStart) {
-    // First payment covers first cycle: classStart to classStart+30 days
-    const cycleEnd = new Date(classStart);
-    cycleEnd.setDate(cycleEnd.getDate() + 30);
-    
+    const cycleEnd = addMonths(classStart, 1);
     return {
       billingCycleStart: classStart.toISOString(),
       billingCycleEnd: cycleEnd.toISOString(),
-      nextPaymentDue: cycleEnd.toISOString() // Charged at end of cycle for next cycle
+      nextPaymentDue: cycleEnd.toISOString()
     };
   }
-  
-  // Class has already started (late joiner)
-  // Find which cycle we're currently in
-  const daysSinceStart = Math.floor((today.getTime() - classStart.getTime()) / (1000 * 60 * 60 * 24));
-  const currentCycleNumber = Math.floor(daysSinceStart / 30);
-  
-  // Current cycle start = classStart + (cycleNumber * 30 days)
-  const currentCycleStart = new Date(classStart);
-  currentCycleStart.setDate(currentCycleStart.getDate() + (currentCycleNumber * 30));
-  
-  const currentCycleEnd = new Date(currentCycleStart);
-  currentCycleEnd.setDate(currentCycleEnd.getDate() + 30);
-  
-  // First payment covers NEXT cycle (they get remainder of current cycle free)
-  const nextCycleStart = currentCycleEnd;
-  const nextCycleEnd = new Date(nextCycleStart);
-  nextCycleEnd.setDate(nextCycleEnd.getDate() + 30);
-  
+
+  // Class has already started — use calendar months
+  let months = (today.getFullYear() - classStart.getFullYear()) * 12
+             + (today.getMonth() - classStart.getMonth());
+  if (today.getDate() < classStart.getDate()) {
+    months = Math.max(0, months - 1);
+  }
+  const elapsedCycles = months + 1;
+
+  const currentCycleEnd = addMonths(classStart, elapsedCycles);
+  const nextCycleEnd    = addMonths(classStart, elapsedCycles + 1);
+
   return {
-    billingCycleStart: nextCycleStart.toISOString(),
-    billingCycleEnd: nextCycleEnd.toISOString(),
-    nextPaymentDue: nextCycleEnd.toISOString() // Charged at end of next cycle
+    billingCycleStart: addMonths(classStart, elapsedCycles - 1).toISOString(),
+    billingCycleEnd: currentCycleEnd.toISOString(),
+    nextPaymentDue: nextCycleEnd.toISOString()
   };
 }
 
