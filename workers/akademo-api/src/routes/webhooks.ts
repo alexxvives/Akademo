@@ -437,10 +437,11 @@ webhooks.post('/stripe', async (c) => {
             } else {
             }
 
-            // IMPORTANT: Update ClassEnrollment status to APPROVED and paymentFrequency
+            // IMPORTANT: Update ClassEnrollment status, paymentFrequency, and save stripeSubscriptionId
+            const subscriptionId = subscription || null;
             await c.env.DB
-              .prepare('UPDATE ClassEnrollment SET status = ?, paymentFrequency = ? WHERE id = ?')
-              .bind('APPROVED', isMonthly ? 'MONTHLY' : 'ONE_TIME', enrollmentId)
+              .prepare('UPDATE ClassEnrollment SET status = ?, paymentFrequency = ?, stripeSubscriptionId = ? WHERE id = ?')
+              .bind('APPROVED', isMonthly ? 'MONTHLY' : 'ONE_TIME', subscriptionId, enrollmentId)
               .run();
 
           }
@@ -492,16 +493,13 @@ webhooks.post('/stripe', async (c) => {
         .first() as any;
 
       if (enrollment) {
-        // Calculate next billing cycle
-        const billingCycle = calculateBillingCycle('monthly');
-        
         // Add to payment history
         await c.env.DB
           .prepare(`
             INSERT INTO Payment (
               id, type, payerId, receiverId, amount, currency, status, stripePaymentId,
-              paymentMethod, classId, metadata, completedAt, nextPaymentDue, billingCycleStart, billingCycleEnd, createdAt
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ?, ?, ?, datetime('now'))
+              paymentMethod, classId, metadata, completedAt, createdAt
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
           `)
           .bind(
             crypto.randomUUID(),
@@ -520,10 +518,7 @@ webhooks.post('/stripe', async (c) => {
               payerName: `${enrollment.firstName} ${enrollment.lastName}`,
               payerEmail: enrollment.email,
               className: enrollment.className
-            }),
-            billingCycle.nextPaymentDue,
-            billingCycle.billingCycleStart,
-            billingCycle.billingCycleEnd
+            })
           )
           .run();
 

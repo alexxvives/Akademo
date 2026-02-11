@@ -102,74 +102,108 @@ app.route('/zoom-accounts', zoomAccounts);
 app.route('/zoom', zoomRoutes);
 
 // Cron trigger handler for monthly payment generation
+// Uses calculation-based approach: compares expected payments vs actual payments made
 async function handleScheduled(env: Bindings) {
+  console.log('[Cron] Monthly payment generation started');
 
   try {
-    // Find all active monthly cash/bizum enrollments that are due for payment
+    // Find all active monthly cash/bizum enrollments (exclude withdrawn/banned)
     const enrollments = await env.DB.prepare(`
       SELECT 
         e.id as enrollmentId,
         e.classId,
         e.userId,
-        e.nextPaymentDue,
+        e.enrolledAt,
+        e.paymentMethod,
         c.monthlyPrice,
         c.name as className,
+        c.startDate as classStartDate,
         c.academyId,
         u.firstName,
         u.lastName,
-        u.email
+        u.email,
+        COALESCE((
+          SELECT SUM(p.amount) FROM Payment p 
+          WHERE p.payerId = e.userId 
+            AND p.classId = e.classId 
+            AND p.status IN ('PAID', 'COMPLETED')
+        ), 0) as totalPaid,
+        COALESCE((
+          SELECT COUNT(*) FROM Payment p 
+          WHERE p.payerId = e.userId 
+            AND p.classId = e.classId 
+            AND p.status = 'PENDING'
+        ), 0) as pendingPayments
       FROM ClassEnrollment e
       JOIN Class c ON e.classId = c.id
       JOIN User u ON e.userId = u.id
       WHERE e.paymentFrequency = 'MONTHLY'
-      AND e.paymentMethod IN ('cash', 'bizum')
-      AND e.paymentStatus = 'PAID'
-      AND date(e.nextPaymentDue) <= date('now')
-      AND c.monthlyPrice IS NOT NULL
+        AND e.paymentMethod IN ('cash', 'bizum')
+        AND e.status IN ('APPROVED', 'PENDING')
+        AND c.monthlyPrice IS NOT NULL
+        AND c.monthlyPrice > 0
     `).all();
 
+    console.log(`[Cron] Found ${enrollments.results.length} monthly cash/bizum enrollments`);
 
     let created = 0;
     for (const enrollment of enrollments.results as any[]) {
       try {
-        // Create pending payment record
-        await env.DB.prepare(`
-          INSERT INTO Payment (
-            id, type, payerId, payerType, payerName, payerEmail,
-            receiverId, amount, currency, status, paymentMethod,
-            classId, description, metadata, createdAt, updatedAt
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-        `).bind(
-          crypto.randomUUID(),
-          'STUDENT_TO_ACADEMY',
-          enrollment.userId,
-          'STUDENT',
-          `${enrollment.firstName} ${enrollment.lastName}`,
-          enrollment.email,
-          enrollment.academyId,
-          enrollment.monthlyPrice,
-          'EUR',
-          'PENDING',
-          enrollment.paymentMethod,
-          enrollment.classId,
-          `Pago mensual - ${enrollment.className}`,
-          JSON.stringify({ generatedBySystem: true, dueDate: enrollment.nextPaymentDue }),
-        ).run();
+        // Calculate how many months should have been paid
+        const startDate = new Date(enrollment.classStartDate || enrollment.enrolledAt);
+        const now = new Date();
+        const monthsDiff = (now.getFullYear() - startDate.getFullYear()) * 12 
+          + (now.getMonth() - startDate.getMonth());
+        const expectedMonths = Math.max(1, monthsDiff + 1);
+        const expectedAmount = expectedMonths * enrollment.monthlyPrice;
 
-        // Update next payment due date (add 1 month)
-        await env.DB.prepare(`
-          UPDATE ClassEnrollment
-          SET nextPaymentDue = date(nextPaymentDue, '+1 month'),
-              updatedAt = datetime('now')
-          WHERE id = ?
-        `).bind(enrollment.enrollmentId).run();
+        // How many months are overdue (excluding already pending payments)
+        const paidAmount = Number(enrollment.totalPaid) || 0;
+        const pendingCount = Number(enrollment.pendingPayments) || 0;
+        const overdueAmount = expectedAmount - paidAmount - (pendingCount * enrollment.monthlyPrice);
+        const overdueMonths = Math.max(0, Math.floor(overdueAmount / enrollment.monthlyPrice));
 
-        created++;
+        if (overdueMonths <= 0) continue;
+
+        console.log(`[Cron] ${enrollment.firstName} ${enrollment.lastName} - ${enrollment.className}: ${overdueMonths} months overdue (expected ${expectedMonths} months, paid ${paidAmount}€, ${pendingCount} pending)`);
+
+        // Create one PENDING Payment per overdue month
+        for (let i = 0; i < overdueMonths; i++) {
+          const monthOffset = expectedMonths - overdueMonths + i;
+          const dueDate = new Date(startDate);
+          dueDate.setMonth(dueDate.getMonth() + monthOffset);
+
+          await env.DB.prepare(`
+            INSERT INTO Payment (
+              id, type, payerId, payerType, payerName, payerEmail,
+              receiverId, amount, currency, status, paymentMethod,
+              classId, description, metadata, createdAt, updatedAt
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+          `).bind(
+            crypto.randomUUID(),
+            'STUDENT_TO_ACADEMY',
+            enrollment.userId,
+            'STUDENT',
+            `${enrollment.firstName} ${enrollment.lastName}`,
+            enrollment.email,
+            enrollment.academyId,
+            enrollment.monthlyPrice,
+            'EUR',
+            'PENDING',
+            enrollment.paymentMethod,
+            enrollment.classId,
+            `Pago mensual - ${enrollment.className} (${dueDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })})`,
+            JSON.stringify({ generatedBySystem: true, monthOffset, dueDate: dueDate.toISOString() }),
+          ).run();
+
+          created++;
+        }
       } catch (error) {
         console.error(`[Cron] Error creating payment for enrollment ${enrollment.enrollmentId}:`, error);
       }
     }
 
+    console.log(`[Cron] Created ${created} pending payment(s)`);
   } catch (error) {
     console.error('[Cron] Error in monthly payment generation:', error);
   }
