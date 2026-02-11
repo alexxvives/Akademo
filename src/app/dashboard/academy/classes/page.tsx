@@ -630,7 +630,7 @@ export default function AcademyClassesPage() {
                     min="1"
                     value={formData.maxStudents}
                     onChange={(e) => setFormData({ ...formData, maxStudents: e.target.value })}
-                    placeholder="Ej: 30"
+                    placeholder=""
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                   <p className="text-xs text-gray-500 mt-1">Dejar vacío para sin límite</p>
@@ -1105,7 +1105,7 @@ export default function AcademyClassesPage() {
                     min="1"
                     value={formData.maxStudents}
                     onChange={(e) => setFormData({ ...formData, maxStudents: e.target.value })}
-                    placeholder="Ej: 30"
+                    placeholder=""
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                   <p className="text-xs text-gray-500 mt-1">Dejar vacío para sin límite</p>

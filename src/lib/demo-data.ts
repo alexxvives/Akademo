@@ -36,12 +36,14 @@ export const DEMO_LESSONS_PER_CLASS = {
 };
 
 // Streams (total: 5 streams)
+// NOTE: participantCount MUST be <= unique student count per class after email+classId dedup:
+//   Programación Web: ~15 unique, Matemáticas: ~28, Diseño Gráfico: ~47, Física Cuántica: ~30
 export const DEMO_STREAMS = [
-  { className: 'Programación Web', duration: 75, participantCount: 35 },    // 87.5% attendance (35/40)
-  { className: 'Matemáticas Avanzadas', duration: 50, participantCount: 22 }, // 68.75% attendance (22/32)
-  { className: 'Diseño Gráfico', duration: 120, participantCount: 16 },    // 26.67% attendance (16/60)
-  { className: 'Programación Web', duration: 45, participantCount: 28 },    // 70% attendance (28/40)
-  { className: 'Diseño Gráfico', duration: 65, participantCount: 19 },     // 31.67% attendance (19/60)
+  { className: 'Programación Web', duration: 75, participantCount: 11 },    // 73% attendance (11/15)
+  { className: 'Matemáticas Avanzadas', duration: 50, participantCount: 20 }, // 71% attendance (20/28)
+  { className: 'Diseño Gráfico', duration: 120, participantCount: 32 },    // 68% attendance (32/47)
+  { className: 'Programación Web', duration: 45, participantCount: 10 },    // 67% attendance (10/15)
+  { className: 'Diseño Gráfico', duration: 65, participantCount: 35 },     // 74% attendance (35/47)
 ];
 
 // Calculated stats (derived from above constants)
@@ -50,10 +52,8 @@ export const DEMO_STATS = {
   totalStreamHours: 5,
   totalStreamMinutes: 55,
   
-  // Average attendance: (35+22+16+28+19) / 5 streams = 24 avg per stream
-  // Against total students: 24/164 = 14.6% or against avg class size: 24/41 = 58.5%
-  // But we'll calculate properly: total attendees (120) / total capacity (5 streams × avg 41 students) = 120/205 = 58.5%
-  avgStreamAttendance: 51, // (matches user's requirement: 51%)
+  // Average attendance per stream: (11+20+32+10+35) / 5 = 21.6
+  avgStreamAttendance: 70, // Per-class avg: ~70%
   
   // Average lesson progress: 41%
   avgLessonProgress: 41,
@@ -460,7 +460,7 @@ export function generateDemoStreams(): DemoStream[] {
       title: 'Clase en Vivo - Introducción a React',
       className: 'Programación Web',
       teacherName: 'Carlos Rodríguez',
-      participantCount: 35,
+      participantCount: 11,
       startedAt: daysAgo(7), // Feb 3, 00:00
       endedAt: daysAgo(7, 1, 15), // Feb 3, 01:15 (75 min duration)
       createdAt: daysAgo(7, -1), // Feb 2, 23:00 (created 1h before)
@@ -469,8 +469,8 @@ export function generateDemoStreams(): DemoStream[] {
       recordingId: DEMO_VIDEO_GUID,
       classId: 'demo-c1',
       participantsData: JSON.stringify({
-        totalRecords: 35,
-        uniqueCount: 35,
+        totalRecords: 11,
+        uniqueCount: 11,
         participants: [
           { name: 'Juan García', email: 'juan@example.com', joinTime: daysAgo(7), duration: 4500 },
           { name: 'María López', email: 'maria@example.com', joinTime: daysAgo(7, 0, 5), duration: 4200 },
@@ -483,7 +483,7 @@ export function generateDemoStreams(): DemoStream[] {
       title: 'Repaso de Matemáticas',
       className: 'Matemáticas Avanzadas',
       teacherName: 'María García',
-      participantCount: 22,
+      participantCount: 20,
       startedAt: daysAgo(5), // Feb 5, 00:00
       endedAt: daysAgo(5, 0, 50), // Feb 5, 00:50 (50 min duration)
       createdAt: daysAgo(5, -0.5), // Feb 4, 23:30 (created 30m before)
@@ -491,14 +491,14 @@ export function generateDemoStreams(): DemoStream[] {
       duration: 50,
       recordingId: DEMO_VIDEO_GUID,
       classId: 'demo-c2',
-      participantsData: JSON.stringify({ totalRecords: 22, uniqueCount: 22, participants: [{ name: 'Ana Rodríguez', email: 'ana@example.com', duration: 3000 }] }),
+      participantsData: JSON.stringify({ totalRecords: 20, uniqueCount: 20, participants: [{ name: 'Ana Rodríguez', email: 'ana@example.com', duration: 3000 }] }),
     },
     {
       id: 'demo-stream3',
       title: 'Diseño de Logotipos',
       className: 'Diseño Gráfico',
       teacherName: 'Ana Martínez',
-      participantCount: 16,
+      participantCount: 32,
       startedAt: daysAgo(3), // Feb 7, 00:00
       endedAt: daysAgo(3, 2), // Feb 7, 02:00 (120 min duration)
       createdAt: daysAgo(3, -0.75), // Feb 6, 23:15 (created 45m before)
@@ -506,7 +506,7 @@ export function generateDemoStreams(): DemoStream[] {
       duration: 120,
       recordingId: DEMO_VIDEO_GUID,
       classId: 'demo-c3',
-      participantsData: JSON.stringify({ totalRecords: 16, uniqueCount: 16, participants: [{ name: 'Luis Fernández', email: 'luis@example.com', duration: 7200 }] }),
+      participantsData: JSON.stringify({ totalRecords: 32, uniqueCount: 32, participants: [{ name: 'Luis Fernández', email: 'luis@example.com', duration: 7200 }] }),
     },
     // Live stream - EN VIVO right now
     {
@@ -514,7 +514,7 @@ export function generateDemoStreams(): DemoStream[] {
       title: 'Clase En Vivo - Programación Avanzada',
       className: 'Programación Web',
       teacherName: 'Carlos Rodríguez',
-      participantCount: 12,
+      participantCount: 8,
       startedAt: new Date(Date.now() - 15 * 60 * 1000).toISOString(), // Started 15 minutes ago
       endedAt: '', // Empty for live stream
       createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // Created 30 minutes ago
@@ -522,14 +522,14 @@ export function generateDemoStreams(): DemoStream[] {
       duration: 0,
       recordingId: '',
       classId: 'demo-c1',
-      participantsData: JSON.stringify({ totalRecords: 12, uniqueCount: 12, participants: [{ name: 'Pedro Sánchez', email: 'pedro@example.com', duration: 900 }] }),
+      participantsData: JSON.stringify({ totalRecords: 8, uniqueCount: 8, participants: [{ name: 'Pedro Sánchez', email: 'pedro@example.com', duration: 900 }] }),
     },
     {
       id: 'demo-stream4',
       title: 'Sesión de Consultas',
       className: 'Programación Web',
       teacherName: 'Carlos Rodríguez',
-      participantCount: 28,
+      participantCount: 10,
       startedAt: daysAgo(2), // Feb 8, 00:00
       endedAt: daysAgo(2, 0, 45), // Feb 8, 00:45 (45 min duration)
       createdAt: daysAgo(2, -0.33), // Feb 7, 23:40 (created 20m before)
@@ -537,14 +537,14 @@ export function generateDemoStreams(): DemoStream[] {
       duration: 45,
       recordingId: DEMO_VIDEO_GUID,
       classId: 'demo-c1',
-      participantsData: JSON.stringify({ totalRecords: 28, uniqueCount: 28, participants: [{ name: 'Pedro Sánchez', email: 'pedro@example.com', duration: 2700 }] }),
+      participantsData: JSON.stringify({ totalRecords: 10, uniqueCount: 10, participants: [{ name: 'Pedro Sánchez', email: 'pedro@example.com', duration: 2700 }] }),
     },
     {
       id: 'demo-stream5',
       title: 'Clase Especial',
       className: 'Diseño Gráfico',
       teacherName: 'Ana Martínez',
-      participantCount: 19,
+      participantCount: 35,
       startedAt: daysAgo(1), // Feb 9, 00:00
       endedAt: daysAgo(1, 1, 5), // Feb 9, 01:05 (65 min duration)
       createdAt: daysAgo(1, -0.25), // Feb 8, 23:45 (created 15m before)
@@ -552,7 +552,7 @@ export function generateDemoStreams(): DemoStream[] {
       duration: 65,
       recordingId: DEMO_VIDEO_GUID,
       classId: 'demo-c3',
-      participantsData: JSON.stringify({ totalRecords: 31, uniqueCount: 31, participants: [{ name: 'Laura Gómez', email: 'laura@example.com', duration: 3900 }] }),
+      participantsData: JSON.stringify({ totalRecords: 35, uniqueCount: 35, participants: [{ name: 'Laura Gómez', email: 'laura@example.com', duration: 3900 }] }),
     },
   ];
 }
@@ -981,6 +981,199 @@ export interface DemoSubmission {
   gradedAt?: string;
   downloadedAt?: string; // Track if teacher has seen/downloaded submission
   version: number; // Submission version (if student resubmitted)
+}
+
+// ============================================
+// SHARED DEMO DATA: Lesson Ratings for Dashboard Charts
+// Used by BOTH academy and teacher dashboards
+// ============================================
+export function generateDemoLessonRatings() {
+  const lessonsData = [
+    // Programación Web (demo-c1) - varied ratings
+    { lessonId: 'demo-l1', lessonTitle: 'Introducción a React', className: 'Programación Web', classId: 'demo-c1', averageRating: 4.8, ratingCount: 25 },
+    { lessonId: 'demo-l2', lessonTitle: 'Variables y Tipos', className: 'Programación Web', classId: 'demo-c1', averageRating: 3.5, ratingCount: 23 },
+    { lessonId: 'demo-l3', lessonTitle: 'Funciones y Scope', className: 'Programación Web', classId: 'demo-c1', averageRating: 4.7, ratingCount: 22 },
+    { lessonId: 'demo-l4', lessonTitle: 'Arrays y Objetos', className: 'Programación Web', classId: 'demo-c1', averageRating: 2.1, ratingCount: 21 },
+    { lessonId: 'demo-l5', lessonTitle: 'Programación Asíncrona', className: 'Programación Web', classId: 'demo-c1', averageRating: 5.0, ratingCount: 19 },
+    { lessonId: 'demo-l6', lessonTitle: 'React Hooks', className: 'Programación Web', classId: 'demo-c1', averageRating: 4.2, ratingCount: 18 },
+    // Matemáticas (demo-c2) - varied ratings
+    { lessonId: 'demo-l7', lessonTitle: 'Límites y Continuidad', className: 'Matemáticas Avanzadas', classId: 'demo-c2', averageRating: 4.3, ratingCount: 18 },
+    { lessonId: 'demo-l8', lessonTitle: 'Derivadas', className: 'Matemáticas Avanzadas', classId: 'demo-c2', averageRating: 1.8, ratingCount: 17 },
+    { lessonId: 'demo-l9', lessonTitle: 'Integrales Definidas', className: 'Matemáticas Avanzadas', classId: 'demo-c2', averageRating: 4.9, ratingCount: 16 },
+    { lessonId: 'demo-l10', lessonTitle: 'Series y Sucesiones', className: 'Matemáticas Avanzadas', classId: 'demo-c2', averageRating: 2.4, ratingCount: 15 },
+    // Diseño Gráfico (demo-c3) - varied ratings
+    { lessonId: 'demo-l11', lessonTitle: 'Principios de Diseño', className: 'Diseño Gráfico', classId: 'demo-c3', averageRating: 4.9, ratingCount: 20 },
+    { lessonId: 'demo-l12', lessonTitle: 'Photoshop Básico', className: 'Diseño Gráfico', classId: 'demo-c3', averageRating: 3.2, ratingCount: 19 },
+    { lessonId: 'demo-l13', lessonTitle: 'Tipografía', className: 'Diseño Gráfico', classId: 'demo-c3', averageRating: 5.0, ratingCount: 18 },
+    { lessonId: 'demo-l14', lessonTitle: 'Teoría del Color', className: 'Diseño Gráfico', classId: 'demo-c3', averageRating: 2.7, ratingCount: 17 },
+    // Física Cuántica (demo-c4) - varied ratings
+    { lessonId: 'demo-l15', lessonTitle: 'Mecánica Cuántica', className: 'Física Cuántica', classId: 'demo-c4', averageRating: 4.5, ratingCount: 14 },
+    { lessonId: 'demo-l16', lessonTitle: 'Partículas y Ondas', className: 'Física Cuántica', classId: 'demo-c4', averageRating: 1.9, ratingCount: 13 },
+    { lessonId: 'demo-l17', lessonTitle: 'Dualidad Onda-Partícula', className: 'Física Cuántica', classId: 'demo-c4', averageRating: 3.8, ratingCount: 12 },
+  ];
+
+  return {
+    overall: {
+      averageRating: 3.8,
+      totalRatings: 250,
+      ratedLessons: 17,
+    },
+    lessons: lessonsData,
+  };
+}
+
+// ============================================
+// SHARED DEMO DATA: Feedback/Valoraciones Topics Structure
+// Used by BOTH academy and teacher feedback pages
+// ============================================
+export interface DemoFeedbackTopic {
+  id: string;
+  name: string;
+  lessons: { id: string; title: string; ratingCount: number; startIdx: number }[];
+}
+
+export function generateDemoFeedbackData(): { classFeedback: Array<{ id: string; name: string; teacherName: string; totalRatings: number; averageRating: number; topics: Array<{ id: string; name: string; totalRatings: number; averageRating: number; lessons: Array<{ id: string; title: string; totalRatings: number; averageRating: number; ratings: Array<{ id: string; rating: number; studentName: string; comment: string | null; createdAt: string; isRead: boolean }> }> }> }> } {
+  const demoClasses = generateDemoClasses();
+  const demoRatings = generateDemoRatings();
+
+  let currentIdx = 0;
+
+  const topicsByClass: Record<string, DemoFeedbackTopic[]> = {
+    'demo-c1': [
+      { id: 'demo-c1-t1', name: 'Fundamentos', lessons: [
+        { id: 'demo-l1', title: 'Introducción a React', ratingCount: 5, startIdx: currentIdx },
+        { id: 'demo-l2', title: 'Variables y Tipos', ratingCount: 0, startIdx: -1 },
+      ]},
+      { id: 'demo-c1-t2', name: 'Hooks y Estado', lessons: [
+        { id: 'demo-l3', title: 'useState y useEffect', ratingCount: 3, startIdx: currentIdx += 5 },
+        { id: 'demo-l4', title: 'Context API', ratingCount: 0, startIdx: -1 },
+      ]},
+      { id: 'demo-c1-t3', name: 'Routing', lessons: [
+        { id: 'demo-l5', title: 'React Router', ratingCount: 0, startIdx: -1 },
+        { id: 'demo-l6', title: 'Navegación Avanzada', ratingCount: 0, startIdx: -1 },
+      ]},
+      { id: 'demo-c1-sin-tema', name: 'Sin tema', lessons: [
+        { id: 'demo-l1-st', title: 'Proyecto Final', ratingCount: 2, startIdx: currentIdx += 3 },
+      ]},
+    ],
+    'demo-c2': [
+      { id: 'demo-c2-t1', name: 'Cálculo Diferencial', lessons: [
+        { id: 'demo-l7', title: 'Límites', ratingCount: 3, startIdx: currentIdx += 2 },
+        { id: 'demo-l8', title: 'Continuidad', ratingCount: 0, startIdx: -1 },
+        { id: 'demo-l9', title: 'Derivadas', ratingCount: 3, startIdx: currentIdx += 3 },
+      ]},
+      { id: 'demo-c2-t2', name: 'Cálculo Integral', lessons: [
+        { id: 'demo-l10', title: 'Integrales Definidas', ratingCount: 0, startIdx: -1 },
+        { id: 'demo-l11', title: 'Integrales Indefinidas', ratingCount: 3, startIdx: currentIdx += 3 },
+      ]},
+      { id: 'demo-c2-t3', name: 'Series', lessons: [
+        { id: 'demo-l12', title: 'Sucesiones', ratingCount: 0, startIdx: -1 },
+        { id: 'demo-l13', title: 'Series Convergentes', ratingCount: 0, startIdx: -1 },
+      ]},
+      { id: 'demo-c2-t4', name: 'Aplicaciones', lessons: [
+        { id: 'demo-l14', title: 'Optimización', ratingCount: 0, startIdx: -1 },
+      ]},
+      { id: 'demo-c2-sin-tema', name: 'Sin tema', lessons: [
+        { id: 'demo-l7-st', title: 'Repaso General', ratingCount: 0, startIdx: -1 },
+      ]},
+    ],
+    'demo-c3': [
+      { id: 'demo-c3-t1', name: 'Teoría del Diseño', lessons: [
+        { id: 'demo-l15', title: 'Principios de Diseño', ratingCount: 4, startIdx: currentIdx += 3 },
+        { id: 'demo-l16', title: 'Composición', ratingCount: 0, startIdx: -1 },
+      ]},
+      { id: 'demo-c3-t2', name: 'Herramientas', lessons: [
+        { id: 'demo-l17', title: 'Photoshop Básico', ratingCount: 4, startIdx: currentIdx += 4 },
+        { id: 'demo-l18', title: 'Illustrator', ratingCount: 0, startIdx: -1 },
+      ]},
+      { id: 'demo-c3-t3', name: 'Tipografía y Color', lessons: [
+        { id: 'demo-l19', title: 'Tipografía', ratingCount: 4, startIdx: currentIdx += 4 },
+        { id: 'demo-l20', title: 'Teoría del Color', ratingCount: 0, startIdx: -1 },
+        { id: 'demo-l21', title: 'Paletas Cromáticas', ratingCount: 0, startIdx: -1 },
+      ]},
+      { id: 'demo-c3-sin-tema', name: 'Sin tema', lessons: [
+        { id: 'demo-l15-st', title: 'Ejercicio Libre', ratingCount: 0, startIdx: -1 },
+      ]},
+    ],
+    'demo-c4': [
+      { id: 'demo-c4-t1', name: 'Fundamentos Cuánticos', lessons: [
+        { id: 'demo-l22', title: 'Mecánica Cuántica Intro', ratingCount: 4, startIdx: currentIdx += 4 },
+        { id: 'demo-l23', title: 'Función de Onda', ratingCount: 0, startIdx: -1 },
+      ]},
+      { id: 'demo-c4-t2', name: 'Principios', lessons: [
+        { id: 'demo-l24', title: 'Dualidad Onda-Partícula', ratingCount: 0, startIdx: -1 },
+        { id: 'demo-l25', title: 'Principio de Incertidumbre', ratingCount: 0, startIdx: -1 },
+      ]},
+      { id: 'demo-c4-t3', name: 'Aplicaciones', lessons: [
+        { id: 'demo-l26', title: 'Computación Cuántica', ratingCount: 0, startIdx: -1 },
+      ]},
+      { id: 'demo-c4-sin-tema', name: 'Sin tema', lessons: [
+        { id: 'demo-l22-st', title: 'Laboratorio Virtual', ratingCount: 0, startIdx: -1 },
+      ]},
+    ],
+  };
+
+  const classFeedback = demoClasses.map(c => {
+    const classTopics = topicsByClass[c.id] || [];
+
+    let totalRatings = 0;
+    let totalScore = 0;
+
+    const topics = classTopics.map(topic => {
+      const lessonsResult = topic.lessons.map(lesson => {
+        const lessonRatings = lesson.ratingCount > 0 && lesson.startIdx >= 0
+          ? demoRatings.slice(lesson.startIdx, lesson.startIdx + lesson.ratingCount).map((r, ri) => {
+              totalRatings++;
+              totalScore += r.rating;
+              return {
+                id: `demo-rating-${lesson.id}-${ri}`,
+                rating: r.rating,
+                studentName: r.studentName,
+                comment: r.comment,
+                createdAt: r.createdAt,
+                isRead: r.viewed,
+              };
+            })
+          : [];
+        
+        const avg = lessonRatings.length > 0
+          ? lessonRatings.reduce((sum, lr) => sum + lr.rating, 0) / lessonRatings.length
+          : 0;
+
+        return {
+          id: lesson.id,
+          title: lesson.title,
+          totalRatings: lessonRatings.length,
+          averageRating: +avg.toFixed(1),
+          ratings: lessonRatings,
+        };
+      });
+
+      // Calculate topic-level aggregations
+      const topicLessonsWithRatings = lessonsResult.filter(l => l.totalRatings > 0);
+      const topicTotalRatings = topicLessonsWithRatings.reduce((sum, l) => sum + l.totalRatings, 0);
+      const topicTotalScore = topicLessonsWithRatings.reduce((sum, l) => sum + (l.averageRating * l.totalRatings), 0);
+
+      return {
+        id: topic.id,
+        name: topic.name,
+        totalRatings: topicTotalRatings,
+        averageRating: topicTotalRatings > 0 ? +(topicTotalScore / topicTotalRatings).toFixed(1) : 0,
+        lessons: lessonsResult,
+      };
+    });
+
+    return {
+      id: c.id,
+      name: c.name,
+      teacherName: c.teacherName,
+      totalRatings,
+      averageRating: totalRatings > 0 ? +(totalScore / totalRatings).toFixed(1) : 0,
+      topics,
+    };
+  });
+
+  return { classFeedback };
 }
 
 export function generateDemoAssignments(): DemoAssignment[] {

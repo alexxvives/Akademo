@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiClient } from '@/lib/api-client';
+import { generateDemoClasses, generateDemoStudents, generateDemoLessonRatings, generateDemoStreams, generateDemoStats } from '@/lib/demo-data';
 
 export interface Academy {
   id: string;
@@ -92,6 +93,84 @@ export function useTeacherDashboard() {
 
   const loadData = useCallback(async () => {
     try {
+      // Check if teacher is in a demo (NOT PAID) academy
+      let isDemoAcademy = false;
+      try {
+        const academyRes = await apiClient('/teacher/academy');
+        const academyResult = await academyRes.json();
+        const status = academyResult.data?.academy?.paymentStatus || 'PAID';
+        if (status === 'NOT PAID') {
+          isDemoAcademy = true;
+          const demoName = academyResult.data?.academy?.name || 'Academia Demo';
+          setAcademyName(demoName);
+        }
+      } catch { /* continue with normal load */ }
+
+      if (isDemoAcademy) {
+        // Use shared demo data (same source as academy dashboard)
+        const demoClasses = generateDemoClasses();
+        const demoStudentsRaw = generateDemoStudents();
+        const demoRatings = generateDemoLessonRatings();
+        const demoStreams = generateDemoStreams();
+        const demoStats = generateDemoStats();
+
+        setMemberships([{ id: 'demo-m1', status: 'APPROVED', academyName: 'Academia Demo', academyDescription: 'Academia de demostración', requestedAt: new Date().toISOString() }]);
+        setAvailableAcademies([]);
+        setClasses(demoClasses.map(c => ({
+          id: c.id,
+          name: c.name,
+          slug: c.name.toLowerCase().replace(/\s+/g, '-'),
+          description: c.description || null,
+          academyName: 'Academia Demo',
+          enrollmentCount: c.studentCount || 0,
+        })));
+
+        // Map demo students to EnrolledStudent format (same mapping as academy)
+        const classNameToId: Record<string, string> = {
+          'Programación Web': 'demo-c1',
+          'Matemáticas Avanzadas': 'demo-c2',
+          'Física Cuántica': 'demo-c4',
+          'Diseño Gráfico': 'demo-c3',
+        };
+        const seen = new Set<string>();
+        const mappedStudents: EnrolledStudent[] = demoStudentsRaw
+          .map(s => ({
+            id: s.id,
+            name: `${s.firstName} ${s.lastName}`,
+            email: s.email,
+            classId: classNameToId[s.className] || 'demo-c1',
+            className: s.className,
+            lessonsCompleted: Math.floor(Math.random() * 5) + 2,
+            totalLessons: 10,
+            lastActive: s.lastLoginAt || null,
+          }))
+          .filter(s => {
+            const key = `${s.email}__${s.classId}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+        setEnrolledStudents(mappedStudents);
+        setPendingEnrollments([]);
+        setRatingsData(demoRatings);
+        setRejectedCount(0);
+
+        // Stream stats from demo data
+        const streamsWithParticipants = demoStreams.filter(s => s.participantCount > 0);
+        const totalParticipants = streamsWithParticipants.reduce((sum, s) => sum + s.participantCount, 0);
+        setStreamStats({
+          total: demoStreams.length,
+          avgParticipants: streamsWithParticipants.length > 0 ? Math.round(totalParticipants / streamsWithParticipants.length) : 0,
+          thisMonth: demoStats.totalStreams,
+          totalHours: demoStats.totalStreamHours,
+          totalMinutes: 0,
+        });
+
+        setClassWatchTime({ hours: 45, minutes: 30 });
+        setLoading(false);
+        return;
+      }
+
       const [membershipsRes, academiesRes, classesRes, pendingRes, ratingsRes, rejectedRes, streamsRes, progressRes] = await Promise.all([
         apiClient('/requests/teacher'),
         apiClient('/explore/academies'),
