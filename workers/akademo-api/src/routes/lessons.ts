@@ -179,10 +179,7 @@ lessons.get('/:id', async (c) => {
       ];
       
       const demoLesson = demoLessons.find(l => l.id === lessonId);
-      if (!demoLesson) {
-        return c.json(errorResponse('Demo lesson not found'), 404);
-      }
-
+      if (demoLesson) {
       return c.json({
         success: true,
         data: {
@@ -210,6 +207,8 @@ lessons.get('/:id', async (c) => {
           documents: [],
         },
       });
+      }
+      // Demo ID not in hardcoded list — fall through to DB lookup
     }
 
     // Get lesson with videos and documents

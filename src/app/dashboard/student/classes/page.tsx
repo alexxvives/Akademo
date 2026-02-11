@@ -123,8 +123,6 @@ export default function StudentClassesPage() {
     // First check if document signed
     if (!classItem.documentSigned) {
       e.preventDefault();
-      // Demo: Don't allow signing for physics class
-      if (classItem.id === 'demo-class-physics') return;
       setSigningClass(classItem);
       return;
     }
