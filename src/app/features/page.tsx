@@ -10,27 +10,33 @@ const t = {
   es: {
     nav: { features: 'Características', pricing: 'Precios', login: 'Iniciar Sesión', cta: 'Empieza Gratis' },
     hero: {
-      badge: 'Plataforma Exclusiva para Academias',
-      title1: 'Deja de perder dinero.',
-      title2: 'Protege tu academia con tecnología.',
-      subtitle: 'La infraestructura que tu academia necesita para proteger su contenido, prevenir cuentas compartidas y gestionar todo desde un solo lugar.',
+      title1: 'Deja de adivinar.',
+      title2: 'Protege tu academia',
+      title3: 'con tecnología.',
+      subtitle: 'Tu departamento de gestión académica que decide, protege y optimiza. Previene la piratería antes de que ocurra. Gestiona toda tu academia en minutos.',
       cta: 'Empieza Gratis',
-      cta2: 'Ver Precios',
-      tags: ['Sin tarjeta de crédito', 'Gratis para empezar', 'Cancela cuando quieras'],
+      perfectFor: 'Perfecto para:',
+      audiences: [
+        'Academias de formación online que quieren escalar',
+        'Centros educativos que buscan protección con tecnología',
+        'Fundadores que quieren claridad sin costes de desarrollo',
+        'Academias que retienen estudiantes de forma rentable',
+      ],
+      dashboardLive: 'Live',
     },
     problem: {
       label: 'EL PROBLEMA',
       title1: 'La educación online está',
       titleHighlight: 'rota',
       title2: 'para las academias',
-      subtitle: 'Mientras las grandes plataformas tienen equipos enteros de seguridad, tú luchas solo contra la piratería de tu contenido.',
+      subtitle: 'Mientras las grandes plataformas tienen equipos enteros de seguridad, tú luchas solo contra la piratería.',
       stats: [
-        { value: '€5,000+', label: 'Perdidos al año', desc: 'por cuentas compartidas entre estudiantes que no pagan.' },
-        { value: '40+', label: 'Horas al mes', desc: 'gestionando estudiantes, pagos y contenido en hojas de cálculo.' },
-        { value: '73%', label: 'De academias', desc: 'no saben quién comparte sus vídeos ni cómo detenerlo.' },
+        { value: '€5,000+', title: 'Malgastados en piratería', desc: 'La academia típica pierde miles antes de encontrar una solución. Básicamente estás apostando con tu contenido.' },
+        { value: '40+', unit: 'horas', title: 'Perdidas cada mes', desc: 'Gestionando estudiantes, persiguiendo pagos, subiendo contenido. Tiempo que podrías dedicar a enseñar.' },
+        { value: '87%', title: 'Se sienten desbordados', desc: 'Hojas de cálculo, plataformas separadas, opciones infinitas. La mayoría no sabe si lo está haciendo bien.' },
       ],
       painPoints: [
-        'Contenido descargado y revendido',
+        'Rendimiento de contenido en declive',
         'Costes de adquisición cada vez mayores',
         'Competidores usando tu propio material',
       ],
@@ -61,14 +67,14 @@ const t = {
       titleAfter: 'Después',
       title2: 'de AKADEMO',
       subtitle: 'Deja de conformarte con métodos obsoletos. Mira por qué las academias están cambiando.',
-      headers: ['Funcionalidad', 'Sin AKADEMO', 'Con AKADEMO'],
+      headers: ['Funcionalidad', 'Sin AKADEMO', 'Con AKADEMO', 'Mejora'],
       rows: [
-        ['Cuentas compartidas', 'Sin control, pierdes dinero', 'Bloqueadas automáticamente'],
-        ['Protección de contenido', 'Descargas y filtraciones', 'Streaming seguro + marca de agua'],
-        ['Gestión de estudiantes', 'Excel y correos manuales', 'Dashboard centralizado'],
-        ['Control de pagos', 'Perseguir uno a uno', 'Acceso automático por pago'],
-        ['Valoraciones', 'Sin feedback', 'Sistema por lección y tema'],
-        ['Clases en directo', 'Zoom sin protección', 'Integrado con grabación protegida'],
+        ['Protección de contenido', '4-6 horas configurando', 'Protegido al instante', '50x más rápido'],
+        ['Control de piratería', 'Contratar vigilante (+€500)', 'IA detecta al instante', 'Gratis'],
+        ['Gestión de pagos', 'Manual, semanas de retraso', 'Automatizado, tiempo real', 'Siempre al día'],
+        ['Análisis de mercado', 'Agencias caras', 'Análisis IA integrado', 'Incluido'],
+        ['Multi-plataforma', 'Gestionar cada una por separado', 'Un panel unificado', '3x eficiencia'],
+        ['Seguimiento', 'Hojas de cálculo', 'Insights IA en tiempo real', '24/7 monitoreo'],
       ],
       cta: 'Empieza a transformar tu academia',
     },
@@ -110,7 +116,7 @@ const t = {
     footer: {
       tagline: 'Plataforma de protección y gestión para academias online que quieren proteger su contenido y crecer.',
       rights: '© 2025 AKADEMO. Todos los derechos reservados.',
-      product: 'Producto', resources: 'Recursos', company: 'Compañía', legal: 'Legal',
+      product: 'Producto', company: 'Compañía', legal: 'Legal',
       featuresLink: 'Características', pricingLink: 'Precios',
       contactLink: 'Contacto', privacyLink: 'Privacidad', termsLink: 'Términos',
     },
@@ -118,13 +124,19 @@ const t = {
   en: {
     nav: { features: 'Features', pricing: 'Pricing', login: 'Login', cta: 'Start Free' },
     hero: {
-      badge: 'Exclusive Platform for Academies',
-      title1: 'Stop losing money.',
-      title2: 'Protect your academy with technology.',
-      subtitle: 'The infrastructure your academy needs to protect content, prevent account sharing, and manage everything from one place.',
+      title1: 'Stop guessing.',
+      title2: 'Protect your academy',
+      title3: 'with technology.',
+      subtitle: 'Your academy management department that decides, protects and optimizes. Prevent piracy before it happens. Manage your entire academy in minutes.',
       cta: 'Start Free',
-      cta2: 'See Pricing',
-      tags: ['No credit card required', 'Free to start', 'Cancel anytime'],
+      perfectFor: 'Perfect for:',
+      audiences: [
+        'Online training academies looking to scale',
+        'Educational centers seeking tech-powered protection',
+        'Founders who want clarity without development costs',
+        'Academies retaining students profitably',
+      ],
+      dashboardLive: 'Live',
     },
     problem: {
       label: 'THE PROBLEM',
@@ -133,12 +145,12 @@ const t = {
       title2: 'for academies',
       subtitle: 'While big platforms have entire security teams, you\'re fighting content piracy alone.',
       stats: [
-        { value: '€5,000+', label: 'Lost per year', desc: 'from shared accounts among students who don\'t pay.' },
-        { value: '40+', label: 'Hours per month', desc: 'managing students, payments and content in spreadsheets.' },
-        { value: '73%', label: 'Of academies', desc: 'don\'t know who shares their videos or how to stop it.' },
+        { value: '€5,000+', title: 'Wasted on piracy', desc: 'The average academy burns through thousands before finding what works. You\'re basically gambling with your content.' },
+        { value: '40+', unit: 'hours', title: 'Lost every month', desc: 'Managing students, chasing payments, uploading content. Time you could spend actually teaching.' },
+        { value: '87%', title: 'Feel overwhelmed', desc: 'Spreadsheets, separate platforms, endless options. Most founders have no idea if they\'re doing it right.' },
       ],
       painPoints: [
-        'Content downloaded and resold',
+        'Declining content performance',
         'Rising acquisition costs',
         'Competitors using your own material',
       ],
@@ -169,14 +181,14 @@ const t = {
       titleAfter: 'After',
       title2: 'AKADEMO',
       subtitle: 'Stop settling for outdated methods. See why academies are switching.',
-      headers: ['Feature', 'Without AKADEMO', 'With AKADEMO'],
+      headers: ['Feature', 'Without AKADEMO', 'With AKADEMO', 'Improvement'],
       rows: [
-        ['Account sharing', 'No control, losing money', 'Automatically blocked'],
-        ['Content protection', 'Downloads and leaks', 'Secure streaming + watermark'],
-        ['Student management', 'Excel and manual emails', 'Centralized dashboard'],
-        ['Payment control', 'Chasing one by one', 'Automatic access by payment'],
-        ['Ratings', 'No feedback', 'Per-lesson and topic system'],
-        ['Live classes', 'Unprotected Zoom', 'Integrated with protected recording'],
+        ['Content Protection', '4-6 hours configuring', 'Protected instantly', '50x faster'],
+        ['Piracy Control', 'Hire watchdog (+€500)', 'AI detects instantly', 'Free'],
+        ['Payment Management', 'Manual, weeks behind', 'Automated, real-time', 'Always current'],
+        ['Market Analysis', 'Expensive agencies', 'Built-in AI analysis', 'Included'],
+        ['Multi-Platform', 'Manage each separately', 'One unified dashboard', '3x efficiency'],
+        ['Tracking', 'Spreadsheets & guesswork', 'Real-time AI insights', '24/7 monitoring'],
       ],
       cta: 'Start transforming your academy',
     },
@@ -218,12 +230,29 @@ const t = {
     footer: {
       tagline: 'Protection and management platform for online academies that want to protect their content and grow.',
       rights: '© 2025 AKADEMO. All rights reserved.',
-      product: 'Product', resources: 'Resources', company: 'Company', legal: 'Legal',
+      product: 'Product', company: 'Company', legal: 'Legal',
       featuresLink: 'Features', pricingLink: 'Pricing',
       contactLink: 'Contact', privacyLink: 'Privacy', termsLink: 'Terms',
     },
   },
 };
+
+/* ── Reusable tiny SVG icons ── */
+function ChevronDown({ className = '' }: { className?: string }) {
+  return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>;
+}
+function CheckCircle({ className = '' }: { className?: string }) {
+  return <svg className={className} fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>;
+}
+function TrendDown({ className = '' }: { className?: string }) {
+  return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>;
+}
+function XMark({ className = '' }: { className?: string }) {
+  return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>;
+}
+function ArrowRight({ className = '' }: { className?: string }) {
+  return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>;
+}
 
 export default function FeaturesPage() {
   const [lang, setLang] = useState<Lang>('es');
@@ -238,9 +267,9 @@ export default function FeaturesPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white">
+    <div className="min-h-screen bg-zinc-950 text-white antialiased">
       {/* ─── NAVBAR ─── */}
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-[#0a0a0a]/90 backdrop-blur-xl border-b border-white/5' : ''}`}>
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-zinc-950/90 backdrop-blur-xl border-b border-zinc-800/50' : ''}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <Image src="/logo/AKADEMO_logo_OTHER2.svg" alt="AKADEMO" width={140} height={36} className="h-7 sm:h-8 w-auto brightness-0 invert" />
@@ -248,11 +277,11 @@ export default function FeaturesPage() {
           </Link>
           <nav className="hidden md:flex items-center gap-8">
             <Link href="/features" className="text-sm font-medium text-white">{tr.nav.features}</Link>
-            <Link href="/pricing" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">{tr.nav.pricing}</Link>
+            <Link href="/pricing" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">{tr.nav.pricing}</Link>
           </nav>
           <div className="flex items-center gap-3">
-            <Link href="/?modal=login" className="text-sm text-gray-400 hover:text-white transition-colors hidden sm:inline">{tr.nav.login}</Link>
-            <Link href="/?modal=register" className="px-4 py-2 bg-white text-black text-sm font-medium rounded-lg hover:bg-gray-200 transition-all">
+            <Link href="/?modal=login" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:inline">{tr.nav.login}</Link>
+            <Link href="/?modal=register" className="px-4 py-2 bg-white text-zinc-900 text-sm font-medium rounded-lg hover:bg-zinc-200 transition-all">
               {tr.nav.cta}
             </Link>
           </div>
@@ -268,73 +297,146 @@ export default function FeaturesPage() {
         </div>
       </header>
 
-      {/* ─── HERO ─── */}
-      <section className="relative pt-32 pb-20 sm:pt-40 sm:pb-28 px-4 sm:px-6 overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/20 via-transparent to-transparent" />
-        <div className="relative max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-400 text-xs font-medium mb-8">
-            <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-            {tr.hero.badge}
-          </div>
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] mb-6">
-            {tr.hero.title1}
-            <br />
-            <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">{tr.hero.title2}</span>
-          </h1>
-          <p className="text-base sm:text-lg text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
-            {tr.hero.subtitle}
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center mb-8">
-            <Link href="/?modal=register" className="px-8 py-3.5 bg-white text-black font-medium rounded-lg hover:bg-gray-200 transition-all text-sm sm:text-base text-center">
-              {tr.hero.cta}
-            </Link>
-            <Link href="/pricing" className="px-8 py-3.5 bg-white/5 border border-white/10 text-white font-medium rounded-lg hover:bg-white/10 transition-all text-sm sm:text-base text-center">
-              {tr.hero.cta2}
-            </Link>
-          </div>
-          <div className="flex flex-wrap justify-center gap-4">
-            {tr.hero.tags.map((tag, i) => (
-              <span key={i} className="flex items-center gap-1.5 text-xs text-gray-500">
-                <svg className="w-3.5 h-3.5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                {tag}
-              </span>
-            ))}
+      {/* ─── HERO (Growtio style: text left, dashboard image right with floating badges) ─── */}
+      <section className="relative pt-28 pb-16 sm:pt-36 sm:pb-24 px-4 sm:px-6 overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/15 via-transparent to-transparent" />
+        <div className="relative max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
+            {/* Left: Copy */}
+            <div>
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-6">
+                {tr.hero.title1}
+                <br />
+                <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">{tr.hero.title2}</span>
+                <br />
+                {tr.hero.title3}
+              </h1>
+              <p className="text-base sm:text-lg text-zinc-400 mb-8 leading-relaxed max-w-lg">
+                {tr.hero.subtitle}
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 mb-10">
+                <Link href="/?modal=register" className="px-8 py-3.5 bg-white text-zinc-900 font-medium rounded-lg hover:bg-zinc-200 transition-all text-sm sm:text-base text-center">
+                  {tr.hero.cta}
+                </Link>
+              </div>
+              {/* "Perfect for:" section — matches Growtio exactly */}
+              <div>
+                <p className="text-sm font-medium text-zinc-400 mb-3">{tr.hero.perfectFor}</p>
+                <ul className="space-y-2.5">
+                  {tr.hero.audiences.map((a, i) => (
+                    <li key={i} className="flex items-center gap-2.5 text-sm text-zinc-300">
+                      <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                      {a}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* Right: Dashboard screenshot with floating elements */}
+            <div className="relative">
+              {/* Main dashboard image */}
+              <div className="relative rounded-xl overflow-hidden border border-zinc-800 shadow-2xl shadow-emerald-900/10">
+                <Image
+                  src="/images/dashboard-screenshot.png"
+                  alt="AKADEMO Dashboard"
+                  width={800}
+                  height={500}
+                  className="w-full h-auto"
+                  priority
+                />
+                {/* "Live" badge — like Growtio */}
+                <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 bg-zinc-900/80 backdrop-blur-sm border border-zinc-700/50 rounded-full">
+                  <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                  <span className="text-xs font-medium text-zinc-300">{tr.hero.dashboardLive}</span>
+                </div>
+              </div>
+
+              {/* Floating stat card — top-left */}
+              <div className="absolute -top-4 -left-4 sm:-top-6 sm:-left-6 px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl backdrop-blur-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                    <span className="text-sm">🛡️</span>
+                  </div>
+                  <div>
+                    <div className="text-xs text-zinc-500">{lang === 'es' ? 'Protección' : 'Protection'}</div>
+                    <div className="text-sm font-bold text-emerald-400">100%</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Floating stat card — bottom-right */}
+              <div className="absolute -bottom-4 -right-4 sm:-bottom-6 sm:-right-6 px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl backdrop-blur-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                    <span className="text-sm">📊</span>
+                  </div>
+                  <div>
+                    <div className="text-xs text-zinc-500">{lang === 'es' ? 'Dashboard' : 'Dashboard'}</div>
+                    <div className="text-sm font-bold text-emerald-400">{lang === 'es' ? 'Potente' : 'Powerful'}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ─── PROBLEM SECTION ─── */}
+      {/* ─── PROBLEM SECTION (Growtio exact copy — same layout, same colors) ─── */}
       <section className="py-20 sm:py-28 px-4 sm:px-6 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-red-950/5 to-transparent" />
-        <div className="relative max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <span className="inline-block px-3 py-1 bg-red-500/10 border border-red-500/20 rounded-full text-red-400 text-xs font-semibold tracking-wider uppercase mb-6">{tr.problem.label}</span>
-            <h2 className="text-3xl sm:text-5xl font-bold tracking-tight mb-4">
-              {tr.problem.title1} <span className="text-red-400">{tr.problem.titleHighlight}</span> {tr.problem.title2}
+        <div className="max-w-6xl mx-auto">
+          {/* Label */}
+          <div className="text-center mb-6">
+            <span className="inline-block px-3 py-1 text-zinc-500 text-xs font-semibold tracking-[0.2em] uppercase">{tr.problem.label}</span>
+          </div>
+          {/* Title */}
+          <div className="text-center mb-6">
+            <h2 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight">
+              {tr.problem.title1}
+              <span className="bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent"> {tr.problem.titleHighlight} </span>
+              {tr.problem.title2}
             </h2>
-            <p className="text-gray-400 text-base sm:text-lg max-w-2xl mx-auto">{tr.problem.subtitle}</p>
           </div>
-          <div className="grid sm:grid-cols-3 gap-6 mb-12">
+          {/* Subtitle */}
+          <p className="text-center text-zinc-400 text-base sm:text-lg max-w-2xl mx-auto mb-16">
+            {tr.problem.subtitle}
+          </p>
+
+          {/* Stat cards — Growtio style: large value, title, description, with icon */}
+          <div className="grid sm:grid-cols-3 gap-6 mb-14">
             {tr.problem.stats.map((stat, i) => (
-              <div key={i} className="relative p-8 rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:border-red-500/20 transition-all group">
-                <div className="absolute top-4 right-4 w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center">
-                  <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>
+              <div key={i} className="relative p-8 rounded-2xl bg-zinc-900/50 border border-zinc-800/80 hover:border-zinc-700/80 transition-all group">
+                {/* Icon top-right */}
+                <div className="absolute top-5 right-5 w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
+                  <TrendDown className="w-5 h-5 text-red-400" />
                 </div>
-                <div className="text-4xl sm:text-5xl font-bold text-red-400 mb-2">{stat.value}</div>
-                <div className="text-sm font-semibold text-white uppercase tracking-wide mb-3">{stat.label}</div>
-                <p className="text-gray-500 text-sm leading-relaxed">{stat.desc}</p>
+                {/* Value */}
+                <div className="flex items-baseline gap-1 mb-1">
+                  <span className="text-4xl sm:text-5xl font-bold text-white">{stat.value}</span>
+                  {stat.unit && <span className="text-2xl sm:text-3xl font-bold text-white">{stat.unit}</span>}
+                </div>
+                {/* Title */}
+                <h3 className="text-base font-semibold text-white mb-3">{stat.title}</h3>
+                {/* Desc */}
+                <p className="text-zinc-500 text-sm leading-relaxed">{stat.desc}</p>
               </div>
             ))}
           </div>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
-            {tr.problem.painPoints.map((point, i) => (
-              <div key={i} className="flex items-center gap-2 px-4 py-2 bg-red-500/5 border border-red-500/10 rounded-full">
-                <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                <span className="text-sm text-gray-400">{point}</span>
-              </div>
-            ))}
+
+          {/* Pain points row + "What if" — Growtio style */}
+          <div className="flex flex-col items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              {tr.problem.painPoints.map((point, i) => (
+                <div key={i} className="flex items-center gap-2 px-4 py-2 bg-zinc-900/50 border border-zinc-800/80 rounded-full">
+                  <TrendDown className="w-4 h-4 text-red-400" />
+                  <span className="text-sm text-zinc-400">{point}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-lg font-medium bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent mt-4">
+              {tr.problem.solution}
+            </p>
           </div>
-          <p className="text-center text-lg font-medium text-emerald-400">{tr.problem.solution}</p>
         </div>
       </section>
 
@@ -343,68 +445,73 @@ export default function FeaturesPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-950/5 to-transparent" />
         <div className="relative max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <span className="inline-block px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-400 text-xs font-semibold tracking-wider uppercase mb-6">{tr.features.label}</span>
+            <span className="inline-block px-3 py-1 text-zinc-500 text-xs font-semibold tracking-[0.2em] uppercase mb-6">{tr.features.label}</span>
             <h2 className="text-3xl sm:text-5xl font-bold tracking-tight mb-4">
               {tr.features.title1} <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">{tr.features.titleHighlight}</span>
             </h2>
-            <p className="text-gray-400 text-base sm:text-lg max-w-2xl mx-auto">{tr.features.subtitle}</p>
+            <p className="text-zinc-400 text-base sm:text-lg max-w-2xl mx-auto">{tr.features.subtitle}</p>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {tr.features.list.map((f, i) => (
-              <div key={i} className="group p-6 rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:border-emerald-500/20 hover:bg-white/[0.04] transition-all duration-300">
+              <div key={i} className="group p-6 rounded-2xl bg-zinc-900/30 border border-zinc-800/80 hover:border-emerald-500/30 hover:bg-zinc-900/50 transition-all duration-300">
                 <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">{f.icon}</div>
-                <h3 className="text-lg font-semibold mb-2">{f.title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{f.desc}</p>
+                <h3 className="text-lg font-semibold mb-2 text-white">{f.title}</h3>
+                <p className="text-zinc-500 text-sm leading-relaxed">{f.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ─── BEFORE vs AFTER ─── */}
+      {/* ─── BEFORE vs AFTER (Growtio style: table with 4 columns including Improvement) ─── */}
       <section className="py-20 sm:py-28 px-4 sm:px-6">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
-            <span className="inline-block px-3 py-1 bg-white/5 border border-white/10 rounded-full text-gray-400 text-xs font-semibold tracking-wider uppercase mb-6">{tr.comparison.label}</span>
+            <span className="inline-block px-3 py-1 text-zinc-500 text-xs font-semibold tracking-[0.2em] uppercase mb-6">{tr.comparison.label}</span>
             <h2 className="text-3xl sm:text-5xl font-bold tracking-tight mb-4">
               {tr.comparison.title1} <span className="text-red-400">{tr.comparison.titleBefore}</span> {tr.comparison.titleVs} <span className="text-emerald-400">{tr.comparison.titleAfter}</span> {tr.comparison.title2}
             </h2>
-            <p className="text-gray-400 text-base sm:text-lg max-w-2xl mx-auto">{tr.comparison.subtitle}</p>
+            <p className="text-zinc-400 text-base sm:text-lg max-w-2xl mx-auto">{tr.comparison.subtitle}</p>
           </div>
-          <div className="rounded-2xl border border-white/[0.06] overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-white/[0.03]">
-                  {tr.comparison.headers.map((h, i) => (
-                    <th key={i} className={`py-4 px-5 text-left font-semibold text-xs uppercase tracking-wider ${i === 0 ? 'text-gray-300' : i === 1 ? 'text-red-400' : 'text-emerald-400'}`}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {tr.comparison.rows.map((row, i) => (
-                  <tr key={i} className="border-t border-white/[0.04] hover:bg-white/[0.02] transition-colors">
-                    <td className="py-4 px-5 font-medium text-gray-200">{row[0]}</td>
-                    <td className="py-4 px-5 text-red-400/80">
-                      <span className="flex items-center gap-2">
-                        <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                        {row[1]}
-                      </span>
-                    </td>
-                    <td className="py-4 px-5 text-emerald-400/80">
-                      <span className="flex items-center gap-2">
-                        <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                        {row[2]}
-                      </span>
-                    </td>
+          <div className="rounded-2xl border border-zinc-800/80 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[640px]">
+                <thead>
+                  <tr className="bg-zinc-900/50">
+                    {tr.comparison.headers.map((h, i) => (
+                      <th key={i} className={`py-4 px-5 text-left font-semibold text-xs uppercase tracking-wider ${
+                        i === 0 ? 'text-zinc-300' : i === 1 ? 'text-red-400' : i === 2 ? 'text-emerald-400' : 'text-zinc-400'
+                      }`}>{h}</th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {tr.comparison.rows.map((row, i) => (
+                    <tr key={i} className="border-t border-zinc-800/50 hover:bg-zinc-900/30 transition-colors">
+                      <td className="py-4 px-5 font-medium text-zinc-200">{row[0]}</td>
+                      <td className="py-4 px-5 text-red-400/80">
+                        <span className="flex items-center gap-2">
+                          <XMark className="w-4 h-4 flex-shrink-0" />
+                          {row[1]}
+                        </span>
+                      </td>
+                      <td className="py-4 px-5 text-emerald-400/80">
+                        <span className="flex items-center gap-2">
+                          <CheckCircle className="w-4 h-4 flex-shrink-0" />
+                          {row[2]}
+                        </span>
+                      </td>
+                      <td className="py-4 px-5 text-zinc-400 text-xs font-medium">{row[3]}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
           <div className="text-center mt-10">
-            <Link href="/?modal=register" className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 text-black font-medium rounded-lg hover:bg-emerald-400 transition-all text-sm">
+            <Link href="/?modal=register" className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 text-zinc-900 font-medium rounded-lg hover:bg-emerald-400 transition-all text-sm">
               {tr.comparison.cta}
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+              <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
@@ -415,49 +522,49 @@ export default function FeaturesPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-950/5 to-transparent" />
         <div className="relative max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <span className="inline-block px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-400 text-xs font-semibold tracking-wider uppercase mb-6">{tr.product.label}</span>
+            <span className="inline-block px-3 py-1 text-zinc-500 text-xs font-semibold tracking-[0.2em] uppercase mb-6">{tr.product.label}</span>
             <h2 className="text-3xl sm:text-5xl font-bold tracking-tight mb-4">
               {tr.product.title1} <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">{tr.product.titleHighlight}</span>
             </h2>
-            <p className="text-gray-400 text-base sm:text-lg max-w-2xl mx-auto">{tr.product.subtitle}</p>
+            <p className="text-zinc-400 text-base sm:text-lg max-w-2xl mx-auto">{tr.product.subtitle}</p>
           </div>
           <div className="space-y-6">
             {/* Hero card */}
             {tr.product.items.slice(0, 1).map((item, i) => (
-              <div key={i} className="grid md:grid-cols-2 gap-8 p-8 sm:p-10 rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:border-emerald-500/20 transition-all">
+              <div key={i} className="grid md:grid-cols-2 gap-8 p-8 sm:p-10 rounded-2xl bg-zinc-900/30 border border-zinc-800/80 hover:border-emerald-500/30 transition-all">
                 <div>
                   <span className="inline-block px-2.5 py-1 bg-emerald-500/10 text-emerald-400 text-xs font-medium rounded-md mb-4">{item.badge}</span>
                   <div className="text-4xl mb-4">{item.icon}</div>
                   <h3 className="text-2xl font-bold mb-3">{item.title}</h3>
-                  <p className="text-gray-400 text-sm leading-relaxed mb-6">{item.desc}</p>
+                  <p className="text-zinc-400 text-sm leading-relaxed mb-6">{item.desc}</p>
                   <ul className="space-y-2.5">
                     {item.features.map((f, fi) => (
-                      <li key={fi} className="flex items-center gap-2.5 text-sm text-gray-300">
-                        <svg className="w-4 h-4 text-emerald-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                      <li key={fi} className="flex items-center gap-2.5 text-sm text-zinc-300">
+                        <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                         {f}
                       </li>
                     ))}
                   </ul>
                 </div>
                 <div className="flex items-center justify-center">
-                  <div className="w-full max-w-sm aspect-square rounded-2xl bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 border border-white/[0.06] flex items-center justify-center">
+                  <div className="w-full max-w-sm aspect-square rounded-2xl bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 border border-zinc-800/50 flex items-center justify-center">
                     <span className="text-8xl opacity-30">{item.icon}</span>
                   </div>
                 </div>
               </div>
             ))}
-            {/* Grid of remaining cards */}
+            {/* Grid cards */}
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {tr.product.items.slice(1).map((item, i) => (
-                <div key={i} className="p-6 rounded-2xl bg-white/[0.02] border border-white/[0.06] hover:border-emerald-500/20 transition-all group">
-                  <span className="inline-block px-2 py-0.5 bg-white/5 text-gray-400 text-[10px] font-medium rounded-md mb-3 uppercase tracking-wider">{item.badge}</span>
+                <div key={i} className="p-6 rounded-2xl bg-zinc-900/30 border border-zinc-800/80 hover:border-emerald-500/30 transition-all group">
+                  <span className="inline-block px-2 py-0.5 bg-zinc-800/80 text-zinc-400 text-[10px] font-medium rounded-md mb-3 uppercase tracking-wider">{item.badge}</span>
                   <div className="text-2xl mb-3">{item.icon}</div>
-                  <h3 className="text-base font-semibold mb-2">{item.title}</h3>
-                  <p className="text-gray-500 text-xs leading-relaxed mb-4">{item.desc}</p>
+                  <h3 className="text-base font-semibold mb-2 text-white">{item.title}</h3>
+                  <p className="text-zinc-500 text-xs leading-relaxed mb-4">{item.desc}</p>
                   <ul className="space-y-1.5">
                     {item.features.slice(0, 3).map((f, fi) => (
-                      <li key={fi} className="flex items-center gap-2 text-xs text-gray-400">
-                        <svg className="w-3 h-3 text-emerald-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                      <li key={fi} className="flex items-center gap-2 text-xs text-zinc-400">
+                        <CheckCircle className="w-3 h-3 text-emerald-500 flex-shrink-0" />
                         {f}
                       </li>
                     ))}
@@ -474,32 +581,30 @@ export default function FeaturesPage() {
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">{tr.faq.title}</h2>
-            <p className="text-gray-400 text-sm sm:text-base">{tr.faq.subtitle}</p>
+            <p className="text-zinc-400 text-sm sm:text-base">{tr.faq.subtitle}</p>
           </div>
           <div className="space-y-2">
             {tr.faq.items.map((faq, i) => (
-              <div key={i} className="rounded-xl border border-white/[0.06] overflow-hidden">
+              <div key={i} className="rounded-xl border border-zinc-800/80 overflow-hidden">
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-white/[0.02] transition-colors"
+                  className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-zinc-900/30 transition-colors"
                 >
-                  <span className="font-medium text-gray-200 text-sm pr-4">{faq.q}</span>
-                  <svg className={`w-5 h-5 text-gray-500 flex-shrink-0 transition-transform duration-200 ${openFaq === i ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
+                  <span className="font-medium text-zinc-200 text-sm pr-4">{faq.q}</span>
+                  <ChevronDown className={`w-5 h-5 text-zinc-500 flex-shrink-0 transition-transform duration-200 ${openFaq === i ? 'rotate-180' : ''}`} />
                 </button>
                 {openFaq === i && (
-                  <div className="px-5 pb-4 text-gray-400 text-sm leading-relaxed border-t border-white/[0.04]">
+                  <div className="px-5 pb-4 text-zinc-400 text-sm leading-relaxed border-t border-zinc-800/50">
                     <div className="pt-3">{faq.a}</div>
                   </div>
                 )}
               </div>
             ))}
           </div>
-          <div className="mt-10 text-center p-6 rounded-2xl bg-white/[0.02] border border-white/[0.06]">
-            <h3 className="font-semibold text-gray-200 mb-1">{tr.faq.contact.title}</h3>
-            <p className="text-gray-500 text-sm mb-4">{tr.faq.contact.subtitle}</p>
-            <a href="mailto:info@akademo.es" className="inline-block px-5 py-2.5 bg-white/5 border border-white/10 text-white text-sm font-medium rounded-lg hover:bg-white/10 transition-all">
+          <div className="mt-10 text-center p-6 rounded-2xl bg-zinc-900/30 border border-zinc-800/80">
+            <h3 className="font-semibold text-zinc-200 mb-1">{tr.faq.contact.title}</h3>
+            <p className="text-zinc-500 text-sm mb-4">{tr.faq.contact.subtitle}</p>
+            <a href="mailto:info@akademo.es" className="inline-block px-5 py-2.5 bg-zinc-800 border border-zinc-700 text-white text-sm font-medium rounded-lg hover:bg-zinc-700 transition-all">
               {tr.faq.contact.cta}
             </a>
           </div>
@@ -508,19 +613,19 @@ export default function FeaturesPage() {
 
       {/* ─── CTA ─── */}
       <section className="py-20 sm:py-28 px-4 sm:px-6 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-emerald-900/20 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-emerald-900/15 via-transparent to-transparent" />
         <div className="relative max-w-3xl mx-auto text-center">
           <h2 className="text-3xl sm:text-5xl font-bold tracking-tight mb-4">
             {tr.cta.title1} <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">{tr.cta.titleHighlight}</span>{tr.cta.title2}
           </h2>
-          <p className="text-gray-400 text-base sm:text-lg mb-8 max-w-xl mx-auto">{tr.cta.subtitle}</p>
-          <Link href="/?modal=register" className="inline-block px-8 py-3.5 bg-white text-black font-medium rounded-lg hover:bg-gray-200 transition-all text-sm sm:text-base mb-8">
+          <p className="text-zinc-400 text-base sm:text-lg mb-8 max-w-xl mx-auto">{tr.cta.subtitle}</p>
+          <Link href="/?modal=register" className="inline-block px-8 py-3.5 bg-white text-zinc-900 font-medium rounded-lg hover:bg-zinc-200 transition-all text-sm sm:text-base mb-8">
             {tr.cta.button}
           </Link>
           <div className="flex flex-wrap justify-center gap-3">
             {tr.cta.tags.map((tag, i) => (
-              <span key={i} className="flex items-center gap-1.5 text-xs text-gray-500">
-                <svg className="w-3.5 h-3.5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+              <span key={i} className="flex items-center gap-1.5 text-xs text-zinc-500">
+                <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
                 {tag}
               </span>
             ))}
@@ -529,7 +634,7 @@ export default function FeaturesPage() {
       </section>
 
       {/* ─── FOOTER ─── */}
-      <footer className="border-t border-white/[0.06] py-16 px-4 sm:px-6">
+      <footer className="border-t border-zinc-800/80 py-16 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
           <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-10 mb-12">
             <div className="lg:col-span-2">
@@ -537,35 +642,35 @@ export default function FeaturesPage() {
                 <Image src="/logo/AKADEMO_logo_OTHER2.svg" alt="AKADEMO" width={100} height={28} className="h-6 w-auto brightness-0 invert" />
                 <span className="font-bold text-lg">AKADEMO</span>
               </div>
-              <p className="text-gray-500 text-sm leading-relaxed max-w-xs">{tr.footer.tagline}</p>
+              <p className="text-zinc-500 text-sm leading-relaxed max-w-xs">{tr.footer.tagline}</p>
             </div>
             <div>
-              <h4 className="font-semibold text-sm text-gray-200 mb-4">{tr.footer.product}</h4>
+              <h4 className="font-semibold text-sm text-zinc-200 mb-4">{tr.footer.product}</h4>
               <ul className="space-y-2.5">
-                <li><Link href="/features" className="text-gray-500 hover:text-white text-sm transition-colors">{tr.footer.featuresLink}</Link></li>
-                <li><Link href="/pricing" className="text-gray-500 hover:text-white text-sm transition-colors">{tr.footer.pricingLink}</Link></li>
+                <li><Link href="/features" className="text-zinc-500 hover:text-white text-sm transition-colors">{tr.footer.featuresLink}</Link></li>
+                <li><Link href="/pricing" className="text-zinc-500 hover:text-white text-sm transition-colors">{tr.footer.pricingLink}</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold text-sm text-gray-200 mb-4">{tr.footer.company}</h4>
+              <h4 className="font-semibold text-sm text-zinc-200 mb-4">{tr.footer.company}</h4>
               <ul className="space-y-2.5">
-                <li><a href="mailto:info@akademo.es" className="text-gray-500 hover:text-white text-sm transition-colors">{tr.footer.contactLink}</a></li>
+                <li><a href="mailto:info@akademo.es" className="text-zinc-500 hover:text-white text-sm transition-colors">{tr.footer.contactLink}</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold text-sm text-gray-200 mb-4">{tr.footer.legal}</h4>
+              <h4 className="font-semibold text-sm text-zinc-200 mb-4">{tr.footer.legal}</h4>
               <ul className="space-y-2.5">
-                <li><a href="#" className="text-gray-500 hover:text-white text-sm transition-colors">{tr.footer.privacyLink}</a></li>
-                <li><a href="#" className="text-gray-500 hover:text-white text-sm transition-colors">{tr.footer.termsLink}</a></li>
+                <li><a href="#" className="text-zinc-500 hover:text-white text-sm transition-colors">{tr.footer.privacyLink}</a></li>
+                <li><a href="#" className="text-zinc-500 hover:text-white text-sm transition-colors">{tr.footer.termsLink}</a></li>
               </ul>
             </div>
           </div>
-          <div className="border-t border-white/[0.06] pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <p className="text-gray-600 text-xs">{tr.footer.rights}</p>
+          <div className="border-t border-zinc-800/80 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <p className="text-zinc-600 text-xs">{tr.footer.rights}</p>
             <div className="flex gap-4">
-              <Link href="/features" className="text-gray-600 hover:text-gray-400 text-xs transition-colors">{tr.footer.featuresLink}</Link>
-              <Link href="/pricing" className="text-gray-600 hover:text-gray-400 text-xs transition-colors">{tr.footer.pricingLink}</Link>
-              <a href="mailto:info@akademo.es" className="text-gray-600 hover:text-gray-400 text-xs transition-colors">{tr.footer.contactLink}</a>
+              <Link href="/features" className="text-zinc-600 hover:text-zinc-400 text-xs transition-colors">{tr.footer.featuresLink}</Link>
+              <Link href="/pricing" className="text-zinc-600 hover:text-zinc-400 text-xs transition-colors">{tr.footer.pricingLink}</Link>
+              <a href="mailto:info@akademo.es" className="text-zinc-600 hover:text-zinc-400 text-xs transition-colors">{tr.footer.contactLink}</a>
             </div>
           </div>
         </div>

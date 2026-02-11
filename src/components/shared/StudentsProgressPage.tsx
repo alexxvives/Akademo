@@ -375,7 +375,36 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
 
   const loadAcademyName = useCallback(async () => {
     try {
-      const endpoint = role === 'ADMIN' ? '/admin/academies' : role === 'TEACHER' ? '/requests/teacher' : '/academies';
+      // For TEACHER role, check /teacher/academy for demo mode
+      if (role === 'TEACHER') {
+        const [teacherAcademyRes, userRes] = await Promise.all([
+          apiClient('/teacher/academy'),
+          apiClient('/auth/me')
+        ]);
+        const userResult = await userRes.json();
+        if (userResult.success && userResult.data?.email) {
+          setUserEmail(userResult.data.email);
+        }
+        if (teacherAcademyRes.ok) {
+          const teacherAcademyData = await teacherAcademyRes.json();
+          const academy = teacherAcademyData.data?.academy;
+          if (academy) {
+            setAcademyName(academy.name || '');
+            const status = academy.paymentStatus || 'PAID';
+            setPaymentStatus(status);
+            if (status === 'NOT PAID') {
+              setStudents(buildDemoStudentProgress());
+              setClasses(DEMO_CLASSES);
+              setLoading(false);
+              return;
+            }
+          }
+        }
+        await loadProgress();
+        return;
+      }
+
+      const endpoint = role === 'ADMIN' ? '/admin/academies' : '/academies';
       const [res, userRes] = await Promise.all([
         apiClient(endpoint),
         apiClient('/auth/me')
@@ -388,14 +417,8 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
         setUserEmail(userResult.data.email);
       }
       
-      if (Array.isArray(result)) {
-        // Teacher endpoint returns array directly
-        if (result.length > 0) {
-          setAcademyName(result[0].academyName || '');
-        }
-        await loadProgress();
-      } else if (result.success && Array.isArray(result.data) && result.data.length > 0) {
-        // Academy endpoint returns { success, data }
+      if (result.success && Array.isArray(result.data) && result.data.length > 0) {
+        // Academy/Admin endpoint returns { success, data }
         const academy = result.data[0];
         setAcademyName(academy.name || '');
         const status = academy.paymentStatus || 'PAID';
@@ -421,8 +444,8 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
       }
     } catch (error) {
       console.error('Failed to load academy name:', error);
-      // On error, show demo data for academy role
-      if (role === 'ACADEMY') {
+      // On error, show demo data for academy/teacher role
+      if (role === 'ACADEMY' || role === 'TEACHER') {
         setStudents(buildDemoStudentProgress());
         setClasses(DEMO_CLASSES);
       }
