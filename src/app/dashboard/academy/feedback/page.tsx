@@ -122,7 +122,7 @@ export default function AcademyFeedbackPage() {
                 id: 'demo-c1-t2',
                 name: 'Hooks y Estado',
                 lessons: [
-                  { id: 'demo-l3', title: 'useState y useEffect', ratingCount: 5, startIdx: currentIdx += 5 },
+                  { id: 'demo-l3', title: 'useState y useEffect', ratingCount: 3, startIdx: currentIdx += 5 },
                   { id: 'demo-l4', title: 'Context API', ratingCount: 0, startIdx: -1 },
                 ]
               },
@@ -134,13 +134,20 @@ export default function AcademyFeedbackPage() {
                   { id: 'demo-l6', title: 'Navegación Avanzada', ratingCount: 0, startIdx: -1 },
                 ]
               },
+              {
+                id: 'demo-c1-sin-tema',
+                name: 'Sin tema',
+                lessons: [
+                  { id: 'demo-l1-st', title: 'Proyecto Final', ratingCount: 2, startIdx: currentIdx += 3 },
+                ]
+              },
             ],
             'demo-c2': [ // Matemáticas - 9 ratings across 3 of 9 lessons
               {
                 id: 'demo-c2-t1',
                 name: 'Cálculo Diferencial',
                 lessons: [
-                  { id: 'demo-l7', title: 'Límites', ratingCount: 3, startIdx: currentIdx += 5 },
+                  { id: 'demo-l7', title: 'Límites', ratingCount: 3, startIdx: currentIdx += 2 },
                   { id: 'demo-l8', title: 'Continuidad', ratingCount: 0, startIdx: -1 },
                   { id: 'demo-l9', title: 'Derivadas', ratingCount: 3, startIdx: currentIdx += 3 },
                 ]
@@ -166,6 +173,13 @@ export default function AcademyFeedbackPage() {
                 name: 'Aplicaciones',
                 lessons: [
                   { id: 'demo-l14', title: 'Optimización', ratingCount: 0, startIdx: -1 },
+                ]
+              },
+              {
+                id: 'demo-c2-sin-tema',
+                name: 'Sin tema',
+                lessons: [
+                  { id: 'demo-l7-st', title: 'Repaso General', ratingCount: 0, startIdx: -1 },
                 ]
               },
             ],
@@ -195,6 +209,13 @@ export default function AcademyFeedbackPage() {
                   { id: 'demo-l21', title: 'Paletas Cromáticas', ratingCount: 0, startIdx: -1 },
                 ]
               },
+              {
+                id: 'demo-c3-sin-tema',
+                name: 'Sin tema',
+                lessons: [
+                  { id: 'demo-l15-st', title: 'Ejercicio Libre', ratingCount: 0, startIdx: -1 },
+                ]
+              },
             ],
             'demo-c4': [ // Física Cuántica - 4 ratings across 1 of 5 lessons
               {
@@ -218,6 +239,13 @@ export default function AcademyFeedbackPage() {
                 name: 'Aplicaciones',
                 lessons: [
                   { id: 'demo-l26', title: 'Computación Cuántica', ratingCount: 0, startIdx: -1 },
+                ]
+              },
+              {
+                id: 'demo-c4-sin-tema',
+                name: 'Sin tema',
+                lessons: [
+                  { id: 'demo-l22-st', title: 'Laboratorio Virtual', ratingCount: 0, startIdx: -1 },
                 ]
               },
             ],

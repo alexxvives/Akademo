@@ -99,6 +99,7 @@ export interface DemoRating {
   comment: string;
   createdAt: string;
   viewed: boolean; // Track if rating has been viewed by academy
+  classId: string;
 }
 
 export interface DemoStream {
@@ -372,6 +373,16 @@ export function generateDemoRatings(count: number = 35): DemoRating[] {
   const ratings: DemoRating[] = [];
   let id = 1;
   
+  // Map lesson index to classId
+  // 0-5: React/programming → demo-c1, 6-9: Math → demo-c2, 10-13: Design → demo-c3, 14-16: Physics → demo-c4
+  const getClassId = (lessonIndex: number): string => {
+    const idx = lessonIndex % lessons.length;
+    if (idx <= 5) return 'demo-c1';
+    if (idx <= 9) return 'demo-c2';
+    if (idx <= 13) return 'demo-c3';
+    return 'demo-c4';
+  };
+
   // Helper to create deterministic ratings (same every time)
   const addRating = (rating: number, lessonIndex: number, studentIndex: number, daysAgo: number, viewed: boolean = true) => {
     const student = students[studentIndex % students.length];
@@ -390,6 +401,7 @@ export function generateDemoRatings(count: number = 35): DemoRating[] {
       comment,
       createdAt,
       viewed, // Add viewed status
+      classId: getClassId(lessonIndex),
     });
     id++;
   };
@@ -911,6 +923,7 @@ export function generateDemoStudentTimes(_lessonId: string) {
   
   return Array.from({ length: studentCount }, (_, i) => {
     const watchedTime = Math.floor(maxWatchTime * watchTimePatterns[i]);
+    const status = watchedTime >= maxWatchTime ? 'BLOCKED' : watchedTime > videoDuration * 0.9 ? 'COMPLETED' : 'ACTIVE';
     
     return {
       studentId: `demo-student-${i + 1}`,
@@ -919,9 +932,9 @@ export function generateDemoStudentTimes(_lessonId: string) {
         {
           videoId: `demo-video-1`,
           videoTitle: 'Video Principal de la Lección',
-          totalWatchTimeSeconds: watchedTime,
+          totalWatchTimeSeconds: status === 'BLOCKED' ? maxWatchTime : watchedTime,
           maxWatchTimeSeconds: maxWatchTime,
-          status: watchedTime >= maxWatchTime ? 'BLOCKED' : watchedTime > videoDuration * 0.9 ? 'COMPLETED' : 'ACTIVE',
+          status,
         }
       ]
     };

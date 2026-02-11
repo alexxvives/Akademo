@@ -85,6 +85,7 @@ interface PaymentHistoryItem {
   status?: string | null;
   amount?: number | null;
   paymentMethod?: string | null;
+  classId?: string | null;
 }
 
 interface EnrollmentRecord {
@@ -115,7 +116,7 @@ export default function AcademyDashboard() {
   const [classWatchTime, setClassWatchTime] = useState({ hours: 0, minutes: 0 });
   const [selectedClass, setSelectedClass] = useState('all');
   const [paymentStatus, setPaymentStatus] = useState<string>('NOT PAID');
-  const [paymentStats, setPaymentStats] = useState({ totalPaid: 0, bizumCount: 0, cashCount: 0, stripeCount: 0 });
+  const [allCompletedPayments, setAllCompletedPayments] = useState<PaymentHistoryItem[]>([]);
 
   useEffect(() => {
     loadData();
@@ -246,13 +247,14 @@ export default function AcademyDashboard() {
           const demoPendingPayments = generateDemoPendingPayments(); // 5 pending
           const demoHistoryPayments = generateDemoPaymentHistory(); // 23 total: 21 paid, 2 rejected
           
-          // Calculate demo payment statistics
+          // Store demo payments for filtering
           const paidPayments = demoHistoryPayments.filter(p => p.paymentStatus === 'PAID');
-          const totalPaid = paidPayments.reduce((sum, p) => sum + p.paymentAmount, 0);
-          const bizumCount = paidPayments.filter(p => p.paymentMethod === 'bizum').length;
-          const cashCount = paidPayments.filter(p => p.paymentMethod === 'cash').length;
-          const stripeCount = paidPayments.filter(p => p.paymentMethod === 'stripe').length;
-          setPaymentStats({ totalPaid, bizumCount, cashCount, stripeCount });
+          setAllCompletedPayments(paidPayments.map(p => ({
+            status: p.paymentStatus,
+            amount: p.paymentAmount,
+            paymentMethod: p.paymentMethod,
+            classId: p.classId,
+          })));
           
           // Map payments to enrollments (pending)
           const demoPending = demoPendingPayments.map((payment, i) => ({
@@ -289,15 +291,11 @@ export default function AcademyDashboard() {
         setRejectedCount(rejectedResult.data.count || 0);
       }
 
-      // Calculate payment statistics from completed/paid payments
+      // Store completed payments for filtering
       if (paymentsResult.success && Array.isArray(paymentsResult.data)) {
         const paymentsData = paymentsResult.data as PaymentHistoryItem[];
         const completedPayments = paymentsData.filter((p) => p.status === 'COMPLETED' || p.status === 'PAID');
-        const totalPaid = completedPayments.reduce((sum, p) => sum + (p.amount ?? 0), 0);
-        const bizumCount = completedPayments.filter((p) => p.paymentMethod === 'bizum').length;
-        const cashCount = completedPayments.filter((p) => p.paymentMethod === 'cash').length;
-        const stripeCount = completedPayments.filter((p) => p.paymentMethod === 'stripe').length;
-        setPaymentStats({ totalPaid, bizumCount, cashCount, stripeCount });
+        setAllCompletedPayments(completedPayments);
       }
 
       if (streamsResult.success && Array.isArray(streamsResult.data)) {
@@ -431,6 +429,16 @@ export default function AcademyDashboard() {
       totalMinutes,
     };
   }, [allStreams, selectedClass]);
+
+  // Calculate filtered payment stats
+  const paymentStats = useMemo(() => {
+    const filtered = selectedClass === 'all' ? allCompletedPayments : allCompletedPayments.filter(p => p.classId === selectedClass);
+    const totalPaid = filtered.reduce((sum, p) => sum + (p.amount ?? 0), 0);
+    const bizumCount = filtered.filter(p => p.paymentMethod === 'bizum').length;
+    const cashCount = filtered.filter(p => p.paymentMethod === 'cash').length;
+    const stripeCount = filtered.filter(p => p.paymentMethod === 'stripe').length;
+    return { totalPaid, bizumCount, cashCount, stripeCount };
+  }, [allCompletedPayments, selectedClass]);
 
   // Calculate filtered class watch time
   const filteredClassWatchTime = useMemo(() => {
@@ -597,15 +605,15 @@ export default function AcademyDashboard() {
                     <div className="flex items-center justify-center gap-3 p-3 bg-gray-50 rounded-lg">
                       <div className="text-center min-w-[60px]">
                         <div className="text-xs text-gray-500 mb-0.5">Bizum</div>
-                        <AnimatedNumber value={paymentStats.bizumCount} className="text-lg font-bold text-purple-600" />
+                        <AnimatedNumber value={paymentStats.bizumCount} className="text-lg font-bold text-gray-900" />
                       </div>
                       <div className="text-center min-w-[60px]">
                         <div className="text-xs text-gray-500 mb-0.5">Efectivo</div>
-                        <AnimatedNumber value={paymentStats.cashCount} className="text-lg font-bold text-amber-600" />
+                        <AnimatedNumber value={paymentStats.cashCount} className="text-lg font-bold text-gray-900" />
                       </div>
                       <div className="text-center min-w-[60px]">
                         <div className="text-xs text-gray-500 mb-0.5">Stripe</div>
-                        <AnimatedNumber value={paymentStats.stripeCount} className="text-lg font-bold text-blue-600" />
+                        <AnimatedNumber value={paymentStats.stripeCount} className="text-lg font-bold text-gray-900" />
                       </div>
                     </div>
                   </div>
@@ -657,9 +665,10 @@ export default function AcademyDashboard() {
               const ratingCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
               
               if (paymentStatus === 'NOT PAID') {
-                // Use actual demo ratings distribution: 134★5, 71★4, 36★3, 40★2, 26★1
+                // Use actual demo ratings distribution, filtered by class
                 const allDemoRatings = generateDemoRatings();
-                allDemoRatings.forEach(rating => {
+                const filteredDemoRatings = selectedClass === 'all' ? allDemoRatings : allDemoRatings.filter(r => r.classId === selectedClass);
+                filteredDemoRatings.forEach(rating => {
                   ratingCounts[rating.rating as 1|2|3|4|5]++;
                 });
               } else {

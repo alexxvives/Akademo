@@ -1253,6 +1253,27 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
   };
 
   const handleEditLesson = async (lesson: Lesson) => {
+    // In demo mode, populate form with existing lesson data (no API call)
+    if (paymentStatus === 'NOT PAID') {
+      setEditingLessonMedia({ videos: [], documents: [] });
+      setLessonFormData({
+        title: lesson.title,
+        description: lesson.description || '',
+        externalUrl: '',
+        releaseDate: lesson.releaseDate.split('T')[0],
+        releaseTime: '00:00',
+        publishImmediately: true,
+        maxWatchTimeMultiplier: lesson.maxWatchTimeMultiplier,
+        watermarkIntervalMins: lesson.watermarkIntervalMins,
+        topicId: lesson.topicId || '',
+        videos: [],
+        documents: [],
+        selectedStreamRecordings: [],
+      });
+      setEditingLessonId(lesson.id);
+      setShowLessonForm(true);
+      return;
+    }
     try {
       // Load lesson details WITHOUT setting selectedLesson to avoid navigation
       const res = await apiClient(`/lessons/${lesson.id}`);
@@ -2367,7 +2388,12 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
                     </div>
                     
                     <div className="flex gap-3">
-                      <button type="submit" className="flex-1 px-6 py-2.5 bg-accent-300 text-gray-900 rounded-lg hover:bg-accent-400 font-medium text-sm">
+                      <button 
+                        type="submit" 
+                        disabled={paymentStatus === 'NOT PAID'}
+                        className="flex-1 px-6 py-2.5 bg-accent-300 text-gray-900 rounded-lg hover:bg-accent-400 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={paymentStatus === 'NOT PAID' ? 'No disponible en modo demo' : undefined}
+                      >
                         Reprogramar
                       </button>
                       <button 
