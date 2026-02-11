@@ -180,7 +180,7 @@ export default function AcademyDashboard() {
           }));
           setClasses(mappedClasses);
           
-          const mappedStudents = (demoStudents || []).map(s => {
+          const rawStudents = (demoStudents || []).map(s => {
             // Map class names to demo class IDs
             const classNameToId: Record<string, string> = {
               'Programación Web': 'demo-c1',
@@ -198,6 +198,14 @@ export default function AcademyDashboard() {
               totalLessons: 10,
               lastActive: s.lastLoginAt,
             };
+          });
+          // Deduplicate: same email + same class = one enrollment (prevents inflated counts)
+          const seen = new Set<string>();
+          const mappedStudents = rawStudents.filter(s => {
+            const key = `${s.email}__${s.classId}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
           });
           setEnrolledStudents(mappedStudents);
           

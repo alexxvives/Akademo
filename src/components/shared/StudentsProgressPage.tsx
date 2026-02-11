@@ -142,7 +142,13 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
     { id: 'demo-c4', name: 'Física Cuántica' },
   ];
 
-  const DEMO_TEACHERS = ['Carlos Rodríguez', 'María García', 'Ana Martínez'];
+  // Source of truth: must match generateDemoClasses() in demo-data.ts
+  const DEMO_CLASS_TEACHER: Record<string, string> = {
+    'demo-c1': 'Carlos Rodríguez',
+    'demo-c2': 'María García',
+    'demo-c3': 'Ana Martínez',
+    'demo-c4': 'Luis López',
+  };
 
   const buildDemoStudentProgress = useCallback((): StudentProgress[] => {
     const demoStudents = generateDemoStudents();
@@ -162,7 +168,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
           classIds: [classId],
           lastLoginAt: s.lastLoginAt,
           watchTimeBase: index,
-          perClassTeachers: [DEMO_TEACHERS[index % 3]],
+          perClassTeachers: [DEMO_CLASS_TEACHER[classId] || 'Carlos Rodríguez'],
         });
       } else {
         const existing = studentMap.get(key);
@@ -170,7 +176,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
           if (!existing.classes.includes(s.className)) {
             existing.classes.push(s.className);
             existing.classIds.push(classId);
-            existing.perClassTeachers.push(DEMO_TEACHERS[(existing.classes.length - 1) % 3]);
+            existing.perClassTeachers.push(DEMO_CLASS_TEACHER[classId] || 'Carlos Rodríguez');
           }
           if (s.lastLoginAt && (!existing.lastLoginAt || new Date(s.lastLoginAt) > new Date(existing.lastLoginAt))) {
             existing.lastLoginAt = s.lastLoginAt;
@@ -180,7 +186,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
     });
 
     return Array.from(studentMap.values()).map((student, index) => {
-      const teacherName = DEMO_TEACHERS[Math.floor(index / 3) % 3];
+      const teacherName = DEMO_CLASS_TEACHER[student.classIds[0]] || 'Carlos Rodríguez';
       // Deterministic watch time based on index (no Math.random)
       const totalWatchTime = student.watchTimeBase === 0 ? 90000 :
         student.watchTimeBase % 3 === 0 ? ((index * 1234 + 567) % 3600) :
@@ -207,7 +213,8 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
           return {
             className: cls,
             classId: student.classIds[ci],
-            teacherName: student.perClassTeachers[ci] || DEMO_TEACHERS[ci % 3],
+            enrollmentId: `demo-enroll-${student.id}-${student.classIds[ci]}`,
+            teacherName: student.perClassTeachers[ci] || DEMO_CLASS_TEACHER[student.classIds[ci]] || 'Carlos Rodríguez',
             totalWatchTime: clsTime,
             videosWatched: clsVideos,
             totalVideos: Math.floor(totalVideos / student.classes.length),
@@ -226,6 +233,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
         email: student.email,
         className: student.classes.length === 1 ? student.classes[0] : `${student.classes.length} asignaturas`,
         classId: student.classIds[0],
+        enrollmentId: `demo-enroll-${student.id}-${student.classIds[0]}`,
         teacherName,
         totalWatchTime,
         videosWatched,

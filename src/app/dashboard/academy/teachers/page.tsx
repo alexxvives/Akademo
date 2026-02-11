@@ -268,7 +268,7 @@ export default function AcademyTeachers() {
                     Profesor
                   </th>
                   <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Clases
+                    Asignaturas
                   </th>
                   <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Estudiantes
@@ -335,7 +335,7 @@ export default function AcademyTeachers() {
                             ? 'bg-green-100 text-green-700'
                             : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
                         }`}
-                        title={`Link para unirse a las clases de ${teacher.name}`}
+                        title={`Link para unirse a las asignaturas de ${teacher.name}`}
                       >
                         {copiedId === teacher.id ? (
                           <>

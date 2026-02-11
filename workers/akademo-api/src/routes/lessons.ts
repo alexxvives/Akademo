@@ -204,7 +204,16 @@ lessons.get('/:id', async (c) => {
               mimeType: 'video/mp4',
             },
           }],
-          documents: [],
+          documents: [{
+            id: `${demoLesson.id}-doc`,
+            title: 'Material de Apoyo',
+            upload: {
+              storagePath: '/demo/Documento.pdf',
+              storageType: 'local',
+              fileName: 'Documento.pdf',
+              mimeType: 'application/pdf',
+            },
+          }],
         },
       });
       }
