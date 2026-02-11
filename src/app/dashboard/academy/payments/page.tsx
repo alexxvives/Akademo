@@ -1168,7 +1168,7 @@ export default function AcademyPaymentsPage() {
             id: e.classId,
             name: e.className
           }))}
-          currentClassId="all"
+          currentClassId={selectedStudent.classId || 'all'}
           onClassChange={async (classId) => {
             if (classId === 'all') {
               // Show all payments across all classes

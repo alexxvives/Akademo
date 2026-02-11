@@ -778,6 +778,7 @@ export function generateDemoPendingPayments(): DemoPayment[] {
     }
   });
 
+  const MAX_PENDING = 4;
   const baseDate = new Date('2026-02-05T00:00:00.000Z');
   const payments: DemoPayment[] = [];
   let paymentIdx = 0;
@@ -786,10 +787,13 @@ export function generateDemoPendingPayments(): DemoPayment[] {
   const demoPaymentOptions: ('UP_TO_DATE' | 'BEHIND')[] = ['UP_TO_DATE', 'UP_TO_DATE', 'BEHIND', 'UP_TO_DATE', 'UP_TO_DATE'];
   const demoStatuses: ('UP_TO_DATE' | 'BEHIND')[] = ['UP_TO_DATE', 'UP_TO_DATE', 'BEHIND'];
 
-  Array.from(studentMap.values()).forEach((student, index) => {
+  const students = Array.from(studentMap.values());
+  for (let index = 0; index < students.length && payments.length < MAX_PENDING; index++) {
+    const student = students[index];
     if (student.classes.length > 1) {
       // Multi-class students: check each class individually
-      student.classes.forEach((cls, ci) => {
+      for (let ci = 0; ci < student.classes.length && payments.length < MAX_PENDING; ci++) {
+        const cls = student.classes[ci];
         const classStatus = demoStatuses[(index + ci) % 3];
         if (classStatus === 'BEHIND') {
           paymentIdx++;
@@ -809,7 +813,7 @@ export function generateDemoPendingPayments(): DemoPayment[] {
             updatedAt: new Date(baseDate.getTime() - paymentIdx * 3 * 24 * 60 * 60 * 1000).toISOString(),
           });
         }
-      });
+      }
     } else {
       // Single-class students: use aggregate status
       const aggregateStatus = demoPaymentOptions[index % 5];
@@ -833,7 +837,7 @@ export function generateDemoPendingPayments(): DemoPayment[] {
         });
       }
     }
-  });
+  }
 
   return payments;
 }
