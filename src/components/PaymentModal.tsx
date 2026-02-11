@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { apiClient, apiPost } from '@/lib/api-client';
 
 interface PaymentModalProps {
@@ -213,7 +214,7 @@ export default function PaymentModal({
     }
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] backdrop-blur-sm">
       <div className="bg-white rounded-2xl w-full max-w-5xl shadow-2xl max-h-[90vh] overflow-y-auto m-4">
         {/* Header */}
@@ -468,6 +469,7 @@ export default function PaymentModal({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

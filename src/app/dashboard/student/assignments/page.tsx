@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { apiClient, apiPost } from '@/lib/api-client';
+import { generateDemoClasses, generateDemoStudentAssignments } from '@/lib/demo-data';
 
 interface Class { id: string; name: string; }
 interface Assignment {
@@ -26,6 +27,7 @@ export default function StudentAssignments() {
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [activeTab, setActiveTab] = useState<'pendientes' | 'completados'>('pendientes');
+  const [paymentStatus, setPaymentStatus] = useState<string>('PAID');
 
   // Helper to check if assignment is past due
   const isPastDue = (dueDate?: string) => {
@@ -54,6 +56,25 @@ export default function StudentAssignments() {
   const loadClasses = async () => {
     try {
       setLoading(true);
+
+      // Check academy payment status for demo mode
+      const academyRes = await apiClient('/academies');
+      const academyResult = await academyRes.json();
+      let currentPaymentStatus = 'PAID';
+      if (academyResult.success && Array.isArray(academyResult.data) && academyResult.data.length > 0) {
+        currentPaymentStatus = academyResult.data[0].paymentStatus || 'PAID';
+        setPaymentStatus(currentPaymentStatus);
+      }
+
+      // Demo mode: load demo classes and assignments
+      if (currentPaymentStatus === 'NOT PAID') {
+        const demoClasses = generateDemoClasses();
+        setClasses(demoClasses.map(c => ({ id: c.id, name: c.name })));
+        const demoAssignments = generateDemoStudentAssignments();
+        setAssignments(demoAssignments as Assignment[]);
+        return;
+      }
+
       const res = await apiClient('/enrollments');
       const result = await res.json();
       if (result.success && result.data) {
@@ -72,6 +93,16 @@ export default function StudentAssignments() {
 
   const loadAssignments = async () => {
     try {
+      // Demo mode: filter from already-loaded demo assignments
+      if (paymentStatus === 'NOT PAID') {
+        const demoAssignments = generateDemoStudentAssignments();
+        const filtered = selectedClassId
+          ? demoAssignments.filter(a => a.classId === selectedClassId)
+          : demoAssignments;
+        setAssignments(filtered as Assignment[]);
+        return;
+      }
+
       // If no class selected, fetch all assignments
       const url = selectedClassId 
         ? `/assignments?classId=${selectedClassId}` 

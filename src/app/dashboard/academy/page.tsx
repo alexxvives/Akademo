@@ -104,6 +104,14 @@ function AnimatedNumber({ value, className }: { value: number; className?: strin
   return <div className={className}>{animatedValue.toLocaleString('es-ES')}</div>;
 }
 
+// Animated Currency Component (supports decimals)
+function AnimatedCurrency({ value, className }: { value: number; className?: string }) {
+  // Animate the integer part (cents × 100) for smooth decimal animation
+  const animatedCents = useAnimatedNumber(Math.round(value * 100));
+  const display = new Intl.NumberFormat('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(animatedCents / 100);
+  return <div className={className}>{display}€</div>;
+}
+
 export default function AcademyDashboard() {
   const [classes, setClasses] = useState<Class[]>([]);
   const [enrolledStudents, setEnrolledStudents] = useState<EnrolledStudent[]>([]);
@@ -599,7 +607,7 @@ export default function AcademyDashboard() {
                   {/* Right side: Total Cobrado on top, payment methods below */}
                   <div className="space-y-3">
                     <div className="text-center p-3 bg-green-50 rounded-lg">
-                      <div className="text-3xl sm:text-4xl font-bold text-green-700 mb-1">{new Intl.NumberFormat('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(paymentStats.totalPaid)}€</div>
+                      <AnimatedCurrency value={paymentStats.totalPaid} className="text-3xl sm:text-4xl font-bold text-green-700 mb-1" />
                       <div className="text-xs text-gray-500">Total Cobrado</div>
                     </div>
                     <div className="flex items-center justify-center gap-3 p-3 bg-gray-50 rounded-lg">

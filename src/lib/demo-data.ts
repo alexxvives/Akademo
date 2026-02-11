@@ -406,27 +406,34 @@ export function generateDemoRatings(count: number = 35): DemoRating[] {
     id++;
   };
   
-  // Generate 15 five-star ratings (5 unviewed)
+  // Distribute ratings across all 4 classes using lesson indices that map to each class:
+  // indices 0-5 → demo-c1, 6-9 → demo-c2, 10-13 → demo-c3, 14-16 → demo-c4
+  
+  // Generate 15 five-star ratings (5 unviewed) - spread across all classes
+  const fiveStarLessons = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15]; // 6 c1, 4 c2, 3 c3, 2 c4
   for (let i = 0; i < 15; i++) {
-    addRating(5, Math.floor(i / 3), i, 30 - i, i < 10); // First 10 viewed, last 5 unviewed
+    addRating(5, fiveStarLessons[i], i, 30 - i, i < 10);
   }
   
-  // Generate 10 four-star ratings (4 unviewed)
+  // Generate 10 four-star ratings (4 unviewed) - spread across classes
+  const fourStarLessons = [0, 1, 2, 3, 6, 7, 8, 10, 11, 14]; // 4 c1, 3 c2, 2 c3, 1 c4
   for (let i = 0; i < 10; i++) {
-    addRating(4, Math.floor(i / 2), i + 5, 25 - i, i < 6); // First 6 viewed, last 4 unviewed
+    addRating(4, fourStarLessons[i], i + 5, 25 - i, i < 6);
   }
   
-  // Generate 6 three-star ratings (2 unviewed)
+  // Generate 6 three-star ratings (2 unviewed) - spread across classes
+  const threeStarLessons = [0, 1, 2, 6, 7, 10]; // 3 c1, 2 c2, 1 c3
   for (let i = 0; i < 6; i++) {
-    addRating(3, i % 3, i + 10, 20 - i * 2, i < 4); // First 4 viewed, last 2 unviewed
+    addRating(3, threeStarLessons[i], i + 10, 20 - i * 2, i < 4);
   }
   
-  // Generate 3 two-star ratings (1 unviewed)
+  // Generate 3 two-star ratings (1 unviewed) - spread across classes
+  const twoStarLessons = [1, 7, 11]; // 1 c1, 1 c2, 1 c3
   for (let i = 0; i < 3; i++) {
-    addRating(2, i, i + 15, 15 - i * 3, i < 2); // First 2 viewed, last 1 unviewed
+    addRating(2, twoStarLessons[i], i + 15, 15 - i * 3, i < 2);
   }
   
-  // Generate 1 one-star rating (0 unviewed - all old ratings are viewed)
+  // Generate 1 one-star rating (0 unviewed)
   for (let i = 0; i < 1; i++) {
     addRating(1, 0, i, 10, true); // Viewed
   }
@@ -1220,5 +1227,71 @@ export function countTotalUngradedDemoSubmissions(): number {
     total += countUngradedDemoSubmissions(assignment.id);
   }
   return total;
+}
+
+// Student perspective: assignments with some submitted and graded
+export interface DemoStudentAssignment {
+  id: string;
+  title: string;
+  description?: string;
+  dueDate?: string;
+  maxScore: number;
+  attachmentName?: string;
+  attachmentIds?: string;
+  submittedAt?: string;
+  score?: number;
+  feedback?: string;
+  gradedAt?: string;
+  createdAt: string;
+  className?: string;
+  classId?: string;
+  submissionUploadId?: string;
+  submissionStoragePath?: string;
+}
+
+export function generateDemoStudentAssignments(): DemoStudentAssignment[] {
+  const assignments = generateDemoAssignments();
+
+  // Map teacher assignments to student perspective
+  // Some submitted + graded, some submitted + pending grading, some not submitted
+  const studentAssignments: DemoStudentAssignment[] = assignments.map((a) => {
+    const base: DemoStudentAssignment = {
+      id: a.id,
+      title: a.title,
+      description: a.description,
+      dueDate: a.dueDate,
+      maxScore: a.maxScore,
+      attachmentName: a.attachmentName,
+      attachmentIds: a.attachmentIds,
+      createdAt: a.createdAt,
+      className: a.className,
+      classId: a.classId,
+    };
+
+    // Submitted + graded: a1 (92/100), a4 (85/100), a6 (95/100), a7 (78/100), a9 (88/100)
+    // Submitted + pending: a2, a5
+    // Not submitted (pending): a3, a8, a10
+    switch (a.id) {
+      case 'demo-a1':
+        return { ...base, submittedAt: new Date(Date.UTC(2026, 1, 14, 18, 30)).toISOString(), score: 92, feedback: '¡Excelente trabajo con los componentes!', gradedAt: new Date(Date.UTC(2026, 1, 16, 10, 0)).toISOString(), submissionUploadId: 'demo-sub-s1', submissionStoragePath: 'demo/submissions/componente_react.pdf' };
+      case 'demo-a2':
+        return { ...base, submittedAt: new Date(Date.UTC(2026, 1, 19, 20, 15)).toISOString(), submissionUploadId: 'demo-sub-s2', submissionStoragePath: 'demo/submissions/hooks_estado.pdf' };
+      case 'demo-a4':
+        return { ...base, submittedAt: new Date(Date.UTC(2026, 1, 16, 14, 45)).toISOString(), score: 85, feedback: 'Buen manejo de derivadas, revisa el ejercicio 3', gradedAt: new Date(Date.UTC(2026, 1, 18, 9, 30)).toISOString(), submissionUploadId: 'demo-sub-s3', submissionStoragePath: 'demo/submissions/derivadas.pdf' };
+      case 'demo-a5':
+        return { ...base, submittedAt: new Date(Date.UTC(2026, 1, 21, 22, 0)).toISOString(), submissionUploadId: 'demo-sub-s4', submissionStoragePath: 'demo/submissions/integrales.pdf' };
+      case 'demo-a6':
+        return { ...base, submittedAt: new Date(Date.UTC(2026, 1, 15, 11, 20)).toISOString(), score: 95, feedback: '¡Fantástico diseño de logo!', gradedAt: new Date(Date.UTC(2026, 1, 17, 14, 0)).toISOString(), submissionUploadId: 'demo-sub-s5', submissionStoragePath: 'demo/submissions/logo_design.pdf' };
+      case 'demo-a7':
+        return { ...base, submittedAt: new Date(Date.UTC(2026, 1, 18, 16, 30)).toISOString(), score: 78, feedback: 'Buena composición, mejora el contraste', gradedAt: new Date(Date.UTC(2026, 1, 20, 11, 45)).toISOString(), submissionUploadId: 'demo-sub-s6', submissionStoragePath: 'demo/submissions/tipografia.pdf' };
+      case 'demo-a9':
+        return { ...base, submittedAt: new Date(Date.UTC(2026, 1, 17, 19, 0)).toISOString(), score: 88, feedback: 'Muy bien resuelto, excelente comprensión', gradedAt: new Date(Date.UTC(2026, 1, 19, 15, 30)).toISOString(), submissionUploadId: 'demo-sub-s7', submissionStoragePath: 'demo/submissions/schrodinger.pdf' };
+      default:
+        // a3, a8, a10 → not submitted (pending)
+        return base;
+    }
+  });
+
+  return studentAssignments;
 }
 

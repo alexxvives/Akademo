@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 interface DocumentSigningModalProps {
   isOpen: boolean;
@@ -84,7 +85,7 @@ export default function DocumentSigningModal({
     }
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 backdrop-blur-sm !m-0 p-6">
       {/* Shield Animation Overlay */}
       {showShieldAnimation && (
@@ -255,6 +256,7 @@ export default function DocumentSigningModal({
           animation: slideUp 0.5s ease-out forwards;
         }
       `}</style>
-    </div>
+    </div>,
+    document.body
   );
 }
