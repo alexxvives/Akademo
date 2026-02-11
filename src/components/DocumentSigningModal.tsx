@@ -9,6 +9,7 @@ interface DocumentSigningModalProps {
   onSign: () => Promise<void>;
   classId: string;
   className: string;
+  readOnly?: boolean;
 }
 
 export default function DocumentSigningModal({
@@ -17,6 +18,7 @@ export default function DocumentSigningModal({
   onSign,
   classId: _classId,
   className,
+  readOnly = false,
 }: DocumentSigningModalProps) {
   const [agreed, setAgreed] = useState(false);
   const [signing, setSigning] = useState(false);
@@ -32,13 +34,15 @@ export default function DocumentSigningModal({
       setAgreed(false);
       setSigning(false);
       setPdfLoaded(false);
-      setShowShieldAnimation(true);
-      setHasScrolledToEnd(false);
+      setShowShieldAnimation(!readOnly);
+      setHasScrolledToEnd(readOnly);
       // Hide shield animation after 1.5 seconds
-      const timer = setTimeout(() => setShowShieldAnimation(false), 1500);
-      return () => clearTimeout(timer);
+      if (!readOnly) {
+        const timer = setTimeout(() => setShowShieldAnimation(false), 1500);
+        return () => clearTimeout(timer);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, readOnly]);
 
   // Monitor scroll in the PDF container
   useEffect(() => {
@@ -120,7 +124,7 @@ export default function DocumentSigningModal({
             <div className="flex-1 text-center">
               <h2 className="text-xl font-bold text-gray-900">CONTRATO DE USO Y COMPROMISO DE CONFIDENCIALIDAD – AKADEMO</h2>
               <p className="text-gray-600 mt-1">
-                <span className="font-medium text-brand-600">{className}</span> — Firma requerida para acceder
+                <span className="font-medium text-brand-600">{className}</span> — {readOnly ? 'Documento ya firmado' : 'Firma requerida para acceder'}
               </p>
             </div>
             <button
@@ -160,6 +164,7 @@ export default function DocumentSigningModal({
         </div>
 
         {/* Footer - Agreement and Sign Button */}
+        {!readOnly && (
         <div className="border-t border-gray-200 bg-white rounded-b-3xl">
           {/* Scroll indicator */}
           {!hasScrolledToEnd && (
@@ -234,6 +239,7 @@ export default function DocumentSigningModal({
             Tu firma digital queda registrada de forma segura. Este documento también requiere la aprobación del profesor.
           </p>
         </div>
+        )}
       </div>
 
       {/* CSS for animations */}

@@ -157,6 +157,12 @@ payments.post('/initiate', validateBody(initiatePaymentSchema), async (c) => {
         )
         .run();
       
+      // Update enrollment paymentFrequency
+      await c.env.DB
+        .prepare('UPDATE ClassEnrollment SET paymentFrequency = ? WHERE userId = ? AND classId = ?')
+        .bind(isMonthly ? 'MONTHLY' : 'ONE_TIME', session.id, classId)
+        .run();
+
       const message = billingCycle.missedCycles > 0
         ? `Solicitud enviada. Total: ${finalAmount}€ (incluye ${billingCycle.missedCycles} mes(es) pendiente(s)). Próximos pagos: ${price}€/mes.`
         : paymentMethod === 'cash' 
@@ -208,6 +214,12 @@ payments.post('/initiate', validateBody(initiatePaymentSchema), async (c) => {
         billingCycle.billingCycleStart,
         billingCycle.billingCycleEnd
       )
+      .run();
+
+    // Update enrollment paymentFrequency
+    await c.env.DB
+      .prepare('UPDATE ClassEnrollment SET paymentFrequency = ? WHERE userId = ? AND classId = ?')
+      .bind(isMonthly ? 'MONTHLY' : 'ONE_TIME', session.id, classId)
       .run();
 
     const message = billingCycle.missedCycles > 0

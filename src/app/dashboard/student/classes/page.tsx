@@ -53,6 +53,7 @@ export default function StudentClassesPage() {
   const [academyName, setAcademyName] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [signingClass, setSigningClass] = useState<EnrolledClass | null>(null);
+  const [viewingDocClass, setViewingDocClass] = useState<EnrolledClass | null>(null);
   const [payingClass, setPayingClass] = useState<EnrolledClass | null>(null);
 
   useEffect(() => {
@@ -273,16 +274,22 @@ export default function StudentClassesPage() {
                         </div>
                       </div>
                     ) : (
-                      <div className="relative group/shield-signed">
+                      <div 
+                        className="relative group/shield-signed cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setViewingDocClass(classItem);
+                        }}
+                      >
                         <Image 
                           src="/icons/shield-verified.svg" 
                           alt="Documentos firmados" 
                           width={28} 
                           height={28}
-                          className="drop-shadow-sm"
+                          className="drop-shadow-sm hover:scale-110 transition-transform"
                         />
                         <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover/shield-signed:opacity-100 transition-opacity z-10">
-                          Documento firmado
+                          Ver documento firmado
                         </div>
                       </div>
                     )}
@@ -424,6 +431,16 @@ export default function StudentClassesPage() {
         onSign={handleSign}
         classId={signingClass?.id || ''}
         className={signingClass?.name || ''}
+      />
+
+      {/* Document Viewing Modal (read-only) */}
+      <DocumentSigningModal
+        isOpen={!!viewingDocClass}
+        onClose={() => setViewingDocClass(null)}
+        onSign={async () => {}}
+        classId={viewingDocClass?.id || ''}
+        className={viewingDocClass?.name || ''}
+        readOnly
       />
     </div>
   );

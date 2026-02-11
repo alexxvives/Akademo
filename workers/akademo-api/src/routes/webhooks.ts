@@ -437,10 +437,10 @@ webhooks.post('/stripe', async (c) => {
             } else {
             }
 
-            // IMPORTANT: Update ClassEnrollment status to APPROVED for immediate access
+            // IMPORTANT: Update ClassEnrollment status to APPROVED and paymentFrequency
             await c.env.DB
-              .prepare('UPDATE ClassEnrollment SET status = ? WHERE id = ?')
-              .bind('APPROVED', enrollmentId)
+              .prepare('UPDATE ClassEnrollment SET status = ?, paymentFrequency = ? WHERE id = ?')
+              .bind('APPROVED', isMonthly ? 'MONTHLY' : 'ONE_TIME', enrollmentId)
               .run();
 
           }
