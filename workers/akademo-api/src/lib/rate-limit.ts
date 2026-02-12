@@ -75,12 +75,12 @@ export function rateLimit(config: RateLimitConfig) {
 // Pre-configured rate limiters
 export const loginRateLimit = rateLimit({
   windowMs: 60_000,      // 1 minute
-  maxRequests: 5,         // 5 login attempts per minute per IP
+  maxRequests: 20,        // 20 login attempts per minute per IP (generous for shared WiFi/NAT)
 });
 
 export const registerRateLimit = rateLimit({
   windowMs: 3_600_000,   // 1 hour
-  maxRequests: 3,         // 3 registrations per hour per IP
+  maxRequests: 10,        // 10 registrations per hour per IP (generous for shared WiFi/NAT)
 });
 
 export const emailVerificationRateLimit = rateLimit({

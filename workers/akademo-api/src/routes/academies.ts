@@ -409,22 +409,16 @@ academies.get('/teachers', async (c) => {
     // Get class and student counts for each teacher
     const teachersWithCounts = await Promise.all(
       teachers.map(async (teacher: any) => {
-        // Count classes taught by this teacher
-        const classCountResult = await c.env.DB.prepare(
-          `SELECT COUNT(*) as count FROM Class WHERE teacherId = ?`
-        ).bind(teacher.id).first<{ count: number }>();
+        // Get classes taught by this teacher (with names and student counts)
+        const classesResult = await c.env.DB.prepare(
+          `SELECT c.id, c.name,
+           (SELECT COUNT(*) FROM ClassEnrollment ce WHERE ce.classId = c.id AND ce.status = 'APPROVED') as studentCount
+           FROM Class c WHERE c.teacherId = ?`
+        ).bind(teacher.id).all();
         
-        const classCount = classCountResult?.count || 0;
-
-        // Count students enrolled in this teacher's classes
-        const studentCountResult = await c.env.DB.prepare(
-          `SELECT COUNT(DISTINCT ce.userId) as count
-           FROM ClassEnrollment ce
-           JOIN Class c ON ce.classId = c.id
-           WHERE c.teacherId = ? AND ce.status = 'APPROVED'`
-        ).bind(teacher.id).first<{ count: number }>();
-        
-        const studentCount = studentCountResult?.count || 0;
+        const teacherClasses = (classesResult.results || []) as Array<{ id: string; name: string; studentCount: number }>;
+        const classCount = teacherClasses.length;
+        const studentCount = teacherClasses.reduce((sum, cls) => sum + (cls.studentCount || 0), 0);
 
         return {
           id: teacher.id,
@@ -432,6 +426,7 @@ academies.get('/teachers', async (c) => {
           name: `${teacher.firstName} ${teacher.lastName}`,
           classCount,
           studentCount,
+          classes: teacherClasses.map(cls => ({ id: cls.id, name: cls.name, studentCount: cls.studentCount || 0 })),
           createdAt: teacher.createdAt,
         };
       })
