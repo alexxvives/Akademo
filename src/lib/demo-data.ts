@@ -1177,8 +1177,6 @@ export function generateDemoFeedbackData(): { classFeedback: Array<{ id: string;
 }
 
 export function generateDemoAssignments(): DemoAssignment[] {
-  const _baseDate = new Date('2026-02-10T00:00:00Z');
-  
   return [
     // Programación Web (demo-c1) - 3 assignments
     {
@@ -1488,3 +1486,159 @@ export function generateDemoStudentAssignments(): DemoStudentAssignment[] {
   return studentAssignments;
 }
 
+// ============================================
+// STUDENT ENROLLED CLASSES (for student demo)
+// ============================================
+
+export interface DemoStudentEnrolledClass {
+  id: string;
+  slug?: string;
+  name: string;
+  description?: string;
+  academyName: string;
+  teacherFirstName: string;
+  teacherLastName: string;
+  videoCount: number;
+  documentCount: number;
+  lessonCount: number;
+  studentCount: number;
+  createdAt: string;
+  startDate?: string;
+  enrollmentStatus: 'APPROVED';
+  documentSigned: number;
+  whatsappGroupLink?: string;
+  paymentStatus: string;
+  paymentMethod: string;
+  monthlyPrice?: number | null;
+  oneTimePrice?: number | null;
+  maxStudents?: number | null;
+}
+
+export function generateDemoStudentEnrolledClasses(): DemoStudentEnrolledClass[] {
+  const demoClasses = generateDemoClasses();
+  const demoLessons = generateDemoLessons();
+
+  return demoClasses.map(c => {
+    const classLessons = demoLessons.filter(l => l.classId === c.id);
+    const teacherParts = c.teacherName.split(' ');
+    return {
+      id: c.id,
+      slug: c.name.toLowerCase().replace(/\s+/g, '-'),
+      name: c.name,
+      description: c.description,
+      academyName: 'Academia Demo',
+      teacherFirstName: teacherParts[0],
+      teacherLastName: teacherParts.slice(1).join(' '),
+      videoCount: c.videoCount,
+      documentCount: c.documentCount,
+      lessonCount: classLessons.length,
+      studentCount: c.studentCount,
+      createdAt: c.createdAt,
+      startDate: c.startDate,
+      enrollmentStatus: 'APPROVED',
+      documentSigned: 1,
+      whatsappGroupLink: c.whatsappGroupLink || undefined,
+      paymentStatus: 'PAID',
+      paymentMethod: 'stripe',
+      monthlyPrice: c.monthlyPrice,
+      oneTimePrice: c.oneTimePrice,
+      maxStudents: c.maxStudents,
+    };
+  });
+}
+
+// ============================================
+// STUDENT CLASS DETAIL (lessons with videos for student view)
+// ============================================
+
+export interface DemoStudentLesson {
+  id: string;
+  title: string;
+  description: string | null;
+  releaseDate: string;
+  topicId: string | null;
+  topicName?: string;
+  maxWatchTimeMultiplier: number;
+  watermarkIntervalMins: number;
+  videos: Array<{
+    id: string;
+    title: string;
+    description: string | null;
+    durationSeconds: number | null;
+    bunnyGuid: string;
+    playStates: Array<{
+      totalWatchTimeSeconds: number;
+      sessionStartTime: string | null;
+    }>;
+    upload: {
+      storageType: string;
+      bunnyGuid: string;
+      storagePath: string;
+    };
+  }>;
+  documents: Array<{
+    id: string;
+    title: string;
+    description: string | null;
+    upload: {
+      fileName: string;
+      storagePath: string;
+      mimeType: string;
+    };
+  }>;
+  firstVideoBunnyGuid?: string;
+  videoCount: number;
+  documentCount: number;
+  totalVideoDuration: number;
+  totalWatchedSeconds: number;
+}
+
+export function generateDemoStudentLessons(classId: string): DemoStudentLesson[] {
+  const allLessons = generateDemoLessons();
+  const classLessons = allLessons.filter(l => l.classId === classId);
+
+  return classLessons.map((lesson, idx) => ({
+    id: lesson.id,
+    title: lesson.title,
+    description: `Lección ${idx + 1} del curso`,
+    releaseDate: new Date(Date.now() - (30 - idx * 5) * 24 * 60 * 60 * 1000).toISOString(),
+    topicId: null,
+    maxWatchTimeMultiplier: 3,
+    watermarkIntervalMins: 5,
+    videos: [
+      {
+        id: `${lesson.id}-v1`,
+        title: lesson.title,
+        description: null,
+        durationSeconds: lesson.duration,
+        bunnyGuid: DEMO_VIDEO_GUID,
+        playStates: [
+          {
+            totalWatchTimeSeconds: Math.floor(Math.random() * lesson.duration * 0.8),
+            sessionStartTime: new Date(Date.now() - Math.floor(Math.random() * 7) * 24 * 60 * 60 * 1000).toISOString(),
+          },
+        ],
+        upload: {
+          storageType: 'bunny',
+          bunnyGuid: DEMO_VIDEO_GUID,
+          storagePath: `demo/videos/${lesson.id}.mp4`,
+        },
+      },
+    ],
+    documents: (lesson.documents || []).map((doc, dIdx) => ({
+      id: `${lesson.id}-d${dIdx + 1}`,
+      title: doc.title,
+      description: null,
+      upload: {
+        fileName: `${doc.title}.pdf`,
+        storagePath: doc.url,
+        mimeType: 'application/pdf',
+      },
+    })),
+    firstVideoBunnyGuid: DEMO_VIDEO_GUID,
+    videoCount: 1,
+    documentCount: (lesson.documents || []).length,
+    totalVideoDuration: lesson.duration,
+    totalWatchedSeconds: Math.floor(Math.random() * lesson.duration * 0.6),
+  }));
+}

@@ -51,18 +51,6 @@ export default function AdminFacturas() {
     }
   };
 
-  const _totalAmount = payments
-    .filter(p => p.status === 'COMPLETED')
-    .reduce((sum, p) => sum + p.amount, 0);
-
-  const _studentPaymentsTotal = payments
-    .filter(p => p.type === 'STUDENT_TO_ACADEMY' && p.status === 'COMPLETED')
-    .reduce((sum, p) => sum + p.amount, 0);
-
-  const _academyPaymentsTotal = payments
-    .filter(p => p.type === 'ACADEMY_TO_PLATFORM' && p.status === 'COMPLETED')
-    .reduce((sum, p) => sum + p.amount, 0);
-
   const formatAmount = (amount: number, currency: string = 'USD') => {
     return new Intl.NumberFormat('es-ES', {
       style: 'currency',

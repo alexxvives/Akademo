@@ -60,6 +60,7 @@ export default function TeacherAssignments() {
   const [_editUploadFiles, _setEditUploadFiles] = useState<File[]>([]); // Multiple files for edit
   const [userEmail, setUserEmail] = useState<string>('');
   const [paymentStatus, setPaymentStatus] = useState<string>(''); // Empty until loaded
+  const [dataReady, setDataReady] = useState(false); // True only after loadData completes
 
   // Helper to check if assignment is past due
   const _isPastDue = (dueDate?: string) => {
@@ -86,17 +87,19 @@ export default function TeacherAssignments() {
 
   useEffect(() => { loadData(); }, []);
   useEffect(() => { 
-    // Only load assignments after we have user data loaded (userEmail will be set)
-    if (userEmail) {
+    // Only load assignments after loadData has fully completed (dataReady)
+    if (dataReady && userEmail && paymentStatus) {
       console.log('🔄 [TEACHER] Triggering loadAssignments because data is ready');
       loadAssignments(); 
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedClassId, userEmail, paymentStatus]);
+  }, [selectedClassId, dataReady]);
 
   const loadData = async () => {
     try {
       setLoading(true);
+      setDataReady(false); // Prevent useEffect from firing while loading
+      setPaymentStatus(''); // Reset payment status
       console.log('🚀 loadData started...');
       
       // Get user email
@@ -126,6 +129,7 @@ export default function TeacherAssignments() {
         console.log('📦 Demo classes loaded:', demoClasses.length);
         setClasses(demoClasses.map(c => ({ id: c.id, name: c.name })) as Class[]);
         setLoading(false);
+        setDataReady(true);
         return;
       }
       
@@ -139,6 +143,7 @@ export default function TeacherAssignments() {
       console.error('Failed to load data:', error);
     } finally {
       setLoading(false);
+      setDataReady(true);
     }
   };
 

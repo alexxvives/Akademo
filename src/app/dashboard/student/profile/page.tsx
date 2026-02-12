@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
 import { PasswordInput } from '@/components/ui';
 import { SkeletonProfile } from '@/components/ui/SkeletonLoader';
@@ -16,7 +15,6 @@ interface User {
 }
 
 export default function StudentProfile() {
-  const _router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);

@@ -145,11 +145,6 @@ export function FeedbackView({
     );
   }
 
-  const totalRatings = classes.reduce((sum, c) => sum + c.totalRatings, 0);
-  const _avgRating = totalRatings > 0
-    ? classes.reduce((sum, c) => sum + (c.averageRating * c.totalRatings), 0) / totalRatings
-    : 0;
-
   return (
     <div className="space-y-6">
       {/* Class Filter (only if enabled) */}

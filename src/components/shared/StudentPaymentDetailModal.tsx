@@ -148,8 +148,6 @@ export function StudentPaymentDetailModal({
 
   const pendingPayments = filteredPayments.filter(p => p.status === 'PENDING' || p.status === 'CASH_PENDING');
   const completedPayments = filteredPayments.filter(p => p.status === 'COMPLETED' || p.status === 'PAID');
-  const _onTimePayments = completedPayments.filter(p => !p.isLate).length;
-  const _latePayments = completedPayments.filter(p => p.isLate).length;
   
   // Calculate filtered totals based on current class filter
   const filteredTotalPaid = completedPayments.reduce((sum, p) => sum + p.amount, 0);

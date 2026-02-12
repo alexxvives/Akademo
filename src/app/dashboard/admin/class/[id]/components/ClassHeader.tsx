@@ -30,7 +30,6 @@ export default function ClassHeader({
   onCreateStream,
   onTogglePendingRequests: _onTogglePendingRequests,
 }: ClassHeaderProps) {
-  const _approvedCount = (classData.enrollments || []).filter((e) => e.status === 'APPROVED').length;
 
   return (
     <>

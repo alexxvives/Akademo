@@ -7,6 +7,7 @@ import ProtectedVideoPlayer from '@/components/ProtectedVideoPlayer';
 import { SkeletonStudentClass } from '@/components/ui/SkeletonLoader';
 import { useAuth } from '@/hooks/useAuth';
 import { apiClient } from '@/lib/api-client';
+import { generateDemoStudentLessons, generateDemoClasses } from '@/lib/demo-data';
 import StudentTopicsLessonsList from './components/StudentTopicsLessonsList';
 
 interface Video {
@@ -112,6 +113,7 @@ export default function ClassPage() {
   const [feedbackText, setFeedbackText] = useState('');
   const [tempRating, setTempRating] = useState<number | null>(null);
   const [academyFeedbackEnabled, setAcademyFeedbackEnabled] = useState<boolean>(true);
+  const [isDemo, setIsDemo] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -152,6 +154,22 @@ export default function ClassPage() {
     if (lessonParam) {
       // Reload lesson data to get fresh playStates
       const reloadLessonData = async () => {
+        // In demo mode, just use local lesson data
+        if (isDemo) {
+          const lesson = lessons.find(l => l.id === lessonParam);
+          if (lesson) {
+            setSelectedLesson(lesson);
+            setLessonRating(null);
+            if (watchVideoId) {
+              const video = lesson.videos.find(v => v.id === watchVideoId);
+              if (video) setSelectedVideo(video);
+            } else if (lesson.videos.length > 0) {
+              setSelectedVideo(lesson.videos[0]);
+            }
+          }
+          return;
+        }
+
         try {
           const res = await apiClient(`/lessons/${lessonParam}`);
           const result = await res.json();
@@ -209,6 +227,43 @@ export default function ClassPage() {
 
   const loadData = async () => {
     try {
+      // Check if this is a demo class (ID starts with 'demo-' or slug matches)
+      const demoClasses = generateDemoClasses();
+      const demoClass = demoClasses.find(c => c.id === classId || c.name.toLowerCase().replace(/\s+/g, '-') === classId);
+      
+      if (demoClass) {
+        // Also verify the student's academy is actually unpaid
+        let isDemoAcademy = false;
+        try {
+          const academiesRes = await apiClient('/academies');
+          const academiesResult = await academiesRes.json();
+          if (academiesResult.success && Array.isArray(academiesResult.data) && academiesResult.data.length > 0) {
+            isDemoAcademy = academiesResult.data[0].paymentStatus === 'NOT PAID';
+          }
+        } catch { /* fallback: if classId starts with demo-, treat as demo */ }
+        
+        if (isDemoAcademy || classId.startsWith('demo-')) {
+          setIsDemo(true);
+          setClassData({
+            id: demoClass.id,
+            name: demoClass.name,
+            description: demoClass.description,
+            startDate: demoClass.startDate,
+            academy: { name: 'Academia Demo', id: 'demo-academy-1' },
+          });
+          setEnrollmentStatus('APPROVED');
+          setAcademyFeedbackEnabled(true);
+
+          // Generate demo lessons for this class
+          const demoLessons = generateDemoStudentLessons(demoClass.id);
+          setLessons(demoLessons as unknown as Lesson[]);
+          setTopics([]);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Real data path
       // First, load class data to resolve slug to ID
       const classRes = await apiClient(`/classes/${classId}`);
       const classResult = await classRes.json();
@@ -276,16 +331,20 @@ export default function ClassPage() {
       return;
     }
     
-    // Fetch user's rating for this lesson
-    try {
-      const res = await apiClient(`/ratings?lessonId=${lesson.id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setLessonRating(data.data?.rating ?? null);
-      } else {
+    // In demo mode, skip API rating fetch
+    if (!isDemo) {
+      try {
+        const res = await apiClient(`/ratings?lessonId=${lesson.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          setLessonRating(data.data?.rating ?? null);
+        } else {
+          setLessonRating(null);
+        }
+      } catch {
         setLessonRating(null);
       }
-    } catch {
+    } else {
       setLessonRating(null);
     }
     
@@ -311,6 +370,13 @@ export default function ClassPage() {
   const selectVideoInLesson = async (video: Video) => {
     if (!selectedLesson) return;
     
+    if (isDemo) {
+      // In demo mode, just select the video locally
+      setSelectedVideo(video);
+      const newUrl = `/dashboard/student/class/${classId}?lesson=${selectedLesson.id}&watch=${video.id}`;
+      router.push(newUrl);
+      return;
+    }
     
     // Reload lesson data to get fresh playStates before switching
     try {
@@ -344,6 +410,16 @@ export default function ClassPage() {
 
   const submitRating = async (rating: number) => {
     if (!selectedLesson || showRatingSuccess) return;
+    
+    // Demo mode: simulate rating submission
+    if (isDemo) {
+      setLessonRating(rating);
+      setShowRatingSuccess(true);
+      setTempRating(null);
+      setFeedbackText('');
+      setTimeout(() => setShowRatingSuccess(false), 2000);
+      return;
+    }
     
     try {
       const res = await apiClient('/ratings', {

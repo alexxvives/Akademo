@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
+import { generateDemoStudentEnrolledClasses } from '@/lib/demo-data';
 import DocumentSigningModal from '@/components/DocumentSigningModal';
 import PaymentModal from '@/components/PaymentModal';
 import { SkeletonClasses } from '@/components/ui/SkeletonLoader';
@@ -81,6 +82,27 @@ export default function StudentClassesPage() {
 
   const loadData = async () => {
     try {
+      // Check if this is a demo student (academy not paid)
+      const academiesRes = await apiClient('/academies');
+      const academiesResult = await academiesRes.json();
+      
+      if (academiesResult.success && Array.isArray(academiesResult.data) && academiesResult.data.length > 0) {
+        const academy = academiesResult.data[0];
+        if (academy.paymentStatus === 'NOT PAID') {
+          // Demo mode: show demo enrolled classes
+          const demoClasses = generateDemoStudentEnrolledClasses();
+          setEnrolledClasses(demoClasses.map(c => ({
+            ...c,
+            monthlyPrice: c.monthlyPrice ?? undefined,
+            oneTimePrice: c.oneTimePrice ?? undefined,
+            maxStudents: c.maxStudents ?? undefined,
+          })));
+          setAcademyName('Academia Demo');
+          setLoading(false);
+          return;
+        }
+      }
+
       const classesRes = await apiClient('/classes');
       const classesResult = await classesRes.json();
 
@@ -227,7 +249,6 @@ export default function StudentClassesPage() {
         {enrolledClasses.map((classItem) => {
           const liveStream = activeStreams.find(s => s.classId === classItem.id);
           const needsSignature = !classItem.documentSigned;
-          const _isPaymentPending = classItem.paymentStatus === 'PENDING' && (classItem.paymentMethod === 'cash' || classItem.paymentMethod === 'bizum');
           
           return (
             <div
