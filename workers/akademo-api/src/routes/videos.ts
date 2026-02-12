@@ -129,7 +129,7 @@ videos.post('/progress', validateBody(videoProgressSchema), async (c) => {
     }
   } catch (error: any) {
     console.error('[Video Progress] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -155,7 +155,7 @@ videos.post('/progress/reset', async (c) => {
     return c.json(successResponse({ message: 'Progress reset' }));
   } catch (error: any) {
     console.error('[Reset Progress] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -250,7 +250,7 @@ videos.post('/progress/admin-update', async (c) => {
     return c.json(successResponse({ message: 'Time updated successfully' }));
   } catch (error: any) {
     console.error('[Admin Update Time] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -313,7 +313,7 @@ videos.get('/:id', async (c) => {
     return c.json(successResponse(video));
   } catch (error: any) {
     console.error('[Get Video] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 

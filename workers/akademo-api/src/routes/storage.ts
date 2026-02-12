@@ -3,6 +3,55 @@ import { Bindings } from '../types';
 import { requireAuth, getSession } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 
+// ============ Upload Security ============
+
+const ALLOWED_MIME_TYPES = new Set([
+  // Images
+  'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml',
+  // Documents
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  // Video (for small clips; large videos go through Bunny)
+  'video/mp4', 'video/webm',
+  // Audio
+  'audio/mpeg', 'audio/wav', 'audio/ogg',
+]);
+
+// Max file sizes by upload type (in bytes)
+const MAX_FILE_SIZES: Record<string, number> = {
+  avatar: 5 * 1024 * 1024,       // 5 MB
+  logo: 5 * 1024 * 1024,         // 5 MB
+  document: 25 * 1024 * 1024,    // 25 MB
+  assignment: 50 * 1024 * 1024,  // 50 MB
+  uploads: 50 * 1024 * 1024,     // 50 MB (default)
+};
+const DEFAULT_MAX_SIZE = 50 * 1024 * 1024; // 50 MB
+
+/** Sanitize a file name: remove path traversal, null bytes, control chars */
+function sanitizeFileName(name: string): string {
+  return name
+    .replace(/\0/g, '')           // null bytes
+    .replace(/\.\./g, '')         // path traversal
+    .replace(/[/\\]/g, '_')       // directory separators
+    .replace(/[<>:"|?*]/g, '_')   // Windows-invalid chars
+    .replace(/[\x00-\x1f]/g, '')  // control characters
+    .slice(0, 255);               // max length
+}
+
+/** Sanitize a storage path: allow only alphanumeric, hyphens, underscores, dots, slashes */
+function sanitizePath(p: string): string {
+  return p
+    .replace(/\0/g, '')
+    .replace(/\.\.\//g, '')       // path traversal
+    .replace(/\.\.\\/g, '')
+    .replace(/^\/+/, '')          // leading slashes
+    .replace(/[^a-zA-Z0-9\-_./]/g, '_')
+    .slice(0, 500);
+}
+
 const storage = new Hono<{ Bindings: Bindings }>();
 
 // POST /storage/upload - Simple file upload (for small files like logos)
@@ -20,11 +69,11 @@ storage.post('/upload', async (c) => {
     // Allow STUDENT for assignment submissions
     if (!['ADMIN', 'TEACHER', 'ACADEMY', 'STUDENT'].includes(session.role)) {
       console.error('[Upload] Role not authorized:', session.role);
-      return c.json(errorResponse(`Tu rol (${session.role}) no tiene permiso para subir archivos`), 403);
+      return c.json(errorResponse('Tu rol no tiene permiso para subir archivos'), 403);
     }
     
     const formData = await c.req.formData();
-    const file = formData.get('file') as File;
+    const file = formData.get('file') as unknown as File | null;
     const type = formData.get('type') as string; // 'assignment', 'document', 'avatar', etc.
     const customPath = formData.get('path') as string | null; // Optional custom path
 
@@ -32,10 +81,23 @@ storage.post('/upload', async (c) => {
       return c.json(errorResponse('file is required'), 400);
     }
 
-    // Generate path based on type or use custom path
+    // Validate MIME type
+    if (!ALLOWED_MIME_TYPES.has(file.type)) {
+      return c.json(errorResponse(`Tipo de archivo no permitido: ${file.type}`), 400);
+    }
+
+    // Validate file size
+    const maxSize = MAX_FILE_SIZES[type] || DEFAULT_MAX_SIZE;
+    if (file.size > maxSize) {
+      const maxMB = Math.round(maxSize / (1024 * 1024));
+      return c.json(errorResponse(`El archivo excede el tamaño máximo de ${maxMB} MB`), 400);
+    }
+
+    // Sanitize file name and path
+    const safeName = sanitizeFileName(file.name);
     const id = crypto.randomUUID().replace(/-/g, '');
     const folder = type || 'uploads';
-    const path = customPath || `${folder}/${id}-${file.name}`;
+    const path = customPath ? sanitizePath(customPath) : `${folder}/${id}-${safeName}`;
 
     // Read file as ArrayBuffer
     const fileData = await file.arrayBuffer();
@@ -46,7 +108,7 @@ storage.post('/upload', async (c) => {
         contentType: file.type,
       },
       customMetadata: {
-        originalName: file.name,
+        originalName: safeName,
         uploadedAt: new Date().toISOString(),
         uploadedBy: session.id,
       },
@@ -61,7 +123,7 @@ storage.post('/upload', async (c) => {
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `).bind(
       uploadId,
-      file.name,
+      safeName,
       file.size,
       file.type,
       path,
@@ -72,13 +134,13 @@ storage.post('/upload', async (c) => {
     return c.json(successResponse({
       uploadId,
       path,
-      fileName: file.name,
+      fileName: safeName,
       fileSize: file.size,
       message: 'File uploaded successfully',
     }));
   } catch (error: any) {
     console.error('[Simple Upload] Error:', error);
-    return c.json(errorResponse(error.message || 'Failed to upload file'), 500);
+    return c.json(errorResponse('Failed to upload file'), 500);
   }
 });
 
@@ -104,7 +166,7 @@ storage.get('/upload/:id', async (c) => {
     return c.json(successResponse(upload));
   } catch (error: any) {
     console.error('[Get Upload] Error:', error);
-    return c.json(errorResponse(error.message || 'Failed to fetch upload'), 500);
+    return c.json(errorResponse('Failed to fetch upload'), 500);
   }
 });
 
@@ -123,9 +185,15 @@ storage.post('/multipart/init', async (c) => {
       return c.json(errorResponse('fileName, fileType, and folder required'), 400);
     }
 
-    // Generate unique key
+    // Validate MIME type
+    if (!ALLOWED_MIME_TYPES.has(fileType)) {
+      return c.json(errorResponse(`Tipo de archivo no permitido: ${fileType}`), 400);
+    }
+
+    // Generate unique key with sanitized file name
+    const safeName = sanitizeFileName(fileName);
     const id = crypto.randomUUID().replace(/-/g, '');
-    const key = `${folder}/${id}-${fileName}`;
+    const key = `${sanitizePath(folder)}/${id}-${safeName}`;
 
     // Create multipart upload
     const multipartUpload = await c.env.STORAGE.createMultipartUpload(key, {
@@ -133,7 +201,7 @@ storage.post('/multipart/init', async (c) => {
         contentType: fileType,
       },
       customMetadata: {
-        originalName: fileName,
+        originalName: safeName,
         uploadedAt: new Date().toISOString(),
       },
     });
@@ -144,7 +212,7 @@ storage.post('/multipart/init', async (c) => {
     }));
   } catch (error: any) {
     console.error('[Multipart Init] Error:', error);
-    return c.json(errorResponse(error.message || 'Failed to init upload'), 500);
+    return c.json(errorResponse('Failed to init upload'), 500);
   }
 });
 
@@ -180,7 +248,7 @@ storage.put('/multipart/upload-part', async (c) => {
       multipartUpload = c.env.STORAGE.resumeMultipartUpload(key, uploadId);
     } catch (e: any) {
       console.error('[Upload Part] Failed to resume multipart upload:', e);
-       return c.json(errorResponse(`Failed to resume multipart upload: ${e.message}`), 500);
+       return c.json(errorResponse('Failed to resume multipart upload'), 500);
     }
     
     // Upload the part
@@ -189,7 +257,7 @@ storage.put('/multipart/upload-part', async (c) => {
       uploadedPart = await multipartUpload.uploadPart(partNumber, fileData);
     } catch (e: any) {
        console.error(`[Upload Part] R2 uploadPart failed. key='${key}' uploadId='${uploadId}' part=${partNumber}`, e);
-       return c.json(errorResponse(`R2 uploadPart failed: ${e.message}`), 500);
+       return c.json(errorResponse('Failed to upload part to storage'), 500);
     }
 
     return c.json(successResponse({
@@ -198,10 +266,7 @@ storage.put('/multipart/upload-part', async (c) => {
     }));
   } catch (error: any) {
     console.error('[Upload Part] Critical Error:', error);
-    if (error.message === 'Unauthorized') {
-        return c.json(errorResponse('Unauthorized'), 401);
-    }
-    return c.json(errorResponse(error.message || 'Failed to upload part'), 500);
+    return c.json(errorResponse('Failed to upload part'), 500);
   }
 });
 
@@ -229,7 +294,7 @@ storage.post('/multipart/complete', async (c) => {
     }));
   } catch (error: any) {
     console.error('[Complete Upload] Error:', error);
-    return c.json(errorResponse(error.message || 'Failed to complete upload'), 500);
+    return c.json(errorResponse('Failed to complete upload'), 500);
   }
 });
 
@@ -254,7 +319,7 @@ storage.post('/multipart/abort', async (c) => {
     return c.json(successResponse({ message: 'Upload aborted' }));
   } catch (error: any) {
     console.error('[Abort Upload] Error:', error);
-    return c.json(errorResponse(error.message || 'Failed to abort upload'), 500);
+    return c.json(errorResponse('Failed to abort upload'), 500);
   }
 });
 
@@ -284,7 +349,7 @@ storage.get('/serve/*', async (c) => {
 
     if (!key || key === 'undefined' || key === 'null') {
       console.error('[Serve File] Invalid key:', key);
-      return c.json(errorResponse(`Invalid file path: ${key}`), 400);
+      return c.json(errorResponse('Invalid file path'), 400);
     }
 
     const object = await c.env.STORAGE.get(key);
@@ -301,8 +366,8 @@ storage.get('/serve/*', async (c) => {
           },
         });
       }
-      console.error('[Serve File] File not found in R2. Key:', key, 'RawKey:', rawKey);
-      return c.json(errorResponse(`File not found: ${key}`), 404);
+      console.error('[Serve File] File not found in R2. Key:', key);
+      return c.json(errorResponse('File not found'), 404);
     }
 
     return new Response(object.body, {
@@ -314,7 +379,7 @@ storage.get('/serve/*', async (c) => {
     });
   } catch (error: any) {
     console.error('[Serve File] Error:', error);
-    return c.json(errorResponse(error.message || 'Failed to serve file'), 500);
+    return c.json(errorResponse('Failed to serve file'), 500);
   }
 });
 

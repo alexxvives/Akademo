@@ -256,7 +256,7 @@ webhooks.post('/zoom', async (c) => {
   } catch (error: any) {
     console.error('[Zoom Webhook] Error:', error);
     // Return 200 even on error to avoid Zoom retries
-    return c.json(successResponse({ received: true, error: error.message }));
+    return c.json(successResponse({ received: true }));
   }
 });
 
@@ -322,7 +322,7 @@ webhooks.post('/bunny', async (c) => {
     return c.json(successResponse({ received: true }));
   } catch (error: any) {
     console.error('[Bunny Webhook] Error:', error);
-    return c.json(successResponse({ received: true, error: error.message }));
+    return c.json(successResponse({ received: true }));
   }
 });
 
@@ -334,15 +334,54 @@ webhooks.post('/stripe', async (c) => {
       return c.json(errorResponse('Missing Stripe signature'), 400);
     }
 
-    // TODO: Verify webhook signature with Stripe
-    // const stripe = new Stripe(c.env.STRIPE_SECRET_KEY);
-    // const event = stripe.webhooks.constructEvent(
-    //   await c.req.text(),
-    //   signature,
-    //   c.env.STRIPE_WEBHOOK_SECRET
-    // );
+    // Verify webhook signature with HMAC-SHA256 (Stripe v1 scheme)
+    const rawBody = await c.req.text();
+    const webhookSecret = (c.env as unknown as Record<string, unknown>).STRIPE_WEBHOOK_SECRET as string;
+    
+    if (webhookSecret) {
+      const parts = signature.split(',').reduce((acc: Record<string, string>, part: string) => {
+        const [key, val] = part.split('=');
+        acc[key.trim()] = val;
+        return acc;
+      }, {} as Record<string, string>);
+      
+      const timestamp = parts['t'];
+      const expectedSig = parts['v1'];
+      
+      if (!timestamp || !expectedSig) {
+        return c.json(errorResponse('Invalid signature format'), 400);
+      }
+      
+      // Reject if timestamp is more than 5 minutes old (replay protection)
+      const age = Math.floor(Date.now() / 1000) - parseInt(timestamp, 10);
+      if (age > 300) {
+        return c.json(errorResponse('Webhook timestamp too old'), 400);
+      }
+      
+      // Compute expected signature: HMAC-SHA256(timestamp + "." + rawBody)
+      const encoder = new TextEncoder();
+      const key = await crypto.subtle.importKey(
+        'raw',
+        encoder.encode(webhookSecret),
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign']
+      );
+      const signedPayload = encoder.encode(`${timestamp}.${rawBody}`);
+      const sigBuffer = await crypto.subtle.sign('HMAC', key, signedPayload);
+      const computedSig = Array.from(new Uint8Array(sigBuffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+      
+      if (computedSig !== expectedSig) {
+        console.error('[Stripe Webhook] Signature verification failed');
+        return c.json(errorResponse('Invalid signature'), 400);
+      }
+    } else {
+      console.warn('[Stripe Webhook] STRIPE_WEBHOOK_SECRET not set — skipping signature verification');
+    }
 
-    const payload = await c.req.json();
+    const payload = JSON.parse(rawBody);
     const event = payload.type;
     const data = payload.data.object;
 
@@ -623,7 +662,7 @@ webhooks.post('/stripe', async (c) => {
     return c.json(successResponse({ received: true }));
   } catch (error: any) {
     console.error('[Stripe Webhook] Error:', error);
-    return c.json(successResponse({ received: true, error: error.message }));
+    return c.json(successResponse({ received: true }));
   }
 });
 

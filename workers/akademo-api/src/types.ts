@@ -39,6 +39,12 @@ export interface Bindings {
   // Email
   RESEND_API_KEY: string;
   
+  // Stripe
+  STRIPE_WEBHOOK_SECRET: string;
+  
+  // Session
+  SESSION_SECRET: string;
+  
   // Frontend
   FRONTEND_URL: string;
 }

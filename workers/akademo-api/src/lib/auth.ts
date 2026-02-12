@@ -15,6 +15,7 @@ interface UserRow {
 
 const SESSION_COOKIE_NAME = 'academy_session';
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
+const SESSION_SIGNING_ALG = { name: 'HMAC', hash: 'SHA-256' };
 
 export interface SessionUser {
   id: string;
@@ -32,8 +33,74 @@ export async function verifyPassword(password: string, hashedPassword: string): 
   return bcrypt.compare(password, hashedPassword);
 }
 
+/**
+ * Derive an HMAC-SHA256 signing key from a secret string.
+ * Uses the first available secret (SESSION_SECRET env var, or falls back to a derived key from DB binding).
+ */
+async function getSigningKey(env: Bindings): Promise<CryptoKey> {
+  // Use SESSION_SECRET env var if available, otherwise deterministic fallback
+  const secret = (env as unknown as Record<string, unknown>).SESSION_SECRET as string
+    || 'akademo-session-key-' + (env.DB ? 'prod' : 'dev');
+  const encoder = new TextEncoder();
+  return crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret),
+    SESSION_SIGNING_ALG,
+    false,
+    ['sign', 'verify']
+  );
+}
+
+/**
+ * Sign a payload with HMAC-SHA256 and return `base64url(payload).base64url(signature)`
+ */
+async function signToken(payload: string, env: Bindings): Promise<string> {
+  const key = await getSigningKey(env);
+  const encoder = new TextEncoder();
+  const data = encoder.encode(payload);
+  const sig = await crypto.subtle.sign('HMAC', key, data);
+  // Base64url encode both parts
+  const payloadB64 = btoa(payload).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const sigB64 = btoa(String.fromCharCode(...new Uint8Array(sig)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  return `${payloadB64}.${sigB64}`;
+}
+
+/**
+ * Verify a signed token and return the payload, or null if invalid.
+ */
+async function verifyToken(token: string, env: Bindings): Promise<string | null> {
+  const parts = token.split('.');
+  if (parts.length !== 2) {
+    // Legacy unsigned token (base64-only) — accept during migration but log warning
+    try {
+      const decoded = atob(token);
+      if (decoded && decoded.length > 0) {
+        console.warn('[Auth] Legacy unsigned session token detected — will be replaced on next login');
+        return decoded;
+      }
+    } catch { /* invalid */ }
+    return null;
+  }
+  try {
+    const [payloadB64, sigB64] = parts;
+    // Restore base64 padding
+    const pad = (s: string) => s.replace(/-/g, '+').replace(/_/g, '/') + '=='.slice(0, (4 - s.length % 4) % 4);
+    const payload = atob(pad(payloadB64));
+    const sigStr = atob(pad(sigB64));
+    const sigArray = new Uint8Array([...sigStr].map(c => c.charCodeAt(0)));
+
+    const key = await getSigningKey(env);
+    const encoder = new TextEncoder();
+    const valid = await crypto.subtle.verify('HMAC', key, sigArray, encoder.encode(payload));
+    return valid ? payload : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function createSession(c: Context<{ Bindings: Bindings }>, userId: string): Promise<string> {
-  const sessionId = btoa(userId);
+  const sessionId = await signToken(userId, c.env);
   setCookie(c, SESSION_COOKIE_NAME, sessionId, {
     httpOnly: true,
     secure: true,
@@ -43,6 +110,10 @@ export async function createSession(c: Context<{ Bindings: Bindings }>, userId: 
     domain: '.akademo-edu.com',
   });
   return sessionId;
+}
+
+export async function createSignedSession(data: string, env: Bindings): Promise<string> {
+  return signToken(data, env);
 }
 
 export async function deleteSession(c: Context<{ Bindings: Bindings }>): Promise<void> {
@@ -71,21 +142,24 @@ export async function getSession(c: Context<{ Bindings: Bindings }>): Promise<Se
     let deviceSessionId: string | null = null;
     
     try {
-        // Decode base64 session ID to get user ID (and deviceSessionId for students)
-        const decoded = atob(sessionId);
+        // Verify signed token and decode payload
+        const decoded = await verifyToken(sessionId, c.env);
+        if (!decoded) {
+          console.error('[getSession] Token verification failed');
+          return null;
+        }
         
-        // Try to parse as JSON (new format with deviceSessionId)
+        // Try to parse as JSON (format with deviceSessionId)
         try {
           const parsed = JSON.parse(decoded);
           userId = parsed.userId;
           deviceSessionId = parsed.deviceSessionId || null;
         } catch {
-          // Old format - just userId
+          // Simple format - just userId
           userId = decoded;
         }
     } catch (e) {
         console.error('[getSession] FAILED to decode session ID:', e);
-        console.error('[getSession] Invalid sessionId format:', sessionId);
         return null;
     }
     

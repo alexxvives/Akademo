@@ -102,7 +102,7 @@ requests.post('/student', async (c) => {
     if (error.message === 'Unauthorized') {
       return c.json(errorResponse('Please login to request access to classes'), 401);
     }
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -142,7 +142,7 @@ requests.get('/teacher', async (c) => {
     return c.json(memberships);
   } catch (error: any) {
     console.error('[Teacher Requests] Error:', error);
-    return c.json(errorResponse(error.message), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -194,7 +194,7 @@ requests.post('/teacher', async (c) => {
     }));
   } catch (error: any) {
     console.error('[Teacher Request] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 

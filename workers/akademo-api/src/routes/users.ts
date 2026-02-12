@@ -79,7 +79,7 @@ users.post('/create-student', async (c) => {
     return c.json(successResponse(user), 201);
   } catch (error: any) {
     console.error('[Create Student] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -156,7 +156,7 @@ users.post('/create-teacher', async (c) => {
     return c.json(successResponse(user), 201);
   } catch (error: any) {
     console.error('[Create Teacher] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -212,7 +212,7 @@ users.delete('/teacher/:id', async (c) => {
     return c.json(successResponse({ message: 'Teacher deleted successfully' }));
   } catch (error: any) {
     console.error('[Delete Teacher] Error:', error);
-    return c.json(errorResponse(error.message || 'Failed to delete teacher'), 500);
+    return c.json(errorResponse('Failed to delete teacher'), 500);
   }
 });
 
@@ -276,7 +276,7 @@ users.patch('/teacher/:id', async (c) => {
     return c.json(successResponse({ message: 'Teacher updated successfully' }));
   } catch (error: any) {
     console.error('[Update Teacher] Error:', error);
-    return c.json(errorResponse(error.message || 'Failed to update teacher'), 500);
+    return c.json(errorResponse('Failed to update teacher'), 500);
   }
 });
 
@@ -344,7 +344,7 @@ users.delete('/delete-account', async (c) => {
     
   } catch (error: any) {
     console.error('[Delete Account] Error:', error);
-    return c.json(errorResponse(error.message || 'Failed to delete account'), 500);
+    return c.json(errorResponse('Failed to delete account'), 500);
   }
 });
 

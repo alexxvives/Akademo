@@ -86,7 +86,7 @@ assignments.get('/all', async (c) => {
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
     console.error('[Assignments GET /all] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -212,7 +212,7 @@ assignments.get('/', async (c) => {
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
     console.error('[Assignments GET] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -289,7 +289,7 @@ assignments.post('/', validateBody(createAssignmentSchema), async (c) => {
     return c.json(successResponse(assignment), 201);
   } catch (error: any) {
     console.error('[Assignments POST] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -333,7 +333,7 @@ assignments.get('/ungraded-count', async (c) => {
     return c.json(successResponse(count));
   } catch (error: any) {
     console.error('[Assignments ungraded-count] Error:', error);
-    return c.json(errorResponse(error.message || 'Failed to fetch ungraded count'), 500);
+    return c.json(errorResponse('Failed to fetch ungraded count'), 500);
   }
 });
 
@@ -361,7 +361,7 @@ assignments.get('/new-grades-count', async (c) => {
     return c.json(successResponse(count));
   } catch (error: any) {
     console.error('[Assignments new-grades-count] Error:', error);
-    return c.json(errorResponse(error.message || 'Failed to fetch new grades count'), 500);
+    return c.json(errorResponse('Failed to fetch new grades count'), 500);
   }
 });
 
@@ -439,7 +439,7 @@ assignments.get('/:id', async (c) => {
     return c.json(errorResponse('Unauthorized'), 403);
   } catch (error: any) {
     console.error('[Assignments/:id GET] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -509,7 +509,7 @@ assignments.post('/:id/submit', async (c) => {
     return c.json(successResponse(submission), 201);
   } catch (error: any) {
     console.error('[Assignments/:id/submit POST] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -578,7 +578,7 @@ assignments.patch('/submissions/:submissionId/grade', validateBody(gradeSubmissi
     return c.json(successResponse(updatedSubmission));
   } catch (error: any) {
     console.error('[Assignments/submissions/:id/grade PATCH] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -646,7 +646,7 @@ assignments.get('/:id/submissions/download', async (c) => {
     }));
   } catch (error: any) {
     console.error('[Assignments/:id/submissions/download GET] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -734,7 +734,7 @@ assignments.patch('/:id', async (c) => {
     return c.json(successResponse({ message: 'Assignment updated successfully' }));
   } catch (error: any) {
     console.error('[Assignments/:id PATCH] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -778,7 +778,7 @@ assignments.delete('/:id', async (c) => {
     return c.json(successResponse({ message: 'Assignment deleted successfully' }));
   } catch (error: any) {
     console.error('[Assignments/:id DELETE] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 

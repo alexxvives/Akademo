@@ -69,7 +69,7 @@ notifications.post('/', async (c) => {
     }));
   } catch (error: any) {
     console.error('[Send Notifications] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -91,7 +91,7 @@ notifications.get('/', async (c) => {
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
     console.error('[Get Notifications] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -123,7 +123,7 @@ notifications.patch('/:id', async (c) => {
     return c.json(successResponse({ message: 'Marked as read' }));
   } catch (error: any) {
     console.error('[Mark Notification Read] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -155,7 +155,7 @@ notifications.delete('/:id', async (c) => {
     return c.json(successResponse({ message: 'Notification deleted' }));
   } catch (error: any) {
     console.error('[Delete Notification] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 

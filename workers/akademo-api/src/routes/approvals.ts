@@ -36,7 +36,7 @@ approvals.get('/academy', async (c) => {
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
     console.error('[Academy Approvals] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -85,7 +85,7 @@ approvals.post('/academy', async (c) => {
     return c.json(successResponse({ message: `Enrollment ${status.toLowerCase()}` }));
   } catch (error: any) {
     console.error('[Approve Academy Enrollment] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -118,7 +118,7 @@ approvals.get('/teacher', async (c) => {
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
     console.error('[Teacher Approvals] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -166,7 +166,7 @@ approvals.post('/teacher', async (c) => {
     return c.json(successResponse({ message: `Enrollment ${status.toLowerCase()}` }));
   } catch (error: any) {
     console.error('[Approve Teacher Enrollment] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 

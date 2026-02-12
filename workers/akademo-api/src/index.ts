@@ -34,16 +34,12 @@ import { successResponse, errorResponse } from './lib/utils';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
-// Global error handler - provides detailed errors for debugging
+// Global error handler - log details server-side, return generic message to client
 app.onError((err, c) => {
   console.error('[API Error]', err);
-  const errorMessage = err instanceof Error ? err.message : String(err);
-  const errorCause = err instanceof Error && 'cause' in err && err.cause instanceof Error 
-    ? err.cause.message 
-    : undefined;
   return c.json({
     success: false,
-    error: `API Error: ${errorCause || errorMessage}`,
+    error: 'Internal server error',
   }, 500);
 });
 

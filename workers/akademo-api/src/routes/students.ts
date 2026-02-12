@@ -150,9 +150,7 @@ students.get('/progress', async (c) => {
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
     console.error('[Students Progress] Error:', error);
-    // Return detailed error for debugging
-    const errorDetail = error.cause?.message || error.message || String(error);
-    return c.json(errorResponse(`Students progress error: ${errorDetail}`), 500);
+    return c.json(errorResponse('Failed to fetch student progress'), 500);
   }
 });
 

@@ -2,9 +2,10 @@ import { Hono } from 'hono';
 import { setCookie } from 'hono/cookie';
 import bcrypt from 'bcryptjs';
 import { Bindings } from '../types';
-import { getSession } from '../lib/auth';
+import { getSession, createSignedSession } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
-import { loginSchema, validateBody } from '../lib/validation';
+import { loginSchema, registerSchema, validateBody } from '../lib/validation';
+import { loginRateLimit, registerRateLimit, checkEmailRateLimit, emailVerificationRateLimit } from '../lib/rate-limit';
 
 const auth = new Hono<{ Bindings: Bindings }>();
 
@@ -75,7 +76,7 @@ auth.post('/session/check', async (c) => {
 });
 
 // POST /auth/register
-auth.post('/register', async (c) => {
+auth.post('/register', registerRateLimit, validateBody(registerSchema), async (c) => {
   try {
     const { 
       email, 
@@ -90,25 +91,14 @@ auth.post('/register', async (c) => {
       classIds = [],  // For TEACHER (can join multiple classes)
     } = await c.req.json();
 
-    if (!email || !password) {
-      return c.json(errorResponse('Email and password are required'), 400);
-    }
-
-    // Validate name fields based on role
+    // Zod validates: email format, password min 8, role enum
+    // Conditional validations below (cross-field):
     if (role === 'ACADEMY' && !academyName) {
       return c.json(errorResponse('Academy name is required'), 400);
     }
 
     if ((role === 'STUDENT' || role === 'TEACHER') && (!firstName || !lastName)) {
       return c.json(errorResponse('First name and last name are required'), 400);
-    }
-
-    if (password.length < 8) {
-      return c.json(errorResponse('Password must be at least 8 characters'), 400);
-    }
-
-    if (!['STUDENT', 'TEACHER', 'ACADEMY'].includes(role)) {
-      return c.json(errorResponse('Invalid role'), 400);
     }
 
     // Validate required fields based on role
@@ -228,11 +218,11 @@ auth.post('/register', async (c) => {
         .run();
     }
 
-    // Create session token - include deviceSessionId for students
+    // Create signed session token - include deviceSessionId for students
     const sessionData = deviceSessionId 
       ? JSON.stringify({ userId, deviceSessionId }) 
       : userId;
-    const sessionId = btoa(sessionData);
+    const sessionId = await createSignedSession(sessionData, c.env);
     setCookie(c, 'academy_session', sessionId, {
       httpOnly: true,
       secure: true,
@@ -243,7 +233,7 @@ auth.post('/register', async (c) => {
     });
 
     return c.json(successResponse({
-      token: sessionId, // Return token for cross-domain auth
+      token: sessionId, // Return signed token for cross-domain auth
       id: userId,
       email: email.toLowerCase(),
       firstName: userFirstName,
@@ -252,12 +242,12 @@ auth.post('/register', async (c) => {
     }), 201);
   } catch (error: any) {
     console.error('[Register] Error:', error);
-    return c.json(errorResponse(error.message || 'Registration failed'), 500);
+    return c.json(errorResponse('Registration failed'), 500);
   }
 });
 
 // POST /auth/login
-auth.post('/login', validateBody(loginSchema), async (c) => {
+auth.post('/login', loginRateLimit, validateBody(loginSchema), async (c) => {
   try {
     const { email, password } = await c.req.json();
 
@@ -307,11 +297,11 @@ auth.post('/login', validateBody(loginSchema), async (c) => {
         .run();
     }
     
-    // Create session token - include deviceSessionId for students to track specific session
+    // Create signed session token - include deviceSessionId for students to track specific session
     const sessionData = deviceSessionId 
       ? JSON.stringify({ userId: user.id, deviceSessionId }) 
       : user.id as string;
-    const sessionId = btoa(sessionData);
+    const sessionId = await createSignedSession(sessionData, c.env);
     
     setCookie(c, 'academy_session', sessionId, {
       httpOnly: true,
@@ -323,7 +313,7 @@ auth.post('/login', validateBody(loginSchema), async (c) => {
     });
 
     return c.json(successResponse({
-      token: sessionId, // Return token for cross-domain auth
+      token: sessionId, // Return signed token for cross-domain auth
       id: user.id,
       email: user.email,
       firstName: user.firstName,
@@ -333,7 +323,7 @@ auth.post('/login', validateBody(loginSchema), async (c) => {
   } catch (error: any) {
     console.error('[Login] Error:', error);
     console.error('[Login] Error stack:', error.stack);
-    return c.json(errorResponse(error.message || 'Login failed'), 500);
+    return c.json(errorResponse('Login failed'), 500);
   }
 });
 
@@ -344,14 +334,17 @@ auth.post('/logout', async (c) => {
     const authHeader = c.req.header('Authorization');
     
     if (authHeader?.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      const userId = Buffer.from(token, 'base64').toString('utf-8');
+      // Get session to extract userId (uses signed token verification)
+      const session = await getSession(c);
+      const userId = session?.id;
       
       // Deactivate all device sessions for this user
-      await c.env.DB
-        .prepare('UPDATE DeviceSession SET isActive = 0 WHERE userId = ? AND isActive = 1')
-        .bind(userId)
-        .run();
+      if (userId) {
+        await c.env.DB
+          .prepare('UPDATE DeviceSession SET isActive = 0 WHERE userId = ? AND isActive = 1')
+          .bind(userId)
+          .run();
+      }
       
       // Demo data reset removed - all demo data is now hardcoded in src/lib/demo-data.ts
       // Demo accounts (paymentStatus='NOT PAID') automatically see fresh generated data on every login
@@ -374,7 +367,7 @@ auth.post('/logout', async (c) => {
 });
 
 // POST /auth/check-email - Check if email exists
-auth.post('/check-email', async (c) => {
+auth.post('/check-email', checkEmailRateLimit, async (c) => {
   try {
     const { email } = await c.req.json();
 
@@ -393,12 +386,12 @@ auth.post('/check-email', async (c) => {
     }));
   } catch (error: any) {
     console.error('[Check Email] Error:', error);
-    return c.json(errorResponse(error.message || 'Failed to check email'), 500);
+    return c.json(errorResponse('Failed to check email'), 500);
   }
 });
 
 // POST /auth/send-verification
-auth.post('/send-verification', async (c) => {
+auth.post('/send-verification', emailVerificationRateLimit, async (c) => {
   try {
     const { email } = await c.req.json();
 
@@ -471,7 +464,7 @@ auth.post('/send-verification', async (c) => {
     }));
   } catch (error: any) {
     console.error('[Send Verification] Error:', error);
-    return c.json(errorResponse(error.message || 'Failed to send verification'), 500);
+    return c.json(errorResponse('Failed to send verification'), 500);
   }
 });
 
@@ -519,7 +512,7 @@ auth.post('/verify-email', async (c) => {
     }));
   } catch (error: any) {
     console.error('[Verify Email] Error:', error);
-    return c.json(errorResponse(error.message || 'Verification failed'), 500);
+    return c.json(errorResponse('Verification failed'), 500);
   }
 });
 
@@ -584,7 +577,7 @@ auth.get('/join/:teacherId', async (c) => {
     }));
   } catch (error: any) {
     console.error('[Join API] Error:', error);
-    return c.json(errorResponse(error.message || 'Error al cargar los datos del profesor'), 500);
+    return c.json(errorResponse('Error al cargar los datos del profesor'), 500);
   }
 });
 
@@ -633,7 +626,7 @@ auth.get('/join/academy/:academyId', async (c) => {
     }));
   } catch (error: any) {
     console.error('[Academy Join API] Error:', error);
-    return c.json(errorResponse(error.message || 'Error al cargar los datos de la academia'), 500);
+    return c.json(errorResponse('Error al cargar los datos de la academia'), 500);
   }
 });
 
@@ -713,8 +706,8 @@ auth.post('/switch-role', async (c) => {
       .bind(newRole, session.id)
       .run();
 
-    // Create new session (same user, new role)
-    const sessionId = btoa(session.id);
+    // Create new signed session (same user, new role)
+    const sessionId = await createSignedSession(session.id, c.env);
     setCookie(c, 'academy_session', sessionId, {
       httpOnly: true,
       secure: true,
@@ -736,7 +729,7 @@ auth.post('/switch-role', async (c) => {
     }));
   } catch (error: any) {
     console.error('[Switch Role] Error:', error);
-    return c.json(errorResponse(error.message || 'Failed to switch role'), 500);
+    return c.json(errorResponse('Failed to switch role'), 500);
   }
 });
 

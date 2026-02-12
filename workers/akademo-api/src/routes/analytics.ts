@@ -84,7 +84,7 @@ analytics.get('/', async (c) => {
     }
 
     return c.json(successResponse(stats));
-  } catch (error: unknown) {
+  } catch (error: any) {
     const message = error instanceof Error ? error.message : 'Internal server error';
     console.error('[Analytics] Error:', error);
     return c.json(errorResponse(message), 500);

@@ -85,7 +85,7 @@ bunny.post('/video/create', async (c) => {
     }));
   } catch (error: any) {
     console.error('[Bunny Create] Error:', error);
-    return c.json(errorResponse(error.message || 'Failed to create video'), 500);
+    return c.json(errorResponse('Failed to create video'), 500);
   }
 });
 
@@ -118,9 +118,9 @@ bunny.put('/video/upload', async (c) => {
     let bodyBuffer: ArrayBuffer;
     try {
       bodyBuffer = await c.req.arrayBuffer();
-    } catch (bodyError: any) {
+    } catch (bodyError: unknown) {
       console.error('[Bunny Upload] Failed to read body:', bodyError);
-      return c.json(errorResponse(`Failed to read upload body: ${bodyError.message}`), 400);
+      return c.json(errorResponse('Failed to read upload body'), 400);
     }
 
     if (bodyBuffer.byteLength === 0) {
@@ -155,7 +155,7 @@ bunny.put('/video/upload', async (c) => {
     return c.json(successResponse({ videoGuid }));
   } catch (error: any) {
     console.error('[Bunny Upload] Error:', error);
-    return c.json(errorResponse(error.message || 'Failed to upload'), 500);
+    return c.json(errorResponse('Failed to upload'), 500);
   }
 });
 
@@ -175,7 +175,7 @@ bunny.get('/video/:guid', async (c) => {
     return c.json(successResponse(video));
   } catch (error: any) {
     console.error('[Bunny Get Video] Error:', error);
-    return c.json(errorResponse(error.message || 'Failed to get video'), 500);
+    return c.json(errorResponse('Failed to get video'), 500);
   }
 });
 
@@ -215,7 +215,7 @@ bunny.get('/video/:guid/status', async (c) => {
     }));
   } catch (error: any) {
     console.error('[Bunny Status] Error:', error);
-    return c.json(errorResponse(error.message || 'Failed to get status'), 500);
+    return c.json(errorResponse('Failed to get status'), 500);
   }
 });
 
@@ -241,7 +241,7 @@ bunny.get('/video/:guid/stream', async (c) => {
     }));
   } catch (error: any) {
     console.error('[Bunny Stream URL] Error:', error);
-    return c.json(errorResponse(error.message || 'Failed to generate stream URL'), 500);
+    return c.json(errorResponse('Failed to generate stream URL'), 500);
   }
 });
 
@@ -276,7 +276,7 @@ bunny.get('/video/:videoGuid', async (c) => {
     if (error.message?.includes('404') || error.message?.includes('not found')) {
       return c.json(errorResponse('Video not found'), 404);
     }
-    return c.json(errorResponse(error.message || 'Failed to get video'), 500);
+    return c.json(errorResponse('Failed to get video'), 500);
   }
 });
 

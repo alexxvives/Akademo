@@ -252,7 +252,7 @@ payments.post('/initiate', validateBody(initiatePaymentSchema), async (c) => {
     return c.json(errorResponse('Stripe integration not yet configured. Please use cash or bizum payment.'), 501);
   } catch (error: any) {
     console.error('[Payment Initiate] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -334,7 +334,7 @@ payments.get('/pending-cash', async (c) => {
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
     console.error('[Pending Cash Payments] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -377,7 +377,7 @@ payments.get('/pending-count', async (c) => {
     return c.json(successResponse(count));
   } catch (error: any) {
     console.error('[Payments] Error fetching pending count:', error);
-    return c.json(errorResponse(error.message || 'Failed to fetch pending payments count'), 500);
+    return c.json(errorResponse('Failed to fetch pending payments count'), 500);
   }
 });
 
@@ -491,7 +491,7 @@ payments.patch('/:enrollmentId/approve-cash', async (c) => {
     }));
   } catch (error: any) {
     console.error('[Approve Cash Payment] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -606,7 +606,7 @@ payments.post('/stripe-session', async (c) => {
     return c.json(errorResponse('Stripe Connect not yet configured. Please use cash payment.'), 501);
   } catch (error: any) {
     console.error('[Stripe Session] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -639,7 +639,7 @@ payments.get('/my-payments', async (c) => {
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
     console.error('[My Payments] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -695,7 +695,7 @@ payments.patch('/:id/approve-payment', async (c) => {
     return c.json(successResponse({ message: approved ? 'Payment approved' : 'Payment rejected' }));
   } catch (error: any) {
     console.error('[Approve Payment] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -747,7 +747,7 @@ payments.get('/history', async (c) => {
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
     console.error('[Payment History] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -808,7 +808,7 @@ payments.put('/history/:id/reverse', async (c) => {
 
   } catch (error: any) {
     console.error('[Reverse Payment] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -838,7 +838,7 @@ payments.post('/academy-activation', async (c) => {
     }));
   } catch (error: any) {
     console.error('[Academy Activation Payment] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -905,7 +905,7 @@ payments.post('/stripe-connect', async (c) => {
 
   } catch (error: any) {
     console.error('[Stripe Connect] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -949,7 +949,7 @@ payments.get('/stripe-status', async (c) => {
 
   } catch (error: any) {
     console.error('[Stripe Status] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -1038,7 +1038,7 @@ payments.post('/register-manual', async (c) => {
     return c.json(successResponse({ id: paymentId, message: 'Pago registrado exitosamente' }));
   } catch (error: any) {
     console.error('[Payments] Error registering manual payment:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -1081,7 +1081,7 @@ payments.delete('/:id', async (c) => {
     return c.json(successResponse({ message: 'Payment deleted successfully' }));
   } catch (error: any) {
     console.error('[Payments] Error deleting payment:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -1162,7 +1162,7 @@ payments.patch('/:id', async (c) => {
     return c.json(successResponse(updated));
   } catch (error: any) {
     console.error('[Payments] Error updating payment:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -1216,7 +1216,7 @@ payments.post('/academy-activation-session', async (c) => {
     return c.json(successResponse({ url: checkoutSession.url }));
   } catch (error: any) {
     console.error('[Academy Activation] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 

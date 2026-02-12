@@ -182,7 +182,7 @@ studentPayments.get('/:studentId/class/:classId', async (c) => {
     return c.json(successResponse(responseData));
   } catch (error: any) {
     console.error('[Student Payments] Error fetching payment history:', error);
-    return c.json(errorResponse(`Failed to fetch payment history: ${error.message}`), 500);
+    return c.json(errorResponse('Failed to fetch payment history'), 500);
   }
 });
 

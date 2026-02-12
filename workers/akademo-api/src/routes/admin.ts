@@ -43,7 +43,7 @@ admin.get('/academies', async (c) => {
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
     console.error('[Admin Academies] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -90,7 +90,7 @@ admin.get('/payments', async (c) => {
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
     console.error('[Admin Payments] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -137,7 +137,7 @@ admin.get('/classes', async (c) => {
     console.error('[Admin Classes] Error:', error);
     console.error('[Admin Classes] Error stack:', error.stack);
     console.error('[Admin Classes] Error message:', error.message);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -178,7 +178,7 @@ admin.get('/lessons', async (c) => {
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
     console.error('[Admin Lessons] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -229,7 +229,7 @@ admin.patch('/academy/:id', async (c) => {
     return c.json(successResponse({ id: academyId, updated: true }));
   } catch (error: any) {
     console.error('[Admin Update Academy] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -269,7 +269,7 @@ admin.get('/teachers', async (c) => {
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
     console.error('[Admin Teachers] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -307,7 +307,7 @@ admin.get('/students', async (c) => {
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
     console.error('[Admin Students] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -337,7 +337,7 @@ admin.get('/zoom-accounts', async (c) => {
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
     console.error('[Admin Zoom Accounts] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -380,7 +380,7 @@ admin.patch('/classes/:id/assign-zoom', async (c) => {
     return c.json(successResponse({ message: 'Zoom account assigned successfully' }));
   } catch (error: any) {
     console.error('[Admin Assign Zoom] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -473,7 +473,7 @@ admin.delete('/users/:id', async (c) => {
     return c.json(successResponse({ message: `User ${user.email} deleted successfully` }));
   } catch (error: any) {
     console.error('[Admin Delete Account] Error:', error);
-    return c.json(errorResponse(error.message || 'Failed to delete user account'), 500);
+    return c.json(errorResponse('Failed to delete user account'), 500);
   }
 });
 

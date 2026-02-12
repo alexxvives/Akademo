@@ -108,7 +108,7 @@ zoom.post('/signature', async (c) => {
     }));
   } catch (error: any) {
     console.error('[Zoom Signature] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 

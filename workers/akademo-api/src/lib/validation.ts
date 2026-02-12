@@ -24,11 +24,16 @@ export const loginSchema = z.object({
 });
 
 export const registerSchema = z.object({
-  email: z.string().email('Invalid email format'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  firstName: z.string().min(1, 'First name is required').max(100),
-  lastName: z.string().min(1, 'Last name is required').max(100),
-  role: z.enum(['STUDENT', 'TEACHER', 'ACADEMY', 'ADMIN']).default('STUDENT'),
+  email: z.string().email('Invalid email format').max(255),
+  password: z.string().min(8, 'Password must be at least 8 characters').max(128),
+  firstName: z.string().min(1).max(100).optional(),
+  lastName: z.string().min(1).max(100).optional(),
+  academyName: z.string().min(1).max(200).optional(),
+  monoacademy: z.boolean().optional().default(false),
+  role: z.enum(['STUDENT', 'TEACHER', 'ACADEMY']).default('STUDENT'),
+  academyId: z.string().uuid().optional(),
+  classId: z.string().uuid().optional(),
+  classIds: z.array(z.string().uuid()).optional().default([]),
 });
 
 export const changePasswordSchema = z.object({

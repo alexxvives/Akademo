@@ -79,7 +79,7 @@ academies.get('/', async (c) => {
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
     console.error('[List Academies] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -113,7 +113,7 @@ academies.post('/', async (c) => {
     return c.json(successResponse(academy), 201);
   } catch (error: any) {
     console.error('[Create Academy] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -168,7 +168,7 @@ academies.get('/students', async (c) => {
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
     console.error('[Academy Students] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -321,7 +321,7 @@ academies.post('/teachers', async (c) => {
     }));
   } catch (error: any) {
     console.error('[Create Teacher] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -349,7 +349,7 @@ academies.get('/my-academy', async (c) => {
     return c.json(successResponse(result));
   } catch (error: any) {
     console.error('[My Academy] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -440,7 +440,7 @@ academies.get('/teachers', async (c) => {
     return c.json(successResponse(teachersWithCounts));
   } catch (error: any) {
     console.error('[Academy Teachers] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -510,7 +510,7 @@ academies.get('/classes', async (c) => {
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
     console.error('[Academy Classes] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -549,7 +549,7 @@ academies.get('/:id', async (c) => {
     }));
   } catch (error: any) {
     console.error('[Get Academy] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -642,7 +642,7 @@ academies.patch('/:id', async (c) => {
     return c.json(successResponse(updated));
   } catch (error: any) {
     console.error('[Update Academy] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -670,7 +670,7 @@ academies.get('/:id/classes', async (c) => {
     return c.json(successResponse(classes.results || []));
   } catch (error: any) {
     console.error('[Academy Classes List] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 

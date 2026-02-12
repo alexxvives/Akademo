@@ -130,7 +130,7 @@ classes.get('/', async (c) => {
     console.error('[Classes GET] Error:', error);
     console.error('[Classes GET] Error message:', error.message);
     console.error('[Classes GET] Error stack:', error.stack);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -229,7 +229,7 @@ classes.post('/', validateBody(createClassSchema), async (c) => {
     return c.json(successResponse(created));
   } catch (error: any) {
     console.error('[Classes POST] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -293,9 +293,9 @@ classes.get('/:id', async (c) => {
           // Student is not enrolled - mark as such
           (classRecord as any).isEnrolled = false;
         }
-      } catch (enrollError: any) {
+      } catch (enrollError: unknown) {
         console.error('[Classes/:id] Enrollment check error:', enrollError);
-        return c.json(errorResponse(`Failed to verify enrollment: ${enrollError.message}`), 500);
+        return c.json(errorResponse('Failed to verify enrollment'), 500);
       }
     }
 
@@ -341,7 +341,7 @@ classes.get('/:id', async (c) => {
     return c.json(successResponse(classRecord));
   } catch (error: any) {
     console.error('[Classes/:id] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -441,7 +441,7 @@ classes.patch('/:id', validateBody(updateClassSchema), async (c) => {
     return c.json(successResponse(updated));
   } catch (error: any) {
     console.error('[Classes/:id PATCH] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 

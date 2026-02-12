@@ -200,7 +200,7 @@ ratings.get('/teacher', async (c) => {
 
   } catch (error: any) {
     console.error('[Get Teacher Ratings] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -310,7 +310,7 @@ ratings.get('/', async (c) => {
   } catch (error: any) {
     console.error('[Ratings] Error:', error);
     console.error('[Ratings] Stack:', error.stack);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -377,7 +377,7 @@ ratings.post('/', validateBody(createRatingSchema), async (c) => {
 
   } catch (error: any) {
     console.error('[Submit Rating] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 

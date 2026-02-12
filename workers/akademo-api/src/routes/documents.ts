@@ -48,7 +48,7 @@ documents.get('/', async (c) => {
     return c.json(errorResponse('classId or lessonId required'), 400);
   } catch (error: any) {
     console.error('[Get Documents] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 

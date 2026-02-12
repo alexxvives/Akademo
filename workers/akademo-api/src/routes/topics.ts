@@ -62,7 +62,7 @@ topics.get('/', async (c) => {
     return c.json(successResponse(topicsResult.results || []));
   } catch (error: any) {
     console.error('[List Topics] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -124,7 +124,7 @@ topics.post('/', async (c) => {
     return c.json(successResponse(newTopic));
   } catch (error: any) {
     console.error('[Create Topic] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -177,7 +177,7 @@ topics.put('/:id', async (c) => {
     return c.json(successResponse(updated));
   } catch (error: any) {
     console.error('[Update Topic] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -226,7 +226,7 @@ topics.delete('/:id', async (c) => {
     return c.json(successResponse({ message: 'Topic deleted' }));
   } catch (error: any) {
     console.error('[Delete Topic] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
@@ -295,7 +295,7 @@ topics.put('/:id/reorder', async (c) => {
     return c.json(successResponse({ message: 'Topic reordered' }));
   } catch (error: any) {
     console.error('[Reorder Topic] Error:', error);
-    return c.json(errorResponse(error.message || 'Internal server error'), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
