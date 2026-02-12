@@ -10,11 +10,11 @@ const t = {
   es: {
     nav: { features: 'Características', pricing: 'Precios', login: 'Iniciar Sesión', cta: 'Empieza Gratis' },
     hero: {
-      title1: 'Deja de adivinar.',
-      title2: 'Protege tu academia',
-      title3: 'con tecnología.',
+      title1: 'Protege tu academia.',
+      title2: 'Digitaliza tu contenido',
+      title3: 'y mantén cada acceso bajo control.',
       subtitle: 'Tu departamento de gestión académica que decide, protege y optimiza. Previene la piratería antes de que ocurra. Gestiona toda tu academia en minutos.',
-      cta: 'Empieza Gratis',
+      cta: 'Solicita una demo',
       perfectFor: 'Perfecto para:',
       audiences: [
         'Academias de formación online que quieren escalar',
@@ -124,11 +124,11 @@ const t = {
   en: {
     nav: { features: 'Features', pricing: 'Pricing', login: 'Login', cta: 'Start Free' },
     hero: {
-      title1: 'Stop guessing.',
-      title2: 'Protect your academy',
-      title3: 'with technology.',
+      title1: 'Protect your academy.',
+      title2: 'Digitize your content',
+      title3: 'and keep every access under control.',
       subtitle: 'Your academy management department that decides, protects and optimizes. Prevent piracy before it happens. Manage your entire academy in minutes.',
-      cta: 'Start Free',
+      cta: 'Request a demo',
       perfectFor: 'Perfect for:',
       audiences: [
         'Online training academies looking to scale',
@@ -253,6 +253,15 @@ function XMark({ className = '' }: { className?: string }) {
 function ArrowRight({ className = '' }: { className?: string }) {
   return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>;
 }
+function DollarIcon({ className = '' }: { className?: string }) {
+  return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 2v20m5-17a5 5 0 00-5-1c-3 0-5 1.5-5 3.5s2 3 5 3.5 5 1.5 5 3.5-2 3.5-5 3.5a5 5 0 01-5-1" /></svg>;
+}
+function ClockIcon({ className = '' }: { className?: string }) {
+  return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><circle cx="12" cy="12" r="10" /><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2" /></svg>;
+}
+function BrainIcon({ className = '' }: { className?: string }) {
+  return <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 2a7 7 0 00-5.2 11.6A5 5 0 009 22h6a5 5 0 002.2-8.4A7 7 0 0012 2zm0 0v4m-4 4h8" /></svg>;
+}
 
 export default function FeaturesPage() {
   const [lang, setLang] = useState<Lang>('es');
@@ -267,9 +276,9 @@ export default function FeaturesPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white antialiased">
+    <div className="min-h-screen bg-[#121a2d] text-white antialiased">
       {/* ─── NAVBAR ─── */}
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-zinc-950/90 backdrop-blur-xl border-b border-zinc-800/50' : ''}`}>
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-[#121a2d]/90 backdrop-blur-xl border-b border-zinc-800/50' : ''}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <Image src="/logo/AKADEMO_logo_OTHER2.svg" alt="AKADEMO" width={140} height={36} className="h-7 sm:h-8 w-auto brightness-0 invert" />
@@ -305,9 +314,9 @@ export default function FeaturesPage() {
             {/* Left: Copy */}
             <div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-6">
-                {tr.hero.title1}
+                <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">{tr.hero.title1}</span>
                 <br />
-                <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">{tr.hero.title2}</span>
+                {tr.hero.title2}
                 <br />
                 {tr.hero.title3}
               </h1>
@@ -315,7 +324,7 @@ export default function FeaturesPage() {
                 {tr.hero.subtitle}
               </p>
               <div className="flex flex-col sm:flex-row gap-3 mb-10">
-                <Link href="/?modal=register" className="px-8 py-3.5 bg-white text-zinc-900 font-medium rounded-lg hover:bg-zinc-200 transition-all text-sm sm:text-base text-center">
+                <Link href="/?modal=register" className="px-8 py-3.5 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-medium rounded-lg hover:from-emerald-400 hover:to-cyan-400 transition-all text-sm sm:text-base text-center shadow-lg shadow-emerald-500/25">
                   {tr.hero.cta}
                 </Link>
               </div>
@@ -338,7 +347,7 @@ export default function FeaturesPage() {
               {/* Main dashboard image */}
               <div className="relative rounded-xl overflow-hidden border border-zinc-800 shadow-2xl shadow-emerald-900/10">
                 <Image
-                  src="/images/dashboard-screenshot.png"
+                  src="/demo.png"
                   alt="AKADEMO Dashboard"
                   width={800}
                   height={500}
@@ -387,7 +396,7 @@ export default function FeaturesPage() {
         <div className="max-w-6xl mx-auto">
           {/* Label */}
           <div className="text-center mb-6">
-            <span className="inline-block px-3 py-1 text-zinc-500 text-xs font-semibold tracking-[0.2em] uppercase">{tr.problem.label}</span>
+            <span className="inline-block px-3 py-1 text-xs font-semibold tracking-[0.2em] uppercase bg-gradient-to-r from-emerald-400 to-green-300 bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(52,211,153,0.5)]">{tr.problem.label}</span>
           </div>
           {/* Title */}
           <div className="text-center mb-6">
@@ -402,25 +411,34 @@ export default function FeaturesPage() {
             {tr.problem.subtitle}
           </p>
 
-          {/* Stat cards — Growtio style: large value, title, description, with icon */}
+          {/* Stat cards — Growtio style: colored values + icons per card */}
           <div className="grid sm:grid-cols-3 gap-6 mb-14">
-            {tr.problem.stats.map((stat, i) => (
-              <div key={i} className="relative p-8 rounded-2xl bg-zinc-900/50 border border-zinc-800/80 hover:border-zinc-700/80 transition-all group">
-                {/* Icon top-right */}
-                <div className="absolute top-5 right-5 w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
-                  <TrendDown className="w-5 h-5 text-red-400" />
+            {tr.problem.stats.map((stat, i) => {
+              const cardColors = [
+                { valueCls: 'text-red-400', iconBg: 'bg-yellow-500/15', iconColor: 'text-yellow-400', icon: 'dollar' },
+                { valueCls: 'text-yellow-400', iconBg: 'bg-green-500/15', iconColor: 'text-green-400', icon: 'clock' },
+                { valueCls: 'text-purple-400', iconBg: 'bg-purple-500/15', iconColor: 'text-purple-400', icon: 'brain' },
+              ][i];
+              return (
+                <div key={i} className="relative p-8 rounded-2xl bg-zinc-900/50 border border-zinc-800/80 hover:border-zinc-700/80 transition-all group">
+                  {/* Icon top-left */}
+                  <div className={`w-10 h-10 rounded-xl ${cardColors.iconBg} flex items-center justify-center mb-6`}>
+                    {cardColors.icon === 'dollar' && <DollarIcon className={`w-5 h-5 ${cardColors.iconColor}`} />}
+                    {cardColors.icon === 'clock' && <ClockIcon className={`w-5 h-5 ${cardColors.iconColor}`} />}
+                    {cardColors.icon === 'brain' && <BrainIcon className={`w-5 h-5 ${cardColors.iconColor}`} />}
+                  </div>
+                  {/* Value */}
+                  <div className="flex items-baseline gap-1 mb-1">
+                    <span className={`text-4xl sm:text-5xl font-bold ${cardColors.valueCls}`}>{stat.value}</span>
+                    {stat.unit && <span className={`text-2xl sm:text-3xl font-bold ${cardColors.valueCls}`}>{stat.unit}</span>}
+                  </div>
+                  {/* Title */}
+                  <h3 className="text-base font-semibold text-white mb-3">{stat.title}</h3>
+                  {/* Desc */}
+                  <p className="text-zinc-500 text-sm leading-relaxed">{stat.desc}</p>
                 </div>
-                {/* Value */}
-                <div className="flex items-baseline gap-1 mb-1">
-                  <span className="text-4xl sm:text-5xl font-bold text-white">{stat.value}</span>
-                  {stat.unit && <span className="text-2xl sm:text-3xl font-bold text-white">{stat.unit}</span>}
-                </div>
-                {/* Title */}
-                <h3 className="text-base font-semibold text-white mb-3">{stat.title}</h3>
-                {/* Desc */}
-                <p className="text-zinc-500 text-sm leading-relaxed">{stat.desc}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Pain points row + "What if" — Growtio style */}

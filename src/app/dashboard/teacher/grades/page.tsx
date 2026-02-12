@@ -130,7 +130,7 @@ export default function TeacherGrades() {
           submissions.forEach(sub => {
             if (sub.gradedAt && sub.score !== undefined) {
               allGrades.push({
-                studentId: `demo-student-${sub.id}`,
+                studentId: sub.studentEmail, // Use email as ID so same student across assignments is aggregated
                 studentName: sub.studentName,
                 studentEmail: sub.studentEmail,
                 assignmentTitle: assignment.title,
