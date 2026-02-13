@@ -5,6 +5,7 @@ import { apiClient } from '@/lib/api-client';
 import { StudentsProgressTable, type StudentProgress } from '@/components/shared';
 import type { ClassBreakdownItem } from './StudentsProgressTable';
 import { generateDemoStudents } from '@/lib/demo-data';
+import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 
 interface Class {
   id: string;
@@ -565,25 +566,13 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
           </div>
           {/* Class Filter - Shows when academy is selected for ADMIN or always for others */}
           {(role !== 'ADMIN' || selectedAcademy !== 'all') && (
-            <div className="relative">
-              <select
-                id="class-filter"
-                name="classFilter"
-                value={selectedClass}
-                onChange={(e) => setSelectedClass(e.target.value)}
-                className="appearance-none w-full sm:w-48 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-              >
-                <option value="all">Todas las asignaturas</option>
-                {filteredClasses.map((cls) => (
-                  <option key={cls.id} value={cls.id}>{cls.name}</option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-            </div>
+            <ClassSearchDropdown
+              classes={filteredClasses}
+              value={selectedClass}
+              onChange={setSelectedClass}
+              allLabel="Todas las asignaturas"
+              className="w-full sm:w-48"
+            />
           )}
           {/* Academy Filter - Only for ADMIN */}
           {role === 'ADMIN' && academies.length > 0 && (

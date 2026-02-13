@@ -27,6 +27,8 @@ interface ClassItem {
   maxStudents?: number | null;
   startDate?: string | null;
   description: string | null;
+  university?: string | null;
+  carrera?: string | null;
 }
 
 interface ClassFormData {
@@ -41,6 +43,8 @@ interface ClassFormData {
   whatsappGroupLink: string;
   maxStudents: string;
   startDate: string;
+  university: string;
+  carrera: string;
 }
 
 interface ClassFormModalProps {
@@ -98,6 +102,35 @@ export function ClassFormModal({
                 required
               />
             </div>
+
+            {/* University field */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Universidad (opcional)
+              </label>
+              <input
+                type="text"
+                value={formData.university}
+                onChange={(e) => setFormData((f) => ({ ...f, university: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Ej: Universidad Complutense de Madrid"
+              />
+            </div>
+
+            {/* Carrera field */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Carrera (opcional)
+              </label>
+              <input
+                type="text"
+                value={formData.carrera}
+                onChange={(e) => setFormData((f) => ({ ...f, carrera: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Ej: Ingeniería Informática"
+              />
+            </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Profesor asignado (opcional)</label>
               <div className="relative">

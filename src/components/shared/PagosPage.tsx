@@ -6,6 +6,7 @@ import { generateDemoPendingPayments, generateDemoPaymentHistory } from '@/lib/d
 import { SkeletonTable } from '@/components/ui/SkeletonLoader';
 import { StudentPaymentDetailModal } from '@/components/shared';
 import { ModalPortal } from '@/components/ui/ModalPortal';
+import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 
 interface PendingPayment {
   enrollmentId: string;
@@ -578,21 +579,13 @@ export default function PagosPage({ role }: PagosPageProps) {
             </svg>
           </div>
           {/* Class Filter */}
-          <div className="relative">
-            <select
-              value={selectedClass}
-              onChange={(e) => setSelectedClass(e.target.value)}
-              className="appearance-none w-full sm:w-48 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-            >
-              <option value="all">Todas las clases</option>
-              {classes.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-            <svg className="w-4 h-4 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </div>
+          <ClassSearchDropdown
+            classes={classes}
+            value={selectedClass}
+            onChange={setSelectedClass}
+            allLabel="Todas las clases"
+            className="w-full sm:w-48"
+          />
         </div>
       </div>
 

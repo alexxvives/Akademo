@@ -52,6 +52,8 @@ interface Class {
   whatsappGroupLink?: string | null;
   maxStudents?: number | null;
   startDate?: string | null;
+  university?: string | null;
+  carrera?: string | null;
 }
 
 interface Academy {
@@ -71,6 +73,8 @@ interface ClassFormData {
   whatsappGroupLink: string;
   maxStudents: string;
   startDate: string;
+  university: string;
+  carrera: string;
 }
 
 const emptyForm: ClassFormData = {
@@ -85,6 +89,8 @@ const emptyForm: ClassFormData = {
   whatsappGroupLink: '',
   maxStudents: '',
   startDate: '',
+  university: '',
+  carrera: '',
 };
 
 interface ClassesPageProps {
@@ -289,6 +295,8 @@ export function ClassesPage({ role }: ClassesPageProps) {
           whatsappGroupLink: formData.whatsappGroupLink || null,
           maxStudents: formData.maxStudents ? parseInt(formData.maxStudents) : null,
           startDate: formData.startDate || null,
+          university: formData.university || null,
+          carrera: formData.carrera || null,
           academyId,
         }),
       });
@@ -322,6 +330,8 @@ export function ClassesPage({ role }: ClassesPageProps) {
           whatsappGroupLink: formData.whatsappGroupLink || null,
           maxStudents: formData.maxStudents ? parseInt(formData.maxStudents) : null,
           startDate: formData.startDate || null,
+          university: formData.university || null,
+          carrera: formData.carrera || null,
         }),
       });
       const data = await res.json();
@@ -352,6 +362,8 @@ export function ClassesPage({ role }: ClassesPageProps) {
       whatsappGroupLink: cls.whatsappGroupLink || '',
       maxStudents: cls.maxStudents?.toString() || '',
       startDate: cls.startDate || '',
+      university: cls.university || '',
+      carrera: cls.carrera || '',
     });
     setError('');
     setShowEditModal(true);

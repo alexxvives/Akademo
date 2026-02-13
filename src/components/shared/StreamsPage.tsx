@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
 import { generateDemoStreams } from '@/lib/demo-data';
 import { SkeletonList } from '@/components/ui/SkeletonLoader';
+import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 
 interface Stream {
   id: string;
@@ -305,40 +306,23 @@ export function StreamsPage({ role }: StreamsPageProps) {
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           {/* Class filter — for academy, or admin when academy selected */}
           {role === 'ACADEMY' && classes.length > 0 && (
-            <div className="relative">
-              <select
-                value={selectedClass}
-                onChange={(e) => setSelectedClass(e.target.value)}
-                className="appearance-none w-full md:w-56 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-              >
-                <option value="all">Todas las clases</option>
-                {classes.map((cls) => (
-                  <option key={cls.id} value={cls.id}>
-                    {cls.name}
-                  </option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-            </div>
+            <ClassSearchDropdown
+              classes={classes}
+              value={selectedClass}
+              onChange={setSelectedClass}
+              allLabel="Todas las clases"
+              className="w-full md:w-56"
+            />
           )}
 
           {role === 'ADMIN' && selectedAcademy !== 'all' && filteredClassOptions.length > 0 && (
-            <select
+            <ClassSearchDropdown
+              classes={filteredClassOptions}
               value={selectedClass}
-              onChange={(e) => setSelectedClass(e.target.value)}
-              className="appearance-none w-56 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-            >
-              <option value="all">Todas las clases</option>
-              {filteredClassOptions.map((cls) => (
-                <option key={cls.id} value={cls.id}>
-                  {cls.name}
-                </option>
-              ))}
-            </select>
+              onChange={setSelectedClass}
+              allLabel="Todas las clases"
+              className="w-56"
+            />
           )}
 
           {/* Academy filter — admin only */}

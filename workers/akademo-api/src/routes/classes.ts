@@ -42,6 +42,7 @@ classes.get('/', async (c) => {
         SELECT 
           c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
           a.feedbackEnabled, c.whatsappGroupLink, c.monthlyPrice, c.oneTimePrice, c.zoomAccountId, c.maxStudents, c.startDate,
+          c.university, c.carrera,
           a.name as academyName,
           u.firstName as teacherFirstName,
           u.lastName as teacherLastName,
@@ -73,6 +74,7 @@ classes.get('/', async (c) => {
         SELECT 
           c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
           a.feedbackEnabled, c.whatsappGroupLink, c.monthlyPrice, c.oneTimePrice, c.zoomAccountId, c.maxStudents, c.startDate,
+          c.university, c.carrera,
           a.name as academyName,
           za.accountName as zoomAccountName,
           (SELECT COUNT(*) FROM ClassEnrollment WHERE classId = c.id AND status = 'APPROVED') as studentCount,
@@ -93,6 +95,7 @@ classes.get('/', async (c) => {
         SELECT 
           c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
           a.feedbackEnabled, c.whatsappGroupLink, c.monthlyPrice, c.oneTimePrice, c.zoomAccountId, c.maxStudents, c.startDate,
+          c.university, c.carrera,
           a.name as academyName,
           u.firstName as teacherFirstName,
           u.lastName as teacherLastName,
@@ -116,6 +119,7 @@ classes.get('/', async (c) => {
         SELECT 
           c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
           a.feedbackEnabled, c.whatsappGroupLink, c.monthlyPrice, c.oneTimePrice, c.zoomAccountId, c.maxStudents, c.startDate,
+          c.university, c.carrera,
           a.name as academyName
         FROM Class c
         JOIN Academy a ON c.academyId = a.id
@@ -186,7 +190,7 @@ classes.post('/', validateBody(createClassSchema), async (c) => {
   try {
     const session = await requireAuth(c);
     const body = await c.req.json();
-    const { name, description, academyId, teacherId, whatsappGroupLink } = body;
+    const { name, description, academyId, teacherId, whatsappGroupLink, university, carrera } = body;
 
     // Check if user has permission to create class in this academy
     let hasPermission = false;
@@ -234,8 +238,8 @@ classes.post('/', validateBody(createClassSchema), async (c) => {
 
     await c.env.DB.prepare(`
       INSERT INTO Class (id, name, slug, description, academyId, teacherId, whatsappGroupLink, zoomAccountId, 
-                         monthlyPrice, oneTimePrice, createdAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                         monthlyPrice, oneTimePrice, createdAt, university, carrera)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       classId,
       name,
@@ -247,7 +251,9 @@ classes.post('/', validateBody(createClassSchema), async (c) => {
       body.zoomAccountId || null,
       body.monthlyPrice || null,
       body.oneTimePrice || null,
-      now
+      now,
+      university || null,
+      carrera || null
     ).run();
 
     // Return the created class
@@ -255,6 +261,7 @@ classes.post('/', validateBody(createClassSchema), async (c) => {
       SELECT 
         c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
         a.feedbackEnabled, c.whatsappGroupLink, c.monthlyPrice, c.oneTimePrice, c.zoomAccountId, c.maxStudents, c.startDate,
+        c.university, c.carrera,
         a.name as academyName
       FROM Class c
       JOIN Academy a ON c.academyId = a.id
@@ -279,6 +286,7 @@ classes.get('/:id', async (c) => {
       SELECT 
         c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
         a.feedbackEnabled, c.whatsappGroupLink, c.monthlyPrice, c.oneTimePrice, c.zoomAccountId, c.maxStudents, c.startDate,
+        c.university, c.carrera,
         a.name as academyName,
         a.ownerId as academyOwnerId,
         (u.firstName || ' ' || u.lastName) as teacherName,
@@ -451,6 +459,14 @@ classes.patch('/:id', validateBody(updateClassSchema), async (c) => {
       updates.push('startDate = ?');
       params.push(body.startDate || null);
     }
+    if (body.university !== undefined) {
+      updates.push('university = ?');
+      params.push(body.university || null);
+    }
+    if (body.carrera !== undefined) {
+      updates.push('carrera = ?');
+      params.push(body.carrera || null);
+    }
 
     if (updates.length === 0) {
       return c.json(errorResponse('No fields to update'), 400);
@@ -467,6 +483,7 @@ classes.patch('/:id', validateBody(updateClassSchema), async (c) => {
         c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
         a.feedbackEnabled, c.whatsappGroupLink, c.zoomAccountId, c.maxStudents, c.startDate,
         c.monthlyPrice, c.oneTimePrice,
+        c.university, c.carrera,
         a.name as academyName
       FROM Class c
       JOIN Academy a ON c.academyId = a.id

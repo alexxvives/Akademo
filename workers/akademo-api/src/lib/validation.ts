@@ -65,6 +65,8 @@ export const createClassSchema = z.object({
   academyId: z.string().min(1, 'Academy ID is required'),
   whatsappGroupLink: z.string().url().optional().or(z.literal('')).or(z.literal(null)).optional(),
   maxStudents: z.coerce.number().int().min(0).optional(),
+  university: z.string().max(200).optional().nullable(),
+  carrera: z.string().max(200).optional().nullable(),
 });
 
 export const updateClassSchema = z.object({
@@ -78,6 +80,8 @@ export const updateClassSchema = z.object({
   oneTimePrice: z.coerce.number().min(0).optional().nullable(),
   maxStudents: z.coerce.number().int().min(0).optional(),
   startDate: z.string().optional(),
+  university: z.string().max(200).optional().nullable(),
+  carrera: z.string().max(200).optional().nullable(),
 });
 
 // ============ Lesson Schemas ============

@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { FeedbackView, type ClassFeedback } from '@/components/shared';
 import { generateDemoFeedbackData } from '@/lib/demo-data';
+import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 import { SkeletonFeedback } from '@/components/ui/SkeletonLoader';
 
 interface Academy {
@@ -227,18 +228,13 @@ export function FeedbackPage({ role }: FeedbackPageProps) {
         {role === 'ADMIN' && (
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             {selectedAcademy !== 'all' && filteredClassOptions.length > 0 && (
-              <select
+              <ClassSearchDropdown
+                classes={filteredClassOptions}
                 value={selectedClass}
-                onChange={(e) => setSelectedClass(e.target.value)}
-                className="appearance-none w-56 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-              >
-                <option value="all">Todas las clases</option>
-                {filteredClassOptions.map((cls) => (
-                  <option key={cls.id} value={cls.id}>
-                    {cls.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setSelectedClass}
+                allLabel="Todas las clases"
+                className="w-56"
+              />
             )}
 
             <select

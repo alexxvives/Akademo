@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 
 interface Class { id: string; name: string; }
 interface Assignment {
@@ -82,18 +83,14 @@ export function AssignmentModals(props: AssignmentModalsProps) {
             <form onSubmit={handleCreateAssignment} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Asignatura</label>
-                <div className="relative">
-                  <select value={selectedClassForCreate} onChange={(e) => setSelectedClassForCreate(e.target.value)} required
-                    className="w-full h-[38px] px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 appearance-none bg-white cursor-pointer">
-                    <option value=""></option>
-                    {classes.map((cls) => (<option key={cls.id} value={cls.id}>{cls.name}</option>))}
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </div>
+                <ClassSearchDropdown
+                  classes={classes}
+                  value={selectedClassForCreate}
+                  onChange={setSelectedClassForCreate}
+                  placeholder="Seleccionar asignatura..."
+                  className="w-full"
+                  required
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Título *</label>

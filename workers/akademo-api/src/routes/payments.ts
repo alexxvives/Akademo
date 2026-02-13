@@ -281,7 +281,7 @@ payments.get('/pending-cash', async (c) => {
     // AUTO-CREATE PENDING PAYMENTS FOR STUDENTS WHO ARE BEHIND
     // Only for ACADEMY role (not for TEACHER or ADMIN)
     if (session.role === 'ACADEMY') {
-      // 1. Get all approved enrollments for this academy's classes
+      // 1. Get all approved enrollments for this academy with payment info
       const enrollments = await c.env.DB
         .prepare(`
           SELECT 
@@ -289,53 +289,80 @@ payments.get('/pending-cash', async (c) => {
             ce.userId as studentId,
             ce.classId,
             ce.enrolledAt,
+            ce.paymentFrequency,
             c.name as className,
             c.monthlyPrice,
-            c.paymentFrequency,
+            c.oneTimePrice,
             c.startDate as classStartDate,
             u.firstName,
             u.lastName,
             u.email,
             a.id as academyId,
-            a.name as academyName
+            a.name as academyName,
+            COALESCE(
+              (SELECT SUM(p2.amount) FROM Payment p2 
+               WHERE p2.payerId = ce.userId AND p2.classId = ce.classId 
+               AND p2.status = 'PAID' AND p2.type = 'STUDENT_TO_ACADEMY'), 0
+            ) as totalPaid
           FROM ClassEnrollment ce
           JOIN Class c ON ce.classId = c.id
           JOIN Academy a ON c.academyId = a.id
           JOIN User u ON ce.userId = u.id
           WHERE a.ownerId = ?
           AND ce.status = 'APPROVED'
-          AND c.paymentFrequency = 'MONTHLY'
         `)
         .bind(session.id)
         .all();
 
       // 2. For each enrollment, check if student owes money
       for (const enrollment of (enrollments.results || []) as any[]) {
-        const classStart = new Date(enrollment.classStartDate);
-        const today = new Date();
+        const totalPaid = enrollment.totalPaid || 0;
+        const isMonthly = enrollment.paymentFrequency === 'MONTHLY';
+        const monthlyPrice = enrollment.monthlyPrice;
+        const oneTimePrice = enrollment.oneTimePrice;
 
-        // Calculate how many months the student owes
-        const elapsedCycles = countElapsedCycles(classStart, today);
-        
-        if (elapsedCycles > 0) {
-          // Student owes money! Check if there's already a PENDING payment
+        let amountOwed = 0;
+        let description = '';
+        let monthsOwed = 0;
+
+        if (isMonthly && monthlyPrice > 0) {
+          // MONTHLY: calculate elapsed cycles and subtract paid
+          const classStart = new Date(enrollment.classStartDate || enrollment.enrolledAt);
+          const today = new Date();
+          if (today >= classStart) {
+            const elapsedCycles = countElapsedCycles(classStart, today);
+            const totalExpected = elapsedCycles * monthlyPrice;
+            amountOwed = Math.max(0, totalExpected - totalPaid);
+            monthsOwed = Math.max(0, elapsedCycles - Math.floor(totalPaid / monthlyPrice));
+            if (monthsOwed > 1) {
+              description = `Pago pendiente (${monthsOwed} meses × ${monthlyPrice}€)`;
+            } else if (monthsOwed === 1) {
+              description = `Pago pendiente mensual`;
+            }
+          }
+        } else if (!isMonthly && oneTimePrice > 0) {
+          // ONE_TIME: check if they've paid the full oneTimePrice
+          if (totalPaid < oneTimePrice) {
+            amountOwed = oneTimePrice - totalPaid;
+            monthsOwed = 0;
+            description = `Pago único pendiente`;
+          }
+        }
+
+        if (amountOwed > 0) {
+          // Check if pending payment already exists
           const existingPayment = await c.env.DB
             .prepare(`
-              SELECT id FROM Payment
-              WHERE payerId = ?
-              AND classId = ?
-              AND status = 'PENDING'
-              AND type = 'STUDENT_TO_ACADEMY'
+              SELECT id, amount FROM Payment
+              WHERE payerId = ? AND classId = ?
+              AND status = 'PENDING' AND type = 'STUDENT_TO_ACADEMY'
               LIMIT 1
             `)
             .bind(enrollment.studentId, enrollment.classId)
-            .first();
+            .first() as { id: string; amount: number } | null;
 
           if (!existingPayment) {
-            // No pending payment exists - create one!
-            const catchUpAmount = elapsedCycles * enrollment.monthlyPrice;
             const paymentId = `payment-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-
             await c.env.DB
               .prepare(`
                 INSERT INTO Payment (
@@ -345,53 +372,21 @@ payments.get('/pending-cash', async (c) => {
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
               `)
               .bind(
-                paymentId,
-                'STUDENT_TO_ACADEMY',
-                enrollment.studentId,
-                'STUDENT',
-                `${enrollment.firstName} ${enrollment.lastName}`,
-                enrollment.email,
-                enrollment.academyId,
-                enrollment.academyName,
-                catchUpAmount,
-                'EUR',
-                'PENDING',
-                'cash', // Default to cash for auto-created payments
-                enrollment.classId,
-                elapsedCycles > 1 
-                  ? `Pago pendiente (${elapsedCycles} meses × ${enrollment.monthlyPrice}€)`
-                  : `Pago pendiente mensual`,
-                JSON.stringify({ 
-                  enrollmentId: enrollment.enrollmentId,
-                  monthsOwed: elapsedCycles,
-                  autoCreated: true,
-                  createdAt: new Date().toISOString()
-                }),
+                paymentId, 'STUDENT_TO_ACADEMY', enrollment.studentId, 'STUDENT',
+                `${enrollment.firstName} ${enrollment.lastName}`, enrollment.email,
+                enrollment.academyId, enrollment.academyName,
+                amountOwed, 'EUR', 'PENDING', 'cash', enrollment.classId,
+                description,
+                JSON.stringify({ enrollmentId: enrollment.enrollmentId, monthsOwed, autoCreated: true })
               )
               .run();
-          } else {
-            // Payment exists, but might need amount update if more months have passed
-            const catchUpAmount = elapsedCycles * enrollment.monthlyPrice;
-            
+          } else if (Math.abs(existingPayment.amount - amountOwed) > 0.01) {
+            // Amount changed (more months passed or partial payment made) - update
             await c.env.DB
-              .prepare(`
-                UPDATE Payment 
-                SET amount = ?,
-                    description = ?,
-                    metadata = ?
-                WHERE id = ?
-              `)
+              .prepare(`UPDATE Payment SET amount = ?, description = ?, metadata = ? WHERE id = ?`)
               .bind(
-                catchUpAmount,
-                elapsedCycles > 1 
-                  ? `Pago pendiente (${elapsedCycles} meses × ${enrollment.monthlyPrice}€)`
-                  : `Pago pendiente mensual`,
-                JSON.stringify({ 
-                  enrollmentId: enrollment.enrollmentId,
-                  monthsOwed: elapsedCycles,
-                  autoUpdated: true,
-                  updatedAt: new Date().toISOString()
-                }),
+                amountOwed, description,
+                JSON.stringify({ enrollmentId: enrollment.enrollmentId, monthsOwed, autoUpdated: true }),
                 existingPayment.id
               )
               .run();
