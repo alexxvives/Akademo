@@ -488,7 +488,7 @@ assignments.post('/:id/submit', async (c) => {
       WHERE assignmentId = ? AND studentId = ?
       ORDER BY version DESC
       LIMIT 1
-    `).bind(assignmentId, session.id).first();
+    `).bind(assignmentId, session.id).first() as any;
 
     const newVersion = existingSubmissions ? (existingSubmissions.version + 1) : 1;
     const submissionId = nanoid();

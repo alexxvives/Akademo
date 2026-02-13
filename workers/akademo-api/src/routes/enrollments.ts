@@ -573,7 +573,7 @@ enrollments.post('/leave', async (c) => {
         } else {
           const stripe = (await import('stripe')).default;
           const stripeClient = new stripe(c.env.STRIPE_SECRET_KEY, {
-            apiVersion: '2024-12-18.acacia',
+            apiVersion: '2025-12-15.clover' as any,
           });
           
           await stripeClient.subscriptions.cancel(enrollment.stripeSubscriptionId);
@@ -639,7 +639,7 @@ enrollments.delete('/:id', async (c) => {
         if (c.env.STRIPE_SECRET_KEY) {
           const stripe = (await import('stripe')).default;
           const stripeClient = new stripe(c.env.STRIPE_SECRET_KEY, {
-            apiVersion: '2024-12-18.acacia',
+            apiVersion: '2025-12-15.clover' as any,
           });
           await stripeClient.subscriptions.cancel(enrollment.stripeSubscriptionId);
           console.log('[Ban Student] Cancelled Stripe subscription:', enrollment.stripeSubscriptionId);

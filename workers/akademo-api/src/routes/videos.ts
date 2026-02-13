@@ -47,7 +47,7 @@ videos.post('/progress', validateBody(videoProgressSchema), async (c) => {
       .bind(videoId, session.id)
       .first() as any;
 
-    const maxWatchTime = (video.durationSeconds || 0) * (video.maxWatchTimeMultiplier || 2);
+    const maxWatchTime = (((video as any).durationSeconds as number) || 0) * (((video as any).maxWatchTimeMultiplier as number) || 2);
     const now = new Date().toISOString();
 
     if (existing) {

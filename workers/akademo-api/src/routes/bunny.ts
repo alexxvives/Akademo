@@ -47,7 +47,7 @@ bunny.post('/video/create', async (c) => {
     if (collectionName) {
       try {
         // Get existing collections
-        const listResponse = await bunnyApi(`/library/${libraryId}/collections`, {}, apiKey);
+        const listResponse = await bunnyApi(`/library/${libraryId}/collections`, {}, apiKey) as any;
         const existing = (listResponse.items || []).find((c: any) => c.name === collectionName);
         
         if (existing) {
@@ -57,7 +57,7 @@ bunny.post('/video/create', async (c) => {
           const newCollection = await bunnyApi(`/library/${libraryId}/collections`, {
             method: 'POST',
             body: JSON.stringify({ name: collectionName }),
-          }, apiKey);
+          }, apiKey) as any;
           collectionId = newCollection.guid;
         }
       } catch (error: any) {
@@ -75,7 +75,7 @@ bunny.post('/video/create', async (c) => {
     const video = await bunnyApi(`/library/${libraryId}/videos`, {
       method: 'POST',
       body: JSON.stringify(payload),
-    }, apiKey);
+    }, apiKey) as any;
 
     return c.json(successResponse({
       videoGuid: video.guid,
@@ -149,7 +149,7 @@ bunny.put('/video/upload', async (c) => {
         return c.json(errorResponse(`Video ${videoGuid} not found in Bunny Stream. It may have been deleted or expired.`), 404);
       }
       
-      return c.json(errorResponse(`Upload failed: ${error}`), response.status);
+      return c.json(errorResponse(`Upload failed: ${error}`), 500);
     }
 
     return c.json(successResponse({ videoGuid }));
@@ -170,7 +170,7 @@ bunny.get('/video/:guid', async (c) => {
 
     const video = await bunnyApi(`/library/${libraryId}/videos/${guid}`, {
       method: 'GET',
-    }, apiKey);
+    }, apiKey) as any;
 
     return c.json(successResponse(video));
   } catch (error: any) {
@@ -190,7 +190,7 @@ bunny.get('/video/:guid/status', async (c) => {
 
     const video = await bunnyApi(`/library/${libraryId}/videos/${guid}`, {
       method: 'GET',
-    }, apiKey);
+    }, apiKey) as any;
 
     const isReady = video.status === 4; // 4 = ready
     const statusText = isReady ? 'Ready' : video.status === 3 ? 'Processing' : 'Pending';
@@ -258,7 +258,7 @@ bunny.get('/video/:videoGuid', async (c) => {
     const apiKey = c.env.BUNNY_STREAM_API_KEY;
     const libraryId = c.env.BUNNY_STREAM_LIBRARY_ID;
 
-    const video = await bunnyApi(`/library/${libraryId}/videos/${videoGuid}`, {}, apiKey);
+    const video = await bunnyApi(`/library/${libraryId}/videos/${videoGuid}`, {}, apiKey) as any;
 
     return c.json(successResponse({
       guid: video.guid,

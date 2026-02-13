@@ -59,7 +59,7 @@ export async function getOrCreateCollection(collectionName: string): Promise<str
   );
 
   if (listResponse.ok) {
-    const collections = await listResponse.json();
+    const collections = await listResponse.json() as any;
     const existing = (collections.items || []).find((c: any) => c.name === collectionName);
     if (existing) {
       return existing.guid;
@@ -84,7 +84,7 @@ export async function getOrCreateCollection(collectionName: string): Promise<str
     throw new Error(`Failed to create collection: ${error}`);
   }
 
-  const newCollection = await createResponse.json();
+  const newCollection = await createResponse.json() as any;
   return newCollection.guid;
 }
 
@@ -357,7 +357,7 @@ export async function getBunnyLiveStreams(): Promise<BunnyLiveStream[]> {
     throw new Error('Failed to get live streams');
   }
 
-  const data = await response.json();
+  const data = await response.json() as any;
   return (data.items || []).map((item: any) => formatLiveStream(item, config.BUNNY_STREAM_CDN_HOSTNAME));
 }
 

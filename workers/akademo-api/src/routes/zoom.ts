@@ -77,7 +77,7 @@ async function generateJwtSignature(
 
 // Generate Zoom SDK signature (JWT) for joining meetings
 // SDK v5.0+ requires JWT with appKey field
-zoom.post('/signature', async (c) => {
+zoom.post('/signature', async (c: any) => {
   try {
     const session = await requireAuth(c);
     const { meetingNumber, role = 0 } = await c.req.json();

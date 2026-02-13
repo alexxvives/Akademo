@@ -924,7 +924,7 @@ payments.put('/history/:id/reverse', async (c) => {
             completedAt = ${completedAt}
         WHERE id = ?
       `)
-      .bind(newStatus, session.id, approverName, enrollmentId)
+      .bind(newStatus, enrollmentId)
       .run();
 
     return c.json(successResponse({ 
@@ -1312,7 +1312,7 @@ payments.post('/academy-activation-session', async (c) => {
       return c.json(errorResponse('Academy not found'), 404);
     }
 
-    const stripe = new Stripe(c.env.STRIPE_SECRET_KEY);
+    const stripe = require('stripe')(c.env.STRIPE_SECRET_KEY) as any;
 
     const checkoutSession = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],

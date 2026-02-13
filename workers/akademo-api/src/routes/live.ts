@@ -411,12 +411,12 @@ live.get('/:id/check-recording', async (c) => {
         return c.json(successResponse({ recordingId: null, bunnyStatus: null }));
       }
 
-      const videos = await response.json();
-      const streamTitle = stream.title.toLowerCase().trim();
-      const streamTime = new Date(stream.createdAt).getTime();
+      const videos = await response.json() as any;
+      const streamTitle = ((stream as any).title as string).toLowerCase().trim();
+      const streamTime = new Date((stream as any).createdAt as string).getTime();
 
       // Look for videos matching title (fuzzy) and created around the same time (±2 hours)
-      const matchingVideo = videos.items?.find((video: any) => {
+      const matchingVideo = (videos.items || []).find((video: any) => {
         const videoTitle = video.title.toLowerCase().trim();
         const videoTime = new Date(video.dateUploaded).getTime();
         const timeDiff = Math.abs(streamTime - videoTime);
@@ -871,12 +871,12 @@ live.delete('/:id', async (c) => {
         // Parse recording IDs (can be single GUID string or JSON array)
         let recordingGuids: string[] = [];
         try {
-          recordingGuids = JSON.parse(stream.recordingId);
+          recordingGuids = JSON.parse((stream as any).recordingId);
           if (!Array.isArray(recordingGuids)) {
-            recordingGuids = [stream.recordingId];
+            recordingGuids = [(stream as any).recordingId];
           }
         } catch {
-          recordingGuids = [stream.recordingId];
+          recordingGuids = [(stream as any).recordingId as string];
         }
 
         
@@ -1017,7 +1017,7 @@ live.post('/:id/check-recording', async (c) => {
     };
 
     // Check recording in Zoom
-    const recordingData = await getZoomRecording(stream.zoomMeetingId, zoomConfig);
+    const recordingData = await getZoomRecording((stream as any).zoomMeetingId as string, zoomConfig);
     
     if (!recordingData || !recordingData.recording_files) {
       return c.json(errorResponse('No recording found in Zoom yet'), 404);
@@ -1069,7 +1069,7 @@ live.post('/:id/check-recording', async (c) => {
         continue;
       }
 
-      const bunnyData = await bunnyResponse.json();
+      const bunnyData = await bunnyResponse.json() as any;
       
       const bunnyGuid = bunnyData.guid || bunnyData.id;
 

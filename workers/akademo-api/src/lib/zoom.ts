@@ -45,7 +45,7 @@ export async function getAccessToken(config?: ZoomConfig): Promise<string> {
     throw new Error(`Failed to get Zoom access token: ${error}`);
   }
 
-  const data = await response.json();
+  const data = await response.json() as any;
   
   // Cache the token (expires in ~1 hour, we cache for 50 minutes to be safe)
   cachedToken = {
@@ -110,7 +110,7 @@ export async function createZoomMeeting(options: CreateMeetingOptions): Promise<
     throw new Error(`Failed to create Zoom meeting: ${error}`);
   }
 
-  const meeting = await meetingResponse.json();
+  const meeting = await meetingResponse.json() as ZoomMeeting;
   
   return meeting;
 }
@@ -318,7 +318,7 @@ export async function getZoomMeetingParticipants(meetingId: string | number): Pr
     throw new Error(errorMessage);
   }
 
-  const data = await response.json();
+  const data = await response.json() as any;
   
   return data;
 }

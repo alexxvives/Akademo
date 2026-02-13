@@ -40,6 +40,7 @@ export interface Bindings {
   RESEND_API_KEY: string;
   
   // Stripe
+  STRIPE_SECRET_KEY: string;
   STRIPE_WEBHOOK_SECRET: string;
   
   // Session
