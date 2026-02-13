@@ -56,16 +56,19 @@ export function ClassSearchDropdown({
     return cls?.name || '';
   }, [value, classes, allLabel, allValue]);
 
-  // Filter classes by search
+  // Filter classes by search and sort alphabetically
   const filtered = useMemo(() => {
-    if (!search.trim()) return classes;
-    const q = search.toLowerCase();
-    return classes.filter(
-      (c) =>
-        c.name.toLowerCase().includes(q) ||
-        (c.university && c.university.toLowerCase().includes(q)) ||
-        (c.carrera && c.carrera.toLowerCase().includes(q))
-    );
+    let result = classes;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = classes.filter(
+        (c) =>
+          c.name.toLowerCase().includes(q) ||
+          (c.university && c.university.toLowerCase().includes(q)) ||
+          (c.carrera && c.carrera.toLowerCase().includes(q))
+      );
+    }
+    return [...result].sort((a, b) => a.name.localeCompare(b.name));
   }, [classes, search]);
 
   // Group by university → carrera
@@ -173,7 +176,9 @@ export function ClassSearchDropdown({
                           <div className="px-3 py-1 text-xs font-medium text-gray-400 pl-5">
                             {car}
                           </div>
-                          {items.map((cls) => (
+                          {items
+                            .sort((a, b) => a.name.localeCompare(b.name))
+                            .map((cls) => (
                             <button
                               key={cls.id}
                               type="button"

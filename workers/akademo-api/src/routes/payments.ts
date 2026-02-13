@@ -368,8 +368,8 @@ payments.get('/pending-cash', async (c) => {
                 INSERT INTO Payment (
                   id, type, payerId, payerType, payerName, payerEmail,
                   receiverId, receiverName, amount, currency, status,
-                  paymentMethod, classId, description, metadata, createdAt, updatedAt
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+                  paymentMethod, classId, description, metadata, createdAt
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
               `)
               .bind(
                 paymentId, 'STUDENT_TO_ACADEMY', enrollment.studentId, 'STUDENT',
@@ -943,7 +943,6 @@ payments.get('/history', async (c) => {
             p.paymentMethod,
             p.completedAt as approvedAt,
             p.createdAt,
-            p.updatedAt,
             p.status as paymentStatus,
             u.firstName as studentFirstName,
             u.lastName as studentLastName,
@@ -976,7 +975,6 @@ payments.get('/history', async (c) => {
             p.paymentMethod,
             p.completedAt as approvedAt,
             p.createdAt,
-            p.updatedAt,
             p.status as paymentStatus,
             u.firstName as studentFirstName,
             u.lastName as studentLastName,

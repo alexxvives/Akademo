@@ -480,7 +480,7 @@ export function ClassesPage({ role }: ClassesPageProps) {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="flex items-center gap-3 mb-1">
                       <h3 className="text-xl font-bold text-gray-900 group-hover:text-brand-600 transition-colors">
                         {cls.name}
                       </h3>
@@ -503,6 +503,13 @@ export function ClassesPage({ role }: ClassesPageProps) {
                         </a>
                       )}
                     </div>
+
+                    {/* University / Carrera subtitle */}
+                    {(cls.university || cls.carrera) && (
+                      <p className="text-xs text-gray-400 mb-2">
+                        {[cls.university, cls.carrera].filter(Boolean).join(' · ')}
+                      </p>
+                    )}
 
                     {cls.description ? (
                       <p className="text-sm text-gray-600 mb-4 line-clamp-2">{cls.description}</p>
