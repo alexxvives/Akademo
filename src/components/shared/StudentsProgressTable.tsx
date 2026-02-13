@@ -14,6 +14,7 @@ export interface ClassBreakdownItem {
   lastActive: string | null;
   enrollmentId?: string;
   paymentStatus?: 'UP_TO_DATE' | 'BEHIND' | 'FREE';
+  monthsBehind?: number;
 }
 
 export interface StudentProgress {
@@ -30,6 +31,7 @@ export interface StudentProgress {
   enrollmentId?: string;
   classBreakdown?: ClassBreakdownItem[];
   paymentStatus?: 'UP_TO_DATE' | 'BEHIND' | 'FREE';
+  monthsBehind?: number;
 }
 
 interface StudentsProgressTableProps {
@@ -341,7 +343,7 @@ export function StudentsProgressTable({
                           </span>
                         ) : student.paymentStatus === 'BEHIND' ? (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
-                            Atrasado
+                            Atrasado{student.monthsBehind && student.monthsBehind > 1 ? ` (x${student.monthsBehind})` : ''}
                           </span>
                         ) : (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-400">
@@ -435,7 +437,7 @@ export function StudentsProgressTable({
                               </span>
                             ) : cls.paymentStatus === 'BEHIND' ? (
                               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-600">
-                                Atrasado
+                                Atrasado{cls.monthsBehind && cls.monthsBehind > 1 ? ` (x${cls.monthsBehind})` : ''}
                               </span>
                             ) : (
                               <span className="text-xs text-gray-400">—</span>

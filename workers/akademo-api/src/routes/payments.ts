@@ -176,11 +176,19 @@ payments.post('/initiate', validateBody(initiatePaymentSchema), async (c) => {
         .bind(isMonthly ? 'MONTHLY' : 'ONE_TIME', session.id, classId)
         .run();
 
-      const message = billingCycle.missedCycles > 0
-        ? `Solicitud enviada. Total: ${finalAmount}€ (incluye ${billingCycle.missedCycles} mes(es) pendiente(s)). Próximos pagos: ${price}€/mes.`
-        : paymentMethod === 'cash' 
-          ? 'Solicitud de pago enviada. La academia confirmará la recepción del efectivo.'
-          : 'Solicitud de pago enviada. La academia confirmará la recepción del pago por Bizum.';
+      // Format next payment due date for display
+      const formattedNextDue = billingCycle.nextPaymentDue 
+        ? new Date(billingCycle.nextPaymentDue).toLocaleDateString('es-ES', { 
+            day: '2-digit', 
+            month: '2-digit', 
+            year: 'numeric' 
+          })
+        : null;
+
+      let message = 'Solicitud de pago enviada. La academia confirmará la recepción del pago.';
+      if (isMonthly && formattedNextDue) {
+        message += ` Recuerda que el próximo pago deberá ser el ${formattedNextDue}.`;
+      }
       
       return c.json(successResponse({
         message,
@@ -235,9 +243,19 @@ payments.post('/initiate', validateBody(initiatePaymentSchema), async (c) => {
       .bind(isMonthly ? 'MONTHLY' : 'ONE_TIME', session.id, classId)
       .run();
 
-    const message = billingCycle.missedCycles > 0
-      ? `Solicitud enviada. Total: ${finalAmount}€ (incluye ${billingCycle.missedCycles} mes(es) pendiente(s)). Próximos pagos: ${price}€/mes.`
-      : `Solicitud de pago enviada. La academia confirmar\u00e1 la recepci\u00f3n del ${paymentMethod === 'cash' ? 'efectivo' : 'pago por Bizum'}.`;
+    // Format next payment due date for display
+    const formattedNextDue = billingCycle.nextPaymentDue 
+      ? new Date(billingCycle.nextPaymentDue).toLocaleDateString('es-ES', { 
+          day: '2-digit', 
+          month: '2-digit', 
+          year: 'numeric' 
+        })
+      : null;
+
+    let message = 'Solicitud de pago enviada. La academia confirmará la recepción del pago.';
+    if (isMonthly && formattedNextDue) {
+      message += ` Recuerda que el próximo pago deberá ser el ${formattedNextDue}.`;
+    }
 
     return c.json(successResponse({
       message,

@@ -18,7 +18,7 @@ interface PendingEnrollment { id: string; student: { id: string; firstName: stri
 interface RatingsData { overall: { averageRating: number | null; totalRatings: number; ratedLessons: number }; lessons: Array<{ lessonId: string; lessonTitle: string; className: string; classId: string; academyId?: string; averageRating: number | null; ratingCount: number }>; }
 interface StreamRecord { classId?: string | null; participantCount?: number | null; startedAt?: string | null; endedAt?: string | null; createdAt?: string | null; academyId?: string; }
 interface ProgressRecord { id: string; firstName: string; lastName: string; email: string; classId: string; className: string; academyId?: string; lessonsCompleted?: number | null; totalLessons?: number | null; lastActive?: string | null; totalWatchTime?: number | null; }
-interface PaymentHistoryItem { status?: string | null; amount?: number | null; paymentMethod?: string | null; classId?: string | null; }
+interface PaymentHistoryItem { paymentStatus?: string | null; amount?: number | null; paymentMethod?: string | null; classId?: string | null; }
 interface EnrollmentRecord { student: { id: string; firstName: string; lastName: string; email: string } }
 
 // ─── Animated helpers ───
@@ -107,7 +107,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
 
     if (rejectedResult.success && rejectedResult.data) setRejectedCount(rejectedResult.data.count || 0);
     if (paymentsResult.success && Array.isArray(paymentsResult.data)) {
-      const completed = (paymentsResult.data as PaymentHistoryItem[]).filter(p => p.status === 'COMPLETED' || p.status === 'PAID');
+      const completed = (paymentsResult.data as PaymentHistoryItem[]).filter(p => p.paymentStatus === 'COMPLETED' || p.paymentStatus === 'PAID');
       setAllCompletedPayments(completed);
     }
     if (streamsResult.success && Array.isArray(streamsResult.data)) setAllStreams(streamsResult.data);
@@ -159,7 +159,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
     setClassWatchTime({ hours: Math.floor(totalMin / 60), minutes: totalMin % 60 });
     const demoPending = generateDemoPendingPayments();
     const demoHistory = generateDemoPaymentHistory();
-    setAllCompletedPayments(demoHistory.filter(p => p.paymentStatus === 'PAID').map(p => ({ status: p.paymentStatus, amount: p.paymentAmount, paymentMethod: p.paymentMethod, classId: p.classId })));
+    setAllCompletedPayments(demoHistory.filter(p => p.paymentStatus === 'PAID').map(p => ({ paymentStatus: p.paymentStatus, amount: p.paymentAmount, paymentMethod: p.paymentMethod, classId: p.classId })));
     setPendingEnrollments(demoPending.map((p, i) => ({
       id: `demo-pending-${i + 1}`, student: { id: `demo-sp-${i + 1}`, firstName: p.studentFirstName, lastName: p.studentLastName, email: p.studentEmail },
       class: { id: classNameToId[p.className] || 'demo-c1', name: p.className }, enrolledAt: p.createdAt,

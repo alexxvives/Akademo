@@ -703,6 +703,18 @@ export default function PagosPage({ role }: PagosPageProps) {
                       >
                         {processingIds.has(payment.enrollmentId) ? '...' : '✓ Aprobar'}
                       </button>
+                      <button
+                        onClick={(e) => {
+                          if (paymentStatus === 'NOT PAID') { e.preventDefault(); e.stopPropagation(); return; }
+                          e.stopPropagation();
+                          handleReject(payment.enrollmentId);
+                        }}
+                        disabled={processingIds.has(payment.enrollmentId) || paymentStatus === 'NOT PAID'}
+                        className="p-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:cursor-not-allowed"
+                        title={paymentStatus === 'NOT PAID' ? 'Disponible solo en academias activadas' : 'Rechazar pago'}
+                      >
+                        🗑️
+                      </button>
                     </div>
                   </td>
                 )}

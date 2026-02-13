@@ -77,29 +77,34 @@ function computePaymentStatus(
   classStartDate: string | null | undefined,
   enrolledAt: string | null | undefined,
   totalPaid: number | null | undefined,
-): 'UP_TO_DATE' | 'BEHIND' | 'FREE' {
+): { status: 'UP_TO_DATE' | 'BEHIND' | 'FREE'; monthsBehind: number } {
   // Free class: no prices set or both zero
   const hasMonthly = monthlyPrice != null && monthlyPrice > 0;
   const hasOneTime = oneTimePrice != null && oneTimePrice > 0;
-  if (!hasMonthly && !hasOneTime) return 'FREE';
+  if (!hasMonthly && !hasOneTime) return { status: 'FREE', monthsBehind: 0 };
 
   const paid = totalPaid ?? 0;
 
   if (paymentFrequency === 'MONTHLY' && hasMonthly) {
     // Calculate expected months from class start (or enrollment) to now
     const startStr = classStartDate || enrolledAt;
-    if (!startStr) return paid >= monthlyPrice ? 'UP_TO_DATE' : 'BEHIND';
+    if (!startStr) {
+      const monthsBehind = paid < monthlyPrice ? 1 : 0;
+      return { status: paid >= monthlyPrice ? 'UP_TO_DATE' : 'BEHIND', monthsBehind };
+    }
     const start = new Date(startStr);
     const now = new Date();
     const monthsDiff = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
     const expectedMonths = Math.max(1, monthsDiff + 1); // At least 1 month due
     const expectedAmount = expectedMonths * monthlyPrice;
-    return paid >= expectedAmount ? 'UP_TO_DATE' : 'BEHIND';
+    const paidMonths = Math.floor(paid / monthlyPrice);
+    const monthsBehind = Math.max(0, expectedMonths - paidMonths);
+    return { status: paid >= expectedAmount ? 'UP_TO_DATE' : 'BEHIND', monthsBehind };
   }
 
   // One-time payment or default
   const price = hasOneTime ? oneTimePrice! : monthlyPrice!;
-  return paid >= price ? 'UP_TO_DATE' : 'BEHIND';
+  return { status: paid >= price ? 'UP_TO_DATE' : 'BEHIND', monthsBehind: 0 };
 }
 
 export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
@@ -200,6 +205,8 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
       // This must match the same set in demo-data.ts generateDemoPendingPayments()
       const BEHIND_INDICES = new Set([2, 7, 15, 22]);
       const isBehind = BEHIND_INDICES.has(index);
+      // Demo: assign 1-3 months behind for BEHIND students
+      const demoMonthsBehind = isBehind ? (index % 3) + 1 : 0;
 
       // Build per-class breakdown if student is in multiple classes
       let classBreakdown: ClassBreakdownItem[] | undefined;
@@ -210,6 +217,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
           const clsTime = Math.floor(totalWatchTime / student.classes.length) + ((index * 137 + ci * 89) % 600);
           // For BEHIND students, mark their first class as BEHIND
           const classPaymentStatus: 'UP_TO_DATE' | 'BEHIND' = (isBehind && ci === 0) ? 'BEHIND' : 'UP_TO_DATE';
+          const classMonthsBehind = (isBehind && ci === 0) ? demoMonthsBehind : 0;
           return {
             className: cls,
             classId: student.classIds[ci],
@@ -220,6 +228,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
             totalVideos: Math.floor(totalVideos / student.classes.length),
             lastActive: student.lastLoginAt ?? null,
             paymentStatus: classPaymentStatus,
+            monthsBehind: classMonthsBehind,
           };
         });
       }
@@ -241,6 +250,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
         lastActive: student.lastLoginAt ?? null,
         classBreakdown,
         paymentStatus: aggregateStatus,
+        monthsBehind: demoMonthsBehind,
       };
     });
   }, []);
@@ -274,7 +284,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
         const studentMap = new Map<string, StudentProgressAggregate>();
         
         data.data.forEach((student: StudentProgressApiRecord) => {
-          const classPaymentStatus = computePaymentStatus(
+          const paymentResult = computePaymentStatus(
             student.paymentFrequency,
             student.monthlyPrice,
             student.oneTimePrice,
@@ -291,7 +301,8 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
             totalVideos: student.totalLessons ?? 0,
             lastActive: student.lastActive ?? null,
             enrollmentId: student.enrollmentId ?? undefined,
-            paymentStatus: classPaymentStatus,
+            paymentStatus: paymentResult.status,
+            monthsBehind: paymentResult.monthsBehind,
           };
 
           if (!studentMap.has(student.id)) {
@@ -339,7 +350,11 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
         const progressData: StudentProgress[] = Array.from(studentMap.values()).map(student => {
           // Aggregate payment status: if ANY class is BEHIND, student is BEHIND overall
           // If all FREE, student is FREE. Otherwise UP_TO_DATE.
+          // For months behind, sum up all BEHIND months across classes
           const statuses = student.perClassRecords.map(r => r.paymentStatus);
+          const totalMonthsBehind = student.perClassRecords
+            .filter(r => r.paymentStatus === 'BEHIND')
+            .reduce((sum, r) => sum + (r.monthsBehind || 0), 0);
           let aggregatePaymentStatus: 'UP_TO_DATE' | 'BEHIND' | 'FREE' = 'FREE';
           if (statuses.some(s => s === 'BEHIND')) {
             aggregatePaymentStatus = 'BEHIND';
@@ -361,6 +376,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
             enrollmentId: student.enrollmentIds[0], // Use first enrollment for actions
             classBreakdown: student.perClassRecords.length > 1 ? student.perClassRecords : undefined,
             paymentStatus: aggregatePaymentStatus,
+            monthsBehind: totalMonthsBehind,
           };
         });
         
