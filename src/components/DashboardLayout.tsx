@@ -101,6 +101,9 @@ export default function DashboardLayout({
   // New grades available count for student
   const [newGradesCount, setNewGradesCount] = useState(0);
   
+  // Unpaid classes count for student sidebar badge
+  const [unpaidClassesCount, setUnpaidClassesCount] = useState(0);
+  
   // Academy state for academy join link and feedbackEnabled
   const [academyId, setAcademyId] = useState<string | null>(null);
   const [academyPaymentStatus, setAcademyPaymentStatus] = useState<string | null>(null);
@@ -298,6 +301,21 @@ export default function DashboardLayout({
     }
   }, []);
 
+  const loadUnpaidClasses = useCallback(async () => {
+    try {
+      const response = await apiClient('/classes');
+      const result = await response.json();
+      if (result.success && Array.isArray(result.data)) {
+        const unpaid = result.data.filter((c: { paymentStatus?: string }) => 
+          c.paymentStatus && c.paymentStatus !== 'PAID' && c.paymentStatus !== 'COMPLETED'
+        );
+        setUnpaidClassesCount(unpaid.length);
+      }
+    } catch (error) {
+      console.error('Failed to load unpaid classes:', error);
+    }
+  }, []);
+
   useEffect(() => {
     checkAuth();
     
@@ -318,6 +336,9 @@ export default function DashboardLayout({
       // Load new grades count and poll for updates
       loadNewGrades();
       const gradesInterval = setInterval(loadNewGrades, 15000);
+      
+      // Load unpaid classes count for sidebar badge
+      loadUnpaidClasses();
       
       return () => {
         clearInterval(interval);
@@ -499,7 +520,7 @@ export default function DashboardLayout({
         ];
       case 'STUDENT':
         return [
-          { label: 'Mis Asignaturas', href: '/dashboard/student/classes', matchPaths: ['/dashboard/student/class'], showPulse: activeStreams.length > 0, iconType: 'book' as const },
+          { label: 'Mis Asignaturas', href: '/dashboard/student/classes', matchPaths: ['/dashboard/student/class'], showPulse: activeStreams.length > 0, iconType: 'book' as const, badge: unpaidClassesCount > 0 ? unpaidClassesCount : undefined, badgeColor: 'bg-red-500 text-white' },
           { label: 'Ejercicios', href: '/dashboard/student/assignments', badge: newGradesCount > 0 ? newGradesCount : undefined, badgeColor: 'bg-[#b0e788]', iconType: 'fileText' as const },
         ];
       case 'ACADEMY':

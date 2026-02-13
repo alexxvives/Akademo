@@ -396,33 +396,6 @@ export default function StudentClassesPage() {
                     <p className="text-sm text-gray-400 italic mb-4">Sin descripción</p>
                   )}
                   
-                  {/* Payment Warning Banner - Show when payment is not completed */}
-                  {classItem.paymentStatus && classItem.paymentStatus !== 'PAID' && classItem.paymentStatus !== 'COMPLETED' && (
-                    <div className="mb-4 p-3 bg-amber-50 border border-amber-300 rounded-lg flex items-start gap-2">
-                      <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                      </svg>
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-amber-800">Recordatorio de Pago</p>
-                        <p className="text-xs text-amber-700 mt-1">
-                          {classItem.paymentStatus === 'PENDING' && (classItem.paymentMethod === 'cash' || classItem.paymentMethod === 'bizum')
-                            ? `Tu solicitud de pago por ${classItem.paymentMethod === 'cash' ? 'efectivo' : 'Bizum'} está pendiente de aprobación por la academia.`
-                            : 'Tienes un pago pendiente. Haz clic en "Realizar Pago" para completar tu inscripción.'
-                          }
-                        </p>
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setPayingClass(classItem);
-                        }}
-                        className="px-3 py-1.5 bg-amber-600 text-white rounded-md text-xs font-medium hover:bg-amber-700 transition-colors whitespace-nowrap"
-                      >
-                        Realizar Pago
-                      </button>
-                    </div>
-                  )}
-                  
                   {/* Teacher Info */}
                   <div className="flex items-center gap-2 text-sm text-gray-700 mb-2">
                     <span className="font-medium">Profesor:</span>

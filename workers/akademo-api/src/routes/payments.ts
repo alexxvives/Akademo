@@ -71,14 +71,13 @@ function calculateBillingCycle(classStartDate: string, _enrollmentDate: string, 
   // Current cycle boundaries
   const currentCycleStart = addMonths(classStart, elapsedCycles - 1);
   const currentCycleEnd   = addMonths(classStart, elapsedCycles);
-  const nextCycleEnd      = addMonths(classStart, elapsedCycles + 1);
 
   const catchUpAmount = elapsedCycles * monthlyPrice;
 
   return {
     billingCycleStart: classStart.toISOString(),
     billingCycleEnd: currentCycleEnd.toISOString(),
-    nextPaymentDue: nextCycleEnd.toISOString(),
+    nextPaymentDue: currentCycleEnd.toISOString(),
     missedCycles: elapsedCycles,
     catchUpAmount: catchUpAmount,
     totalAmount: catchUpAmount // Total to charge NOW (all elapsed cycles)
@@ -187,7 +186,7 @@ payments.post('/initiate', validateBody(initiatePaymentSchema), async (c) => {
 
       let message = 'Solicitud de pago enviada. La academia confirmará la recepción del pago.';
       if (isMonthly && formattedNextDue) {
-        message += ` Recuerda que el próximo pago deberá ser el ${formattedNextDue}.`;
+        message += ` Recuerda que el próximo pago de ${price}€ deberá ser el ${formattedNextDue}.`;
       }
       
       return c.json(successResponse({
@@ -254,7 +253,7 @@ payments.post('/initiate', validateBody(initiatePaymentSchema), async (c) => {
 
     let message = 'Solicitud de pago enviada. La academia confirmará la recepción del pago.';
     if (isMonthly && formattedNextDue) {
-      message += ` Recuerda que el próximo pago deberá ser el ${formattedNextDue}.`;
+      message += ` Recuerda que el próximo pago de ${price}€ deberá ser el ${formattedNextDue}.`;
     }
 
     return c.json(successResponse({
