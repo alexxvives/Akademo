@@ -129,8 +129,13 @@ classes.get('/', async (c) => {
     // For students: calculate firstPaymentAmount for classes with monthly pricing
     if (session.role === 'STUDENT') {
       classes = classes.map((classData: any) => {
-        // Only calculate for classes that haven't been paid yet and have monthly pricing
-        if (!classData.paymentStatus && classData.monthlyPrice && classData.startDate) {
+        // Calculate for classes that aren't fully paid and have monthly pricing
+        const needsBillingCalc = classData.paymentStatus !== 'PAID' 
+                                && classData.paymentStatus !== 'COMPLETED'
+                                && classData.monthlyPrice 
+                                && classData.startDate;
+        
+        if (needsBillingCalc) {
           const classStart = new Date(classData.startDate);
           const today = new Date();
           
