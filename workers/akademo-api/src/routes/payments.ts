@@ -322,8 +322,67 @@ payments.get('/pending-cash', async (c) => {
         ORDER BY p.createdAt DESC
       `;
       params = [session.id];
+    } else if (session.role === 'ADMIN') {
+      const academyId = c.req.query('academyId');
+      if (academyId) {
+        query = `
+          SELECT 
+            p.id as enrollmentId,
+            p.status as paymentStatus,
+            p.paymentMethod,
+            p.amount as paymentAmount,
+            p.createdAt as enrolledAt,
+            p.payerId as studentId,
+            u.firstName as studentFirstName,
+            u.lastName as studentLastName,
+            u.email as studentEmail,
+            p.classId,
+            c.name as className,
+            p.currency,
+            a.id as academyId,
+            a.name as academyName,
+            teacher.firstName || ' ' || teacher.lastName as teacherName
+          FROM Payment p
+          JOIN Class c ON p.classId = c.id
+          JOIN Academy a ON c.academyId = a.id
+          JOIN User u ON p.payerId = u.id
+          LEFT JOIN User teacher ON c.teacherId = teacher.id
+          WHERE a.id = ?
+          AND p.status = 'PENDING'
+          AND p.type = 'STUDENT_TO_ACADEMY'
+          ORDER BY p.createdAt DESC
+        `;
+        params = [academyId];
+      } else {
+        query = `
+          SELECT 
+            p.id as enrollmentId,
+            p.status as paymentStatus,
+            p.paymentMethod,
+            p.amount as paymentAmount,
+            p.createdAt as enrolledAt,
+            p.payerId as studentId,
+            u.firstName as studentFirstName,
+            u.lastName as studentLastName,
+            u.email as studentEmail,
+            p.classId,
+            c.name as className,
+            p.currency,
+            a.id as academyId,
+            a.name as academyName,
+            teacher.firstName || ' ' || teacher.lastName as teacherName
+          FROM Payment p
+          JOIN Class c ON p.classId = c.id
+          JOIN Academy a ON c.academyId = a.id
+          JOIN User u ON p.payerId = u.id
+          LEFT JOIN User teacher ON c.teacherId = teacher.id
+          WHERE p.status = 'PENDING'
+          AND p.type = 'STUDENT_TO_ACADEMY'
+          ORDER BY p.createdAt DESC
+        `;
+      }
     } else {
-      return c.json(errorResponse('Only academy owners and teachers can view pending payments'), 403);
+      return c.json(errorResponse('Only academy owners, teachers, and admins can view pending payments'), 403);
     }
 
     const result = await c.env.DB
@@ -736,8 +795,75 @@ payments.get('/history', async (c) => {
         LIMIT 50
       `;
       params = [session.id];
+    } else if (session.role === 'ADMIN') {
+      const academyId = c.req.query('academyId');
+      if (academyId) {
+        query = `
+          SELECT 
+            p.id as paymentId,
+            p.id as enrollmentId,
+            p.payerId as studentId,
+            p.classId,
+            p.amount as paymentAmount,
+            p.currency,
+            p.paymentMethod,
+            p.completedAt as approvedAt,
+            p.createdAt,
+            p.updatedAt,
+            p.status as paymentStatus,
+            u.firstName as studentFirstName,
+            u.lastName as studentLastName,
+            u.email as studentEmail,
+            c.name as className,
+            a.id as academyId,
+            a.name as academyName,
+            teacher.firstName || ' ' || teacher.lastName as teacherName
+          FROM Payment p
+          JOIN Class c ON p.classId = c.id
+          JOIN Academy a ON c.academyId = a.id
+          JOIN User u ON p.payerId = u.id
+          LEFT JOIN User teacher ON c.teacherId = teacher.id
+          WHERE a.id = ?
+            AND p.status IN ('PAID', 'COMPLETED')
+            AND p.type = 'STUDENT_TO_ACADEMY'
+          ORDER BY p.completedAt DESC
+          LIMIT 100
+        `;
+        params = [academyId];
+      } else {
+        query = `
+          SELECT 
+            p.id as paymentId,
+            p.id as enrollmentId,
+            p.payerId as studentId,
+            p.classId,
+            p.amount as paymentAmount,
+            p.currency,
+            p.paymentMethod,
+            p.completedAt as approvedAt,
+            p.createdAt,
+            p.updatedAt,
+            p.status as paymentStatus,
+            u.firstName as studentFirstName,
+            u.lastName as studentLastName,
+            u.email as studentEmail,
+            c.name as className,
+            a.id as academyId,
+            a.name as academyName,
+            teacher.firstName || ' ' || teacher.lastName as teacherName
+          FROM Payment p
+          JOIN Class c ON p.classId = c.id
+          JOIN Academy a ON c.academyId = a.id
+          JOIN User u ON p.payerId = u.id
+          LEFT JOIN User teacher ON c.teacherId = teacher.id
+          WHERE p.status IN ('PAID', 'COMPLETED')
+            AND p.type = 'STUDENT_TO_ACADEMY'
+          ORDER BY p.completedAt DESC
+          LIMIT 100
+        `;
+      }
     } else {
-      return c.json(errorResponse('Only academy owners can view payment history'), 403);
+      return c.json(errorResponse('Only academy owners and admins can view payment history'), 403);
     }
 
     const result = await c.env.DB.prepare(query).bind(...params).all();

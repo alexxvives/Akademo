@@ -114,8 +114,8 @@ export function AssignmentModals(props: AssignmentModalsProps) {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Archivos adjuntos (PDFs)</label>
-                <input type="file" multiple accept=".pdf"
+                <label className="block text-sm font-medium text-gray-700 mb-1">Archivos adjuntos</label>
+                <input type="file" multiple
                   onChange={(e) => setUploadFiles(Array.from(e.target.files || []))}
                   className="w-full h-[38px] px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 file:mr-4 file:py-0.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200" />
                 {uploadFiles.length > 0 && (
@@ -174,11 +174,11 @@ export function AssignmentModals(props: AssignmentModalsProps) {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Actualizar archivo PDF (opcional)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Actualizar archivo (opcional)</label>
                 {selectedAssignment.attachmentName && (
                   <div className="mb-2 text-sm text-gray-600">Archivo actual: {selectedAssignment.attachmentName}</div>
                 )}
-                <input type="file" accept=".pdf"
+                <input type="file"
                   onChange={(e) => setEditUploadFile(e.target.files?.[0] || null)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200" />
                 {editUploadFile && (

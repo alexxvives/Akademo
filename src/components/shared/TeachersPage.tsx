@@ -385,9 +385,7 @@ export function TeachersPage({ role }: TeachersPageProps) {
                 />
               </svg>
               <span className="text-xs text-gray-600">
-                {role === 'ACADEMY'
-                  ? 'Haz clic en cualquier fila para editar.'
-                  : 'Haz clic en la flecha para ver las asignaturas del profesor.'}
+                Haz clic en la flecha para ver las asignaturas del profesor.
               </span>
             </div>
             <table className="w-full">
@@ -408,7 +406,7 @@ export function TeachersPage({ role }: TeachersPageProps) {
                     Estudiantes
                   </th>
                   <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {role === 'ACADEMY' ? 'Unido' : 'Registrado'}
+                    Unido
                   </th>
                   {role === 'ACADEMY' && (
                     <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -446,6 +444,23 @@ export function TeachersPage({ role }: TeachersPageProps) {
                             ) : (
                               <div className="w-4 h-4 flex-shrink-0" />
                             )}
+                            {/* Avatar for all roles */}
+                            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
+                              <span className="text-purple-600 font-medium">
+                                {teacher.name.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                            <div
+                              onClick={(e) => {
+                                if (role === 'ACADEMY' && !isDemo) {
+                                  e.stopPropagation();
+                                  openEditModal(teacher);
+                                }
+                              }}
+                            >
+                              <div className="text-sm font-medium text-gray-900">{teacher.name}</div>
+                              <div className="text-sm text-gray-500">{teacher.email}</div>
+                            </div>
                             {/* Academy: delete button */}
                             {role === 'ACADEMY' && (
                               <button
@@ -454,7 +469,7 @@ export function TeachersPage({ role }: TeachersPageProps) {
                                   handleDeleteTeacher(teacher.id, teacher.name);
                                 }}
                                 disabled={deleting === teacher.id || isDemo}
-                                className="text-red-600 hover:text-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                                className="text-red-600 hover:text-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 ml-auto"
                                 title="Eliminar profesor"
                               >
                                 {deleting === teacher.id ? (
@@ -476,25 +491,6 @@ export function TeachersPage({ role }: TeachersPageProps) {
                                 )}
                               </button>
                             )}
-                            {/* Admin: avatar */}
-                            {role === 'ADMIN' && (
-                              <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                <span className="text-purple-600 font-medium">
-                                  {teacher.name.charAt(0).toUpperCase()}
-                                </span>
-                              </div>
-                            )}
-                            <div
-                              onClick={(e) => {
-                                if (role === 'ACADEMY' && !isDemo) {
-                                  e.stopPropagation();
-                                  openEditModal(teacher);
-                                }
-                              }}
-                            >
-                              <div className="text-sm font-medium text-gray-900">{teacher.name}</div>
-                              <div className="text-sm text-gray-500">{teacher.email}</div>
-                            </div>
                           </div>
                         </td>
                         {role === 'ADMIN' && (
@@ -583,7 +579,7 @@ export function TeachersPage({ role }: TeachersPageProps) {
                             <td className="px-3 sm:px-6 py-3">
                               {cls.studentCount !== undefined && (
                                 <span className="text-xs text-gray-700">
-                                  {cls.studentCount} estudiantes
+                                  {cls.studentCount}
                                 </span>
                               )}
                             </td>

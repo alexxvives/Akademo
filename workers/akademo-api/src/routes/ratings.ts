@@ -157,6 +157,32 @@ ratings.get('/teacher', async (c) => {
     }
 
     // Calculate averages and convert to arrays
+    // First, fetch ALL topics for the classes in the ratings (so empty topics appear too)
+    const classIds = Object.keys(classesMap);
+    if (classIds.length > 0) {
+      const placeholders = classIds.map(() => '?').join(',');
+      const topicsResult = await c.env.DB.prepare(
+        `SELECT t.id, t.name, t.classId FROM Topic t WHERE t.classId IN (${placeholders}) ORDER BY t.name`
+      ).bind(...classIds).all();
+      const allTopics = topicsResult.results || [];
+
+      // Add missing topics to the classesMap
+      for (const topic of allTopics) {
+        const classId = topic.classId as string;
+        const topicId = topic.id as string;
+        if (classesMap[classId] && !classesMap[classId].topics[topicId]) {
+          classesMap[classId].topics[topicId] = {
+            id: topicId,
+            name: topic.name as string,
+            totalRatings: 0,
+            sumRatings: 0,
+            averageRating: 0,
+            lessons: {}
+          };
+        }
+      }
+    }
+
     const classes = Object.values(classesMap).map(cls => {
       const topics = Object.values(cls.topics).map((topic: any) => {
         const lessons = Object.values(topic.lessons).map((lesson: any) => ({

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useCallback, useEffect, useState } from 'react';
 import { apiClient, apiPost } from '@/lib/api-client';
@@ -76,7 +76,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
     return 'text-gray-900';
   };
 
-  // ─── Academy data loading ───
+  // â”€â”€â”€ Academy data loading â”€â”€â”€
   const loadAcademyAssignments = useCallback(async () => {
     try {
       if (paymentStatus === 'NOT PAID') {
@@ -143,7 +143,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
     }
   };
 
-  // ─── Admin data loading ───
+  // â”€â”€â”€ Admin data loading â”€â”€â”€
   const loadAdminData = async () => {
     try {
       setLoading(true);
@@ -198,7 +198,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
     }
   };
 
-  // ─── Effects ───
+  // â”€â”€â”€ Effects â”€â”€â”€
   useEffect(() => {
     if (isAcademy) loadAcademyData();
     else loadAdminData();
@@ -215,9 +215,9 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedAcademy, selectedClass]);
 
-  // ─── Shared handlers ───
+  // â”€â”€â”€ Shared handlers â”€â”€â”€
   const handleDeleteAssignment = async (assignmentId: string, title: string) => {
-    if (!confirm(`¿Estás seguro que deseas eliminar "${title}"? Esta acción no se puede deshacer.`)) return;
+    if (!confirm(`Â¿EstÃ¡s seguro que deseas eliminar "${title}"? Esta acciÃ³n no se puede deshacer.`)) return;
     setDeletingAssignmentId(assignmentId);
     try {
       const res = await apiClient(`/assignments/${assignmentId}`, { method: 'DELETE' });
@@ -266,7 +266,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
     }
   };
 
-  // ─── Academy-only handlers ───
+  // â”€â”€â”€ Academy-only handlers â”€â”€â”€
   const loadSubmissions = async (assignmentId: string) => {
     try {
       if (paymentStatus === 'NOT PAID') {
@@ -438,7 +438,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
     ? classes.filter(c => c.academyId === selectedAcademy)
     : classes;
 
-  // ─── Rendering ───
+  // â”€â”€â”€ Rendering â”€â”€â”€
   if (loading) {
     return (
       <div className="space-y-6 animate-pulse">
@@ -589,14 +589,14 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
       <table className="min-w-full divide-y divide-gray-200">
         <thead className={`bg-gray-50 ${isAcademy ? 'sticky top-0 z-10' : ''}`}>
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Título</th>
-            {isAdmin && <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Academia</th>}
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Asignatura</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ejercicios</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha límite</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Entregas</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Calificadas</th>
-            {isAcademy && <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>}
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TÃ­tulo</th>
+            {isAdmin && <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Academia</th>}
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asignatura</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ejercicios</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha lÃ­mite</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entregas</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Calificadas</th>
+            {isAcademy && <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>}
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
@@ -615,7 +615,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
                     }}
                     disabled={deletingAssignmentId === assignment.id || (isAcademy && paymentStatus === 'NOT PAID' && userEmail.toLowerCase().includes('demo'))}
                     className="text-red-600 hover:text-red-700 transition-colors disabled:opacity-50 flex-shrink-0 disabled:cursor-not-allowed"
-                    title={isAcademy && paymentStatus === 'NOT PAID' && userEmail.toLowerCase().includes('demo') ? 'No disponible en modo demostración' : 'Eliminar ejercicio'}>
+                    title={isAcademy && paymentStatus === 'NOT PAID' && userEmail.toLowerCase().includes('demo') ? 'No disponible en modo demostraciÃ³n' : 'Eliminar ejercicio'}>
                     {deletingAssignmentId === assignment.id ? (
                       <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
                     ) : (
@@ -625,8 +625,8 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
                     )}
                   </button>
                   <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-900">{assignment.title}</div>
-                    {assignment.description && <div className="text-sm text-gray-500 truncate max-w-md">{assignment.description}</div>}
+                    <div className="text-sm font-medium text-gray-900 truncate max-w-[14rem]">{assignment.title}</div>
+                    {assignment.description && <div className="text-sm text-gray-500 truncate max-w-[14rem]">{assignment.description}</div>}
                   </div>
                 </div>
               </td>

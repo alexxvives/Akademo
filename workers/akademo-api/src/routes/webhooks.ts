@@ -235,14 +235,34 @@ webhooks.post('/zoom', async (c) => {
 
       if (stream) {
         const isJoin = event.includes('joined');
-        const currentCount = stream.participantCount || 0;
-        const newCount = isJoin ? currentCount + 1 : Math.max(0, currentCount - 1);
-        
-        // Update participant count
-        const result = await c.env.DB
-          .prepare('UPDATE LiveStream SET participantCount = ?, participantsFetchedAt = ? WHERE id = ?')
-          .bind(newCount, new Date().toISOString(), stream.id)
-          .run();
+        const storedMax = stream.participantCount || 0;
+
+        // Track current active participants using participantsData JSON
+        let activeParticipants: string[] = [];
+        try {
+          activeParticipants = JSON.parse(stream.participantsData || '[]');
+          if (!Array.isArray(activeParticipants)) activeParticipants = [];
+        } catch { activeParticipants = []; }
+
+        if (isJoin) {
+          // Add participant to active set (avoid duplicates)
+          if (!activeParticipants.includes(participantUserId)) {
+            activeParticipants.push(participantUserId);
+          }
+          // participantCount = max concurrent participants ever seen
+          const newMax = Math.max(storedMax, activeParticipants.length);
+          await c.env.DB
+            .prepare('UPDATE LiveStream SET participantCount = ?, participantsData = ?, participantsFetchedAt = ? WHERE id = ?')
+            .bind(newMax, JSON.stringify(activeParticipants), new Date().toISOString(), stream.id)
+            .run();
+        } else {
+          // On leave, remove from active set but never decrease participantCount
+          activeParticipants = activeParticipants.filter(id => id !== participantUserId);
+          await c.env.DB
+            .prepare('UPDATE LiveStream SET participantsData = ?, participantsFetchedAt = ? WHERE id = ?')
+            .bind(JSON.stringify(activeParticipants), new Date().toISOString(), stream.id)
+            .run();
+        }
 
       } else {
         // Debug: Show all active streams

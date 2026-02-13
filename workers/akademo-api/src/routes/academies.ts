@@ -451,48 +451,42 @@ academies.get('/classes', async (c) => {
     if (session.role === 'ADMIN') {
       query = `
         SELECT 
-          c.*,
+          c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt,
+          c.whatsappGroupLink, c.monthlyPrice, c.oneTimePrice, c.zoomAccountId, c.maxStudents, c.startDate,
           a.name as academyName,
           u.firstName as teacherFirstName,
           u.lastName as teacherLastName,
-          COUNT(DISTINCT ce.id) as studentCount,
-          COUNT(DISTINCT l.id) as lessonCount,
-          COUNT(DISTINCT v.id) as videoCount,
-          COUNT(DISTINCT d.id) as documentCount,
-          ROUND(AVG(lr.rating), 1) as avgRating
+          za.accountName as zoomAccountName,
+          (SELECT COUNT(*) FROM ClassEnrollment WHERE classId = c.id AND status = 'APPROVED') as studentCount,
+          (SELECT COUNT(*) FROM Lesson WHERE classId = c.id) as lessonCount,
+          (SELECT COUNT(*) FROM Video v JOIN Lesson l ON v.lessonId = l.id WHERE l.classId = c.id) as videoCount,
+          (SELECT COUNT(*) FROM Document d JOIN Lesson l ON d.lessonId = l.id WHERE l.classId = c.id) as documentCount,
+          (SELECT ROUND(AVG(lr.rating), 1) FROM LessonRating lr JOIN Lesson l ON lr.lessonId = l.id WHERE l.classId = c.id) as avgRating
         FROM Class c
         JOIN Academy a ON c.academyId = a.id
         LEFT JOIN User u ON c.teacherId = u.id
-        LEFT JOIN ClassEnrollment ce ON c.id = ce.classId AND ce.status = 'APPROVED'
-        LEFT JOIN Lesson l ON c.id = l.classId
-        LEFT JOIN Video v ON l.id = v.lessonId
-        LEFT JOIN Document d ON l.id = d.lessonId
-        LEFT JOIN LessonRating lr ON l.id = lr.lessonId
-        GROUP BY c.id
+        LEFT JOIN ZoomAccount za ON c.zoomAccountId = za.id
         ORDER BY c.createdAt DESC
       `;
     } else if (session.role === 'ACADEMY') {
       query = `
         SELECT 
-          c.*,
+          c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt,
+          c.whatsappGroupLink, c.monthlyPrice, c.oneTimePrice, c.zoomAccountId, c.maxStudents, c.startDate,
           a.name as academyName,
           u.firstName as teacherFirstName,
           u.lastName as teacherLastName,
-          COUNT(DISTINCT ce.id) as studentCount,
-          COUNT(DISTINCT l.id) as lessonCount,
-          COUNT(DISTINCT v.id) as videoCount,
-          COUNT(DISTINCT d.id) as documentCount,
-          ROUND(AVG(lr.rating), 1) as avgRating
+          za.accountName as zoomAccountName,
+          (SELECT COUNT(*) FROM ClassEnrollment WHERE classId = c.id AND status = 'APPROVED') as studentCount,
+          (SELECT COUNT(*) FROM Lesson WHERE classId = c.id) as lessonCount,
+          (SELECT COUNT(*) FROM Video v JOIN Lesson l ON v.lessonId = l.id WHERE l.classId = c.id) as videoCount,
+          (SELECT COUNT(*) FROM Document d JOIN Lesson l ON d.lessonId = l.id WHERE l.classId = c.id) as documentCount,
+          (SELECT ROUND(AVG(lr.rating), 1) FROM LessonRating lr JOIN Lesson l ON lr.lessonId = l.id WHERE l.classId = c.id) as avgRating
         FROM Class c
         JOIN Academy a ON c.academyId = a.id
         LEFT JOIN User u ON c.teacherId = u.id
-        LEFT JOIN ClassEnrollment ce ON c.id = ce.classId AND ce.status = 'APPROVED'
-        LEFT JOIN Lesson l ON c.id = l.classId
-        LEFT JOIN Video v ON l.id = v.lessonId
-        LEFT JOIN Document d ON l.id = d.lessonId
-        LEFT JOIN LessonRating lr ON l.id = lr.lessonId
+        LEFT JOIN ZoomAccount za ON c.zoomAccountId = za.id
         WHERE a.ownerId = ?
-        GROUP BY c.id
         ORDER BY c.createdAt DESC
       `;
       params = [session.id];

@@ -370,36 +370,36 @@ export function StreamsPage({ role }: StreamsPageProps) {
             <table className="w-full">
               <thead className="bg-gray-50/50 border-b border-gray-200 sticky top-0 z-10">
                 <tr>
-                  <th className="text-left py-3 px-2 sm:px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="text-left py-3 px-2 sm:px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Título
                   </th>
                   {role === 'ADMIN' && (
-                    <th className="text-left py-3 px-2 sm:px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th className="text-left py-3 px-2 sm:px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Academia
                     </th>
                   )}
-                  <th className="text-left py-3 px-2 sm:px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="text-left py-3 px-2 sm:px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Profesor
                   </th>
-                  <th className="text-left py-3 px-2 sm:px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="text-left py-3 px-2 sm:px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Clase
                   </th>
-                  <th className="text-left py-3 px-2 sm:px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="text-left py-3 px-2 sm:px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Estado
                   </th>
-                  <th className="text-left py-3 px-2 sm:px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="text-left py-3 px-2 sm:px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Participantes
                   </th>
-                  <th className="text-left py-3 px-2 sm:px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="text-left py-3 px-2 sm:px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Fecha
                   </th>
-                  <th className="text-left py-3 px-2 sm:px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="text-left py-3 px-2 sm:px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Duración
                   </th>
-                  <th className="text-left py-3 px-2 sm:px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="text-left py-3 px-2 sm:px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Grabación
                   </th>
-                  <th className="text-left py-3 px-2 sm:px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <th className="text-left py-3 px-2 sm:px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Lección
                   </th>
                 </tr>
@@ -473,7 +473,7 @@ export function StreamsPage({ role }: StreamsPageProps) {
                             />
                           ) : (
                             <div className="flex items-center gap-2">
-                              <span className="font-medium text-gray-900">{stream.title}</span>
+                              <span className="text-sm font-medium text-gray-900">{stream.title}</span>
                               <button
                                 onClick={() => handleEditTitle(stream.id, stream.title)}
                                 className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -506,7 +506,7 @@ export function StreamsPage({ role }: StreamsPageProps) {
                       <td className="py-3 px-2 sm:px-4">
                         <Link
                           href={`${dashboardBase}/class/${stream.classSlug || stream.classId}`}
-                          className="text-brand-600 hover:text-brand-700 font-medium transition-colors"
+                          className="text-sm text-brand-600 hover:text-brand-700 font-medium transition-colors"
                         >
                           {stream.className}
                         </Link>

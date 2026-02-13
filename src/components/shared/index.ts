@@ -24,3 +24,5 @@ export { AssignmentsPage } from './AssignmentsPage';
 export { AssignmentModals } from './AssignmentModals';
 
 export { DashboardPage } from './DashboardPage';
+
+export { default as PagosPage } from './PagosPage';
