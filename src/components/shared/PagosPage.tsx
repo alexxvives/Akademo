@@ -113,6 +113,7 @@ export default function PagosPage({ role }: PagosPageProps) {
   const [studentSearchTerm, setStudentSearchTerm] = useState('');
   const [showStudentDropdown, setShowStudentDropdown] = useState(false);
   const [studentEnrollments, setStudentEnrollments] = useState<{[key: string]: {classId: string; className: string}[]}>({});
+  const [pendingPaymentsCollapsed, setPendingPaymentsCollapsed] = useState(false);
 
   // Admin-only state
   const [academies, setAcademies] = useState<Academy[]>([]);
@@ -606,6 +607,17 @@ export default function PagosPage({ role }: PagosPageProps) {
               {isAdmin ? 'Vista de solo lectura de los pagos de todas las academias.' : 'Haz clic en cualquier fila para editar.'}
             </span>
           </div>
+          {filteredPendingPayments.length > 0 && (
+            <button
+              onClick={() => setPendingPaymentsCollapsed(!pendingPaymentsCollapsed)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <svg className={`w-4 h-4 transition-transform ${pendingPaymentsCollapsed ? 'rotate-0' : 'rotate-90'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+              {pendingPaymentsCollapsed ? 'Mostrar' : 'Ocultar'} pendientes ({filteredPendingPayments.length})
+            </button>
+          )}
         </div>
         <div className="max-h-[637px] overflow-y-auto overflow-x-auto">
         <table className="w-full">
@@ -624,7 +636,7 @@ export default function PagosPage({ role }: PagosPageProps) {
           </thead>
           <tbody className="divide-y divide-gray-200">
             {/* Pending Payments */}
-            {filteredPendingPayments.map((payment) => (
+            {!pendingPaymentsCollapsed && filteredPendingPayments.map((payment) => (
               <tr
                 key={`pending-${payment.enrollmentId}`}
                 className="bg-amber-50 hover:bg-amber-100 border-l-4 border-amber-400 transition-colors"
@@ -690,34 +702,18 @@ export default function PagosPage({ role }: PagosPageProps) {
                 </td>
                 {isAcademy && (
                   <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={(e) => {
-                          if (paymentStatus === 'NOT PAID') { e.preventDefault(); e.stopPropagation(); return; }
-                          e.stopPropagation();
-                          handleApprove(payment.enrollmentId);
-                        }}
-                        disabled={processingIds.has(payment.enrollmentId) || paymentStatus === 'NOT PAID'}
-                        className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700 disabled:cursor-not-allowed"
-                        title={paymentStatus === 'NOT PAID' ? 'Disponible solo en academias activadas' : 'Aprobar pago'}
-                      >
-                        {processingIds.has(payment.enrollmentId) ? '...' : '✓ Aprobar'}
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          if (paymentStatus === 'NOT PAID') { e.preventDefault(); e.stopPropagation(); return; }
-                          e.stopPropagation();
-                          handleReject(payment.enrollmentId);
-                        }}
-                        disabled={processingIds.has(payment.enrollmentId) || paymentStatus === 'NOT PAID'}
-                        className="p-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:cursor-not-allowed"
-                        title={paymentStatus === 'NOT PAID' ? 'Disponible solo en academias activadas' : 'Rechazar pago'}
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
+                    <button
+                      onClick={(e) => {
+                        if (paymentStatus === 'NOT PAID') { e.preventDefault(); e.stopPropagation(); return; }
+                        e.stopPropagation();
+                        handleApprove(payment.enrollmentId);
+                      }}
+                      disabled={processingIds.has(payment.enrollmentId) || paymentStatus === 'NOT PAID'}
+                      className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700 disabled:cursor-not-allowed"
+                      title={paymentStatus === 'NOT PAID' ? 'Disponible solo en academias activadas' : 'Confirmar pago'}
+                    >
+                      {processingIds.has(payment.enrollmentId) ? '...' : '✓ Confirmar'}
+                    </button>
                   </td>
                 )}
               </tr>

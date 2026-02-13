@@ -350,11 +350,11 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
         const progressData: StudentProgress[] = Array.from(studentMap.values()).map(student => {
           // Aggregate payment status: if ANY class is BEHIND, student is BEHIND overall
           // If all FREE, student is FREE. Otherwise UP_TO_DATE.
-          // For months behind, sum up all BEHIND months across classes
+          // For months behind, use the MAX (not sum) across all classes
           const statuses = student.perClassRecords.map(r => r.paymentStatus);
           const totalMonthsBehind = student.perClassRecords
             .filter(r => r.paymentStatus === 'BEHIND')
-            .reduce((sum, r) => sum + (r.monthsBehind || 0), 0);
+            .reduce((max, r) => Math.max(max, r.monthsBehind || 0), 0);
           let aggregatePaymentStatus: 'UP_TO_DATE' | 'BEHIND' | 'FREE' = 'FREE';
           if (statuses.some(s => s === 'BEHIND')) {
             aggregatePaymentStatus = 'BEHIND';
