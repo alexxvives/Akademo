@@ -124,8 +124,38 @@ classes.get('/', async (c) => {
     }
 
     const result = await c.env.DB.prepare(query).bind(...params).all();
+    let classes = result.results || [];
 
-    return c.json(successResponse(result.results || []));
+    // For students: calculate firstPaymentAmount for classes with monthly pricing
+    if (session.role === 'STUDENT') {
+      classes = classes.map((classData: any) => {
+        // Only calculate for classes that haven't been paid yet and have monthly pricing
+        if (!classData.paymentStatus && classData.monthlyPrice && classData.startDate) {
+          const classStart = new Date(classData.startDate);
+          const today = new Date();
+          
+          // Calculate elapsed cycles (same logic as in payments.ts)
+          let months = (today.getFullYear() - classStart.getFullYear()) * 12
+                     + (today.getMonth() - classStart.getMonth());
+          if (today.getDate() < classStart.getDate()) {
+            months = Math.max(0, months - 1);
+          }
+          const elapsedCycles = Math.max(1, months + 1); // At least 1 cycle
+          
+          // First payment includes catch-up for all elapsed cycles
+          const firstPaymentAmount = elapsedCycles * classData.monthlyPrice;
+          
+          return {
+            ...classData,
+            firstPaymentAmount,
+            missedCycles: elapsedCycles
+          };
+        }
+        return classData;
+      });
+    }
+
+    return c.json(successResponse(classes));
   } catch (error: any) {
     console.error('[Classes GET] Error:', error);
     console.error('[Classes GET] Error message:', error.message);

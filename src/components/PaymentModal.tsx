@@ -17,6 +17,8 @@ interface PaymentModalProps {
   oneTimePrice?: number | null;
   maxStudents?: number;
   currentStudentCount?: number;
+  firstPaymentAmount?: number;
+  missedCycles?: number;
 }
 
 export default function PaymentModal({
@@ -32,6 +34,8 @@ export default function PaymentModal({
   oneTimePrice,
   maxStudents,
   currentStudentCount,
+  firstPaymentAmount,
+  missedCycles,
 }: PaymentModalProps) {
   // Determine payment options based on which prices are set
   const hasMonthly = monthlyPrice != null && monthlyPrice > 0;
@@ -276,9 +280,23 @@ export default function PaymentModal({
                       <h4 className={`text-base font-semibold mb-1 ${!hasMonthly ? 'text-gray-400' : 'text-[#1a1c29]'}`}>
                         Pago Mensual
                       </h4>
-                      <span className={`text-xl font-bold ${!hasMonthly ? 'text-gray-400' : paymentFrequency === 'monthly' ? 'text-[#1a1c29]' : 'text-gray-700'}`}>
-                        {hasMonthly ? formatPrice(monthlyPrice || 0, currency) : 'No disponible'}
-                      </span>
+                      {missedCycles && missedCycles > 1 ? (
+                        <div>
+                          <span className={`text-xl font-bold ${!hasMonthly ? 'text-gray-400' : paymentFrequency === 'monthly' ? 'text-[#1a1c29]' : 'text-gray-700'}`}>
+                            {hasMonthly && firstPaymentAmount ? formatPrice(firstPaymentAmount, currency) : 'No disponible'}
+                          </span>
+                          <p className="text-xs text-gray-600 mt-1">
+                            ({missedCycles} meses × {formatPrice(monthlyPrice || 0, currency)})
+                          </p>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            Luego {formatPrice(monthlyPrice || 0, currency)}/mes
+                          </p>
+                        </div>
+                      ) : (
+                        <span className={`text-xl font-bold ${!hasMonthly ? 'text-gray-400' : paymentFrequency === 'monthly' ? 'text-[#1a1c29]' : 'text-gray-700'}`}>
+                          {hasMonthly ? formatPrice(monthlyPrice || 0, currency) : 'No disponible'}
+                        </span>
+                      )}
                     </div>
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
                       !hasMonthly

@@ -35,8 +35,8 @@ interface EnrolledClass {
   allowOneTime?: number;
   monthlyPrice?: number;
   oneTimePrice?: number;
-  maxStudents?: number;
-}
+  maxStudents?: number;  firstPaymentAmount?: number;
+  missedCycles?: number;}
 
 interface ActiveStream {
   id: string;
@@ -107,7 +107,7 @@ export default function StudentClassesPage() {
       const classesResult = await classesRes.json();
 
       if (classesResult.success && Array.isArray(classesResult.data)) {
-        const classes = classesResult.data.map((c: { id: string; slug?: string; name: string; description?: string; academyName?: string; teacherFirstName?: string; teacherLastName?: string; videoCount?: number; documentCount?: number; lessonCount?: number; studentCount?: number; createdAt: string; startDate?: string; enrollmentStatus?: string; documentSigned?: number; whatsappGroupLink?: string; paymentStatus?: string; paymentMethod?: string; price?: number; currency?: string; allowMonthly?: number; allowOneTime?: number; monthlyPrice?: number; oneTimePrice?: number; maxStudents?: number }) => ({
+        const classes = classesResult.data.map((c: { id: string; slug?: string; name: string; description?: string; academyName?: string; teacherFirstName?: string; teacherLastName?: string; videoCount?: number; documentCount?: number; lessonCount?: number; studentCount?: number; createdAt: string; startDate?: string; enrollmentStatus?: string; documentSigned?: number; whatsappGroupLink?: string; paymentStatus?: string; paymentMethod?: string; price?: number; currency?: string; allowMonthly?: number; allowOneTime?: number; monthlyPrice?: number; oneTimePrice?: number; maxStudents?: number; firstPaymentAmount?: number; missedCycles?: number }) => ({
           id: c.id,
           slug: c.slug,
           name: c.name,
@@ -129,6 +129,8 @@ export default function StudentClassesPage() {
           monthlyPrice: c.monthlyPrice ?? null,
           oneTimePrice: c.oneTimePrice ?? null,
           maxStudents: c.maxStudents,
+          firstPaymentAmount: c.firstPaymentAmount,
+          missedCycles: c.missedCycles,
         }));
         setEnrolledClasses(classes);
         if (classes.length > 0) {
@@ -439,6 +441,8 @@ export default function StudentClassesPage() {
         oneTimePrice={payingClass?.oneTimePrice ?? null}
         maxStudents={payingClass?.maxStudents}
         currentStudentCount={payingClass?.studentCount || 0}
+        firstPaymentAmount={payingClass?.firstPaymentAmount}
+        missedCycles={payingClass?.missedCycles}
         onPaymentComplete={() => {
           setPayingClass(null);
           loadData();
