@@ -306,10 +306,11 @@ export default function DashboardLayout({
       const response = await apiClient('/classes');
       const result = await response.json();
       if (result.success && Array.isArray(result.data)) {
-        const unpaid = result.data.filter((c: { paymentStatus?: string }) => 
-          c.paymentStatus && c.paymentStatus !== 'PAID' && c.paymentStatus !== 'COMPLETED'
+        // Count classes where the student still needs to take action (no payment submitted yet)
+        const needsAction = result.data.filter((c: { paymentStatus?: string | null }) => 
+          !c.paymentStatus
         );
-        setUnpaidClassesCount(unpaid.length);
+        setUnpaidClassesCount(needsAction.length);
       }
     } catch (error) {
       console.error('Failed to load unpaid classes:', error);
@@ -520,7 +521,7 @@ export default function DashboardLayout({
         ];
       case 'STUDENT':
         return [
-          { label: 'Mis Asignaturas', href: '/dashboard/student/classes', matchPaths: ['/dashboard/student/class'], showPulse: activeStreams.length > 0, iconType: 'book' as const, badge: unpaidClassesCount > 0 ? unpaidClassesCount : undefined, badgeColor: 'bg-red-500 text-white' },
+          { label: 'Mis Asignaturas', href: '/dashboard/student/classes', matchPaths: ['/dashboard/student/class'], showPulse: activeStreams.length > 0, iconType: 'book' as const, badge: unpaidClassesCount > 0 ? unpaidClassesCount : undefined, badgeColor: 'bg-[#b0e788]' },
           { label: 'Ejercicios', href: '/dashboard/student/assignments', badge: newGradesCount > 0 ? newGradesCount : undefined, badgeColor: 'bg-[#b0e788]', iconType: 'fileText' as const },
         ];
       case 'ACADEMY':

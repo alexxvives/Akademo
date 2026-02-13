@@ -138,7 +138,7 @@ export default function PaymentModal({
       const result = await res.json();
       
       if (result.success) {
-        alert(result.data?.message || 'Solicitud de pago enviada. La academia confirmar\u00e1 la recepci\u00f3n del efectivo.');
+        alert(result.data?.message || 'Solicitud enviada. La academia confirmará la recepción del efectivo.');
         onPaymentComplete();
       } else {
         throw new Error(result.error || 'Error al registrar pago');
@@ -201,7 +201,7 @@ export default function PaymentModal({
       const result = await res.json();
       
       if (result.success) {
-        alert(result.data?.message || 'Solicitud de pago enviada. La academia confirmar\u00e1 la recepci\u00f3n del pago por Bizum.');
+        alert(result.data?.message || 'Solicitud enviada. La academia confirmará la recepción del pago por Bizum.');
         onPaymentComplete();
       } else {
         throw new Error(result.error || 'Error al registrar pago por Bizum');

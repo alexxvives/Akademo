@@ -184,7 +184,7 @@ payments.post('/initiate', validateBody(initiatePaymentSchema), async (c) => {
           })
         : null;
 
-      let message = 'Solicitud de pago enviada. La academia confirmará la recepción del pago.';
+      let message = 'Solicitud enviada. La academia confirmará la recepción del pago.';
       if (isMonthly && formattedNextDue) {
         message += ` Recuerda que el próximo pago de ${price}€ deberá ser el ${formattedNextDue}.`;
       }
@@ -251,7 +251,7 @@ payments.post('/initiate', validateBody(initiatePaymentSchema), async (c) => {
         })
       : null;
 
-    let message = 'Solicitud de pago enviada. La academia confirmará la recepción del pago.';
+    let message = 'Solicitud enviada. La academia confirmará la recepción del pago.';
     if (isMonthly && formattedNextDue) {
       message += ` Recuerda que el próximo pago de ${price}€ deberá ser el ${formattedNextDue}.`;
     }
