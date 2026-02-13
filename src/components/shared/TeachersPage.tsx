@@ -413,6 +413,11 @@ export function TeachersPage({ role }: TeachersPageProps) {
                       Link de Inscripción
                     </th>
                   )}
+                  {role === 'ACADEMY' && (
+                    <th className="px-3 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Acciones
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -444,53 +449,10 @@ export function TeachersPage({ role }: TeachersPageProps) {
                             ) : (
                               <div className="w-4 h-4 flex-shrink-0" />
                             )}
-                            {/* Avatar for all roles */}
-                            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0">
-                              <span className="text-purple-600 font-medium">
-                                {teacher.name.charAt(0).toUpperCase()}
-                              </span>
-                            </div>
-                            <div
-                              onClick={(e) => {
-                                if (role === 'ACADEMY' && !isDemo) {
-                                  e.stopPropagation();
-                                  openEditModal(teacher);
-                                }
-                              }}
-                            >
+                            <div>
                               <div className="text-sm font-medium text-gray-900">{teacher.name}</div>
                               <div className="text-sm text-gray-500">{teacher.email}</div>
                             </div>
-                            {/* Academy: delete button */}
-                            {role === 'ACADEMY' && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteTeacher(teacher.id, teacher.name);
-                                }}
-                                disabled={deleting === teacher.id || isDemo}
-                                className="text-red-600 hover:text-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 ml-auto"
-                                title="Eliminar profesor"
-                              >
-                                {deleting === teacher.id ? (
-                                  <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
-                                ) : (
-                                  <svg
-                                    className="w-4 h-4"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                    />
-                                  </svg>
-                                )}
-                              </button>
-                            )}
                           </div>
                         </td>
                         {role === 'ADMIN' && (
@@ -559,6 +521,62 @@ export function TeachersPage({ role }: TeachersPageProps) {
                                 </>
                               )}
                             </button>
+                          </td>
+                        )}
+                        {role === 'ACADEMY' && (
+                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openEditModal(teacher);
+                                }}
+                                disabled={isDemo}
+                                className="text-blue-600 hover:text-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Editar profesor"
+                              >
+                                <svg
+                                  className="w-4 h-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                  />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteTeacher(teacher.id, teacher.name);
+                                }}
+                                disabled={deleting === teacher.id || isDemo}
+                                className="text-red-600 hover:text-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Eliminar profesor"
+                              >
+                                {deleting === teacher.id ? (
+                                  <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                                ) : (
+                                  <svg
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                    />
+                                  </svg>
+                                )}
+                              </button>
+                            </div>
                           </td>
                         )}
                       </tr>
