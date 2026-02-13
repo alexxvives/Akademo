@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@akademo/types": "*",
+    "@cloudflare/workerd-windows-64": "^1.20260213.0",
     "bcryptjs": "^2.4.3",
     "hono": "^4.0.0",
     "nanoid": "^5.0.4",
