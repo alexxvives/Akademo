@@ -1,0 +1,3 @@
+[  111843ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://akademo-api.alexxvives.workers.dev/auth/session/check:0
+[  111844ms] [ERROR] Failed to load resource: the server responded with a status of 500 () @ https://akademo-api.alexxvives.workers.dev/live/active:0
+[  112294ms] [ERROR] Failed to load resource: the server responded with a status of 500 () @ https://akademo-api.alexxvives.workers.dev/live/active:0

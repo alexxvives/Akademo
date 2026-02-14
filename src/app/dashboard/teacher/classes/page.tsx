@@ -17,6 +17,8 @@ interface Class {
   avgRating?: number | null;
   createdAt: string;  startDate?: string | null;  zoomAccountName?: string | null;
   whatsappGroupLink?: string | null;
+  university?: string | null;
+  carrera?: string | null;
 }
 
 interface RatingRecord {
@@ -166,6 +168,11 @@ export default function TeacherClasses() {
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <h3 className="text-xl font-bold text-gray-900 group-hover:text-brand-600 transition-colors">{cls.name}</h3>
+                        {(cls.university || cls.carrera) && (
+                          <span className="text-sm text-gray-400 font-normal">
+                            {[cls.university, cls.carrera].filter(Boolean).join(' · ')}
+                          </span>
+                        )}
                         {cls.whatsappGroupLink && (
                           <a
                             href={cls.whatsappGroupLink}

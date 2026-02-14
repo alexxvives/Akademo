@@ -1,0 +1,5 @@
+[     127ms] [ERROR] Failed to load academy: TypeError: Failed to fetch
+    at a (https://akademo-edu.com/_next/static/chunks/commons-90f818f111122203.js:1:824475)
+    at https://akademo-edu.com/_next/static/chunks/commons-90f818f111122203.js:1:146473
+    at https://akademo-edu.com/_next/static/chunks/commons-90f818f111122203.js:1:149543 @ https://akademo-edu.com/_next/static/chunks/2117-a79fa94e80df14b3.js:0
+[     129ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://akademo-edu.com/login:0

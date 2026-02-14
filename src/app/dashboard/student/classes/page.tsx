@@ -27,6 +27,8 @@ interface EnrolledClass {
   enrollmentStatus?: 'PENDING' | 'APPROVED';
   documentSigned: number;
   whatsappGroupLink?: string;
+  university?: string | null;
+  carrera?: string | null;
   paymentStatus?: string; // PENDING, CASH_PENDING, PAID
   paymentMethod?: string; // 'cash', 'bizum', 'stripe'
   price?: number;
@@ -268,6 +270,11 @@ export default function StudentClassesPage() {
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <div className="flex items-center gap-2">
                       <h3 className="text-lg sm:text-xl font-bold text-gray-900 group-hover:text-brand-600 transition-colors">{classItem.name}</h3>
+                      {(classItem.university || classItem.carrera) && (
+                        <span className="text-sm text-gray-400 font-normal">
+                          {[classItem.university, classItem.carrera].filter(Boolean).join(' · ')}
+                        </span>
+                      )}
                       {classItem.whatsappGroupLink && (
                         <a
                           href={classItem.whatsappGroupLink}

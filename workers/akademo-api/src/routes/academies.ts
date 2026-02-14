@@ -420,13 +420,28 @@ academies.get('/teachers', async (c) => {
         const classCount = teacherClasses.length;
         const studentCount = teacherClasses.reduce((sum, cls) => sum + (cls.studentCount || 0), 0);
 
+        // Get revenue per class from completed payments
+        const classRevenueMap: Record<string, number> = {};
+        if (classCount > 0) {
+          const classIds = teacherClasses.map(cls => cls.id);
+          const placeholders = classIds.map(() => '?').join(',');
+          const revenueResult = await c.env.DB.prepare(
+            `SELECT classId, COALESCE(SUM(amount), 0) as total FROM Payment WHERE classId IN (${placeholders}) AND (status = 'COMPLETED' OR status = 'PAID') GROUP BY classId`
+          ).bind(...classIds).all();
+          for (const row of (revenueResult.results || []) as Array<{ classId: string; total: number }>) {
+            classRevenueMap[row.classId] = row.total || 0;
+          }
+        }
+        const totalRevenue = Object.values(classRevenueMap).reduce((sum: number, v: number) => sum + v, 0);
+
         return {
           id: teacher.id,
           email: teacher.email,
           name: `${teacher.firstName} ${teacher.lastName}`,
           classCount,
           studentCount,
-          classes: teacherClasses.map(cls => ({ id: cls.id, name: cls.name, studentCount: cls.studentCount || 0 })),
+          totalRevenue,
+          classes: teacherClasses.map(cls => ({ id: cls.id, name: cls.name, studentCount: cls.studentCount || 0, revenue: classRevenueMap[cls.id] || 0 })),
           createdAt: teacher.createdAt,
         };
       })

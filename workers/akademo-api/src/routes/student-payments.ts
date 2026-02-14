@@ -116,11 +116,12 @@ studentPayments.get('/:studentId/class/:classId', async (c) => {
     } else {
       // Fetch payments for specific class
       paymentsQuery = `
-        SELECT *
-        FROM Payment
-        WHERE payerId = ? 
-        AND classId = ?
-        ORDER BY createdAt DESC
+        SELECT p.*, c.name as className
+        FROM Payment p
+        JOIN Class c ON p.classId = c.id
+        WHERE p.payerId = ? 
+        AND p.classId = ?
+        ORDER BY p.createdAt DESC
       `;
       paymentsParams = [studentId, classId];
     }
@@ -168,6 +169,7 @@ studentPayments.get('/:studentId/class/:classId', async (c) => {
         isLate: isLate,
         approvedBy: metadata.approvedBy || null,
         monthNumber: paymentFrequency === 'MONTHLY' ? (allPayments.length - index) : null,
+        className: payment.className || null,
       };
     });
 

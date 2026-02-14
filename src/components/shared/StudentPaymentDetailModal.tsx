@@ -46,6 +46,7 @@ export function StudentPaymentDetailModal({
 }: StudentPaymentDetailModalProps) {
   // Internal state for class filtering
   const [internalClassId, setInternalClassId] = React.useState<string>(externalClassId || 'all');
+  const [isFilterChanging, setIsFilterChanging] = React.useState(false);
   
   // Use internal state for filtering
   const currentClassId = internalClassId;
@@ -55,8 +56,14 @@ export function StudentPaymentDetailModal({
     setInternalClassId(externalClassId || 'all');
   }, [externalClassId]);
   
+  // Reset filter loading when payments data changes
+  React.useEffect(() => {
+    setIsFilterChanging(false);
+  }, [payments]);
+  
   // Handle class change with internal state
   const handleClassChange = (classId: string) => {
+    setIsFilterChanging(true);
     setInternalClassId(classId);
     onClassChange?.(classId);
   };
@@ -276,7 +283,11 @@ export function StudentPaymentDetailModal({
                     Historial de Pagos
                   </h3>
                   
-                  {filteredPayments.length === 0 ? (
+                  {isFilterChanging ? (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                    </div>
+                  ) : filteredPayments.length === 0 ? (
                     <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
                       <svg className="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -300,13 +311,13 @@ export function StudentPaymentDetailModal({
                               
                               {/* Center: Class & Date */}
                               <div className="flex flex-col items-center gap-0.5 min-w-0 flex-1">
-                                <span className="text-xs font-semibold text-gray-700 truncate max-w-full">{payment.className || className}</span>
+                                <span className="text-xs font-semibold text-gray-700 truncate max-w-full">{payment.className || '—'}</span>
                                 <span className="text-xs text-gray-500">{formatDate(payment.paymentDate)}</span>
                               </div>
                               
                               {/* Right: Month & Amount */}
                               <div className="flex items-center gap-3 flex-shrink-0">
-                                {paymentFrequency === 'MONTHLY' && payment.monthNumber && (
+                                {payment.monthNumber && (
                                   <span className="text-xs font-semibold text-gray-600 bg-blue-50 px-2 py-1 rounded border border-blue-200">
                                     M{payment.monthNumber}
                                   </span>

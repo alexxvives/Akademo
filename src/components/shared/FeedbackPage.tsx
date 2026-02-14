@@ -187,12 +187,13 @@ export function FeedbackPage({ role }: FeedbackPageProps) {
     }
   };
 
-  // Admin filtering
+  // Filtering
   const filteredClasses = useMemo(() => {
-    if (role === 'ACADEMY') return classes;
     let result = classes;
-    if (selectedAcademy !== 'all') {
-      result = result.filter((c) => c.academyId === selectedAcademy);
+    if (role === 'ADMIN') {
+      if (selectedAcademy !== 'all') {
+        result = result.filter((c) => c.academyId === selectedAcademy);
+      }
     }
     if (selectedClass !== 'all') {
       result = result.filter((c) => c.id === selectedClass);
@@ -223,6 +224,17 @@ export function FeedbackPage({ role }: FeedbackPageProps) {
             <p className="text-gray-600 text-sm mt-1">Todas las academias</p>
           )}
         </div>
+
+        {/* Academy class filter */}
+        {role === 'ACADEMY' && classes.length > 1 && (
+          <ClassSearchDropdown
+            classes={classes}
+            value={selectedClass}
+            onChange={setSelectedClass}
+            allLabel="Todas las asignaturas"
+            className="w-56"
+          />
+        )}
 
         {/* Admin filters */}
         {role === 'ADMIN' && (

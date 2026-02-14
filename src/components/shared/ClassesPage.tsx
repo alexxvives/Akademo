@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
 import { generateDemoClasses, generateDemoTeachers, generateDemoZoomAccounts } from '@/lib/demo-data';
 import { SkeletonClasses } from '@/components/ui/SkeletonLoader';
+import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 import { ClassFormModal } from './ClassFormModal';
 
 interface Teacher {
@@ -116,6 +117,7 @@ export function ClassesPage({ role }: ClassesPageProps) {
   // Admin-only
   const [academies, setAcademies] = useState<Academy[]>([]);
   const [selectedAcademy, setSelectedAcademy] = useState<string>('all');
+  const [selectedClassId, setSelectedClassId] = useState<string>('all');
 
   const isDemo = role === 'ACADEMY' && paymentStatus === 'NOT PAID';
 
@@ -237,7 +239,9 @@ export function ClassesPage({ role }: ClassesPageProps) {
   const filteredClasses =
     role === 'ADMIN' && selectedAcademy !== 'all'
       ? classes.filter((c) => c.academyId === selectedAcademy)
-      : classes;
+      : role === 'ACADEMY' && selectedClassId !== 'all'
+        ? classes.filter((c) => c.id === selectedClassId)
+        : classes;
 
   // --- CRUD handlers (Academy only) ---
   const validateForm = (): boolean => {
@@ -418,7 +422,16 @@ export function ClassesPage({ role }: ClassesPageProps) {
                 </div>
               </div>
             )}
-            {/* Academy: create button */}
+            {/* Academy: class filter */}
+            {role === 'ACADEMY' && classes.length > 1 && (
+              <ClassSearchDropdown
+                classes={classes}
+                value={selectedClassId}
+                onChange={setSelectedClassId}
+                allLabel="Todas las asignaturas"
+                className="w-56"
+              />
+            )}
             {role === 'ACADEMY' && (
               <button
                 onClick={openCreateModal}
@@ -484,6 +497,11 @@ export function ClassesPage({ role }: ClassesPageProps) {
                       <h3 className="text-xl font-bold text-gray-900 group-hover:text-brand-600 transition-colors">
                         {cls.name}
                       </h3>
+                      {(cls.university || cls.carrera) && (
+                        <span className="text-sm text-gray-400 font-normal">
+                          {[cls.university, cls.carrera].filter(Boolean).join(' · ')}
+                        </span>
+                      )}
                       {/* WhatsApp link */}
                       {cls.whatsappGroupLink && (
                         <a
@@ -503,13 +521,6 @@ export function ClassesPage({ role }: ClassesPageProps) {
                         </a>
                       )}
                     </div>
-
-                    {/* University / Carrera subtitle */}
-                    {(cls.university || cls.carrera) && (
-                      <p className="text-xs text-gray-400 mb-2">
-                        {[cls.university, cls.carrera].filter(Boolean).join(' · ')}
-                      </p>
-                    )}
 
                     {cls.description ? (
                       <p className="text-sm text-gray-600 mb-4 line-clamp-2">{cls.description}</p>

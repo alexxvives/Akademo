@@ -9,6 +9,7 @@ interface TeacherClass {
   id?: string;
   name: string;
   studentCount?: number;
+  revenue?: number;
 }
 
 interface Teacher {
@@ -18,6 +19,7 @@ interface Teacher {
   academyName?: string;
   classCount: number;
   studentCount: number;
+  totalRevenue?: number;
   classes: TeacherClass[];
   createdAt: string;
 }
@@ -405,6 +407,11 @@ export function TeachersPage({ role }: TeachersPageProps) {
                   <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Estudiantes
                   </th>
+                  {role === 'ACADEMY' && (
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Total Generado
+                    </th>
+                  )}
                   <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Unido
                   </th>
@@ -466,6 +473,13 @@ export function TeachersPage({ role }: TeachersPageProps) {
                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                           <span className="text-sm text-gray-900">{teacher.studentCount || 0}</span>
                         </td>
+                        {role === 'ACADEMY' && (
+                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm font-medium text-gray-900">
+                              {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(teacher.totalRevenue || 0)}
+                            </span>
+                          </td>
+                        )}
                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                           <span className="text-sm text-gray-500">
                             {new Date(teacher.createdAt).toLocaleDateString('es')}
@@ -601,6 +615,13 @@ export function TeachersPage({ role }: TeachersPageProps) {
                                 </span>
                               )}
                             </td>
+                            {role === 'ACADEMY' && (
+                              <td className="px-3 sm:px-6 py-3">
+                                <span className="text-xs font-medium text-gray-700">
+                                  {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(cls.revenue || 0)}
+                                </span>
+                              </td>
+                            )}
                             <td
                               className="px-3 sm:px-6 py-3"
                               colSpan={role === 'ACADEMY' ? 2 : 1}
