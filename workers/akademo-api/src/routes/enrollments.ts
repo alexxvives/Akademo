@@ -667,4 +667,98 @@ enrollments.delete('/:id', async (c) => {
   }
 });
 
+// GET /enrollments/payment-status - Get payment status counts for teacher's students
+enrollments.get('/payment-status', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    if (session.role !== 'TEACHER' && session.role !== 'ACADEMY' && session.role !== 'ADMIN') {
+      return c.json(errorResponse('Not authorized'), 403);
+    }
+
+    const now = new Date().toISOString();
+    let query = '';
+    let params: string[] = [];
+
+    if (session.role === 'TEACHER') {
+      // Get all APPROVED enrollments from teacher's classes with payment info
+      query = `
+        SELECT 
+          e.id, e.userId, e.classId, e.paymentFrequency, e.nextPaymentDue,
+          c.name as className
+        FROM ClassEnrollment e
+        JOIN Class c ON e.classId = c.id
+        WHERE c.teacherId = ? AND e.status = 'APPROVED'
+      `;
+      params = [session.id];
+    } else if (session.role === 'ACADEMY') {
+      query = `
+        SELECT 
+          e.id, e.userId, e.classId, e.paymentFrequency, e.nextPaymentDue,
+          c.name as className
+        FROM ClassEnrollment e
+        JOIN Class c ON e.classId = c.id
+        JOIN Academy a ON c.academyId = a.id
+        WHERE a.ownerId = ? AND e.status = 'APPROVED'
+      `;
+      params = [session.id];
+    } else {
+      // ADMIN
+      query = `
+        SELECT 
+          e.id, e.userId, e.classId, e.paymentFrequency, e.nextPaymentDue,
+          c.name as className
+        FROM ClassEnrollment e
+        JOIN Class c ON e.classId = c.id
+        WHERE e.status = 'APPROVED'
+      `;
+      params = [];
+    }
+
+    const result = await c.env.DB
+      .prepare(query)
+      .bind(...params)
+      .all();
+
+    const enrollments_data = result.results || [];
+    
+    let alDia = 0;
+    let atrasados = 0;
+
+    for (const enrollment of enrollments_data as any[]) {
+      if (enrollment.paymentFrequency === 'MONTHLY' && enrollment.nextPaymentDue) {
+        // Monthly payment: check if next payment is overdue
+        if (new Date(enrollment.nextPaymentDue) < new Date(now)) {
+          atrasados++;
+        } else {
+          alDia++;
+        }
+      } else if (enrollment.paymentFrequency === 'ONE_TIME') {
+        // One-time payment: check if there's a completed payment
+        const payment = await c.env.DB
+          .prepare(`
+            SELECT id FROM Payment 
+            WHERE payerId = ? AND classId = ? AND (status = 'COMPLETED' OR status = 'PAID')
+            LIMIT 1
+          `)
+          .bind(enrollment.userId, enrollment.classId)
+          .first();
+        
+        if (payment) {
+          alDia++;
+        } else {
+          atrasados++;
+        }
+      } else {
+        // No payment frequency set or unknown, assume al dia
+        alDia++;
+      }
+    }
+
+    return c.json(successResponse({ alDia, atrasados, total: enrollments_data.length }));
+  } catch (error: any) {
+    console.error('[Payment Status] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
+
 export default enrollments;

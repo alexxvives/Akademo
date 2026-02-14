@@ -137,7 +137,7 @@ export function AssignmentModals(props: AssignmentModalsProps) {
                 <button type="button" onClick={() => { setShowCreateModal(false); resetForm(); }}
                   className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
                 <button type="submit" disabled={creating || paymentStatus === 'NOT PAID'}
-                  className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   title={paymentStatus === 'NOT PAID' ? 'No disponible en modo demostración' : ''}>
                   {creating ? 'Creando...' : 'Crear Ejercicio'}
                 </button>

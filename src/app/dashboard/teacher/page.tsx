@@ -22,6 +22,7 @@ export default function TeacherDashboard() {
     rejectedCount,
     streamStats,
     classWatchTime,
+    paymentStatusCounts,
     loadData,
   } = useTeacherDashboard();
 
@@ -97,6 +98,7 @@ export default function TeacherDashboard() {
         classWatchTime={classWatchTime}
         ratingsData={ratingsData}
         selectedClass={selectedClass}
+        paymentStatusCounts={paymentStatusCounts}
       />
     </div>
   );

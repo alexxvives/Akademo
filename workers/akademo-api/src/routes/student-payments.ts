@@ -149,14 +149,57 @@ studentPayments.get('/:studentId/class/:classId', async (c) => {
     // Get payment frequency from enrollment (if specific class)
     const paymentFrequency = enrollment?.paymentFrequency || 'ONE_TIME';
 
+    // For 'all' classes view, we need per-class enrollment info to determine monthNumber
+    let enrollmentsByClass: Record<string, { paymentFrequency: string }> = {};
+    if (classId === 'all' && allPayments.length > 0) {
+      // Get unique classIds from payments
+      const classIds = [...new Set(allPayments.map((p: any) => p.classId).filter(Boolean))];
+      if (classIds.length > 0) {
+        const placeholders = classIds.map(() => '?').join(',');
+        const enrollments = await c.env.DB
+          .prepare(`
+            SELECT classId, paymentFrequency
+            FROM ClassEnrollment
+            WHERE userId = ? AND classId IN (${placeholders})
+          `)
+          .bind(studentId, ...classIds)
+          .all();
+        
+        for (const e of (enrollments.results || []) as any[]) {
+          enrollmentsByClass[e.classId] = { paymentFrequency: e.paymentFrequency || 'ONE_TIME' };
+        }
+      }
+    }
+
+    // Group payments by classId for per-class monthNumber calculation
+    const paymentsByClass: Record<string, any[]> = {};
+    for (const p of allPayments as any[]) {
+      const cid = p.classId || 'unknown';
+      if (!paymentsByClass[cid]) paymentsByClass[cid] = [];
+      paymentsByClass[cid].push(p);
+    }
+
     // Format payments for frontend (all statuses including PENDING)
-    const formattedPayments = allPayments.map((payment: any, index: number) => {
+    const formattedPayments = allPayments.map((payment: any) => {
       const metadata = payment.metadata ? JSON.parse(payment.metadata) : {};
       const dueDate = metadata.dueDate || payment.createdAt;
       const paymentDate = payment.completedAt || payment.createdAt;
       
       // Determine if payment was late
       const isLate = payment.completedAt && new Date(payment.completedAt) > new Date(dueDate);
+
+      // Calculate monthNumber based on per-class frequency
+      let monthNumber: number | null = null;
+      if (classId === 'all') {
+        const classEnrollment = enrollmentsByClass[payment.classId];
+        if (classEnrollment?.paymentFrequency === 'MONTHLY') {
+          const classPayments = paymentsByClass[payment.classId] || [];
+          const indexInClass = classPayments.indexOf(payment);
+          monthNumber = classPayments.length - indexInClass;
+        }
+      } else {
+        monthNumber = paymentFrequency === 'MONTHLY' ? ((allPayments as any[]).length - (allPayments as any[]).indexOf(payment)) : null;
+      }
 
       return {
         id: payment.id,
@@ -168,7 +211,7 @@ studentPayments.get('/:studentId/class/:classId', async (c) => {
         dueDate: dueDate,
         isLate: isLate,
         approvedBy: metadata.approvedBy || null,
-        monthNumber: paymentFrequency === 'MONTHLY' ? (allPayments.length - index) : null,
+        monthNumber,
         className: payment.className || null,
       };
     });

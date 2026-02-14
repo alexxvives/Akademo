@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { generateDemoTeachers, generateDemoClasses } from '@/lib/demo-data';
 import { SkeletonList } from '@/components/ui/SkeletonLoader';
@@ -58,6 +58,7 @@ export function TeachersPage({ role }: TeachersPageProps) {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [editFormData, setEditFormData] = useState({ fullName: '', email: '', classId: '' });
   const [updating, setUpdating] = useState(false);
 
@@ -293,14 +294,27 @@ export function TeachersPage({ role }: TeachersPageProps) {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  // Filtering (admin only)
-  const filteredTeachers =
-    role === 'ADMIN' && selectedAcademy !== 'ALL'
-      ? teachers.filter((t) => {
-          const academy = academies.find((a) => a.id === selectedAcademy);
-          return t.academyName === academy?.name;
-        })
-      : teachers;
+  // Filtering (admin only + search)
+  const filteredTeachers = useMemo(() => {
+    let result = teachers;
+    
+    // Admin academy filter
+    if (role === 'ADMIN' && selectedAcademy !== 'ALL') {
+      const academy = academies.find((a) => a.id === selectedAcademy);
+      result = result.filter((t) => t.academyName === academy?.name);
+    }
+    
+    // Search filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter((t) => 
+        t.name.toLowerCase().includes(q) || 
+        t.email.toLowerCase().includes(q)
+      );
+    }
+    
+    return result;
+  }, [teachers, role, selectedAcademy, academies, searchQuery]);
 
   if (loading) return <SkeletonList rows={10} />;
 
@@ -309,16 +323,34 @@ export function TeachersPage({ role }: TeachersPageProps) {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
+          <div className="flex items-center gap-3">
             <h1 className="text-2xl font-semibold text-gray-900">Profesores</h1>
-            {role === 'ACADEMY' && academyName && (
-              <p className="text-sm text-gray-500 mt-1">{academyName}</p>
-            )}
-            {role === 'ADMIN' && (
-              <p className="text-sm text-gray-500 mt-1">AKADEMO PLATFORM</p>
+            {role === 'ACADEMY' && (
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg transition-colors font-semibold"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Crear Profesor
+              </button>
             )}
           </div>
           <div className="flex items-center gap-3">
+            {/* Search Bar */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Buscar profesor..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full sm:w-48 pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              />
+              <svg className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
             {/* Admin: academy filter */}
             {role === 'ADMIN' && academies.length > 0 && (
               <div className="relative">
@@ -341,20 +373,14 @@ export function TeachersPage({ role }: TeachersPageProps) {
                 </div>
               </div>
             )}
-            {/* Academy: create button */}
-            {role === 'ACADEMY' && (
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg transition-colors font-semibold"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Crear Profesor
-              </button>
-            )}
           </div>
         </div>
+        {role === 'ACADEMY' && academyName && (
+          <p className="text-sm text-gray-500 -mt-4">{academyName}</p>
+        )}
+        {role === 'ADMIN' && (
+          <p className="text-sm text-gray-500 -mt-4">AKADEMO PLATFORM</p>
+        )}
 
         {filteredTeachers.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
@@ -601,9 +627,11 @@ export function TeachersPage({ role }: TeachersPageProps) {
                           <tr key={`${teacher.id}-cls-${idx}`} className="bg-gray-50/70">
                             <td
                               className="px-3 sm:px-6 py-3"
-                              colSpan={role === 'ADMIN' ? 3 : 2}
+                              colSpan={role === 'ADMIN' ? 2 : 1}
                             >
-                              <div className={`flex items-center gap-3 ${role === 'ADMIN' ? 'pl-14' : 'pl-12'}`}>
+                            </td>
+                            <td className="px-3 sm:px-6 py-3">
+                              <div className="flex items-center gap-2">
                                 <span className="text-xs text-gray-500">↳</span>
                                 <span className="text-xs font-medium text-indigo-600">{cls.name}</span>
                               </div>

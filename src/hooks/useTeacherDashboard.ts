@@ -90,6 +90,7 @@ export function useTeacherDashboard() {
   const [rejectedCount, setRejectedCount] = useState(0);
   const [streamStats, setStreamStats] = useState({ total: 0, avgParticipants: 0, thisMonth: 0, totalHours: 0, totalMinutes: 0 });
   const [classWatchTime, setClassWatchTime] = useState({ hours: 0, minutes: 0 });
+  const [paymentStatusCounts, setPaymentStatusCounts] = useState({ alDia: 0, atrasados: 0 });
 
   const loadData = useCallback(async () => {
     try {
@@ -171,7 +172,7 @@ export function useTeacherDashboard() {
         return;
       }
 
-      const [membershipsRes, academiesRes, classesRes, pendingRes, ratingsRes, rejectedRes, streamsRes, progressRes] = await Promise.all([
+      const [membershipsRes, academiesRes, classesRes, pendingRes, ratingsRes, rejectedRes, streamsRes, progressRes, paymentStatusRes] = await Promise.all([
         apiClient('/requests/teacher'),
         apiClient('/explore/academies'),
         apiClient('/classes'),
@@ -180,9 +181,10 @@ export function useTeacherDashboard() {
         apiClient('/enrollments/rejected'),
         apiClient('/live/history'),
         apiClient('/students/progress'), // Load student progress in parallel
+        apiClient('/enrollments/payment-status'),
       ]);
 
-      const [membershipsResult, academiesResult, classesResult, pendingResult, ratingsResult, rejectedResult, streamsResult, progressResult] = await Promise.all([
+      const [membershipsResult, academiesResult, classesResult, pendingResult, ratingsResult, rejectedResult, streamsResult, progressResult, paymentStatusResult] = await Promise.all([
         membershipsRes.json(),
         academiesRes.json(),
         classesRes.json(),
@@ -191,10 +193,18 @@ export function useTeacherDashboard() {
         rejectedRes.json(),
         streamsRes.json(),
         progressRes.json(),
+        paymentStatusRes.json(),
       ]);
 
       if (rejectedResult.success && rejectedResult.data) {
         setRejectedCount(rejectedResult.data.count || 0);
+      }
+
+      if (paymentStatusResult.success && paymentStatusResult.data) {
+        setPaymentStatusCounts({
+          alDia: paymentStatusResult.data.alDia || 0,
+          atrasados: paymentStatusResult.data.atrasados || 0,
+        });
       }
 
       if (streamsResult.success && Array.isArray(streamsResult.data)) {
@@ -305,6 +315,7 @@ export function useTeacherDashboard() {
     rejectedCount,
     streamStats,
     classWatchTime,
+    paymentStatusCounts,
     loadData,
   };
 }

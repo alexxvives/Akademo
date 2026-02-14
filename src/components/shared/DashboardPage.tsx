@@ -403,8 +403,8 @@ export function DashboardPage({ role }: DashboardPageProps) {
             <div className="flex-1 flex items-center justify-center gap-3 p-3 bg-gray-50 rounded-lg">
               {[{ label: 'Bizum', value: paymentStats.bizumCount }, { label: 'Efectivo', value: paymentStats.cashCount }, { label: 'Stripe', value: paymentStats.stripeCount }].map(m => (
                 <div key={m.label} className="text-center min-w-[60px]">
-                  <div className="text-xs text-gray-500 mb-0.5">{m.label}</div>
-                  <AnimatedNumber value={m.value} className="text-lg font-bold text-gray-900" />
+                  <div className="text-sm text-gray-500 mb-0.5">{m.label}</div>
+                  <AnimatedNumber value={m.value} className="text-2xl font-bold text-gray-900" />
                 </div>
               ))}
             </div>

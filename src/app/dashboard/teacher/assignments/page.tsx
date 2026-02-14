@@ -139,9 +139,10 @@ export default function TeacherAssignments() {
       if (classResult.success && classResult.data) {
         setClasses(classResult.data);
       }
+      // Don't set loading=false here — let loadAssignments finish first
+      setDataReady(true);
     } catch (error) {
       console.error('Failed to load data:', error);
-    } finally {
       setLoading(false);
       setDataReady(true);
     }
@@ -175,6 +176,8 @@ export default function TeacherAssignments() {
       if (result.success) setAssignments(result.data);
     } catch (error) {
       console.error('❌ Failed to load assignments:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -821,7 +824,7 @@ export default function TeacherAssignments() {
                   Cancelar
                 </button>
                 <button type="submit" disabled={creating || paymentStatus === 'NOT PAID'}
-                  className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   title={paymentStatus === 'NOT PAID' ? 'No disponible en modo demostración' : ''}>
                   {creating ? 'Creando...' : 'Crear Ejercicio'}
                 </button>

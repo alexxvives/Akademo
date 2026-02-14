@@ -63,6 +63,7 @@ interface Academy {
   id: string;
   paymentStatus?: string | null;
   feedbackEnabled?: number | null;
+  hiddenMenuItems?: string | null;
 }
 
 export default function DashboardLayout({
@@ -548,7 +549,15 @@ export default function DashboardLayout({
     }
   };
 
-  const menuItems = getMenuItems();
+  const menuItems = (() => {
+    const items = getMenuItems();
+    if (!academy?.hiddenMenuItems) return items;
+    try {
+      const hidden: string[] = JSON.parse(academy.hiddenMenuItems);
+      if (!hidden.length) return items;
+      return items.filter(item => !hidden.includes(item.label));
+    } catch { return items; }
+  })();
 
   if (loading) {
     return (

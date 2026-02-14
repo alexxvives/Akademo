@@ -498,7 +498,7 @@ export function ClassesPage({ role }: ClassesPageProps) {
                         {cls.name}
                       </h3>
                       {(cls.university || cls.carrera) && (
-                        <span className="text-sm text-gray-400 font-normal">
+                        <span className="text-base text-gray-500 font-medium">
                           {[cls.university, cls.carrera].filter(Boolean).join(' · ')}
                         </span>
                       )}

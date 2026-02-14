@@ -216,7 +216,7 @@ export function StudentPaymentDetailModal({
                                   currentClassId === 'all' ? 'bg-accent-50 text-accent-700 font-medium' : 'text-gray-700'
                                 }`}
                               >
-                                Todas las clases
+                                Todas las asignaturas
                               </button>
                               {availableClasses.map(cls => (
                                 <button
@@ -284,8 +284,25 @@ export function StudentPaymentDetailModal({
                   </h3>
                   
                   {isFilterChanging ? (
-                    <div className="flex items-center justify-center py-12">
-                      <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                    <div className="space-y-2">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="bg-white border border-gray-200 rounded-lg px-4 py-2.5 animate-pulse">
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-2 flex-1">
+                              <div className="h-5 w-16 bg-gray-200 rounded-full"></div>
+                              <div className="h-4 w-14 bg-gray-200 rounded"></div>
+                            </div>
+                            <div className="flex flex-col items-center gap-0.5 flex-1">
+                              <div className="h-4 w-24 bg-gray-200 rounded"></div>
+                              <div className="h-3 w-16 bg-gray-200 rounded"></div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <div className="h-5 w-10 bg-gray-200 rounded"></div>
+                              <div className="h-5 w-16 bg-gray-200 rounded"></div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   ) : filteredPayments.length === 0 ? (
                     <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
@@ -316,7 +333,7 @@ export function StudentPaymentDetailModal({
                               </div>
                               
                               {/* Right: Month & Amount */}
-                              <div className="flex items-center gap-3 flex-shrink-0">
+                              <div className="flex items-center justify-end gap-3 flex-shrink-0 min-w-[110px]">
                                 {payment.monthNumber && (
                                   <span className="text-xs font-semibold text-gray-600 bg-blue-50 px-2 py-1 rounded border border-blue-200">
                                     M{payment.monthNumber}

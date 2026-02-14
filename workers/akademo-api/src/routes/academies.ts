@@ -628,6 +628,14 @@ academies.patch('/:id', async (c) => {
       updates.push('allowMultipleTeachers = ?');
       values.push(body.allowMultipleTeachers);
     }
+    if (body.requireGrading !== undefined) {
+      updates.push('requireGrading = ?');
+      values.push(body.requireGrading);
+    }
+    if (body.hiddenMenuItems !== undefined) {
+      updates.push('hiddenMenuItems = ?');
+      values.push(typeof body.hiddenMenuItems === 'string' ? body.hiddenMenuItems : JSON.stringify(body.hiddenMenuItems));
+    }
 
     if (updates.length === 0) {
       return c.json(errorResponse('No fields to update'), 400);

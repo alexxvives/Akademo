@@ -41,6 +41,8 @@ interface Academy {
   logoUrl?: string;
   allowedPaymentMethods?: string;
   allowMultipleTeachers?: number;
+  requireGrading?: number;
+  hiddenMenuItems?: string;
 }
 
 const WATERMARK_OPTIONS = [
@@ -80,7 +82,9 @@ export default function ProfilePage() {
     defaultWatermarkIntervalMins: 5,
     defaultMaxWatchTimeMultiplier: 2.0,
     allowedPaymentMethods: ['stripe', 'cash', 'bizum'],
-    allowMultipleTeachers: false
+    allowMultipleTeachers: false,
+    requireGrading: true,
+    hiddenMenuItems: [] as string[]
   });
 
   const loadData = useCallback(async () => {
@@ -129,7 +133,9 @@ export default function ProfilePage() {
           defaultWatermarkIntervalMins: academyData.defaultWatermarkIntervalMins || 5,
           defaultMaxWatchTimeMultiplier: academyData.defaultMaxWatchTimeMultiplier || 2.0,
           allowedPaymentMethods: allowedMethods,
-          allowMultipleTeachers: academyData.allowMultipleTeachers === 1
+          allowMultipleTeachers: academyData.allowMultipleTeachers === 1,
+          requireGrading: academyData.requireGrading !== 0,
+          hiddenMenuItems: (() => { try { return JSON.parse(academyData.hiddenMenuItems || '[]'); } catch { return []; } })()
         });
       }
 
@@ -216,7 +222,7 @@ export default function ProfilePage() {
   };
 
   type SettingField = keyof typeof formData;
-  type SettingValue = string | number | boolean;
+  type SettingValue = string | number | boolean | string[];
 
   const handleSettingChange = async (field: SettingField, value: SettingValue) => {
     if (!academy) return;
@@ -243,7 +249,9 @@ export default function ProfilePage() {
         defaultWatermarkIntervalMins: newFormData.defaultWatermarkIntervalMins,
         defaultMaxWatchTimeMultiplier: newFormData.defaultMaxWatchTimeMultiplier,
         allowedPaymentMethods: field === 'allowedPaymentMethods' ? value : JSON.stringify(newFormData.allowedPaymentMethods),
-        allowMultipleTeachers: field === 'allowMultipleTeachers' ? value : (newFormData.allowMultipleTeachers ? 1 : 0)
+        allowMultipleTeachers: field === 'allowMultipleTeachers' ? value : (newFormData.allowMultipleTeachers ? 1 : 0),
+        requireGrading: field === 'requireGrading' ? value : (newFormData.requireGrading ? 1 : 0),
+        hiddenMenuItems: field === 'hiddenMenuItems' ? JSON.stringify(value) : JSON.stringify(newFormData.hiddenMenuItems)
       };
 
 
@@ -261,6 +269,10 @@ export default function ProfilePage() {
           window.dispatchEvent(new CustomEvent('feedbackToggled', { 
             detail: { feedbackEnabled: value } 
           }));
+        }
+        // If menu items changed, reload sidebar
+        if (field === 'hiddenMenuItems') {
+          window.dispatchEvent(new CustomEvent('feedbackToggled'));
         }
       } else {
         console.error('Error updating setting:', result);
@@ -289,7 +301,9 @@ export default function ProfilePage() {
           defaultWatermarkIntervalMins: formData.defaultWatermarkIntervalMins,
           defaultMaxWatchTimeMultiplier: formData.defaultMaxWatchTimeMultiplier,
           allowedPaymentMethods: JSON.stringify(formData.allowedPaymentMethods),
-          allowMultipleTeachers: formData.allowMultipleTeachers ? 1 : 0
+          allowMultipleTeachers: formData.allowMultipleTeachers ? 1 : 0,
+          requireGrading: formData.requireGrading ? 1 : 0,
+          hiddenMenuItems: JSON.stringify(formData.hiddenMenuItems)
         })
       });
 
@@ -423,7 +437,9 @@ export default function ProfilePage() {
                               }
                             })()
                           : ['stripe', 'cash', 'bizum'],
-                        allowMultipleTeachers: academy.allowMultipleTeachers === 1
+                        allowMultipleTeachers: academy.allowMultipleTeachers === 1,
+                        requireGrading: academy.requireGrading !== 0,
+                        hiddenMenuItems: (() => { try { return JSON.parse(academy.hiddenMenuItems || '[]'); } catch { return []; } })()
                       });
                     }}
                     disabled={saving}
@@ -692,27 +708,27 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Allow Multiple Teachers Per Class */}
+            {/* Require Grading */}
             <div className="lg:col-span-1">
               <label className="block text-sm font-medium text-gray-900 mb-2">
-                Múltiples profesores por clase
+                Calificación obligatoria
               </label>
-              <p className="text-xs text-gray-500 mb-3">Permite asignar varios profesores a una misma clase</p>
+              <p className="text-xs text-gray-500 mb-3">Requiere que los profesores califiquen los ejercicios</p>
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => handleSettingChange('allowMultipleTeachers', formData.allowMultipleTeachers ? 0 : 1)}
+                  onClick={() => handleSettingChange('requireGrading', formData.requireGrading ? 0 : 1)}
                   className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors cursor-pointer ${
-                    formData.allowMultipleTeachers ? 'bg-brand-600' : 'bg-gray-300'
+                    formData.requireGrading ? 'bg-brand-600' : 'bg-gray-300'
                   }`}
                 >
                   <span
                     className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform ${
-                      formData.allowMultipleTeachers ? 'translate-x-6' : 'translate-x-1'
+                      formData.requireGrading ? 'translate-x-6' : 'translate-x-1'
                     }`}
                   />
                 </button>
                 <span className="text-sm text-gray-700 font-medium">
-                  {formData.allowMultipleTeachers ? 'Activado' : 'Desactivado'}
+                  {formData.requireGrading ? 'Activado' : 'Desactivado'}
                 </span>
               </div>
             </div>
@@ -750,6 +766,51 @@ export default function ProfilePage() {
                 ))}
               </select>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Sidebar Menu Configuration */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="px-4 sm:px-8 py-5 bg-gray-50 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">Menú lateral</h3>
+          <p className="text-sm text-gray-600">Personaliza las opciones visibles en el menú lateral de la academia</p>
+        </div>
+        <div className="px-4 sm:px-8 py-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[
+              { label: 'Valoraciones', description: 'Valoraciones de estudiantes' },
+              { label: 'Streams', description: 'Clases en vivo por Zoom' },
+              { label: 'Ejercicios', description: 'Gestión de ejercicios y entregas' },
+              { label: 'Calificaciones', description: 'Sistema de calificaciones' },
+              { label: 'Profesores', description: 'Gestión de profesores' },
+              { label: 'Estudiantes', description: 'Lista de estudiantes' },
+            ].map(item => {
+              const isHidden = formData.hiddenMenuItems.includes(item.label);
+              return (
+                <div key={item.label} className="flex items-center justify-between p-3 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-900">{item.label}</p>
+                    <p className="text-xs text-gray-500 truncate">{item.description}</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      const newHidden = isHidden
+                        ? formData.hiddenMenuItems.filter((l: string) => l !== item.label)
+                        : [...formData.hiddenMenuItems, item.label];
+                      handleSettingChange('hiddenMenuItems', newHidden);
+                    }}
+                    className={`relative inline-flex h-6 w-10 items-center rounded-full transition-colors cursor-pointer flex-shrink-0 ml-3 ${
+                      !isHidden ? 'bg-brand-600' : 'bg-gray-300'
+                    }`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                      !isHidden ? 'translate-x-5' : 'translate-x-1'
+                    }`} />
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -980,12 +1041,12 @@ export default function ProfilePage() {
                   </button>
                   
                   <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center shadow-sm flex-shrink-0 overflow-hidden p-2">
+                    <div className="w-20 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm flex-shrink-0 overflow-hidden p-2">
                       <Image
-                        src="/zoom_logo.png"
+                        src="/images/zoom_logo.png"
                         alt="Zoom"
-                        width={56}
-                        height={56}
+                        width={80}
+                        height={48}
                         className="w-full h-full object-contain"
                       />
                     </div>

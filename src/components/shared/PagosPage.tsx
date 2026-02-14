@@ -583,7 +583,7 @@ export default function PagosPage({ role }: PagosPageProps) {
             classes={classes}
             value={selectedClass}
             onChange={setSelectedClass}
-            allLabel="Todas las clases"
+            allLabel="Todas las asignaturas"
             className="w-full sm:w-48"
           />
         </div>
@@ -1022,7 +1022,7 @@ export default function PagosPage({ role }: PagosPageProps) {
               <button
                 onClick={handleRegisterPayment}
                 disabled={paymentStatus === 'NOT PAID'}
-                className="flex-1 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:cursor-not-allowed"
                 title={paymentStatus === 'NOT PAID' ? 'Disponible solo en academias activadas' : 'Registrar pago'}
               >
                 Registrar
@@ -1055,7 +1055,7 @@ export default function PagosPage({ role }: PagosPageProps) {
                 selectedStudent.studentId,
                 selectedStudent.name,
                 selectedStudent.email,
-                'Todas las clases',
+                'Todas las asignaturas',
                 selectedStudent.enrollmentDate,
                 classId
               );
