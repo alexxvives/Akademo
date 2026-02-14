@@ -36,6 +36,8 @@ export interface ClassFeedback {
   academyId?: string;
   academyName?: string;
   teacherName?: string;
+  university?: string | null;
+  carrera?: string | null;
   totalRatings: number;
   averageRating: number;
   topics: Topic[];
@@ -183,6 +185,13 @@ export function FeedbackView({
                 <div>
                   <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                     <h3 className="text-xl font-bold text-gray-900">{classItem.name}</h3>
+                    {(classItem.university || classItem.carrera) && (
+                      <span className="text-xl text-gray-500 font-medium">
+                        {classItem.carrera && classItem.university
+                          ? `${classItem.carrera} (${classItem.university})`
+                          : classItem.carrera || classItem.university}
+                      </span>
+                    )}
                     {classUnreadCount > 0 && (
                       <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-red-100 text-red-800">
                         {classUnreadCount} {classUnreadCount === 1 ? 'nueva' : 'nuevas'}

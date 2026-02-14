@@ -127,7 +127,11 @@ export function FeedbackPage({ role }: FeedbackPageProps) {
               : null;
 
           if (ratingClass) {
-            allFeedback.push(ratingClass);
+            allFeedback.push({
+              ...ratingClass,
+              university: cls.university,
+              carrera: cls.carrera,
+            });
           } else {
             allFeedback.push({
               id: cls.id,
@@ -135,6 +139,8 @@ export function FeedbackPage({ role }: FeedbackPageProps) {
               teacherName:
                 cls.teacherName ||
                 `${cls.teacherFirstName || ''} ${cls.teacherLastName || ''}`.trim(),
+              university: cls.university,
+              carrera: cls.carrera,
               totalRatings: 0,
               averageRating: 0,
               topics: [],

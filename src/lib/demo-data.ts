@@ -1042,7 +1042,7 @@ export interface DemoFeedbackTopic {
   lessons: { id: string; title: string; ratingCount: number; startIdx: number }[];
 }
 
-export function generateDemoFeedbackData(): { classFeedback: Array<{ id: string; name: string; teacherName: string; totalRatings: number; averageRating: number; topics: Array<{ id: string; name: string; totalRatings: number; averageRating: number; lessons: Array<{ id: string; title: string; totalRatings: number; averageRating: number; ratings: Array<{ id: string; rating: number; studentName: string; comment: string | null; createdAt: string; isRead: boolean }> }> }> }> } {
+export function generateDemoFeedbackData(): { classFeedback: Array<{ id: string; name: string; teacherName: string; university?: string | null; carrera?: string | null; totalRatings: number; averageRating: number; topics: Array<{ id: string; name: string; totalRatings: number; averageRating: number; lessons: Array<{ id: string; title: string; totalRatings: number; averageRating: number; ratings: Array<{ id: string; rating: number; studentName: string; comment: string | null; createdAt: string; isRead: boolean }> }> }> }> } {
   const demoClasses = generateDemoClasses();
   const demoRatings = generateDemoRatings();
 
@@ -1177,6 +1177,8 @@ export function generateDemoFeedbackData(): { classFeedback: Array<{ id: string;
       id: c.id,
       name: c.name,
       teacherName: c.teacherName,
+      university: c.university,
+      carrera: c.carrera,
       totalRatings,
       averageRating: totalRatings > 0 ? +(totalScore / totalRatings).toFixed(1) : 0,
       topics,

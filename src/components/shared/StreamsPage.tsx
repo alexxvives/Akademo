@@ -310,7 +310,7 @@ export function StreamsPage({ role }: StreamsPageProps) {
               classes={classes}
               value={selectedClass}
               onChange={setSelectedClass}
-              allLabel="Todas las clases"
+              allLabel="Todas las asignaturas"
               className="w-full md:w-56"
             />
           )}
@@ -320,7 +320,7 @@ export function StreamsPage({ role }: StreamsPageProps) {
               classes={filteredClassOptions}
               value={selectedClass}
               onChange={setSelectedClass}
-              allLabel="Todas las clases"
+              allLabel="Todas las asignaturas"
               className="w-56"
             />
           )}
@@ -366,7 +366,7 @@ export function StreamsPage({ role }: StreamsPageProps) {
                     Profesor
                   </th>
                   <th className="text-left py-3 px-2 sm:px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Clase
+                    Asignatura
                   </th>
                   <th className="text-left py-3 px-2 sm:px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Estado
@@ -384,7 +384,7 @@ export function StreamsPage({ role }: StreamsPageProps) {
                     Grabación
                   </th>
                   <th className="text-left py-3 px-2 sm:px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Lección
+                    Clase
                   </th>
                 </tr>
               </thead>
@@ -552,7 +552,7 @@ export function StreamsPage({ role }: StreamsPageProps) {
                                 d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
                               />
                             </svg>
-                            Ver lección
+                            Ver clase
                           </Link>
                         ) : stream.recordingId ? (
                           <button

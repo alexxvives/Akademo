@@ -269,7 +269,7 @@ export default function StudentClassesPage() {
                 <div className="flex-1">
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-lg sm:text-xl font-bold text-gray-900 group-hover:text-brand-600 transition-colors">{classItem.name}</h3>
+                      <h3 className="text-lg sm:text-xl font-bold text-gray-900">{classItem.name}</h3>
                       {(classItem.university || classItem.carrera) && (
                         <span className="text-lg sm:text-xl text-gray-500 font-medium">
                           {classItem.carrera && classItem.university

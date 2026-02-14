@@ -15,7 +15,7 @@ import { uploadToBunny } from '@/lib/bunny-upload';
 import { formatDuration } from '@/lib/formatters';
 
 // Import shared components
-import { ClassHeader, PendingEnrollments, TopicsLessonsList } from '@/components/class';
+import { ClassHeader, PendingEnrollments, TopicsLessonsList, StudentsList } from '@/components/class';
 
 interface Topic {
   id: string;
@@ -143,7 +143,7 @@ interface ClassData {
 }
 
 export interface ClassDetailPageProps {
-  role: 'academy' | 'teacher';
+  role: 'academy' | 'teacher' | 'admin';
 }
 
 export default function ClassDetailPage({ role }: ClassDetailPageProps) {
@@ -2416,6 +2416,11 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
                   </form>
                 </div>
               </div>
+            )}
+
+            {/* Students List */}
+            {!selectedLesson && (
+              <StudentsList enrollments={classData.enrollments || []} />
             )}
 
           </>
