@@ -5,6 +5,15 @@
       "args": [
         "@playwright/mcp@latest"
       ]
+    },
+    "stripe": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@stripe/mcp",
+        "--api-key=${STRIPE_SECRET_KEY}",
+        "--tools=all"
+      ]
     }
   }
 }

@@ -95,7 +95,9 @@ function computePaymentStatus(
     }
     const start = new Date(startStr);
     const now = new Date();
-    const monthsDiff = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+    let monthsDiff = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+    // Adjust for day-of-month: if we haven't reached the billing day yet, subtract a month
+    if (now.getDate() < start.getDate()) monthsDiff = Math.max(0, monthsDiff - 1);
     const expectedMonths = Math.max(1, monthsDiff + 1); // At least 1 month due
     const expectedAmount = expectedMonths * monthlyPrice;
     const paidMonths = Math.floor(paid / monthlyPrice);

@@ -453,6 +453,7 @@ academies.get('/classes', async (c) => {
         SELECT 
           c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt,
           c.whatsappGroupLink, c.monthlyPrice, c.oneTimePrice, c.zoomAccountId, c.maxStudents, c.startDate,
+          c.university, c.carrera,
           a.name as academyName,
           u.firstName as teacherFirstName,
           u.lastName as teacherLastName,
@@ -473,6 +474,7 @@ academies.get('/classes', async (c) => {
         SELECT 
           c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt,
           c.whatsappGroupLink, c.monthlyPrice, c.oneTimePrice, c.zoomAccountId, c.maxStudents, c.startDate,
+          c.university, c.carrera,
           a.name as academyName,
           u.firstName as teacherFirstName,
           u.lastName as teacherLastName,

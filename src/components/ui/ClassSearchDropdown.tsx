@@ -77,23 +77,16 @@ export function ClassSearchDropdown({
     if (!hasGroups) return null; // No grouping needed
 
     const groups: Record<string, Record<string, ClassOption[]>> = {};
-    const ungrouped: ClassOption[] = [];
 
     for (const cls of filtered) {
-      const uni = cls.university || '';
-      const car = cls.carrera || '';
-      if (!uni && !car) {
-        ungrouped.push(cls);
-      } else {
-        const uniKey = uni || 'Sin universidad';
-        const carKey = car || 'Sin carrera';
-        if (!groups[uniKey]) groups[uniKey] = {};
-        if (!groups[uniKey][carKey]) groups[uniKey][carKey] = [];
-        groups[uniKey][carKey].push(cls);
-      }
+      const uniKey = cls.university || 'Universidad no asignada';
+      const carKey = cls.carrera || 'Carrera no asignada';
+      if (!groups[uniKey]) groups[uniKey] = {};
+      if (!groups[uniKey][carKey]) groups[uniKey][carKey] = [];
+      groups[uniKey][carKey].push(cls);
     }
 
-    return { groups, ungrouped };
+    return { groups };
   }, [filtered, classes]);
 
   const handleSelect = (id: string) => {
@@ -163,14 +156,24 @@ export function ClassSearchDropdown({
           {grouped ? (
             <>
               {Object.entries(grouped.groups)
-                .sort(([a], [b]) => a.localeCompare(b))
+                .sort(([a], [b]) => {
+                  // "Universidad no asignada" always last
+                  if (a === 'Universidad no asignada') return 1;
+                  if (b === 'Universidad no asignada') return -1;
+                  return a.localeCompare(b);
+                })
                 .map(([uni, carreras]) => (
                   <div key={uni}>
                     <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 bg-gray-50 uppercase tracking-wide border-t border-gray-100">
                       {uni}
                     </div>
                     {Object.entries(carreras)
-                      .sort(([a], [b]) => a.localeCompare(b))
+                      .sort(([a], [b]) => {
+                        // "Carrera no asignada" always last within university
+                        if (a === 'Carrera no asignada') return 1;
+                        if (b === 'Carrera no asignada') return -1;
+                        return a.localeCompare(b);
+                      })
                       .map(([car, items]) => (
                         <div key={`${uni}-${car}`}>
                           <div className="px-3 py-1 text-xs font-medium text-gray-400 pl-5">
@@ -194,27 +197,6 @@ export function ClassSearchDropdown({
                       ))}
                   </div>
                 ))}
-              {grouped.ungrouped.length > 0 && (
-                <>
-                  {Object.keys(grouped.groups).length > 0 && (
-                    <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 bg-gray-50 uppercase tracking-wide border-t border-gray-100">
-                      Otras
-                    </div>
-                  )}
-                  {grouped.ungrouped.map((cls) => (
-                    <button
-                      key={cls.id}
-                      type="button"
-                      onClick={() => handleSelect(cls.id)}
-                      className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 ${
-                        value === cls.id ? 'bg-brand-50 text-brand-700 font-medium' : 'text-gray-700'
-                      }`}
-                    >
-                      {cls.name}
-                    </button>
-                  ))}
-                </>
-              )}
             </>
           ) : (
             /* Flat rendering (no university/carrera data) */
