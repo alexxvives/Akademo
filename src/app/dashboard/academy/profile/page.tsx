@@ -1047,6 +1047,7 @@ export default function ProfilePage() {
                         alt="Zoom"
                         width={80}
                         height={48}
+                        unoptimized
                         className="w-full h-full object-contain"
                       />
                     </div>

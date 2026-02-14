@@ -59,14 +59,14 @@ export default function ClassHeader({
         <div className="flex gap-2 sm:gap-3 flex-wrap">
           <button
             onClick={onCreateLesson}
-            className="px-3 py-2 sm:px-5 sm:py-2.5 bg-gray-900 text-white rounded-lg text-sm sm:text-base font-medium hover:bg-gray-800 transition-all"
+            className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-all"
           >
             + Nueva Clase
           </button>
           <button
             onClick={onCreateStream}
             disabled={isStreamDisabled}
-            className="px-3 py-2 sm:px-5 sm:py-2.5 bg-red-500 text-white rounded-lg text-sm sm:text-base font-medium hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all"
+            className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all"
             title=""
           >
             {creatingStream ? (

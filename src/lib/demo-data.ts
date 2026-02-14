@@ -144,6 +144,8 @@ export interface DemoClass {
   zoomAccountName?: string | null;
   whatsappGroupLink?: string | null;
   maxStudents?: number | null;
+  university?: string | null;
+  carrera?: string | null;
 }
 
 export interface DemoLesson {
@@ -610,6 +612,8 @@ export function generateDemoClasses(): DemoClass[] {
       zoomAccountName: 'info@akademo-edu.com',
       whatsappGroupLink: 'https://chat.whatsapp.com/EVwr6bNsKng5Rk965ZuM4U',
       maxStudents: 50,
+      university: 'UPC',
+      carrera: 'Ingeniería Informática',
     },
     {
       id: 'demo-c2',
@@ -631,6 +635,8 @@ export function generateDemoClasses(): DemoClass[] {
       zoomAccountName: 'info@akademo-edu.com',
       whatsappGroupLink: 'https://chat.whatsapp.com/EVwr6bNsKng5Rk965ZuM4U',
       maxStudents: 40,
+      university: 'UAB',
+      carrera: 'Matemáticas',
     },
     {
       id: 'demo-c3',
@@ -652,6 +658,8 @@ export function generateDemoClasses(): DemoClass[] {
       zoomAccountName: 'info@akademo-edu.com',
       whatsappGroupLink: 'https://chat.whatsapp.com/EVwr6bNsKng5Rk965ZuM4U',
       maxStudents: 70,
+      university: 'UPC',
+      carrera: 'Diseño y Creación Digital',
     },
     {
       id: 'demo-c4',
@@ -673,6 +681,8 @@ export function generateDemoClasses(): DemoClass[] {
       zoomAccountName: null,
       whatsappGroupLink: null,
       maxStudents: 35,
+      university: 'UAB',
+      carrera: 'Física',
     },
   ];
 }

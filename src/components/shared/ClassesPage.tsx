@@ -498,8 +498,10 @@ export function ClassesPage({ role }: ClassesPageProps) {
                         {cls.name}
                       </h3>
                       {(cls.university || cls.carrera) && (
-                        <span className="text-base text-gray-500 font-medium">
-                          {[cls.university, cls.carrera].filter(Boolean).join(' · ')}
+                        <span className="text-xl text-gray-500 font-medium">
+                          {cls.carrera && cls.university
+                            ? `${cls.carrera} (${cls.university})`
+                            : cls.carrera || cls.university}
                         </span>
                       )}
                       {/* WhatsApp link */}
