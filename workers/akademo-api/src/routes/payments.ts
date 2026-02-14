@@ -302,7 +302,7 @@ payments.get('/pending-cash', async (c) => {
             COALESCE(
               (SELECT SUM(p2.amount) FROM Payment p2 
                WHERE p2.payerId = ce.userId AND p2.classId = ce.classId 
-               AND p2.status = 'PAID' AND p2.type = 'STUDENT_TO_ACADEMY'), 0
+               AND p2.status IN ('PAID', 'COMPLETED') AND p2.type = 'STUDENT_TO_ACADEMY'), 0
             ) as totalPaid
           FROM ClassEnrollment ce
           JOIN Class c ON ce.classId = c.id

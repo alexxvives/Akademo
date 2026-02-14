@@ -113,7 +113,7 @@ export function ClassFormModal({
                 value={formData.university}
                 onChange={(e) => setFormData((f) => ({ ...f, university: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Ej: Universidad Complutense de Madrid"
+                placeholder=""
               />
             </div>
 
@@ -127,7 +127,7 @@ export function ClassFormModal({
                 value={formData.carrera}
                 onChange={(e) => setFormData((f) => ({ ...f, carrera: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Ej: Ingeniería Informática"
+                placeholder=""
               />
             </div>
 
