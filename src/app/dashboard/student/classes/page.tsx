@@ -109,7 +109,7 @@ export default function StudentClassesPage() {
       const classesResult = await classesRes.json();
 
       if (classesResult.success && Array.isArray(classesResult.data)) {
-        const classes = classesResult.data.map((c: { id: string; slug?: string; name: string; description?: string; academyName?: string; teacherFirstName?: string; teacherLastName?: string; videoCount?: number; documentCount?: number; lessonCount?: number; studentCount?: number; createdAt: string; startDate?: string; enrollmentStatus?: string; documentSigned?: number; whatsappGroupLink?: string; paymentStatus?: string; paymentMethod?: string; price?: number; currency?: string; allowMonthly?: number; allowOneTime?: number; monthlyPrice?: number; oneTimePrice?: number; maxStudents?: number; firstPaymentAmount?: number; missedCycles?: number }) => ({
+        const classes = classesResult.data.map((c: { id: string; slug?: string; name: string; description?: string; academyName?: string; teacherFirstName?: string; teacherLastName?: string; videoCount?: number; documentCount?: number; lessonCount?: number; studentCount?: number; createdAt: string; startDate?: string; enrollmentStatus?: string; documentSigned?: number; whatsappGroupLink?: string; paymentStatus?: string; paymentMethod?: string; price?: number; currency?: string; allowMonthly?: number; allowOneTime?: number; monthlyPrice?: number; oneTimePrice?: number; maxStudents?: number; firstPaymentAmount?: number; missedCycles?: number; university?: string | null; carrera?: string | null }) => ({
           id: c.id,
           slug: c.slug,
           name: c.name,
@@ -133,6 +133,8 @@ export default function StudentClassesPage() {
           maxStudents: c.maxStudents,
           firstPaymentAmount: c.firstPaymentAmount,
           missedCycles: c.missedCycles,
+          university: c.university,
+          carrera: c.carrera,
         }));
         setEnrolledClasses(classes);
         if (classes.length > 0) {

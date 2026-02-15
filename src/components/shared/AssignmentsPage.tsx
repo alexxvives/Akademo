@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { apiClient, apiPost } from '@/lib/api-client';
 import { generateDemoAssignments, generateDemoSubmissions, generateDemoClasses, countNewDemoSubmissions } from '@/lib/demo-data';
 import { AssignmentModals } from './AssignmentModals';
@@ -12,6 +12,7 @@ interface Assignment {
   submissionCount: number; gradedCount: number; attachmentName?: string; className?: string;
   academyName?: string; createdAt: string; classId?: string;
   uploadId?: string; attachmentIds?: string;
+  solutionUploadId?: string;
 }
 interface Submission {
   id: string; studentName: string; studentEmail: string; submissionFileName: string;
@@ -60,6 +61,10 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
   const [gradeScore, setGradeScore] = useState(0);
   const [gradeFeedback, setGradeFeedback] = useState('');
   const [creating, setCreating] = useState(false);
+  const [requireGrading, setRequireGrading] = useState(true);
+  const [uploadingSolutionId, setUploadingSolutionId] = useState<string | null>(null);
+  const solutionFileRef = useRef<HTMLInputElement>(null);
+  const solutionAssignmentRef = useRef<string | null>(null);
 
   // Admin-only state
   const [academies, setAcademies] = useState<Academy[]>([]);
@@ -122,6 +127,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
         setAcademyName(academy.name || '');
         const status = academy.paymentStatus || 'PAID';
         setPaymentStatus(status);
+        setRequireGrading(academy.requireGrading !== 0);
         if (status === 'NOT PAID') {
           const demoClasses = generateDemoClasses();
           setClasses(demoClasses.map(c => ({ id: c.id, name: c.name })));
@@ -218,7 +224,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
 
   // â”€â”€â”€ Shared handlers â”€â”€â”€
   const handleDeleteAssignment = async (assignmentId: string, title: string) => {
-    if (!confirm(`Â¿EstÃ¡s seguro que deseas eliminar "${title}"? Esta acciÃ³n no se puede deshacer.`)) return;
+    if (!confirm(`¿Estás seguro que deseas eliminar "${title}"? Esta acción no se puede deshacer.`)) return;
     setDeletingAssignmentId(assignmentId);
     try {
       const res = await apiClient(`/assignments/${assignmentId}`, { method: 'DELETE' });
@@ -233,6 +239,51 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
       alert('Error al eliminar ejercicio');
     } finally {
       setDeletingAssignmentId(null);
+    }
+  };
+
+  const handleSolutionUpload = async (file: File, assignmentId: string) => {
+    setUploadingSolutionId(assignmentId);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', 'assignment');
+      const uploadRes = await apiClient('/storage/upload', { method: 'POST', body: formData });
+      const uploadResult = await uploadRes.json();
+      if (!uploadResult.success) { alert('Error al subir archivo'); return; }
+      const res = await apiClient(`/assignments/${assignmentId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ solutionUploadId: uploadResult.data.uploadId }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setAssignments(prev => prev.map(a => a.id === assignmentId ? { ...a, solutionUploadId: uploadResult.data.uploadId } : a));
+      } else {
+        alert(`Error: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Failed to upload solution:', error);
+      alert('Error al subir solucionario');
+    } finally {
+      setUploadingSolutionId(null);
+    }
+  };
+
+  const handleRemoveSolution = async (assignmentId: string) => {
+    if (!confirm('¿Eliminar el solucionario de este ejercicio?')) return;
+    try {
+      const res = await apiClient(`/assignments/${assignmentId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ solutionUploadId: null }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setAssignments(prev => prev.map(a => a.id === assignmentId ? { ...a, solutionUploadId: undefined } : a));
+      }
+    } catch (error) {
+      console.error('Failed to remove solution:', error);
     }
   };
 
@@ -553,20 +604,30 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
             </p>
           </div>
         ) : (
+          <>
+          {/* Hidden file input for solution upload */}
+          <input
+            type="file"
+            ref={solutionFileRef}
+            className="hidden"
+            accept=".pdf,.doc,.docx"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file && solutionAssignmentRef.current) {
+                handleSolutionUpload(file, solutionAssignmentRef.current);
+              }
+              e.target.value = '';
+            }}
+          />
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
             {isAcademy && (
               <div className="overflow-x-auto max-h-[750px] overflow-y-auto">
-                <div className="px-6 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
-                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span className="text-xs text-gray-600">Haz clic en cualquier fila para editar.</span>
-                </div>
                 {renderTable()}
               </div>
             )}
             {isAdmin && renderTable()}
           </div>
+          </>
         )}
       </div>
 
@@ -598,6 +659,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
           gradeScore={gradeScore} setGradeScore={setGradeScore}
           gradeFeedback={gradeFeedback} setGradeFeedback={setGradeFeedback}
           handleGradeSubmission={handleGradeSubmission}
+          requireGrading={requireGrading}
         />
       )}
     </>
@@ -608,46 +670,22 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
       <table className="min-w-full divide-y divide-gray-200">
         <thead className={`bg-gray-50 ${isAcademy ? 'sticky top-0 z-10' : ''}`}>
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">TÃ­tulo</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Título</th>
             {isAdmin && <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Academia</th>}
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asignatura</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ejercicios</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha lÃ­mite</th>
+            {requireGrading && <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha límite</th>}
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entregas</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Calificadas</th>
-            {isAcademy && <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>}
+            {requireGrading && <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Calificadas</th>}
+            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {assignments.map((assignment) => (
             <tr key={assignment.id}
-              onClick={isAcademy ? () => openEditAssignment(assignment) : undefined}
-              className={`hover:bg-gray-50 transition-colors group ${isAcademy ? 'cursor-pointer' : ''}`}>
+              className="hover:bg-gray-50 transition-colors group">
               <td className="px-6 py-4">
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (!(isAcademy && paymentStatus === 'NOT PAID' && userEmail.toLowerCase().includes('demo'))) {
-                        handleDeleteAssignment(assignment.id, assignment.title);
-                      }
-                    }}
-                    disabled={deletingAssignmentId === assignment.id || (isAcademy && paymentStatus === 'NOT PAID' && userEmail.toLowerCase().includes('demo'))}
-                    className="text-red-600 hover:text-red-700 transition-colors disabled:opacity-50 flex-shrink-0 disabled:cursor-not-allowed"
-                    title={isAcademy && paymentStatus === 'NOT PAID' && userEmail.toLowerCase().includes('demo') ? 'No disponible en modo demostraciÃ³n' : 'Eliminar ejercicio'}>
-                    {deletingAssignmentId === assignment.id ? (
-                      <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
-                    ) : (
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    )}
-                  </button>
-                  <div className="flex-1">
-                    <div className="text-sm font-medium text-gray-900 truncate max-w-[14rem]">{assignment.title}</div>
-                    {assignment.description && <div className="text-sm text-gray-500 truncate max-w-[14rem]">{assignment.description}</div>}
-                  </div>
-                </div>
+                <div className="text-sm font-medium text-gray-900 truncate max-w-[14rem]">{assignment.title}</div>
               </td>
               {isAdmin && (
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -673,6 +711,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
                   );
                 })()}
               </td>
+              {requireGrading && (
               <td className={`px-6 py-4 whitespace-nowrap text-sm ${getDueDateColor(assignment.dueDate)}`}>
                 {assignment.dueDate ? (
                   <>
@@ -683,6 +722,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
                   </>
                 ) : 'Sin fecha'}
               </td>
+              )}
               <td className="px-6 py-4 whitespace-nowrap text-sm">
                 <div className="inline-flex items-center gap-2">
                   <span>{assignment.submissionCount}</span>
@@ -696,13 +736,70 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
                   })()}
                 </div>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assignment.gradedCount} / {assignment.submissionCount}</td>
-              {isAcademy && (
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                  <button onClick={(e) => { e.stopPropagation(); openSubmissions(assignment); }}
-                    className="text-brand-600 hover:text-brand-900">Ver entregas</button>
-                </td>
-              )}
+              {requireGrading && <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assignment.gradedCount} / {assignment.submissionCount}</td>}
+              <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                <div className="flex items-center justify-end gap-1">
+                  <button onClick={() => openSubmissions(assignment)}
+                    className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="Ver entregas">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                    </svg>
+                  </button>
+                  {isAcademy && (
+                    <>
+                      <button onClick={() => openEditAssignment(assignment)}
+                        className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        title="Editar ejercicio">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                      {assignment.solutionUploadId ? (
+                        <button
+                          onClick={() => handleRemoveSolution(assignment.id)}
+                          className="p-1.5 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+                          title="Solucionario subido (clic para eliminar)">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => { solutionAssignmentRef.current = assignment.id; solutionFileRef.current?.click(); }}
+                          disabled={uploadingSolutionId === assignment.id}
+                          className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+                          title="Subir solucionario">
+                          {uploadingSolutionId === assignment.id ? (
+                            <div className="w-4 h-4 border-2 border-brand-600 border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                          )}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => {
+                          if (!(isAcademy && paymentStatus === 'NOT PAID' && userEmail.toLowerCase().includes('demo'))) {
+                            handleDeleteAssignment(assignment.id, assignment.title);
+                          }
+                        }}
+                        disabled={deletingAssignmentId === assignment.id || (isAcademy && paymentStatus === 'NOT PAID' && userEmail.toLowerCase().includes('demo'))}
+                        className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={isAcademy && paymentStatus === 'NOT PAID' && userEmail.toLowerCase().includes('demo') ? 'No disponible en modo demostración' : 'Eliminar ejercicio'}>
+                        {deletingAssignmentId === assignment.id ? (
+                          <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        )}
+                      </button>
+                    </>
+                  )}
+                </div>
+              </td>
             </tr>
           ))}
         </tbody>

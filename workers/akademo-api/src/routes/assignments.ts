@@ -20,7 +20,7 @@ assignments.get('/all', async (c) => {
       query = `
         SELECT 
           a.id, a.classId, a.teacherId, a.title, a.description, 
-          a.dueDate, a.maxScore, a.uploadId, a.createdAt, a.updatedAt,
+          a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt, a.updatedAt,
           c.name as className,
           GROUP_CONCAT(DISTINCT aa.uploadId) as attachmentIds,
           COUNT(DISTINCT aa.id) as attachmentCount,
@@ -40,7 +40,7 @@ assignments.get('/all', async (c) => {
       query = `
         SELECT 
           a.id, a.classId, a.teacherId, a.title, a.description, 
-          a.dueDate, a.maxScore, a.uploadId, a.createdAt, a.updatedAt,
+          a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt, a.updatedAt,
           c.name as className,
           GROUP_CONCAT(DISTINCT aa.uploadId) as attachmentIds,
           COUNT(DISTINCT aa.id) as attachmentCount,
@@ -61,7 +61,7 @@ assignments.get('/all', async (c) => {
       query = `
         SELECT 
           a.id, a.classId, a.teacherId, a.title, a.description, 
-          a.dueDate, a.maxScore, a.uploadId, a.createdAt, a.updatedAt,
+          a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt, a.updatedAt,
           c.name as className,
           ac.name as academyName,
           GROUP_CONCAT(DISTINCT aa.uploadId) as attachmentIds,
@@ -102,7 +102,7 @@ assignments.get('/', async (c) => {
       const query = `
         SELECT 
           a.id, a.classId, a.title, a.description, 
-          a.dueDate, a.maxScore, a.uploadId, a.createdAt,
+          a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt,
           c.name as className,
           s.id as submissionId,
           s.uploadId as submissionUploadId,
@@ -141,7 +141,7 @@ assignments.get('/', async (c) => {
       query = `
         SELECT 
           a.id, a.classId, a.teacherId, a.title, a.description, 
-          a.dueDate, a.maxScore, a.uploadId, a.createdAt, a.updatedAt,
+          a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt, a.updatedAt,
           c.name as className,
           GROUP_CONCAT(DISTINCT aa.uploadId) as attachmentIds,
           COUNT(DISTINCT aa.id) as attachmentCount,
@@ -161,7 +161,7 @@ assignments.get('/', async (c) => {
       query = `
         SELECT 
           a.id, a.classId, a.teacherId, a.title, a.description, 
-          a.dueDate, a.maxScore, a.uploadId, a.createdAt, a.updatedAt,
+          a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt, a.updatedAt,
           c.name as className,
           GROUP_CONCAT(DISTINCT aa.uploadId) as attachmentIds,
           COUNT(DISTINCT aa.id) as attachmentCount,
@@ -182,7 +182,7 @@ assignments.get('/', async (c) => {
       query = `
         SELECT 
           a.id, a.classId, a.title, a.description, 
-          a.dueDate, a.maxScore, a.uploadId, a.createdAt,
+          a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt,
           c.name as className,
           u.fileName as attachmentName,
           s.id as submissionId,
@@ -660,7 +660,7 @@ assignments.patch('/:id', async (c) => {
     }
 
     const assignmentId = c.req.param('id');
-    const { title, description, dueDate, maxScore, uploadId, uploadIds } = await c.req.json();
+    const { title, description, dueDate, maxScore, uploadId, uploadIds, solutionUploadId } = await c.req.json();
 
     // Verify assignment exists
     const assignment = await c.env.DB.prepare(`
@@ -719,6 +719,10 @@ assignments.patch('/:id', async (c) => {
     if (uploadIds !== undefined) {
       updateFields.push('attachmentIds = ?');
       bindings.push(JSON.stringify(uploadIds));
+    }
+    if (solutionUploadId !== undefined) {
+      updateFields.push('solutionUploadId = ?');
+      bindings.push(solutionUploadId);
     }
 
     updateFields.push('updatedAt = ?');

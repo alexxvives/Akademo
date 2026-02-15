@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { apiClient, apiPost } from '@/lib/api-client';
 import { generateDemoAssignments, generateDemoClasses } from '@/lib/demo-data';
 
@@ -11,6 +11,7 @@ interface Assignment {
   className?: string;
   uploadId?: string; // Legacy single file
   attachmentIds?: string; // JSON array of upload IDs
+  solutionUploadId?: string; // Solution sheet upload
 }
 interface Submission {
   id: string; studentName: string; studentEmail: string; submissionFileName: string;
@@ -61,6 +62,10 @@ export default function TeacherAssignments() {
   const [userEmail, setUserEmail] = useState<string>('');
   const [paymentStatus, setPaymentStatus] = useState<string>(''); // Empty until loaded
   const [dataReady, setDataReady] = useState(false); // True only after loadData completes
+  const [requireGrading, setRequireGrading] = useState<boolean>(true);
+  const [uploadingSolutionId, setUploadingSolutionId] = useState<string | null>(null);
+  const solutionFileRef = useRef<HTMLInputElement>(null);
+  const solutionAssignmentRef = useRef<string | null>(null);
 
   // Helper to check if assignment is past due
   const _isPastDue = (dueDate?: string) => {
@@ -113,12 +118,13 @@ export default function TeacherAssignments() {
       const academyRes = await apiClient('/teacher/academy');
       let currentPaymentStatus = 'PAID';
       if (academyRes.ok) {
-        const academyResult = await academyRes.json() as { data?: { academy?: { name?: string; paymentStatus?: string } } };
+        const academyResult = await academyRes.json() as { data?: { academy?: { name?: string; paymentStatus?: string; requireGrading?: number } } };
         if (academyResult.data?.academy) {
           console.log('🏫 Academy:', academyResult.data.academy.name, 'Payment:', academyResult.data.academy.paymentStatus);
           setAcademyName(academyResult.data.academy.name || '');
           currentPaymentStatus = academyResult.data.academy.paymentStatus || 'PAID';
           setPaymentStatus(currentPaymentStatus);
+          setRequireGrading(academyResult.data.academy.requireGrading !== 0);
         }
       }
       
@@ -231,6 +237,51 @@ export default function TeacherAssignments() {
       alert('Error al eliminar ejercicio');
     } finally {
       setDeletingAssignmentId(null);
+    }
+  };
+
+  const handleSolutionUpload = async (file: File, assignmentId: string) => {
+    setUploadingSolutionId(assignmentId);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', 'assignment');
+      const uploadRes = await apiClient('/storage/upload', { method: 'POST', body: formData });
+      const uploadResult = await uploadRes.json();
+      if (!uploadResult.success) { alert('Error al subir archivo'); return; }
+      const res = await apiClient(`/assignments/${assignmentId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ solutionUploadId: uploadResult.data.uploadId }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setAssignments(prev => prev.map(a => a.id === assignmentId ? { ...a, solutionUploadId: uploadResult.data.uploadId } : a));
+      } else {
+        alert(`Error: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Failed to upload solution:', error);
+      alert('Error al subir solucionario');
+    } finally {
+      setUploadingSolutionId(null);
+    }
+  };
+
+  const handleRemoveSolution = async (assignmentId: string) => {
+    if (!confirm('¿Eliminar el solucionario de este ejercicio?')) return;
+    try {
+      const res = await apiClient(`/assignments/${assignmentId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ solutionUploadId: null }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setAssignments(prev => prev.map(a => a.id === assignmentId ? { ...a, solutionUploadId: undefined } : a));
+      }
+    } catch (error) {
+      console.error('Failed to remove solution:', error);
     }
   };
 
@@ -533,6 +584,21 @@ export default function TeacherAssignments() {
           </div>
         </div>
         
+        {/* Hidden file input for solution upload */}
+        <input
+          type="file"
+          ref={solutionFileRef}
+          className="hidden"
+          accept=".pdf,.doc,.docx"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file && solutionAssignmentRef.current) {
+              handleSolutionUpload(file, solutionAssignmentRef.current);
+            }
+            e.target.value = '';
+          }}
+        />
+
         {/* Table */}
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           {/* Info banner */}
@@ -610,25 +676,15 @@ export default function TeacherAssignments() {
           </div>
         ) : (
           <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
-            <div className="px-6 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className="text-xs text-gray-600">
-                  Haz clic en cualquier fila para editar.
-                </span>
-              </div>
-            </div>
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Título</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Asignatura</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ejercicios</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha límite</th>
+                  {requireGrading && <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha límite</th>}
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Entregas</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Calificadas</th>
+                  {requireGrading && <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Calificadas</th>}
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
                 </tr>
               </thead>
@@ -636,36 +692,10 @@ export default function TeacherAssignments() {
                 {assignments.map((assignment) => (
                   <tr 
                     key={assignment.id} 
-                    onClick={() => openEditAssignment(assignment)}
-                    className="hover:bg-gray-50 transition-colors group cursor-pointer"
+                    className="hover:bg-gray-50 transition-colors group"
                   >
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            // Disable delete for demo assignments
-                            if (!assignment.id.startsWith('demo-')) {
-                              handleDeleteAssignment(assignment.id, assignment.title);
-                            }
-                          }}
-                          disabled={deletingAssignmentId === assignment.id || assignment.id.startsWith('demo-')}
-                          className="text-red-600 hover:text-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
-                          title={assignment.id.startsWith('demo-') ? 'No se pueden eliminar ejercicios de demostración' : 'Eliminar ejercicio'}
-                        >
-                          {deletingAssignmentId === assignment.id ? (
-                            <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
-                          ) : (
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          )}
-                        </button>
-                        <div className="flex-1">
-                          <div className="text-sm font-medium text-gray-900">{assignment.title}</div>
-                          {assignment.description && <div className="text-sm text-gray-500 truncate max-w-md">{assignment.description}</div>}
-                        </div>
-                      </div>
+                      <div className="text-sm font-medium text-gray-900">{assignment.title}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {assignment.className || 'N/A'}
@@ -680,10 +710,7 @@ export default function TeacherAssignments() {
                         }
                         return fileCount > 0 ? (
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openAssignmentFiles(assignment);
-                            }}
+                            onClick={() => openAssignmentFiles(assignment)}
                             className="flex items-center gap-2 text-sm text-brand-600 hover:text-brand-700 transition-colors group"
                           >
                             <div className="w-8 h-10 flex items-center justify-center bg-red-50 rounded border border-red-200 group-hover:bg-red-100 transition-colors">
@@ -698,6 +725,7 @@ export default function TeacherAssignments() {
                         );
                       })()}
                     </td>
+                    {requireGrading && (
                     <td className={`px-6 py-4 whitespace-nowrap text-sm ${getDueDateColor(assignment.dueDate)}`}>
                       {assignment.dueDate ? (
                         <>
@@ -715,18 +743,68 @@ export default function TeacherAssignments() {
                         </>
                       ) : 'Sin fecha'}
                     </td>
+                    )}
                     <td className="px-6 py-4 whitespace-nowrap text-sm">{assignment.submissionCount}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">{assignment.gradedCount} / {assignment.submissionCount}</td>
+                    {requireGrading && <td className="px-6 py-4 whitespace-nowrap text-sm">{assignment.gradedCount} / {assignment.submissionCount}</td>}
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openSubmissions(assignment);
-                        }}
-                        className="text-brand-600 hover:text-brand-900"
-                      >
-                        Ver entregas ({assignment.submissionCount || 0})
-                      </button>
+                      <div className="flex items-center justify-end gap-1">
+                        <button onClick={() => openSubmissions(assignment)}
+                          className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-gray-100 rounded-lg transition-colors"
+                          title="Ver entregas">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                          </svg>
+                        </button>
+                        <button onClick={() => openEditAssignment(assignment)}
+                          className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-gray-100 rounded-lg transition-colors"
+                          title="Editar ejercicio">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        {assignment.solutionUploadId ? (
+                          <button
+                            onClick={() => handleRemoveSolution(assignment.id)}
+                            className="p-1.5 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+                            title="Solucionario subido (clic para eliminar)">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => { solutionAssignmentRef.current = assignment.id; solutionFileRef.current?.click(); }}
+                            disabled={uploadingSolutionId === assignment.id}
+                            className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+                            title="Subir solucionario">
+                            {uploadingSolutionId === assignment.id ? (
+                              <div className="w-4 h-4 border-2 border-brand-600 border-t-transparent rounded-full animate-spin"></div>
+                            ) : (
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                            )}
+                          </button>
+                        )}
+                        <button
+                          onClick={() => {
+                            if (!assignment.id.startsWith('demo-')) {
+                              handleDeleteAssignment(assignment.id, assignment.title);
+                            }
+                          }}
+                          disabled={deletingAssignmentId === assignment.id || assignment.id.startsWith('demo-')}
+                          className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title={assignment.id.startsWith('demo-') ? 'No se pueden eliminar ejercicios de demostración' : 'Eliminar ejercicio'}
+                        >
+                          {deletingAssignmentId === assignment.id ? (
+                            <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          )}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -775,6 +853,7 @@ export default function TeacherAssignments() {
                 <textarea value={newDescription} onChange={(e) => setNewDescription(e.target.value)} rows={2}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-y focus:ring-2 focus:ring-brand-500" />
               </div>
+              {requireGrading && (
               <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Fecha y hora límite</label>
@@ -791,6 +870,7 @@ export default function TeacherAssignments() {
                   />
                 </div>
               </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Archivos adjuntos (PDFs)</label>
                 <input 
@@ -1044,11 +1124,13 @@ export default function TeacherAssignments() {
                 <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} rows={4}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
               </div>
+              {requireGrading && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de entrega</label>
                 <input type="date" value={editDueDate} onChange={(e) => setEditDueDate(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
               </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Actualizar archivo PDF (opcional)</label>
                 {selectedAssignment.attachmentName && (

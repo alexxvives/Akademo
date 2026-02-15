@@ -57,6 +57,7 @@ export interface AssignmentModalsProps {
   gradeScore: number; setGradeScore: (v: number) => void;
   gradeFeedback: string; setGradeFeedback: (v: string) => void;
   handleGradeSubmission: (e: React.FormEvent) => void;
+  requireGrading?: boolean;
 }
 
 export function AssignmentModals(props: AssignmentModalsProps) {
@@ -71,6 +72,7 @@ export function AssignmentModals(props: AssignmentModalsProps) {
     downloadSingleSubmission, openGradeModal,
     showGradeModal, setShowGradeModal, selectedSubmission, gradeScore, setGradeScore,
     gradeFeedback, setGradeFeedback, handleGradeSubmission,
+    requireGrading = true,
   } = props;
 
   return (
@@ -102,6 +104,7 @@ export function AssignmentModals(props: AssignmentModalsProps) {
                 <textarea value={newDescription} onChange={(e) => setNewDescription(e.target.value)} rows={4}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
               </div>
+              {requireGrading && (
               <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Fecha y hora límite</label>
@@ -110,6 +113,7 @@ export function AssignmentModals(props: AssignmentModalsProps) {
                     className={`w-full h-[38px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 ${!newDueDate ? 'text-transparent' : ''}`} />
                 </div>
               </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Archivos adjuntos</label>
                 <input type="file" multiple
@@ -165,11 +169,13 @@ export function AssignmentModals(props: AssignmentModalsProps) {
                 <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} rows={2}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-y focus:ring-2 focus:ring-brand-500" />
               </div>
+              {requireGrading && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de entrega</label>
                 <input type="date" value={editDueDate} onChange={(e) => setEditDueDate(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
               </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Actualizar archivo (opcional)</label>
                 {selectedAssignment.attachmentName && (

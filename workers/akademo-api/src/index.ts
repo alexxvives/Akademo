@@ -108,11 +108,11 @@ app.get('/teacher/academy', async (c) => {
       return c.json(errorResponse('Only teachers can use this endpoint'), 403);
     }
     const result = await c.env.DB.prepare(`
-      SELECT a.id, a.name, a.logoUrl, a.paymentStatus
+      SELECT a.id, a.name, a.logoUrl, a.paymentStatus, a.requireGrading
       FROM Academy a
       JOIN Teacher t ON t.academyId = a.id
       WHERE t.userId = ?
-    `).bind(session.id).first<{ id: string; name: string; logoUrl: string | null; paymentStatus: string | null }>();
+    `).bind(session.id).first<{ id: string; name: string; logoUrl: string | null; paymentStatus: string | null; requireGrading: number | null }>();
     if (!result) {
       return c.json(errorResponse('Academy not found'), 404);
     }

@@ -623,8 +623,7 @@ export default function PagosPage({ role }: PagosPageProps) {
               <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
               <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Método</th>
               <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Historial</th>
-              {isAcademy && <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acción</th>}
+              <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -672,43 +671,49 @@ export default function PagosPage({ role }: PagosPageProps) {
                     year: 'numeric'
                   })}
                 </td>
-                <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      showStudentPaymentHistory(
-                        payment.studentId,
-                        `${payment.studentFirstName} ${payment.studentLastName}`,
-                        payment.studentEmail,
-                        payment.className,
-                        payment.enrolledAt,
-                        payment.classId
-                      );
-                    }}
-                    className="text-sm text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1.5"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    Ver
-                  </button>
-                </td>
-                {isAcademy && (
-                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-right">
+                  <div className="flex items-center justify-end gap-1">
                     <button
                       onClick={(e) => {
-                        if (paymentStatus === 'NOT PAID') { e.preventDefault(); e.stopPropagation(); return; }
                         e.stopPropagation();
-                        handleApprove(payment.enrollmentId);
+                        showStudentPaymentHistory(
+                          payment.studentId,
+                          `${payment.studentFirstName} ${payment.studentLastName}`,
+                          payment.studentEmail,
+                          payment.className,
+                          payment.enrolledAt,
+                          payment.classId
+                        );
                       }}
-                      disabled={processingIds.has(payment.enrollmentId) || paymentStatus === 'NOT PAID'}
-                      className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700 disabled:cursor-not-allowed"
-                      title={paymentStatus === 'NOT PAID' ? 'Disponible solo en academias activadas' : 'Confirmar pago'}
+                      className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-gray-100 rounded-lg transition-colors"
+                      title="Ver historial"
                     >
-                      {processingIds.has(payment.enrollmentId) ? '...' : '✓ Confirmar'}
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
                     </button>
-                  </td>
-                )}
+                    {isAcademy && (
+                      <button
+                        onClick={(e) => {
+                          if (paymentStatus === 'NOT PAID') { e.preventDefault(); e.stopPropagation(); return; }
+                          e.stopPropagation();
+                          handleApprove(payment.enrollmentId);
+                        }}
+                        disabled={processingIds.has(payment.enrollmentId) || paymentStatus === 'NOT PAID'}
+                        className="p-1.5 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                        title={paymentStatus === 'NOT PAID' ? 'Disponible solo en academias activadas' : 'Confirmar pago'}
+                      >
+                        {processingIds.has(payment.enrollmentId) ? (
+                          <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </td>
               </tr>
             ))}
 
@@ -762,97 +767,95 @@ export default function PagosPage({ role }: PagosPageProps) {
                     year: 'numeric'
                   })}
                 </td>
-                <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      showStudentPaymentHistory(
-                        history.studentId || '',
-                        `${history.studentFirstName} ${history.studentLastName}`,
-                        history.studentEmail,
-                        history.className,
-                        history.createdAt || history.updatedAt || history.approvedAt,
-                        history.classId
-                      );
-                    }}
-                    className="text-sm text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1.5"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    Ver
-                  </button>
-                </td>
-                {isAcademy && (
-                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setRegisterForm({
-                            studentId: history.studentId || '',
-                            classId: history.classId || '',
-                            amount: history.paymentAmount.toString(),
-                            paymentMethod: (history.paymentMethod.toLowerCase() === 'cash' || history.paymentMethod === 'CASH') ? 'cash' : 'bizum',
-                            status: 'PAID',
-                          });
-                          setEditingPaymentId(history.paymentId || null);
-                          setShowRegisterModal(true);
-                        }}
-                        className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-gray-100 rounded-lg transition-colors"
-                        title="Editar pago"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={async (e) => {
-                          if (paymentStatus === 'NOT PAID') { e.preventDefault(); e.stopPropagation(); return; }
-                          e.stopPropagation();
-                          if (!confirm('¿Estás seguro de que quieres eliminar este pago? Esta acción no se puede deshacer.')) return;
-                          
-                          try {
-                            setDeletingPaymentId(history.paymentId || null);
-                            const response = await apiClient(`/payments/${history.paymentId}`, { method: 'DELETE' });
-                            
-                            if (response.ok) {
-                              await loadData();
-                            } else {
-                              alert('Error al eliminar el pago');
-                            }
-                          } catch (error) {
-                            console.error('Error deleting payment:', error);
-                            alert('Error al eliminar el pago');
-                          } finally {
-                            setDeletingPaymentId(null);
-                          }
-                        }}
-                        disabled={deletingPaymentId === history.paymentId || paymentStatus === 'NOT PAID'}
-                        className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                        title={paymentStatus === 'NOT PAID' ? 'Disponible solo en academias activadas' : 'Eliminar pago'}
-                      >
-                        {deletingPaymentId === history.paymentId ? (
-                          <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                        ) : (
+                <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-right">
+                  <div className="flex items-center justify-end gap-1">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        showStudentPaymentHistory(
+                          history.studentId || '',
+                          `${history.studentFirstName} ${history.studentLastName}`,
+                          history.studentEmail,
+                          history.className,
+                          history.createdAt || history.updatedAt || history.approvedAt,
+                          history.classId
+                        );
+                      }}
+                      className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-gray-100 rounded-lg transition-colors"
+                      title="Ver historial"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </button>
+                    {isAcademy && (
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setRegisterForm({
+                              studentId: history.studentId || '',
+                              classId: history.classId || '',
+                              amount: history.paymentAmount.toString(),
+                              paymentMethod: (history.paymentMethod.toLowerCase() === 'cash' || history.paymentMethod === 'CASH') ? 'cash' : 'bizum',
+                              status: 'PAID',
+                            });
+                            setEditingPaymentId(history.paymentId || null);
+                            setShowRegisterModal(true);
+                          }}
+                          className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-gray-100 rounded-lg transition-colors"
+                          title="Editar pago"
+                        >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                           </svg>
-                        )}
-                      </button>
-                    </div>
-                  </td>
-                )}
+                        </button>
+                        <button
+                          onClick={async (e) => {
+                            if (paymentStatus === 'NOT PAID') { e.preventDefault(); e.stopPropagation(); return; }
+                            e.stopPropagation();
+                            if (!confirm('¿Estás seguro de que quieres eliminar este pago? Esta acción no se puede deshacer.')) return;
+                            try {
+                              setDeletingPaymentId(history.paymentId || null);
+                              const response = await apiClient(`/payments/${history.paymentId}`, { method: 'DELETE' });
+                              if (response.ok) {
+                                await loadData();
+                              } else {
+                                alert('Error al eliminar el pago');
+                              }
+                            } catch (error) {
+                              console.error('Error deleting payment:', error);
+                              alert('Error al eliminar el pago');
+                            } finally {
+                              setDeletingPaymentId(null);
+                            }
+                          }}
+                          disabled={deletingPaymentId === history.paymentId || paymentStatus === 'NOT PAID'}
+                          className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                          title={paymentStatus === 'NOT PAID' ? 'Disponible solo en academias activadas' : 'Eliminar pago'}
+                        >
+                          {deletingPaymentId === history.paymentId ? (
+                            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          )}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </td>
               </tr>
             ))}
 
             {/* Empty State */}
             {filteredPendingPayments.length === 0 && filteredPaymentHistory.length === 0 && (
               <tr>
-                <td colSpan={isAdmin ? 8 : 8} className="px-6 py-8 sm:py-12 text-center">
+                <td colSpan={isAdmin ? 8 : 7} className="px-6 py-8 sm:py-12 text-center">
                   <div className="text-gray-400">
                     <svg className="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
