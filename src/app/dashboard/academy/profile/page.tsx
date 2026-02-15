@@ -270,6 +270,12 @@ export default function ProfilePage() {
             detail: { feedbackEnabled: value } 
           }));
         }
+        // If requireGrading was toggled, dispatch event for DashboardLayout to update sidebar
+        if (field === 'requireGrading') {
+          window.dispatchEvent(new CustomEvent('feedbackToggled', { 
+            detail: { requireGrading: value } 
+          }));
+        }
         // If menu items changed, reload sidebar
         if (field === 'hiddenMenuItems') {
           window.dispatchEvent(new CustomEvent('feedbackToggled'));
@@ -682,14 +688,16 @@ export default function ProfilePage() {
         </div>
 
         <div className="px-4 sm:px-8 py-4 sm:py-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-y-4 gap-x-8">
             {/* Feedback Toggle */}
-            <div className="lg:col-span-1">
-              <label className="block text-sm font-medium text-gray-900 mb-2">
-                Habilitar feedback
-              </label>
-              <p className="text-xs text-gray-500 mb-3">Permitir valoraciones de estudiantes en las clases</p>
-              <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="block text-sm font-medium text-gray-900">
+                  Habilitar feedback
+                </label>
+                <p className="text-xs text-gray-500">Permitir valoraciones de estudiantes en las clases</p>
+              </div>
+              <div className="flex items-center gap-3 ml-4 shrink-0">
                 <button
                   onClick={() => handleSettingChange('feedbackEnabled', formData.feedbackEnabled ? 0 : 1)}
                   className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors cursor-pointer ${
@@ -709,12 +717,14 @@ export default function ProfilePage() {
             </div>
 
             {/* Require Grading */}
-            <div className="lg:col-span-1">
-              <label className="block text-sm font-medium text-gray-900 mb-2">
-                Calificación obligatoria
-              </label>
-              <p className="text-xs text-gray-500 mb-3">Requiere que los profesores califiquen los ejercicios</p>
-              <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="block text-sm font-medium text-gray-900">
+                  Calificación obligatoria
+                </label>
+                <p className="text-xs text-gray-500">Requiere que los profesores califiquen los ejercicios</p>
+              </div>
+              <div className="flex items-center gap-3 ml-4 shrink-0">
                 <button
                   onClick={() => handleSettingChange('requireGrading', formData.requireGrading ? 0 : 1)}
                   className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors cursor-pointer ${
@@ -734,37 +744,45 @@ export default function ProfilePage() {
             </div>
 
             {/* Watch Time Multiplier */}
-            <div className="lg:col-span-1">
-              <label className="block text-sm font-medium text-gray-900 mb-2">
-                Límite de visualización
-              </label>
-              <p className="text-xs text-gray-500 mb-3">Veces que puede ver el contenido</p>
-              <select
-                value={formData.defaultMaxWatchTimeMultiplier}
-                onChange={(e) => handleSettingChange('defaultMaxWatchTimeMultiplier', parseFloat(e.target.value))}
-                className="block w-full pl-3 pr-10 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all text-sm bg-white appearance-none bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNNSA3LjVMMTAgMTIuNUwxNSA3LjUiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPg==')] bg-no-repeat bg-[position:right_0.75rem_center]"
-              >
-                {MULTIPLIER_OPTIONS.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="block text-sm font-medium text-gray-900">
+                  Límite de visualización
+                </label>
+                <p className="text-xs text-gray-500">Veces que puede ver el contenido</p>
+              </div>
+              <div className="ml-4 shrink-0 w-32">
+                <select
+                  value={formData.defaultMaxWatchTimeMultiplier}
+                  onChange={(e) => handleSettingChange('defaultMaxWatchTimeMultiplier', parseFloat(e.target.value))}
+                  className="block w-full pl-3 pr-8 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all text-sm bg-white appearance-none bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNNSA3LjVMMTAgMTIuNUwxNSA3LjUiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPg==')] bg-no-repeat bg-[position:right_0.5rem_center]"
+                >
+                  {MULTIPLIER_OPTIONS.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {/* Watermark Interval */}
-            <div className="lg:col-span-1">
-              <label className="block text-sm font-medium text-gray-900 mb-2">
-                Marca de agua
-              </label>
-              <p className="text-xs text-gray-500 mb-3">Frecuencia de aparición</p>
-              <select
-                value={formData.defaultWatermarkIntervalMins}
-                onChange={(e) => handleSettingChange('defaultWatermarkIntervalMins', parseInt(e.target.value))}
-                className="block w-full pl-3 pr-10 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all text-sm bg-white appearance-none bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNNSA3LjVMMTAgMTIuNUwxNSA3LjUiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPg==')] bg-no-repeat bg-[position:right_0.75rem_center]"
-              >
-                {WATERMARK_OPTIONS.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="block text-sm font-medium text-gray-900">
+                  Marca de agua
+                </label>
+                <p className="text-xs text-gray-500">Frecuencia de aparición</p>
+              </div>
+              <div className="ml-4 shrink-0 w-32">
+                <select
+                  value={formData.defaultWatermarkIntervalMins}
+                  onChange={(e) => handleSettingChange('defaultWatermarkIntervalMins', parseInt(e.target.value))}
+                  className="block w-full pl-3 pr-8 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all text-sm bg-white appearance-none bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNNSA3LjVMMTAgMTIuNUwxNSA3LjUiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPg==')] bg-no-repeat bg-[position:right_0.5rem_center]"
+                >
+                  {WATERMARK_OPTIONS.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
         </div>

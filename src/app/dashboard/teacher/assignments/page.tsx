@@ -685,6 +685,7 @@ export default function TeacherAssignments() {
                   {requireGrading && <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha límite</th>}
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Entregas</th>
                   {requireGrading && <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Calificadas</th>}
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Solucionario</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
                 </tr>
               </thead>
@@ -746,6 +747,34 @@ export default function TeacherAssignments() {
                     )}
                     <td className="px-6 py-4 whitespace-nowrap text-sm">{assignment.submissionCount}</td>
                     {requireGrading && <td className="px-6 py-4 whitespace-nowrap text-sm">{assignment.gradedCount} / {assignment.submissionCount}</td>}
+                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm">
+                      {assignment.solutionUploadId ? (
+                        <button
+                          onClick={() => handleRemoveSolution(assignment.id)}
+                          className="inline-flex items-center gap-1 px-2 py-1 text-green-700 bg-green-50 border border-green-200 rounded-md hover:bg-green-100 transition-colors text-xs font-medium"
+                          title="Solucionario subido (clic para eliminar)">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Subido
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => { solutionAssignmentRef.current = assignment.id; solutionFileRef.current?.click(); }}
+                          disabled={uploadingSolutionId === assignment.id}
+                          className="inline-flex items-center gap-1 px-2 py-1 text-gray-500 bg-gray-50 border border-gray-200 rounded-md hover:bg-gray-100 hover:text-brand-600 transition-colors text-xs font-medium disabled:opacity-50"
+                          title="Subir solucionario">
+                          {uploadingSolutionId === assignment.id ? (
+                            <div className="w-3.5 h-3.5 border-2 border-brand-600 border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                            </svg>
+                          )}
+                          Subir
+                        </button>
+                      )}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                       <div className="flex items-center justify-end gap-1">
                         <button onClick={() => openSubmissions(assignment)}
@@ -762,30 +791,6 @@ export default function TeacherAssignments() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                           </svg>
                         </button>
-                        {assignment.solutionUploadId ? (
-                          <button
-                            onClick={() => handleRemoveSolution(assignment.id)}
-                            className="p-1.5 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
-                            title="Solucionario subido (clic para eliminar)">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => { solutionAssignmentRef.current = assignment.id; solutionFileRef.current?.click(); }}
-                            disabled={uploadingSolutionId === assignment.id}
-                            className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
-                            title="Subir solucionario">
-                            {uploadingSolutionId === assignment.id ? (
-                              <div className="w-4 h-4 border-2 border-brand-600 border-t-transparent rounded-full animate-spin"></div>
-                            ) : (
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                              </svg>
-                            )}
-                          </button>
-                        )}
                         <button
                           onClick={() => {
                             if (!assignment.id.startsWith('demo-')) {

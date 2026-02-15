@@ -582,29 +582,39 @@ assignments.patch('/submissions/:submissionId/grade', validateBody(gradeSubmissi
   }
 });
 
-// GET /assignments/:id/submissions/download - Get all submissions for bulk download (teachers only)
+// GET /assignments/:id/submissions/download - Get all submissions for bulk download (teachers/academy/admin)
 assignments.get('/:id/submissions/download', async (c) => {
   try {
     const session = await requireAuth(c);
 
-    if (session.role !== 'TEACHER') {
-      return c.json(errorResponse('Only teachers can download submissions'), 403);
+    if (!['TEACHER', 'ACADEMY', 'ADMIN'].includes(session.role)) {
+      return c.json(errorResponse('Only teachers, academy owners and admins can download submissions'), 403);
     }
 
     const assignmentId = c.req.param('id');
     const onlyNew = c.req.query('onlyNew') === 'true';
 
-    // Verify assignment exists and teacher has access
+    // Verify assignment exists and user has access
     const assignment = await c.env.DB.prepare(`
-      SELECT id, teacherId, title FROM Assignment WHERE id = ?
+      SELECT a.id, a.teacherId, a.title, a.classId, c.academyId
+      FROM Assignment a
+      JOIN Class c ON a.classId = c.id
+      WHERE a.id = ?
     `).bind(assignmentId).first();
 
     if (!assignment) {
       return c.json(errorResponse('Assignment not found'), 404);
     }
 
-    if (assignment.teacherId !== session.id) {
+    // Check permission based on role
+    if (session.role === 'TEACHER' && assignment.teacherId !== session.id) {
       return c.json(errorResponse('You do not have permission'), 403);
+    }
+    if (session.role === 'ACADEMY') {
+      const academy = await c.env.DB.prepare('SELECT id FROM Academy WHERE ownerId = ?').bind(session.id).first();
+      if (!academy || academy.id !== assignment.academyId) {
+        return c.json(errorResponse('You do not have permission'), 403);
+      }
     }
 
     // Get submissions

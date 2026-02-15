@@ -166,13 +166,8 @@ export default function TeacherClasses() {
                   <div className="flex items-start justify-between">
                     {/* Left side: all content */}
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
+                      <div className="flex items-center gap-3 mb-1">
                         <h3 className="text-xl font-bold text-gray-900 group-hover:text-brand-600 transition-colors">{cls.name}</h3>
-                        {(cls.university || cls.carrera) && (
-                          <span className="text-base text-gray-500 font-medium">
-                            {[cls.university, cls.carrera].filter(Boolean).join(' · ')}
-                          </span>
-                        )}
                         {cls.whatsappGroupLink && (
                           <a
                             href={cls.whatsappGroupLink}

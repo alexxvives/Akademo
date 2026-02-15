@@ -499,13 +499,6 @@ export function ClassesPage({ role }: ClassesPageProps) {
                       <h3 className="text-xl font-bold text-gray-900">
                         {cls.name}
                       </h3>
-                      {(cls.university || cls.carrera) && (
-                        <span className="text-xl text-gray-500 font-medium">
-                          {cls.carrera && cls.university
-                            ? `${cls.carrera} (${cls.university})`
-                            : cls.carrera || cls.university}
-                        </span>
-                      )}
                       {/* WhatsApp link */}
                       {cls.whatsappGroupLink && (
                         <a
