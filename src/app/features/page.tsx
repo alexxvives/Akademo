@@ -11,9 +11,8 @@ const t = {
     nav: { features: 'Características', pricing: 'Precios', login: 'Iniciar Sesión', cta: 'Empieza Gratis' },
     hero: {
       title1: 'Protege tu academia.',
-      title2: 'Digitaliza tu contenido',
-      title3: 'y mantén cada acceso bajo control.',
-      subtitle: 'Tu departamento de gestión académica que decide, protege y optimiza. Previene la piratería antes de que ocurra. Gestiona toda tu academia en minutos.',
+      title2: 'Retoma el control de tu contenido.',
+      subtitle: '',
       cta: 'Solicita una demo',
       perfectFor: 'Perfecto para:',
       audiences: [
@@ -125,9 +124,8 @@ const t = {
     nav: { features: 'Features', pricing: 'Pricing', login: 'Login', cta: 'Start Free' },
     hero: {
       title1: 'Protect your academy.',
-      title2: 'Digitize your content',
-      title3: 'and keep every access under control.',
-      subtitle: 'Your academy management department that decides, protects and optimizes. Prevent piracy before it happens. Manage your entire academy in minutes.',
+      title2: 'Take back control of your content.',
+      subtitle: '',
       cta: 'Request a demo',
       perfectFor: 'Perfect for:',
       audiences: [
@@ -309,16 +307,11 @@ export default function FeaturesPage() {
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
             {/* Left: Copy */}
             <div>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-6">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-[1.1] mb-8">
                 <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">{tr.hero.title1}</span>
                 <br />
                 {tr.hero.title2}
-                <br />
-                {tr.hero.title3}
               </h1>
-              <p className="text-base sm:text-lg text-zinc-400 mb-8 leading-relaxed max-w-lg">
-                {tr.hero.subtitle}
-              </p>
               <div className="flex flex-col sm:flex-row gap-3 mb-10">
                 <Link href="/?modal=register" className="px-8 py-3.5 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-medium rounded-lg hover:from-emerald-400 hover:to-cyan-400 transition-all text-sm sm:text-base text-center shadow-lg shadow-emerald-500/25">
                   {tr.hero.cta}
@@ -340,8 +333,10 @@ export default function FeaturesPage() {
 
             {/* Right: Dashboard screenshot with floating elements */}
             <div className="relative">
+              {/* Gradient glow behind image */}
+              <div className="absolute -inset-4 bg-gradient-to-r from-emerald-500/20 via-cyan-500/15 to-emerald-500/20 rounded-2xl blur-2xl opacity-60" />
               {/* Main dashboard image */}
-              <div className="relative rounded-xl overflow-hidden border border-zinc-800 shadow-2xl shadow-emerald-900/10">
+              <div className="relative rounded-xl overflow-hidden border border-zinc-800 shadow-2xl shadow-emerald-900/20">
                 <Image
                   src="/demo.png"
                   alt="AKADEMO Dashboard"
@@ -362,7 +357,7 @@ export default function FeaturesPage() {
               <div className="absolute -top-4 -left-4 sm:-top-6 sm:-left-6 px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl backdrop-blur-sm">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                    <span className="text-sm">🛡️</span>
+                    <svg className="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
                   </div>
                   <div>
                     <div className="text-xs text-zinc-500">{lang === 'es' ? 'Protección' : 'Protection'}</div>
@@ -375,7 +370,7 @@ export default function FeaturesPage() {
               <div className="absolute -bottom-4 -right-4 sm:-bottom-6 sm:-right-6 px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl backdrop-blur-sm">
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                    <span className="text-sm">📊</span>
+                    <svg className="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>
                   </div>
                   <div>
                     <div className="text-xs text-zinc-500">{lang === 'es' ? 'Dashboard' : 'Dashboard'}</div>
@@ -397,7 +392,7 @@ export default function FeaturesPage() {
           </div>
           {/* Title */}
           <div className="text-center mb-6">
-            <h2 className="text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight">
+            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
               {tr.problem.title1}
               <span className="bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent"> {tr.problem.titleHighlight} </span>
               {tr.problem.title2}
@@ -412,12 +407,12 @@ export default function FeaturesPage() {
           <div className="grid sm:grid-cols-3 gap-6 mb-14">
             {tr.problem.stats.map((stat, i) => {
               const cardColors = [
-                { valueCls: 'text-red-400', iconBg: 'bg-yellow-500/15', iconColor: 'text-yellow-400', icon: 'dollar' },
-                { valueCls: 'text-yellow-400', iconBg: 'bg-green-500/15', iconColor: 'text-green-400', icon: 'clock' },
+                { valueCls: 'text-red-400', iconBg: 'bg-red-500/15', iconColor: 'text-red-400', icon: 'dollar' },
+                { valueCls: 'text-yellow-400', iconBg: 'bg-yellow-500/15', iconColor: 'text-yellow-400', icon: 'clock' },
                 { valueCls: 'text-purple-400', iconBg: 'bg-purple-500/15', iconColor: 'text-purple-400', icon: 'brain' },
               ][i];
               return (
-                <div key={i} className="relative p-8 rounded-2xl bg-zinc-900/50 border border-zinc-800/80 hover:border-zinc-700/80 transition-all group">
+                <div key={i} className="relative p-8 rounded-2xl bg-zinc-900 border border-zinc-800 hover:border-zinc-700 transition-all group">
                   {/* Icon top-left */}
                   <div className={`w-10 h-10 rounded-xl ${cardColors.iconBg} flex items-center justify-center mb-6`}>
                     {cardColors.icon === 'dollar' && <DollarIcon className={`w-5 h-5 ${cardColors.iconColor}`} />}
@@ -442,7 +437,7 @@ export default function FeaturesPage() {
           <div className="flex flex-col items-center gap-4">
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               {tr.problem.painPoints.map((point, i) => (
-                <div key={i} className="flex items-center gap-2 px-4 py-2 bg-zinc-900/50 border border-zinc-800/80 rounded-full">
+                <div key={i} className="flex items-center gap-2 px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-full">
                   <TrendDown className="w-4 h-4 text-red-400" />
                   <span className="text-sm text-zinc-400">{point}</span>
                 </div>
@@ -461,7 +456,7 @@ export default function FeaturesPage() {
         <div className="relative max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <span className="inline-block px-3 py-1 text-zinc-500 text-xs font-semibold tracking-[0.2em] uppercase mb-6">{tr.features.label}</span>
-            <h2 className="text-3xl sm:text-5xl font-bold tracking-tight mb-4">
+            <h2 className="text-2xl sm:text-4xl font-bold tracking-tight mb-4">
               {tr.features.title1} <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">{tr.features.titleHighlight}</span>
             </h2>
             <p className="text-zinc-400 text-base sm:text-lg max-w-2xl mx-auto">{tr.features.subtitle}</p>
@@ -483,7 +478,7 @@ export default function FeaturesPage() {
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <span className="inline-block px-3 py-1 text-zinc-500 text-xs font-semibold tracking-[0.2em] uppercase mb-6">{tr.comparison.label}</span>
-            <h2 className="text-3xl sm:text-5xl font-bold tracking-tight mb-4">
+            <h2 className="text-2xl sm:text-4xl font-bold tracking-tight mb-4">
               {tr.comparison.title1} <span className="text-red-400">{tr.comparison.titleBefore}</span> {tr.comparison.titleVs} <span className="text-emerald-400">{tr.comparison.titleAfter}</span> {tr.comparison.title2}
             </h2>
             <p className="text-zinc-400 text-base sm:text-lg max-w-2xl mx-auto">{tr.comparison.subtitle}</p>
@@ -538,7 +533,7 @@ export default function FeaturesPage() {
         <div className="relative max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <span className="inline-block px-3 py-1 text-zinc-500 text-xs font-semibold tracking-[0.2em] uppercase mb-6">{tr.product.label}</span>
-            <h2 className="text-3xl sm:text-5xl font-bold tracking-tight mb-4">
+            <h2 className="text-2xl sm:text-4xl font-bold tracking-tight mb-4">
               {tr.product.title1} <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">{tr.product.titleHighlight}</span>
             </h2>
             <p className="text-zinc-400 text-base sm:text-lg max-w-2xl mx-auto">{tr.product.subtitle}</p>
@@ -595,7 +590,7 @@ export default function FeaturesPage() {
       <section className="py-20 sm:py-28 px-4 sm:px-6">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">{tr.faq.title}</h2>
+            <h2 className="text-2xl sm:text-4xl font-bold tracking-tight mb-4">{tr.faq.title}</h2>
             <p className="text-zinc-400 text-sm sm:text-base">{tr.faq.subtitle}</p>
           </div>
           <div className="space-y-2">
@@ -630,7 +625,7 @@ export default function FeaturesPage() {
       <section className="py-20 sm:py-28 px-4 sm:px-6 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-emerald-900/15 via-transparent to-transparent" />
         <div className="relative max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl sm:text-5xl font-bold tracking-tight mb-4">
+          <h2 className="text-2xl sm:text-4xl font-bold tracking-tight mb-4">
             {tr.cta.title1} <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">{tr.cta.titleHighlight}</span>{tr.cta.title2}
           </h2>
           <p className="text-zinc-400 text-base sm:text-lg mb-8 max-w-xl mx-auto">{tr.cta.subtitle}</p>

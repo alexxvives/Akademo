@@ -15,7 +15,7 @@ import { uploadToBunny } from '@/lib/bunny-upload';
 import { formatDuration } from '@/lib/formatters';
 
 // Import shared components
-import { ClassHeader, PendingEnrollments, TopicsLessonsList, StudentsList } from '@/components/class';
+import { ClassHeader, PendingEnrollments, TopicsLessonsList } from '@/components/class';
 
 interface Topic {
   id: string;
@@ -120,6 +120,7 @@ interface StreamRecording {
   classSlug?: string;
   status?: string;
   recordingId?: string;
+  validRecordingId?: string;
 }
 
 interface AnalyticsData {
@@ -361,7 +362,8 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
           // Check both classId and classSlug
           const matchClass = stream.classId === classId || stream.classSlug === classId;
           const hasRecording = (stream.status === 'ended' || (stream.recordingId && stream.recordingId.length > 5));
-          return matchClass && hasRecording;
+          const notUsed = !stream.validRecordingId;
+          return matchClass && hasRecording && notUsed;
         });
         setAvailableStreamRecordings(recordingsForClass);
         return recordingsForClass; // Return the recordings for the useEffect
@@ -2355,7 +2357,8 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
 
             {/* Reschedule Modal */}
             {showRescheduleModal && reschedulingLesson && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <ModalPortal>
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4">
                 <div className="bg-white rounded-2xl max-w-md w-full p-6">
                   <h3 className="text-xl font-semibold text-gray-900 mb-4">Reprogramar Lección</h3>
 
@@ -2416,11 +2419,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
                   </form>
                 </div>
               </div>
-            )}
-
-            {/* Students List */}
-            {!selectedLesson && (
-              <StudentsList enrollments={classData.enrollments || []} />
+              </ModalPortal>
             )}
 
           </>
