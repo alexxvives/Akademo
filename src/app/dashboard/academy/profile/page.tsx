@@ -348,10 +348,16 @@ export default function ProfilePage() {
 
     setUploadingLogo(true);
     try {
+      // Derive a safe filename from email: academy1@gmail.com → academy1.png
+      const ownerEmail = academy.email || user?.email || '';
+      const username = ownerEmail.split('@')[0].replace(/[^a-zA-Z0-9_-]/g, '_') || academy.id;
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'png';
+      const safeFileName = `${username}.${ext}`;
+
       // Upload to R2
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('path', `academy-logos/${academy.id}/${file.name}`);
+      formData.append('path', `academy-logos/${academy.id}/${safeFileName}`);
 
       const uploadRes = await apiClient('/storage/upload', {
         method: 'POST',
@@ -1152,7 +1158,7 @@ export default function ProfilePage() {
                 <div className="flex items-start gap-4">
                   <div className="w-14 h-14 bg-white border border-gray-200 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0 overflow-hidden">
                     <Image
-                      src="/Stripe_logo.svg"
+                      src="/images/Stripe_logo.svg"
                       alt="Stripe"
                       width={56}
                       height={56}
