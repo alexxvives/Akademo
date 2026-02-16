@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -115,7 +115,7 @@ const t = {
     },
     footer: {
       tagline: 'Plataforma de protección y gestión para academias online que quieren proteger su contenido y crecer.',
-      rights: '© 2025 AKADEMO. Todos los derechos reservados.',
+      rights: '© 2026 AKADEMO. Todos los derechos reservados.',
       product: 'Producto', company: 'Compañía', legal: 'Legal',
       featuresLink: 'Características', pricingLink: 'Precios',
       contactLink: 'Contacto', privacyLink: 'Privacidad', termsLink: 'Términos',
@@ -229,7 +229,7 @@ const t = {
     },
     footer: {
       tagline: 'Protection and management platform for online academies that want to protect their content and grow.',
-      rights: '© 2025 AKADEMO. All rights reserved.',
+      rights: '© 2026 AKADEMO. All rights reserved.',
       product: 'Product', company: 'Company', legal: 'Legal',
       featuresLink: 'Features', pricingLink: 'Pricing',
       contactLink: 'Contact', privacyLink: 'Privacy', termsLink: 'Terms',
@@ -266,43 +266,39 @@ function BrainIcon({ className = '' }: { className?: string }) {
 export default function FeaturesPage() {
   const [lang, setLang] = useState<Lang>('es');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [isScrolled, setIsScrolled] = useState(false);
   const tr = t[lang];
-
-  useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 40);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   return (
     <div className="min-h-screen bg-[#121a2d] text-white antialiased">
-      {/* ─── NAVBAR ─── */}
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-[#121a2d]/90 backdrop-blur-xl border-b border-zinc-800/50' : ''}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <Image src="/logo/AKADEMO_logo_OTHER2.svg" alt="AKADEMO" width={140} height={36} className="h-7 sm:h-8 w-auto brightness-0 invert" />
-            <span className="text-lg font-bold tracking-tight font-[family-name:var(--font-montserrat)]">AKADEMO</span>
-          </Link>
-          <nav className="hidden md:flex items-center gap-8">
-            <Link href="/features" className="text-sm font-medium text-white">{tr.nav.features}</Link>
-            <Link href="/pricing" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">{tr.nav.pricing}</Link>
-          </nav>
-          <div className="flex items-center gap-3">
-            <Link href="/?modal=login" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:inline">{tr.nav.login}</Link>
-            <Link href="/?modal=register" className="px-4 py-2 bg-white text-zinc-900 text-sm font-medium rounded-lg hover:bg-zinc-200 transition-all">
-              {tr.nav.cta}
-            </Link>
+      {/* ─── NAVBAR (glass capsule — matches landing page) ─── */}
+      <header className="fixed top-0 left-0 right-0 z-50">
+        <div className="mt-4 mx-3 sm:mx-auto">
+          <div className="max-w-6xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-lg bg-white/10 border border-white/20">
+            <div className="flex items-center justify-between">
+              <Link href="/" className="flex items-center gap-2.5">
+                <Image src="/logo/AKADEMO_logo_OTHER2.svg" alt="AKADEMO" width={140} height={36} className="h-7 sm:h-8 w-auto brightness-0 invert" />
+                <span className="text-lg font-bold tracking-tight font-[family-name:var(--font-montserrat)]">AKADEMO</span>
+              </Link>
+              <nav className="hidden md:flex items-center gap-8">
+                <Link href="/features" className="text-sm font-medium text-white">{tr.nav.features}</Link>
+                <Link href="/pricing" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">{tr.nav.pricing}</Link>
+              </nav>
+              <div className="flex items-center gap-3">
+                <div className="flex gap-1">
+                  <button onClick={() => setLang('es')} className={`w-7 h-7 rounded-md flex items-center justify-center text-xs transition-all ${lang === 'es' ? 'bg-white/20 ring-1 ring-white/30' : 'bg-white/5 hover:bg-white/10'}`}>
+                    <Image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 900 600'%3E%3Cpath fill='%23c60b1e' d='M0 0h900v600H0z'/%3E%3Cpath fill='%23ffc400' d='M0 150h900v300H0z'/%3E%3C/svg%3E" alt="ES" width={16} height={16} unoptimized className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => setLang('en')} className={`w-7 h-7 rounded-md flex items-center justify-center text-xs transition-all ${lang === 'en' ? 'bg-white/20 ring-1 ring-white/30' : 'bg-white/5 hover:bg-white/10'}`}>
+                    <Image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30'%3E%3Cpath fill='%23012169' d='M0 0h60v30H0z'/%3E%3Cpath stroke='%23fff' stroke-width='6' d='M0 0l60 30m0-30L0 30'/%3E%3Cpath stroke='%23C8102E' stroke-width='4' d='M0 0l60 30m0-30L0 30'/%3E%3Cpath stroke='%23fff' stroke-width='10' d='M30 0v30M0 15h60'/%3E%3Cpath stroke='%23C8102E' stroke-width='6' d='M30 0v30M0 15h60'/%3E%3C/svg%3E" alt="EN" width={16} height={16} unoptimized className="w-4 h-4" />
+                  </button>
+                </div>
+                <Link href="/?modal=login" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:inline">{tr.nav.login}</Link>
+                <Link href="/?modal=register" className="px-4 py-2 bg-white text-zinc-900 text-sm font-medium rounded-lg hover:bg-zinc-200 transition-all">
+                  {tr.nav.cta}
+                </Link>
+              </div>
+            </div>
           </div>
-        </div>
-        {/* Lang switcher */}
-        <div className="fixed top-3 right-28 sm:right-36 z-50 flex gap-1">
-          <button onClick={() => setLang('es')} className={`w-7 h-7 rounded-md flex items-center justify-center text-xs transition-all ${lang === 'es' ? 'bg-white/20 ring-1 ring-white/30' : 'bg-white/5 hover:bg-white/10'}`}>
-            <Image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 900 600'%3E%3Cpath fill='%23c60b1e' d='M0 0h900v600H0z'/%3E%3Cpath fill='%23ffc400' d='M0 150h900v300H0z'/%3E%3C/svg%3E" alt="ES" width={16} height={16} unoptimized className="w-4 h-4" />
-          </button>
-          <button onClick={() => setLang('en')} className={`w-7 h-7 rounded-md flex items-center justify-center text-xs transition-all ${lang === 'en' ? 'bg-white/20 ring-1 ring-white/30' : 'bg-white/5 hover:bg-white/10'}`}>
-            <Image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30'%3E%3Cpath fill='%23012169' d='M0 0h60v30H0z'/%3E%3Cpath stroke='%23fff' stroke-width='6' d='M0 0l60 30m0-30L0 30'/%3E%3Cpath stroke='%23C8102E' stroke-width='4' d='M0 0l60 30m0-30L0 30'/%3E%3Cpath stroke='%23fff' stroke-width='10' d='M30 0v30M0 15h60'/%3E%3Cpath stroke='%23C8102E' stroke-width='6' d='M30 0v30M0 15h60'/%3E%3C/svg%3E" alt="EN" width={16} height={16} unoptimized className="w-4 h-4" />
-          </button>
         </div>
       </header>
 
@@ -352,6 +348,7 @@ export default function FeaturesPage() {
                   width={800}
                   height={500}
                   className="w-full h-auto"
+                  unoptimized
                   priority
                 />
                 {/* "Live" badge — like Growtio */}

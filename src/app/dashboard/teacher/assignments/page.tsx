@@ -749,15 +749,24 @@ export default function TeacherAssignments() {
                     {requireGrading && <td className="px-6 py-4 whitespace-nowrap text-sm">{assignment.gradedCount} / {assignment.submissionCount}</td>}
                     <td className="px-6 py-4 whitespace-nowrap text-center text-sm">
                       {assignment.solutionUploadId ? (
-                        <button
-                          onClick={() => handleRemoveSolution(assignment.id)}
-                          className="inline-flex items-center gap-1 px-2 py-1 text-green-700 bg-green-50 border border-green-200 rounded-md hover:bg-green-100 transition-colors text-xs font-medium"
-                          title="Solucionario subido (clic para eliminar)">
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          Subido
-                        </button>
+                        <div className="inline-flex items-center gap-1">
+                          <button
+                            onClick={() => window.open(`/api/storage/serve/${assignment.solutionUploadId}`, '_blank')}
+                            className="p-1.5 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+                            title="Ver solucionario">
+                            <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleRemoveSolution(assignment.id)}
+                            className="p-1 text-gray-400 hover:text-red-500 rounded transition-colors"
+                            title="Eliminar solucionario">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
                       ) : (
                         <button
                           onClick={() => { solutionAssignmentRef.current = assignment.id; solutionFileRef.current?.click(); }}

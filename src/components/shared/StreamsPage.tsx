@@ -384,7 +384,7 @@ export function StreamsPage({ role }: StreamsPageProps) {
                     Grabación
                   </th>
                   <th className="text-left py-3 px-2 sm:px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Clase
+                    Acciones
                   </th>
                 </tr>
               </thead>
@@ -414,28 +414,9 @@ export function StreamsPage({ role }: StreamsPageProps) {
                 ) : (
                   filteredStreams.map((stream) => (
                     <tr key={stream.id} className="hover:bg-gray-50/50 transition-colors">
-                      {/* Title + Delete + Edit */}
+                      {/* Title */}
                       <td className="py-3 px-2 sm:px-4">
                         <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleDeleteStream(stream.id, stream.title)}
-                            disabled={deletingStreamId === stream.id}
-                            className="text-red-600 hover:text-red-700 transition-colors disabled:opacity-50 flex-shrink-0"
-                            title="Eliminar stream"
-                          >
-                            {deletingStreamId === stream.id ? (
-                              <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
-                            ) : (
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                />
-                              </svg>
-                            )}
-                          </button>
                           {stream.status === 'active' && (
                             <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
                           )}
@@ -456,23 +437,7 @@ export function StreamsPage({ role }: StreamsPageProps) {
                               className="px-2 py-1 border border-blue-500 rounded text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                           ) : (
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-medium text-gray-900">{stream.title}</span>
-                              <button
-                                onClick={() => handleEditTitle(stream.id, stream.title)}
-                                className="text-gray-400 hover:text-gray-600 transition-colors"
-                                title="Editar título"
-                              >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                                  />
-                                </svg>
-                              </button>
-                            </div>
+                            <span className="text-sm font-medium text-gray-900">{stream.title}</span>
                           )}
                         </div>
                       </td>
@@ -537,35 +502,54 @@ export function StreamsPage({ role }: StreamsPageProps) {
                           <span className="text-gray-400 text-sm">—</span>
                         )}
                       </td>
+                      {/* Acciones */}
                       <td className="py-3 px-2 sm:px-4">
-                        {stream.validRecordingId ? (
-                          <Link
-                            href={`${dashboardBase}/class/${stream.classSlug || stream.classId}?lesson=${stream.validRecordingId}`}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 text-blue-600 hover:text-blue-700 border-2 border-blue-200 hover:border-blue-300 rounded-lg text-xs font-semibold transition-all"
+                        <div className="flex items-center gap-1.5">
+                          {stream.validRecordingId ? (
+                            <Link
+                              href={`${dashboardBase}/class/${stream.classSlug || stream.classId}?lesson=${stream.validRecordingId}`}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 text-blue-600 hover:text-blue-700 border-2 border-blue-200 hover:border-blue-300 rounded-lg text-xs font-semibold transition-all"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                              Ver clase
+                            </Link>
+                          ) : stream.recordingId ? (
+                            <button
+                              onClick={() =>
+                                (window.location.href = `${dashboardBase}/class/${stream.classId}?${role === 'ADMIN' ? `action=create-lesson&recordingId=${stream.recordingId}&streamTitle=${encodeURIComponent(stream.title)}` : `createFromStream=${stream.id}`}`)
+                              }
+                              className="inline-flex items-center gap-1 px-3 py-1.5 text-blue-600 hover:text-blue-700 border-2 border-blue-200 hover:border-blue-300 rounded-lg text-xs font-semibold transition-all"
+                            >
+                              Crear clase
+                            </button>
+                          ) : null}
+                          <button
+                            onClick={() => handleEditTitle(stream.id, stream.title)}
+                            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                            title="Editar título"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                              />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                             </svg>
-                            Ver clase
-                          </Link>
-                        ) : stream.recordingId ? (
-                          <button
-                            onClick={() =>
-                              (window.location.href = `${dashboardBase}/class/${stream.classId}?${role === 'ADMIN' ? `action=create-lesson&recordingId=${stream.recordingId}&streamTitle=${encodeURIComponent(stream.title)}` : `createFromStream=${stream.id}`}`)
-                            }
-                            className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                          >
-                            Crear clase
                           </button>
-                        ) : (
-                          <span className="text-gray-400 text-sm">—</span>
-                        )}
+                          <button
+                            onClick={() => handleDeleteStream(stream.id, stream.title)}
+                            disabled={deletingStreamId === stream.id}
+                            className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                            title="Eliminar stream"
+                          >
+                            {deletingStreamId === stream.id ? (
+                              <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                            ) : (
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            )}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
