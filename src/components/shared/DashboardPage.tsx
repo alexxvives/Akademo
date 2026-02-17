@@ -55,6 +55,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
   const [academyInfo, setAcademyInfo] = useState<{ id: string; name: string; paymentStatus?: string } | null>(null);
   const [paymentStatus, setPaymentStatus] = useState('NOT PAID');
   const [allCompletedPayments, setAllCompletedPayments] = useState<PaymentHistoryItem[]>([]);
+  const [studentPaymentStatus, setStudentPaymentStatus] = useState<{ alDia: number; atrasados: number; total: number } | null>(null);
 
   // Admin-only state
   const [academies, setAcademies] = useState<Academy[]>([]);
@@ -87,14 +88,14 @@ export function DashboardPage({ role }: DashboardPageProps) {
 
   // ─── Academy data loading ───
   const loadAcademyData = async () => {
-    const [academiesRes, classesRes, pendingRes, ratingsRes, rejectedRes, streamsRes, progressRes, paymentsRes] = await Promise.all([
+    const [academiesRes, classesRes, pendingRes, ratingsRes, rejectedRes, streamsRes, progressRes, paymentsRes, paymentStatusRes] = await Promise.all([
       apiClient('/academies'), apiClient('/academies/classes'), apiClient('/enrollments/pending'),
       apiClient('/ratings'), apiClient('/enrollments/rejected'), apiClient('/live/history'),
-      apiClient('/students/progress'), apiClient('/payments/history'),
+      apiClient('/students/progress'), apiClient('/payments/history'), apiClient('/enrollments/payment-status'),
     ]);
-    const [academiesResult, classesResult, pendingResult, ratingsResult, rejectedResult, streamsResult, progressResult, paymentsResult] = await Promise.all([
+    const [academiesResult, classesResult, pendingResult, ratingsResult, rejectedResult, streamsResult, progressResult, paymentsResult, paymentStatusResult] = await Promise.all([
       academiesRes.json(), classesRes.json(), pendingRes.json(), ratingsRes.json(),
-      rejectedRes.json(), streamsRes.json(), progressRes.json(), paymentsRes.json(),
+      rejectedRes.json(), streamsRes.json(), progressRes.json(), paymentsRes.json(), paymentStatusRes.json(),
     ]);
 
     if (academiesResult.success && Array.isArray(academiesResult.data) && academiesResult.data.length > 0) {
@@ -111,6 +112,9 @@ export function DashboardPage({ role }: DashboardPageProps) {
     if (paymentsResult.success && Array.isArray(paymentsResult.data)) {
       const completed = (paymentsResult.data as PaymentHistoryItem[]).filter(p => p.paymentStatus === 'COMPLETED' || p.paymentStatus === 'PAID');
       setAllCompletedPayments(completed);
+    }
+    if (paymentStatusResult.success && paymentStatusResult.data) {
+      setStudentPaymentStatus(paymentStatusResult.data as { alDia: number; atrasados: number; total: number });
     }
     if (streamsResult.success && Array.isArray(streamsResult.data)) setAllStreams(streamsResult.data);
     if (progressResult.success && Array.isArray(progressResult.data)) {
@@ -393,6 +397,19 @@ export function DashboardPage({ role }: DashboardPageProps) {
               <AnimatedNumber value={filteredStudents.length} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1" />
               <div className="text-xs text-gray-500">Matrículas</div>
             </div>
+            {studentPaymentStatus && (
+              <div className="flex-1 flex items-center justify-between gap-2 p-3 bg-gray-50 rounded-lg">
+                <div className="flex-1 flex flex-col items-center">
+                  <AnimatedNumber value={studentPaymentStatus.alDia} className="text-2xl font-bold text-green-600 mb-0.5" />
+                  <div className="text-xs text-gray-500">al día</div>
+                </div>
+                <div className="w-px h-8 bg-gray-200" />
+                <div className="flex-1 flex flex-col items-center">
+                  <AnimatedNumber value={studentPaymentStatus.atrasados} className="text-2xl font-bold text-red-600 mb-0.5" />
+                  <div className="text-xs text-gray-500">atrasados</div>
+                </div>
+              </div>
+            )}
           </div>
           <div className="flex flex-col gap-3">
             <div className="flex-1 flex flex-col items-center justify-center p-3 bg-green-50 rounded-lg">

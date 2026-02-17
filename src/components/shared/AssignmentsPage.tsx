@@ -322,6 +322,23 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
     }
   };
 
+  const handleRemoveExerciseFiles = async (assignmentId: string) => {
+    if (!confirm('¿Eliminar todos los archivos de este ejercicio?')) return;
+    try {
+      const res = await apiClient(`/assignments/${assignmentId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ attachmentIds: '' }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setAssignments(prev => prev.map(a => a.id === assignmentId ? { ...a, attachmentIds: '', uploadId: undefined } : a));
+      }
+    } catch (error) {
+      console.error('Failed to remove exercise files:', error);
+    }
+  };
+
   const openAssignmentFiles = async (assignment: Assignment) => {
     let uploadIds: string[] = [];
     if (assignment.attachmentIds && assignment.attachmentIds.trim()) {
@@ -723,15 +740,27 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
                 {(() => {
                   const fileCount = getFileCount(assignment);
                   return fileCount > 0 ? (
-                    <button onClick={(e) => { e.stopPropagation(); openAssignmentFiles(assignment); }}
-                      className="flex items-center gap-2 text-sm text-brand-600 hover:text-brand-700 transition-colors group">
-                      <div className="w-8 h-10 flex items-center justify-center bg-red-50 rounded border border-red-200 group-hover:bg-red-100 transition-colors">
-                        <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                      <span className="text-xs font-medium">{fileCount} archivo{fileCount > 1 ? 's' : ''}</span>
-                    </button>
+                    <div className="flex items-center justify-center gap-2">
+                      <button onClick={(e) => { e.stopPropagation(); openAssignmentFiles(assignment); }}
+                        className="flex items-center gap-2 text-sm text-brand-600 hover:text-brand-700 transition-colors group">
+                        <div className="relative">
+                          <div className="w-8 h-10 flex items-center justify-center bg-red-50 rounded border border-red-200 group-hover:bg-red-100 transition-colors">
+                            <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleRemoveExerciseFiles(assignment.id); }}
+                            className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center bg-red-500 hover:bg-red-600 rounded-full text-white transition-colors"
+                          >
+                            <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                        <span className="text-xs font-medium">{fileCount} archivo{fileCount > 1 ? 's' : ''}</span>
+                      </button>
+                    </div>
                   ) : (
                     <span className="text-xs text-gray-400">Sin archivo</span>
                   );
@@ -766,24 +795,27 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
               {canManage && (
                 <td className="px-6 py-4 whitespace-nowrap text-center text-sm">
                   {assignment.solutionUploadId ? (
-                    <div className="inline-flex items-center gap-2">
+                    <div className="flex items-center justify-center gap-2">
                       <button
                         onClick={() => window.open(`/api/documents/assignment/${assignment.solutionUploadId}`, '_blank')}
-                        className="flex items-center gap-1.5 text-sm text-green-600 hover:text-green-700 transition-colors group"
+                        className="flex items-center gap-2 text-sm text-green-600 hover:text-green-700 transition-colors group"
                         title="Ver solucionario">
-                        <div className="w-7 h-9 flex items-center justify-center bg-green-50 rounded border border-green-200 group-hover:bg-green-100 transition-colors">
-                          <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                          </svg>
+                        <div className="relative">
+                          <div className="w-7 h-9 flex items-center justify-center bg-green-50 rounded border border-green-200 group-hover:bg-green-100 transition-colors">
+                            <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleRemoveSolution(assignment.id); }}
+                            className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center bg-red-500 hover:bg-red-600 rounded-full text-white transition-colors"
+                            title="Eliminar solucionario">
+                            <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
                         </div>
-                      </button>
-                      <button
-                        onClick={() => handleRemoveSolution(assignment.id)}
-                        className="p-1 text-gray-400 hover:text-red-500 rounded transition-colors"
-                        title="Eliminar solucionario">
-                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                        <span className="text-xs font-medium">1 archivo</span>
                       </button>
                     </div>
                   ) : (

@@ -141,7 +141,7 @@ export function ClassSearchDropdown({
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-[32rem] overflow-y-auto">
           {/* "All" option */}
           {allLabel && (
             <button
