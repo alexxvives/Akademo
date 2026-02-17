@@ -23,8 +23,16 @@ export async function GET(
     const response = await fetch(storageUrl);
     
     if (!response.ok) {
-      const error = await response.json();
-      return NextResponse.json(error, { status: response.status });
+      // Try to parse JSON error, but handle non-JSON responses gracefully
+      try {
+        const error = await response.json();
+        return NextResponse.json(error, { status: response.status });
+      } catch {
+        return NextResponse.json(
+          { success: false, error: `Storage returned ${response.status}` },
+          { status: response.status }
+        );
+      }
     }
     
     // Stream the file response

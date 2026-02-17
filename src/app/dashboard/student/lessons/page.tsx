@@ -89,7 +89,7 @@ export default function StudentLessons() {
             {lessons.map((lesson) => (
               <Link
                 key={lesson.id}
-                href={`/dashboard/student/class/${lesson.classSlug || lesson.classId}`}
+                href={`/dashboard/student/subject/${lesson.classSlug || lesson.classId}`}
                 className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-shadow hover:border-brand-300"
               >
                 <div className="flex items-start justify-between mb-3">

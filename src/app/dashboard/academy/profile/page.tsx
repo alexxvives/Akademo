@@ -524,6 +524,7 @@ export default function ProfilePage() {
                         width={64}
                         height={64}
                         className="w-full h-full object-contain"
+                        unoptimized
                       />
                     </div>
                   ) : (
@@ -1115,7 +1116,7 @@ export default function ProfilePage() {
             <div className="border-2 border-gray-900 rounded-lg p-4 mt-6">
               <p className="text-sm text-gray-900">
                 Para asignar una cuenta de Zoom a una clase, ve a la{' '}
-                <a href="/dashboard/academy/classes" className="font-bold hover:text-gray-700">
+                <a href="/dashboard/academy/subjects" className="font-bold hover:text-gray-700">
                   página de clases
                 </a>
                 {' '}y edita la clase correspondiente.

@@ -237,7 +237,7 @@ export default function AcademyManagePage() {
               {academy.classes.map((classItem) => (
                 <Link
                   key={classItem.id}
-                  href={`/dashboard/teacher/class/${classItem.slug || classItem.id}`}
+                  href={`/dashboard/teacher/subject/${classItem.slug || classItem.id}`}
                   className="group bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-sm transition-all p-5"
                 >
                   <div className="flex items-start justify-between mb-2">

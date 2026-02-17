@@ -18,7 +18,7 @@ export interface ClassHeaderProps {
     description?: string | null;
     enrollments: Array<{ status: string }>;
   };
-  /** URL for back navigation (e.g., /dashboard/academy/classes) */
+  /** URL for back navigation (e.g., /dashboard/academy/subjects) */
   backLink: string;
   creatingStream: boolean;
   showPendingRequests: boolean;

@@ -152,7 +152,7 @@ export default function AcademyLessonsPage() {
             {filteredLessons.map((lesson) => (
               <Link
                 key={lesson.id}
-                href={`/dashboard/academy/class/${lesson.classSlug || lesson.classId}`}
+                href={`/dashboard/academy/subject/${lesson.classSlug || lesson.classId}`}
                 className="block bg-white rounded-xl border-2 border-gray-200 hover:border-blue-400 hover:shadow-lg transition-all p-5 group"
               >
                 <div className="flex items-start justify-between mb-3">

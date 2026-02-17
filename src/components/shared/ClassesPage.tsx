@@ -407,27 +407,29 @@ export function ClassesPage({ role }: ClassesPageProps) {
     <>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-semibold text-gray-900">{role === 'TEACHER' ? 'Mis Asignaturas' : 'Asignaturas'}</h1>
-            {role === 'ACADEMY' && (
-              <button
-                onClick={openCreateModal}
-                disabled={teachers.length === 0}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                title={teachers.length === 0 ? 'Debes tener al menos un profesor para crear asignaturas' : ''}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Nueva Asignatura
-              </button>
-            )}
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-semibold text-gray-900">{role === 'TEACHER' ? 'Mis Asignaturas' : 'Asignaturas'}</h1>
+              {role === 'ACADEMY' && (
+                <button
+                  onClick={openCreateModal}
+                  disabled={teachers.length === 0}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                  title={teachers.length === 0 ? 'Debes tener al menos un profesor para crear asignaturas' : ''}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Nueva Asignatura
+                </button>
+              )}
+            </div>
             {(role === 'ACADEMY' || role === 'TEACHER') && academyName && (
-              <p className="text-sm text-gray-500">{academyName}</p>
+              <p className="text-sm text-gray-500 mt-1">{academyName}</p>
             )}
             {role === 'ADMIN' && (
-              <p className="text-sm text-gray-500">AKADEMO PLATFORM</p>
+              <p className="text-sm text-gray-500 mt-1">AKADEMO PLATFORM</p>
             )}
           </div>
           <div className="flex items-center gap-3">
@@ -506,7 +508,7 @@ export function ClassesPage({ role }: ClassesPageProps) {
             {filteredClasses.map((cls) => (
               <Link
                 key={cls.id}
-                href={`${dashboardBase}/class/${cls.slug || cls.id}`}
+                href={`${dashboardBase}/subject/${cls.slug || cls.id}`}
                 className="block bg-white rounded-xl border-2 border-gray-200 hover:border-brand-400 hover:shadow-xl transition-all p-6 group cursor-pointer"
               >
                 <div className="flex items-start justify-between">

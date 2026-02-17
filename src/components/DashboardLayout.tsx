@@ -470,7 +470,7 @@ export default function DashboardLayout({
           },
           { 
             label: 'Asignaturas', 
-            href: '/dashboard/admin/classes', 
+            href: '/dashboard/admin/subjects', 
             iconType: 'book' as const,
           },
           { 
@@ -514,7 +514,7 @@ export default function DashboardLayout({
       case 'TEACHER':
         return [
           { label: 'Panel de Control', href: '/dashboard/teacher', iconType: 'chart' },
-          { label: 'Asignaturas', href: '/dashboard/teacher/classes', matchPaths: ['/dashboard/teacher/class'], iconType: 'book' },
+          { label: 'Asignaturas', href: '/dashboard/teacher/subjects', matchPaths: ['/dashboard/teacher/subject'], iconType: 'book' },
           ...(academy?.feedbackEnabled !== 0 ? [{ label: 'Valoraciones', href: '/dashboard/teacher/feedback', iconType: 'message' as const, badge: unreadValoracionesCount > 0 ? unreadValoracionesCount : undefined, badgeColor: 'bg-[#b0e788]' }] : []),
           { label: 'Streams', href: '/dashboard/teacher/streams', iconType: 'clap' },
           { label: 'Ejercicios', href: '/dashboard/teacher/assignments', iconType: 'fileText', badge: academy?.requireGrading !== 0 && ungradedAssignmentsCount > 0 ? ungradedAssignmentsCount : undefined, badgeColor: 'bg-[#b0e788]' },
@@ -523,13 +523,13 @@ export default function DashboardLayout({
         ];
       case 'STUDENT':
         return [
-          { label: 'Mis Asignaturas', href: '/dashboard/student/classes', matchPaths: ['/dashboard/student/class'], showPulse: activeStreams.length > 0, iconType: 'book' as const, badge: unpaidClassesCount > 0 ? unpaidClassesCount : undefined, badgeColor: 'bg-[#b0e788]' },
+          { label: 'Mis Asignaturas', href: '/dashboard/student/subjects', matchPaths: ['/dashboard/student/subject'], showPulse: activeStreams.length > 0, iconType: 'book' as const, badge: unpaidClassesCount > 0 ? unpaidClassesCount : undefined, badgeColor: 'bg-[#b0e788]' },
           { label: 'Ejercicios', href: '/dashboard/student/assignments', badge: academy?.requireGrading !== 0 && newGradesCount > 0 ? newGradesCount : undefined, badgeColor: 'bg-[#b0e788]', iconType: 'fileText' as const },
         ];
       case 'ACADEMY':
         const academyMenuItems: MenuItem[] = [
           { label: 'Panel de Control', href: '/dashboard/academy', iconType: 'chart' as const },
-          { label: 'Asignaturas', href: '/dashboard/academy/classes', matchPaths: ['/dashboard/academy/class'], iconType: 'book' as const },
+          { label: 'Asignaturas', href: '/dashboard/academy/subjects', matchPaths: ['/dashboard/academy/subject'], iconType: 'book' as const },
           ...(academy?.feedbackEnabled !== 0 ? [{ label: 'Valoraciones', href: '/dashboard/academy/feedback', iconType: 'message' as const, badge: unreadValoracionesCount > 0 ? unreadValoracionesCount : undefined, badgeColor: 'bg-[#b0e788]' }] : []),
           { label: 'Streams', href: '/dashboard/academy/streams', iconType: 'clap' as const },
           { label: 'Ejercicios', href: '/dashboard/academy/assignments', iconType: 'fileText' as const, badge: academy?.requireGrading !== 0 && newSubmissionsCount > 0 ? newSubmissionsCount : undefined, badgeColor: 'bg-[#b0e788]' },

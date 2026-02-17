@@ -7,7 +7,7 @@ export default function StudentDashboardRedirect() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/dashboard/student/classes');
+    router.replace('/dashboard/student/subjects');
   }, [router]);
 
   return (

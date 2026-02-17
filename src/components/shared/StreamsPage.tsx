@@ -454,7 +454,7 @@ export function StreamsPage({ role }: StreamsPageProps) {
                       </td>
                       <td className="py-3 px-2 sm:px-4">
                         <Link
-                          href={`${dashboardBase}/class/${stream.classSlug || stream.classId}`}
+                          href={`${dashboardBase}/subject/${stream.classSlug || stream.classId}`}
                           className="text-sm text-brand-600 hover:text-brand-700 font-medium transition-colors"
                         >
                           {stream.className}
@@ -507,7 +507,7 @@ export function StreamsPage({ role }: StreamsPageProps) {
                         <div className="flex items-center gap-1.5">
                           {stream.validRecordingId ? (
                             <Link
-                              href={`${dashboardBase}/class/${stream.classSlug || stream.classId}?lesson=${stream.validRecordingId}`}
+                              href={`${dashboardBase}/subject/${stream.classSlug || stream.classId}?lesson=${stream.validRecordingId}`}
                               className="p-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
                               title="Ver clase"
                             >
@@ -519,7 +519,7 @@ export function StreamsPage({ role }: StreamsPageProps) {
                           ) : stream.recordingId ? (
                             <button
                               onClick={() =>
-                                (window.location.href = `${dashboardBase}/class/${stream.classId}?${role === 'ADMIN' ? `action=create-lesson&recordingId=${stream.recordingId}&streamTitle=${encodeURIComponent(stream.title)}` : `createFromStream=${stream.id}`}`)
+                                (window.location.href = `${dashboardBase}/subject/${stream.classId}?${role === 'ADMIN' ? `action=create-lesson&recordingId=${stream.recordingId}&streamTitle=${encodeURIComponent(stream.title)}` : `createFromStream=${stream.id}`}`)
                               }
                               className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors"
                               title="Crear clase"

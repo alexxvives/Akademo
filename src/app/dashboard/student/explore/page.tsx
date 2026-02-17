@@ -48,7 +48,7 @@ export default function ExploreAcademiesPage() {
           <p className="text-gray-600 text-sm mt-1">Encuentra una academia y solicita inscripción a sus clases</p>
         </div>
         <Link
-          href="/dashboard/student/classes"
+          href="/dashboard/student/subjects"
           className="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
         >
           ← Mis Clases

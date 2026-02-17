@@ -765,14 +765,14 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
   };
 
   const selectLesson = (lesson: Lesson) => {
-    router.push(`${basePath}/class/${classId}?lesson=${lesson.id}`);
+    router.push(`${basePath}/subject/${classId}?lesson=${lesson.id}`);
   };
 
   const goBackToLessons = () => {
     if (selectedLesson?.topicId) {
       setExpandTopicId(selectedLesson.topicId);
     }
-    router.push(`${basePath}/class/${classId}`);
+    router.push(`${basePath}/subject/${classId}`);
     setSelectedLesson(null);
     setSelectedVideo(null);
     loadData();
@@ -782,7 +782,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
     if (!selectedLesson) return;
     
     
-    const newUrl = `${basePath}/class/${classId}?lesson=${selectedLesson.id}&watch=${video.id}`;
+    const newUrl = `${basePath}/subject/${classId}?lesson=${selectedLesson.id}&watch=${video.id}`;
     
     // Use soft navigation with key prop on player to force remount
     router.push(newUrl);
@@ -1473,11 +1473,11 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
       {!selectedLesson && (
           <ClassHeader 
               classData={classData}
-              backLink={`${basePath}/classes`}
+              backLink={`${basePath}/subjects`}
               creatingStream={creatingStream}
               showPendingRequests={showPendingRequests}
               paymentStatus={paymentStatus}
-              onCreateLesson={() => { router.push(`${basePath}/class/${classId}?action=create`); }}
+              onCreateLesson={() => { router.push(`${basePath}/subject/${classId}?action=create`); }}
               onCreateStream={createLiveClass}
               onTogglePendingRequests={() => setShowPendingRequests(!showPendingRequests)}
             />
@@ -1814,7 +1814,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
                       {editingLessonId ? 'Editar Clase' : 'Crear Nueva Clase'}
                     </h3>
                     <button 
-                      onClick={() => { setShowLessonForm(false); setEditingLessonId(null); setEditingLessonMedia(null); router.push(`${basePath}/class/${classId}`); }}
+                      onClick={() => { setShowLessonForm(false); setEditingLessonId(null); setEditingLessonMedia(null); router.push(`${basePath}/subject/${classId}`); }}
                       className="text-gray-400 hover:text-gray-600 transition-colors"
                     >
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2298,7 +2298,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
                       >
                         {uploading ? 'Creando...' : editingLessonId ? 'Actualizar Lección' : 'Crear Lección'}
                       </button>
-                      <button type="button" onClick={() => { setShowLessonForm(false); setEditingLessonId(null); setEditingLessonMedia(null); router.push(`${basePath}/class/${classId}`); }} className="px-6 py-2.5 text-gray-600 hover:text-gray-900 font-medium text-sm">
+                      <button type="button" onClick={() => { setShowLessonForm(false); setEditingLessonId(null); setEditingLessonMedia(null); router.push(`${basePath}/subject/${classId}`); }} className="px-6 py-2.5 text-gray-600 hover:text-gray-900 font-medium text-sm">
                         Cancelar
                       </button>
                     </div>

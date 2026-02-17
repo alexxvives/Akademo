@@ -348,7 +348,7 @@ export default function ClassPage() {
       setLessonRating(null);
     }
     
-    router.push(`/dashboard/student/class/${classId}?lesson=${lesson.id}`);
+    router.push(`/dashboard/student/subject/${classId}?lesson=${lesson.id}`);
   };
 
   const goBackToLessons = async () => {
@@ -360,7 +360,7 @@ export default function ClassPage() {
         return newSet;
       });
     }
-    router.push(`/dashboard/student/class/${classId}`);
+    router.push(`/dashboard/student/subject/${classId}`);
     setSelectedLesson(null);
     setSelectedVideo(null);
     setLessonRating(null);
@@ -373,7 +373,7 @@ export default function ClassPage() {
     if (isDemo) {
       // In demo mode, just select the video locally
       setSelectedVideo(video);
-      const newUrl = `/dashboard/student/class/${classId}?lesson=${selectedLesson.id}&watch=${video.id}`;
+      const newUrl = `/dashboard/student/subject/${classId}?lesson=${selectedLesson.id}&watch=${video.id}`;
       router.push(newUrl);
       return;
     }
@@ -400,7 +400,7 @@ export default function ClassPage() {
     }
     
     // Update URL without full page reload
-    const newUrl = `/dashboard/student/class/${classId}?lesson=${selectedLesson.id}&watch=${video.id}`;
+    const newUrl = `/dashboard/student/subject/${classId}?lesson=${selectedLesson.id}&watch=${video.id}`;
     router.push(newUrl);
   };
 
@@ -489,7 +489,7 @@ export default function ClassPage() {
           <p className="text-gray-500 mb-6">
             Empieza el <span className="font-semibold text-gray-700">{startDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
           </p>
-          <Link href="/dashboard/student/classes" className="px-5 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium">
+          <Link href="/dashboard/student/subjects" className="px-5 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium">
             ← Volver a mis asignaturas
           </Link>
         </div>
@@ -504,7 +504,7 @@ export default function ClassPage() {
         {!selectedLesson && classData && (
           <>
             {/* Back Button */}
-            <Link href="/dashboard/student/classes" className="text-sm text-gray-500 hover:text-gray-900 inline-block">
+            <Link href="/dashboard/student/subjects" className="text-sm text-gray-500 hover:text-gray-900 inline-block">
               ← Volver a asignaturas
             </Link>
             {/* Title and Stats */}

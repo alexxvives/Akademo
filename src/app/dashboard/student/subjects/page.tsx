@@ -165,7 +165,7 @@ export default function StudentClassesPage() {
     
     // All checks passed - show skeleton loading and navigate to class
     setLoading(true);
-    router.push(`/dashboard/student/class/${classItem.slug || classItem.id}`);
+    router.push(`/dashboard/student/subject/${classItem.slug || classItem.id}`);
   };
 
   const handleSign = async () => {
@@ -193,7 +193,7 @@ export default function StudentClassesPage() {
         setPayingClass(updatedClass);
       } else {
         // Navigate to the class
-        router.push(`/dashboard/student/class/${updatedClass.slug || updatedClass.id}`);
+        router.push(`/dashboard/student/subject/${updatedClass.slug || updatedClass.id}`);
       }
     } else {
       throw new Error(result.error || 'Failed to sign document');
@@ -241,7 +241,7 @@ export default function StudentClassesPage() {
           {academyName && <p className="text-sm text-gray-500 mt-1">{academyName}</p>}
         </div>
         <Link
-          href="/dashboard/student/enrolled-academies/classes"
+          href="/dashboard/student/enrolled-academies/subjects"
           className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium text-sm"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

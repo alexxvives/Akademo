@@ -127,6 +127,7 @@ export function Sidebar({
                 height={40}
                 className="h-10 w-10 object-contain"
                 priority
+                unoptimized
               />
               {academyName && (
                 <span className="text-lg font-bold text-gray-400 font-[family-name:var(--font-montserrat)]">
@@ -223,7 +224,7 @@ export function Sidebar({
         {role === 'STUDENT' && (
           <div className="px-3 py-2 border-t border-gray-800/50">
             <Link
-              href="/dashboard/student/enrolled-academies/classes"
+              href="/dashboard/student/enrolled-academies/subjects"
               className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#b1e787] hover:bg-[#9dd46f] text-gray-900 rounded-xl transition-all shadow-lg font-semibold"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
