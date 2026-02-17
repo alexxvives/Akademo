@@ -593,11 +593,17 @@ export default function TopicsLessonsList({
                       <span className="text-xs text-gray-400 ml-1">({lesson.ratingCount})</span>
                     )}
                   </div>
-                  <span className="text-gray-300 font-bold text-sm">
+                  <span 
+                    className="text-gray-300 font-bold text-sm cursor-help"
+                    title="Número de estudiantes que han accedido a la clase"
+                  >
                     {lesson.studentsAccessed || 0}/{totalStudents} estudiantes
                   </span>
                 </div>
-                <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                <div 
+                  className="h-2 bg-gray-700 rounded-full overflow-hidden cursor-help"
+                  title="Número de estudiantes que han accedido a la clase"
+                >
                   <div
                     className="h-full transition-all"
                     style={{
