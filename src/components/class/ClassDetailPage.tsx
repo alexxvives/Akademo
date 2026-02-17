@@ -957,12 +957,9 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
       // Publish immediately - use current time
       releaseTimestamp = new Date().toISOString();
     } else {
-      // Scheduled - validate date/time is not in the past
+      // Scheduled - use selected date/time
       const releaseDatetime = `${lessonFormData.releaseDate}T${lessonFormData.releaseTime}:00`;
       const scheduledDate = new Date(releaseDatetime);
-      if (scheduledDate < new Date()) {
-        return alert('La fecha y hora de publicación no puede estar en el pasado');
-      }
       releaseTimestamp = scheduledDate.toISOString();
     }
     
@@ -1902,7 +1899,6 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
                                 <input 
                                   type="date" 
                                   value={lessonFormData.releaseDate} 
-                                  min={new Date().toISOString().split('T')[0]}
                                   onChange={e => setLessonFormData({ ...lessonFormData, releaseDate: e.target.value })} 
                                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors"
                                 />
@@ -2376,10 +2372,6 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
                           type="date" 
                           name="rescheduleDate"
                           defaultValue={(() => {
-                            const d = new Date();
-                            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-                          })()}
-                          min={(() => {
                             const d = new Date();
                             return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
                           })()}

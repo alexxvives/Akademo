@@ -397,6 +397,26 @@ export function ClassesPage({ role }: ClassesPageProps) {
     setShowCreateModal(true);
   };
 
+  const handleDeleteClass = async (cls: Class) => {
+    const confirmed = window.confirm(
+      `¿Estás seguro de que quieres eliminar "${cls.name}"?\n\nEsto eliminará todas las lecciones, videos, documentos, calificaciones y matrículas asociadas.\n\nEsta acción no se puede deshacer.`
+    );
+    if (!confirmed) return;
+
+    try {
+      const res = await apiClient(`/classes/${cls.id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        loadData();
+      } else {
+        alert(data.error || 'Error al eliminar la asignatura');
+      }
+    } catch (err) {
+      console.error('Error deleting class:', err);
+      alert('Error al eliminar la asignatura');
+    }
+  };
+
   const dashboardBase = role === 'ACADEMY' ? '/dashboard/academy' : role === 'TEACHER' ? '/dashboard/teacher' : '/dashboard/admin';
 
   if (loading) {
@@ -407,7 +427,7 @@ export function ClassesPage({ role }: ClassesPageProps) {
     <>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-semibold text-gray-900">{role === 'TEACHER' ? 'Mis Asignaturas' : 'Asignaturas'}</h1>
@@ -622,10 +642,11 @@ export function ClassesPage({ role }: ClassesPageProps) {
                     </div>
                   </div>
 
-                  {/* Right side (academy/teacher: edit + zoom badge) */}
+                  {/* Right side (academy/teacher: edit + delete + zoom badge) */}
                   {(role === 'ACADEMY' || role === 'TEACHER') && (
                     <div className="flex flex-col items-end gap-2 ml-4">
                       {role === 'ACADEMY' && (
+                      <div className="flex items-center gap-1">
                       <button
                         onClick={(e) => {
                           e.preventDefault();
@@ -644,6 +665,25 @@ export function ClassesPage({ role }: ClassesPageProps) {
                           />
                         </svg>
                       </button>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleDeleteClass(cls);
+                        }}
+                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Eliminar asignatura"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          />
+                        </svg>
+                      </button>
+                      </div>
                       )}
                       {cls.zoomAccountName ? (
                         <span className="flex items-center gap-2 px-3 py-2 bg-green-50 border border-green-200 rounded-md">

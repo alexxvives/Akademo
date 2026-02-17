@@ -97,7 +97,9 @@ export const createLessonSchema = z.object({
   watermarkIntervalMins: z.coerce.number().min(1).max(60).optional(),
 }).passthrough(); // Allow extra fields like videos, documents
 
-export const updateLessonSchema = createLessonSchema.partial().omit({ classId: true });
+export const updateLessonSchema = createLessonSchema.partial().omit({ classId: true }).extend({
+  resetTimers: z.boolean().optional(),
+});
 
 // ============ Topic Schemas ============
 

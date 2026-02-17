@@ -317,6 +317,8 @@ export default function ProfilePage() {
       if (result.success) {
         setEditing(false);
         await loadData();
+        // Update sidebar academy name immediately
+        refreshAcademyLogo();
       } else {
         alert('Error al guardar los cambios');
       }
