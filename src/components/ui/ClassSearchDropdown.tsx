@@ -105,10 +105,9 @@ export function ClassSearchDropdown({
         onClick={() => {
           if (!disabled) {
             setIsOpen(true);
-            setSearch(displayName || '');
+            setSearch('');
             setTimeout(() => {
               inputRef.current?.focus();
-              inputRef.current?.select();
             }, 0);
           }
         }}

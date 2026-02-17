@@ -768,7 +768,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
                   {assignment.solutionUploadId ? (
                     <div className="inline-flex items-center gap-2">
                       <button
-                        onClick={() => window.open(`/api/storage/serve/${assignment.solutionUploadId}`, '_blank')}
+                        onClick={() => window.open(`/api/documents/assignment/${assignment.solutionUploadId}`, '_blank')}
                         className="flex items-center gap-1.5 text-sm text-green-600 hover:text-green-700 transition-colors group"
                         title="Ver solucionario">
                         <div className="w-7 h-9 flex items-center justify-center bg-green-50 rounded border border-green-200 group-hover:bg-green-100 transition-colors">
