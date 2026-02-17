@@ -538,6 +538,11 @@ export function ClassesPage({ role }: ClassesPageProps) {
                       <h3 className="text-xl font-bold text-gray-900">
                         {cls.name}
                       </h3>
+                      {(cls.university || cls.carrera) && (
+                        <span className="text-sm text-gray-500 font-normal">
+                          {[cls.university, cls.carrera].filter(Boolean).join(' • ')}
+                        </span>
+                      )}
                       {/* WhatsApp link */}
                       {cls.whatsappGroupLink && (
                         <a

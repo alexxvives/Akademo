@@ -1,14 +1,16 @@
 'use client';
 
 interface ReportsPageProps {
-  role: 'ACADEMY' | 'ADMIN';
+  role: 'ACADEMY' | 'ADMIN' | 'TEACHER';
 }
 
 export function ReportsPage({ role }: ReportsPageProps) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Reportes</h1>
+        <h1 className="text-2xl font-semibold text-gray-900">
+          {role === 'TEACHER' ? 'Reportes de Estudiantes' : 'Reportes'}
+        </h1>
         {role === 'ADMIN' && (
           <p className="text-gray-500 mt-1">Genera y visualiza reportes globales de la plataforma</p>
         )}
@@ -29,6 +31,8 @@ export function ReportsPage({ role }: ReportsPageProps) {
         <p className="text-gray-500 max-w-md mx-auto">
           {role === 'ADMIN'
             ? 'El sistema de reportes estará disponible pronto. Podrás generar reportes de rendimiento, uso, ingresos y estadísticas globales de la plataforma.'
+            : role === 'TEACHER'
+            ? 'El sistema de reportes estará disponible pronto. Podrás generar reportes de rendimiento, asistencia y progreso de tus estudiantes.'
             : 'El sistema de reportes estará disponible pronto. Podrás generar reportes de rendimiento, asistencia, ingresos y estadísticas de uso.'}
         </p>
         <div className="mt-8 inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full text-sm text-gray-600">

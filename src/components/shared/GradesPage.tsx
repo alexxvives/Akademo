@@ -81,7 +81,7 @@ interface ApiResponse<T> {
 }
 
 interface GradesPageProps {
-  role: 'ACADEMY' | 'ADMIN';
+  role: 'ACADEMY' | 'ADMIN' | 'TEACHER';
 }
 
 export function GradesPage({ role }: GradesPageProps) {
@@ -97,11 +97,17 @@ export function GradesPage({ role }: GradesPageProps) {
   const [academies, setAcademies] = useState<Academy[]>([]);
   const [selectedAcademy, setSelectedAcademy] = useState<string>('');
 
-  const isDemo = role === 'ACADEMY' && paymentStatus === 'NOT PAID';
+  const isDemo = (role === 'ACADEMY' || role === 'TEACHER') && paymentStatus === 'NOT PAID';
 
   // --- Data loading ---
 
   const loadGrades = useCallback(async () => {
+    if (!selectedClass || selectedClass === '') {
+      console.log('[GradesPage] loadGrades called but no class selected');
+      return;
+    }
+    
+    console.log('[GradesPage] loadGrades starting for:', selectedClass, 'isDemo:', isDemo); // DEBUG
     setLoading(true);
     try {
       if (isDemo) {
@@ -109,6 +115,7 @@ export function GradesPage({ role }: GradesPageProps) {
         const filtered =
           selectedClass === 'all' ? demoAssignments : demoAssignments.filter((a) => a.classId === selectedClass);
 
+        console.log('[GradesPage] Demo mode - assignments:', filtered.length); // DEBUG
         const gradesData: StudentGrade[] = [];
         filtered.forEach((assignment) => {
           const submissions = generateDemoSubmissions(assignment.id);
@@ -133,6 +140,7 @@ export function GradesPage({ role }: GradesPageProps) {
 
         setGrades(gradesData);
         calcAverages(gradesData);
+        console.log('[GradesPage] Demo grades loaded:', gradesData.length); // DEBUG
         setLoading(false);
         return;
       }
@@ -149,16 +157,20 @@ export function GradesPage({ role }: GradesPageProps) {
               : `/assignments?classId=${selectedClass}`;
         }
       } else {
+        // ACADEMY and TEACHER use same endpoint
         endpoint = selectedClass === 'all' ? '/assignments/all' : `/assignments?classId=${selectedClass}`;
       }
 
+      console.log('[GradesPage] Fetching assignments from:', endpoint); // DEBUG
       const assignmentsRaw = await apiClient(endpoint);
       const assignmentsRes = (await assignmentsRaw.json()) as ApiResponse<AssignmentSummary[]>;
       if (!assignmentsRes.success) {
+        console.error('[GradesPage] Failed to fetch assignments:', assignmentsRes.error); // DEBUG
         setLoading(false);
         return;
       }
 
+      console.log('[GradesPage] Assignments fetched:', assignmentsRes.data.length); // DEBUG
       const allGrades: StudentGrade[] = [];
       for (const assignment of assignmentsRes.data) {
         const res = await apiClient(`/assignments/${assignment.id}`);
@@ -186,6 +198,7 @@ export function GradesPage({ role }: GradesPageProps) {
         }
       }
 
+      console.log('[GradesPage] Total graded submissions:', allGrades.length); // DEBUG
       setGrades(allGrades);
       calcAverages(allGrades);
       setLoading(false);
@@ -221,7 +234,7 @@ export function GradesPage({ role }: GradesPageProps) {
   // Load initial data (classes, academies)
   const loadInitial = useCallback(async () => {
     try {
-      if (role === 'ACADEMY') {
+      if (role === 'ACADEMY' || role === 'TEACHER') {
         const [academyRes] = await Promise.all([apiClient('/academies')]);
         const academyResult = await academyRes.json();
         if (academyResult.success && Array.isArray(academyResult.data) && academyResult.data.length > 0) {
@@ -296,7 +309,12 @@ export function GradesPage({ role }: GradesPageProps) {
   }, [role, selectedAcademy, loadClasses]);
 
   useEffect(() => {
-    if (selectedClass) loadGrades();
+    // Only load grades when selectedClass is actually set (not empty string)
+    // Note: 'all' is a valid value and should trigger loading
+    if (selectedClass && selectedClass !== '') {
+      console.log('[GradesPage] Loading grades for class:', selectedClass); // DEBUG
+      loadGrades();
+    }
   }, [selectedClass, loadGrades]);
 
   // Filtering
@@ -406,7 +424,7 @@ export function GradesPage({ role }: GradesPageProps) {
     );
   }
 
-  if ((role === 'ACADEMY' && classes.length === 0) || (role === 'ADMIN' && academies.length === 0)) {
+  if (((role === 'ACADEMY' || role === 'TEACHER') && classes.length === 0) || (role === 'ADMIN' && academies.length === 0)) {
     return (
       <div className="space-y-6">
         <h1 className="text-2xl font-semibold text-gray-900">Calificaciones</h1>
@@ -486,7 +504,11 @@ export function GradesPage({ role }: GradesPageProps) {
 
       {filteredAverages.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-12 text-center">
-          <p className="text-gray-500">No hay calificaciones para mostrar en esta asignatura</p>
+          <p className="text-gray-500">
+            {selectedClass === 'all' 
+              ? 'No hay calificaciones para mostrar. Asegúrate de haber calificado algunas entregas de ejercicios.'
+              : 'No hay calificaciones para mostrar en esta asignatura'}
+          </p>
         </div>
       ) : (
         <>
