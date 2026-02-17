@@ -920,6 +920,14 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
         
         const result = await response.json();
         if (result.success) {
+          // Clean URL params
+          const url = new URL(window.location.href);
+          if (url.searchParams.has('action')) {
+            url.searchParams.delete('action');
+            url.searchParams.delete('recordingId');
+            url.searchParams.delete('streamTitle');
+            window.history.replaceState({}, '', url.toString());
+          }
           setShowLessonForm(false);
           setLessonFormData({
             title: '',
@@ -1038,21 +1046,6 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
         });
         setUploadProgress(0);
         
-        // Show success message
-        // Show custom success notification
-        const notification = document.createElement('div');
-        notification.className = 'fixed top-4 left-1/2 -translate-x-1/2 bg-green-600 text-white px-6 py-4 rounded-lg shadow-lg z-50 flex items-center gap-3 animate-slide-in-from-top';
-        notification.innerHTML = `
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span class="font-semibold">Lección creada exitosamente</span>
-        `;
-        document.body.appendChild(notification);
-        setTimeout(() => {
-          notification.style.animation = 'slideOut 0.3s ease-in';
-          setTimeout(() => notification.remove(), 300);
-        }, 3000);
         await loadData();
       } else {
         // Remove temp lesson on error

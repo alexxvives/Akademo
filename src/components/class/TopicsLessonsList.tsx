@@ -941,7 +941,7 @@ export default function TopicsLessonsList({
                                     className="px-2 py-1 bg-gray-900 text-white rounded text-xs hover:bg-gray-800 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                                     title={isDisabled ? 'Active su academia para modificar tiempos' : 'Reducir 15 minutos'}
                                   >
-                                    -15min
+                                    +15min
                                   </button>
                                   <button
                                     onClick={() => {
@@ -952,7 +952,7 @@ export default function TopicsLessonsList({
                                     className="px-2 py-1 bg-gray-900 text-white rounded text-xs hover:bg-gray-800 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                                     title={isDisabled ? 'Active su academia para modificar tiempos' : 'Reducir 30 minutos'}
                                   >
-                                    -30min
+                                    +30min
                                   </button>
                                   <button
                                     onClick={() => {
@@ -963,7 +963,7 @@ export default function TopicsLessonsList({
                                     className="px-2 py-1 bg-gray-900 text-white rounded text-xs hover:bg-gray-800 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                                     title={isDisabled ? 'Active su academia para modificar tiempos' : 'Reducir 1 hora'}
                                   >
-                                    -1h
+                                    +1hr
                                   </button>
                                 </div>
                               </div>

@@ -407,6 +407,7 @@ export function ClassesPage({ role }: ClassesPageProps) {
       const res = await apiClient(`/classes/${cls.id}`, { method: 'DELETE' });
       const data = await res.json();
       if (data.success) {
+        alert('Asignatura borrada con éxito');
         loadData();
       } else {
         alert(data.error || 'Error al eliminar la asignatura');
