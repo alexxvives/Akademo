@@ -6,6 +6,7 @@ import { apiClient } from '@/lib/api-client';
 import { generateDemoStreams } from '@/lib/demo-data';
 import { SkeletonList } from '@/components/ui/SkeletonLoader';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
+import { AcademySearchDropdown } from '@/components/ui/AcademySearchDropdown';
 
 interface Stream {
   id: string;
@@ -327,21 +328,16 @@ export function StreamsPage({ role }: StreamsPageProps) {
 
           {/* Academy filter — admin only */}
           {role === 'ADMIN' && (
-            <select
+            <AcademySearchDropdown
+              academies={academies}
               value={selectedAcademy}
-              onChange={(e) => {
-                setSelectedAcademy(e.target.value);
+              onChange={(newVal) => {
+                setSelectedAcademy(newVal);
                 setSelectedClass('all');
               }}
-              className="appearance-none w-56 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-            >
-              <option value="all">Todas las academias</option>
-              {academies.map((academy) => (
-                <option key={academy.id} value={academy.id}>
-                  {academy.name}
-                </option>
-              ))}
-            </select>
+              allLabel="Todas las academias"
+              className="w-56"
+            />
           )}
         </div>
       </div>

@@ -2,30 +2,30 @@
 
 ## 🎨 Visual Overview: What's Shared vs What's Not
 
-| Page/Feature | Student | Teacher | Academy | Admin | Status |
-|--------------|---------|---------|---------|-------|--------|
-| **Dashboard (Home)** | Redirect | Custom (106L) | Shared ✅ | Shared ✅ | 🟡 Teacher unique |
-| **Subjects/Classes List** | Custom (477L) | Shared ✅ | Shared ✅ | Shared ✅ | 🔴 UNIFY STUDENT |
-| **Subject/Class Detail** | Custom (787L) | Shared ✅ | Shared ✅ | Shared ✅ | 🔴 UNIFY STUDENT |
-| **Students/Progress** | N/A | Shared ✅ | Shared ✅ | Shared ✅ | ✅ Perfect |
-| **Teachers** | N/A | N/A | Shared ✅ | Shared ✅ | ✅ Perfect |
-| **Assignments** | Custom (680L) | Custom (1184L) | Shared ✅ | Shared ✅ | 🔴 UNIFY BOTH |
-| **Grades** | N/A | Custom (526L) | Shared ✅ | Shared ✅ | 🔴 UNIFY TEACHER |
-| **Feedback** | N/A | Shared ✅ | Shared ✅ | Shared ✅ | ✅ Perfect |
-| **Streams** | N/A | Custom (60L) | Shared ✅ | Shared ✅ | 🟡 Check if needed |
-| **Reports** | N/A | Placeholder | Shared ✅ | Shared ✅ | 🔴 Use shared |
-| **Payments/Pagos** | N/A | N/A | Shared ✅ | Shared ✅ | ✅ Perfect |
-| **Profile** | Custom (292L) | Custom (303L) | Custom (1230L) | N/A | 🔴 UNIFY ALL |
-| **Quizzes** | Custom | N/A | N/A | N/A | ✅ Student-only |
-| **Live** | Custom | N/A | N/A | N/A | ✅ Student-only |
-| **Lessons (List)** | Custom | N/A | Custom | N/A | ✅ Different purposes |
-| **Explore** | Custom | N/A | N/A | N/A | ✅ Student-only |
-| **Grading** | N/A | Custom | N/A | N/A | ✅ Teacher-only |
-| **Academy Join** | N/A | Custom | N/A | N/A | ✅ Teacher-only |
-| **Revenue** | N/A | N/A | Custom | N/A | ✅ Academy-only |
-| **Accounts (Zoom)** | N/A | N/A | N/A | Custom | ✅ Admin-only |
-| **Academies** | N/A | N/A | N/A | Custom | ✅ Admin-only |
-| **Facturas** | N/A | N/A | N/A | Custom | ✅ Admin-only |
+| Page/Feature              | Student       | Teacher       | Academy | Admin | Status |
+|--------------             |---------      |---------      |---------|-------|--------|
+| **Dashboard (Home)**      | Redirect      | Custom (106L) | Shared ✅ | Shared ✅ | 🟡 Teacher unique |
+| **Subjects/Classes List** | Custom (477L) | Shared ✅     | Shared ✅ | Shared ✅ | ✅ Correctly separate* |
+| **Subject/Class Detail**  | Custom (787L) | Shared ✅     | Shared ✅ | Shared ✅ | ✅ Correctly separate* |
+| **Students/Progress**     | N/A           | Shared ✅      | Shared ✅ | Shared ✅ | ✅ Perfect |
+| **Teachers**              | N/A           | N/A            | Shared ✅ | Shared ✅ | ✅ Perfect |
+| **Assignments**           | Custom (680L) | Custom (1184L) | Shared ✅ | Shared ✅ | 🔴 UNIFY BOTH |
+| **Grades**                | N/A           | Custom (526L)  | Shared ✅ | Shared ✅ | 🔴 UNIFY TEACHER |
+| **Feedback**              | N/A           | Shared ✅     | Shared ✅ | Shared ✅ | ✅ Perfect |
+| **Streams**               | N/A           | Custom (60L)   | Shared ✅ | Shared ✅ | 🟡 Check if needed |
+| **Reports**               | N/A           | Placeholder   | Shared ✅ | Shared ✅ | 🔴 Use shared |
+| **Payments/Pagos**        | N/A           | N/A           | Shared ✅ | Shared ✅ | ✅ Perfect |
+| **Profile**               | Custom (292L) | Custom (303L) | Custom (1230L) | N/A | 🔴 UNIFY ALL |
+| **Quizzes**               | Custom        | N/A          | N/A | N/A | ✅ Student-only |
+| **Live**                  | Custom        | N/A          | N/A | N/A | ✅ Student-only |
+| **Lessons (List)**        | Custom        | N/A           | Custom | N/A | ✅ Different purposes |
+| **Explore**               | Custom        | N/A          | N/A | N/A | ✅ Student-only |
+| **Grading**               | N/A           | Custom         | N/A | N/A | ✅ Teacher-only |
+| **Academy Join**          | N/A           | Custom         | N/A | N/A | ✅ Teacher-only |
+| **Revenue**               | N/A           | N/A         | Custom | N/A | ✅ Academy-only |
+| **Accounts (Zoom)**       | N/A           | N/A         | N/A | Custom | ✅ Admin-only |
+| **Academies**             | N/A           | N/A           | N/A | Custom | ✅ Admin-only |
+| **Facturas**              | N/A           | N/A          | N/A | Custom | ✅ Admin-only |
 
 ### Legend:
 - ✅ **Perfect** - Correctly shared or correctly unique
@@ -34,18 +34,20 @@
 - **Custom (###L)** - Custom implementation with line count
 - **Shared ✅** - Uses component from `components/shared/`
 
+**\* Student Subjects/Classes:** Student views show enrolled classes with payment status and personal progress (read-only consumption). Teacher/Academy/Admin views show managed classes with CRUD operations and all students' data (administrative management). Different use cases = correctly separate implementations.
+
 ---
 
 ## 📈 Unification Potential by Role
 
 ### Student Role
-**Current:** 4 opportunities to unify
-1. Subjects list (477 lines) → Use `ClassesPage`
-2. Subject detail (787 lines) → Use `ClassDetailPage`
-3. Assignments (680 lines) → Use enhanced `AssignmentsPage`
-4. Profile (292 lines) → Use shared `ProfilePage`
+**Current:** 2 opportunities to unify
+1. Assignments (680 lines) → Use enhanced `AssignmentsPage`
+2. Profile (292 lines) → Use shared `ProfilePage`
 
-**Total Savings: 2,236 lines**
+**Note on Subjects/Classes:** Student views display enrolled classes with payment status and personal progress, while Teacher/Academy/Admin views show managed classes with edit/delete actions and all students' data. These are fundamentally different use cases and should remain separate.
+
+**Total Savings: 972 lines**
 
 ---
 

@@ -10,6 +10,7 @@ import {
 } from '@/lib/demo-data';
 import { SkeletonDashboard } from '@/components/ui/SkeletonLoader';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
+import { AcademySearchDropdown } from '@/components/ui/AcademySearchDropdown';
 
 // ─── Types ───
 interface Academy { id: string; name: string; ownerName: string; ownerEmail: string; status: string; paymentStatus?: string; teacherCount: number; studentCount: number; classCount: number; createdAt: string; }
@@ -280,16 +281,14 @@ export function DashboardPage({ role }: DashboardPageProps) {
           )}
           {/* Admin: academy filter */}
           {isAdmin && academies.length > 0 && (
-            <div className="relative">
-              <select value={selectedAcademy} onChange={(e) => setSelectedAcademy(e.target.value)}
-                className="appearance-none w-full md:w-56 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent">
-                <option value="all">Todas las Academias</option>
-                {academies.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-              </div>
-            </div>
+            <AcademySearchDropdown
+              academies={academies}
+              value={selectedAcademy}
+              onChange={setSelectedAcademy}
+              allLabel="Todas las Academias"
+              allValue="all"
+              className="w-full md:w-56"
+            />
           )}
           {/* Academy: class filter */}
           {isAcademy && classes.length > 0 && (

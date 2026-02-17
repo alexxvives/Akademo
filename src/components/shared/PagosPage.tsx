@@ -7,6 +7,7 @@ import { SkeletonTable } from '@/components/ui/SkeletonLoader';
 import { StudentPaymentDetailModal } from '@/components/shared';
 import { ModalPortal } from '@/components/ui/ModalPortal';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
+import { AcademySearchDropdown } from '@/components/ui/AcademySearchDropdown';
 
 interface PendingPayment {
   enrollmentId: string;
@@ -546,24 +547,17 @@ export default function PagosPage({ role }: PagosPageProps) {
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           {/* Admin: Academy Filter */}
           {isAdmin && (
-            <div className="relative">
-              <select
-                value={selectedAcademy}
-                onChange={(e) => {
-                  setSelectedAcademy(e.target.value);
-                  setLoading(true);
-                }}
-                className="appearance-none w-full sm:w-48 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-              >
-                <option value="all">Todas las academias</option>
-                {academies.map((a) => (
-                  <option key={a.id} value={a.id}>{a.name}</option>
-                ))}
-              </select>
-              <svg className="w-4 h-4 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
+            <AcademySearchDropdown
+              academies={academies}
+              value={selectedAcademy}
+              onChange={(value) => {
+                setSelectedAcademy(value);
+                setLoading(true);
+              }}
+              allLabel="Todas las academias"
+              allValue="all"
+              className="w-full sm:w-48"
+            />
           )}
           {/* Search Bar */}
           <div className="relative">

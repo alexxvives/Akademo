@@ -6,6 +6,7 @@ import { apiClient } from '@/lib/api-client';
 import { generateDemoClasses, generateDemoTeachers, generateDemoZoomAccounts } from '@/lib/demo-data';
 import { SkeletonClasses } from '@/components/ui/SkeletonLoader';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
+import { AcademySearchDropdown } from '@/components/ui/AcademySearchDropdown';
 import { ClassFormModal } from './ClassFormModal';
 
 interface Teacher {
@@ -456,25 +457,13 @@ export function ClassesPage({ role }: ClassesPageProps) {
           <div className="flex items-center gap-3">
             {/* Admin: academy filter */}
             {role === 'ADMIN' && academies.length > 0 && (
-              <div className="relative">
-                <select
-                  value={selectedAcademy}
-                  onChange={(e) => setSelectedAcademy(e.target.value)}
-                  className="appearance-none w-full md:w-64 pl-3 pr-8 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="all">Todas las Academias</option>
-                  {academies.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name}
-                    </option>
-                  ))}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </div>
+              <AcademySearchDropdown
+                academies={academies}
+                value={selectedAcademy}
+                onChange={setSelectedAcademy}
+                allLabel="Todas las Academias"
+                className="w-full md:w-64"
+              />
             )}
             {/* Academy or Teacher: class filter */}
             {(role === 'ACADEMY' || role === 'TEACHER') && classes.length > 1 && (
