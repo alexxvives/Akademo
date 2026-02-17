@@ -648,7 +648,7 @@ export default function TopicsLessonsList({
             </svg>
             <span className="font-semibold text-gray-900">{topicName}</span>
             <span className="text-xs text-gray-600 bg-gray-200 px-2.5 py-1 rounded-full font-medium">
-              {topicLessons.length} {topicLessons.length === 1 ? 'lección' : 'Clases'}
+              {topicLessons.length} {topicLessons.length === 1 ? 'clase' : 'clases'}
             </span>
           </div>
           {topicId && (

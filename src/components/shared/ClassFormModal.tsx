@@ -210,7 +210,7 @@ export function ClassFormModal({
           <div className="space-y-4 p-4 rounded-xl transition-all">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 group relative">
-                <label className="block text-sm font-medium text-gray-900">Opciones de pago *</label>
+                <label className="block text-sm font-medium text-gray-900 text-left">Opciones de pago *</label>
                 <svg className="w-4 h-4 text-gray-400 cursor-help" fill="currentColor" viewBox="0 0 20 20">
                   <path
                     fillRule="evenodd"
@@ -324,7 +324,7 @@ export function ClassFormModal({
             <button
               type="submit"
               disabled={saving || isDemo}
-              className="flex-1 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
               title={isDemo ? 'No disponible en modo demostración' : ''}
             >
               {saving ? savingLabel : submitLabel}

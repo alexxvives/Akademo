@@ -2395,7 +2395,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
                       <button 
                         type="submit" 
                         disabled={paymentStatus === 'NOT PAID'}
-                        className="flex-1 px-6 py-2.5 bg-accent-300 text-gray-900 rounded-lg hover:bg-accent-400 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="flex-1 px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                         title={paymentStatus === 'NOT PAID' ? 'No disponible en modo demo' : undefined}
                       >
                         Reprogramar

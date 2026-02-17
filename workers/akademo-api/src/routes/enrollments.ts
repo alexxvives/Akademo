@@ -612,10 +612,10 @@ enrollments.delete('/:id', async (c) => {
 
     const enrollmentId = c.req.param('id');
 
-    // Get enrollment details including stripeSubscriptionId
+    // Get enrollment details
     const enrollment: any = await c.env.DB
       .prepare(`
-        SELECT e.id, e.classId, e.userId, e.stripeSubscriptionId, c.academyId, a.ownerId
+        SELECT e.id, e.classId, e.userId, c.academyId, a.ownerId
         FROM ClassEnrollment e
         JOIN Class c ON e.classId = c.id
         JOIN Academy a ON c.academyId = a.id
@@ -631,23 +631,6 @@ enrollments.delete('/:id', async (c) => {
     // Verify academy owner
     if (session.role === 'ACADEMY' && enrollment.ownerId !== session.id) {
       return c.json(errorResponse('Not authorized to ban students from this academy'), 403);
-    }
-
-    // Cancel Stripe subscription if exists
-    if (enrollment.stripeSubscriptionId) {
-      try {
-        if (c.env.STRIPE_SECRET_KEY) {
-          const stripe = (await import('stripe')).default;
-          const stripeClient = new stripe(c.env.STRIPE_SECRET_KEY, {
-            apiVersion: '2025-12-15.clover' as any,
-          });
-          await stripeClient.subscriptions.cancel(enrollment.stripeSubscriptionId);
-          console.log('[Ban Student] Cancelled Stripe subscription:', enrollment.stripeSubscriptionId);
-        }
-      } catch (stripeError: any) {
-        console.error('[Ban Student] Stripe cancellation error:', stripeError);
-        // Continue anyway - ban student even if Stripe fails
-      }
     }
 
     // Update enrollment status to BANNED

@@ -449,8 +449,6 @@ lessons.patch('/:id', validateBody(updateLessonSchema), async (c) => {
       return c.json(errorResponse('No fields to update'), 400);
     }
 
-    // Add updatedAt
-    updates.push('updatedAt = datetime("now")');
     values.push(lessonId);
 
     await c.env.DB
