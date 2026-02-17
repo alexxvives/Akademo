@@ -476,14 +476,14 @@ export function ClassesPage({ role }: ClassesPageProps) {
                 </div>
               </div>
             )}
-            {/* Academy: class filter */}
-            {role === 'ACADEMY' && classes.length > 1 && (
+            {/* Academy or Teacher: class filter */}
+            {(role === 'ACADEMY' || role === 'TEACHER') && classes.length > 1 && (
               <ClassSearchDropdown
                 classes={classes}
                 value={selectedClassId}
                 onChange={setSelectedClassId}
                 allLabel="Todas las asignaturas"
-                className="w-56"
+                className="w-64"
               />
             )}
           </div>

@@ -27,6 +27,8 @@ export interface Class {
   zoomAccountName?: string | null;
   videoCount?: number;
   documentCount?: number;
+  university?: string | null;
+  carrera?: string | null;
 }
 
 export interface Student {

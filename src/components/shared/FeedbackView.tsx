@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { SkeletonFeedback } from '@/components/ui/SkeletonLoader';
+import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 
 export interface Rating {
   id: string;
@@ -152,25 +153,13 @@ export function FeedbackView({
       {/* Class Filter (only if enabled) */}
       {showClassFilter && classes.length > 1 && onClassFilterChange && (
         <div className="flex justify-end">
-          <div className="relative w-full sm:w-48">
-            <select
-              value={selectedClass}
-              onChange={(e) => onClassFilterChange(e.target.value)}
-              className="appearance-none w-full pl-3 pr-10 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-            >
-              <option value="all">Todas las clases</option>
-              {classes.map((cls) => (
-                <option key={cls.id} value={cls.id}>
-                  {cls.name}
-                </option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-              <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
-          </div>
+          <ClassSearchDropdown
+            classes={classes}
+            value={selectedClass}
+            onChange={onClassFilterChange}
+            allLabel="Todas las asignaturas"
+            className="w-full sm:w-56"
+          />
         </div>
       )}
 

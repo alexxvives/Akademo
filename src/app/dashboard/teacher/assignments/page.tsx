@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { apiClient, apiPost } from '@/lib/api-client';
 import { generateDemoAssignments, generateDemoClasses } from '@/lib/demo-data';
+import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 
-interface Class { id: string; name: string; }
+interface Class { id: string; name: string; university?: string | null; carrera?: string | null; }
 interface Assignment {
   id: string; title: string; description?: string; dueDate?: string; maxScore: number;
   submissionCount: number; gradedCount: number; attachmentName?: string; createdAt: string;
@@ -649,18 +650,13 @@ export default function TeacherAssignments() {
             {academyName && <p className="text-sm text-gray-500 mt-1">{academyName}</p>}
           </div>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <div className="relative">
-              <select value={selectedClassId} onChange={(e) => setSelectedClassId(e.target.value)}
-                className="appearance-none w-full sm:w-48 pl-4 pr-10 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent">
-                <option value="">Todas las asignaturas</option>
-                {classes.map((cls) => (<option key={cls.id} value={cls.id}>{cls.name}</option>))}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-            </div>
+            <ClassSearchDropdown
+              classes={classes}
+              value={selectedClassId}
+              onChange={setSelectedClassId}
+              allLabel="Todas las asignaturas"
+              className="w-full sm:w-56"
+            />
           </div>
         </div>
 

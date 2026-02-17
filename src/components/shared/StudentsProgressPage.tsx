@@ -11,6 +11,8 @@ interface Class {
   id: string;
   name: string;
   academyId?: string;
+  university?: string | null;
+  carrera?: string | null;
 }
 
 interface Academy {

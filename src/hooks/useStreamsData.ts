@@ -23,6 +23,8 @@ export interface Stream {
 export interface Class {
   id: string;
   name: string;
+  university?: string | null;
+  carrera?: string | null;
 }
 
 export function useStreamsData() {
