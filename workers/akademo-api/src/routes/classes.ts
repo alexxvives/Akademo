@@ -520,8 +520,39 @@ classes.delete('/:id', async (c) => {
       return c.json(errorResponse('Only academy owners can delete classes'), 403);
     }
 
+    // 0. Fetch all video bunnyGuids before deleting from DB (to clean Bunny CDN)
+    const videosToDelete = await c.env.DB.prepare(`
+      SELECT u.bunnyGuid
+      FROM Video v
+      JOIN Upload u ON v.uploadId = u.id
+      JOIN Lesson l ON v.lessonId = l.id
+      WHERE l.classId = ? AND u.bunnyGuid IS NOT NULL
+    `).bind(classId).all();
+
+    // Delete videos from Bunny CDN
+    const apiKey = c.env.BUNNY_STREAM_API_KEY;
+    const libraryId = c.env.BUNNY_STREAM_LIBRARY_ID;
+    if (apiKey && libraryId) {
+      for (const row of (videosToDelete.results || [])) {
+        const bunnyGuid = (row as any).bunnyGuid;
+        if (bunnyGuid) {
+          try {
+            const resp = await fetch(`https://video.bunnycdn.com/library/${libraryId}/videos/${bunnyGuid}`, {
+              method: 'DELETE',
+              headers: { 'AccessKey': apiKey },
+            });
+            if (!resp.ok) {
+              console.error(`[Delete Class] Failed to delete Bunny video ${bunnyGuid}:`, await resp.text());
+            }
+          } catch (err) {
+            console.error(`[Delete Class] Error deleting Bunny video ${bunnyGuid}:`, err);
+          }
+        }
+      }
+    }
+
     // Delete related data in order (foreign key constraints)
-    // 1. Delete video play states for videos in lessons of this class
+    // 1. Delete video play states
     await c.env.DB.prepare(`
       DELETE FROM VideoPlayState WHERE videoId IN (
         SELECT v.id FROM Video v 
@@ -530,14 +561,14 @@ classes.delete('/:id', async (c) => {
       )
     `).bind(classId).run();
 
-    // 2. Delete videos in lessons of this class
+    // 2. Delete videos from DB
     await c.env.DB.prepare(`
       DELETE FROM Video WHERE lessonId IN (
         SELECT id FROM Lesson WHERE classId = ?
       )
     `).bind(classId).run();
 
-    // 3. Delete documents in lessons of this class
+    // 3. Delete documents
     await c.env.DB.prepare(`
       DELETE FROM Document WHERE lessonId IN (
         SELECT id FROM Lesson WHERE classId = ?
@@ -551,45 +582,46 @@ classes.delete('/:id', async (c) => {
       )
     `).bind(classId).run();
 
-    // 5. Delete assignment submissions for assignments in lessons of this class
+    // 5. Delete assignment submissions (Assignment uses classId, not lessonId)
     await c.env.DB.prepare(`
       DELETE FROM AssignmentSubmission WHERE assignmentId IN (
-        SELECT a.id FROM Assignment a 
-        JOIN Lesson l ON a.lessonId = l.id 
-        WHERE l.classId = ?
+        SELECT id FROM Assignment WHERE classId = ?
       )
     `).bind(classId).run();
 
-    // 6. Delete assignments in lessons of this class
+    // 6. Delete assignment attachments
     await c.env.DB.prepare(`
-      DELETE FROM Assignment WHERE lessonId IN (
-        SELECT id FROM Lesson WHERE classId = ?
+      DELETE FROM AssignmentAttachment WHERE assignmentId IN (
+        SELECT id FROM Assignment WHERE classId = ?
       )
     `).bind(classId).run();
 
-    // 7. Delete topics for this class
+    // 7. Delete assignments
+    await c.env.DB.prepare('DELETE FROM Assignment WHERE classId = ?').bind(classId).run();
+
+    // 8. Delete topics
     await c.env.DB.prepare('DELETE FROM Topic WHERE classId = ?').bind(classId).run();
 
-    // 8. Delete lessons
+    // 9. Delete lessons
     await c.env.DB.prepare('DELETE FROM Lesson WHERE classId = ?').bind(classId).run();
-
-    // 9. Delete enrollment payments
-    await c.env.DB.prepare(`
-      DELETE FROM EnrollmentPayment WHERE enrollmentId IN (
-        SELECT id FROM ClassEnrollment WHERE classId = ?
-      )
-    `).bind(classId).run();
 
     // 10. Delete enrollments
     await c.env.DB.prepare('DELETE FROM ClassEnrollment WHERE classId = ?').bind(classId).run();
 
-    // 11. Delete notifications related to this class
-    await c.env.DB.prepare('DELETE FROM Notification WHERE classId = ?').bind(classId).run();
+    // 11. Delete notifications (data is JSON, filter by classId inside)
+    try {
+      await c.env.DB.prepare(`DELETE FROM Notification WHERE json_extract(data, '$.classId') = ?`).bind(classId).run();
+    } catch { /* Notification cleanup is best-effort */ }
 
-    // 12. Delete live streams
+    // 12. Delete payments for this class
+    try {
+      await c.env.DB.prepare('DELETE FROM Payment WHERE classId = ?').bind(classId).run();
+    } catch { /* Payment cleanup is best-effort */ }
+
+    // 13. Delete live streams
     await c.env.DB.prepare('DELETE FROM LiveStream WHERE classId = ?').bind(classId).run();
 
-    // 13. Finally delete the class itself
+    // 14. Finally delete the class itself
     await c.env.DB.prepare('DELETE FROM Class WHERE id = ?').bind(classId).run();
 
     return c.json(successResponse({ deleted: true, className: classRecord.name }));

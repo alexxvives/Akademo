@@ -812,7 +812,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
       const result = await uploadToBunny({
         file: video.file,
         title: video.title || video.file.name,
-        collectionName: classData?.academy?.name, // Use academy name for collection
+        collectionName: (classData as any)?.academyName || classData?.academy?.name, // Use academy name for collection
         onProgress: (progress) => {
           const fileProgress = progress.loaded;
           const totalUploaded = uploadedSize + fileProgress;
@@ -1075,7 +1075,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
   };
 
   const handleDeleteLesson = async (lessonId: string) => {
-    if (!confirm('Delete this lesson? All videos and documents will be deleted.')) return;
+    if (!confirm('¿Eliminar esta clase? Se eliminarán todos los videos y documentos.')) return;
     try {
       const res = await apiClient(`/lessons/${lessonId}`, { method: 'DELETE' });
       const result = await res.json();

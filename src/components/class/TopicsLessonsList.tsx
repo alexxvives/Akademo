@@ -363,9 +363,21 @@ export default function TopicsLessonsList({
       });
       const result = await res.json();
       if (result.success) {
-        if (selectedLessonForTime) {
-          await handleManageStudentTimes(selectedLessonForTime);
-        }
+        // Optimistic update: only refresh the affected student's video
+        setStudentTimesData(prev => prev.map(student => {
+          if (student.studentId !== studentId) return student;
+          return {
+            ...student,
+            videos: student.videos.map(video => {
+              if (video.videoId !== videoId) return video;
+              return {
+                ...video,
+                totalWatchTimeSeconds: newTimeSeconds,
+                status: newTimeSeconds >= video.maxWatchTimeSeconds ? 'BLOCKED' : 'ACTIVE',
+              };
+            }),
+          };
+        }));
       } else {
         alert(result.error || 'Error al actualizar tiempo');
       }
@@ -896,7 +908,7 @@ export default function TopicsLessonsList({
                                   <p className="font-medium text-gray-900 text-sm">Video {videoIndex + 1}</p>
                                   <div className="flex items-center gap-2">
                                     <span className="text-xs text-gray-600">
-                                      Tiempo usado: {Math.floor(video.totalWatchTimeSeconds / 60)}:{String(Math.floor(video.totalWatchTimeSeconds % 60)).padStart(2, '0')}
+                                      Tiempo usado: {video.totalWatchTimeSeconds < 0 ? '-' : ''}{Math.floor(Math.abs(video.totalWatchTimeSeconds) / 60)}:{String(Math.floor(Math.abs(video.totalWatchTimeSeconds) % 60)).padStart(2, '0')}
                                     </span>
                                     <span className="text-xs text-gray-400">/</span>
                                     <span className="text-xs text-gray-600">
@@ -922,36 +934,36 @@ export default function TopicsLessonsList({
                                   </button>
                                   <button
                                     onClick={() => {
-                                      const newTime = Math.max(0, video.totalWatchTimeSeconds - 900);
+                                      const newTime = video.totalWatchTimeSeconds - 900;
                                       handleUpdateStudentTime(studentData.studentId, video.videoId, newTime);
                                     }}
                                     disabled={isDisabled}
                                     className="px-2 py-1 bg-gray-900 text-white rounded text-xs hover:bg-gray-800 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                                     title={isDisabled ? 'Active su academia para modificar tiempos' : 'Reducir 15 minutos'}
                                   >
-                                    +15min
+                                    -15min
                                   </button>
                                   <button
                                     onClick={() => {
-                                      const newTime = Math.max(0, video.totalWatchTimeSeconds - 1800);
+                                      const newTime = video.totalWatchTimeSeconds - 1800;
                                       handleUpdateStudentTime(studentData.studentId, video.videoId, newTime);
                                     }}
                                     disabled={isDisabled}
                                     className="px-2 py-1 bg-gray-900 text-white rounded text-xs hover:bg-gray-800 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                                     title={isDisabled ? 'Active su academia para modificar tiempos' : 'Reducir 30 minutos'}
                                   >
-                                    +30min
+                                    -30min
                                   </button>
                                   <button
                                     onClick={() => {
-                                      const newTime = Math.max(0, video.totalWatchTimeSeconds - 3600);
+                                      const newTime = video.totalWatchTimeSeconds - 3600;
                                       handleUpdateStudentTime(studentData.studentId, video.videoId, newTime);
                                     }}
                                     disabled={isDisabled}
                                     className="px-2 py-1 bg-gray-900 text-white rounded text-xs hover:bg-gray-800 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                                     title={isDisabled ? 'Active su academia para modificar tiempos' : 'Reducir 1 hora'}
                                   >
-                                    +1hr
+                                    -1h
                                   </button>
                                 </div>
                               </div>
