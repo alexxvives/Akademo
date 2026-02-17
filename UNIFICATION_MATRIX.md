@@ -10,7 +10,7 @@
 | **Students/Progress**     | N/A           | Shared ✅      | Shared ✅ | Shared ✅ | ✅ Perfect |
 | **Teachers**              | N/A           | N/A            | Shared ✅ | Shared ✅ | ✅ Perfect |
 | **Assignments**           | Custom (680L) | Custom (1184L) | Shared ✅ | Shared ✅ | 🔴 UNIFY BOTH |
-| **Grades**                | N/A           | Custom (526L)  | Shared ✅ | Shared ✅ | 🔴 UNIFY TEACHER |
+| **Grades**                | N/A           | Shared ✅      | Shared ✅ | Shared ✅ | ✅ Perfect |
 | **Feedback**              | N/A           | Shared ✅     | Shared ✅ | Shared ✅ | ✅ Perfect |
 | **Streams**               | N/A           | Custom (60L)   | Shared ✅ | Shared ✅ | 🟡 Check if needed |
 | **Reports**               | N/A           | Placeholder   | Shared ✅ | Shared ✅ | 🔴 Use shared |
@@ -52,15 +52,16 @@
 ---
 
 ### Teacher Role
-**Current:** 6 opportunities to unify
+**Current:** 5 opportunities to unify
 1. Profile (303 lines) → Use shared `ProfilePage`
 2. Assignments (1,184 lines) → Use enhanced `AssignmentsPage`
-3. Grades (526 lines) → Use enhanced `GradesPage`
-4. Streams (~60 lines) → Consider using `StreamsPage`
-5. Reports (placeholder) → Use `ReportsPage`
-6. Dashboard (106 lines) → Keep separate (too unique)
+3. Streams (~60 lines) → Consider using `StreamsPage`
+4. Reports (placeholder) → Use `ReportsPage`
+5. Dashboard (106 lines) → Keep separate (too unique)
 
-**Total Savings: ~2,079 lines** (excluding dashboard)
+**Already Unified:** ✅ Grades (uses shared `GradesPage`)
+
+**Total Savings: ~1,553 lines** (excluding dashboard)
 
 ---
 
@@ -76,16 +77,15 @@
 
 | Priority | Opportunity | Impact | Effort | Lines Saved |
 |----------|-------------|--------|--------|-------------|
-| 🔥 **P0** | Student subject detail | VERY HIGH | LOW | 787 |
-| 🔥 **P0** | Student subjects list | HIGH | MEDIUM | 477 |
-| 🚀 **P1** | Teacher assignments | HIGH | MEDIUM | ~600 |
-| 🚀 **P1** | Student assignments | HIGH | MEDIUM | ~400 |
-| 🚀 **P1** | Teacher grades | MEDIUM | LOW | 521 |
-| 📝 **P2** | Profile pages | HIGH | HIGH | 1,325 |
+| 🔥 **P0** | Teacher assignments | VERY HIGH | MEDIUM | ~1,184 |
+| 🔥 **P0** | Student assignments | HIGH | MEDIUM | ~680 |
+| 🚀 **P1** | Profile pages | HIGH | HIGH | 1,325 |
 | 📝 **P2** | Teacher reports | LOW | LOW | ~60 |
 | 📝 **P2** | Teacher streams | LOW | LOW | ~60 |
 
-**Total Potential:** ~4,230 lines removed
+**Already Unified:** ✅ Teacher grades (526 lines) ✅ Student subjects (1,264 lines correctly separate)
+
+**Total Potential:** ~3,309 lines can be removed
 
 ---
 
@@ -121,14 +121,14 @@ src/
 
 ## 💡 Quick Wins Checklist
 
-- [ ] Student subject detail → Use `ClassDetailPage`
-- [ ] Student subjects list → Use `ClassesPage`
-- [ ] Teacher grades → Use `GradesPage` with charts
-- [ ] Teacher reports → Use `ReportsPage`
-- [ ] Teacher streams → Use `StreamsPage` (if UI matches)
+- [x] ~~Teacher grades → Use `GradesPage` with charts~~ ✅ **DONE**
 - [ ] Student assignments → Use enhanced `AssignmentsPage`
 - [ ] Teacher assignments → Use enhanced `AssignmentsPage`
+- [ ] Teacher reports → Use `ReportsPage`
+- [ ] Teacher streams → Use `StreamsPage` (if UI matches)
 - [ ] Profile pages → Create shared `ProfilePage`
+
+**Note:** Student subjects/classes are intentionally separate (different use cases).
 
 ---
 

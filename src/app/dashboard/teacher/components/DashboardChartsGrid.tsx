@@ -146,32 +146,29 @@ export function DashboardChartsGrid({
       {/* Student Summary */}
       <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full">
         <h3 className="text-lg font-semibold text-gray-900 mb-6">Estudiantes</h3>
-        <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="text-center p-3 bg-gray-50 rounded-lg">
+        <div className="grid grid-cols-2 gap-4 h-[calc(100%-3rem)]">
+          {/* Estudiantes Container */}
+          <div className="flex flex-col justify-center p-4 bg-gray-50 rounded-lg">
+            <div className="text-center">
               <AnimatedNumber value={new Set(filteredStudents.map(s => s.id)).size} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1" />
               <div className="text-xs text-gray-500">Estudiantes</div>
             </div>
-            <div className="text-center p-3 bg-gray-50 rounded-lg">
+          </div>
+
+          {/* Matrículas Container */}
+          <div className="flex flex-col justify-between p-4 bg-gray-50 rounded-lg">
+            <div className="text-center">
               <AnimatedNumber value={filteredStudents.length} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1" />
               <div className="text-xs text-gray-500">Matrículas</div>
             </div>
-          </div>
-          <div className="flex justify-between gap-4 pt-4 border-t border-gray-100">
-            <div className="flex-1 text-center group/aldia relative cursor-help">
-              <AnimatedNumber value={paymentStatusCounts.alDia} className="text-lg sm:text-2xl font-bold text-green-600" />
-              <div className="text-xs text-gray-500">al día</div>
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800 text-slate-200 text-xs rounded-lg shadow-xl border border-slate-700 opacity-0 invisible group-hover/aldia:opacity-100 group-hover/aldia:visible transition-all duration-200 whitespace-nowrap z-20">
-                <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-2 h-2 bg-slate-800 border-b border-r border-slate-700 rotate-45"></div>
-                Matrículas con pagos al día
+            <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-gray-500">al día</span>
+                <AnimatedNumber value={paymentStatusCounts.alDia} className="text-lg font-bold text-green-600" />
               </div>
-            </div>
-            <div className="flex-1 text-center group/atrasados relative cursor-help">
-              <AnimatedNumber value={paymentStatusCounts.atrasados} className="text-lg sm:text-2xl font-bold text-red-600" />
-              <div className="text-xs text-gray-500">atrasados</div>
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-slate-800 text-slate-200 text-xs rounded-lg shadow-xl border border-slate-700 opacity-0 invisible group-hover/atrasados:opacity-100 group-hover/atrasados:visible transition-all duration-200 whitespace-nowrap z-20">
-                <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-2 h-2 bg-slate-800 border-b border-r border-slate-700 rotate-45"></div>
-                Matrículas con pagos pendientes
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-gray-500">atrasados</span>
+                <AnimatedNumber value={paymentStatusCounts.atrasados} className="text-lg font-bold text-red-600" />
               </div>
             </div>
           </div>
