@@ -573,7 +573,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
               value={selectedClass}
               onChange={setSelectedClass}
               allLabel="Todas las asignaturas"
-              className="w-full sm:w-48"
+              className="w-full sm:w-56"
             />
           )}
           {/* Academy Filter - Only for ADMIN */}

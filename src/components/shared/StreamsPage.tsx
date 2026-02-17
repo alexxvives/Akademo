@@ -311,7 +311,7 @@ export function StreamsPage({ role }: StreamsPageProps) {
               value={selectedClass}
               onChange={setSelectedClass}
               allLabel="Todas las asignaturas"
-              className="w-full md:w-56"
+              className="w-full md:w-64"
             />
           )}
 
@@ -321,7 +321,7 @@ export function StreamsPage({ role }: StreamsPageProps) {
               value={selectedClass}
               onChange={setSelectedClass}
               allLabel="Todas las asignaturas"
-              className="w-56"
+              className="w-64"
             />
           )}
 

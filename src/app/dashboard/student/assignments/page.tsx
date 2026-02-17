@@ -261,7 +261,7 @@ export default function StudentAssignments() {
             onChange={setSelectedClassId}
             allLabel="Todas las asignaturas"
             allValue=""
-            className="w-full md:w-64"
+            className="w-full md:w-72"
           />
         </div>
 

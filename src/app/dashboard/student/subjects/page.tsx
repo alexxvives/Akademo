@@ -272,6 +272,11 @@ export default function StudentClassesPage() {
                     <div className="flex items-center justify-between gap-2 mb-1">
                     <div className="flex items-center gap-2">
                       <h3 className="text-lg sm:text-xl font-bold text-gray-900">{classItem.name}</h3>
+                      {(classItem.university || classItem.carrera) && (
+                        <span className="text-lg sm:text-xl text-gray-600">
+                          {classItem.carrera && classItem.university ? `${classItem.carrera} (${classItem.university})` : classItem.carrera || classItem.university}
+                        </span>
+                      )}
                       {classItem.whatsappGroupLink && (
                         <a
                           href={classItem.whatsappGroupLink}

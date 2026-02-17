@@ -584,7 +584,7 @@ export default function PagosPage({ role }: PagosPageProps) {
             value={selectedClass}
             onChange={setSelectedClass}
             allLabel="Todas las asignaturas"
-            className="w-full sm:w-48"
+            className="w-full sm:w-56"
           />
         </div>
       </div>

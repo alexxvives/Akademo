@@ -25,6 +25,8 @@ interface ClassSummary {
   name: string;
   teacherFirstName?: string | null;
   teacherLastName?: string | null;
+  university?: string | null;
+  carrera?: string | null;
 }
 
 export default function AcademyLessonsPage() {

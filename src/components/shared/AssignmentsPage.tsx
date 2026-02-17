@@ -580,7 +580,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
                 onChange={(v) => isAcademy ? setSelectedClassId(v) : setSelectedClass(v)}
                 allLabel="Todas las asignaturas"
                 allValue=""
-                className="w-full sm:w-48"
+                className="w-full sm:w-56"
               />
             )}
           </div>

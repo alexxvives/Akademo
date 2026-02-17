@@ -43,6 +43,8 @@ interface StudentAverage {
 interface ClassSummary {
   id: string;
   name: string;
+  university?: string | null;
+  carrera?: string | null;
 }
 
 interface Academy {
@@ -496,7 +498,7 @@ export function GradesPage({ role }: GradesPageProps) {
             value={selectedClass}
             onChange={setSelectedClass}
             allLabel="Todas las asignaturas"
-            className="w-full sm:w-48"
+            className="w-full sm:w-56"
             disabled={classes.length === 0}
           />
         </div>

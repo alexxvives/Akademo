@@ -27,6 +27,8 @@ interface Teacher {
 interface ClassSummary {
   id: string;
   name: string;
+  university?: string | null;
+  carrera?: string | null;
 }
 
 interface Academy {
