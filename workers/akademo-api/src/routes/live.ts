@@ -459,21 +459,25 @@ live.patch('/:id', async (c) => {
     const streamId = c.req.param('id');
     const { status, title } = await c.req.json();
 
-    if (!['ADMIN', 'TEACHER'].includes(session.role)) {
+    if (!['ADMIN', 'TEACHER', 'ACADEMY'].includes(session.role)) {
       return c.json(errorResponse('Not authorized'), 403);
     }
 
     // Verify ownership
     const stream = await c.env.DB
-      .prepare('SELECT * FROM LiveStream WHERE id = ?')
+      .prepare(`SELECT ls.*, a.ownerId as academyOwnerId FROM LiveStream ls JOIN Class c ON ls.classId = c.id JOIN Academy a ON c.academyId = a.id WHERE ls.id = ?`)
       .bind(streamId)
-      .first();
+      .first() as any;
 
     if (!stream) {
       return c.json(errorResponse('Stream not found'), 404);
     }
 
     if (session.role === 'TEACHER' && stream.teacherId !== session.id) {
+      return c.json(errorResponse('Not authorized'), 403);
+    }
+
+    if (session.role === 'ACADEMY' && stream.academyOwnerId !== session.id) {
       return c.json(errorResponse('Not authorized'), 403);
     }
 

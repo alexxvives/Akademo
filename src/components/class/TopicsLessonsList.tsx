@@ -479,21 +479,26 @@ export default function TopicsLessonsList({
           <div className="relative" style={{ height: '160px' }}>
             {(lesson.firstVideoBunnyGuid || lesson.firstVideoUpload?.bunnyGuid) ? (
               <>
-                <Image
-                  src={getBunnyThumbnailUrl(lesson.firstVideoBunnyGuid || lesson.firstVideoUpload?.bunnyGuid || '')}
-                  alt={lesson.title}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 600px"
-                  unoptimized
-                  className={`object-cover ${lesson.isUploading || lesson.isTranscoding ? 'opacity-50' : ''}`}
-                />
-                {(lesson.isUploading || lesson.isTranscoding) && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60">
+                {lesson.isTranscoding ? (
+                  <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 flex flex-col items-center justify-center">
                     <div className="w-8 h-8 animate-spin rounded-full border-2 border-white/30 border-t-purple-400 mb-2" />
-                    <span className="text-sm font-medium text-white">
-                      {lesson.isUploading ? 'Subiendo...' : 'Transcodificando...'}
-                    </span>
+                    <span className="text-sm font-medium text-white">Transcodificando...</span>
                   </div>
+                ) : lesson.isUploading ? (
+                  <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 flex flex-col items-center justify-center">
+                    <div className="w-8 h-8 animate-spin rounded-full border-2 border-white/30 border-t-purple-400 mb-2" />
+                    <span className="text-sm font-medium text-white">Subiendo...</span>
+                  </div>
+                ) : (
+                  <Image
+                    src={`${getBunnyThumbnailUrl(lesson.firstVideoBunnyGuid || lesson.firstVideoUpload?.bunnyGuid || '')}?t=${lesson.isTranscoding || 0}`}
+                    alt={lesson.title}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 600px"
+                    unoptimized
+                    className="object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
                 )}
                 {/* Date Badge - Top Left */}
                 {released && (

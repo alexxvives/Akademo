@@ -521,6 +521,7 @@ classes.delete('/:id', async (c) => {
     }
 
     // 0. Fetch all video bunnyGuids before deleting from DB (to clean Bunny CDN)
+    // EXCLUDE videos that came from stream recordings — those should only be deleted when the stream itself is deleted
     const videosToDelete = await c.env.DB.prepare(`
       SELECT u.bunnyGuid
       FROM Video v
@@ -529,13 +530,34 @@ classes.delete('/:id', async (c) => {
       WHERE l.classId = ? AND u.bunnyGuid IS NOT NULL
     `).bind(classId).all();
 
-    // Delete videos from Bunny CDN
+    // Get all stream recording GUIDs for this class (single GUIDs or JSON arrays)
+    const streamRecordings = await c.env.DB.prepare(
+      `SELECT recordingId FROM LiveStream WHERE classId = ? AND recordingId IS NOT NULL`
+    ).bind(classId).all();
+    const streamGuids = new Set<string>();
+    for (const row of (streamRecordings.results || [])) {
+      const rid = (row as any).recordingId as string;
+      if (rid) {
+        try {
+          const parsed = JSON.parse(rid);
+          if (Array.isArray(parsed)) {
+            parsed.forEach((g: string) => streamGuids.add(g));
+          } else {
+            streamGuids.add(rid);
+          }
+        } catch {
+          streamGuids.add(rid);
+        }
+      }
+    }
+
+    // Delete non-stream videos from Bunny CDN
     const apiKey = c.env.BUNNY_STREAM_API_KEY;
     const libraryId = c.env.BUNNY_STREAM_LIBRARY_ID;
     if (apiKey && libraryId) {
       for (const row of (videosToDelete.results || [])) {
         const bunnyGuid = (row as any).bunnyGuid;
-        if (bunnyGuid) {
+        if (bunnyGuid && !streamGuids.has(bunnyGuid)) {
           try {
             const resp = await fetch(`https://video.bunnycdn.com/library/${libraryId}/videos/${bunnyGuid}`, {
               method: 'DELETE',
@@ -547,6 +569,8 @@ classes.delete('/:id', async (c) => {
           } catch (err) {
             console.error(`[Delete Class] Error deleting Bunny video ${bunnyGuid}:`, err);
           }
+        } else if (bunnyGuid && streamGuids.has(bunnyGuid)) {
+          console.log(`[Delete Class] Skipping stream recording video ${bunnyGuid} — preserved in Bunny`);
         }
       }
     }

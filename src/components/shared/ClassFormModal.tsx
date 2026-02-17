@@ -1,6 +1,7 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
+import { StyledSelect } from '@/components/ui/StyledSelect';
 
 interface Teacher {
   id: string;
@@ -84,6 +85,27 @@ export function ClassFormModal({
   const submitLabel = mode === 'create' ? 'Crear Asignatura' : 'Guardar Cambios';
   const savingLabel = mode === 'create' ? 'Creando...' : 'Guardando...';
 
+  const teacherOptions = useMemo(() => {
+    const filtered = teachers.filter((teacher) => {
+      if (!allowMultipleTeachers && editingClass) {
+        return teacher.userId === editingClass.teacherId || !classes.some((cls) => cls.teacherId === teacher.userId);
+      }
+      if (!allowMultipleTeachers) {
+        return !classes.some((cls) => cls.teacherId === teacher.userId);
+      }
+      return true;
+    });
+    return [
+      { value: '', label: 'Sin profesor asignado' },
+      ...filtered.map((t) => ({ value: t.userId, label: `${t.firstName} ${t.lastName} (${t.email})` })),
+    ];
+  }, [teachers, allowMultipleTeachers, editingClass, classes]);
+
+  const zoomOptions = useMemo(() => [
+    { value: '', label: 'Sin cuenta de Zoom' },
+    ...zoomAccounts.map((a) => ({ value: a.id, label: a.accountName })),
+  ], [zoomAccounts]);
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white rounded-2xl w-full max-w-3xl p-6 my-8">
@@ -133,38 +155,12 @@ export function ClassFormModal({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Profesor asignado (opcional)</label>
-              <div className="relative">
-                <select
-                  value={formData.teacherId}
-                  onChange={(e) => setFormData((f) => ({ ...f, teacherId: e.target.value }))}
-                  className="appearance-none w-full pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-gray-500"
-                >
-                  <option value="">Sin profesor asignado (asignar después)</option>
-                  {teachers
-                    .filter((teacher) => {
-                      if (!allowMultipleTeachers && editingClass) {
-                        return (
-                          teacher.userId === editingClass.teacherId ||
-                          !classes.some((cls) => cls.teacherId === teacher.userId)
-                        );
-                      }
-                      if (!allowMultipleTeachers) {
-                        return !classes.some((cls) => cls.teacherId === teacher.userId);
-                      }
-                      return true;
-                    })
-                    .map((teacher) => (
-                      <option key={teacher.userId} value={teacher.userId}>
-                        {teacher.firstName} {teacher.lastName} ({teacher.email})
-                      </option>
-                    ))}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </div>
+              <StyledSelect
+                value={formData.teacherId}
+                onChange={(v) => setFormData((f) => ({ ...f, teacherId: v }))}
+                options={teacherOptions}
+                placeholder="Sin profesor asignado"
+              />
             </div>
 
             <div>
@@ -207,10 +203,10 @@ export function ClassFormModal({
           </div>
 
           {/* Payment Options */}
-          <div className="space-y-4 p-4 rounded-xl transition-all">
-            <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2 group relative">
-                <label className="block text-sm font-medium text-gray-900 text-left">Opciones de pago *</label>
+                <label className="block text-sm font-medium text-gray-700">Opciones de pago *</label>
                 <svg className="w-4 h-4 text-gray-400 cursor-help" fill="currentColor" viewBox="0 0 20 20">
                   <path
                     fillRule="evenodd"
@@ -243,7 +239,6 @@ export function ClassFormModal({
                 active={formData.allowMonthly}
                 onToggle={() => setFormData((f) => ({ ...f, allowMonthly: !f.allowMonthly }))}
                 label="Pago Mensual"
-                desc="Cobro recurrente mensual"
                 color="blue"
                 value={formData.monthlyPrice}
                 onChange={(v) => setFormData((f) => ({ ...f, monthlyPrice: v, allowMonthly: true }))}
@@ -254,7 +249,6 @@ export function ClassFormModal({
                 active={formData.allowOneTime}
                 onToggle={() => setFormData((f) => ({ ...f, allowOneTime: !f.allowOneTime }))}
                 label="Pago Único"
-                desc="Pago único, acceso vitalicio"
                 color="green"
                 value={formData.oneTimePrice}
                 onChange={(v) => setFormData((f) => ({ ...f, oneTimePrice: v, allowOneTime: true }))}
@@ -266,25 +260,12 @@ export function ClassFormModal({
           {/* Zoom */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Cuenta de Zoom (opcional)</label>
-            <div className="relative">
-              <select
-                value={formData.zoomAccountId}
-                onChange={(e) => setFormData((f) => ({ ...f, zoomAccountId: e.target.value }))}
-                className="appearance-none w-full pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">Sin cuenta de Zoom</option>
-                {zoomAccounts.map((account) => (
-                  <option key={account.id} value={account.id}>
-                    {account.accountName}
-                  </option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-            </div>
+            <StyledSelect
+              value={formData.zoomAccountId}
+              onChange={(v) => setFormData((f) => ({ ...f, zoomAccountId: v }))}
+              options={zoomOptions}
+              placeholder="Sin cuenta de Zoom"
+            />
             {zoomAccounts.length === 0 && (
               <p className="text-xs text-gray-500 mt-1">
                 No hay cuentas de Zoom conectadas.{' '}
@@ -340,7 +321,6 @@ function PaymentOptionCard({
   active,
   onToggle,
   label,
-  desc,
   color,
   value,
   onChange,
@@ -349,7 +329,6 @@ function PaymentOptionCard({
   active: boolean;
   onToggle: () => void;
   label: string;
-  desc: string;
   color: 'blue' | 'green';
   value: string;
   onChange: (v: string) => void;
@@ -414,7 +393,6 @@ function PaymentOptionCard({
           disabled={!active}
         />
       </div>
-      <p className={`text-xs mt-2 ${c.desc}`}>{desc}</p>
     </button>
   );
 }

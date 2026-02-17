@@ -13,6 +13,7 @@ import { useTranscodingPoll } from '@/hooks/useTranscodingPoll';
 import { multipartUpload } from '@/lib/multipart-upload';
 import { uploadToBunny } from '@/lib/bunny-upload';
 import { formatDuration } from '@/lib/formatters';
+import { StyledSelect } from '@/components/ui/StyledSelect';
 
 // Import shared components
 import { ClassHeader, PendingEnrollments, TopicsLessonsList } from '@/components/class';
@@ -1872,16 +1873,15 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
                         {/* Topic Selector - show in BOTH create and edit modes */}
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">Tema</label>
-                          <select
+                          <StyledSelect
                             value={lessonFormData.topicId}
-                            onChange={e => setLessonFormData({ ...lessonFormData, topicId: e.target.value })}
-                            className="w-full px-3 py-2 pr-10 border border-gray-200 rounded-lg text-sm bg-white appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20fill%3D%27none%27%20viewBox%3D%270%200%2020%2020%27%3E%3Cpath%20stroke%3D%27%236b7280%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%20stroke-width%3D%271.5%27%20d%3D%27M6%208l4%204%204-4%27%2F%3E%3C%2Fsvg%3E')] bg-[length:1.5em] bg-[right_0.5rem_center] bg-no-repeat"
-                          >
-                            <option value="">Sin tema</option>
-                            {topics.map(topic => (
-                              <option key={topic.id} value={topic.id}>{topic.name}</option>
-                            ))}
-                          </select>
+                            onChange={(v) => setLessonFormData({ ...lessonFormData, topicId: v })}
+                            options={[
+                              { value: '', label: 'Sin tema' },
+                              ...topics.map(topic => ({ value: topic.id, label: topic.name })),
+                            ]}
+                            placeholder="Sin tema"
+                          />
                         </div>
                         {/* Date/Time inputs - Show when Programar is selected - Only for CREATE mode */}
                         {!editingLessonId && !lessonFormData.publishImmediately && (
