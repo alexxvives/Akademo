@@ -20,7 +20,7 @@ interface ClassOption {
 }
 
 interface FeedbackPageProps {
-  role: 'ACADEMY' | 'ADMIN';
+  role: 'ACADEMY' | 'ADMIN' | 'TEACHER';
 }
 
 export function FeedbackPage({ role }: FeedbackPageProps) {
@@ -35,6 +35,10 @@ export function FeedbackPage({ role }: FeedbackPageProps) {
   const [selectedAcademy, setSelectedAcademy] = useState('all');
   const [selectedClass, setSelectedClass] = useState('all');
 
+  const isAcademy = role === 'ACADEMY';
+  const isTeacher = role === 'TEACHER';
+  const isAdmin = role === 'ADMIN';
+
   useEffect(() => {
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -42,8 +46,10 @@ export function FeedbackPage({ role }: FeedbackPageProps) {
 
   const loadData = async () => {
     try {
-      if (role === 'ACADEMY') {
+      if (isAcademy) {
         await loadAcademyData();
+      } else if (isTeacher) {
+        await loadTeacherData();
       } else {
         await loadAdminData();
       }
@@ -79,6 +85,86 @@ export function FeedbackPage({ role }: FeedbackPageProps) {
     } catch (error) {
       console.error('Failed to load academy data:', error);
       setClasses([]);
+      setLoading(false);
+    }
+  };
+
+  const loadTeacherData = async () => {
+    try {
+      const res = await apiClient('/teacher/academy');
+      const result = await res.json() as { data?: { academy?: { name?: string; paymentStatus?: string } } };
+      if (result.data?.academy) {
+        const academy = result.data.academy;
+        setAcademyName(academy.name || '');
+        const status = academy.paymentStatus || 'NOT PAID';
+        setPaymentStatus(status);
+
+        if (status === 'NOT PAID') {
+          const { classFeedback } = generateDemoFeedbackData();
+          setClasses(classFeedback);
+          setLoading(false);
+          return;
+        }
+
+        await loadTeacherFeedback();
+      } else {
+        setClasses([]);
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error('Failed to load teacher data:', error);
+      setClasses([]);
+      setLoading(false);
+    }
+  };
+
+  const loadTeacherFeedback = async () => {
+    try {
+      const [classesRes, ratingsRes] = await Promise.all([
+        apiClient('/classes'),
+        apiClient('/ratings/teacher'),
+      ]);
+      const [classesData, ratingsData] = await Promise.all([
+        classesRes.json(),
+        ratingsRes.json(),
+      ]);
+
+      const allFeedback: ClassFeedback[] = [];
+      if (classesData.success && Array.isArray(classesData.data)) {
+        for (const cls of classesData.data) {
+          const ratingClass =
+            ratingsData.success && Array.isArray(ratingsData.data)
+              ? ratingsData.data.find((rc: ClassFeedback) => rc.id === cls.id)
+              : null;
+
+          if (ratingClass) {
+            allFeedback.push({
+              ...ratingClass,
+              university: cls.university,
+              carrera: cls.carrera,
+            });
+          } else {
+            allFeedback.push({
+              id: cls.id,
+              name: cls.name,
+              teacherName:
+                cls.teacherName ||
+                `${cls.teacherFirstName || ''} ${cls.teacherLastName || ''}`.trim(),
+              university: cls.university,
+              carrera: cls.carrera,
+              totalRatings: 0,
+              averageRating: 0,
+              topics: [],
+            });
+          }
+        }
+      }
+
+      allFeedback.sort((a, b) => b.averageRating - a.averageRating);
+      setClasses(allFeedback);
+    } catch (error) {
+      console.error('Failed to load teacher feedback:', error);
+    } finally {
       setLoading(false);
     }
   };
@@ -184,8 +270,10 @@ export function FeedbackPage({ role }: FeedbackPageProps) {
         body: JSON.stringify({ ratingIds }),
       });
       window.dispatchEvent(new CustomEvent('unreadReviewsChanged'));
-      if (role === 'ACADEMY') {
+      if (isAcademy) {
         loadFeedbackWithClasses();
+      } else if (isTeacher) {
+        loadTeacherFeedback();
       } else {
         loadRatings();
       }
@@ -197,7 +285,7 @@ export function FeedbackPage({ role }: FeedbackPageProps) {
   // Filtering
   const filteredClasses = useMemo(() => {
     let result = classes;
-    if (role === 'ADMIN') {
+    if (isAdmin) {
       if (selectedAcademy !== 'all') {
         result = result.filter((c) => c.academyId === selectedAcademy);
       }
@@ -206,7 +294,7 @@ export function FeedbackPage({ role }: FeedbackPageProps) {
       result = result.filter((c) => c.id === selectedClass);
     }
     return result;
-  }, [role, classes, selectedAcademy, selectedClass]);
+  }, [isAdmin, classes, selectedAcademy, selectedClass]);
 
   const filteredClassOptions = useMemo(() => {
     if (selectedAcademy === 'all') return [];
@@ -222,18 +310,18 @@ export function FeedbackPage({ role }: FeedbackPageProps) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">
-            {role === 'ACADEMY' ? 'Valoraciones de Estudiantes' : 'Feedback de Estudiantes'}
+            {isAdmin ? 'Feedback de Estudiantes' : 'Valoraciones de Estudiantes'}
           </h1>
-          {role === 'ACADEMY' && academyName && (
+          {(isAcademy || isTeacher) && academyName && (
             <p className="text-sm text-gray-500 mt-1">{academyName}</p>
           )}
-          {role === 'ADMIN' && (
+          {isAdmin && (
             <p className="text-gray-600 text-sm mt-1">Todas las academias</p>
           )}
         </div>
 
-        {/* Academy class filter */}
-        {role === 'ACADEMY' && classes.length > 1 && (
+        {/* Academy/Teacher class filter */}
+        {(isAcademy || isTeacher) && classes.length > 1 && (
           <ClassSearchDropdown
             classes={classes}
             value={selectedClass}
@@ -244,7 +332,7 @@ export function FeedbackPage({ role }: FeedbackPageProps) {
         )}
 
         {/* Admin filters */}
-        {role === 'ADMIN' && (
+        {isAdmin && (
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             {selectedAcademy !== 'all' && filteredClassOptions.length > 0 && (
               <ClassSearchDropdown

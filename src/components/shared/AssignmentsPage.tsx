@@ -23,12 +23,14 @@ interface Submission {
 interface Academy { id: string; name: string; }
 
 interface AssignmentsPageProps {
-  role: 'ACADEMY' | 'ADMIN';
+  role: 'ACADEMY' | 'ADMIN' | 'TEACHER';
 }
 
 export function AssignmentsPage({ role }: AssignmentsPageProps) {
   const isAcademy = role === 'ACADEMY';
   const isAdmin = role === 'ADMIN';
+  const isTeacher = role === 'TEACHER';
+  const canManage = isAcademy || isTeacher || isAdmin; // All roles can create/edit/delete
 
   // Shared state
   const [classes, setClasses] = useState<Class[]>([]);
@@ -109,10 +111,10 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
   }, [paymentStatus, selectedClassId]);
 
   useEffect(() => {
-    if (isAcademy && userEmail && paymentStatus) {
+    if ((isAcademy || isTeacher) && userEmail && paymentStatus) {
       loadAcademyAssignments();
     }
-  }, [isAcademy, loadAcademyAssignments, userEmail, paymentStatus]);
+  }, [isAcademy, isTeacher, loadAcademyAssignments, userEmail, paymentStatus]);
 
   const loadAcademyData = async () => {
     try {
@@ -150,7 +152,40 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
       setLoading(false);
     }
   };
+  // ——— Teacher data loading ———
+  const loadTeacherData = async () => {
+    try {
+      setLoading(true);
+      const userRes = await apiClient('/auth/me');
+      const userResult = await userRes.json();
+      const email = userResult.success && userResult.data ? userResult.data.email || '' : '';
+      setUserEmail(email);
 
+      const academyRes = await apiClient('/teacher/academy');
+      if (academyRes.ok) {
+        const academyResult = await academyRes.json() as { data?: { academy?: { name?: string; paymentStatus?: string; requireGrading?: number } } };
+        if (academyResult.data?.academy) {
+          setAcademyName(academyResult.data.academy.name || '');
+          const status = academyResult.data.academy.paymentStatus || 'PAID';
+          setPaymentStatus(status);
+          setRequireGrading(academyResult.data.academy.requireGrading !== 0);
+          if (status === 'NOT PAID') {
+            const demoClasses = generateDemoClasses();
+            setClasses(demoClasses.map(c => ({ id: c.id, name: c.name })));
+            setLoading(false);
+            return;
+          }
+        }
+      }
+      const classRes = await apiClient('/classes');
+      const classResult = await classRes.json();
+      if (classResult.success && classResult.data) setClasses(classResult.data);
+    } catch (error) {
+      console.error('Failed to load teacher data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
   // â”€â”€â”€ Admin data loading â”€â”€â”€
   const loadAdminData = async () => {
     try {
@@ -208,8 +243,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
 
   // â”€â”€â”€ Effects â”€â”€â”€
   useEffect(() => {
-    if (isAcademy) loadAcademyData();
-    else loadAdminData();
+    if (isAcademy) loadAcademyData();    else if (isTeacher) loadTeacherData();    else loadAdminData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -297,8 +331,8 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
     }
     if (uploadIds.length === 0) { alert('No hay archivos disponibles'); return; }
 
-    // Demo mode (academy only)
-    if (isAcademy && paymentStatus === 'NOT PAID') {
+    // Demo mode (academy/teacher only)
+    if ((isAcademy || isTeacher) && paymentStatus === 'NOT PAID') {
       window.open('/demo/Documento.pdf', '_blank');
       return;
     }
@@ -402,10 +436,9 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
     e.preventDefault();
     if (!selectedSubmission) return;
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/assignments/submissions/${selectedSubmission.id}/grade`, {
+      const res = await apiClient(`/assignments/submissions/${selectedSubmission.id}/grade`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
         body: JSON.stringify({ score: gradeScore, feedback: gradeFeedback }),
       });
       const result = await res.json();
@@ -541,8 +574,8 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
           <div>
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-2xl font-semibold text-gray-900">Ejercicios</h1>
-              {isAcademy && (
-                <button onClick={() => { setSelectedClassForCreate(selectedClassId); setShowCreateModal(true); }}
+              {canManage && (
+                <button onClick={() => { setSelectedClassForCreate(isAdmin ? selectedClass : selectedClassId); setShowCreateModal(true); }}
                   className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium text-sm transition-all flex items-center gap-2">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -552,7 +585,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
               )}
             </div>
             <p className="text-sm text-gray-500 mt-1">
-              {isAcademy ? (academyName || '') : 'Vista general de todos los ejercicios'}
+              {(isAcademy || isTeacher) ? (academyName || '') : 'Vista general de todos los ejercicios'}
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -567,12 +600,12 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
               />
             )}
 
-            {/* Class filter (academy always, admin only when academy selected) */}
-            {(isAcademy || (isAdmin && selectedAcademy)) && (
+            {/* Class filter (academy/teacher always, admin only when academy selected) */}
+            {(isAcademy || isTeacher || (isAdmin && selectedAcademy)) && (
               <ClassSearchDropdown
                 classes={isAdmin ? filteredClasses : classes}
-                value={isAcademy ? selectedClassId : selectedClass}
-                onChange={(v) => isAcademy ? setSelectedClassId(v) : setSelectedClass(v)}
+                value={(isAcademy || isTeacher) ? selectedClassId : selectedClass}
+                onChange={(v) => (isAcademy || isTeacher) ? setSelectedClassId(v) : setSelectedClass(v)}
                 allLabel="Todas las asignaturas"
                 allValue=""
                 className="w-full sm:w-56"
@@ -591,7 +624,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
             </div>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">No hay ejercicios</h2>
             <p className="text-gray-500">
-              {isAcademy
+              {(isAcademy || isTeacher)
                 ? 'Crea tu primer ejercicio para esta asignatura'
                 : selectedAcademy
                   ? 'No hay ejercicios para los filtros seleccionados'
@@ -615,19 +648,16 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
             }}
           />
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-            {isAcademy && (
-              <div className="overflow-x-auto max-h-[750px] overflow-y-auto">
-                {renderTable()}
-              </div>
-            )}
-            {isAdmin && renderTable()}
+            <div className="overflow-x-auto max-h-[750px] overflow-y-auto">
+              {renderTable()}
+            </div>
           </div>
           </>
         )}
       </div>
 
-      {/* Academy-only modals */}
-      {isAcademy && (
+      {/* Modals for create/edit/submissions/grading */}
+      {canManage && (
         <AssignmentModals
           classes={classes}
           paymentStatus={paymentStatus}
@@ -663,7 +693,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
   function renderTable() {
     return (
       <table className="min-w-full divide-y divide-gray-200">
-        <thead className={`bg-gray-50 ${isAcademy ? 'sticky top-0 z-10' : ''}`}>
+        <thead className="bg-gray-50 sticky top-0 z-10">
           <tr>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Título</th>
             {isAdmin && <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Academia</th>}
@@ -672,7 +702,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
             {requireGrading && <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha límite</th>}
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entregas</th>
             {requireGrading && <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Calificadas</th>}
-            {isAcademy && <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Solucionario</th>}
+            {canManage && <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Solucionario</th>}
             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
           </tr>
         </thead>
@@ -722,7 +752,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
               <td className="px-6 py-4 whitespace-nowrap text-sm">
                 <div className="inline-flex items-center gap-2">
                   <span>{assignment.submissionCount}</span>
-                  {isAcademy && paymentStatus === 'NOT PAID' && (() => {
+                  {(isAcademy || isTeacher) && paymentStatus === 'NOT PAID' && (() => {
                     const newCount = countNewDemoSubmissions(assignment.id);
                     return newCount > 0 ? (
                       <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-green-800 bg-green-200 rounded">
@@ -733,7 +763,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
                 </div>
               </td>
               {requireGrading && <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assignment.gradedCount} / {assignment.submissionCount}</td>}
-              {isAcademy && (
+              {canManage && (
                 <td className="px-6 py-4 whitespace-nowrap text-center text-sm">
                   {assignment.solutionUploadId ? (
                     <div className="inline-flex items-center gap-1">
@@ -781,7 +811,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                     </svg>
                   </button>
-                  {isAcademy && (
+                  {canManage && (
                     <>
                       <button onClick={() => openEditAssignment(assignment)}
                         className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-gray-100 rounded-lg transition-colors"
@@ -792,13 +822,13 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
                       </button>
                       <button
                         onClick={() => {
-                          if (!(isAcademy && paymentStatus === 'NOT PAID' && userEmail.toLowerCase().includes('demo'))) {
+                          if (!((isAcademy || isTeacher) && paymentStatus === 'NOT PAID' && userEmail.toLowerCase().includes('demo'))) {
                             handleDeleteAssignment(assignment.id, assignment.title);
                           }
                         }}
-                        disabled={deletingAssignmentId === assignment.id || (isAcademy && paymentStatus === 'NOT PAID' && userEmail.toLowerCase().includes('demo'))}
+                        disabled={deletingAssignmentId === assignment.id || ((isAcademy || isTeacher) && paymentStatus === 'NOT PAID' && userEmail.toLowerCase().includes('demo'))}
                         className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        title={isAcademy && paymentStatus === 'NOT PAID' && userEmail.toLowerCase().includes('demo') ? 'No disponible en modo demostración' : 'Eliminar ejercicio'}>
+                        title={(isAcademy || isTeacher) && paymentStatus === 'NOT PAID' && userEmail.toLowerCase().includes('demo') ? 'No disponible en modo demostración' : 'Eliminar ejercicio'}>
                         {deletingAssignmentId === assignment.id ? (
                           <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
                         ) : (

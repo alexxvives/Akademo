@@ -44,7 +44,7 @@ interface ClassOption {
 }
 
 interface StreamsPageProps {
-  role: 'ACADEMY' | 'ADMIN';
+  role: 'ACADEMY' | 'ADMIN' | 'TEACHER';
 }
 
 export function StreamsPage({ role }: StreamsPageProps) {
@@ -62,8 +62,11 @@ export function StreamsPage({ role }: StreamsPageProps) {
   const [academies, setAcademies] = useState<Academy[]>([]);
   const [selectedAcademy, setSelectedAcademy] = useState('all');
 
-  const isDemo = role === 'ACADEMY' && paymentStatus === 'NOT PAID';
-  const dashboardBase = role === 'ACADEMY' ? '/dashboard/academy' : '/dashboard/admin';
+  const isAcademy = role === 'ACADEMY';
+  const isTeacher = role === 'TEACHER';
+  const isAdmin = role === 'ADMIN';
+  const isDemo = (isAcademy || isTeacher) && paymentStatus === 'NOT PAID';
+  const dashboardBase = isAcademy ? '/dashboard/academy' : isTeacher ? '/dashboard/teacher' : '/dashboard/admin';
 
   const loadStreams = useCallback(async () => {
     try {
@@ -81,7 +84,55 @@ export function StreamsPage({ role }: StreamsPageProps) {
 
   const loadData = useCallback(async () => {
     try {
-      if (role === 'ACADEMY') {
+      if (role === 'TEACHER') {
+        // Teacher: load via /teacher/academy + /classes + /live/history
+        const academyRes = await apiClient('/teacher/academy');
+        if (academyRes.ok) {
+          const academyResult = await academyRes.json() as { data?: { academy?: { name?: string; paymentStatus?: string } } };
+          if (academyResult.data?.academy) {
+            setAcademyName(academyResult.data.academy.name || '');
+            const status = academyResult.data.academy.paymentStatus || 'NOT PAID';
+            setPaymentStatus(status);
+
+            if (status === 'NOT PAID') {
+              const demoStreams = generateDemoStreams() as Stream[];
+              setStreams(demoStreams.map((stream) => ({
+                ...stream,
+                classSlug: stream.className.toLowerCase().replace(/\s+/g, '-'),
+              })));
+              setClasses([
+                { id: 'demo-c1', name: 'Programación Web' },
+                { id: 'demo-c2', name: 'Matemáticas Avanzadas' },
+                { id: 'demo-c3', name: 'Diseño Gráfico' },
+                { id: 'demo-c4', name: 'Física Cuántica' },
+              ]);
+              setLoading(false);
+              return;
+            }
+          }
+        }
+
+        const [classesRes, streamsRes] = await Promise.all([
+          apiClient('/classes'),
+          apiClient('/live/history'),
+        ]);
+        const [classesResult, streamsResult] = await Promise.all([
+          classesRes.json(),
+          streamsRes.json(),
+        ]);
+        if (classesResult.success && Array.isArray(classesResult.data)) setClasses(classesResult.data);
+        if (streamsResult.success && Array.isArray(streamsResult.data)) setStreams(streamsResult.data);
+        setLoading(false);
+
+        const pollInterval = setInterval(async () => {
+          try {
+            const r = await apiClient('/live/history');
+            const res = await r.json();
+            if (res.success) setStreams(res.data || []);
+          } catch (e) { console.error(e); }
+        }, 10000);
+        window.addEventListener('beforeunload', () => clearInterval(pollInterval));
+      } else if (role === 'ACADEMY') {
         const [academiesRes, classesRes] = await Promise.all([
           apiClient('/academies'),
           apiClient('/academies/classes'),
@@ -296,17 +347,17 @@ export function StreamsPage({ role }: StreamsPageProps) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Historial de Streams</h1>
-          {role === 'ACADEMY' && academyName && (
+          {(isAcademy || isTeacher) && academyName && (
             <p className="text-gray-600 text-sm mt-1">{academyName}</p>
           )}
-          {role === 'ADMIN' && (
+          {isAdmin && (
             <p className="text-gray-600 text-sm mt-1">Todas las academias</p>
           )}
         </div>
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           {/* Class filter — for academy, or admin when academy selected */}
-          {role === 'ACADEMY' && classes.length > 0 && (
+          {(isAcademy || isTeacher) && classes.length > 0 && (
             <ClassSearchDropdown
               classes={classes}
               value={selectedClass}
