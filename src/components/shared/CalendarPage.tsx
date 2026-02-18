@@ -273,7 +273,8 @@ export function CalendarPage({ role }: CalendarPageProps) {
   const eventsByDate = useMemo(() => {
     const map = new Map<string, CalendarEvent[]>();
     for (const event of filteredEvents) {
-      const key = formatDateKey(new Date(event.date));
+      // Use the date string directly (YYYY-MM-DD) as the key to avoid timezone shifting
+      const key = event.date.startsWith('20') ? event.date.slice(0, 10) : formatDateKey(new Date(event.date));
       const existing = map.get(key) || [];
       existing.push(event);
       map.set(key, existing);
@@ -373,11 +374,20 @@ export function CalendarPage({ role }: CalendarPageProps) {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Calendario</h1>
-          {academyName && <p className="text-sm text-gray-500 mt-1">{academyName}</p>}
-          {!academyName && role === 'ADMIN' && <p className="text-sm text-gray-500 mt-1">AKADEMO PLATFORM</p>}
-          {isDemo && <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">Datos de demostración</span>}
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">Calendario</h1>
+            {academyName && <p className="text-sm text-gray-500 mt-0.5">{academyName}</p>}
+            {!academyName && role === 'ADMIN' && <p className="text-sm text-gray-500 mt-0.5">AKADEMO PLATFORM</p>}
+            {isDemo && <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">Datos de demostración</span>}
+          </div>
+          {canCreateEvents && !isDemo && (
+            <button onClick={() => setAddEventDate(currentDate)}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 rounded-xl transition-colors">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+              Añadir evento
+            </button>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-3">
           {classes.length > 0 && !isDemo && (
@@ -388,13 +398,6 @@ export function CalendarPage({ role }: CalendarPageProps) {
               allLabel="Todas las asignaturas"
               className="w-full sm:w-56"
             />
-          )}
-          {canCreateEvents && !isDemo && (
-            <button onClick={() => setAddEventDate(currentDate)}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-brand-500 hover:bg-brand-600 rounded-xl transition-colors">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-              Añadir evento
-            </button>
           )}
         </div>
       </div>
@@ -420,7 +423,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
           </div>
 
           {/* Navigation */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => navigate(-1)}
               className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
@@ -429,7 +432,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <h2 className="text-lg font-semibold text-gray-900 min-w-[200px] text-center capitalize">
+            <h2 className="text-base font-semibold text-gray-900 min-w-[180px] text-center capitalize">
               {headerLabel}
             </h2>
             <button
@@ -442,7 +445,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
             </button>
             <button
               onClick={goToday}
-              className="ml-2 px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
             >
               Hoy
             </button>
@@ -466,9 +469,6 @@ export function CalendarPage({ role }: CalendarPageProps) {
           {viewMode === 'day' && renderDayView()}
         </div>
       </div>
-
-      {/* Selected day detail */}
-      {selectedDay && renderDayDetail()}
 
       {/* Add event modal */}
       {addEventDate && (
@@ -510,14 +510,12 @@ export function CalendarPage({ role }: CalendarPageProps) {
             return (
               <div
                 key={key}
-                onClick={() => setSelectedDay(isSameDay(day, selectedDay || new Date(0)) ? null : day)}
+                onClick={() => { setCurrentDate(day); setViewMode('day'); setSelectedDay(null); }}
                 className={`group min-h-[80px] sm:min-h-[100px] p-1.5 rounded-lg border text-left transition-all cursor-pointer ${
-                  isSelected
-                    ? 'border-brand-500 bg-brand-50 ring-1 ring-brand-500'
-                    : isToday
-                      ? 'border-blue-200 bg-blue-50/50'
-                      : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'
-                } ${!isCurrentMonth ? 'opacity-40' : ''}`}
+                  isToday
+                    ? 'border-blue-200 bg-blue-50/50'
+                    : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'
+                } ${!isCurrentMonth ? 'opacity-30' : ''}`}
               >
                 {/* Top row: day number left + add button right */}
                 <div className="flex items-start justify-between mb-1">
