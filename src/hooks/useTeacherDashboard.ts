@@ -170,6 +170,7 @@ export function useTeacherDashboard() {
         });
 
         setClassWatchTime({ hours: 45, minutes: 30 });
+        setPaymentStatusCounts({ alDia: 18, atrasados: 4 });
         setLoading(false);
         return;
       }

@@ -370,6 +370,28 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
     }
   };
 
+  const openSolutionFile = async (solutionUploadId: string) => {
+    // Demo mode
+    if ((isAcademy || isTeacher) && paymentStatus === 'NOT PAID') {
+      window.open('/demo/Documento.pdf', '_blank');
+      return;
+    }
+
+    try {
+      const uploadRes = await apiClient(`/storage/upload/${solutionUploadId}`);
+      const uploadResult = await uploadRes.json();
+      if (uploadResult.success && uploadResult.data) {
+        const url = `/api/documents/${uploadResult.data.storagePath}`;
+        window.open(url, '_blank');
+      } else {
+        alert('Error: No se pudo encontrar el archivo del solucionario');
+      }
+    } catch (error) {
+      console.error('Failed to open solution file:', error);
+      alert('Error al abrir solucionario');
+    }
+  };
+
   // â”€â”€â”€ Academy-only handlers â”€â”€â”€
   const loadSubmissions = async (assignmentId: string) => {
     try {
@@ -797,12 +819,12 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
                   {assignment.solutionUploadId ? (
                     <div className="flex items-center justify-center gap-2">
                       <button
-                        onClick={() => window.open(`/api/documents/assignment/${assignment.solutionUploadId}`, '_blank')}
+                        onClick={() => openSolutionFile(assignment.solutionUploadId!)}
                         className="flex items-center gap-2 text-sm text-green-600 hover:text-green-700 transition-colors group"
                         title="Ver solucionario">
                         <div className="relative">
-                          <div className="w-7 h-9 flex items-center justify-center bg-green-50 rounded border border-green-200 group-hover:bg-green-100 transition-colors">
-                            <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                          <div className="w-8 h-10 flex items-center justify-center bg-green-50 rounded border border-green-200 group-hover:bg-green-100 transition-colors">
+                            <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                             </svg>
                           </div>

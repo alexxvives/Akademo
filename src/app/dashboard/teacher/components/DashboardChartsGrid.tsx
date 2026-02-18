@@ -148,10 +148,20 @@ export function DashboardChartsGrid({
         <h3 className="text-lg font-semibold text-gray-900 mb-6">Estudiantes</h3>
         <div className="grid grid-cols-2 gap-4 h-[calc(100%-3rem)]">
           {/* Estudiantes Container */}
-          <div className="flex flex-col justify-center p-4 bg-gray-50 rounded-lg">
+          <div className="flex flex-col justify-between p-4 bg-gray-50 rounded-lg">
             <div className="text-center">
               <AnimatedNumber value={new Set(filteredStudents.map(s => s.id)).size} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1" />
               <div className="text-xs text-gray-500">Estudiantes</div>
+            </div>
+            <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-gray-500">al día</span>
+                <AnimatedNumber value={paymentStatusCounts.alDia} className="text-lg font-bold text-green-600" />
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-gray-500">atrasados</span>
+                <AnimatedNumber value={paymentStatusCounts.atrasados} className="text-lg font-bold text-red-600" />
+              </div>
             </div>
           </div>
 

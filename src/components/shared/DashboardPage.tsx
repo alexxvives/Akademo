@@ -389,27 +389,42 @@ export function DashboardPage({ role }: DashboardPageProps) {
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-3">
-            <div className="flex-1 flex flex-col items-center justify-center p-3 bg-gray-50 rounded-lg">
-              <AnimatedNumber value={uniqueStudentCount} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1" />
-              <div className="text-xs text-gray-500">Estudiantes</div>
-            </div>
-            <div className="flex-1 flex flex-col items-center justify-center p-3 bg-gray-50 rounded-lg">
-              <AnimatedNumber value={filteredStudents.length} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1" />
-              <div className="text-xs text-gray-500">Matrículas</div>
-            </div>
-            {studentPaymentStatus && (
-              <div className="flex-1 flex items-center justify-between gap-2 p-3 bg-gray-50 rounded-lg">
-                <div className="flex-1 flex flex-col items-center">
-                  <AnimatedNumber value={studentPaymentStatus.alDia} className="text-2xl font-bold text-green-600 mb-0.5" />
-                  <div className="text-xs text-gray-500">al día</div>
-                </div>
-                <div className="w-px h-8 bg-gray-200" />
-                <div className="flex-1 flex flex-col items-center">
-                  <AnimatedNumber value={studentPaymentStatus.atrasados} className="text-2xl font-bold text-red-600 mb-0.5" />
-                  <div className="text-xs text-gray-500">atrasados</div>
-                </div>
+            <div className="flex-1 flex flex-col p-3 bg-gray-50 rounded-lg">
+              <div className="flex flex-col items-center justify-center">
+                <AnimatedNumber value={uniqueStudentCount} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1" />
+                <div className="text-xs text-gray-500">Estudiantes</div>
               </div>
-            )}
+              {studentPaymentStatus && (
+                <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-gray-500">al día</span>
+                    <AnimatedNumber value={studentPaymentStatus.alDia} className="text-lg font-bold text-green-600" />
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-gray-500">atrasados</span>
+                    <AnimatedNumber value={studentPaymentStatus.atrasados} className="text-lg font-bold text-red-600" />
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="flex-1 flex flex-col p-3 bg-gray-50 rounded-lg">
+              <div className="flex flex-col items-center justify-center">
+                <AnimatedNumber value={filteredStudents.length} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1" />
+                <div className="text-xs text-gray-500">Matrículas</div>
+              </div>
+              {studentPaymentStatus && (
+                <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-gray-500">al día</span>
+                    <AnimatedNumber value={studentPaymentStatus.alDia} className="text-lg font-bold text-green-600" />
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-gray-500">atrasados</span>
+                    <AnimatedNumber value={studentPaymentStatus.atrasados} className="text-lg font-bold text-red-600" />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
           <div className="flex flex-col gap-3">
             <div className="flex-1 flex flex-col items-center justify-center p-3 bg-green-50 rounded-lg">

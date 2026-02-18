@@ -368,10 +368,10 @@ export function TeachersPage({ role }: TeachersPageProps) {
           </div>
         </div>
         {role === 'ACADEMY' && academyName && (
-          <p className="text-sm text-gray-500 -mt-4">{academyName}</p>
+          <p className="text-sm text-gray-500 mt-1">{academyName}</p>
         )}
         {role === 'ADMIN' && (
-          <p className="text-sm text-gray-500 -mt-4">AKADEMO PLATFORM</p>
+          <p className="text-sm text-gray-500 mt-1">AKADEMO PLATFORM</p>
         )}
 
         {filteredTeachers.length === 0 ? (
