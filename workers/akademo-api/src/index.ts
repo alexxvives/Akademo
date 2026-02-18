@@ -27,6 +27,7 @@ import studentPaymentsRoutes from './routes/student-payments';
 import { zoomAccounts } from './routes/zoom-accounts';
 import assignmentsRoutes from './routes/assignments';
 import zoomRoutes from './routes/zoom';
+import calendarEventsRoutes from './routes/calendar-events';
 import { Bindings } from './types';
 
 import { requireAuth } from './lib/auth';
@@ -98,6 +99,7 @@ app.route('/bunny', bunnyRoutes);
 app.route('/storage', storageRoutes);
 app.route('/webhooks', webhookRoutes);
 app.route('/zoom-accounts', zoomAccounts);
+app.route('/calendar-events', calendarEventsRoutes);
 app.route('/zoom', zoomRoutes);
 
 // GET /teacher/academy - Get teacher's academy with paymentStatus (for demo mode detection)

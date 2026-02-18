@@ -3,16 +3,20 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
+import { CalendarAddEventModal } from './CalendarAddEventModal';
 
 // ─── Types ───
+type EventType = 'lesson' | 'stream' | 'assignment' | 'physicalClass' | 'scheduledStream';
+
 interface CalendarEvent {
   id: string;
   title: string;
   date: string; // ISO date
-  type: 'lesson' | 'stream' | 'assignment';
+  type: EventType;
   className?: string;
   classId?: string;
   extra?: string;
+  manual?: boolean; // true = CalendarScheduledEvent (deletable)
 }
 
 interface ClassSummary {
@@ -34,17 +38,47 @@ const WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
 const VIEW_LABELS: Record<ViewMode, string> = { month: 'Mes', week: 'Semana', day: 'Día' };
 
-const EVENT_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
-  lesson: { bg: 'bg-blue-50', text: 'text-blue-700', dot: 'bg-blue-500' },
-  stream: { bg: 'bg-purple-50', text: 'text-purple-700', dot: 'bg-purple-500' },
-  assignment: { bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-500' },
+const EVENT_COLORS: Record<EventType, { bg: string; text: string; dot: string }> = {
+  lesson:          { bg: 'bg-blue-50',   text: 'text-blue-700',   dot: 'bg-blue-500' },
+  assignment:      { bg: 'bg-amber-50',  text: 'text-amber-700',  dot: 'bg-amber-500' },
+  stream:          { bg: 'bg-red-50',    text: 'text-red-700',    dot: 'bg-red-500' },
+  scheduledStream: { bg: 'bg-red-50',    text: 'text-red-700',    dot: 'bg-red-500' },
+  physicalClass:   { bg: 'bg-violet-50', text: 'text-violet-700', dot: 'bg-violet-500' },
 };
 
-const EVENT_LABELS: Record<string, string> = {
-  lesson: 'Clase',
-  stream: 'Stream',
-  assignment: 'Ejercicio',
+const EVENT_LABELS: Record<EventType, string> = {
+  lesson:          'Clase online',
+  assignment:      'Ejercicio',
+  stream:          'Stream',
+  scheduledStream: 'Stream programado',
+  physicalClass:   'Clase presencial',
 };
+
+// ─── Demo data generator (relative to today) ───
+function offsetDate(base: Date, days: number): string {
+  const d = new Date(base);
+  d.setDate(d.getDate() + days);
+  return formatDateKey(d);
+}
+
+function generateDemoEvents(today: Date): CalendarEvent[] {
+  return [
+    { id: 'demo-l1', title: 'Álgebra Lineal — Matrices',       date: offsetDate(today, -10), type: 'lesson',          className: 'Matemáticas I' },
+    { id: 'demo-l2', title: 'Cálculo diferencial',             date: offsetDate(today, -7),  type: 'lesson',          className: 'Matemáticas I' },
+    { id: 'demo-s1', title: 'Repaso examen parcial',           date: offsetDate(today, -5),  type: 'stream',          className: 'Física General', extra: 'Duración: 67min' },
+    { id: 'demo-a1', title: 'Entrega Práctica 1',              date: offsetDate(today, -3),  type: 'assignment',      className: 'Química Orgánica' },
+    { id: 'demo-l3', title: 'Termodinámica — Entropía',        date: offsetDate(today, -2),  type: 'lesson',          className: 'Física General' },
+    { id: 'demo-pc1', title: 'Clase presencial — Laboratorio', date: offsetDate(today, -1),  type: 'physicalClass',   className: 'Química Orgánica', manual: true },
+    { id: 'demo-l4', title: 'Vectores y espacios vectoriales', date: offsetDate(today, 0),   type: 'lesson',          className: 'Matemáticas I' },
+    { id: 'demo-a2', title: 'Ejercicio semana 3',              date: offsetDate(today, 2),   type: 'assignment',      className: 'Física General' },
+    { id: 'demo-ss1', title: 'Stream: Dudas parcial',          date: offsetDate(today, 3),   type: 'scheduledStream', className: 'Matemáticas I', manual: true },
+    { id: 'demo-l5', title: 'Reacciones electroquímicas',      date: offsetDate(today, 5),   type: 'lesson',          className: 'Química Orgánica' },
+    { id: 'demo-pc2', title: 'Tutoría presencial',             date: offsetDate(today, 7),   type: 'physicalClass',   className: 'Física General', manual: true },
+    { id: 'demo-a3', title: 'Entrega Práctica 2',              date: offsetDate(today, 10),  type: 'assignment',      className: 'Química Orgánica' },
+    { id: 'demo-l6', title: 'Integrales — Cambio de variable', date: offsetDate(today, 12),  type: 'lesson',          className: 'Matemáticas I' },
+    { id: 'demo-ss2', title: 'Stream especial — Examen final', date: offsetDate(today, 14),  type: 'scheduledStream', className: 'Física General', manual: true },
+  ];
+}
 
 // ─── Helpers ───
 function startOfWeek(d: Date): Date {
@@ -72,14 +106,36 @@ export function CalendarPage({ role }: CalendarPageProps) {
   const [selectedClass, setSelectedClass] = useState('all');
   const [loading, setLoading] = useState(true);
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  const [addEventDate, setAddEventDate] = useState<Date | null>(null);
+  const [academyName, setAcademyName] = useState('');
+  const [isDemo, setIsDemo] = useState(false);
 
   const isStudent = role === 'STUDENT';
+  const canCreateEvents = ['ACADEMY', 'TEACHER', 'ADMIN'].includes(role);
 
   // ─── Data loading ───
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      // Load classes
+      // 1. Academy info + demo detection
+      if (role === 'ACADEMY' || role === 'TEACHER') {
+        try {
+          const res = await apiClient('/academies');
+          const result = await res.json();
+          if (result.success && Array.isArray(result.data) && result.data.length > 0) {
+            const academy = result.data[0];
+            if (academy.name) setAcademyName(academy.name);
+            if ((academy.paymentStatus || 'NOT PAID') === 'NOT PAID') {
+              setIsDemo(true);
+              setEvents(generateDemoEvents(new Date()));
+              setLoading(false);
+              return;
+            }
+          }
+        } catch { /* continue */ }
+      }
+
+      // 2. Load classes
       let classesData: ClassSummary[] = [];
       if (isStudent) {
         const res = await apiClient('/student/classes');
@@ -165,15 +221,47 @@ export function CalendarPage({ role }: CalendarPageProps) {
         }
       } catch { /* skip */ }
 
+      // Manual scheduled events (physicalClass / scheduledStream)
+      try {
+        const res = await apiClient('/calendar-events');
+        const result = await res.json();
+        if (result.success && Array.isArray(result.data)) {
+          for (const ev of result.data) {
+            allEvents.push({
+              id: `manual-${ev.id}`, title: ev.title, date: ev.eventDate,
+              type: ev.type as EventType, className: ev.className || '', classId: ev.classId || '',
+              extra: ev.notes || undefined, manual: true,
+            });
+          }
+        }
+      } catch { /* skip */ }
+
       setEvents(allEvents);
     } catch (error) {
       console.error('Failed to load calendar data:', error);
     } finally {
       setLoading(false);
     }
-  }, [isStudent]);
+  }, [isStudent, role]);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  const handleEventAdded = useCallback((ev: { id: string; title: string; type: 'physicalClass' | 'scheduledStream'; eventDate: string; notes?: string | null; classId?: string | null }) => {
+    const cls = classes.find(c => c.id === ev.classId);
+    setEvents(prev => [...prev, {
+      id: `manual-${ev.id}`, title: ev.title, date: ev.eventDate, type: ev.type,
+      className: cls?.name || '', classId: ev.classId || '', extra: ev.notes || undefined, manual: true,
+    }]);
+  }, [classes]);
+
+  const handleDeleteEvent = useCallback(async (eventId: string) => {
+    const rawId = eventId.replace('manual-', '');
+    try {
+      const res = await apiClient(`/calendar-events/${rawId}`, { method: 'DELETE' });
+      const result = await res.json();
+      if (result.success) setEvents(prev => prev.filter(e => e.id !== eventId));
+    } catch { /* skip */ }
+  }, []);
 
   // ─── Filtered events ───
   const filteredEvents = useMemo(() => {
@@ -287,12 +375,12 @@ export function CalendarPage({ role }: CalendarPageProps) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Calendario</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {role === 'ADMIN' ? 'AKADEMO PLATFORM' : ''}
-          </p>
+          {academyName && <p className="text-sm text-gray-500 mt-1">{academyName}</p>}
+          {!academyName && role === 'ADMIN' && <p className="text-sm text-gray-500 mt-1">AKADEMO PLATFORM</p>}
+          {isDemo && <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">Datos de demostración</span>}
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          {classes.length > 0 && (
+          {classes.length > 0 && !isDemo && (
             <ClassSearchDropdown
               classes={classes}
               value={selectedClass}
@@ -300,6 +388,13 @@ export function CalendarPage({ role }: CalendarPageProps) {
               allLabel="Todas las asignaturas"
               className="w-full sm:w-56"
             />
+          )}
+          {canCreateEvents && !isDemo && (
+            <button onClick={() => setAddEventDate(currentDate)}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-brand-500 hover:bg-brand-600 rounded-xl transition-colors">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+              Añadir evento
+            </button>
           )}
         </div>
       </div>
@@ -354,11 +449,11 @@ export function CalendarPage({ role }: CalendarPageProps) {
           </div>
 
           {/* Legend */}
-          <div className="flex items-center gap-3">
-            {Object.entries(EVENT_LABELS).map(([type, label]) => (
-              <div key={type} className="flex items-center gap-1.5">
-                <div className={`w-2.5 h-2.5 rounded-full ${EVENT_COLORS[type].dot}`} />
-                <span className="text-xs text-gray-500">{label}</span>
+          <div className="flex flex-wrap items-center gap-2">
+            {([['lesson','Clase online'],['assignment','Ejercicio'],['stream','Stream'],['physicalClass','Clase presencial']] as [EventType,string][]).map(([type, label]) => (
+              <div key={type} className="flex items-center gap-1">
+                <div className={`w-2 h-2 rounded-full ${EVENT_COLORS[type].dot}`} />
+                <span className="text-[11px] text-gray-500">{label}</span>
               </div>
             ))}
           </div>
@@ -374,6 +469,16 @@ export function CalendarPage({ role }: CalendarPageProps) {
 
       {/* Selected day detail */}
       {selectedDay && renderDayDetail()}
+
+      {/* Add event modal */}
+      {addEventDate && (
+        <CalendarAddEventModal
+          date={addEventDate}
+          classes={classes}
+          onClose={() => setAddEventDate(null)}
+          onSaved={handleEventAdded}
+        />
+      )}
     </div>
   );
 
@@ -403,10 +508,10 @@ export function CalendarPage({ role }: CalendarPageProps) {
             const isSelected = selectedDay && isSameDay(day, selectedDay);
 
             return (
-              <button
+              <div
                 key={key}
                 onClick={() => setSelectedDay(isSameDay(day, selectedDay || new Date(0)) ? null : day)}
-                className={`min-h-[80px] sm:min-h-[100px] p-1.5 rounded-lg border text-left transition-all ${
+                className={`group min-h-[80px] sm:min-h-[100px] p-1.5 rounded-lg border text-left transition-all cursor-pointer ${
                   isSelected
                     ? 'border-brand-500 bg-brand-50 ring-1 ring-brand-500'
                     : isToday
@@ -414,10 +519,19 @@ export function CalendarPage({ role }: CalendarPageProps) {
                       : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'
                 } ${!isCurrentMonth ? 'opacity-40' : ''}`}
               >
-                <div className={`text-xs font-medium mb-1 ${
-                  isToday ? 'text-blue-600' : isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
-                }`}>
-                  {day.getDate()}
+                {/* Top row: day number left + add button right */}
+                <div className="flex items-start justify-between mb-1">
+                  <span className={`text-xs font-semibold leading-none ${
+                    isToday ? 'text-blue-600' : isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
+                  }`}>{day.getDate()}</span>
+                  {canCreateEvents && !isDemo && isCurrentMonth && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setAddEventDate(day); }}
+                      className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-gray-200 rounded transition-opacity"
+                    >
+                      <svg className="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                    </button>
+                  )}
                 </div>
                 <div className="space-y-0.5">
                   {dayEvents.slice(0, 3).map(event => (
@@ -432,7 +546,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
                     <div className="text-[10px] text-gray-500 px-1">+{dayEvents.length - 3} más</div>
                   )}
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>
@@ -454,10 +568,10 @@ export function CalendarPage({ role }: CalendarPageProps) {
             const isSelected = selectedDay && isSameDay(day, selectedDay);
 
             return (
-              <button
+              <div
                 key={key}
                 onClick={() => setSelectedDay(isSameDay(day, selectedDay || new Date(0)) ? null : day)}
-                className={`min-h-[200px] p-3 rounded-lg border text-left transition-all ${
+                className={`group min-h-[200px] p-2 rounded-lg border transition-all cursor-pointer ${
                   isSelected
                     ? 'border-brand-500 bg-brand-50 ring-1 ring-brand-500'
                     : isToday
@@ -465,11 +579,20 @@ export function CalendarPage({ role }: CalendarPageProps) {
                       : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'
                 }`}
               >
-                <div className="text-center mb-3">
+                {/* Day header center-top */}
+                <div className="text-center mb-2">
                   <div className="text-xs text-gray-500">{WEEKDAYS[calendarDays.indexOf(day)]}</div>
-                  <div className={`text-lg font-semibold ${isToday ? 'text-blue-600' : 'text-gray-900'}`}>
+                  <div className={`text-lg font-bold ${isToday ? 'text-blue-600' : 'text-gray-900'}`}>
                     {day.getDate()}
                   </div>
+                  {canCreateEvents && !isDemo && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setAddEventDate(day); }}
+                      className="opacity-0 group-hover:opacity-100 mt-0.5 p-0.5 hover:bg-gray-200 rounded-full mx-auto flex items-center justify-center transition-opacity"
+                    >
+                      <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                    </button>
+                  )}
                 </div>
                 <div className="space-y-1">
                   {dayEvents.map(event => (
@@ -484,7 +607,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
                     </div>
                   ))}
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>
@@ -522,7 +645,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
             {dayEvents.map(event => (
               <div
                 key={event.id}
-                className={`flex items-start gap-3 p-4 rounded-lg border ${EVENT_COLORS[event.type].bg} border-opacity-50`}
+                className={`group flex items-start gap-3 p-4 rounded-lg border ${EVENT_COLORS[event.type].bg} border-opacity-50`}
               >
                 <div className={`w-3 h-3 rounded-full mt-0.5 flex-shrink-0 ${EVENT_COLORS[event.type].dot}`} />
                 <div className="flex-1 min-w-0">
@@ -542,6 +665,12 @@ export function CalendarPage({ role }: CalendarPageProps) {
                     <p className="text-xs text-gray-400 mt-0.5">{event.extra}</p>
                   )}
                 </div>
+                {canCreateEvents && event.manual && (
+                  <button onClick={() => handleDeleteEvent(event.id)}
+                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 rounded transition-opacity" title="Eliminar">
+                    <svg className="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -562,14 +691,23 @@ export function CalendarPage({ role }: CalendarPageProps) {
           <h3 className="text-lg font-semibold text-gray-900 capitalize">
             {selectedDay.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
           </h3>
-          <button
-            onClick={() => setSelectedDay(null)}
-            className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-2">
+            {canCreateEvents && !isDemo && (
+              <button onClick={() => setAddEventDate(selectedDay)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-brand-600 bg-brand-50 hover:bg-brand-100 rounded-lg transition-colors">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                Añadir
+              </button>
+            )}
+            <button
+              onClick={() => setSelectedDay(null)}
+              className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {dayEvents.length === 0 ? (
@@ -579,7 +717,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
             {dayEvents.map(event => (
               <div
                 key={event.id}
-                className={`flex items-center gap-3 p-3 rounded-lg ${EVENT_COLORS[event.type].bg}`}
+                className={`group flex items-center gap-3 p-3 rounded-lg ${EVENT_COLORS[event.type].bg}`}
               >
                 <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${EVENT_COLORS[event.type].dot}`} />
                 <div className="flex-1 min-w-0">
@@ -593,9 +731,17 @@ export function CalendarPage({ role }: CalendarPageProps) {
                     <p className="text-xs text-gray-500 mt-0.5">{event.className}</p>
                   )}
                 </div>
-                <span className="text-xs text-gray-400 flex-shrink-0">
-                  {new Date(event.date).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-                </span>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <span className="text-xs text-gray-400">
+                    {new Date(event.date).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                  {canCreateEvents && !isDemo && event.manual && (
+                    <button onClick={() => handleDeleteEvent(event.id)}
+                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 rounded transition-opacity" title="Eliminar">
+                      <svg className="w-3 h-3 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
