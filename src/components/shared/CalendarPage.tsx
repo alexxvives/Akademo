@@ -109,6 +109,9 @@ export function CalendarPage({ role }: CalendarPageProps) {
   const [addEventDate, setAddEventDate] = useState<Date | null>(null);
   const [academyName, setAcademyName] = useState('');
   const [isDemo, setIsDemo] = useState(false);
+  const [draggedEventId, setDraggedEventId] = useState<string | null>(null);
+  const [dragOverDate, setDragOverDate] = useState<string | null>(null);
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
 
   const isStudent = role === 'STUDENT';
   const canCreateEvents = ['ACADEMY', 'TEACHER', 'ADMIN'].includes(role);
@@ -135,7 +138,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
         } catch { /* continue */ }
       }
 
-      // 2. Load classes
+      // 2. Load classes (needed before per-class fetches)
       let classesData: ClassSummary[] = [];
       if (isStudent) {
         const res = await apiClient('/student/classes');
@@ -148,47 +151,87 @@ export function CalendarPage({ role }: CalendarPageProps) {
       }
       setClasses(classesData);
 
+      // 3. Fetch all events in parallel
+      const streamEndpoint = isStudent ? '/live/active' : '/live/history';
+      const [streamRes, calendarRes, ...classResults] = await Promise.all([
+        apiClient(streamEndpoint).catch(() => null),
+        apiClient('/calendar-events').catch(() => null),
+        ...classesData.flatMap(cls => [
+          apiClient(`/lessons?classId=${cls.id}`).catch(() => null),
+          apiClient(`/assignments?classId=${cls.id}`).catch(() => null),
+        ]),
+      ]);
+
       const allEvents: CalendarEvent[] = [];
 
-      // Fetch events per class
-      for (const cls of classesData) {
-        // Lessons
-        try {
-          const res = await apiClient(`/lessons?classId=${cls.id}`);
-          const result = await res.json();
-          if (result.success && Array.isArray(result.data)) {
-            for (const lesson of result.data) {
-              const date = lesson.releaseDate || lesson.createdAt;
-              if (date) {
-                allEvents.push({
-                  id: `lesson-${lesson.id}`,
-                  title: lesson.title || 'Sin título',
-                  date,
-                  type: 'lesson',
-                  className: cls.name,
-                  classId: cls.id,
-                });
+      // Process per-class results (lessons + assignments interleaved)
+      for (let i = 0; i < classesData.length; i++) {
+        const cls = classesData[i];
+        const lessonRes = classResults[i * 2];
+        const assignmentRes = classResults[i * 2 + 1];
+
+        if (lessonRes) {
+          try {
+            const result = await lessonRes.json();
+            if (result.success && Array.isArray(result.data)) {
+              for (const lesson of result.data) {
+                const date = lesson.releaseDate || lesson.createdAt;
+                if (date) {
+                  allEvents.push({
+                    id: `lesson-${lesson.id}`,
+                    title: lesson.title || 'Sin título',
+                    date,
+                    type: 'lesson',
+                    className: cls.name,
+                    classId: cls.id,
+                  });
+                }
               }
             }
-          }
-        } catch { /* skip */ }
+          } catch { /* skip */ }
+        }
 
-        // Assignments
+        if (assignmentRes) {
+          try {
+            const result = await assignmentRes.json();
+            if (result.success && Array.isArray(result.data)) {
+              for (const assignment of result.data) {
+                const date = assignment.dueDate || assignment.createdAt;
+                if (date) {
+                  allEvents.push({
+                    id: `assignment-${assignment.id}`,
+                    title: assignment.title || 'Sin título',
+                    date,
+                    type: 'assignment',
+                    className: cls.name,
+                    classId: cls.id,
+                    extra: assignment.dueDate ? `Entrega: ${new Date(assignment.dueDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}` : undefined,
+                  });
+                }
+              }
+            }
+          } catch { /* skip */ }
+        }
+      }
+
+      // Process streams
+      if (streamRes) {
         try {
-          const res = await apiClient(`/assignments?classId=${cls.id}`);
-          const result = await res.json();
+          const result = await streamRes.json();
           if (result.success && Array.isArray(result.data)) {
-            for (const assignment of result.data) {
-              const date = assignment.dueDate || assignment.createdAt;
+            for (const stream of result.data) {
+              const date = stream.startedAt || stream.createdAt;
               if (date) {
                 allEvents.push({
-                  id: `assignment-${assignment.id}`,
-                  title: assignment.title || 'Sin título',
+                  id: `stream-${stream.id}`,
+                  title: stream.title || 'Stream en vivo',
                   date,
-                  type: 'assignment',
-                  className: cls.name,
-                  classId: cls.id,
-                  extra: assignment.dueDate ? `Entrega: ${new Date(assignment.dueDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}` : undefined,
+                  type: 'stream',
+                  className: stream.className || '',
+                  classId: stream.classId || '',
+                  extra: stream.endedAt
+                    ? `Duración: ${Math.round((new Date(stream.endedAt).getTime() - new Date(stream.startedAt).getTime()) / 60000)}min`
+                    : 'En vivo',
                 });
               }
             }
@@ -196,45 +239,21 @@ export function CalendarPage({ role }: CalendarPageProps) {
         } catch { /* skip */ }
       }
 
-      // Streams (all via history for non-students, active for students)
-      try {
-        const endpoint = isStudent ? '/live/active' : '/live/history';
-        const res = await apiClient(endpoint);
-        const result = await res.json();
-        if (result.success && Array.isArray(result.data)) {
-          for (const stream of result.data) {
-            const date = stream.startedAt || stream.createdAt;
-            if (date) {
+      // Process manual calendar events
+      if (calendarRes) {
+        try {
+          const result = await calendarRes.json();
+          if (result.success && Array.isArray(result.data)) {
+            for (const ev of result.data) {
               allEvents.push({
-                id: `stream-${stream.id}`,
-                title: stream.title || 'Stream en vivo',
-                date,
-                type: 'stream',
-                className: stream.className || '',
-                classId: stream.classId || '',
-                extra: stream.endedAt
-                  ? `Duración: ${Math.round((new Date(stream.endedAt).getTime() - new Date(stream.startedAt).getTime()) / 60000)}min`
-                  : 'En vivo',
+                id: `manual-${ev.id}`, title: ev.title, date: ev.eventDate,
+                type: ev.type as EventType, className: ev.className || '', classId: ev.classId || '',
+                extra: ev.notes || undefined, manual: true,
               });
             }
           }
-        }
-      } catch { /* skip */ }
-
-      // Manual scheduled events (physicalClass / scheduledStream)
-      try {
-        const res = await apiClient('/calendar-events');
-        const result = await res.json();
-        if (result.success && Array.isArray(result.data)) {
-          for (const ev of result.data) {
-            allEvents.push({
-              id: `manual-${ev.id}`, title: ev.title, date: ev.eventDate,
-              type: ev.type as EventType, className: ev.className || '', classId: ev.classId || '',
-              extra: ev.notes || undefined, manual: true,
-            });
-          }
-        }
-      } catch { /* skip */ }
+        } catch { /* skip */ }
+      }
 
       setEvents(allEvents);
     } catch (error) {
@@ -262,6 +281,48 @@ export function CalendarPage({ role }: CalendarPageProps) {
       if (result.success) setEvents(prev => prev.filter(e => e.id !== eventId));
     } catch { /* skip */ }
   }, []);
+
+  const handleDragStart = useCallback((e: React.DragEvent, eventId: string) => {
+    setDraggedEventId(eventId);
+    e.dataTransfer.effectAllowed = 'move';
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent, dateKey: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverDate(dateKey);
+  }, []);
+
+  const handleDrop = useCallback(async (e: React.DragEvent, targetDate: Date) => {
+    e.preventDefault();
+    setDragOverDate(null);
+    if (!draggedEventId) return;
+    const draggedEv = events.find(ev => ev.id === draggedEventId);
+    if (!draggedEv || !draggedEv.manual) return;
+    // Only allow dropping on today or future dates
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    if (targetDate < today) { setDraggedEventId(null); return; }
+    const rawId = draggedEventId.replace('manual-', '');
+    const newDate = formatDateKey(targetDate);
+    try {
+      const res = await apiClient(`/calendar-events/${rawId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventDate: newDate }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setEvents(prev => prev.map(ev => ev.id === draggedEventId ? { ...ev, date: newDate } : ev));
+      }
+    } catch { /* skip */ }
+    setDraggedEventId(null);
+  }, [draggedEventId, events]);
+
+  const handleEditEvent = useCallback((event: CalendarEvent) => {
+    if (!canCreateEvents || !event.manual || isDemo) return;
+    setEditingEvent(event);
+    setAddEventDate(new Date(event.date + 'T12:00:00'));
+  }, [canCreateEvents, isDemo]);
 
   // ─── Filtered events ───
   const filteredEvents = useMemo(() => {
@@ -374,7 +435,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
+        <div className="flex items-start gap-4">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">Calendario</h1>
             {academyName && <p className="text-sm text-gray-500 mt-0.5">{academyName}</p>}
@@ -470,13 +531,27 @@ export function CalendarPage({ role }: CalendarPageProps) {
         </div>
       </div>
 
-      {/* Add event modal */}
+      {/* Add/Edit event modal */}
       {addEventDate && (
         <CalendarAddEventModal
           date={addEventDate}
           classes={classes}
-          onClose={() => setAddEventDate(null)}
-          onSaved={handleEventAdded}
+          editEvent={editingEvent ?? undefined}
+          onClose={() => { setAddEventDate(null); setEditingEvent(null); }}
+          onSaved={(ev) => {
+            if (editingEvent) {
+              // Update existing event
+              setEvents(prev => prev.map(e =>
+                e.id === editingEvent.id
+                  ? { ...e, title: ev.title, type: ev.type as EventType, date: ev.eventDate, classId: ev.classId || '', extra: ev.notes || undefined }
+                  : e
+              ));
+              setEditingEvent(null);
+            } else {
+              handleEventAdded(ev);
+            }
+            setAddEventDate(null);
+          }}
         />
       )}
     </div>
@@ -506,15 +581,22 @@ export function CalendarPage({ role }: CalendarPageProps) {
             const isCurrentMonth = day.getMonth() === currentMonth;
             const isToday = isSameDay(day, today);
             const isSelected = selectedDay && isSameDay(day, selectedDay);
+            const isPast = day < today && !isToday;
+            const isDragOver = dragOverDate === key;
 
             return (
               <div
                 key={key}
                 onClick={() => { setCurrentDate(day); setViewMode('day'); setSelectedDay(null); }}
+                onDragOver={!isPast ? (e) => handleDragOver(e, key) : undefined}
+                onDragLeave={() => setDragOverDate(null)}
+                onDrop={!isPast ? (e) => handleDrop(e, day) : undefined}
                 className={`group min-h-[80px] sm:min-h-[100px] p-1.5 rounded-lg border text-left transition-all cursor-pointer ${
-                  isToday
-                    ? 'border-blue-200 bg-blue-50/50'
-                    : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'
+                  isDragOver
+                    ? 'border-brand-400 bg-brand-50 ring-1 ring-brand-400'
+                    : isToday
+                      ? 'border-blue-200 bg-blue-50/50'
+                      : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'
                 } ${!isCurrentMonth ? 'opacity-30' : ''}`}
               >
                 {/* Top row: day number left + add button right */}
@@ -532,14 +614,19 @@ export function CalendarPage({ role }: CalendarPageProps) {
                   )}
                 </div>
                 <div className="space-y-0.5">
-                  {dayEvents.slice(0, 3).map(event => (
+                  {dayEvents.slice(0, 3).map(event => {
+                    const isFuture = new Date(event.date + 'T12:00:00') >= today;
+                    return (
                     <div
                       key={event.id}
-                      className={`text-[10px] leading-tight px-1 py-0.5 rounded truncate ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text}`}
+                      draggable={!!(canCreateEvents && event.manual && isFuture)}
+                      onDragStart={canCreateEvents && event.manual && isFuture ? (e) => { e.stopPropagation(); handleDragStart(e, event.id); } : undefined}
+                      onClick={canCreateEvents && event.manual ? (e) => { e.stopPropagation(); handleEditEvent(event); } : undefined}
+                      className={`text-[10px] leading-tight px-1 py-0.5 rounded truncate ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text} ${canCreateEvents && event.manual ? 'cursor-grab active:cursor-grabbing hover:brightness-95' : ''}`}
                     >
                       {event.title}
                     </div>
-                  ))}
+                  )})}
                   {dayEvents.length > 3 && (
                     <div className="text-[10px] text-gray-500 px-1">+{dayEvents.length - 3} más</div>
                   )}
@@ -569,12 +656,17 @@ export function CalendarPage({ role }: CalendarPageProps) {
               <div
                 key={key}
                 onClick={() => setSelectedDay(isSameDay(day, selectedDay || new Date(0)) ? null : day)}
+                onDragOver={(e) => { if (day >= today || isToday) handleDragOver(e, key); }}
+                onDragLeave={() => setDragOverDate(null)}
+                onDrop={(e) => { if (day >= today || isToday) handleDrop(e, day); }}
                 className={`group min-h-[200px] p-2 rounded-lg border transition-all cursor-pointer ${
-                  isSelected
-                    ? 'border-brand-500 bg-brand-50 ring-1 ring-brand-500'
-                    : isToday
-                      ? 'border-blue-200 bg-blue-50/50'
-                      : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'
+                  dragOverDate === key
+                    ? 'border-brand-400 bg-brand-50 ring-1 ring-brand-400'
+                    : isSelected
+                      ? 'border-brand-500 bg-brand-50 ring-1 ring-brand-500'
+                      : isToday
+                        ? 'border-blue-200 bg-blue-50/50'
+                        : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'
                 }`}
               >
                 {/* Day header center-top */}
@@ -593,17 +685,22 @@ export function CalendarPage({ role }: CalendarPageProps) {
                   )}
                 </div>
                 <div className="space-y-1">
-                  {dayEvents.map(event => (
+                  {dayEvents.map(event => {
+                    const isFuture = new Date(event.date + 'T12:00:00') >= today;
+                    return (
                     <div
                       key={event.id}
-                      className={`text-xs px-2 py-1 rounded ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text}`}
+                      draggable={!!(canCreateEvents && event.manual && isFuture)}
+                      onDragStart={canCreateEvents && event.manual && isFuture ? (e) => { e.stopPropagation(); handleDragStart(e, event.id); } : undefined}
+                      onClick={canCreateEvents && event.manual ? (e) => { e.stopPropagation(); handleEditEvent(event); } : undefined}
+                      className={`text-xs px-2 py-1 rounded ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text} ${canCreateEvents && event.manual ? 'cursor-grab active:cursor-grabbing hover:brightness-95' : ''}`}
                     >
                       <div className="font-medium truncate">{event.title}</div>
                       {event.className && (
                         <div className="text-[10px] opacity-70 truncate">{event.className}</div>
                       )}
                     </div>
-                  ))}
+                  )})}
                 </div>
               </div>
             );
@@ -664,10 +761,16 @@ export function CalendarPage({ role }: CalendarPageProps) {
                   )}
                 </div>
                 {canCreateEvents && event.manual && (
-                  <button onClick={() => handleDeleteEvent(event.id)}
-                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 rounded transition-opacity" title="Eliminar">
-                    <svg className="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                  </button>
+                  <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => handleEditEvent(event)}
+                      className="p-1 hover:bg-gray-200 rounded transition-colors" title="Editar">
+                      <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                    </button>
+                    <button onClick={() => handleDeleteEvent(event.id)}
+                      className="p-1 hover:bg-red-100 rounded transition-colors" title="Eliminar">
+                      <svg className="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                  </div>
                 )}
               </div>
             ))}
@@ -733,11 +836,17 @@ export function CalendarPage({ role }: CalendarPageProps) {
                   <span className="text-xs text-gray-400">
                     {new Date(event.date).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                   </span>
-                  {canCreateEvents && !isDemo && event.manual && (
-                    <button onClick={() => handleDeleteEvent(event.id)}
-                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 rounded transition-opacity" title="Eliminar">
-                      <svg className="w-3 h-3 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                    </button>
+                {canCreateEvents && !isDemo && event.manual && (
+                    <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => handleEditEvent(event)}
+                        className="p-1 hover:bg-gray-200 rounded transition-colors" title="Editar">
+                        <svg className="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                      </button>
+                      <button onClick={() => handleDeleteEvent(event.id)}
+                        className="p-1 hover:bg-red-100 rounded transition-colors" title="Eliminar">
+                        <svg className="w-3 h-3 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>

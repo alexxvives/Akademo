@@ -424,6 +424,25 @@ export function GradesPage({ role }: GradesPageProps) {
     }
   };
 
+  const handleRemoveSubmissionFiles = async (assignmentId: string, studentId: string) => {
+    if (!confirm('¿Eliminar la entrega de este estudiante?')) return;
+    try {
+      const res = await apiClient(`/assignments/${assignmentId}/submissions/${studentId}`, {
+        method: 'DELETE',
+      });
+      const result = await res.json();
+      if (result.success) {
+        setGrades(prev => prev.map(g =>
+          g.assignmentId === assignmentId && g.studentId === studentId
+            ? { ...g, submissionUploadId: undefined, submissionStoragePath: undefined }
+            : g
+        ));
+      }
+    } catch (error) {
+      console.error('Failed to remove submission files:', error);
+    }
+  };
+
   // Loading skeleton
   if (loading) {
     return (
@@ -628,16 +647,27 @@ export function GradesPage({ role }: GradesPageProps) {
                         {grade.submissionStoragePath ? (
                           <button
                             onClick={() => handleDownload(grade.submissionStoragePath!)}
-                            className="flex items-center gap-2 text-sm text-gray-900 hover:bg-gray-50 rounded px-2 py-1 -mx-2 transition-colors"
+                            className="flex items-center gap-2 text-sm text-gray-900 hover:bg-gray-50 rounded px-2 py-1 -mx-2 transition-colors group"
                           >
-                            <div className="w-8 h-10 flex items-center justify-center bg-green-50 rounded border border-green-200">
-                              <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path
-                                  fillRule="evenodd"
-                                  d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
-                                  clipRule="evenodd"
-                                />
-                              </svg>
+                            <div className="relative">
+                              <div className="w-8 h-10 flex items-center justify-center bg-green-50 rounded border border-green-200">
+                                <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                              </div>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleRemoveSubmissionFiles(grade.assignmentId, grade.studentId); }}
+                                className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center bg-red-500 hover:bg-red-600 rounded-full text-white transition-colors opacity-0 group-hover:opacity-100"
+                                title="Eliminar entrega"
+                              >
+                                <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
                             </div>
                             <span className="text-xs">1 archivo</span>
                           </button>

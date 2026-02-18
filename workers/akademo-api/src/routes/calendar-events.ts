@@ -147,6 +147,62 @@ calendarEvents.post('/', async (c) => {
   }
 });
 
+// PATCH /calendar-events/:id — update event (title, eventDate, notes, classId, location)
+calendarEvents.patch('/:id', async (c) => {
+  try {
+    const session = await requireAuth(c);
+
+    if (!['ACADEMY', 'TEACHER', 'ADMIN'].includes(session.role)) {
+      return c.json(errorResponse('Forbidden'), 403);
+    }
+
+    const eventId = c.req.param('id');
+
+    const row = await c.env.DB.prepare('SELECT createdBy FROM CalendarScheduledEvent WHERE id = ?')
+      .bind(eventId)
+      .first<{ createdBy: string }>();
+
+    if (!row) {
+      return c.json(errorResponse('Event not found'), 404);
+    }
+
+    if (session.role !== 'ADMIN' && row.createdBy !== session.id) {
+      return c.json(errorResponse('Forbidden'), 403);
+    }
+
+    const body = await c.req.json();
+    const { title, eventDate, notes, classId, location, type } = body;
+
+    const updateFields: string[] = [];
+    const bindings: unknown[] = [];
+
+    if (title !== undefined) { updateFields.push('title = ?'); bindings.push(title); }
+    if (eventDate !== undefined) { updateFields.push('eventDate = ?'); bindings.push(eventDate); }
+    if (notes !== undefined) { updateFields.push('notes = ?'); bindings.push(notes ?? null); }
+    if (classId !== undefined) { updateFields.push('classId = ?'); bindings.push(classId ?? null); }
+    if (location !== undefined) { updateFields.push('location = ?'); bindings.push(location ?? null); }
+    if (type !== undefined) { updateFields.push('type = ?'); bindings.push(type); }
+
+    if (updateFields.length === 0) {
+      return c.json(errorResponse('No fields to update'), 400);
+    }
+
+    bindings.push(eventId);
+    await c.env.DB.prepare(`UPDATE CalendarScheduledEvent SET ${updateFields.join(', ')} WHERE id = ?`)
+      .bind(...bindings)
+      .run();
+
+    const updated = await c.env.DB.prepare('SELECT * FROM CalendarScheduledEvent WHERE id = ?')
+      .bind(eventId)
+      .first<CalendarEventRow>();
+
+    return c.json(successResponse(updated));
+  } catch (error) {
+    console.error('[calendar-events PATCH]', error);
+    return c.json(errorResponse('Failed to update calendar event'), 500);
+  }
+});
+
 // DELETE /calendar-events/:id
 calendarEvents.delete('/:id', async (c) => {
   try {

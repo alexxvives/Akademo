@@ -236,6 +236,22 @@ export default function StudentAssignments() {
   const pendingAssignments = assignments.filter(a => !a.submittedAt);
   const completedAssignments = assignments.filter(a => a.submittedAt);
 
+  const handleDeleteSubmission = async (assignmentId: string) => {
+    if (!confirm('¿Quieres eliminar tu entrega? Podrás volver a entregar después.')) return;
+    try {
+      const res = await apiClient(`/assignments/${assignmentId}/submit`, { method: 'DELETE' });
+      const result = await res.json();
+      if (result.success) {
+        loadAssignments();
+      } else {
+        alert(result.error || 'Error al eliminar la entrega');
+      }
+    } catch (error) {
+      console.error('Failed to delete submission:', error);
+      alert('Error al eliminar la entrega');
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-6 animate-pulse">
@@ -374,20 +390,33 @@ export default function StudentAssignments() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {assignment.submittedAt && assignment.submissionStoragePath ? (
-                        <a
-                          href={`/api/documents/${assignment.submissionStoragePath}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-700 transition-colors group"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <div className="w-8 h-10 flex items-center justify-center bg-green-50 rounded border border-green-200 group-hover:bg-green-100 transition-colors">
-                            <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                            </svg>
+                        <div className="flex items-center gap-2 text-sm text-gray-900 group">
+                          <div className="relative">
+                            <a
+                              href={`/api/documents/${assignment.submissionStoragePath}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 hover:text-gray-700 transition-colors"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="w-8 h-10 flex items-center justify-center bg-green-50 rounded border border-green-200 group-hover:bg-green-100 transition-colors">
+                                <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                                </svg>
+                              </div>
+                            </a>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleDeleteSubmission(assignment.id); }}
+                              className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center bg-red-500 hover:bg-red-600 rounded-full text-white transition-colors opacity-0 group-hover:opacity-100"
+                              title="Eliminar entrega"
+                            >
+                              <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
                           </div>
                           <span className="text-xs">1 archivo</span>
-                        </a>
+                        </div>
                       ) : (
                         <span className="text-xs text-gray-400">Sin entregar</span>
                       )}
@@ -499,20 +528,33 @@ export default function StudentAssignments() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {assignment.submittedAt && assignment.submissionStoragePath ? (
-                          <a
-                            href={`/api/documents/${assignment.submissionStoragePath}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-700 transition-colors group"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <div className="w-8 h-10 flex items-center justify-center bg-green-50 rounded border border-green-200 group-hover:bg-green-100 transition-colors">
-                              <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                              </svg>
+                          <div className="flex items-center gap-2 text-sm text-gray-900 group">
+                            <div className="relative">
+                              <a
+                                href={`/api/documents/${assignment.submissionStoragePath}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 hover:text-gray-700 transition-colors"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <div className="w-8 h-10 flex items-center justify-center bg-green-50 rounded border border-green-200 group-hover:bg-green-100 transition-colors">
+                                  <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                                  </svg>
+                                </div>
+                              </a>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleDeleteSubmission(assignment.id); }}
+                                className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center bg-red-500 hover:bg-red-600 rounded-full text-white transition-colors opacity-0 group-hover:opacity-100"
+                                title="Eliminar entrega"
+                              >
+                                <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
                             </div>
                             <span className="text-xs">1 archivo</span>
-                          </a>
+                          </div>
                         ) : (
                           <span className="text-xs text-gray-400">—</span>
                         )}

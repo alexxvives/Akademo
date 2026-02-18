@@ -15,6 +15,7 @@ interface CalendarAddEventModalProps {
   date: Date;
   classes: ClassOption[];
   onClose: () => void;
+  editEvent?: { id: string; title: string; type: string; classId?: string; extra?: string };
   onSaved: (event: {
     id: string;
     title: string;
@@ -28,39 +29,65 @@ interface CalendarAddEventModalProps {
 
 function pad(n: number) { return String(n).padStart(2, '0'); }
 
-export function CalendarAddEventModal({ date, classes, onClose, onSaved }: CalendarAddEventModalProps) {
+export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEvent }: CalendarAddEventModalProps) {
   const defaultDate = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-  const [title, setTitle] = useState('');
-  const [type, setType] = useState<'physicalClass' | 'scheduledStream'>('physicalClass');
+  const [title, setTitle] = useState(editEvent?.title ?? '');
+  const [type, setType] = useState<'physicalClass' | 'scheduledStream'>(
+    (editEvent?.type === 'physicalClass' || editEvent?.type === 'scheduledStream') ? editEvent.type : 'physicalClass'
+  );
   const [eventDate, setEventDate] = useState(defaultDate);
-  const [classId, setClassId] = useState('');
+  const [classId, setClassId] = useState(editEvent?.classId ?? '');
   const [location, setLocation] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const dateInputRef = useRef<HTMLInputElement>(null);
+
+  const isEditMode = !!editEvent;
 
   const handleSave = async () => {
     if (!title.trim()) { setError('El título es obligatorio.'); return; }
     setSaving(true);
     setError('');
     try {
-      const res = await apiClient('/calendar-events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: title.trim(),
-          type,
-          eventDate,
-          classId: classId || undefined,
-          location: location.trim() || undefined,
-        }),
-      });
-      const result = await res.json();
-      if (result.success) {
-        onSaved(result.data);
-        onClose();
+      if (isEditMode) {
+        const rawId = editEvent!.id.replace('manual-', '');
+        const res = await apiClient(`/calendar-events/${rawId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: title.trim(),
+            type,
+            eventDate,
+            classId: classId || null,
+            location: location.trim() || null,
+          }),
+        });
+        const result = await res.json();
+        if (result.success) {
+          onSaved({ ...result.data, id: editEvent!.id, eventDate: result.data.eventDate });
+          onClose();
+        } else {
+          setError(result.error || 'Error al guardar.');
+        }
       } else {
-        setError(result.error || 'Error al guardar.');
+        const res = await apiClient('/calendar-events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: title.trim(),
+            type,
+            eventDate,
+            classId: classId || undefined,
+            location: location.trim() || undefined,
+          }),
+        });
+        const result = await res.json();
+        if (result.success) {
+          onSaved(result.data);
+          onClose();
+        } else {
+          setError(result.error || 'Error al guardar.');
+        }
       }
     } catch {
       setError('Error de conexión.');
@@ -78,7 +105,7 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved }: Calen
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h3 className="text-base font-semibold text-gray-900">Añadir evento</h3>
+          <h3 className="text-base font-semibold text-gray-900">{isEditMode ? 'Editar evento' : 'Añadir evento'}</h3>
           <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
             <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -182,7 +209,7 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved }: Calen
             disabled={saving}
             className="flex-1 py-2.5 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 rounded-xl transition-colors disabled:opacity-60"
           >
-            {saving ? 'Guardando...' : 'Crear evento'}
+            {saving ? 'Guardando...' : isEditMode ? 'Guardar cambios' : 'Crear evento'}
           </button>
         </div>
       </div>

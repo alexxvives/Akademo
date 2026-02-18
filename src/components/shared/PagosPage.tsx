@@ -583,6 +583,8 @@ export default function PagosPage({ role }: PagosPageProps) {
         </div>
       </div>
 
+      {/* Pending toggle + Payments Table grouped tightly */}
+      <div className="space-y-2">
       {/* Pending toggle outside table */}
       {filteredPendingPayments.length > 0 && (
         <div className="flex justify-end">
@@ -862,6 +864,7 @@ export default function PagosPage({ role }: PagosPageProps) {
         </table>
         </div>
       </div>
+      </div>{/* end space-y-2 */}
 
       {/* Register Payment Modal (Academy only) */}
       {isAcademy && showRegisterModal && (

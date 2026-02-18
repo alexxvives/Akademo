@@ -326,21 +326,23 @@ export function TeachersPage({ role }: TeachersPageProps) {
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div>
             <h1 className="text-2xl font-semibold text-gray-900">Profesores</h1>
-            {role === 'ACADEMY' && (
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium text-sm transition-all flex items-center gap-2"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Crear Profesor
-              </button>
-            )}
+            {academyName && <p className="text-sm text-gray-500 mt-1">{academyName}</p>}
+            {!academyName && role === 'ADMIN' && <p className="text-sm text-gray-500 mt-1">AKADEMO PLATFORM</p>}
           </div>
           <div className="flex items-center gap-3">
+            {/* Admin: academy filter */}
+            {role === 'ADMIN' && academies.length > 0 && (
+              <AcademySearchDropdown
+                academies={academies}
+                value={selectedAcademy}
+                onChange={setSelectedAcademy}
+                allLabel="Todas las Academias"
+                allValue="ALL"
+                className="w-full md:w-64"
+              />
+            )}
             {/* Search Bar */}
             <div className="relative">
               <input
@@ -354,26 +356,19 @@ export function TeachersPage({ role }: TeachersPageProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
-            {/* Admin: academy filter */}
-            {role === 'ADMIN' && academies.length > 0 && (
-              <AcademySearchDropdown
-                academies={academies}
-                value={selectedAcademy}
-                onChange={setSelectedAcademy}
-                allLabel="Todas las Academias"
-                allValue="ALL"
-                className="w-full md:w-64"
-              />
+            {role === 'ACADEMY' && (
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium text-sm transition-all flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Crear Profesor
+              </button>
             )}
           </div>
         </div>
-        {role === 'ACADEMY' && academyName && (
-          <p className="text-sm text-gray-500 mt-1">{academyName}</p>
-        )}
-        {role === 'ADMIN' && (
-          <p className="text-sm text-gray-500 mt-1">AKADEMO PLATFORM</p>
-        )}
-
         {filteredTeachers.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">

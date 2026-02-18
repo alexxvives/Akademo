@@ -513,6 +513,28 @@ assignments.post('/:id/submit', async (c) => {
   }
 });
 
+// DELETE /assignments/:id/submit - Student deletes their own submission
+assignments.delete('/:id/submit', async (c) => {
+  try {
+    const session = await requireAuth(c);
+
+    if (session.role !== 'STUDENT') {
+      return c.json(errorResponse('Only students can delete their own submission'), 403);
+    }
+
+    const assignmentId = c.req.param('id');
+
+    await c.env.DB.prepare(`
+      DELETE FROM AssignmentSubmission WHERE assignmentId = ? AND studentId = ?
+    `).bind(assignmentId, session.id).run();
+
+    return c.json(successResponse({ message: 'Submission deleted' }));
+  } catch (error: any) {
+    console.error('[Assignments/:id/submit DELETE] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
+
 // PATCH /assignments/submissions/:submissionId/grade - Grade submission (teachers only)
 assignments.patch('/submissions/:submissionId/grade', validateBody(gradeSubmissionSchema), async (c) => {
   const submissionId = c.req.param('submissionId');
@@ -792,6 +814,49 @@ assignments.delete('/:id', async (c) => {
     return c.json(successResponse({ message: 'Assignment deleted successfully' }));
   } catch (error: any) {
     console.error('[Assignments/:id DELETE] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
+
+// DELETE /assignments/:id/submissions/:studentId - Remove a student's submission (teachers/academy/admin)
+assignments.delete('/:id/submissions/:studentId', async (c) => {
+  try {
+    const session = await requireAuth(c);
+
+    if (!['TEACHER', 'ACADEMY', 'ADMIN'].includes(session.role)) {
+      return c.json(errorResponse('Unauthorized'), 403);
+    }
+
+    const assignmentId = c.req.param('id');
+    const studentId = c.req.param('studentId');
+
+    // Verify assignment exists and check permission
+    const assignment = await c.env.DB.prepare(`
+      SELECT a.id, a.teacherId, a.classId, c.academyId, ac.ownerId
+      FROM Assignment a
+      JOIN Class c ON a.classId = c.id
+      JOIN Academy ac ON c.academyId = ac.id
+      WHERE a.id = ?
+    `).bind(assignmentId).first();
+
+    if (!assignment) {
+      return c.json(errorResponse('Assignment not found'), 404);
+    }
+
+    if (session.role === 'TEACHER' && assignment.teacherId !== session.id) {
+      return c.json(errorResponse('Unauthorized'), 403);
+    }
+    if (session.role === 'ACADEMY' && assignment.ownerId !== session.id) {
+      return c.json(errorResponse('Unauthorized'), 403);
+    }
+
+    await c.env.DB.prepare(`
+      DELETE FROM AssignmentSubmission WHERE assignmentId = ? AND studentId = ?
+    `).bind(assignmentId, studentId).run();
+
+    return c.json(successResponse({ message: 'Submission deleted successfully' }));
+  } catch (error: any) {
+    console.error('[Assignments/:id/submissions/:studentId DELETE] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
 });
