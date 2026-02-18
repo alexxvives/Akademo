@@ -298,21 +298,36 @@ export function CalendarPage({ role }: CalendarPageProps) {
     setDragOverDate(null);
     if (!draggedEventId) return;
     const draggedEv = events.find(ev => ev.id === draggedEventId);
-    if (!draggedEv || !draggedEv.manual) return;
+    if (!draggedEv) { setDraggedEventId(null); return; }
     // Only allow dropping on today or future dates
     const today = new Date(); today.setHours(0, 0, 0, 0);
     if (targetDate < today) { setDraggedEventId(null); return; }
-    const rawId = draggedEventId.replace('manual-', '');
     const newDate = formatDateKey(targetDate);
     try {
-      const res = await apiClient(`/calendar-events/${rawId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventDate: newDate }),
-      });
-      const result = await res.json();
-      if (result.success) {
-        setEvents(prev => prev.map(ev => ev.id === draggedEventId ? { ...ev, date: newDate } : ev));
+      if (draggedEv.manual) {
+        // Manual calendar event
+        const rawId = draggedEventId.replace('manual-', '');
+        const res = await apiClient(`/calendar-events/${rawId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ eventDate: newDate }),
+        });
+        const result = await res.json();
+        if (result.success) {
+          setEvents(prev => prev.map(ev => ev.id === draggedEventId ? { ...ev, date: newDate } : ev));
+        }
+      } else if (draggedEv.id.startsWith('assignment-')) {
+        // Assignment event — update dueDate
+        const rawId = draggedEventId.replace('assignment-', '');
+        const res = await apiClient(`/assignments/${rawId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dueDate: newDate + 'T12:00:00.000Z' }),
+        });
+        const result = await res.json();
+        if (result.success) {
+          setEvents(prev => prev.map(ev => ev.id === draggedEventId ? { ...ev, date: newDate } : ev));
+        }
       }
     } catch { /* skip */ }
     setDraggedEventId(null);
@@ -435,20 +450,20 @@ export function CalendarPage({ role }: CalendarPageProps) {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-start gap-4">
-          <div>
+        <div>
+          <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-semibold text-gray-900">Calendario</h1>
-            {academyName && <p className="text-sm text-gray-500 mt-0.5">{academyName}</p>}
-            {!academyName && role === 'ADMIN' && <p className="text-sm text-gray-500 mt-0.5">AKADEMO PLATFORM</p>}
-            {isDemo && <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">Datos de demostración</span>}
+            {canCreateEvents && !isDemo && (
+              <button onClick={() => setAddEventDate(currentDate)}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 rounded-xl transition-colors">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                Añadir evento
+              </button>
+            )}
           </div>
-          {canCreateEvents && !isDemo && (
-            <button onClick={() => setAddEventDate(currentDate)}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 rounded-xl transition-colors">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-              Añadir evento
-            </button>
-          )}
+          {academyName && <p className="text-sm text-gray-500 mt-0.5">{academyName}</p>}
+          {!academyName && role === 'ADMIN' && <p className="text-sm text-gray-500 mt-0.5">AKADEMO PLATFORM</p>}
+          {isDemo && <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">Datos de demostración</span>}
         </div>
         <div className="flex flex-wrap items-center gap-3">
           {classes.length > 0 && !isDemo && (
@@ -591,7 +606,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
                 onDragOver={!isPast ? (e) => handleDragOver(e, key) : undefined}
                 onDragLeave={() => setDragOverDate(null)}
                 onDrop={!isPast ? (e) => handleDrop(e, day) : undefined}
-                className={`group min-h-[80px] sm:min-h-[100px] p-1.5 rounded-lg border text-left transition-all cursor-pointer ${
+                className={`group min-h-[110px] sm:min-h-[130px] p-1.5 rounded-lg border text-left transition-all cursor-pointer ${
                   isDragOver
                     ? 'border-brand-400 bg-brand-50 ring-1 ring-brand-400'
                     : isToday
@@ -616,13 +631,15 @@ export function CalendarPage({ role }: CalendarPageProps) {
                 <div className="space-y-0.5">
                   {dayEvents.slice(0, 3).map(event => {
                     const isFuture = new Date(event.date + 'T12:00:00') >= today;
+                    const isDraggable = !!(canCreateEvents && isFuture && (event.manual || event.id.startsWith('assignment-')));
+                    const isClickEditable = canCreateEvents && event.manual;
                     return (
                     <div
                       key={event.id}
-                      draggable={!!(canCreateEvents && event.manual && isFuture)}
-                      onDragStart={canCreateEvents && event.manual && isFuture ? (e) => { e.stopPropagation(); handleDragStart(e, event.id); } : undefined}
-                      onClick={canCreateEvents && event.manual ? (e) => { e.stopPropagation(); handleEditEvent(event); } : undefined}
-                      className={`text-[10px] leading-tight px-1 py-0.5 rounded truncate ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text} ${canCreateEvents && event.manual ? 'cursor-grab active:cursor-grabbing hover:brightness-95' : ''}`}
+                      draggable={isDraggable}
+                      onDragStart={isDraggable ? (e) => { e.stopPropagation(); handleDragStart(e, event.id); } : undefined}
+                      onClick={isClickEditable ? (e) => { e.stopPropagation(); handleEditEvent(event); } : undefined}
+                      className={`text-[10px] leading-tight px-1 py-0.5 rounded truncate ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text} ${isDraggable ? 'cursor-grab active:cursor-grabbing hover:brightness-95' : ''}`}
                     >
                       {event.title}
                     </div>
@@ -690,10 +707,10 @@ export function CalendarPage({ role }: CalendarPageProps) {
                     return (
                     <div
                       key={event.id}
-                      draggable={!!(canCreateEvents && event.manual && isFuture)}
-                      onDragStart={canCreateEvents && event.manual && isFuture ? (e) => { e.stopPropagation(); handleDragStart(e, event.id); } : undefined}
+                      draggable={!!(canCreateEvents && isFuture && (event.manual || event.id.startsWith('assignment-')))}
+                      onDragStart={canCreateEvents && isFuture && (event.manual || event.id.startsWith('assignment-')) ? (e) => { e.stopPropagation(); handleDragStart(e, event.id); } : undefined}
                       onClick={canCreateEvents && event.manual ? (e) => { e.stopPropagation(); handleEditEvent(event); } : undefined}
-                      className={`text-xs px-2 py-1 rounded ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text} ${canCreateEvents && event.manual ? 'cursor-grab active:cursor-grabbing hover:brightness-95' : ''}`}
+                      className={`text-xs px-2 py-1 rounded ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text} ${canCreateEvents && (event.manual || event.id.startsWith('assignment-')) ? 'cursor-grab active:cursor-grabbing hover:brightness-95' : ''}`}
                     >
                       <div className="font-medium truncate">{event.title}</div>
                       {event.className && (
