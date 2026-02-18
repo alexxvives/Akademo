@@ -15,6 +15,7 @@ interface CalendarEventRow {
   eventDate: string;
   notes: string | null;
   classId: string | null;
+  location: string | null;
   createdAt: string;
 }
 
@@ -89,6 +90,7 @@ calendarEvents.post('/', async (c) => {
       eventDate: string;
       notes?: string;
       classId?: string;
+      location?: string;
     }>();
 
     if (!body.title || !body.type || !body.eventDate) {
@@ -128,10 +130,10 @@ calendarEvents.post('/', async (c) => {
 
     const id = nanoid();
     await c.env.DB.prepare(
-      `INSERT INTO CalendarScheduledEvent (id, academyId, createdBy, title, type, eventDate, notes, classId, createdAt)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+      `INSERT INTO CalendarScheduledEvent (id, academyId, createdBy, title, type, eventDate, notes, classId, location, createdAt)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
     )
-      .bind(id, academyId, session.id, body.title, body.type, body.eventDate, body.notes ?? null, body.classId ?? null)
+      .bind(id, academyId, session.id, body.title, body.type, body.eventDate, body.notes ?? null, body.classId ?? null, body.location ?? null)
       .run();
 
     const event = await c.env.DB.prepare('SELECT * FROM CalendarScheduledEvent WHERE id = ?')
