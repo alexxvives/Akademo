@@ -172,6 +172,8 @@ export function DashboardPage({ role }: DashboardPageProps) {
     })));
     setRejectedCount(demoHistory.filter(p => p.paymentStatus === 'REJECTED').length);
     setAllStreams(demoStreams);
+    // Set demo student payment status so the estudiantes card renders the same UI as real academies
+    setStudentPaymentStatus({ alDia: 8, atrasados: 3, total: 11, uniqueAlDia: 6, uniqueAtrasados: 2, uniqueTotal: 8 });
   };
 
   // ─── Admin data loading ───

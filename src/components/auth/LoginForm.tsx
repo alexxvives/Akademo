@@ -23,11 +23,18 @@ export function LoginForm({ onSuccess, onSwitchToRegister, onClose }: LoginFormP
     setError('');
 
     try {
+      // Add 15s timeout for login requests to handle slow/unreliable networks
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
       const response = await apiClient('/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       const result = await response.json();
 
@@ -54,7 +61,14 @@ export function LoginForm({ onSuccess, onSwitchToRegister, onClose }: LoginFormP
         setTimeout(() => setErrorShake(false), 500);
       }
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      // Differentiate network errors from other failures
+      if (err instanceof TypeError && (err.message.includes('fetch') || err.message.includes('network') || err.message.includes('Failed'))) {
+        setError('Error de conexión. Comprueba tu conexión a internet e inténtalo de nuevo.');
+      } else if (err instanceof DOMException && err.name === 'AbortError') {
+        setError('La solicitud tardó demasiado. Inténtalo de nuevo.');
+      } else {
+        setError('Ha ocurrido un error. Por favor, inténtalo de nuevo.');
+      }
       setErrorShake(true);
       setTimeout(() => setErrorShake(false), 500);
     } finally {

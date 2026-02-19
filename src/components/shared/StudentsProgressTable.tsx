@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useMemo, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
@@ -90,9 +90,9 @@ export function StudentsProgressTable({
     if (hoursSinceActive <= 24) {
       return { color: 'bg-green-500', label: 'Activo hace menos de 24h', textColor: 'text-green-600' };
     } else if (hoursSinceActive <= 168) { // 7 days
-      return { color: 'bg-yellow-500', label: 'Activo hace menos de 7 dÃ­as', textColor: 'text-yellow-600' };
+      return { color: 'bg-yellow-500', label: 'Activo hace menos de 7 días', textColor: 'text-yellow-600' };
     } else {
-      return { color: 'bg-red-500', label: 'Inactivo hace mÃ¡s de 7 dÃ­as', textColor: 'text-red-600' };
+      return { color: 'bg-red-500', label: 'Inactivo hace más de 7 días', textColor: 'text-red-600' };
     }
   };
 
@@ -228,7 +228,7 @@ export function StudentsProgressTable({
                   Tiempo Total
                 </th>
                 <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ãšltima Actividad
+                  Última Actividad
                 </th>
                 <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Pagos
@@ -248,7 +248,7 @@ export function StudentsProgressTable({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
                     <p className="text-sm font-medium text-gray-900">No hay estudiantes</p>
-                    <p className="text-xs text-gray-500 mt-1">Los estudiantes aparecerÃ¡n aquÃ­ cuando se inscriban en las asignaturas</p>
+                    <p className="text-xs text-gray-500 mt-1">Los estudiantes aparecerán aquí cuando se inscriban en las asignaturas</p>
                   </td>
                 </tr>
               ) : (
@@ -339,7 +339,7 @@ export function StudentsProgressTable({
                           </span>
                         ) : student.paymentStatus === 'UP_TO_DATE' ? (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                            Al dÃ­a
+                            Al día
                           </span>
                         ) : student.paymentStatus === 'BEHIND' ? (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
@@ -347,7 +347,7 @@ export function StudentsProgressTable({
                           </span>
                         ) : (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-400">
-                            â€”
+                            —
                           </span>
                         )}
                       </td>
@@ -357,7 +357,7 @@ export function StudentsProgressTable({
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (!disableBanButton && window.confirm(`Â¿EstÃ¡s seguro de que deseas expulsar a ${student.name} de ${student.className}? Esta acciÃ³n no se puede deshacer.`)) {
+                                if (!disableBanButton && window.confirm(`¿Estás seguro de que deseas expulsar a ${student.name} de ${student.className}? Esta acción no se puede deshacer.`)) {
                                   onBanStudent?.(student.enrollmentId!);
                                 }
                               }}
@@ -367,12 +367,12 @@ export function StudentsProgressTable({
                                   ? 'bg-gray-400 cursor-not-allowed' 
                                   : 'bg-red-600 hover:bg-red-700'
                               }`}
-                              title={disableBanButton ? 'No disponible en modo demostraciÃ³n' : 'Expulsar estudiante'}
+                              title={disableBanButton ? 'No disponible en modo demostración' : 'Expulsar estudiante'}
                             >
                               Expulsar
                             </button>
                           ) : (
-                            <span className="text-xs text-gray-400 italic">Ver detalle â†“</span>
+                            <span className="text-xs text-gray-400 italic">Ver detalle ↓</span>
                           )}
                         </td>
                       )}
@@ -385,7 +385,7 @@ export function StudentsProgressTable({
                         <tr key={`${student.id}-breakdown-${cls.classId}`} className="bg-gray-50/70">
                           <td className="py-3 px-6">
                             <div className="flex items-center gap-3 pl-10">
-                              <span className="text-xs text-gray-500 italic">â†³ detalle por asignatura</span>
+                              <span className="text-xs text-gray-500 italic">↳ detalle por asignatura</span>
                             </div>
                           </td>
                           <td className="py-3 px-6">
@@ -433,14 +433,14 @@ export function StudentsProgressTable({
                               </span>
                             ) : cls.paymentStatus === 'UP_TO_DATE' ? (
                               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-600">
-                                Al dÃ­a
+                                Al día
                               </span>
                             ) : cls.paymentStatus === 'BEHIND' ? (
                               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-600">
                                 Atrasado{cls.monthsBehind && cls.monthsBehind > 1 ? ` (x${cls.monthsBehind})` : ''}
                               </span>
                             ) : (
-                              <span className="text-xs text-gray-400">â€”</span>
+                              <span className="text-xs text-gray-400">€”</span>
                             )}
                           </td>
                           {showBanButton && (
@@ -448,7 +448,7 @@ export function StudentsProgressTable({
                               {cls.enrollmentId && (
                                 <button
                                   onClick={() => {
-                                    if (!disableBanButton && window.confirm(`Â¿EstÃ¡s seguro de que deseas expulsar a ${student.name} de ${cls.className}? Esta acciÃ³n no se puede deshacer.`)) {
+                                    if (!disableBanButton && window.confirm(`¿Estás seguro de que deseas expulsar a ${student.name} de ${cls.className}? Esta acción no se puede deshacer.`)) {
                                       onBanStudent?.(cls.enrollmentId!);
                                     }
                                   }}
@@ -458,7 +458,7 @@ export function StudentsProgressTable({
                                       ? 'bg-gray-400 cursor-not-allowed' 
                                       : 'bg-red-500 hover:bg-red-600'
                                   }`}
-                                  title={disableBanButton ? 'No disponible en modo demostraciÃ³n' : `Expulsar de ${cls.className}`}
+                                  title={disableBanButton ? 'No disponible en modo demostración' : `Expulsar de ${cls.className}`}
                                 >
                                   Expulsar
                                 </button>
