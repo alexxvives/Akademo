@@ -17,7 +17,7 @@ interface DashboardChartsGridProps {
   classWatchTime: { hours: number; minutes: number };
   ratingsData: RatingsData | null;
   selectedClass: string;
-  paymentStatusCounts: { alDia: number; atrasados: number };
+  paymentStatusCounts: { alDia: number; atrasados: number; uniqueAlDia: number; uniqueAtrasados: number };
 }
 
 export function DashboardChartsGrid({ 
@@ -156,11 +156,11 @@ export function DashboardChartsGrid({
             <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
               <div className="flex justify-between items-center">
                 <span className="text-xs text-gray-500">al día</span>
-                <AnimatedNumber value={paymentStatusCounts.alDia} className="text-lg font-bold text-green-600" />
+                <AnimatedNumber value={paymentStatusCounts.uniqueAlDia} className="text-lg font-bold text-green-600" />
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-xs text-gray-500">atrasados</span>
-                <AnimatedNumber value={paymentStatusCounts.atrasados} className="text-lg font-bold text-red-600" />
+                <AnimatedNumber value={paymentStatusCounts.uniqueAtrasados} className="text-lg font-bold text-red-600" />
               </div>
             </div>
           </div>

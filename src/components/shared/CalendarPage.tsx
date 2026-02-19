@@ -141,9 +141,19 @@ export function CalendarPage({ role }: CalendarPageProps) {
       // 2. Load classes (needed before per-class fetches)
       let classesData: ClassSummary[] = [];
       if (isStudent) {
-        const res = await apiClient('/student/classes');
+        // Students use /enrollments to get their classes (no /student/classes route)
+        const res = await apiClient('/enrollments');
         const result = await res.json();
-        if (result.success && Array.isArray(result.data)) classesData = result.data;
+        if (result.success && Array.isArray(result.data)) {
+          classesData = result.data
+            .filter((e: { status: string }) => e.status === 'APPROVED')
+            .map((e: { classId: string; className: string; academyName?: string }) => ({
+              id: e.classId,
+              name: e.className,
+              description: null,
+              academyName: e.academyName,
+            }));
+        }
       } else {
         const res = await apiClient('/classes');
         const result = await res.json();
@@ -455,7 +465,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
             <h1 className="text-2xl font-semibold text-gray-900">Calendario</h1>
             {canCreateEvents && !isDemo && (
               <button onClick={() => setAddEventDate(currentDate)}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 rounded-xl transition-colors">
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 rounded-lg transition-colors">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                 Añadir evento
               </button>

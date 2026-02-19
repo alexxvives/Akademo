@@ -391,7 +391,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
           <div className="flex flex-col gap-3">
             {/* Estudiantes box — count on left, al día/atrasados (unique student) on right */}
             <div className="flex-1 flex items-center p-3 bg-gray-50 rounded-lg gap-3">
-              <div className="flex flex-col items-center justify-center shrink-0">
+              <div className="flex flex-col items-center justify-center shrink-0 min-w-[72px]">
                 <AnimatedNumber value={uniqueStudentCount} className="text-3xl sm:text-4xl font-bold text-gray-900" />
                 <div className="text-xs text-gray-500">Estudiantes</div>
               </div>
@@ -410,7 +410,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
             </div>
             {/* Matrículas box — count on left, al día/atrasados on right */}
             <div className="flex-1 flex items-center p-3 bg-gray-50 rounded-lg gap-3">
-              <div className="flex flex-col items-center justify-center shrink-0">
+              <div className="flex flex-col items-center justify-center shrink-0 min-w-[72px]">
                 <AnimatedNumber value={filteredStudents.length} className="text-3xl sm:text-4xl font-bold text-gray-900" />
                 <div className="text-xs text-gray-500">Matrículas</div>
               </div>

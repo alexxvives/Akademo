@@ -11,7 +11,8 @@ const t = {
     nav: { features: 'Características', pricing: 'Precios', login: 'Iniciar Sesión', cta: 'Empieza Gratis' },
     hero: {
       title1: 'Protege tu academia.',
-      title2: 'Retoma el control de tu contenido.',
+      title2: 'Gestiona tu contenido con control absoluto con',
+      titleBrand: 'AKADEMO.',
       subtitle: '',
       cta: 'Solicita una demo',
       perfectFor: 'Perfecto para:',
@@ -124,7 +125,8 @@ const t = {
     nav: { features: 'Features', pricing: 'Pricing', login: 'Login', cta: 'Start Free' },
     hero: {
       title1: 'Protect your academy.',
-      title2: 'Take back control of your content.',
+      title2: 'Manage your content with absolute control with',
+      titleBrand: 'AKADEMO.',
       subtitle: '',
       cta: 'Request a demo',
       perfectFor: 'Perfect for:',
@@ -282,14 +284,6 @@ export default function FeaturesPage() {
                 <Link href="/pricing" className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">{tr.nav.pricing}</Link>
               </nav>
               <div className="flex items-center gap-3">
-                <div className="flex gap-1">
-                  <button onClick={() => setLang('es')} className={`w-7 h-7 rounded-md flex items-center justify-center text-xs transition-all ${lang === 'es' ? 'bg-white/20 ring-1 ring-white/30' : 'bg-white/5 hover:bg-white/10'}`}>
-                    <Image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 900 600'%3E%3Cpath fill='%23c60b1e' d='M0 0h900v600H0z'/%3E%3Cpath fill='%23ffc400' d='M0 150h900v300H0z'/%3E%3C/svg%3E" alt="ES" width={16} height={16} unoptimized className="w-4 h-4" />
-                  </button>
-                  <button onClick={() => setLang('en')} className={`w-7 h-7 rounded-md flex items-center justify-center text-xs transition-all ${lang === 'en' ? 'bg-white/20 ring-1 ring-white/30' : 'bg-white/5 hover:bg-white/10'}`}>
-                    <Image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30'%3E%3Cpath fill='%23012169' d='M0 0h60v30H0z'/%3E%3Cpath stroke='%23fff' stroke-width='6' d='M0 0l60 30m0-30L0 30'/%3E%3Cpath stroke='%23C8102E' stroke-width='4' d='M0 0l60 30m0-30L0 30'/%3E%3Cpath stroke='%23fff' stroke-width='10' d='M30 0v30M0 15h60'/%3E%3Cpath stroke='%23C8102E' stroke-width='6' d='M30 0v30M0 15h60'/%3E%3C/svg%3E" alt="EN" width={16} height={16} unoptimized className="w-4 h-4" />
-                  </button>
-                </div>
                 <Link href="/?modal=login" className="text-sm text-zinc-400 hover:text-white transition-colors hidden sm:inline">{tr.nav.login}</Link>
                 <Link href="/?modal=register" className="px-4 py-2 bg-white text-zinc-900 text-sm font-medium rounded-lg hover:bg-zinc-200 transition-all">
                   {tr.nav.cta}
@@ -299,6 +293,28 @@ export default function FeaturesPage() {
           </div>
         </div>
       </header>
+
+      {/* ─── Fixed language flags (matches landing page positioning) ─── */}
+      <div className="fixed top-20 sm:top-6 right-4 sm:right-6 z-50 flex gap-1.5">
+        <button
+          onClick={() => setLang('es')}
+          className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center transition-all overflow-hidden shadow-lg ${
+            lang === 'es' ? 'bg-white scale-110' : 'bg-white/70 hover:bg-white/90 backdrop-blur'
+          }`}
+          title="Español"
+        >
+          <Image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 900 600'%3E%3Cpath fill='%23c60b1e' d='M0 0h900v600H0z'/%3E%3Cpath fill='%23ffc400' d='M0 150h900v300H0z'/%3E%3C/svg%3E" alt="ES" width={24} height={24} unoptimized className="w-5 h-5 sm:w-6 sm:h-6" />
+        </button>
+        <button
+          onClick={() => setLang('en')}
+          className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center transition-all overflow-hidden shadow-lg ${
+            lang === 'en' ? 'bg-white scale-110' : 'bg-white/70 hover:bg-white/90 backdrop-blur'
+          }`}
+          title="English"
+        >
+          <Image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30'%3E%3Cpath fill='%23012169' d='M0 0h60v30H0z'/%3E%3Cpath stroke='%23fff' stroke-width='6' d='M0 0l60 30m0-30L0 30'/%3E%3Cpath stroke='%23C8102E' stroke-width='4' d='M0 0l60 30m0-30L0 30'/%3E%3Cpath stroke='%23fff' stroke-width='10' d='M30 0v30M0 15h60'/%3E%3Cpath stroke='%23C8102E' stroke-width='6' d='M30 0v30M0 15h60'/%3E%3C/svg%3E" alt="EN" width={24} height={24} unoptimized className="w-5 h-5 sm:w-6 sm:h-6" />
+        </button>
+      </div>
 
       {/* ─── HERO (Growtio style: text left, dashboard image right with floating badges) ─── */}
       <section className="relative pt-28 pb-16 sm:pt-36 sm:pb-24 px-4 sm:px-6 overflow-hidden">
@@ -310,7 +326,14 @@ export default function FeaturesPage() {
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-[1.1] mb-8">
                 <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">{tr.hero.title1}</span>
                 <br />
-                {tr.hero.title2}
+                {tr.hero.title2}{' '}
+                <span className="relative inline-block">
+                  <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">{tr.hero.titleBrand}</span>
+                  <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 200 12" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+                    <path d="M2 8c30-6 60-6 98-2s70 4 98-2" stroke="url(#underline-grad)" strokeWidth="3" strokeLinecap="round" />
+                    <defs><linearGradient id="underline-grad" x1="0" y1="0" x2="200" y2="0" gradientUnits="userSpaceOnUse"><stop stopColor="#34d399" /><stop offset="1" stopColor="#22d3ee" /></linearGradient></defs>
+                  </svg>
+                </span>
               </h1>
               <div className="flex flex-col sm:flex-row gap-3 mb-10">
                 <Link href="/?modal=register" className="px-8 py-3.5 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-medium rounded-lg hover:from-emerald-400 hover:to-cyan-400 transition-all text-sm sm:text-base text-center shadow-lg shadow-emerald-500/25">
@@ -353,28 +376,62 @@ export default function FeaturesPage() {
                 </div>
               </div>
 
-              {/* Floating stat card — top-left */}
-              <div className="absolute -top-4 -left-4 sm:-top-6 sm:-left-6 px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl backdrop-blur-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                    <svg className="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+              {/* Floating metric cards — 4 corners with float animation */}
+              <style jsx>{`
+                @keyframes float {
+                  0%, 100% { transform: translateY(0px); }
+                  50% { transform: translateY(-8px); }
+                }
+              `}</style>
+
+              {/* Top-left: 0% Cuentas compartidas */}
+              <div className="absolute -top-4 -left-4 sm:-top-6 sm:-left-6 px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl backdrop-blur-sm" style={{ animation: 'float 3s ease-in-out infinite' }}>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>
                   </div>
                   <div>
-                    <div className="text-xs text-zinc-500">{lang === 'es' ? 'Protección' : 'Protection'}</div>
-                    <div className="text-sm font-bold text-emerald-400">100%</div>
+                    <div className="text-lg font-bold text-white">0%</div>
+                    <div className="text-[10px] text-zinc-500 leading-tight">{lang === 'es' ? 'Cuentas compartidas' : 'Shared accounts'}</div>
                   </div>
                 </div>
               </div>
 
-              {/* Floating stat card — bottom-right */}
-              <div className="absolute -bottom-4 -right-4 sm:-bottom-6 sm:-right-6 px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl backdrop-blur-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                    <svg className="w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>
+              {/* Top-right: 100% Control */}
+              <div className="absolute -top-4 -right-4 sm:-top-6 sm:-right-6 px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl backdrop-blur-sm" style={{ animation: 'float 3s ease-in-out infinite 0.75s' }}>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
                   </div>
                   <div>
-                    <div className="text-xs text-zinc-500">{lang === 'es' ? 'Dashboard' : 'Dashboard'}</div>
-                    <div className="text-sm font-bold text-emerald-400">{lang === 'es' ? 'Potente' : 'Powerful'}</div>
+                    <div className="text-lg font-bold text-white">100%</div>
+                    <div className="text-[10px] text-zinc-500 leading-tight">{lang === 'es' ? 'Control total' : 'Total control'}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom-left: 24/7 Monitoreo AI */}
+              <div className="absolute -bottom-4 -left-4 sm:-bottom-6 sm:-left-6 px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl backdrop-blur-sm" style={{ animation: 'float 3s ease-in-out infinite 1.5s' }}>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  </div>
+                  <div>
+                    <div className="text-lg font-bold text-white">24/7</div>
+                    <div className="text-[10px] text-zinc-500 leading-tight">{lang === 'es' ? 'Monitoreo AI' : 'AI Monitoring'}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom-right: 25+ Funcionalidades */}
+              <div className="absolute -bottom-4 -right-4 sm:-bottom-6 sm:-right-6 px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl shadow-xl backdrop-blur-sm" style={{ animation: 'float 3s ease-in-out infinite 2.25s' }}>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-lg bg-orange-500/20 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-orange-400" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" /></svg>
+                  </div>
+                  <div>
+                    <div className="text-lg font-bold text-white">25+</div>
+                    <div className="text-[10px] text-zinc-500 leading-tight">{lang === 'es' ? 'Funcionalidades' : 'Features'}</div>
                   </div>
                 </div>
               </div>

@@ -32,7 +32,6 @@ export default function StudentAssignments() {
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
-  const [activeTab, setActiveTab] = useState<'pendientes' | 'completados'>('pendientes');
   const [paymentStatus, setPaymentStatus] = useState<string>('PAID');
 
   // Helper to check if assignment is past due
@@ -233,9 +232,6 @@ export default function StudentAssignments() {
       alert('Error al abrir archivos');
     }
   };
-  const pendingAssignments = assignments.filter(a => !a.submittedAt);
-  const completedAssignments = assignments.filter(a => a.submittedAt);
-
   const handleDeleteSubmission = async (assignmentId: string) => {
     if (!confirm('¿Quieres eliminar tu entrega? Podrás volver a entregar después.')) return;
     try {
@@ -281,49 +277,23 @@ export default function StudentAssignments() {
           />
         </div>
 
-        {/* Tabs */}
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-4 sm:space-x-8">
-            <button
-              onClick={() => setActiveTab('pendientes')}
-              className={`border-b-2 py-4 px-1 text-sm font-medium ${
-                activeTab === 'pendientes'
-                  ? 'border-brand-600 text-brand-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Pendientes ({pendingAssignments.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('completados')}
-              className={`border-b-2 py-4 px-1 text-sm font-medium ${
-                activeTab === 'completados'
-                  ? 'border-brand-600 text-brand-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Completados ({completedAssignments.length})
-            </button>
-          </nav>
-        </div>
-
-        {/* Pending assignments - TABLE FORMAT */}
-        {activeTab === 'pendientes' && (
-          pendingAssignments.length === 0 ? (
-            <div className="bg-white rounded-xl border border-gray-200 p-6 sm:p-12 text-center">
-              <div className="w-14 h-14 sm:w-20 sm:h-20 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-7 h-7 sm:w-10 sm:h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">¡Todo completado!</h2>
-              <p className="text-gray-500">No tienes ejercicios pendientes por entregar</p>
+        {/* Unified assignments table */}
+        {assignments.length === 0 ? (
+          <div className="bg-white rounded-xl border border-gray-200 p-6 sm:p-12 text-center">
+            <div className="w-14 h-14 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-7 h-7 sm:w-10 sm:h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
             </div>
-          ) : (
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">No hay ejercicios</h2>
+            <p className="text-gray-500">Los ejercicios asignados aparecerán aquí</p>
+          </div>
+        ) : (
           <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Título</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Asignatura</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ejercicios</th>
@@ -333,149 +303,21 @@ export default function StudentAssignments() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {pendingAssignments.map((assignment) => (
-                  <tr 
-                    key={assignment.id} 
-                    className="hover:bg-gray-50 transition-colors"
-                  >
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1">
-                          <div className="text-sm font-medium text-gray-900">{assignment.title}</div>
-                          {assignment.description && (
-                            <div className="text-sm text-gray-500 truncate max-w-md">{assignment.description}</div>
-                          )}
-                        </div>
-                        {assignment.submittedAt && !isPastDue(assignment.dueDate) && !assignment.gradedAt && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openUploadModal(assignment);
-                            }}
-                            className="px-3 py-1.5 text-xs font-medium text-brand-600 hover:text-brand-700 border border-brand-300 rounded-lg hover:bg-brand-50 transition-colors whitespace-nowrap"
-                            title="Reenviar ejercicio"
-                          >
-                            Reenviar
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {assignment.className || '—'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {(() => {
-                        let fileCount = 0;
-                        if (assignment.attachmentIds && assignment.attachmentIds.trim()) {
-                          fileCount = assignment.attachmentIds.split(',').filter(id => id.trim()).length;
-                        } else if (assignment.uploadId) {
-                          fileCount = 1;
-                        }
-                        return fileCount > 0 ? (
-                          <button
-                            onClick={() => downloadAssignmentFile(assignment)}
-                            className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-700 transition-colors group"
-                          >
-                            <div className="w-8 h-10 flex items-center justify-center bg-red-50 rounded border border-red-200 group-hover:bg-red-100 transition-colors">
-                              <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                              </svg>
-                            </div>
-                            <span className="text-xs">{fileCount} archivo{fileCount > 1 ? 's' : ''}</span>
-                          </button>
-                        ) : (
-                          <span className="text-xs text-gray-400">Sin archivo</span>
-                        );
-                      })()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {assignment.submittedAt && assignment.submissionStoragePath ? (
-                        <div className="flex items-center gap-2 text-sm text-gray-900 group">
-                          <div className="relative">
-                            <a
-                              href={`/api/documents/${assignment.submissionStoragePath}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-2 hover:text-gray-700 transition-colors"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <div className="w-8 h-10 flex items-center justify-center bg-green-50 rounded border border-green-200 group-hover:bg-green-100 transition-colors">
-                                <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                                </svg>
-                              </div>
-                            </a>
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleDeleteSubmission(assignment.id); }}
-                              className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center bg-red-500 hover:bg-red-600 rounded-full text-white transition-colors opacity-0 group-hover:opacity-100"
-                              title="Eliminar entrega"
-                            >
-                              <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
-                          </div>
-                          <span className="text-xs">1 archivo</span>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-gray-400">Sin entregar</span>
-                      )}
-                    </td>
-                    <td className={`px-6 py-4 whitespace-nowrap text-sm ${getDueDateColor(assignment.dueDate)}`}>
-                      {assignment.dueDate ? (
-                        <div className="flex items-center">
-                          {new Date(assignment.dueDate).toLocaleDateString('es-ES')}
-                          <span className="text-xs ml-1">
-                            {new Date(assignment.dueDate).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-                      ) : 'Sin fecha'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                      <button
-                        onClick={() => openUploadModal(assignment)}
-                        className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
-                      >
-                        Entregar
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          )
-        )}
-
-        {/* Completed assignments - TABLE FORMAT */}
-        {activeTab === 'completados' && (
-          completedAssignments.length === 0 ? (
-            <div className="bg-white rounded-xl border border-gray-200 p-6 sm:p-12 text-center">
-              <div className="w-14 h-14 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-7 h-7 sm:w-10 sm:h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">Ningún ejercicio completado</h2>
-              <p className="text-gray-500">Los ejercicios que entregues aparecerán aquí</p>
-            </div>
-          ) : (
-            <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Título</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Asignatura</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ejercicios</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Entrega</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Entregado</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Puntuación</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {completedAssignments.map((assignment) => (
+                {assignments.map((assignment) => {
+                  const isCompleted = !!assignment.submittedAt;
+                  return (
                     <tr key={assignment.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {isCompleted ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            Completado
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                            Pendiente
+                          </span>
+                        )}
+                      </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="flex-1">
@@ -484,7 +326,7 @@ export default function StudentAssignments() {
                               <div className="text-sm text-gray-500 truncate max-w-md">{assignment.description}</div>
                             )}
                           </div>
-                          {!isPastDue(assignment.dueDate) && !assignment.gradedAt && (
+                          {isCompleted && !isPastDue(assignment.dueDate) && !assignment.gradedAt && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -556,52 +398,43 @@ export default function StudentAssignments() {
                             <span className="text-xs">1 archivo</span>
                           </div>
                         ) : (
-                          <span className="text-xs text-gray-400">—</span>
+                          <span className="text-xs text-gray-400">Sin entregar</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {assignment.submittedAt ? (
-                          <div>
-                            {new Date(assignment.submittedAt).toLocaleDateString('es-ES')}
+                      <td className={`px-6 py-4 whitespace-nowrap text-sm ${getDueDateColor(assignment.dueDate)}`}>
+                        {assignment.dueDate ? (
+                          <div className="flex items-center">
+                            {new Date(assignment.dueDate).toLocaleDateString('es-ES')}
                             <span className="text-xs ml-1">
-                              {new Date(assignment.submittedAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                              {new Date(assignment.dueDate).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                             </span>
                           </div>
-                        ) : ''}
+                        ) : 'Sin fecha'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {assignment.gradedAt ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            Calificado
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                            Corrección pendiente
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        {assignment.gradedAt ? (
-                          <div>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                        {isCompleted ? (
+                          assignment.gradedAt ? (
                             <div className="text-lg font-bold text-brand-600">
                               {assignment.score}/{assignment.maxScore}
                             </div>
-                            {assignment.feedback && (
-                              <div className="text-xs text-gray-500 mt-1 max-w-xs text-right">
-                                {assignment.feedback}
-                              </div>
-                            )}
-                          </div>
+                          ) : (
+                            <span className="text-xs text-gray-500">En corrección</span>
+                          )
                         ) : (
-                          <span className="text-sm text-gray-400">—</span>
+                          <button
+                            onClick={() => openUploadModal(assignment)}
+                            className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
+                          >
+                            Entregar
+                          </button>
                         )}
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 

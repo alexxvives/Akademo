@@ -97,10 +97,7 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{ isolation: 'isolate' }}>
-      {/* Full-screen backdrop — no click-to-close */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
       {/* Modal */}
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md">
         {/* Header */}
@@ -194,12 +191,11 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
           {error && <p className="text-xs text-red-500 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
         </div>
 
-        {/* Footer */}
         <div className="flex gap-3 px-6 pb-6">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+            className="flex-1 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
           >
             Cancelar
           </button>
@@ -207,7 +203,7 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="flex-1 py-2.5 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 rounded-xl transition-colors disabled:opacity-60"
+            className="flex-1 py-2.5 text-sm font-medium text-white bg-brand-600 hover:bg-brand-700 rounded-lg transition-colors disabled:opacity-60"
           >
             {saving ? 'Guardando...' : isEditMode ? 'Guardar cambios' : 'Crear evento'}
           </button>

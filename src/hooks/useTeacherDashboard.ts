@@ -92,7 +92,7 @@ export function useTeacherDashboard() {
   const [rejectedCount, setRejectedCount] = useState(0);
   const [streamStats, setStreamStats] = useState({ total: 0, avgParticipants: 0, thisMonth: 0, totalHours: 0, totalMinutes: 0 });
   const [classWatchTime, setClassWatchTime] = useState({ hours: 0, minutes: 0 });
-  const [paymentStatusCounts, setPaymentStatusCounts] = useState({ alDia: 0, atrasados: 0 });
+  const [paymentStatusCounts, setPaymentStatusCounts] = useState({ alDia: 0, atrasados: 0, uniqueAlDia: 0, uniqueAtrasados: 0 });
 
   const loadData = useCallback(async () => {
     try {
@@ -170,7 +170,7 @@ export function useTeacherDashboard() {
         });
 
         setClassWatchTime({ hours: 45, minutes: 30 });
-        setPaymentStatusCounts({ alDia: 18, atrasados: 4 });
+        setPaymentStatusCounts({ alDia: 18, atrasados: 4, uniqueAlDia: 15, uniqueAtrasados: 3 });
         setLoading(false);
         return;
       }
@@ -207,6 +207,8 @@ export function useTeacherDashboard() {
         setPaymentStatusCounts({
           alDia: paymentStatusResult.data.alDia || 0,
           atrasados: paymentStatusResult.data.atrasados || 0,
+          uniqueAlDia: paymentStatusResult.data.uniqueAlDia || 0,
+          uniqueAtrasados: paymentStatusResult.data.uniqueAtrasados || 0,
         });
       }
 
