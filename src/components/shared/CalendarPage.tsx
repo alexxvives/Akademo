@@ -490,7 +490,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
 
       {/* Calendar controls */}
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-gray-100">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 sm:px-6 py-4 border-b border-gray-100 relative">
           {/* View mode tabs */}
           <div className="flex bg-gray-100 rounded-lg p-0.5">
             {(['month', 'week', 'day'] as ViewMode[]).map(mode => (
@@ -508,8 +508,8 @@ export function CalendarPage({ role }: CalendarPageProps) {
             ))}
           </div>
 
-          {/* Navigation */}
-          <div className="flex items-center gap-2">
+          {/* Navigation — absolutely centered */}
+          <div className="sm:absolute sm:left-1/2 sm:-translate-x-1/2 flex items-center gap-2">
             <button
               onClick={() => navigate(-1)}
               className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
