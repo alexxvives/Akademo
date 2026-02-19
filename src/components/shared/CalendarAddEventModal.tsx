@@ -24,6 +24,7 @@ interface CalendarAddEventModalProps {
     notes?: string | null;
     classId?: string | null;
     location?: string | null;
+    startTime?: string | null;
   }) => void;
 }
 
@@ -38,6 +39,7 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
   const [eventDate, setEventDate] = useState(defaultDate);
   const [classId, setClassId] = useState(editEvent?.classId ?? '');
   const [location, setLocation] = useState('');
+  const [startTime, setStartTime] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const dateInputRef = useRef<HTMLInputElement>(null);
@@ -143,18 +145,29 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
           </div>
 
           {/* Date — full row clickable */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Fecha <span className="text-red-400">*</span></label>
-            <div
-              className="relative cursor-pointer"
-              onClick={() => dateInputRef.current?.showPicker?.()}
-            >
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Fecha <span className="text-red-400">*</span></label>
+              <div
+                className="relative cursor-pointer"
+                onClick={() => dateInputRef.current?.showPicker?.()}
+              >
+                <input
+                  ref={dateInputRef}
+                  type="date"
+                  value={eventDate}
+                  onChange={(e) => setEventDate(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Hora</label>
               <input
-                ref={dateInputRef}
-                type="date"
-                value={eventDate}
-                onChange={(e) => setEventDate(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer"
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
           </div>

@@ -322,9 +322,6 @@ export default function StudentAssignments() {
                         <div className="flex items-center gap-3">
                           <div className="flex-1">
                             <div className="text-sm font-medium text-gray-900">{assignment.title}</div>
-                            {assignment.description && (
-                              <div className="text-sm text-gray-500 truncate max-w-md">{assignment.description}</div>
-                            )}
                           </div>
                           {isCompleted && !isPastDue(assignment.dueDate) && !assignment.gradedAt && (
                             <button

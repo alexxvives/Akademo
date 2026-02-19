@@ -17,6 +17,7 @@ interface CalendarEvent {
   classId?: string;
   extra?: string;
   manual?: boolean; // true = CalendarScheduledEvent (deletable)
+  startTime?: string; // HH:MM format e.g. "09:30"
 }
 
 interface ClassSummary {
@@ -63,20 +64,20 @@ function offsetDate(base: Date, days: number): string {
 
 function generateDemoEvents(today: Date): CalendarEvent[] {
   return [
-    { id: 'demo-l1', title: 'Álgebra Lineal — Matrices',       date: offsetDate(today, -10), type: 'lesson',          className: 'Matemáticas I' },
-    { id: 'demo-l2', title: 'Cálculo diferencial',             date: offsetDate(today, -7),  type: 'lesson',          className: 'Matemáticas I' },
-    { id: 'demo-s1', title: 'Repaso examen parcial',           date: offsetDate(today, -5),  type: 'stream',          className: 'Física General', extra: 'Duración: 67min' },
-    { id: 'demo-a1', title: 'Entrega Práctica 1',              date: offsetDate(today, -3),  type: 'assignment',      className: 'Química Orgánica' },
-    { id: 'demo-l3', title: 'Termodinámica — Entropía',        date: offsetDate(today, -2),  type: 'lesson',          className: 'Física General' },
-    { id: 'demo-pc1', title: 'Clase presencial — Laboratorio', date: offsetDate(today, -1),  type: 'physicalClass',   className: 'Química Orgánica', manual: true },
-    { id: 'demo-l4', title: 'Vectores y espacios vectoriales', date: offsetDate(today, 0),   type: 'lesson',          className: 'Matemáticas I' },
-    { id: 'demo-a2', title: 'Ejercicio semana 3',              date: offsetDate(today, 2),   type: 'assignment',      className: 'Física General' },
-    { id: 'demo-ss1', title: 'Stream: Dudas parcial',          date: offsetDate(today, 3),   type: 'scheduledStream', className: 'Matemáticas I', manual: true },
-    { id: 'demo-l5', title: 'Reacciones electroquímicas',      date: offsetDate(today, 5),   type: 'lesson',          className: 'Química Orgánica' },
-    { id: 'demo-pc2', title: 'Tutoría presencial',             date: offsetDate(today, 7),   type: 'physicalClass',   className: 'Física General', manual: true },
-    { id: 'demo-a3', title: 'Entrega Práctica 2',              date: offsetDate(today, 10),  type: 'assignment',      className: 'Química Orgánica' },
-    { id: 'demo-l6', title: 'Integrales — Cambio de variable', date: offsetDate(today, 12),  type: 'lesson',          className: 'Matemáticas I' },
-    { id: 'demo-ss2', title: 'Stream especial — Examen final', date: offsetDate(today, 14),  type: 'scheduledStream', className: 'Física General', manual: true },
+    { id: 'demo-l1', title: 'Álgebra Lineal — Matrices',       date: offsetDate(today, -10), type: 'lesson',          className: 'Matemáticas I', startTime: '09:00' },
+    { id: 'demo-l2', title: 'Cálculo diferencial',             date: offsetDate(today, -7),  type: 'lesson',          className: 'Matemáticas I', startTime: '10:30' },
+    { id: 'demo-s1', title: 'Repaso examen parcial',           date: offsetDate(today, -5),  type: 'stream',          className: 'Física General', extra: 'Duración: 67min', startTime: '16:00' },
+    { id: 'demo-a1', title: 'Entrega Práctica 1',              date: offsetDate(today, -3),  type: 'assignment',      className: 'Química Orgánica', startTime: '23:59' },
+    { id: 'demo-l3', title: 'Termodinámica — Entropía',        date: offsetDate(today, -2),  type: 'lesson',          className: 'Física General', startTime: '11:00' },
+    { id: 'demo-pc1', title: 'Clase presencial — Laboratorio', date: offsetDate(today, -1),  type: 'physicalClass',   className: 'Química Orgánica', manual: true, startTime: '14:00' },
+    { id: 'demo-l4', title: 'Vectores y espacios vectoriales', date: offsetDate(today, 0),   type: 'lesson',          className: 'Matemáticas I', startTime: '09:00' },
+    { id: 'demo-a2', title: 'Ejercicio semana 3',              date: offsetDate(today, 2),   type: 'assignment',      className: 'Física General', startTime: '23:59' },
+    { id: 'demo-ss1', title: 'Stream: Dudas parcial',          date: offsetDate(today, 3),   type: 'scheduledStream', className: 'Matemáticas I', manual: true, startTime: '18:00' },
+    { id: 'demo-l5', title: 'Reacciones electroquímicas',      date: offsetDate(today, 5),   type: 'lesson',          className: 'Química Orgánica', startTime: '10:00' },
+    { id: 'demo-pc2', title: 'Tutoría presencial',             date: offsetDate(today, 7),   type: 'physicalClass',   className: 'Física General', manual: true, startTime: '15:30' },
+    { id: 'demo-a3', title: 'Entrega Práctica 2',              date: offsetDate(today, 10),  type: 'assignment',      className: 'Química Orgánica', startTime: '23:59' },
+    { id: 'demo-l6', title: 'Integrales — Cambio de variable', date: offsetDate(today, 12),  type: 'lesson',          className: 'Matemáticas I', startTime: '09:00' },
+    { id: 'demo-ss2', title: 'Stream especial — Examen final', date: offsetDate(today, 14),  type: 'scheduledStream', className: 'Física General', manual: true, startTime: '17:00' },
   ];
 }
 
@@ -97,6 +98,23 @@ function isSameDay(a: Date, b: Date): boolean {
 function formatDateKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
+
+/** Extract HH:MM from an ISO date string if it contains time info */
+function extractTime(isoDate: string): string | undefined {
+  if (!isoDate) return undefined;
+  const d = new Date(isoDate);
+  if (isNaN(d.getTime())) return undefined;
+  // If the string contains 'T' it has time info  
+  if (isoDate.includes('T')) {
+    const h = d.getHours();
+    const m = d.getMinutes();
+    if (h === 0 && m === 0) return undefined; // midnight = probably no real time
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  }
+  return undefined;
+}
+
+const WEEK_HOURS = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
 
 export function CalendarPage({ role }: CalendarPageProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -194,6 +212,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
                     type: 'lesson',
                     className: cls.name,
                     classId: cls.id,
+                    startTime: extractTime(date),
                   });
                 }
               }
@@ -216,6 +235,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
                     className: cls.name,
                     classId: cls.id,
                     extra: assignment.dueDate ? `Entrega: ${new Date(assignment.dueDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}` : undefined,
+                    startTime: extractTime(date),
                   });
                 }
               }
@@ -242,6 +262,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
                   extra: stream.endedAt
                     ? `Duración: ${Math.round((new Date(stream.endedAt).getTime() - new Date(stream.startedAt).getTime()) / 60000)}min`
                     : 'En vivo',
+                  startTime: extractTime(date),
                 });
               }
             }
@@ -275,11 +296,12 @@ export function CalendarPage({ role }: CalendarPageProps) {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  const handleEventAdded = useCallback((ev: { id: string; title: string; type: 'physicalClass' | 'scheduledStream'; eventDate: string; notes?: string | null; classId?: string | null }) => {
+  const handleEventAdded = useCallback((ev: { id: string; title: string; type: 'physicalClass' | 'scheduledStream'; eventDate: string; notes?: string | null; classId?: string | null; startTime?: string | null }) => {
     const cls = classes.find(c => c.id === ev.classId);
     setEvents(prev => [...prev, {
       id: `manual-${ev.id}`, title: ev.title, date: ev.eventDate, type: ev.type,
       className: cls?.name || '', classId: ev.classId || '', extra: ev.notes || undefined, manual: true,
+      startTime: ev.startTime || undefined,
     }]);
   }, [classes]);
 
@@ -471,8 +493,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
               </button>
             )}
           </div>
-          {academyName && <p className="text-sm text-gray-500 mt-0.5">{academyName}</p>}
-          {!academyName && role === 'ADMIN' && <p className="text-sm text-gray-500 mt-0.5">AKADEMO PLATFORM</p>}
+          <p className="text-sm text-gray-500 mt-0.5">{role === 'ADMIN' ? 'AKADEMO PLATFORM' : academyName || 'AKADEMO'}</p>
           {isDemo && <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">Datos de demostración</span>}
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -666,72 +687,177 @@ export function CalendarPage({ role }: CalendarPageProps) {
     );
   }
 
-  // ─── Week view ───
+  // ─── Week view (Google Calendar style with time slots) ───
   function renderWeekView() {
     const today = new Date();
 
-    return (
-      <div>
-        <div className="grid grid-cols-7 gap-2">
-          {calendarDays.map((day) => {
-            const key = formatDateKey(day);
-            const dayEvents = eventsByDate.get(key) || [];
-            const isToday = isSameDay(day, today);
-            const isSelected = selectedDay && isSameDay(day, selectedDay);
+    // Separate all-day events (no startTime) from timed events
+    const allDayByDate = new Map<string, CalendarEvent[]>();
+    const timedByDate = new Map<string, CalendarEvent[]>();
+    
+    calendarDays.forEach(day => {
+      const key = formatDateKey(day);
+      const dayEvents = eventsByDate.get(key) || [];
+      const allDay: CalendarEvent[] = [];
+      const timed: CalendarEvent[] = [];
+      dayEvents.forEach(ev => {
+        if (ev.startTime) timed.push(ev);
+        else allDay.push(ev);
+      });
+      allDayByDate.set(key, allDay);
+      timedByDate.set(key, timed);
+    });
 
+    const hasAnyAllDay = Array.from(allDayByDate.values()).some(arr => arr.length > 0);
+
+    return (
+      <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+        {/* Day headers */}
+        <div className="grid border-b border-gray-200" style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}>
+          <div className="border-r border-gray-100" />
+          {calendarDays.map((day, i) => {
+            const isToday = isSameDay(day, today);
             return (
-              <div
-                key={key}
-                onClick={() => setSelectedDay(isSameDay(day, selectedDay || new Date(0)) ? null : day)}
-                onDragOver={(e) => { if (day >= today || isToday) handleDragOver(e, key); }}
-                onDragLeave={() => setDragOverDate(null)}
-                onDrop={(e) => { if (day >= today || isToday) handleDrop(e, day); }}
-                className={`group min-h-[140px] p-2 rounded-lg border transition-all cursor-pointer ${
-                  dragOverDate === key
-                    ? 'border-brand-400 bg-brand-50 ring-1 ring-brand-400'
-                    : isSelected
-                      ? 'border-brand-500 bg-brand-50 ring-1 ring-brand-500'
-                      : isToday
-                        ? 'border-blue-200 bg-blue-50/50'
-                        : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'
-                }`}
-              >
-                {/* Day header center-top */}
-                <div className="text-center mb-2">
-                  <div className="text-xs text-gray-500">{WEEKDAYS[calendarDays.indexOf(day)]}</div>
-                  <div className={`text-lg font-bold ${isToday ? 'text-blue-600' : 'text-gray-900'}`}>
-                    {day.getDate()}
-                  </div>
-                  {canCreateEvents && !isDemo && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setAddEventDate(day); }}
-                      className="opacity-0 group-hover:opacity-100 mt-0.5 p-0.5 hover:bg-gray-200 rounded-full mx-auto flex items-center justify-center transition-opacity"
-                    >
-                      <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                    </button>
-                  )}
-                </div>
-                <div className="space-y-1">
-                  {dayEvents.map(event => {
-                    const isFuture = new Date(event.date + 'T12:00:00') >= today;
-                    return (
-                    <div
-                      key={event.id}
-                      draggable={!!(canCreateEvents && isFuture && (event.manual || event.id.startsWith('assignment-')))}
-                      onDragStart={canCreateEvents && isFuture && (event.manual || event.id.startsWith('assignment-')) ? (e) => { e.stopPropagation(); handleDragStart(e, event.id); } : undefined}
-                      onClick={canCreateEvents && event.manual ? (e) => { e.stopPropagation(); handleEditEvent(event); } : undefined}
-                      className={`text-xs px-2 py-1 rounded ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text} ${canCreateEvents && (event.manual || event.id.startsWith('assignment-')) ? 'cursor-grab active:cursor-grabbing hover:brightness-95' : ''}`}
-                    >
-                      <div className="font-medium truncate">{event.title}</div>
-                      {event.className && (
-                        <div className="text-[10px] opacity-70 truncate">{event.className}</div>
-                      )}
-                    </div>
-                  )})}
+              <div key={i} className={`text-center py-2 border-r border-gray-100 last:border-r-0 ${isToday ? 'bg-blue-50' : ''}`}>
+                <div className="text-xs text-gray-500 font-medium">{WEEKDAYS[i]}</div>
+                <div className={`text-lg font-bold ${isToday ? 'text-blue-600' : 'text-gray-900'}`}>
+                  {isToday ? (
+                    <span className="inline-flex w-8 h-8 items-center justify-center rounded-full bg-blue-600 text-white text-sm">
+                      {day.getDate()}
+                    </span>
+                  ) : day.getDate()}
                 </div>
               </div>
             );
           })}
+        </div>
+
+        {/* All-day events section */}
+        {hasAnyAllDay && (
+          <div className="grid border-b border-gray-200" style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}>
+            <div className="border-r border-gray-100 px-1 py-1.5 text-[10px] text-gray-400 text-right">Todo el día</div>
+            {calendarDays.map((day, i) => {
+              const key = formatDateKey(day);
+              const events = allDayByDate.get(key) || [];
+              return (
+                <div key={i} className="border-r border-gray-100 last:border-r-0 px-0.5 py-1 space-y-0.5 min-h-[28px]">
+                  {events.map(event => (
+                    <div
+                      key={event.id}
+                      className={`text-[10px] px-1.5 py-0.5 rounded truncate ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text} cursor-pointer`}
+                      onClick={() => canCreateEvents && event.manual ? handleEditEvent(event) : undefined}
+                      title={`${event.title}${event.className ? ` — ${event.className}` : ''}`}
+                    >
+                      {event.title}
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Time grid */}
+        <div className="overflow-y-auto" style={{ maxHeight: '600px' }}>
+          <div className="relative">
+            {WEEK_HOURS.map((hour) => (
+              <div
+                key={hour}
+                className="grid border-b border-gray-100"
+                style={{ gridTemplateColumns: '60px repeat(7, 1fr)', height: '48px' }}
+              >
+                {/* Time label */}
+                <div className="border-r border-gray-100 px-1 text-right relative">
+                  <span className="absolute -top-2 right-1 text-[10px] text-gray-400">
+                    {hour < 10 ? `0${hour}:00` : `${hour}:00`}
+                  </span>
+                </div>
+                {/* Day columns */}
+                {calendarDays.map((day, dayIdx) => {
+                  const key = formatDateKey(day);
+                  const isToday = isSameDay(day, today);
+                  const timedEvents = timedByDate.get(key) || [];
+                  // Events that start in this hour
+                  const hourEvents = timedEvents.filter(ev => {
+                    if (!ev.startTime) return false;
+                    const [h] = ev.startTime.split(':').map(Number);
+                    return h === hour;
+                  });
+
+                  return (
+                    <div
+                      key={dayIdx}
+                      className={`border-r border-gray-100 last:border-r-0 relative ${isToday ? 'bg-blue-50/30' : ''}`}
+                      onClick={() => {
+                        if (canCreateEvents && !isDemo) {
+                          setAddEventDate(day);
+                        }
+                      }}
+                    >
+                      {hourEvents.map((event) => {
+                        const [, min] = (event.startTime || '00:00').split(':').map(Number);
+                        const topOffset = (min / 60) * 48; // 48px per hour
+                        return (
+                          <div
+                            key={event.id}
+                            className={`absolute left-0.5 right-0.5 rounded px-1.5 py-0.5 overflow-hidden cursor-pointer border-l-2 ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text}`}
+                            style={{
+                              top: `${topOffset}px`,
+                              minHeight: '40px',
+                              borderLeftColor: EVENT_COLORS[event.type].dot.replace('bg-', '').includes('blue') ? '#3b82f6'
+                                : EVENT_COLORS[event.type].dot.replace('bg-', '').includes('amber') ? '#f59e0b'
+                                : EVENT_COLORS[event.type].dot.replace('bg-', '').includes('red') ? '#ef4444'
+                                : EVENT_COLORS[event.type].dot.replace('bg-', '').includes('violet') ? '#8b5cf6'
+                                : '#6b7280',
+                              zIndex: 10,
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (canCreateEvents && event.manual) handleEditEvent(event);
+                            }}
+                            title={`${event.startTime} — ${event.title}${event.className ? ` (${event.className})` : ''}`}
+                          >
+                            <div className="text-[10px] font-medium truncate">{event.startTime} {event.title}</div>
+                            {event.className && (
+                              <div className="text-[9px] opacity-70 truncate">{event.className}</div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+
+            {/* Current time indicator */}
+            {(() => {
+              const now = new Date();
+              const h = now.getHours();
+              const m = now.getMinutes();
+              if (h < WEEK_HOURS[0] || h > WEEK_HOURS[WEEK_HOURS.length - 1]) return null;
+              const topPx = (h - WEEK_HOURS[0]) * 48 + (m / 60) * 48;
+              // Find which column is today
+              const todayIdx = calendarDays.findIndex(d => isSameDay(d, now));
+              if (todayIdx === -1) return null;
+              return (
+                <div
+                  className="absolute pointer-events-none"
+                  style={{
+                    top: `${topPx}px`,
+                    left: `calc(60px + ${todayIdx} * ((100% - 60px) / 7))`,
+                    width: `calc((100% - 60px) / 7)`,
+                    zIndex: 20,
+                  }}
+                >
+                  <div className="relative">
+                    <div className="absolute -left-1.5 -top-1.5 w-3 h-3 bg-red-500 rounded-full" />
+                    <div className="h-0.5 bg-red-500 w-full" />
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
         </div>
       </div>
     );

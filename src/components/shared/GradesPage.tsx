@@ -473,7 +473,7 @@ export function GradesPage({ role }: GradesPageProps) {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Calificaciones</h1>
-          <p className="text-sm text-gray-500 mt-1">{role === 'ADMIN' ? 'AKADEMO PLATFORM' : academyName || ''}</p>
+          <p className="text-sm text-gray-500 mt-1">{role === 'ADMIN' ? 'AKADEMO PLATFORM' : academyName || 'AKADEMO'}</p>
         </div>
         <div className="bg-white rounded-2xl border border-gray-200 p-6 sm:p-12 text-center">
           <div className="text-gray-900 font-medium mb-2">
@@ -495,7 +495,7 @@ export function GradesPage({ role }: GradesPageProps) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Calificaciones</h1>
-          <p className="text-sm text-gray-500 mt-1">{role === 'ADMIN' ? 'AKADEMO PLATFORM' : academyName || ''}</p>
+          <p className="text-sm text-gray-500 mt-1">{role === 'ADMIN' ? 'AKADEMO PLATFORM' : academyName || 'AKADEMO'}</p>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           {/* Search */}
