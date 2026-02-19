@@ -583,30 +583,33 @@ export default function PagosPage({ role }: PagosPageProps) {
         </div>
       </div>
 
-      {/* Pending toggle + Payments Table grouped tightly */}
+      {/* Payments Table */}
       <div className="space-y-2">
-      {/* Pending toggle outside table */}
-      {filteredPendingPayments.length > 0 && (
-        <div className="flex justify-end">
-          <button
-            onClick={() => setPendingPaymentsCollapsed(!pendingPaymentsCollapsed)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            <svg className={`w-4 h-4 transition-transform ${pendingPaymentsCollapsed ? 'rotate-0' : 'rotate-90'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-            {pendingPaymentsCollapsed ? 'Mostrar' : 'Ocultar'} pendientes ({filteredPendingPayments.length})
-          </button>
-        </div>
-      )}
-
       {/* Payments Table */}
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
         <div className="max-h-[637px] overflow-y-auto overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
             <tr>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <div className="flex items-center gap-1.5">
+                  <span>Estado</span>
+                  {filteredPendingPayments.length > 0 && (
+                    <button
+                      onClick={() => setPendingPaymentsCollapsed(!pendingPaymentsCollapsed)}
+                      title={pendingPaymentsCollapsed ? 'Mostrar pendientes' : 'Ocultar pendientes'}
+                      className="inline-flex items-center justify-center w-4 h-4 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition-colors"
+                    >
+                      <svg
+                        className={`w-3 h-3 transition-transform ${pendingPaymentsCollapsed ? 'rotate-0' : 'rotate-90'}`}
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              </th>
               <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estudiante</th>
               {isAdmin && <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Academia</th>}
               <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asignatura</th>

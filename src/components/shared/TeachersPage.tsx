@@ -561,7 +561,7 @@ export function TeachersPage({ role }: TeachersPageProps) {
                                   openEditModal(teacher);
                                 }}
                                 disabled={isDemo}
-                                className="text-blue-600 hover:text-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="text-gray-500 hover:text-brand-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 title="Editar profesor"
                               >
                                 <svg

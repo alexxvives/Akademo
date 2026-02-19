@@ -138,7 +138,7 @@ export function StudentsProgressTable({
       {filteredStudents.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Tiempo de VisualizaciÃ³n</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Tiempo de Visualización</h3>
           </div>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={[]}>
@@ -154,7 +154,7 @@ export function StudentsProgressTable({
       ) : chartData.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Tiempo de VisualizaciÃ³n</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Tiempo de Visualización</h3>
             <p className="text-sm text-gray-500">Solo muestra los top 10 estudiantes</p>
           </div>
           <ResponsiveContainer width="100%" height={300}>

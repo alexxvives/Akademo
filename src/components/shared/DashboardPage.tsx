@@ -389,38 +389,28 @@ export function DashboardPage({ role }: DashboardPageProps) {
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-3">
-            <div className="flex-1 flex flex-col p-3 bg-gray-50 rounded-lg">
-              <div className="flex flex-col items-center justify-center">
-                <AnimatedNumber value={uniqueStudentCount} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1" />
+            {/* Estudiantes box — count only, al día/atrasados are per-enrollment so omitted here */}
+            <div className="flex-1 flex items-center p-3 bg-gray-50 rounded-lg gap-3">
+              <div className="flex flex-col items-center justify-center shrink-0">
+                <AnimatedNumber value={uniqueStudentCount} className="text-3xl sm:text-4xl font-bold text-gray-900" />
                 <div className="text-xs text-gray-500">Estudiantes</div>
               </div>
-              {studentPaymentStatus && (
-                <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-gray-500">al día</span>
-                    <AnimatedNumber value={studentPaymentStatus.alDia} className="text-lg font-bold text-green-600" />
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-gray-500">atrasados</span>
-                    <AnimatedNumber value={studentPaymentStatus.atrasados} className="text-lg font-bold text-red-600" />
-                  </div>
-                </div>
-              )}
             </div>
-            <div className="flex-1 flex flex-col p-3 bg-gray-50 rounded-lg">
-              <div className="flex flex-col items-center justify-center">
-                <AnimatedNumber value={filteredStudents.length} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1" />
+            {/* Matrículas box — count on left, al día/atrasados on right */}
+            <div className="flex-1 flex items-center p-3 bg-gray-50 rounded-lg gap-3">
+              <div className="flex flex-col items-center justify-center shrink-0">
+                <AnimatedNumber value={filteredStudents.length} className="text-3xl sm:text-4xl font-bold text-gray-900" />
                 <div className="text-xs text-gray-500">Matrículas</div>
               </div>
               {studentPaymentStatus && (
-                <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
-                  <div className="flex justify-between items-center">
+                <div className="flex-1 ml-2 pl-2 border-l border-gray-200 space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="text-xs text-gray-500">al día</span>
-                    <AnimatedNumber value={studentPaymentStatus.alDia} className="text-lg font-bold text-green-600" />
+                    <AnimatedNumber value={studentPaymentStatus.alDia} className="text-base font-bold text-green-600" />
                   </div>
-                  <div className="flex justify-between items-center">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="text-xs text-gray-500">atrasados</span>
-                    <AnimatedNumber value={studentPaymentStatus.atrasados} className="text-lg font-bold text-red-600" />
+                    <AnimatedNumber value={studentPaymentStatus.atrasados} className="text-base font-bold text-red-600" />
                   </div>
                 </div>
               )}
