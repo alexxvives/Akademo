@@ -11,7 +11,6 @@ import { MobileSidebar } from '@/components/layout/MobileSidebar';
 import { NotificationPanel } from '@/components/layout/NotificationPanel';
 import { DemoDataBanner } from '@/components/academy/DemoDataBanner';
 import { DemoBanner } from '@/components/shared/DemoBanner';
-import { LordIconCalendar } from '@/components/ui/LordIconCalendar';
 
 interface User {
   id: string;
@@ -27,7 +26,7 @@ interface MenuItem {
   label: string;
   href: string;
   icon?: JSX.Element;
-  iconType?: 'chart' | 'book' | 'userPlus' | 'message' | 'clap' | 'fileText' | 'clipboard' | 'activity' | 'users' | 'botMessage' | 'handCoins' | 'star';
+  iconType?: 'chart' | 'book' | 'userPlus' | 'message' | 'clap' | 'fileText' | 'clipboard' | 'activity' | 'users' | 'botMessage' | 'handCoins' | 'star' | 'calendar';
   badge?: number;
   badgeColor?: string;
   matchPaths?: string[];
@@ -514,7 +513,7 @@ export default function DashboardLayout({
           {
             label: 'Calendario',
             href: '/dashboard/admin/calendar',
-            icon: (<LordIconCalendar size={20} />)
+            iconType: 'calendar' as const,
           },
         ];
       case 'TEACHER':
@@ -526,13 +525,13 @@ export default function DashboardLayout({
           { label: 'Ejercicios', href: '/dashboard/teacher/assignments', iconType: 'fileText', badge: academy?.requireGrading !== 0 && ungradedAssignmentsCount > 0 ? ungradedAssignmentsCount : undefined, badgeColor: 'bg-[#b0e788]' },
           ...(academy?.requireGrading !== 0 ? [{ label: 'Calificaciones', href: '/dashboard/teacher/grades', iconType: 'star' as const }] : []),
           { label: 'Estudiantes', href: '/dashboard/teacher/progress', iconType: 'users' },
-          { label: 'Calendario', href: '/dashboard/teacher/calendar', icon: (<LordIconCalendar size={20} />) },
+          { label: 'Calendario', href: '/dashboard/teacher/calendar', iconType: 'calendar' as const },
         ];
       case 'STUDENT':
         return [
           { label: 'Mis Asignaturas', href: '/dashboard/student/subjects', matchPaths: ['/dashboard/student/subject'], showPulse: activeStreams.length > 0, iconType: 'book' as const, badge: unpaidClassesCount > 0 ? unpaidClassesCount : undefined, badgeColor: 'bg-[#b0e788]' },
           { label: 'Ejercicios', href: '/dashboard/student/assignments', badge: academy?.requireGrading !== 0 && newGradesCount > 0 ? newGradesCount : undefined, badgeColor: 'bg-[#b0e788]', iconType: 'fileText' as const },
-          { label: 'Calendario', href: '/dashboard/student/calendar', icon: (<LordIconCalendar size={20} />) },
+          { label: 'Calendario', href: '/dashboard/student/calendar', iconType: 'calendar' as const },
         ];
       case 'ACADEMY':
         const academyMenuItems: MenuItem[] = [
@@ -545,7 +544,7 @@ export default function DashboardLayout({
           { label: 'Profesores', href: '/dashboard/academy/teachers', iconType: 'botMessage' as const },
           { label: 'Estudiantes', href: '/dashboard/academy/students', iconType: 'users' as const },
           { label: 'Pagos', href: '/dashboard/academy/payments', iconType: 'handCoins' as const, badge: pendingPaymentsCount > 0 ? pendingPaymentsCount : undefined, badgeColor: 'bg-[#b0e788]' },
-          { label: 'Calendario', href: '/dashboard/academy/calendar', icon: (<LordIconCalendar size={20} />) },
+          { label: 'Calendario', href: '/dashboard/academy/calendar', iconType: 'calendar' as const },
         ];
         
         // Filter out Profesores menu for monoacademies

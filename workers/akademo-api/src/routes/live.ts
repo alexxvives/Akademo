@@ -253,12 +253,14 @@ live.get('/history', async (c) => {
           c.academyId,
           c.name as className,
           c.slug as classSlug,
+          u.firstName || ' ' || u.lastName as teacherName,
           (SELECT v.lessonId FROM Video v 
            JOIN Upload up ON v.uploadId = up.id 
            WHERE up.bunnyGuid = ls.recordingId 
            LIMIT 1) as validRecordingId
         FROM LiveStream ls
         JOIN Class c ON ls.classId = c.id
+        JOIN User u ON ls.teacherId = u.id
         WHERE ls.teacherId = ? AND ls.status != 'scheduled'
         ORDER BY ls.createdAt DESC
       `;

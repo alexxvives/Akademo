@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
 import { Montserrat } from 'next/font/google';
-import Script from 'next/script';
 import "./globals.css";
 
 const montserrat = Montserrat({ 
   subsets: ['latin'],
   variable: '--font-montserrat',
   display: 'swap',
-  preload: true,
+  preload: false,
   fallback: ['system-ui', 'arial'],
 });
 
@@ -40,7 +39,6 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         {children}
-        <Script src="https://cdn.lordicon.com/lordicon.js" strategy="afterInteractive" />
       </body>
     </html>
   );

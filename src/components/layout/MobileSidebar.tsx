@@ -4,7 +4,12 @@ import { useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { LinkIcon, LogoutIcon } from '@/components/ui';
+import { LinkIcon, LogoutIcon, ChartNoAxesColumnIncreasingIcon, BookTextIcon, UserRoundPlusIcon, MessageSquareMoreIcon, ClapIcon, FileTextIcon, ClipboardCheckIcon, ActivityIcon } from '@/components/ui';
+import { UsersIcon } from '@/components/ui/UsersIcon';
+import { BotMessageSquareIcon } from '@/components/ui/BotMessageSquareIcon';
+import { HandCoinsIcon } from '@/components/ui/HandCoinsIcon';
+import { PenToolIcon } from '@/components/ui/PenToolIcon';
+import { CalendarDaysIcon } from '@/components/ui/CalendarDaysIcon';
 import type { LinkIconHandle } from '@/components/ui/LinkIcon';
 import type { LogoutIconHandle } from '@/components/ui/LogoutIcon';
 
@@ -53,6 +58,26 @@ export function MobileSidebar({
   const pathname = usePathname();
   const linkIconRef = useRef<LinkIconHandle | null>(null);
   const logoutIconRef = useRef<LogoutIconHandle | null>(null);
+
+  const renderIcon = (item: MenuItem) => {
+    const iconMap: Record<string, JSX.Element> = {
+      chart: <ChartNoAxesColumnIncreasingIcon size={20} />,
+      book: <BookTextIcon size={20} />,
+      userPlus: <UserRoundPlusIcon size={20} />,
+      message: <MessageSquareMoreIcon size={20} />,
+      clap: <ClapIcon size={20} />,
+      fileText: <FileTextIcon size={20} />,
+      clipboard: <ClipboardCheckIcon size={20} />,
+      activity: <ActivityIcon size={20} />,
+      users: <UsersIcon size={20} />,
+      botMessage: <BotMessageSquareIcon size={20} />,
+      handCoins: <HandCoinsIcon size={20} />,
+      star: <PenToolIcon size={20} />,
+      calendar: <CalendarDaysIcon size={20} />,
+    };
+    if (item.iconType && iconMap[item.iconType]) return iconMap[item.iconType];
+    return item.icon ?? null;
+  };
 
   return (
     <>
@@ -121,7 +146,7 @@ export function MobileSidebar({
                 }`}
               >
                 <span className={isActive ? 'text-brand-600' : 'text-gray-500'}>
-                  {item.icon}
+                  {renderIcon(item)}
                 </span>
                 <span className="text-sm">{item.label}</span>
                 {showPulse && (

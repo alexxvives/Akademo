@@ -606,7 +606,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
                 onDragOver={!isPast ? (e) => handleDragOver(e, key) : undefined}
                 onDragLeave={() => setDragOverDate(null)}
                 onDrop={!isPast ? (e) => handleDrop(e, day) : undefined}
-                className={`group min-h-[110px] sm:min-h-[130px] p-1.5 rounded-lg border text-left transition-all cursor-pointer ${
+                className={`group min-h-[80px] sm:min-h-[100px] p-1.5 rounded-lg border text-left transition-all cursor-pointer ${
                   isDragOver
                     ? 'border-brand-400 bg-brand-50 ring-1 ring-brand-400'
                     : isToday
@@ -676,7 +676,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
                 onDragOver={(e) => { if (day >= today || isToday) handleDragOver(e, key); }}
                 onDragLeave={() => setDragOverDate(null)}
                 onDrop={(e) => { if (day >= today || isToday) handleDrop(e, day); }}
-                className={`group min-h-[200px] p-2 rounded-lg border transition-all cursor-pointer ${
+                className={`group min-h-[140px] p-2 rounded-lg border transition-all cursor-pointer ${
                   dragOverDate === key
                     ? 'border-brand-400 bg-brand-50 ring-1 ring-brand-400'
                     : isSelected

@@ -55,7 +55,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
   const [academyInfo, setAcademyInfo] = useState<{ id: string; name: string; paymentStatus?: string } | null>(null);
   const [paymentStatus, setPaymentStatus] = useState('NOT PAID');
   const [allCompletedPayments, setAllCompletedPayments] = useState<PaymentHistoryItem[]>([]);
-  const [studentPaymentStatus, setStudentPaymentStatus] = useState<{ alDia: number; atrasados: number; total: number } | null>(null);
+  const [studentPaymentStatus, setStudentPaymentStatus] = useState<{ alDia: number; atrasados: number; total: number; uniqueAlDia?: number; uniqueAtrasados?: number; uniqueTotal?: number } | null>(null);
 
   // Admin-only state
   const [academies, setAcademies] = useState<Academy[]>([]);
@@ -114,7 +114,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
       setAllCompletedPayments(completed);
     }
     if (paymentStatusResult.success && paymentStatusResult.data) {
-      setStudentPaymentStatus(paymentStatusResult.data as { alDia: number; atrasados: number; total: number });
+      setStudentPaymentStatus(paymentStatusResult.data as { alDia: number; atrasados: number; total: number; uniqueAlDia?: number; uniqueAtrasados?: number; uniqueTotal?: number });
     }
     if (streamsResult.success && Array.isArray(streamsResult.data)) setAllStreams(streamsResult.data);
     if (progressResult.success && Array.isArray(progressResult.data)) {
@@ -389,12 +389,24 @@ export function DashboardPage({ role }: DashboardPageProps) {
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-3">
-            {/* Estudiantes box — count only, al día/atrasados are per-enrollment so omitted here */}
+            {/* Estudiantes box — count on left, al día/atrasados (unique student) on right */}
             <div className="flex-1 flex items-center p-3 bg-gray-50 rounded-lg gap-3">
               <div className="flex flex-col items-center justify-center shrink-0">
                 <AnimatedNumber value={uniqueStudentCount} className="text-3xl sm:text-4xl font-bold text-gray-900" />
                 <div className="text-xs text-gray-500">Estudiantes</div>
               </div>
+              {studentPaymentStatus && (studentPaymentStatus.uniqueAlDia != null || studentPaymentStatus.uniqueAtrasados != null) && (
+                <div className="flex-1 ml-2 pl-2 border-l border-gray-200 space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs text-gray-500">al día</span>
+                    <AnimatedNumber value={studentPaymentStatus.uniqueAlDia ?? 0} className="text-base font-bold text-green-600" />
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs text-gray-500">atrasados</span>
+                    <AnimatedNumber value={studentPaymentStatus.uniqueAtrasados ?? 0} className="text-base font-bold text-red-600" />
+                  </div>
+                </div>
+              )}
             </div>
             {/* Matrículas box — count on left, al día/atrasados on right */}
             <div className="flex-1 flex items-center p-3 bg-gray-50 rounded-lg gap-3">

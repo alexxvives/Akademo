@@ -706,12 +706,17 @@ enrollments.get('/payment-status', async (c) => {
     
     let alDia = 0;
     let atrasados = 0;
+    // Track per-student status: a student is "atrasado" if ANY enrollment is atrasado
+    const studentStatus: Record<string, 'alDia' | 'atrasado'> = {};
 
     for (const enrollment of enrollments_data as any[]) {
+      let isAtrasado = false;
+
       if (enrollment.paymentFrequency === 'MONTHLY' && enrollment.nextPaymentDue) {
         // Monthly payment: check if next payment is overdue
         if (new Date(enrollment.nextPaymentDue) < new Date(now)) {
           atrasados++;
+          isAtrasado = true;
         } else {
           alDia++;
         }
@@ -730,14 +735,26 @@ enrollments.get('/payment-status', async (c) => {
           alDia++;
         } else {
           atrasados++;
+          isAtrasado = true;
         }
       } else {
         // No payment frequency set or unknown, assume al dia
         alDia++;
       }
+
+      // Track per-student: once atrasado in any class, student stays atrasado
+      const uid = enrollment.userId as string;
+      if (isAtrasado) {
+        studentStatus[uid] = 'atrasado';
+      } else if (!studentStatus[uid]) {
+        studentStatus[uid] = 'alDia';
+      }
     }
 
-    return c.json(successResponse({ alDia, atrasados, total: enrollments_data.length }));
+    const uniqueAlDia = Object.values(studentStatus).filter(s => s === 'alDia').length;
+    const uniqueAtrasados = Object.values(studentStatus).filter(s => s === 'atrasado').length;
+
+    return c.json(successResponse({ alDia, atrasados, total: enrollments_data.length, uniqueAlDia, uniqueAtrasados, uniqueTotal: Object.keys(studentStatus).length }));
   } catch (error: any) {
     console.error('[Payment Status] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);

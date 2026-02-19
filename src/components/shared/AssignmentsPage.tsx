@@ -764,16 +764,16 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
                   return fileCount > 0 ? (
                     <div className="flex items-center justify-center gap-2">
                       <button onClick={(e) => { e.stopPropagation(); openAssignmentFiles(assignment); }}
-                        className="flex items-center gap-2 text-sm text-brand-600 hover:text-brand-700 transition-colors group">
+                        className="flex items-center gap-2 text-sm text-brand-600 hover:text-brand-700 transition-colors group/file">
                         <div className="relative">
-                          <div className="w-8 h-10 flex items-center justify-center bg-red-50 rounded border border-red-200 group-hover:bg-red-100 transition-colors">
+                          <div className="w-8 h-10 flex items-center justify-center bg-red-50 rounded border border-red-200 group-hover/file:bg-red-100 transition-colors">
                             <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                             </svg>
                           </div>
                           <button
                             onClick={(e) => { e.stopPropagation(); handleRemoveExerciseFiles(assignment.id); }}
-                            className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center bg-red-500 hover:bg-red-600 rounded-full text-white transition-colors"
+                            className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center bg-red-500 hover:bg-red-600 rounded-full text-white transition-colors opacity-0 group-hover/file:opacity-100"
                           >
                             <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

@@ -20,13 +20,14 @@ import { UsersIcon } from '@/components/ui/UsersIcon';
 import { BotMessageSquareIcon } from '@/components/ui/BotMessageSquareIcon';
 import { HandCoinsIcon } from '@/components/ui/HandCoinsIcon';
 import { PenToolIcon, type PenToolIconHandle } from '@/components/ui/PenToolIcon';
+import { CalendarDaysIcon } from '@/components/ui/CalendarDaysIcon';
 import { useAcademyLogo } from '@/hooks/useAcademyLogo';
 
 interface MenuItem {
   label: string;
   href: string;
   icon?: JSX.Element;
-  iconType?: 'chart' | 'book' | 'userPlus' | 'message' | 'clap' | 'fileText' | 'clipboard' | 'activity' | 'users' | 'botMessage' | 'handCoins' | 'star';
+  iconType?: 'chart' | 'book' | 'userPlus' | 'message' | 'clap' | 'fileText' | 'clipboard' | 'activity' | 'users' | 'botMessage' | 'handCoins' | 'star' | 'calendar';
   badge?: number;
   badgeColor?: string;
   matchPaths?: string[];
@@ -107,6 +108,8 @@ export function Sidebar({
       return <HandCoinsIcon ref={iconRef} size={20} />;
     } else if (iconType === 'star') {
       return <PenToolIcon ref={iconRef as RefObject<PenToolIconHandle>} size={20} />;
+    } else if (iconType === 'calendar') {
+      return <CalendarDaysIcon ref={iconRef} size={20} />;
     } else if (item.icon) {
       return item.icon;
     }
