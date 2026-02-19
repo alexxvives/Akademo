@@ -16,6 +16,7 @@ interface CalendarEventRow {
   notes: string | null;
   classId: string | null;
   location: string | null;
+  startTime: string | null;
   createdAt: string;
 }
 
@@ -91,6 +92,7 @@ calendarEvents.post('/', async (c) => {
       notes?: string;
       classId?: string;
       location?: string;
+      startTime?: string;
     }>();
 
     if (!body.title || !body.type || !body.eventDate) {
@@ -130,10 +132,10 @@ calendarEvents.post('/', async (c) => {
 
     const id = nanoid();
     await c.env.DB.prepare(
-      `INSERT INTO CalendarScheduledEvent (id, academyId, createdBy, title, type, eventDate, notes, classId, location, createdAt)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+      `INSERT INTO CalendarScheduledEvent (id, academyId, createdBy, title, type, eventDate, notes, classId, location, startTime, createdAt)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
     )
-      .bind(id, academyId, session.id, body.title, body.type, body.eventDate, body.notes ?? null, body.classId ?? null, body.location ?? null)
+      .bind(id, academyId, session.id, body.title, body.type, body.eventDate, body.notes ?? null, body.classId ?? null, body.location ?? null, body.startTime ?? null)
       .run();
 
     const event = await c.env.DB.prepare('SELECT * FROM CalendarScheduledEvent WHERE id = ?')
@@ -171,7 +173,7 @@ calendarEvents.patch('/:id', async (c) => {
     }
 
     const body = await c.req.json();
-    const { title, eventDate, notes, classId, location, type } = body;
+    const { title, eventDate, notes, classId, location, type, startTime } = body;
 
     const updateFields: string[] = [];
     const bindings: unknown[] = [];
@@ -182,6 +184,7 @@ calendarEvents.patch('/:id', async (c) => {
     if (classId !== undefined) { updateFields.push('classId = ?'); bindings.push(classId ?? null); }
     if (location !== undefined) { updateFields.push('location = ?'); bindings.push(location ?? null); }
     if (type !== undefined) { updateFields.push('type = ?'); bindings.push(type); }
+    if (startTime !== undefined) { updateFields.push('startTime = ?'); bindings.push(startTime ?? null); }
 
     if (updateFields.length === 0) {
       return c.json(errorResponse('No fields to update'), 400);

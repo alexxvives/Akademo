@@ -18,6 +18,7 @@ interface CalendarEvent {
   extra?: string;
   manual?: boolean; // true = CalendarScheduledEvent (deletable)
   startTime?: string; // HH:MM format e.g. "09:30"
+  location?: string;
 }
 
 interface ClassSummary {
@@ -40,11 +41,11 @@ const WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 const VIEW_LABELS: Record<ViewMode, string> = { month: 'Mes', week: 'Semana', day: 'Día' };
 
 const EVENT_COLORS: Record<EventType, { bg: string; text: string; dot: string }> = {
-  lesson:          { bg: 'bg-blue-50',   text: 'text-blue-700',   dot: 'bg-blue-500' },
-  assignment:      { bg: 'bg-amber-50',  text: 'text-amber-700',  dot: 'bg-amber-500' },
-  stream:          { bg: 'bg-red-50',    text: 'text-red-700',    dot: 'bg-red-500' },
-  scheduledStream: { bg: 'bg-red-50',    text: 'text-red-700',    dot: 'bg-red-500' },
-  physicalClass:   { bg: 'bg-violet-50', text: 'text-violet-700', dot: 'bg-violet-500' },
+  lesson:          { bg: 'bg-blue-600',   text: 'text-white',   dot: 'bg-blue-700' },
+  assignment:      { bg: 'bg-amber-600',  text: 'text-white',   dot: 'bg-amber-700' },
+  stream:          { bg: 'bg-red-600',    text: 'text-white',   dot: 'bg-red-700' },
+  scheduledStream: { bg: 'bg-red-600',    text: 'text-white',   dot: 'bg-red-700' },
+  physicalClass:   { bg: 'bg-violet-600', text: 'text-white',   dot: 'bg-violet-700' },
 };
 
 const EVENT_LABELS: Record<EventType, string> = {
@@ -280,6 +281,8 @@ export function CalendarPage({ role }: CalendarPageProps) {
                 id: `manual-${ev.id}`, title: ev.title, date: ev.eventDate,
                 type: ev.type as EventType, className: ev.className || '', classId: ev.classId || '',
                 extra: ev.notes || undefined, manual: true,
+                startTime: ev.startTime || undefined,
+                location: ev.location || undefined,
               });
             }
           }
@@ -296,12 +299,13 @@ export function CalendarPage({ role }: CalendarPageProps) {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  const handleEventAdded = useCallback((ev: { id: string; title: string; type: 'physicalClass' | 'scheduledStream'; eventDate: string; notes?: string | null; classId?: string | null; startTime?: string | null }) => {
+  const handleEventAdded = useCallback((ev: { id: string; title: string; type: 'physicalClass' | 'scheduledStream'; eventDate: string; notes?: string | null; classId?: string | null; startTime?: string | null; location?: string | null }) => {
     const cls = classes.find(c => c.id === ev.classId);
     setEvents(prev => [...prev, {
       id: `manual-${ev.id}`, title: ev.title, date: ev.eventDate, type: ev.type,
       className: cls?.name || '', classId: ev.classId || '', extra: ev.notes || undefined, manual: true,
       startTime: ev.startTime || undefined,
+      location: ev.location || undefined,
     }]);
   }, [classes]);
 
@@ -582,14 +586,22 @@ export function CalendarPage({ role }: CalendarPageProps) {
         <CalendarAddEventModal
           date={addEventDate}
           classes={classes}
-          editEvent={editingEvent ?? undefined}
+          editEvent={editingEvent ? {
+            id: editingEvent.id,
+            title: editingEvent.title,
+            type: editingEvent.type,
+            classId: editingEvent.classId,
+            extra: editingEvent.extra,
+            location: editingEvent.location,
+            startTime: editingEvent.startTime,
+          } : undefined}
           onClose={() => { setAddEventDate(null); setEditingEvent(null); }}
           onSaved={(ev) => {
             if (editingEvent) {
               // Update existing event
               setEvents(prev => prev.map(e =>
                 e.id === editingEvent.id
-                  ? { ...e, title: ev.title, type: ev.type as EventType, date: ev.eventDate, classId: ev.classId || '', extra: ev.notes || undefined }
+                  ? { ...e, title: ev.title, type: ev.type as EventType, date: ev.eventDate, classId: ev.classId || '', extra: ev.notes || undefined, startTime: ev.startTime || undefined, location: ev.location || undefined }
                   : e
               ));
               setEditingEvent(null);
@@ -817,9 +829,12 @@ export function CalendarPage({ role }: CalendarPageProps) {
                             }}
                             title={`${event.startTime} — ${event.title}${event.className ? ` (${event.className})` : ''}`}
                           >
-                            <div className="text-[10px] font-medium truncate">{event.startTime} {event.title}</div>
+                            <div className="flex items-start justify-between gap-0.5">
+                              <div className="text-[10px] font-medium truncate flex-1">{event.title}</div>
+                              {event.startTime && <div className="text-[9px] opacity-80 flex-shrink-0">{event.startTime}</div>}
+                            </div>
                             {event.className && (
-                              <div className="text-[9px] opacity-70 truncate">{event.className}</div>
+                              <div className="text-[9px] opacity-80 truncate">{event.className}</div>
                             )}
                           </div>
                         );
@@ -863,72 +878,146 @@ export function CalendarPage({ role }: CalendarPageProps) {
     );
   }
 
-  // ─── Day view ───
+  // ─── Day view (Google Calendar style with time grid, single column) ───
   function renderDayView() {
     const day = calendarDays[0];
+    const today = new Date();
     const key = formatDateKey(day);
-    const dayEvents = (eventsByDate.get(key) || []).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const dayEvents = (eventsByDate.get(key) || []);
+    const isToday = isSameDay(day, today);
+
+    // Separate all-day events (no startTime) from timed events
+    const allDayEvents = dayEvents.filter(ev => !ev.startTime);
+    const timedEvents = dayEvents.filter(ev => ev.startTime);
 
     return (
       <div>
-        <div className="text-center mb-6">
+        {/* Day header */}
+        <div className="text-center mb-4">
           <div className="text-sm text-gray-500 capitalize">
             {day.toLocaleDateString('es-ES', { weekday: 'long' })}
           </div>
-          <div className="text-3xl font-bold text-gray-900">{day.getDate()}</div>
+          <div className={`text-3xl font-bold ${isToday ? 'text-blue-600' : 'text-gray-900'}`}>
+            {isToday ? (
+              <span className="inline-flex w-10 h-10 items-center justify-center rounded-full bg-blue-600 text-white text-xl">
+                {day.getDate()}
+              </span>
+            ) : day.getDate()}
+          </div>
           <div className="text-sm text-gray-500 capitalize">
             {day.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
           </div>
         </div>
 
-        {dayEvents.length === 0 ? (
-          <div className="text-center py-12">
-            <svg className="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <p className="text-sm text-gray-500">No hay eventos para este día</p>
-          </div>
-        ) : (
-          <div className="space-y-3 max-w-2xl mx-auto">
-            {dayEvents.map(event => (
-              <div
-                key={event.id}
-                className={`group flex items-start gap-3 p-4 rounded-lg border ${EVENT_COLORS[event.type].bg} border-opacity-50`}
-              >
-                <div className={`w-3 h-3 rounded-full mt-0.5 flex-shrink-0 ${EVENT_COLORS[event.type].dot}`} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text}`}>
-                      {EVENT_LABELS[event.type]}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      {new Date(event.date).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
-                  <p className="text-sm font-medium text-gray-900 mt-1">{event.title}</p>
-                  {event.className && (
-                    <p className="text-xs text-gray-500 mt-0.5">{event.className}</p>
-                  )}
-                  {event.extra && (
-                    <p className="text-xs text-gray-400 mt-0.5">{event.extra}</p>
-                  )}
+        <div className="border border-gray-200 rounded-lg overflow-hidden bg-white max-w-2xl mx-auto">
+          {/* All-day events */}
+          {allDayEvents.length > 0 && (
+            <div className="border-b border-gray-200 px-2 py-1.5 space-y-1">
+              <div className="text-[10px] text-gray-400 mb-1">Todo el día</div>
+              {allDayEvents.map(event => (
+                <div
+                  key={event.id}
+                  className={`text-xs px-2 py-1 rounded ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text} cursor-pointer truncate`}
+                  onClick={() => canCreateEvents && event.manual ? handleEditEvent(event) : undefined}
+                >
+                  {event.title}{event.className ? ` — ${event.className}` : ''}
                 </div>
-                {canCreateEvents && event.manual && (
-                  <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => handleEditEvent(event)}
-                      className="p-1 hover:bg-gray-200 rounded transition-colors" title="Editar">
-                      <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                    </button>
-                    <button onClick={() => handleDeleteEvent(event.id)}
-                      className="p-1 hover:bg-red-100 rounded transition-colors" title="Eliminar">
-                      <svg className="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                    </button>
+              ))}
+            </div>
+          )}
+
+          {/* Time grid */}
+          <div className="overflow-y-auto" style={{ maxHeight: '600px' }}>
+            <div className="relative">
+              {WEEK_HOURS.map((hour) => {
+                // Events that start in this hour
+                const hourEvents = timedEvents.filter(ev => {
+                  if (!ev.startTime) return false;
+                  const [h] = ev.startTime.split(':').map(Number);
+                  return h === hour;
+                });
+
+                return (
+                  <div
+                    key={hour}
+                    className="flex border-b border-gray-100"
+                    style={{ height: '48px' }}
+                  >
+                    {/* Time label */}
+                    <div className="w-16 flex-shrink-0 border-r border-gray-100 px-1 text-right relative">
+                      <span className="absolute -top-2 right-1 text-[10px] text-gray-400">
+                        {hour < 10 ? `0${hour}:00` : `${hour}:00`}
+                      </span>
+                    </div>
+                    {/* Event column */}
+                    <div
+                      className={`flex-1 relative ${isToday ? 'bg-blue-50/30' : ''}`}
+                      onClick={() => {
+                        if (canCreateEvents && !isDemo) {
+                          setAddEventDate(day);
+                        }
+                      }}
+                    >
+                      {hourEvents.map((event) => {
+                        const [, min] = (event.startTime || '00:00').split(':').map(Number);
+                        const topOffset = (min / 60) * 48;
+                        return (
+                          <div
+                            key={event.id}
+                            className={`absolute left-1 right-1 rounded px-2 py-1 overflow-hidden cursor-pointer border-l-2 ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text}`}
+                            style={{
+                              top: `${topOffset}px`,
+                              minHeight: '40px',
+                              borderLeftColor: EVENT_COLORS[event.type].dot.replace('bg-', '').includes('blue') ? '#3b82f6'
+                                : EVENT_COLORS[event.type].dot.replace('bg-', '').includes('amber') ? '#f59e0b'
+                                : EVENT_COLORS[event.type].dot.replace('bg-', '').includes('red') ? '#ef4444'
+                                : EVENT_COLORS[event.type].dot.replace('bg-', '').includes('violet') ? '#8b5cf6'
+                                : '#6b7280',
+                              zIndex: 10,
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (canCreateEvents && event.manual) handleEditEvent(event);
+                            }}
+                            title={`${event.startTime} — ${event.title}${event.className ? ` (${event.className})` : ''}`}
+                          >
+                            <div className="flex items-start justify-between gap-1">
+                              <div className="text-xs font-medium truncate flex-1">{event.title}</div>
+                              {event.startTime && <div className="text-[10px] opacity-80 flex-shrink-0">{event.startTime}</div>}
+                            </div>
+                            {event.className && (
+                              <div className="text-[10px] opacity-80 truncate">{event.className}</div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                )}
-              </div>
-            ))}
+                );
+              })}
+
+              {/* Current time indicator */}
+              {isToday && (() => {
+                const now = new Date();
+                const h = now.getHours();
+                const m = now.getMinutes();
+                if (h < WEEK_HOURS[0] || h > WEEK_HOURS[WEEK_HOURS.length - 1]) return null;
+                const topPx = (h - WEEK_HOURS[0]) * 48 + (m / 60) * 48;
+                return (
+                  <div
+                    className="absolute pointer-events-none"
+                    style={{ top: `${topPx}px`, left: '64px', right: '0', zIndex: 20 }}
+                  >
+                    <div className="relative">
+                      <div className="absolute -left-1.5 -top-1.5 w-3 h-3 bg-red-500 rounded-full" />
+                      <div className="h-0.5 bg-red-500 w-full" />
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
           </div>
-        )}
+        </div>
       </div>
     );
   }

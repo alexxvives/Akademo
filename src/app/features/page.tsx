@@ -319,19 +319,19 @@ const FEATURE_ICON_COLORS = [
 export default function FeaturesPage() {
   const [lang, setLang] = useState<Lang>('es');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [activeCapTab, setActiveCapTab] = useState(0);
-  const [calcStudents, setCalcStudents] = useState(50);
-  const [calcHours, setCalcHours] = useState(15);
-  const [calcToolIdx, setCalcToolIdx] = useState(2);
+  const [calcStudents, setCalcStudents] = useState(100);
+  const [calcMonthlyFee, setCalcMonthlyFee] = useState(30);
+  const [calcGhostPct, setCalcGhostPct] = useState(60);
   const tr = t[lang];
 
-  /* Calculator computed values */
-  const toolCosts = [0, 0, 50, 200, 500];
-  const hourlyRate = 25;
-  const monthlySavings = Math.round(calcHours * 4 * hourlyRate * 0.7 + toolCosts[calcToolIdx] * 0.6 + calcStudents * 0.5);
-  const annualSavings = monthlySavings * 12;
-  const hoursSaved = Math.round(calcHours * 0.7);
-  const roiValue = Math.round((annualSavings / (49 * 12)) * 100);
+  /* Ghost-student recovery calculator */
+  const ghostStudents = Math.round(calcStudents * (calcGhostPct / 100));
+  const recoveryRate = 0.5; // 50% of ghost students convert to paying
+  const recoveredStudents = Math.round(ghostStudents * recoveryRate);
+  const monthlyRecovery = recoveredStudents * calcMonthlyFee;
+  const annualRecovery = monthlyRecovery * 12;
+  const currentMonthlyRevenue = (calcStudents - ghostStudents) * calcMonthlyFee;
+  const newMonthlyRevenue = currentMonthlyRevenue + monthlyRecovery;
 
   return (
     <div className="min-h-screen bg-[#121a2d] text-white antialiased">
@@ -737,295 +737,145 @@ export default function FeaturesPage() {
         </div>
       </section>
 
-      {/* ─── FEATURE SHOWCASE (Growtio "Everything you need in one place" style) ─── */}
-      <section className="py-20 sm:py-28 px-4 sm:px-6 relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-950/5 to-transparent" />
-        <div className="relative max-w-7xl mx-auto">
-          <div className="text-center mb-6">
-            <span className="inline-block px-3 py-1 text-xs font-semibold tracking-[0.2em] uppercase bg-gradient-to-r from-emerald-400 to-green-300 bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(52,211,153,0.5)]">
-              {lang === 'es' ? 'PANEL DE CONTROL' : 'POWERFUL DASHBOARD'}
-            </span>
-          </div>
-          <h2 className="text-center text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-4">
-            {lang === 'es' ? 'Todo lo que necesitas en ' : 'Everything you need in '}
-            <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-              {lang === 'es' ? 'un solo lugar' : 'one place'}
-            </span>
-          </h2>
-          <p className="text-center text-[#8692a6] text-base sm:text-lg max-w-3xl mx-auto mb-16">
-            {lang === 'es'
-              ? 'Un centro de mando unificado para toda tu academia. Sin cambiar entre plataformas.'
-              : 'A unified command center for your entire academy. No more switching between platforms.'}
-          </p>
 
-          {/* 2x2 Feature cards with gradient border */}
-          <div className="grid md:grid-cols-2 gap-4 mb-8">
-            {[
-              { icon: 'shield', title: lang === 'es' ? 'Panel Anti-Piratería' : 'Anti-Piracy Dashboard', desc: lang === 'es' ? 'Monitorea y bloquea cuentas compartidas en tiempo real. Control total sobre quién accede.' : 'Monitor and block shared accounts in real time. Total control over who accesses your content.', color: '#10b981' },
-              { icon: 'chart', title: lang === 'es' ? 'Gestión de Clases' : 'Class Management', desc: lang === 'es' ? 'Organiza clases, profesores e inscripciones desde un panel unificado.' : 'Organize classes, assign teachers, and manage enrollments from one panel.', color: '#3b82f6' },
-              { icon: 'video', title: lang === 'es' ? 'Streaming Protegido' : 'Protected Streaming', desc: lang === 'es' ? 'Vídeos cifrados con marca de agua dinámica. Sin descargas posibles.' : 'Encrypted videos with dynamic watermarks. No downloads possible.', color: '#a855f7' },
-              { icon: 'creditcard', title: lang === 'es' ? 'Sistema de Pagos' : 'Payment System', desc: lang === 'es' ? 'Automatiza cobros y detecta morosos al instante.' : 'Automate billing and detect delinquents instantly.', color: '#f97316' },
-            ].map((card, i) => {
-              const Icon = FEATURE_ICONS[card.icon];
-              return (
-                <div key={i} className="relative p-6 rounded-2xl bg-[#1d283a] border border-zinc-800/80 hover:border-emerald-500/30 transition-all group overflow-hidden">
-                  <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-emerald-500 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ backgroundColor: card.color }}>
-                    {Icon && <Icon className="w-6 h-6 text-white" />}
-                  </div>
-                  <h3 className="text-lg font-bold text-white mb-2">{card.title}</h3>
-                  <p className="text-[#8692a6] text-sm leading-relaxed">{card.desc}</p>
-                </div>
-              );
-            })}
-          </div>
 
-          {/* 4 mini icon cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {[
-              { icon: 'chart', title: lang === 'es' ? 'Analíticas en Tiempo Real' : 'Real-time Analytics', desc: lang === 'es' ? 'Todas las métricas en una vista' : 'All metrics in one view', color: FEATURE_ICON_COLORS[0] },
-              { icon: 'shield', title: lang === 'es' ? 'Protección IA' : 'AI Protection', desc: lang === 'es' ? 'Vigilancia 24/7 automatizada' : 'Automated 24/7 surveillance', color: FEATURE_ICON_COLORS[1] },
-              { icon: 'eye', title: lang === 'es' ? 'Marca de Agua' : 'Watermark', desc: lang === 'es' ? 'Identificación por estudiante' : 'Per-student identification', color: FEATURE_ICON_COLORS[2] },
-              { icon: 'users', title: lang === 'es' ? 'Multi-Rol' : 'Multi-Role', desc: lang === 'es' ? 'Academia, profesor, estudiante' : 'Academy, teacher, student', color: FEATURE_ICON_COLORS[3] },
-            ].map((card, i) => {
-              const Icon = FEATURE_ICONS[card.icon];
-              return (
-                <div key={i} className="p-5 rounded-xl bg-[#1d283a]/60 border border-zinc-800/80 hover:border-zinc-700 transition-all">
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-3" style={{ backgroundColor: `${card.color}20` }}>
-                    {Icon && <span style={{ color: card.color }}><Icon className="w-5 h-5" /></span>}
-                  </div>
-                  <h4 className="text-sm font-semibold text-white mb-1">{card.title}</h4>
-                  <p className="text-[#8692a6] text-xs">{card.desc}</p>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* 4 metric chips */}
-          <div className="flex flex-wrap justify-center gap-4">
-            {[
-              { value: '0%', label: lang === 'es' ? 'Piratería' : 'Piracy', color: 'bg-emerald-500' },
-              { value: '100%', label: 'Control', color: 'bg-blue-500' },
-              { value: '24/7', label: lang === 'es' ? 'Monitoreo' : 'Monitoring', color: 'bg-purple-500' },
-              { value: '25+', label: lang === 'es' ? 'Funcionalidades' : 'Features', color: 'bg-orange-500' },
-            ].map((m, i) => (
-              <div key={i} className="flex items-center gap-2.5 px-4 py-2.5 bg-[#1d283a] border border-zinc-800/80 rounded-full">
-                <div className={`w-8 h-8 rounded-lg ${m.color} flex items-center justify-center`}>
-                  <span className="text-xs font-bold text-white">{m.value}</span>
-                </div>
-                <div>
-                  <div className="text-sm font-bold text-white">{m.value}</div>
-                  <div className="text-[11px] text-[#3c4b5e]">{m.label}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── PLATFORM CAPABILITIES (Growtio tabbed section style) ─── */}
-      <section className="py-20 sm:py-28 px-4 sm:px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-6">
-            <span className="inline-block px-3 py-1 text-zinc-500 text-xs font-semibold tracking-[0.2em] uppercase mb-6">
-              {lang === 'es' ? 'CAPACIDADES DE LA PLATAFORMA' : 'PLATFORM CAPABILITIES'}
-            </span>
-          </div>
-          <h2 className="text-center text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-4">
-            {lang === 'es' ? 'Todo lo que necesitas para ' : 'Everything you need to '}
-            <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-              {lang === 'es' ? 'dominar la educación online' : 'dominate online education'}
-            </span>
-          </h2>
-          <p className="text-center text-[#8692a6] text-base sm:text-lg max-w-3xl mx-auto mb-12">
-            {lang === 'es'
-              ? 'Una plataforma para gestionar, proteger y escalar tu academia en todos los canales.'
-              : 'One platform to manage, protect, and scale your academy across every channel.'}
-          </p>
-
-          {/* Tab buttons */}
-          {(() => {
-            const capTabs = [
-              { icon: 'shield', name: lang === 'es' ? 'Protección' : 'Protection', title: lang === 'es' ? 'Protección de Contenido' : 'Content Protection', desc: lang === 'es' ? 'Blinda tu contenido al instante' : 'Shield your content instantly', features: lang === 'es' ? ['Anti-compartir integrado', 'Marca de agua dinámica', 'Detección de patrones sospechosos', 'Bloqueo automático de sesiones'] : ['Built-in anti-sharing', 'Dynamic watermark', 'Suspicious pattern detection', 'Automatic session blocking'] },
-              { icon: 'chart', name: lang === 'es' ? 'Gestión' : 'Management', title: lang === 'es' ? 'Gestión Completa' : 'Complete Management', desc: lang === 'es' ? 'Controla todo desde un panel' : 'Control everything from one panel', features: lang === 'es' ? ['Dashboard en tiempo real', 'Gestión de pagos integrada', 'Seguimiento de progreso', 'Informes descargables'] : ['Real-time dashboard', 'Integrated payment management', 'Progress tracking', 'Downloadable reports'] },
-              { icon: 'clipboard', name: lang === 'es' ? 'Evaluación' : 'Assessment', title: lang === 'es' ? 'Evaluación Integral' : 'Complete Assessment', desc: lang === 'es' ? 'Evalúa sin salir de la plataforma' : 'Grade without leaving the platform', features: lang === 'es' ? ['Tareas y entregas', 'Sistema de calificación', 'Fechas límite automáticas', 'Notificaciones de feedback'] : ['Assignments & submissions', 'Grading system', 'Automatic deadlines', 'Feedback notifications'] },
-              { icon: 'camera', name: lang === 'es' ? 'En Directo' : 'Live', title: lang === 'es' ? 'Clases en Directo' : 'Live Classes', desc: lang === 'es' ? 'Transmite y graba protegido' : 'Stream and record protected', features: lang === 'es' ? ['Integración Zoom nativa', 'Grabación automática', 'Asistencia en tiempo real', 'Soporte multi-academia'] : ['Native Zoom integration', 'Automatic recording', 'Real-time attendance', 'Multi-academy support'] },
-            ];
-            const activeTab = capTabs[activeCapTab];
-            const TabIcon = FEATURE_ICONS[activeTab.icon];
-            return (
-              <>
-                <div className="flex flex-wrap justify-center gap-3 mb-10">
-                  {capTabs.map((tab, i) => {
-                    const Icon = FEATURE_ICONS[tab.icon];
-                    return (
-                      <button key={i} onClick={() => setActiveCapTab(i)} className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all ${activeCapTab === i ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-[#1d283a] text-zinc-400 border border-zinc-800 hover:border-zinc-700'}`}>
-                        {Icon && <Icon className="w-4 h-4" />}
-                        {tab.name}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Active tab content */}
-                <div className="rounded-2xl bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 border border-emerald-500/30 p-8 sm:p-10 mb-8">
-                  <div className="flex items-center gap-3 mb-2">
-                    {TabIcon && <div className="w-12 h-12 rounded-xl bg-emerald-500/15 flex items-center justify-center"><TabIcon className="w-6 h-6 text-emerald-400" /></div>}
-                    <div>
-                      <h3 className="text-xl font-bold text-white">{activeTab.title}</h3>
-                      <p className="text-emerald-400 text-sm">{activeTab.desc}</p>
-                    </div>
-                  </div>
-                  <div className="grid sm:grid-cols-2 gap-3 mt-6">
-                    {activeTab.features.map((feat, fi) => (
-                      <div key={fi} className="flex items-center gap-2.5 px-4 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-                        <CheckCircle className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                        <span className="text-sm text-white">{feat}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="text-center">
-                  <Link href="/features" className="inline-flex items-center gap-2 text-emerald-400 hover:text-emerald-300 text-sm font-medium transition-colors">
-                    {lang === 'es' ? 'Explorar Todas las Funcionalidades' : 'Explore All Features'}
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </div>
-              </>
-            );
-          })()}
-        </div>
-      </section>
-
-      {/* ─── ROI CALCULATOR (Growtio "Calculate your savings" style) ─── */}
+      {/* ─── GHOST STUDENT RECOVERY CALCULATOR ─── */}
       <section className="py-20 sm:py-28 px-4 sm:px-6 relative">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-950/5 to-transparent" />
         <div className="relative max-w-7xl mx-auto">
           <div className="text-center mb-4">
             <span className="inline-flex items-center gap-2 px-3 py-1 text-xs font-semibold tracking-[0.2em] uppercase bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-              {lang === 'es' ? 'CALCULADORA ROI' : 'ROI CALCULATOR'}
+              {lang === 'es' ? 'CALCULADORA DE INGRESOS' : 'REVENUE CALCULATOR'}
             </span>
           </div>
           <h3 className="text-center text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-3">
-            {lang === 'es' ? 'Calcula tus ahorros en gestión académica' : 'Calculate your academy management savings'}
+            {lang === 'es' ? '¿Cuántos de tus estudiantes son ' : 'How many of your students are '}
+            <span className="bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
+              {lang === 'es' ? 'fantasma' : 'ghosts'}
+            </span>
+            ?
           </h3>
           <p className="text-center text-[#8692a6] text-base sm:text-lg max-w-2xl mx-auto mb-12">
-            {lang === 'es' ? 'Descubre cuánto tiempo y dinero puede ahorrarte AKADEMO' : 'See how much time and money AKADEMO can save your academy'}
+            {lang === 'es'
+              ? 'Un estudiante fantasma es alguien que comparte su cuenta con otros. Tú cobras por 1, pero acceden 3. Descubre cuánto dinero estás dejando en la mesa.'
+              : 'A ghost student is someone sharing their account with others. You charge for 1, but 3 access. Discover how much money you\'re leaving on the table.'}
           </p>
 
           <div className="grid lg:grid-cols-2 gap-6">
             {/* Left: Inputs */}
             <div className="bg-[#1d283a] rounded-2xl p-6 sm:p-8 border border-zinc-800 space-y-8">
-              {/* Students slider */}
+              {/* Total students slider */}
               <div>
                 <div className="flex justify-between items-center mb-3">
                   <span className="text-sm font-medium text-zinc-300 flex items-center gap-2">
                     <UsersIcon className="w-4 h-4 text-blue-400" />
-                    {lang === 'es' ? 'Número de Estudiantes' : 'Number of Students'}
+                    {lang === 'es' ? 'Estudiantes Inscritos' : 'Enrolled Students'}
                   </span>
                   <span className="text-lg font-bold text-emerald-400">{calcStudents}</span>
                 </div>
-                <input type="range" min="10" max="500" step="10" value={calcStudents} onChange={e => setCalcStudents(Number(e.target.value))} className="w-full h-1.5 bg-zinc-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-emerald-400 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer" />
-                <div className="flex justify-between text-xs text-zinc-600 mt-1"><span>10</span><span>500</span></div>
+                <input type="range" min="20" max="1000" step="10" value={calcStudents} onChange={e => setCalcStudents(Number(e.target.value))} className="w-full h-1.5 bg-zinc-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-emerald-400 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer" />
+                <div className="flex justify-between text-xs text-zinc-600 mt-1"><span>20</span><span>1000</span></div>
               </div>
 
-              {/* Hours slider */}
+              {/* Monthly fee slider */}
               <div>
                 <div className="flex justify-between items-center mb-3">
                   <span className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-                    <ClockIcon className="w-4 h-4 text-yellow-400" />
-                    {lang === 'es' ? 'Horas Semanales en Gestión' : 'Weekly Management Hours'}
+                    <DollarIcon className="w-4 h-4 text-yellow-400" />
+                    {lang === 'es' ? 'Cuota Mensual por Estudiante' : 'Monthly Fee per Student'}
                   </span>
-                  <span className="text-lg font-bold text-emerald-400">{calcHours}h</span>
+                  <span className="text-lg font-bold text-emerald-400">€{calcMonthlyFee}</span>
                 </div>
-                <input type="range" min="2" max="40" step="1" value={calcHours} onChange={e => setCalcHours(Number(e.target.value))} className="w-full h-1.5 bg-zinc-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-emerald-400 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer" />
-                <div className="flex justify-between text-xs text-zinc-600 mt-1"><span>2h</span><span>40h</span></div>
+                <input type="range" min="10" max="200" step="5" value={calcMonthlyFee} onChange={e => setCalcMonthlyFee(Number(e.target.value))} className="w-full h-1.5 bg-zinc-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-emerald-400 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer" />
+                <div className="flex justify-between text-xs text-zinc-600 mt-1"><span>€10</span><span>€200</span></div>
               </div>
 
-              {/* Current tools */}
+              {/* Ghost percentage slider */}
               <div>
                 <div className="flex justify-between items-center mb-3">
                   <span className="text-sm font-medium text-zinc-300 flex items-center gap-2">
-                    <ChartIcon className="w-4 h-4 text-purple-400" />
-                    {lang === 'es' ? 'Herramientas Actuales' : 'Current Tools'}
+                    <EyeIcon className="w-4 h-4 text-red-400" />
+                    {lang === 'es' ? '% Estudiantes Fantasma (estimado)' : '% Ghost Students (estimated)'}
                   </span>
-                  <span className="text-sm text-zinc-500">{lang === 'es' ? 'Est.' : 'Est.'} €{toolCosts[calcToolIdx]}/{lang === 'es' ? 'mes' : 'mo'}</span>
+                  <span className="text-lg font-bold text-red-400">{calcGhostPct}%</span>
                 </div>
-                <div className="space-y-2">
-                  {(lang === 'es'
-                    ? ['Sin herramientas', 'Hojas de cálculo', 'Plataforma básica (~€50/mes)', 'Herramientas premium (~€200/mes)', 'Stack completo (~€500/mes)']
-                    : ['No tools', 'Spreadsheets', 'Basic platform (~€50/mo)', 'Premium tools (~€200/mo)', 'Full stack (~€500/mo)']
-                  ).map((tool, i) => (
-                    <button key={i} onClick={() => setCalcToolIdx(i)} className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-all ${calcToolIdx === i ? 'bg-emerald-500/15 border border-emerald-500/30 text-white' : 'bg-zinc-800/50 border border-zinc-800 text-zinc-400 hover:border-zinc-700'}`}>
-                      {tool}
-                    </button>
-                  ))}
+                <input type="range" min="10" max="90" step="5" value={calcGhostPct} onChange={e => setCalcGhostPct(Number(e.target.value))} className="w-full h-1.5 bg-zinc-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-red-400 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer" />
+                <div className="flex justify-between text-xs text-zinc-600 mt-1"><span>10%</span><span>90%</span></div>
+              </div>
+
+              {/* Visual: ghost bar */}
+              <div className="bg-zinc-800/60 rounded-xl p-4">
+                <div className="flex items-center justify-between text-xs text-zinc-400 mb-2">
+                  <span>{lang === 'es' ? 'Estudiantes que pagan' : 'Paying students'}</span>
+                  <span>{lang === 'es' ? 'Fantasmas' : 'Ghosts'}</span>
+                </div>
+                <div className="h-3 rounded-full overflow-hidden flex">
+                  <div className="bg-emerald-500 transition-all duration-300" style={{ width: `${100 - calcGhostPct}%` }} />
+                  <div className="bg-red-500/60 transition-all duration-300" style={{ width: `${calcGhostPct}%` }} />
+                </div>
+                <div className="flex items-center justify-between text-xs mt-1.5">
+                  <span className="text-emerald-400 font-medium">{calcStudents - ghostStudents}</span>
+                  <span className="text-red-400 font-medium">{ghostStudents}</span>
                 </div>
               </div>
             </div>
 
             {/* Right: Results */}
             <div className="space-y-4">
-              {/* Annual savings hero */}
-              <div className="bg-gradient-to-r from-emerald-500/15 to-cyan-500/15 border border-emerald-500/20 rounded-xl p-6 text-center">
-                <p className="text-zinc-400 text-sm mb-1">{lang === 'es' ? 'Ahorro Anual' : 'Annual Savings'}</p>
-                <p className="text-4xl sm:text-5xl font-bold text-emerald-400">€{annualSavings.toLocaleString()}</p>
-                <p className="text-zinc-500 text-sm mt-1">{lang === 'es' ? 'al año con AKADEMO' : 'per year with AKADEMO'}</p>
+              {/* Annual recovery hero */}
+              <div className="bg-gradient-to-r from-red-500/15 to-orange-500/15 border border-red-500/20 rounded-xl p-6 text-center">
+                <p className="text-zinc-400 text-sm mb-1">{lang === 'es' ? 'Ingresos Perdidos por Año' : 'Annual Revenue Lost'}</p>
+                <p className="text-4xl sm:text-5xl font-bold text-red-400">€{(ghostStudents * calcMonthlyFee * 12).toLocaleString()}</p>
+                <p className="text-zinc-500 text-sm mt-1">{lang === 'es' ? 'por cuentas compartidas' : 'from shared accounts'}</p>
               </div>
 
-              {/* 2x2 stats grid */}
+              {/* Recoverable with AKADEMO */}
+              <div className="bg-gradient-to-r from-emerald-500/15 to-cyan-500/15 border border-emerald-500/20 rounded-xl p-6 text-center">
+                <p className="text-zinc-400 text-sm mb-1">{lang === 'es' ? 'Ingresos Recuperables por Año' : 'Recoverable Annual Revenue'}</p>
+                <p className="text-4xl sm:text-5xl font-bold text-emerald-400">€{annualRecovery.toLocaleString()}</p>
+                <p className="text-zinc-500 text-sm mt-1">{lang === 'es' ? 'bloqueando cuentas compartidas' : 'by blocking shared accounts'}</p>
+              </div>
+
+              {/* Stats grid */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-[#1d283a] border border-zinc-800 rounded-xl p-5 text-center">
-                  <DollarIcon className="w-5 h-5 text-blue-400 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-white">€{monthlySavings.toLocaleString()}</p>
-                  <p className="text-zinc-500 text-xs mt-1">{lang === 'es' ? 'Ahorro Mensual' : 'Monthly Savings'}</p>
+                  <UsersIcon className="w-5 h-5 text-red-400 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-red-400">{ghostStudents}</p>
+                  <p className="text-zinc-500 text-xs mt-1">{lang === 'es' ? 'Estudiantes Fantasma' : 'Ghost Students'}</p>
                 </div>
                 <div className="bg-[#1d283a] border border-zinc-800 rounded-xl p-5 text-center">
-                  <ClockIcon className="w-5 h-5 text-yellow-400 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-white">{hoursSaved}h</p>
-                  <p className="text-zinc-500 text-xs mt-1">{lang === 'es' ? 'Horas Ahorradas/Mes' : 'Hours Saved/Mo'}</p>
+                  <UsersIcon className="w-5 h-5 text-emerald-400 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-emerald-400">+{recoveredStudents}</p>
+                  <p className="text-zinc-500 text-xs mt-1">{lang === 'es' ? 'Estudiantes Recuperados' : 'Recovered Students'}</p>
                 </div>
                 <div className="bg-[#1d283a] border border-zinc-800 rounded-xl p-5 text-center">
-                  <ChartIcon className="w-5 h-5 text-emerald-400 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-emerald-400">{roiValue}%</p>
-                  <p className="text-zinc-500 text-xs mt-1">ROI</p>
+                  <DollarIcon className="w-5 h-5 text-zinc-400 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-white">€{currentMonthlyRevenue.toLocaleString()}</p>
+                  <p className="text-zinc-500 text-xs mt-1">{lang === 'es' ? 'Ingresos Actuales/Mes' : 'Current Revenue/Mo'}</p>
                 </div>
                 <div className="bg-[#1d283a] border border-zinc-800 rounded-xl p-5 text-center">
-                  <BrainIcon className="w-5 h-5 text-purple-400 mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-white">+{Math.round(calcStudents * 0.15)}%</p>
-                  <p className="text-zinc-500 text-xs mt-1">{lang === 'es' ? 'Eficiencia' : 'Efficiency'}</p>
+                  <DollarIcon className="w-5 h-5 text-emerald-400 mx-auto mb-2" />
+                  <p className="text-2xl font-bold text-emerald-400">€{newMonthlyRevenue.toLocaleString()}</p>
+                  <p className="text-zinc-500 text-xs mt-1">{lang === 'es' ? 'Ingresos Potenciales/Mes' : 'Potential Revenue/Mo'}</p>
                 </div>
               </div>
 
-              {/* Savings breakdown */}
+              {/* Revenue breakdown */}
               <div className="bg-[#1d283a] border border-zinc-800 rounded-xl p-5">
-                <p className="text-sm font-semibold text-zinc-300 mb-3">{lang === 'es' ? 'Desglose de Ahorros' : 'Savings Breakdown'}</p>
+                <p className="text-sm font-semibold text-zinc-300 mb-3">{lang === 'es' ? 'Cómo Recuperas Ingresos' : 'How You Recover Revenue'}</p>
                 {[
-                  { label: lang === 'es' ? 'Consolidación de herramientas' : 'Tool consolidation', value: `+€${Math.round(toolCosts[calcToolIdx] * 0.6)}` },
-                  { label: lang === 'es' ? 'Automatización de gestión' : 'Management automation', value: `+€${Math.round(calcHours * 4 * hourlyRate * 0.5)}` },
-                  { label: lang === 'es' ? 'Reducción de piratería' : 'Piracy reduction', value: `+€${Math.round(calcStudents * 0.5 * 12)}` },
+                  { label: lang === 'es' ? 'Bloqueo de sesiones simultáneas' : 'Simultaneous session blocking', desc: lang === 'es' ? '1 cuenta = 1 dispositivo' : '1 account = 1 device' },
+                  { label: lang === 'es' ? 'Detección de patrones sospechosos' : 'Suspicious pattern detection', desc: lang === 'es' ? 'IA identifica compartición' : 'AI identifies sharing' },
+                  { label: lang === 'es' ? 'Marca de agua personalizada' : 'Custom watermark', desc: lang === 'es' ? 'Disuade redistribución' : 'Deters redistribution' },
                 ].map((item, i) => (
-                  <div key={i} className="flex justify-between items-center py-2 border-b border-zinc-800/50 last:border-0">
-                    <span className="text-sm text-zinc-400 flex items-center gap-2">
-                      <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
-                      {item.label}
-                    </span>
-                    <span className="text-sm font-medium text-emerald-400">{item.value}</span>
+                  <div key={i} className="flex justify-between items-center py-2.5 border-b border-zinc-800/50 last:border-0">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                      <span className="text-sm text-zinc-300">{item.label}</span>
+                    </div>
+                    <span className="text-xs text-zinc-500">{item.desc}</span>
                   </div>
                 ))}
-              </div>
-
-              {/* Current vs AKADEMO */}
-              <div className="bg-[#1d283a] border border-zinc-800 rounded-xl p-5">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-zinc-400">{lang === 'es' ? 'Coste mensual actual:' : 'Current monthly cost:'}</span>
-                  <span className="text-sm text-zinc-300 line-through">€{Math.round(calcHours * 4 * hourlyRate + toolCosts[calcToolIdx]).toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-zinc-400">{lang === 'es' ? 'Con AKADEMO:' : 'With AKADEMO:'}</span>
-                  <span className="text-lg font-bold text-emerald-400">€49/{lang === 'es' ? 'mes' : 'mo'}</span>
-                </div>
               </div>
             </div>
           </div>

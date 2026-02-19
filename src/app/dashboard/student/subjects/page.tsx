@@ -277,7 +277,7 @@ export default function StudentClassesPage() {
                       {(classItem.university || classItem.carrera) && (
                         <div className="flex flex-wrap items-center gap-1.5">
                           {classItem.university && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
                               {classItem.university}
                             </span>
                           )}
