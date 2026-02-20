@@ -60,6 +60,8 @@ export interface TopicsLessonsListProps {
   classId: string;
   totalStudents: number;
   expandTopicId?: string | null;
+  /** Lesson ID to highlight (glow) — used when redirecting from calendar */
+  highlightLessonId?: string | null;
   /** Academy payment status - when 'NOT PAID', editing actions are disabled */
   paymentStatus?: string;
   onSelectLesson: (lesson: Lesson) => void;
@@ -81,6 +83,7 @@ export default function TopicsLessonsList({
   classId,
   totalStudents,
   expandTopicId,
+  highlightLessonId,
   paymentStatus,
   onSelectLesson,
   onEditLesson,
@@ -100,6 +103,8 @@ export default function TopicsLessonsList({
   const [creatingTopic, setCreatingTopic] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollAnimationRef = useRef<number | null>(null);
+  const highlightCardRef = useRef<HTMLDivElement | null>(null);
+  const [glowLessonId, setGlowLessonId] = useState<string | null>(null);
   
   // Check if actions should be disabled (academy not paid)
   const isDisabled = paymentStatus === 'NOT PAID';
@@ -114,6 +119,20 @@ export default function TopicsLessonsList({
       });
     }
   }, [expandTopicId]);
+
+  // Glow & scroll when highlightLessonId changes
+  useEffect(() => {
+    if (!highlightLessonId) return;
+    setGlowLessonId(highlightLessonId);
+    // Wait for topic to expand and render before scrolling
+    const scrollTimer = setTimeout(() => {
+      if (highlightCardRef.current) {
+        highlightCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 400);
+    const clearTimer = setTimeout(() => setGlowLessonId(null), 3700);
+    return () => { clearTimeout(scrollTimer); clearTimeout(clearTimer); };
+  }, [highlightLessonId]);
   
   // Student time management modal
   const [showTimeModal, setShowTimeModal] = useState(false);
@@ -395,6 +414,7 @@ export default function TopicsLessonsList({
     return (
       <div
         key={lesson.id}
+        ref={glowLessonId === lesson.id ? highlightCardRef : null}
         draggable={!lesson.isUploading}
         onDragStart={(e) => handleDragStart(e, lesson.id)}
         onDragEnd={handleDragEnd}
@@ -403,7 +423,11 @@ export default function TopicsLessonsList({
           if (target.closest('[data-action-buttons]')) return;
           if (!lesson.isUploading) onSelectLesson(lesson);
         }}
-        className={`bg-[#1a1d29] rounded-xl overflow-hidden transition-all duration-300 group border border-gray-700 shadow-sm ${
+        className={`bg-[#1a1d29] rounded-xl overflow-hidden transition-all duration-300 group border shadow-sm ${
+          glowLessonId === lesson.id
+            ? 'border-blue-400 shadow-[0_0_24px_rgba(96,165,250,0.45)]'
+            : 'border-gray-700'
+        } ${
           lesson.isUploading
             ? 'cursor-default'
             : 'hover:border-accent-500 hover:shadow-xl hover:shadow-accent-500/20 cursor-pointer hover:scale-[1.03]'

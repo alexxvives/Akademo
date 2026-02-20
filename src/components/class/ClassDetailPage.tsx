@@ -156,6 +156,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
   const lessonParam = searchParams.get('lesson');
   const watchVideoId = searchParams.get('watch');
   const actionParam = searchParams.get('action');
+  const highlightParam = searchParams.get('highlight');
   
   // Use cached auth hook instead of fetching /auth/me manually
   const { user: currentUser } = useAuth();
@@ -168,6 +169,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
   const [selectedVideo, setSelectedVideo] = useState<LessonVideo | null>(null);
   const [loading, setLoading] = useState(true);
   const [lessonFeedback, setLessonFeedback] = useState<Array<{ id: string; rating: number; comment: string; studentName: string; createdAt: string }>>([]);
+  const [highlightLessonId, setHighlightLessonId] = useState<string | null>(null);
 
   // Form states
   const [showLessonForm, setShowLessonForm] = useState(false);
@@ -292,6 +294,19 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lessonParam, watchVideoId, lessons]);
+
+  // Handle ?highlight=lessonId from calendar redirect — expand the lesson's topic and glow the card
+  useEffect(() => {
+    if (!highlightParam || lessons.length === 0) return;
+    const lesson = lessons.find(l => l.id === highlightParam);
+    if (!lesson) return;
+    // Expand the topic this lesson belongs to
+    if (lesson.topicId) {
+      setExpandTopicId(lesson.topicId);
+    }
+    // Set highlight for glow effect
+    setHighlightLessonId(highlightParam);
+  }, [highlightParam, lessons]);
 
   // Handle createFromStream param from streams table
   useEffect(() => {
@@ -2331,6 +2346,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
                 classId={classData?.id || ''}
                 totalStudents={classData.enrollments.filter(e => e.status === 'APPROVED').length}
                 expandTopicId={expandTopicId}
+                highlightLessonId={highlightLessonId}
                 paymentStatus={paymentStatus}
                 onSelectLesson={selectLesson}
                 onEditLesson={handleEditLesson}

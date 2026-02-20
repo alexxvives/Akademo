@@ -1,6 +1,7 @@
 ﻿'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { apiClient, apiPost } from '@/lib/api-client';
 import { generateDemoAssignments, generateDemoSubmissions, generateDemoClasses, countNewDemoSubmissions } from '@/lib/demo-data';
 import { AssignmentModals } from './AssignmentModals';
@@ -37,6 +38,11 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingAssignmentId, setDeletingAssignmentId] = useState<string | null>(null);
+
+  // Highlight (from calendar redirect)
+  const searchParams = useSearchParams();
+  const [glowId, setGlowId] = useState<string | null>(null);
+  const highlightRef = useRef<HTMLTableRowElement | null>(null);
 
   // Academy-only state
   const [selectedClassId, setSelectedClassId] = useState('');
@@ -84,6 +90,20 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
     if (diffDays <= 5) return 'text-orange-600 font-medium';
     return 'text-gray-900';
   };
+
+  // Glow effect on highlighted assignment from calendar redirect
+  useEffect(() => {
+    const highlightId = searchParams.get('highlight');
+    if (!highlightId || assignments.length === 0) return;
+    setGlowId(highlightId);
+    setTimeout(() => {
+      if (highlightRef.current) {
+        highlightRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 300);
+    const timer = setTimeout(() => setGlowId(null), 3300);
+    return () => clearTimeout(timer);
+  }, [searchParams, assignments]);
 
   // â”€â”€â”€ Academy data loading â”€â”€â”€
   const loadAcademyAssignments = useCallback(async () => {
@@ -748,7 +768,9 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
         <tbody className="bg-white divide-y divide-gray-200">
           {assignments.map((assignment) => (
             <tr key={assignment.id}
-              className="hover:bg-gray-50 transition-colors group">
+              id={`assignment-${assignment.id}`}
+              ref={glowId === assignment.id ? highlightRef : null}
+              className={`hover:bg-gray-50 transition-colors group ${glowId === assignment.id ? 'ring-2 ring-inset ring-blue-400 shadow-[inset_0_0_20px_rgba(96,165,250,0.25)] bg-blue-50/30' : ''}`}>
               <td className="px-6 py-4">
                 <div className="text-sm font-medium text-gray-900 truncate max-w-[14rem]">{assignment.title}</div>
               </td>

@@ -249,6 +249,24 @@ export function DashboardPage({ role }: DashboardPageProps) {
     return { avgParticipants: withP.length > 0 ? Math.round(totalP / withP.length) : 0, total: filtered.length, totalHours: Math.floor(totalMin / 60), totalMinutes: totalMin % 60 };
   }, [allStreams, selectedAcademy, selectedClass, isAdmin]);
 
+  // For demo academies: scale al día/atrasados proportionally when a class filter is applied
+  const displayedPaymentStatus = useMemo(() => {
+    if (!studentPaymentStatus) return null;
+    // For PAID academies, the re-fetch useEffect supplies exact numbers — use as-is
+    if (paymentStatus !== 'NOT PAID') return studentPaymentStatus;
+    // Demo mode: scale proportionally by filteredStudents / enrolledStudents
+    if (selectedClass === 'all' || enrolledStudents.length === 0) return studentPaymentStatus;
+    const ratio = filteredStudents.length / enrolledStudents.length;
+    return {
+      alDia: Math.round(studentPaymentStatus.alDia * ratio),
+      atrasados: Math.round(studentPaymentStatus.atrasados * ratio),
+      total: filteredStudents.length,
+      uniqueAlDia: studentPaymentStatus.uniqueAlDia != null ? Math.round(studentPaymentStatus.uniqueAlDia * ratio) : undefined,
+      uniqueAtrasados: studentPaymentStatus.uniqueAtrasados != null ? Math.round(studentPaymentStatus.uniqueAtrasados * ratio) : undefined,
+      uniqueTotal: new Set(filteredStudents.map(s => s.email)).size,
+    };
+  }, [studentPaymentStatus, paymentStatus, selectedClass, filteredStudents, enrolledStudents]);
+
   const paymentStats = useMemo(() => {
     if (!isAcademy) return { totalPaid: 0, bizumCount: 0, cashCount: 0, stripeCount: 0 };
     const filtered = selectedClass === 'all' ? allCompletedPayments : allCompletedPayments.filter(p => p.classId === selectedClass);
@@ -412,11 +430,11 @@ export function DashboardPage({ role }: DashboardPageProps) {
                 <div className="flex-1 ml-2 pl-2 border-l border-gray-200 space-y-1.5">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs text-gray-500">al día</span>
-                    <AnimatedNumber value={studentPaymentStatus.uniqueAlDia ?? 0} className="text-base font-bold text-green-600" />
+                    <AnimatedNumber value={displayedPaymentStatus?.uniqueAlDia ?? 0} className="text-base font-bold text-green-600" />
                   </div>
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs text-gray-500">atrasados</span>
-                    <AnimatedNumber value={studentPaymentStatus.uniqueAtrasados ?? 0} className="text-base font-bold text-red-600" />
+                    <AnimatedNumber value={displayedPaymentStatus?.uniqueAtrasados ?? 0} className="text-base font-bold text-red-600" />
                   </div>
                 </div>
               )}
@@ -431,11 +449,11 @@ export function DashboardPage({ role }: DashboardPageProps) {
                 <div className="flex-1 ml-2 pl-2 border-l border-gray-200 space-y-1.5">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs text-gray-500">al día</span>
-                    <AnimatedNumber value={studentPaymentStatus.alDia} className="text-base font-bold text-green-600" />
+                    <AnimatedNumber value={displayedPaymentStatus?.alDia ?? 0} className="text-base font-bold text-green-600" />
                   </div>
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs text-gray-500">atrasados</span>
-                    <AnimatedNumber value={studentPaymentStatus.atrasados} className="text-base font-bold text-red-600" />
+                    <AnimatedNumber value={displayedPaymentStatus?.atrasados ?? 0} className="text-base font-bold text-red-600" />
                   </div>
                 </div>
               )}

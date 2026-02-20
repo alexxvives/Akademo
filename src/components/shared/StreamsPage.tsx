@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
 import { generateDemoStreams } from '@/lib/demo-data';
 import { SkeletonList } from '@/components/ui/SkeletonLoader';
@@ -61,6 +62,11 @@ export function StreamsPage({ role }: StreamsPageProps) {
   // Admin-only
   const [academies, setAcademies] = useState<Academy[]>([]);
   const [selectedAcademy, setSelectedAcademy] = useState('all');
+
+  // Highlight (from calendar redirect)
+  const searchParams = useSearchParams();
+  const [glowId, setGlowId] = useState<string | null>(null);
+  const highlightRef = useRef<HTMLTableRowElement | null>(null);
 
   const isAcademy = role === 'ACADEMY';
   const isTeacher = role === 'TEACHER';
@@ -230,6 +236,22 @@ export function StreamsPage({ role }: StreamsPageProps) {
       return dateB - dateA;
     });
   }, [streams, selectedClass, selectedAcademy, role]);
+
+  // Glow effect on highlighted stream from calendar redirect
+  useEffect(() => {
+    const highlightId = searchParams.get('highlight');
+    if (!highlightId || filteredStreams.length === 0) return;
+    setGlowId(highlightId);
+    // Scroll to the row after a short delay to allow render
+    setTimeout(() => {
+      if (highlightRef.current) {
+        highlightRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 300);
+    // Remove glow after 3 seconds
+    const timer = setTimeout(() => setGlowId(null), 3300);
+    return () => clearTimeout(timer);
+  }, [searchParams, filteredStreams.length]);
 
   const filteredClassOptions = useMemo(() => {
     if (role !== 'ADMIN' || selectedAcademy === 'all') return [];
@@ -460,7 +482,12 @@ export function StreamsPage({ role }: StreamsPageProps) {
                   </tr>
                 ) : (
                   filteredStreams.map((stream) => (
-                    <tr key={stream.id} className="hover:bg-gray-50/50 transition-colors">
+                    <tr
+                      key={stream.id}
+                      id={`stream-${stream.id}`}
+                      ref={glowId === stream.id ? highlightRef : null}
+                      className={`hover:bg-gray-50/50 transition-colors ${glowId === stream.id ? 'ring-2 ring-inset ring-blue-400 shadow-[inset_0_0_20px_rgba(96,165,250,0.25)] bg-blue-50/30' : ''}`}
+                    >
                       {/* Title */}
                       <td className="py-3 px-2 sm:px-4">
                         <div className="flex items-center gap-2">

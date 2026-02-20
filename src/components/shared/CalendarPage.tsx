@@ -440,12 +440,14 @@ export function CalendarPage({ role }: CalendarPageProps) {
       if (canCreateEvents && !isDemo) handleEditEvent(event);
       return;
     }
+    // Strip type prefix to get the raw entity ID for highlight
+    const rawId = event.id.replace(/^(lesson|stream|assignment|manual)-/, '');
     if (event.type === 'lesson' && event.classId) {
-      router.push(`/dashboard/${rolePrefix}/subject/${event.classId}`);
+      router.push(`/dashboard/${rolePrefix}/subject/${event.classId}?highlight=${rawId}`);
     } else if (event.type === 'assignment') {
-      router.push(`/dashboard/${rolePrefix}/assignments`);
+      router.push(`/dashboard/${rolePrefix}/assignments?highlight=${rawId}`);
     } else if (event.type === 'stream' || event.type === 'scheduledStream') {
-      router.push(`/dashboard/${rolePrefix}/streams`);
+      router.push(`/dashboard/${rolePrefix}/streams?highlight=${rawId}`);
     }
   }, [canCreateEvents, isDemo, rolePrefix, router, handleEditEvent]);
 
@@ -779,7 +781,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
                       onClick={(e) => { e.stopPropagation(); handleEventClick(event); }}
                       className={`text-[10px] leading-tight px-1 py-0.5 rounded truncate cursor-pointer ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text} hover:shadow-md hover:brightness-95 transition-all ${isDraggable ? 'cursor-grab active:cursor-grabbing' : ''}`}
                     >
-                      {event.title}
+                      {event.title}{event.manual && event.className ? ` · ${event.className}` : ''}
                     </div>
                   )})}
                   {dayEvents.length > 3 && (
@@ -865,7 +867,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
         )}
 
         {/* Time grid */}
-        <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
+        <div className="overflow-y-auto" style={{ maxHeight: '504px' }}>
           <div className="grid" style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}>
             {/* Time label column */}
             <div>
@@ -941,6 +943,9 @@ export function CalendarPage({ role }: CalendarPageProps) {
                       {event.className && (
                         <div className="text-[9px] opacity-80 truncate">{event.className}</div>
                       )}
+                      {event.location && (
+                        <div className="text-[9px] opacity-70 truncate">📍 {event.location}</div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -983,7 +988,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
           </div>
         </div>
 
-        <div className="border border-gray-200 rounded-lg overflow-hidden bg-white max-w-2xl mx-auto">
+        <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
           {/* All-day events */}
           {allDayEvents.length > 0 && (
             <div className="border-b border-gray-200 px-2 py-1.5 space-y-1">
@@ -1001,7 +1006,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
           )}
 
           {/* Time grid */}
-          <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 380px)' }}>
+          <div className="overflow-y-auto" style={{ maxHeight: '504px' }}>
             <div className="flex">
               {/* Time labels */}
               <div className="flex-shrink-0 w-16">
@@ -1070,6 +1075,9 @@ export function CalendarPage({ role }: CalendarPageProps) {
                     </div>
                     {event.className && (
                       <div className="text-[10px] opacity-80 truncate">{event.className}</div>
+                    )}
+                    {event.location && (
+                      <div className="text-[10px] opacity-70 truncate">📍 {event.location}</div>
                     )}
                   </div>
                 ))}
