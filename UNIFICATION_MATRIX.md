@@ -20,7 +20,7 @@
 | **Live**                  | Custom        | N/A          | N/A | N/A | ✅ Student-only |
 | **Lessons (List)**        | Custom        | N/A           | Custom | N/A | ✅ Different purposes |
 | **Explore**               | Custom        | N/A          | N/A | N/A | ✅ Student-only |
-| **Grading**               | N/A           | Custom         | N/A | N/A | ✅ Teacher-only |
+lli
 | **Academy Join**          | N/A           | Custom         | N/A | N/A | ✅ Teacher-only |
 | **Revenue**               | N/A           | N/A         | Custom | N/A | ✅ Academy-only |
 | **Accounts (Zoom)**       | N/A           | N/A         | N/A | Custom | ✅ Admin-only |
