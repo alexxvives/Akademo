@@ -42,7 +42,7 @@ const VIEW_LABELS: Record<ViewMode, string> = { month: 'Mes', week: 'Semana', da
 
 const EVENT_COLORS: Record<EventType, { bg: string; text: string; dot: string }> = {
   lesson:          { bg: 'bg-blue-600',   text: 'text-white',   dot: 'bg-blue-700' },
-  assignment:      { bg: 'bg-amber-600',  text: 'text-white',   dot: 'bg-amber-700' },
+  assignment:      { bg: 'bg-green-600',  text: 'text-white',   dot: 'bg-green-700' },
   stream:          { bg: 'bg-red-600',    text: 'text-white',   dot: 'bg-red-700' },
   scheduledStream: { bg: 'bg-red-600',    text: 'text-white',   dot: 'bg-red-700' },
   physicalClass:   { bg: 'bg-violet-600', text: 'text-white',   dot: 'bg-violet-700' },
@@ -115,7 +115,62 @@ function extractTime(isoDate: string): string | undefined {
   return undefined;
 }
 
-const WEEK_HOURS = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
+const WEEK_HOURS = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23];
+
+const EVENT_BORDER_COLORS: Record<EventType, string> = {
+  lesson:          '#2563eb',
+  assignment:      '#15803d',
+  stream:          '#dc2626',
+  scheduledStream: '#dc2626',
+  physicalClass:   '#7c3aed',
+};
+
+// ─── Overlap layout algorithm (Google Calendar style) ───
+function computeOverlapLayout(events: CalendarEvent[]): Array<{
+  event: CalendarEvent;
+  col: number;
+  totalCols: number;
+  topOffset: number;
+  height: number;
+}> {
+  if (events.length === 0) return [];
+  const toMin = (time: string) => { const [h, m] = time.split(':').map(Number); return h * 60 + m; };
+  const items = events
+    .filter(ev => ev.startTime)
+    .map(ev => ({ ev, startMin: toMin(ev.startTime!), endMin: toMin(ev.startTime!) + 60 }));
+  items.sort((a, b) => a.startMin - b.startMin);
+  const cols: number[] = new Array(items.length).fill(0);
+  const totalColsArr: number[] = new Array(items.length).fill(1);
+  let i = 0;
+  while (i < items.length) {
+    let groupEnd = items[i].endMin;
+    let j = i + 1;
+    while (j < items.length && items[j].startMin < groupEnd) {
+      groupEnd = Math.max(groupEnd, items[j].endMin);
+      j++;
+    }
+    const colEnds: number[] = [];
+    for (let k = i; k < j; k++) {
+      const { startMin, endMin } = items[k];
+      let assignedCol = -1;
+      for (let c = 0; c < colEnds.length; c++) {
+        if (colEnds[c] <= startMin) { assignedCol = c; colEnds[c] = endMin; break; }
+      }
+      if (assignedCol === -1) { assignedCol = colEnds.length; colEnds.push(endMin); }
+      cols[k] = assignedCol;
+    }
+    const groupCols = colEnds.length;
+    for (let k = i; k < j; k++) totalColsArr[k] = groupCols;
+    i = j;
+  }
+  return items.map(({ ev, startMin, endMin }, idx) => ({
+    event: ev,
+    col: cols[idx],
+    totalCols: totalColsArr[idx],
+    topOffset: ((startMin - WEEK_HOURS[0] * 60) / 60) * 48,
+    height: ((endMin - startMin) / 60) * 48 - 2,
+  }));
+}
 
 export function CalendarPage({ role }: CalendarPageProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -489,7 +544,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
         <div>
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-2xl font-semibold text-gray-900">Calendario</h1>
-            {canCreateEvents && !isDemo && (
+            {canCreateEvents && (
               <button onClick={() => setAddEventDate(currentDate)}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 rounded-lg transition-colors">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
@@ -498,7 +553,6 @@ export function CalendarPage({ role }: CalendarPageProps) {
             )}
           </div>
           <p className="text-sm text-gray-500 mt-0.5">{role === 'ADMIN' ? 'AKADEMO PLATFORM' : academyName || 'AKADEMO'}</p>
-          {isDemo && <span className="inline-flex items-center mt-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">Datos de demostración</span>}
         </div>
         <div className="flex flex-wrap items-center gap-3">
           {classes.length > 0 && !isDemo && (
@@ -586,6 +640,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
         <CalendarAddEventModal
           date={addEventDate}
           classes={classes}
+          disabled={isDemo}
           editEvent={editingEvent ? {
             id: editingEvent.id,
             title: editingEvent.title,
@@ -654,18 +709,20 @@ export function CalendarPage({ role }: CalendarPageProps) {
                     ? 'border-brand-400 bg-brand-50 ring-1 ring-brand-400'
                     : isToday
                       ? 'border-blue-200 bg-blue-50/50'
-                      : 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'
-                } ${!isCurrentMonth ? 'opacity-30' : ''}`}
+                      : isCurrentMonth
+                        ? 'border-gray-100 hover:border-gray-200 hover:bg-gray-50'
+                        : 'border-gray-50'
+                } ${isPast ? 'opacity-40' : ''} ${!isCurrentMonth ? 'opacity-25' : ''}`}
               >
-                {/* Top row: day number left + add button right */}
-                <div className="flex items-start justify-between mb-1">
+                {/* Top row: day number centered + add button absolute right */}
+                <div className="relative flex justify-center mb-1">
                   <span className={`text-xs font-semibold leading-none ${
                     isToday ? 'text-blue-600' : isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
                   }`}>{day.getDate()}</span>
                   {canCreateEvents && !isDemo && isCurrentMonth && (
                     <button
                       onClick={(e) => { e.stopPropagation(); setAddEventDate(day); }}
-                      className="opacity-0 group-hover:opacity-100 p-0.5 hover:bg-gray-200 rounded transition-opacity"
+                      className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 p-0.5 hover:bg-gray-200 rounded transition-opacity"
                     >
                       <svg className="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                     </button>
@@ -771,107 +828,86 @@ export function CalendarPage({ role }: CalendarPageProps) {
 
         {/* Time grid */}
         <div className="overflow-y-auto" style={{ maxHeight: '600px' }}>
-          <div className="relative">
-            {WEEK_HOURS.map((hour) => (
-              <div
-                key={hour}
-                className="grid border-b border-gray-100"
-                style={{ gridTemplateColumns: '60px repeat(7, 1fr)', height: '48px' }}
-              >
-                {/* Time label */}
-                <div className="border-r border-gray-100 px-1 text-right relative">
+          <div className="grid" style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}>
+            {/* Time label column */}
+            <div>
+              {WEEK_HOURS.map((hour) => (
+                <div key={hour} className="border-r border-b border-gray-100 relative bg-white" style={{ height: '48px' }}>
                   <span className="absolute -top-2 right-1 text-[10px] text-gray-400">
-                    {hour < 10 ? `0${hour}:00` : `${hour}:00`}
+                    {String(hour).padStart(2, '0')}:00
                   </span>
                 </div>
-                {/* Day columns */}
-                {calendarDays.map((day, dayIdx) => {
-                  const key = formatDateKey(day);
-                  const isToday = isSameDay(day, today);
-                  const timedEvents = timedByDate.get(key) || [];
-                  // Events that start in this hour
-                  const hourEvents = timedEvents.filter(ev => {
-                    if (!ev.startTime) return false;
-                    const [h] = ev.startTime.split(':').map(Number);
-                    return h === hour;
-                  });
+              ))}
+            </div>
 
-                  return (
-                    <div
-                      key={dayIdx}
-                      className={`border-r border-gray-100 last:border-r-0 relative ${isToday ? 'bg-blue-50/30' : ''}`}
-                      onClick={() => {
-                        if (canCreateEvents && !isDemo) {
-                          setAddEventDate(day);
-                        }
-                      }}
-                    >
-                      {hourEvents.map((event) => {
-                        const [, min] = (event.startTime || '00:00').split(':').map(Number);
-                        const topOffset = (min / 60) * 48; // 48px per hour
-                        return (
-                          <div
-                            key={event.id}
-                            className={`absolute left-0.5 right-0.5 rounded px-1.5 py-0.5 overflow-hidden cursor-pointer border-l-2 ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text}`}
-                            style={{
-                              top: `${topOffset}px`,
-                              minHeight: '40px',
-                              borderLeftColor: EVENT_COLORS[event.type].dot.replace('bg-', '').includes('blue') ? '#3b82f6'
-                                : EVENT_COLORS[event.type].dot.replace('bg-', '').includes('amber') ? '#f59e0b'
-                                : EVENT_COLORS[event.type].dot.replace('bg-', '').includes('red') ? '#ef4444'
-                                : EVENT_COLORS[event.type].dot.replace('bg-', '').includes('violet') ? '#8b5cf6'
-                                : '#6b7280',
-                              zIndex: 10,
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (canCreateEvents && event.manual) handleEditEvent(event);
-                            }}
-                            title={`${event.startTime} — ${event.title}${event.className ? ` (${event.className})` : ''}`}
-                          >
-                            <div className="flex items-start justify-between gap-0.5">
-                              <div className="text-[10px] font-medium truncate flex-1">{event.title}</div>
-                              {event.startTime && <div className="text-[9px] opacity-80 flex-shrink-0">{event.startTime}</div>}
-                            </div>
-                            {event.className && (
-                              <div className="text-[9px] opacity-80 truncate">{event.className}</div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
-
-            {/* Current time indicator */}
-            {(() => {
-              const now = new Date();
-              const h = now.getHours();
-              const m = now.getMinutes();
-              if (h < WEEK_HOURS[0] || h > WEEK_HOURS[WEEK_HOURS.length - 1]) return null;
-              const topPx = (h - WEEK_HOURS[0]) * 48 + (m / 60) * 48;
-              // Find which column is today
-              const todayIdx = calendarDays.findIndex(d => isSameDay(d, now));
-              if (todayIdx === -1) return null;
+            {/* Day columns — full height, events overlaid absolutely */}
+            {calendarDays.map((day, dayIdx) => {
+              const key = formatDateKey(day);
+              const isToday = isSameDay(day, today);
+              const layout = computeOverlapLayout(timedByDate.get(key) || []);
               return (
                 <div
-                  className="absolute pointer-events-none"
-                  style={{
-                    top: `${topPx}px`,
-                    left: `calc(60px + ${todayIdx} * ((100% - 60px) / 7))`,
-                    width: `calc((100% - 60px) / 7)`,
-                    zIndex: 20,
-                  }}
+                  key={dayIdx}
+                  className={`relative border-r border-gray-100 last:border-r-0 ${isToday ? 'bg-blue-50/30' : ''}`}
+                  style={{ height: `${WEEK_HOURS.length * 48}px` }}
+                  onClick={() => { if (canCreateEvents && !isDemo) setAddEventDate(day); }}
                 >
-                  <div className="relative">
-                    <div className="absolute -left-1.5 -top-1.5 w-3 h-3 bg-red-500 rounded-full" />
-                    <div className="h-0.5 bg-red-500 w-full" />
-                  </div>
+                  {/* Hour separator lines */}
+                  {WEEK_HOURS.map((_, i) => (
+                    <div key={i} className="absolute w-full border-b border-gray-100 pointer-events-none" style={{ top: `${i * 48}px`, height: '48px', left: 0 }} />
+                  ))}
+
+                  {/* Current time indicator */}
+                  {isToday && (() => {
+                    const now = new Date();
+                    const h = now.getHours();
+                    const m = now.getMinutes();
+                    if (h < WEEK_HOURS[0] || h > WEEK_HOURS[WEEK_HOURS.length - 1]) return null;
+                    const topPx = (h - WEEK_HOURS[0]) * 48 + (m / 60) * 48;
+                    return (
+                      <div className="absolute w-full pointer-events-none" style={{ top: `${topPx}px`, left: 0, zIndex: 20 }}>
+                        <div className="relative">
+                          <div className="absolute -left-1.5 -top-1.5 w-3 h-3 bg-red-500 rounded-full" />
+                          <div className="h-0.5 bg-red-500 w-full" />
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Events */}
+                  {layout.map(({ event, col, totalCols, topOffset, height }) => (
+                    <div
+                      key={event.id}
+                      style={{
+                        position: 'absolute',
+                        top: `${Math.max(topOffset, 0)}px`,
+                        height: `${Math.max(height, 22)}px`,
+                        left: `calc(${(col / totalCols) * 100}% + 1px)`,
+                        width: `calc(${(1 / totalCols) * 100}% - 2px)`,
+                        zIndex: 10,
+                        borderLeftWidth: '2px',
+                        borderLeftStyle: 'solid',
+                        borderLeftColor: EVENT_BORDER_COLORS[event.type],
+                      }}
+                      className={`rounded px-1.5 py-0.5 overflow-hidden cursor-pointer ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (canCreateEvents && event.manual) handleEditEvent(event);
+                      }}
+                      title={`${event.startTime} — ${event.title}${event.className ? ` (${event.className})` : ''}`}
+                    >
+                      <div className="flex items-start justify-between gap-0.5">
+                        <div className="text-[10px] font-medium truncate flex-1">{event.title}</div>
+                        {event.startTime && <div className="text-[9px] opacity-80 flex-shrink-0">{event.startTime}</div>}
+                      </div>
+                      {event.className && (
+                        <div className="text-[9px] opacity-80 truncate">{event.className}</div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               );
-            })()}
+            })}
           </div>
         </div>
       </div>
@@ -928,93 +964,78 @@ export function CalendarPage({ role }: CalendarPageProps) {
 
           {/* Time grid */}
           <div className="overflow-y-auto" style={{ maxHeight: '600px' }}>
-            <div className="relative">
-              {WEEK_HOURS.map((hour) => {
-                // Events that start in this hour
-                const hourEvents = timedEvents.filter(ev => {
-                  if (!ev.startTime) return false;
-                  const [h] = ev.startTime.split(':').map(Number);
-                  return h === hour;
-                });
-
-                return (
-                  <div
-                    key={hour}
-                    className="flex border-b border-gray-100"
-                    style={{ height: '48px' }}
-                  >
-                    {/* Time label */}
-                    <div className="w-16 flex-shrink-0 border-r border-gray-100 px-1 text-right relative">
-                      <span className="absolute -top-2 right-1 text-[10px] text-gray-400">
-                        {hour < 10 ? `0${hour}:00` : `${hour}:00`}
-                      </span>
-                    </div>
-                    {/* Event column */}
-                    <div
-                      className={`flex-1 relative ${isToday ? 'bg-blue-50/30' : ''}`}
-                      onClick={() => {
-                        if (canCreateEvents && !isDemo) {
-                          setAddEventDate(day);
-                        }
-                      }}
-                    >
-                      {hourEvents.map((event) => {
-                        const [, min] = (event.startTime || '00:00').split(':').map(Number);
-                        const topOffset = (min / 60) * 48;
-                        return (
-                          <div
-                            key={event.id}
-                            className={`absolute left-1 right-1 rounded px-2 py-1 overflow-hidden cursor-pointer border-l-2 ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text}`}
-                            style={{
-                              top: `${topOffset}px`,
-                              minHeight: '40px',
-                              borderLeftColor: EVENT_COLORS[event.type].dot.replace('bg-', '').includes('blue') ? '#3b82f6'
-                                : EVENT_COLORS[event.type].dot.replace('bg-', '').includes('amber') ? '#f59e0b'
-                                : EVENT_COLORS[event.type].dot.replace('bg-', '').includes('red') ? '#ef4444'
-                                : EVENT_COLORS[event.type].dot.replace('bg-', '').includes('violet') ? '#8b5cf6'
-                                : '#6b7280',
-                              zIndex: 10,
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (canCreateEvents && event.manual) handleEditEvent(event);
-                            }}
-                            title={`${event.startTime} — ${event.title}${event.className ? ` (${event.className})` : ''}`}
-                          >
-                            <div className="flex items-start justify-between gap-1">
-                              <div className="text-xs font-medium truncate flex-1">{event.title}</div>
-                              {event.startTime && <div className="text-[10px] opacity-80 flex-shrink-0">{event.startTime}</div>}
-                            </div>
-                            {event.className && (
-                              <div className="text-[10px] opacity-80 truncate">{event.className}</div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
+            <div className="flex">
+              {/* Time labels */}
+              <div className="flex-shrink-0 w-16">
+                {WEEK_HOURS.map((hour) => (
+                  <div key={hour} className="border-r border-b border-gray-100 relative bg-white" style={{ height: '48px' }}>
+                    <span className="absolute -top-2 right-1 text-[10px] text-gray-400">
+                      {String(hour).padStart(2, '0')}:00
+                    </span>
                   </div>
-                );
-              })}
+                ))}
+              </div>
 
-              {/* Current time indicator */}
-              {isToday && (() => {
-                const now = new Date();
-                const h = now.getHours();
-                const m = now.getMinutes();
-                if (h < WEEK_HOURS[0] || h > WEEK_HOURS[WEEK_HOURS.length - 1]) return null;
-                const topPx = (h - WEEK_HOURS[0]) * 48 + (m / 60) * 48;
-                return (
-                  <div
-                    className="absolute pointer-events-none"
-                    style={{ top: `${topPx}px`, left: '64px', right: '0', zIndex: 20 }}
-                  >
-                    <div className="relative">
-                      <div className="absolute -left-1.5 -top-1.5 w-3 h-3 bg-red-500 rounded-full" />
-                      <div className="h-0.5 bg-red-500 w-full" />
+              {/* Event column — full height, events overlaid absolutely */}
+              <div
+                className={`flex-1 relative ${isToday ? 'bg-blue-50/30' : ''}`}
+                style={{ height: `${WEEK_HOURS.length * 48}px` }}
+                onClick={() => { if (canCreateEvents && !isDemo) setAddEventDate(day); }}
+              >
+                {/* Hour separator lines */}
+                {WEEK_HOURS.map((_, i) => (
+                  <div key={i} className="absolute w-full border-b border-gray-100 pointer-events-none" style={{ top: `${i * 48}px`, height: '48px', left: 0 }} />
+                ))}
+
+                {/* Current time indicator */}
+                {isToday && (() => {
+                  const now = new Date();
+                  const h = now.getHours();
+                  const m = now.getMinutes();
+                  if (h < WEEK_HOURS[0] || h > WEEK_HOURS[WEEK_HOURS.length - 1]) return null;
+                  const topPx = (h - WEEK_HOURS[0]) * 48 + (m / 60) * 48;
+                  return (
+                    <div className="absolute w-full pointer-events-none" style={{ top: `${topPx}px`, left: 0, zIndex: 20 }}>
+                      <div className="relative">
+                        <div className="absolute -left-1.5 -top-1.5 w-3 h-3 bg-red-500 rounded-full" />
+                        <div className="h-0.5 bg-red-500 w-full" />
+                      </div>
                     </div>
+                  );
+                })()}
+
+                {/* Events */}
+                {computeOverlapLayout(timedEvents).map(({ event, col, totalCols, topOffset, height }) => (
+                  <div
+                    key={event.id}
+                    style={{
+                      position: 'absolute',
+                      top: `${Math.max(topOffset, 0)}px`,
+                      height: `${Math.max(height, 22)}px`,
+                      left: `calc(${(col / totalCols) * 100}% + 1px)`,
+                      width: `calc(${(1 / totalCols) * 100}% - 2px)`,
+                      zIndex: 10,
+                      borderLeftWidth: '2px',
+                      borderLeftStyle: 'solid',
+                      borderLeftColor: EVENT_BORDER_COLORS[event.type],
+                    }}
+                    className={`rounded px-2 py-1 overflow-hidden cursor-pointer ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (canCreateEvents && event.manual) handleEditEvent(event);
+                    }}
+                    title={`${event.startTime} — ${event.title}${event.className ? ` (${event.className})` : ''}`}
+                  >
+                    <div className="flex items-start justify-between gap-1">
+                      <div className="text-xs font-medium truncate flex-1">{event.title}</div>
+                      {event.startTime && <div className="text-[10px] opacity-80 flex-shrink-0">{event.startTime}</div>}
+                    </div>
+                    {event.className && (
+                      <div className="text-[10px] opacity-80 truncate">{event.className}</div>
+                    )}
                   </div>
-                );
-              })()}
+                ))}
+              </div>
             </div>
           </div>
         </div>

@@ -15,6 +15,7 @@ interface CalendarAddEventModalProps {
   date: Date;
   classes: ClassOption[];
   onClose: () => void;
+  disabled?: boolean; // disables saving (e.g. demo mode)
   editEvent?: { id: string; title: string; type: string; classId?: string; extra?: string; location?: string; startTime?: string };
   onSaved: (event: {
     id: string;
@@ -30,7 +31,7 @@ interface CalendarAddEventModalProps {
 
 function pad(n: number) { return String(n).padStart(2, '0'); }
 
-export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEvent }: CalendarAddEventModalProps) {
+export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEvent, disabled }: CalendarAddEventModalProps) {
   const defaultDate = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
   const [title, setTitle] = useState(editEvent?.title ?? '');
   const [type, setType] = useState<'physicalClass' | 'scheduledStream'>(
@@ -102,7 +103,7 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
       {/* Modal */}
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md">
         {/* Header */}
@@ -223,9 +224,12 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
           </button>
           <button
             type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="flex-1 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors disabled:opacity-60"
+            onClick={disabled ? undefined : handleSave}
+            disabled={saving || disabled}
+            title={disabled ? 'No disponible en modo demo' : undefined}
+            className={`flex-1 py-2.5 text-sm font-medium text-white rounded-xl transition-colors disabled:opacity-60 ${
+              disabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+            }`}
           >
             {saving ? 'Guardando...' : isEditMode ? 'Guardar cambios' : 'Crear evento'}
           </button>
