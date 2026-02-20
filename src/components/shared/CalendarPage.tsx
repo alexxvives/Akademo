@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 import { CalendarAddEventModal } from './CalendarAddEventModal';
@@ -115,7 +116,7 @@ function extractTime(isoDate: string): string | undefined {
   return undefined;
 }
 
-const WEEK_HOURS = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23];
+const WEEK_HOURS = Array.from({ length: 24 }, (_, i) => i); // 0 – 23
 
 const EVENT_BORDER_COLORS: Record<EventType, string> = {
   lesson:          '#2563eb',
@@ -173,6 +174,8 @@ function computeOverlapLayout(events: CalendarEvent[]): Array<{
 }
 
 export function CalendarPage({ role }: CalendarPageProps) {
+  const router = useRouter();
+  const rolePrefix = role === 'ACADEMY' ? 'academy' : role === 'TEACHER' ? 'teacher' : role === 'STUDENT' ? 'student' : 'admin';
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -430,6 +433,22 @@ export function CalendarPage({ role }: CalendarPageProps) {
     setAddEventDate(new Date(event.date + 'T12:00:00'));
   }, [canCreateEvents, isDemo]);
 
+  // Navigate to the relevant page when clicking a non-manual event
+  const handleEventClick = useCallback((event: CalendarEvent) => {
+    if (event.manual) {
+      // physicalClass / scheduledStream → open edit popup
+      if (canCreateEvents && !isDemo) handleEditEvent(event);
+      return;
+    }
+    if (event.type === 'lesson' && event.classId) {
+      router.push(`/dashboard/${rolePrefix}/subject/${event.classId}`);
+    } else if (event.type === 'assignment') {
+      router.push(`/dashboard/${rolePrefix}/assignments`);
+    } else if (event.type === 'stream' || event.type === 'scheduledStream') {
+      router.push(`/dashboard/${rolePrefix}/streams`);
+    }
+  }, [canCreateEvents, isDemo, rolePrefix, router, handleEditEvent]);
+
   // ─── Filtered events ───
   const filteredEvents = useMemo(() => {
     if (selectedClass === 'all') return events;
@@ -521,14 +540,32 @@ export function CalendarPage({ role }: CalendarPageProps) {
   if (loading) {
     return (
       <div className="space-y-6 animate-pulse">
+        {/* Header row */}
         <div className="flex items-center justify-between">
-          <div className="h-8 bg-gray-200 rounded w-48" />
-          <div className="h-10 bg-gray-200 rounded w-56" />
+          <div className="flex items-center gap-3">
+            <div className="h-8 bg-gray-200 rounded w-32" />
+            <div className="h-8 bg-gray-200 rounded w-28" />
+          </div>
+          <div className="h-10 bg-gray-200 rounded w-52" />
         </div>
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <div className="grid grid-cols-7 gap-2">
+        {/* Calendar card */}
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          {/* Controls bar */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <div className="h-8 bg-gray-200 rounded w-28" />
+            <div className="h-6 bg-gray-200 rounded w-48" />
+            <div className="flex items-center gap-3">
+              {[1,2,3,4].map(i => <div key={i} className="h-4 bg-gray-100 rounded w-16" />)}
+            </div>
+          </div>
+          {/* Weekday headers */}
+          <div className="grid grid-cols-7 px-6 pt-4 pb-2">
+            {WEEKDAYS.map(d => <div key={d} className="h-4 bg-gray-100 rounded mx-1" />)}
+          </div>
+          {/* Day cells */}
+          <div className="grid grid-cols-7 gap-1 px-6 pb-6">
             {Array.from({ length: 35 }).map((_, i) => (
-              <div key={i} className="h-24 bg-gray-100 rounded" />
+              <div key={i} className="h-24 bg-gray-100 rounded-lg" />
             ))}
           </div>
         </div>
@@ -700,11 +737,10 @@ export function CalendarPage({ role }: CalendarPageProps) {
             return (
               <div
                 key={key}
-                onClick={() => { setCurrentDate(day); setViewMode('day'); setSelectedDay(null); }}
                 onDragOver={!isPast ? (e) => handleDragOver(e, key) : undefined}
                 onDragLeave={() => setDragOverDate(null)}
                 onDrop={!isPast ? (e) => handleDrop(e, day) : undefined}
-                className={`group min-h-[80px] sm:min-h-[100px] p-1.5 rounded-lg border text-left transition-all cursor-pointer ${
+                className={`group min-h-[80px] sm:min-h-[100px] p-1.5 rounded-lg border text-left transition-all ${
                   isDragOver
                     ? 'border-brand-400 bg-brand-50 ring-1 ring-brand-400'
                     : isToday
@@ -714,11 +750,14 @@ export function CalendarPage({ role }: CalendarPageProps) {
                         : 'border-gray-50'
                 } ${isPast ? 'opacity-40' : ''} ${!isCurrentMonth ? 'opacity-25' : ''}`}
               >
-                {/* Top row: day number centered + add button absolute right */}
+                {/* Top row: day number (click to navigate) + add button */}
                 <div className="relative flex justify-center mb-1">
-                  <span className={`text-xs font-semibold leading-none ${
-                    isToday ? 'text-blue-600' : isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
-                  }`}>{day.getDate()}</span>
+                  <span
+                    onClick={() => { setCurrentDate(day); setViewMode('day'); setSelectedDay(null); }}
+                    className={`text-xs font-semibold leading-none cursor-pointer rounded-full px-1 hover:bg-gray-200 transition-colors ${
+                      isToday ? 'text-blue-600' : isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
+                    }`}
+                  >{day.getDate()}</span>
                   {canCreateEvents && !isDemo && isCurrentMonth && (
                     <button
                       onClick={(e) => { e.stopPropagation(); setAddEventDate(day); }}
@@ -732,14 +771,13 @@ export function CalendarPage({ role }: CalendarPageProps) {
                   {dayEvents.slice(0, 3).map(event => {
                     const isFuture = new Date(event.date + 'T12:00:00') >= today;
                     const isDraggable = !!(canCreateEvents && isFuture && (event.manual || event.id.startsWith('assignment-')));
-                    const isClickEditable = canCreateEvents && event.manual;
                     return (
                     <div
                       key={event.id}
                       draggable={isDraggable}
                       onDragStart={isDraggable ? (e) => { e.stopPropagation(); handleDragStart(e, event.id); } : undefined}
-                      onClick={isClickEditable ? (e) => { e.stopPropagation(); handleEditEvent(event); } : undefined}
-                      className={`text-[10px] leading-tight px-1 py-0.5 rounded truncate ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text} ${isDraggable ? 'cursor-grab active:cursor-grabbing hover:brightness-95' : ''}`}
+                      onClick={(e) => { e.stopPropagation(); handleEventClick(event); }}
+                      className={`text-[10px] leading-tight px-1 py-0.5 rounded truncate cursor-pointer ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text} hover:shadow-md hover:brightness-95 transition-all ${isDraggable ? 'cursor-grab active:cursor-grabbing' : ''}`}
                     >
                       {event.title}
                     </div>
@@ -827,7 +865,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
         )}
 
         {/* Time grid */}
-        <div className="overflow-y-auto" style={{ maxHeight: '600px' }}>
+        <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 280px)' }}>
           <div className="grid" style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}>
             {/* Time label column */}
             <div>
@@ -889,10 +927,10 @@ export function CalendarPage({ role }: CalendarPageProps) {
                         borderLeftStyle: 'solid',
                         borderLeftColor: EVENT_BORDER_COLORS[event.type],
                       }}
-                      className={`rounded px-1.5 py-0.5 overflow-hidden cursor-pointer ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text}`}
+                      className={`rounded px-1.5 py-0.5 overflow-hidden cursor-pointer hover:shadow-md transition-shadow ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text}`}
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (canCreateEvents && event.manual) handleEditEvent(event);
+                        handleEventClick(event);
                       }}
                       title={`${event.startTime} — ${event.title}${event.className ? ` (${event.className})` : ''}`}
                     >
@@ -963,7 +1001,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
           )}
 
           {/* Time grid */}
-          <div className="overflow-y-auto" style={{ maxHeight: '600px' }}>
+          <div className="overflow-y-auto" style={{ maxHeight: 'calc(100vh - 380px)' }}>
             <div className="flex">
               {/* Time labels */}
               <div className="flex-shrink-0 w-16">
@@ -1019,10 +1057,10 @@ export function CalendarPage({ role }: CalendarPageProps) {
                       borderLeftStyle: 'solid',
                       borderLeftColor: EVENT_BORDER_COLORS[event.type],
                     }}
-                    className={`rounded px-2 py-1 overflow-hidden cursor-pointer ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text}`}
+                    className={`rounded px-2 py-1 overflow-hidden cursor-pointer hover:shadow-md transition-shadow ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text}`}
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (canCreateEvents && event.manual) handleEditEvent(event);
+                      handleEventClick(event);
                     }}
                     title={`${event.startTime} — ${event.title}${event.className ? ` (${event.className})` : ''}`}
                   >

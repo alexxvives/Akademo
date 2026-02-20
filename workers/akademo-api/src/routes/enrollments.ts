@@ -658,21 +658,21 @@ enrollments.get('/payment-status', async (c) => {
       return c.json(errorResponse('Not authorized'), 403);
     }
 
+    const classIdFilter = c.req.query('classId') || null;
     const now = new Date().toISOString();
     let query = '';
     let params: string[] = [];
 
     if (session.role === 'TEACHER') {
-      // Get all APPROVED enrollments from teacher's classes with payment info
       query = `
         SELECT 
           e.id, e.userId, e.classId, e.paymentFrequency, e.nextPaymentDue,
           c.name as className
         FROM ClassEnrollment e
         JOIN Class c ON e.classId = c.id
-        WHERE c.teacherId = ? AND e.status = 'APPROVED'
+        WHERE c.teacherId = ? AND e.status = 'APPROVED'${classIdFilter ? ' AND e.classId = ?' : ''}
       `;
-      params = [session.id];
+      params = classIdFilter ? [session.id, classIdFilter] : [session.id];
     } else if (session.role === 'ACADEMY') {
       query = `
         SELECT 
@@ -681,9 +681,9 @@ enrollments.get('/payment-status', async (c) => {
         FROM ClassEnrollment e
         JOIN Class c ON e.classId = c.id
         JOIN Academy a ON c.academyId = a.id
-        WHERE a.ownerId = ? AND e.status = 'APPROVED'
+        WHERE a.ownerId = ? AND e.status = 'APPROVED'${classIdFilter ? ' AND e.classId = ?' : ''}
       `;
-      params = [session.id];
+      params = classIdFilter ? [session.id, classIdFilter] : [session.id];
     } else {
       // ADMIN
       query = `
@@ -692,9 +692,9 @@ enrollments.get('/payment-status', async (c) => {
           c.name as className
         FROM ClassEnrollment e
         JOIN Class c ON e.classId = c.id
-        WHERE e.status = 'APPROVED'
+        WHERE e.status = 'APPROVED'${classIdFilter ? ' AND e.classId = ?' : ''}
       `;
-      params = [];
+      params = classIdFilter ? [classIdFilter] : [];
     }
 
     const result = await c.env.DB

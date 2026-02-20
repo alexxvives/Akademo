@@ -75,6 +75,17 @@ export function DashboardPage({ role }: DashboardPageProps) {
     }
   }, [selectedAcademy, classes, isAdmin]);
 
+  // Re-fetch payment status when class filter changes (ACADEMY only, not in demo)
+  useEffect(() => {
+    if (!isAcademy || paymentStatus === 'NOT PAID') return;
+    const url = selectedClass === 'all' ? '/enrollments/payment-status' : `/enrollments/payment-status?classId=${selectedClass}`;
+    apiClient(url).then(r => r.json()).then(result => {
+      if (result.success && result.data) {
+        setStudentPaymentStatus(result.data as { alDia: number; atrasados: number; total: number; uniqueAlDia?: number; uniqueAtrasados?: number; uniqueTotal?: number });
+      }
+    }).catch(() => {/* silent */});
+  }, [selectedClass, isAcademy, paymentStatus]);
+
   const loadData = async () => {
     try {
       if (isAcademy) await loadAcademyData();

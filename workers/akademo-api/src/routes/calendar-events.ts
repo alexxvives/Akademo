@@ -71,7 +71,9 @@ calendarEvents.get('/', async (c) => {
 
     return c.json(successResponse(rows.results ?? []));
   } catch (error) {
-    console.error('[calendar-events GET]', error);
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('[calendar-events GET]', msg);
+    if (msg === 'Unauthorized') return c.json(errorResponse('Unauthorized'), 401);
     return c.json(errorResponse('Failed to fetch calendar events'), 500);
   }
 });
@@ -144,7 +146,10 @@ calendarEvents.post('/', async (c) => {
 
     return c.json(successResponse(event), 201);
   } catch (error) {
-    console.error('[calendar-events POST]', error);
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('[calendar-events POST]', msg);
+    if (msg === 'Unauthorized') return c.json(errorResponse('Unauthorized'), 401);
+    if (msg === 'Forbidden') return c.json(errorResponse('Forbidden'), 403);
     return c.json(errorResponse('Failed to create calendar event'), 500);
   }
 });
@@ -201,7 +206,10 @@ calendarEvents.patch('/:id', async (c) => {
 
     return c.json(successResponse(updated));
   } catch (error) {
-    console.error('[calendar-events PATCH]', error);
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('[calendar-events PATCH]', msg);
+    if (msg === 'Unauthorized') return c.json(errorResponse('Unauthorized'), 401);
+    if (msg === 'Forbidden') return c.json(errorResponse('Forbidden'), 403);
     return c.json(errorResponse('Failed to update calendar event'), 500);
   }
 });
@@ -234,7 +242,10 @@ calendarEvents.delete('/:id', async (c) => {
 
     return c.json(successResponse({ deleted: true }));
   } catch (error) {
-    console.error('[calendar-events DELETE]', error);
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('[calendar-events DELETE]', msg);
+    if (msg === 'Unauthorized') return c.json(errorResponse('Unauthorized'), 401);
+    if (msg === 'Forbidden') return c.json(errorResponse('Forbidden'), 403);
     return c.json(errorResponse('Failed to delete calendar event'), 500);
   }
 });
