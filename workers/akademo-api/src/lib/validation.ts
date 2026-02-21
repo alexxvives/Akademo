@@ -31,9 +31,9 @@ export const registerSchema = z.object({
   academyName: z.string().min(1).max(200).optional(),
   monoacademy: z.boolean().optional().default(false),
   role: z.enum(['STUDENT', 'TEACHER', 'ACADEMY']).default('STUDENT'),
-  academyId: z.string().uuid().optional(),
-  classId: z.string().uuid().optional(),
-  classIds: z.array(z.string().uuid()).optional().default([]),
+  academyId: z.string().min(1).optional(),
+  classId: z.string().min(1).optional(),
+  classIds: z.array(z.string().min(1)).optional().default([]),
 });
 
 export const changePasswordSchema = z.object({
