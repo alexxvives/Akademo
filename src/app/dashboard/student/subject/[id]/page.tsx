@@ -533,9 +533,6 @@ export default function ClassPage() {
                 </a>
               </div>
             )}
-
-            </div>
-            </div>
           </>
         )}
 
