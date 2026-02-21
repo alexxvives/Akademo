@@ -186,8 +186,8 @@ auth.post('/register', registerRateLimit, validateBody(registerSchema), async (c
         const enrollmentId = crypto.randomUUID();
         const now = new Date().toISOString();
         await c.env.DB
-          .prepare('INSERT INTO ClassEnrollment (id, classId, userId, status, enrolledAt, createdAt) VALUES (?, ?, ?, ?, ?, ?)')
-          .bind(enrollmentId, cId, userId, 'PENDING', now, now)
+          .prepare('INSERT INTO ClassEnrollment (id, classId, userId, status, enrolledAt) VALUES (?, ?, ?, ?, ?)')
+          .bind(enrollmentId, cId, userId, 'PENDING', now)
           .run();
       }
 
@@ -198,8 +198,8 @@ auth.post('/register', registerRateLimit, validateBody(registerSchema), async (c
         const enrollmentId = crypto.randomUUID();
         const now = new Date().toISOString();
         await c.env.DB
-          .prepare('INSERT INTO ClassEnrollment (id, classId, userId, status, enrolledAt, createdAt) VALUES (?, ?, ?, ?, ?, ?)')
-          .bind(enrollmentId, classId, userId, 'PENDING', now, now)
+          .prepare('INSERT INTO ClassEnrollment (id, classId, userId, status, enrolledAt) VALUES (?, ?, ?, ?, ?)')
+          .bind(enrollmentId, classId, userId, 'PENDING', now)
           .run();
       }
     }
