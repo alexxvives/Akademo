@@ -528,9 +528,18 @@ export function ClassesPage({ role }: ClassesPageProps) {
                         {cls.name}
                       </h3>
                       {(cls.university || cls.carrera) && (
-                        <span className="text-xl text-gray-600">
-                          {cls.carrera && cls.university ? `${cls.carrera} (${cls.university})` : cls.carrera || cls.university}
-                        </span>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {cls.university && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                              {cls.university}
+                            </span>
+                          )}
+                          {cls.carrera && (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                              {cls.carrera}
+                            </span>
+                          )}
+                        </div>
                       )}
                       {/* WhatsApp link */}
                       {cls.whatsappGroupLink && (

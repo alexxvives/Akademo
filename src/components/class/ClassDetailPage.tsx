@@ -304,8 +304,9 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
     if (lesson.topicId) {
       setExpandTopicId(lesson.topicId);
     }
-    // Set highlight for glow effect
-    setHighlightLessonId(highlightParam);
+    // Delay highlight so the topic expansion renders before we scroll/glow
+    const timer = setTimeout(() => setHighlightLessonId(highlightParam), 350);
+    return () => clearTimeout(timer);
   }, [highlightParam, lessons]);
 
   // Handle createFromStream param from streams table

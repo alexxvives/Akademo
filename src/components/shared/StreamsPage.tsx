@@ -486,7 +486,7 @@ export function StreamsPage({ role }: StreamsPageProps) {
                       key={stream.id}
                       id={`stream-${stream.id}`}
                       ref={glowId === stream.id ? highlightRef : null}
-                      className={`hover:bg-gray-50/50 transition-colors ${glowId === stream.id ? 'ring-2 ring-inset ring-blue-400 shadow-[inset_0_0_20px_rgba(96,165,250,0.25)] bg-blue-50/30' : ''}`}
+                      className={`hover:bg-gray-50/50 transition-colors ${glowId === stream.id ? 'ring-1 ring-blue-300/60 bg-blue-50/20 shadow-[inset_0_0_12px_rgba(96,165,250,0.12)]' : ''}`}
                     >
                       {/* Title */}
                       <td className="py-3 px-2 sm:px-4">

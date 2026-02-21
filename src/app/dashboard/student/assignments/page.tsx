@@ -299,7 +299,7 @@ export default function StudentAssignments() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ejercicios</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Entrega</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha límite</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Calificación</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -411,8 +411,18 @@ export default function StudentAssignments() {
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                         {isCompleted ? (
                           assignment.gradedAt ? (
-                            <div className="text-lg font-bold text-brand-600">
-                              {assignment.score}/{assignment.maxScore}
+                            <div className={`text-lg font-bold ${
+                              (() => {
+                                const s = assignment.score ?? 0;
+                                const mx = assignment.maxScore ?? 100;
+                                const pct = mx > 0 ? (s / mx) * 100 : 0;
+                                if (pct <= 50) return 'text-red-600';
+                                if (pct <= 69) return 'text-orange-500';
+                                if (pct <= 90) return 'text-green-500';
+                                return 'text-green-700';
+                              })()
+                            }`}>
+                              {assignment.score ?? 0}/{assignment.maxScore ?? 100}
                             </div>
                           ) : (
                             <span className="text-xs text-gray-500">En corrección</span>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { BarChart, DonutChart } from '@/components/Charts';
 import { apiClient } from '@/lib/api-client';
 import { useAnimatedNumber } from '@/hooks';
@@ -61,6 +61,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
   const [academies, setAcademies] = useState<Academy[]>([]);
   const [selectedAcademy, setSelectedAcademy] = useState('all');
   const [academyClasses, setAcademyClasses] = useState<Class[]>([]);
+  const paymentStatusInitRef = useRef(true); // skip first useEffect fire (loadAcademyData already fetches it)
 
   useEffect(() => { loadData(); }, []);
 
@@ -78,6 +79,8 @@ export function DashboardPage({ role }: DashboardPageProps) {
   // Re-fetch payment status when class filter changes (ACADEMY only, not in demo)
   useEffect(() => {
     if (!isAcademy || paymentStatus === 'NOT PAID') return;
+    // Skip the first trigger caused by paymentStatus changing after loadAcademyData — it already fetched the data
+    if (paymentStatusInitRef.current) { paymentStatusInitRef.current = false; return; }
     const url = selectedClass === 'all' ? '/enrollments/payment-status' : `/enrollments/payment-status?classId=${selectedClass}`;
     apiClient(url).then(r => r.json()).then(result => {
       if (result.success && result.data) {

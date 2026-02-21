@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, useCallback } from 'react';
 import { SkeletonForm } from '@/components/ui/SkeletonLoader';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { apiClient } from '@/lib/api-client';
+import confetti from 'canvas-confetti';
 
 type RegistrationData = Record<string, unknown>;
 
@@ -63,6 +64,18 @@ function VerifyEmailContent() {
     }
   }, [searchParams]);
 
+  const fireConfetti = useCallback(() => {
+    const duration = 1500;
+    const end = Date.now() + duration;
+    const colors = ['#6366f1', '#8b5cf6', '#3b82f6', '#22c55e', '#f59e0b'];
+    const frame = () => {
+      confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0, y: 0.7 }, colors });
+      confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1, y: 0.7 }, colors });
+      if (Date.now() < end) requestAnimationFrame(frame);
+    };
+    frame();
+  }, []);
+
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -99,7 +112,13 @@ function VerifyEmailContent() {
           // So the user is now authenticated
         }
 
-        // Redirect immediately to the return URL or student dashboard
+        // Fire confetti celebration!
+        fireConfetti();
+
+        // Redirect after a short delay so user sees confetti
+        await new Promise(resolve => setTimeout(resolve, 1200));
+
+        // Redirect to the return URL or student dashboard
         const returnUrl = searchParams.get('returnUrl');
         if (returnUrl) {
           router.push(decodeURIComponent(returnUrl));

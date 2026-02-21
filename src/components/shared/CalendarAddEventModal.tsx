@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
+import { CustomTimePicker } from '@/components/ui/CustomTimePicker';
+import { CustomDatePicker } from '@/components/ui/CustomDatePicker';
 
 interface ClassOption {
   id: string;
@@ -33,6 +35,14 @@ function pad(n: number) { return String(n).padStart(2, '0'); }
 
 export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEvent, disabled }: CalendarAddEventModalProps) {
   const defaultDate = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  // Default time to current time (rounded to nearest 5 min) when creating new event
+  const defaultTime = editEvent?.startTime ?? (() => {
+    const now = new Date();
+    const mins = Math.ceil(now.getMinutes() / 5) * 5;
+    const h = mins >= 60 ? now.getHours() + 1 : now.getHours();
+    const m = mins >= 60 ? 0 : mins;
+    return `${pad(h % 24)}:${pad(m)}`;
+  })();
   const [title, setTitle] = useState(editEvent?.title ?? '');
   const [type, setType] = useState<'physicalClass' | 'scheduledStream'>(
     (editEvent?.type === 'physicalClass' || editEvent?.type === 'scheduledStream') ? editEvent.type : 'physicalClass'
@@ -40,11 +50,9 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
   const [eventDate, setEventDate] = useState(defaultDate);
   const [classId, setClassId] = useState(editEvent?.classId ?? '');
   const [location, setLocation] = useState(editEvent?.location ?? '');
-  const [startTime, setStartTime] = useState(editEvent?.startTime ?? '');
+  const [startTime, setStartTime] = useState(defaultTime);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const dateInputRef = useRef<HTMLInputElement>(null);
-  const timeInputRef = useRef<HTMLInputElement>(null);
 
   const isEditMode = !!editEvent;
 
@@ -103,7 +111,7 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+    <div className="fixed inset-0 m-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" style={{ top: 0, left: 0, right: 0, bottom: 0 }}>
       {/* Modal */}
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md">
         {/* Header */}
@@ -148,37 +156,15 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
             />
           </div>
 
-          {/* Date & Time — full row clickable */}
+          {/* Date & Time — custom pickers */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Fecha <span className="text-red-400">*</span></label>
-              <div
-                className="relative cursor-pointer"
-                onClick={() => dateInputRef.current?.showPicker?.()}
-              >
-                <input
-                  ref={dateInputRef}
-                  type="date"
-                  value={eventDate}
-                  onChange={(e) => setEventDate(e.target.value)}
-                  className="w-full px-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 cursor-pointer"
-                />
-              </div>
+              <CustomDatePicker value={eventDate} onChange={setEventDate} />
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">Hora</label>
-              <div
-                className="relative cursor-pointer"
-                onClick={() => timeInputRef.current?.showPicker?.()}
-              >
-                <input
-                  ref={timeInputRef}
-                  type="time"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  className="w-full px-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 cursor-pointer"
-                />
-              </div>
+              <CustomTimePicker value={startTime} onChange={setStartTime} />
             </div>
           </div>
 

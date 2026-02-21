@@ -177,7 +177,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
   const router = useRouter();
   const rolePrefix = role === 'ACADEMY' ? 'academy' : role === 'TEACHER' ? 'teacher' : role === 'STUDENT' ? 'student' : 'admin';
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<ViewMode>('month');
+  const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [classes, setClasses] = useState<ClassSummary[]>([]);
   const [selectedClass, setSelectedClass] = useState('all');
@@ -435,6 +435,13 @@ export function CalendarPage({ role }: CalendarPageProps) {
 
   // Navigate to the relevant page when clicking a non-manual event
   const handleEventClick = useCallback((event: CalendarEvent) => {
+    // Student role: clicking an event navigates to day view of that event's date
+    if (isStudent) {
+      const eventDate = new Date(event.date + (event.date.includes('T') ? '' : 'T12:00:00'));
+      setCurrentDate(eventDate);
+      setViewMode('day');
+      return;
+    }
     if (event.manual) {
       // physicalClass / scheduledStream → open edit popup
       if (canCreateEvents && !isDemo) handleEditEvent(event);
@@ -971,23 +978,6 @@ export function CalendarPage({ role }: CalendarPageProps) {
 
     return (
       <div>
-        {/* Day header */}
-        <div className="text-center mb-4">
-          <div className="text-sm text-gray-500 capitalize">
-            {day.toLocaleDateString('es-ES', { weekday: 'long' })}
-          </div>
-          <div className={`text-3xl font-bold ${isToday ? 'text-blue-600' : 'text-gray-900'}`}>
-            {isToday ? (
-              <span className="inline-flex w-10 h-10 items-center justify-center rounded-full bg-blue-600 text-white text-xl">
-                {day.getDate()}
-              </span>
-            ) : day.getDate()}
-          </div>
-          <div className="text-sm text-gray-500 capitalize">
-            {day.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
-          </div>
-        </div>
-
         <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
           {/* All-day events */}
           {allDayEvents.length > 0 && (
