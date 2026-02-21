@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api-client';
-import { SkeletonList } from '@/components/ui/SkeletonLoader';
+import { SkeletonAcademyCards } from '@/components/ui/SkeletonLoader';
 
 interface Academy {
   id: string;
@@ -37,7 +37,7 @@ export default function ExploreAcademiesPage() {
   };
 
   if (loading) {
-    return <SkeletonList />;
+    return <SkeletonAcademyCards />;
   }
 
   return (

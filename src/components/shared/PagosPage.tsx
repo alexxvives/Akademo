@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { generateDemoPendingPayments, generateDemoPaymentHistory } from '@/lib/demo-data';
-import { SkeletonTable } from '@/components/ui/SkeletonLoader';
+import { SkeletonPayments } from '@/components/ui/SkeletonLoader';
 import { StudentPaymentDetailModal } from '@/components/shared';
 import { ModalPortal } from '@/components/ui/ModalPortal';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
@@ -513,7 +513,7 @@ export default function PagosPage({ role }: PagosPageProps) {
   });
 
   if (loading) {
-    return <SkeletonTable rows={10} cols={isAdmin ? 9 : 8} />;
+    return <SkeletonPayments />;
   }
 
   return (

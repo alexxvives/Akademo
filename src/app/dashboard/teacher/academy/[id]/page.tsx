@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { SkeletonProfile } from '@/components/ui/SkeletonLoader';
+import { SkeletonAcademyManage } from '@/components/ui/SkeletonLoader';
 
 interface Academy {
   id: string;
@@ -102,7 +102,7 @@ export default function AcademyManagePage() {
   };
 
   if (loading) {
-    return <SkeletonProfile />;
+    return <SkeletonAcademyManage />;
   }
 
   if (!academy) {

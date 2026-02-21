@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api-client';
-import { SkeletonList } from '@/components/ui/SkeletonLoader';
+import { SkeletonTable } from '@/components/ui/SkeletonLoader';
 
 interface User {
   id: string;
@@ -190,7 +190,7 @@ export default function AccountsPage() {
   };
 
   if (loading) {
-    return <SkeletonList rows={10} />;
+    return <SkeletonTable rows={10} cols={5} />;
   }
 
   return (

@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { generateDemoTeachers, generateDemoClasses } from '@/lib/demo-data';
-import { SkeletonList } from '@/components/ui/SkeletonLoader';
+import { SkeletonTeachers } from '@/components/ui/SkeletonLoader';
 import { AcademySearchDropdown } from '@/components/ui/AcademySearchDropdown';
 
 interface TeacherClass {
@@ -319,7 +319,7 @@ export function TeachersPage({ role }: TeachersPageProps) {
     return result;
   }, [teachers, role, selectedAcademy, academies, searchQuery]);
 
-  if (loading) return <SkeletonList rows={10} />;
+  if (loading) return <SkeletonTeachers />;
 
   return (
     <>

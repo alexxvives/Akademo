@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { apiClient, apiPost } from '@/lib/api-client';
+import { SkeletonAssignments } from '@/components/ui/SkeletonLoader';
 import { generateDemoClasses, generateDemoStudentAssignments } from '@/lib/demo-data';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 
@@ -248,16 +249,7 @@ export default function StudentAssignments() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-6 animate-pulse">
-        <div className="h-8 w-48 bg-gray-200 rounded"></div>
-        <div className="h-10 w-64 bg-gray-200 rounded-lg ml-auto"></div>
-        <div className="h-32 bg-gray-200 rounded-xl"></div>
-        <div className="h-32 bg-gray-200 rounded-xl"></div>
-      </div>
-    );
-  }
+  if (loading) return <SkeletonAssignments />;
 
   return (
     <>

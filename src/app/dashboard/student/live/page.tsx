@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
+import { SkeletonLiveStreams } from '@/components/ui/SkeletonLoader';
 
 interface LiveStream {
   id: string;
@@ -38,14 +39,7 @@ export default function StudentLivePage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-6 animate-pulse">
-        <div className="h-8 w-48 bg-gray-200 rounded"></div>
-        <div className="h-64 bg-gray-200 rounded-xl"></div>
-      </div>
-    );
-  }
+  if (loading) return <SkeletonLiveStreams />;
 
   return (
     <div className="space-y-6">

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
 import { generateDemoStreams } from '@/lib/demo-data';
-import { SkeletonList } from '@/components/ui/SkeletonLoader';
+import { SkeletonTable } from '@/components/ui/SkeletonLoader';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 import { AcademySearchDropdown } from '@/components/ui/AcademySearchDropdown';
 
@@ -416,7 +416,7 @@ export function StreamsPage({ role }: StreamsPageProps) {
       </div>
 
       {loading ? (
-        <SkeletonList rows={8} />
+        <SkeletonTable rows={8} cols={6} />
       ) : (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
           <div className="overflow-x-auto max-h-[750px] overflow-y-auto">

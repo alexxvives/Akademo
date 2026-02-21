@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
-import { SkeletonList } from '@/components/ui/SkeletonLoader';
+import { SkeletonTable } from '@/components/ui/SkeletonLoader';
 
 interface Academy {
   id: string;
@@ -40,7 +40,7 @@ export default function AdminAcademies() {
   };
 
   if (loading) {
-    return <SkeletonList rows={10} />;
+    return <SkeletonTable rows={10} cols={7} />;
   }
 
   return (
