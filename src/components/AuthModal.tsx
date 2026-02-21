@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { LoginForm } from './auth/LoginForm';
 import { RegisterForm } from './auth/RegisterForm';
+import { ForgotPasswordForm } from './auth/ForgotPasswordForm';
 
 interface AuthModalProps {
   mode: 'login' | 'register';
@@ -10,10 +11,10 @@ interface AuthModalProps {
 }
 
 export default function AuthModal({ mode, onClose }: AuthModalProps) {
-  const [isLogin, setIsLogin] = useState(mode === 'login');
+  const [view, setView] = useState<'login' | 'register' | 'forgot'>(mode);
 
   useEffect(() => {
-    setIsLogin(mode === 'login');
+    setView(mode);
   }, [mode]);
 
   const handleSuccess = (_role: string) => {
@@ -21,13 +22,17 @@ export default function AuthModal({ mode, onClose }: AuthModalProps) {
   };
 
   const switchToLogin = () => {
-    setIsLogin(true);
+    setView('login');
     window.history.pushState({}, '', '/?modal=login');
   };
 
   const switchToRegister = () => {
-    setIsLogin(false);
+    setView('register');
     window.history.pushState({}, '', '/?modal=register');
+  };
+
+  const switchToForgot = () => {
+    setView('forgot');
   };
 
   return (
@@ -42,18 +47,23 @@ export default function AuthModal({ mode, onClose }: AuthModalProps) {
           </svg>
         </button>
 
-        {isLogin ? (
-          <LoginForm 
+        {view === 'login' && (
+          <LoginForm
             onSuccess={handleSuccess}
             onSwitchToRegister={switchToRegister}
+            onForgotPassword={switchToForgot}
             onClose={onClose}
           />
-        ) : (
+        )}
+        {view === 'register' && (
           <RegisterForm
             onSuccess={handleSuccess}
             onSwitchToLogin={switchToLogin}
             onClose={onClose}
           />
+        )}
+        {view === 'forgot' && (
+          <ForgotPasswordForm onBackToLogin={switchToLogin} />
         )}
       </div>
     </div>

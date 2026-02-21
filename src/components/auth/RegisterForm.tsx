@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import confetti from 'canvas-confetti';
 import { RoleSelector } from './RoleSelector';
 import { AcademyFields } from './AcademyFields';
 import { StudentTeacherFields } from './StudentTeacherFields';
@@ -100,12 +99,8 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, onClose }: RegisterFo
           localStorage.setItem('auth_token', result.data.token);
         }
 
-        // Fire confetti celebration before navigating
-        confetti({ particleCount: 180, spread: 100, origin: { y: 0.55 } });
-        setTimeout(() => confetti({ particleCount: 80, spread: 120, origin: { x: 0.1, y: 0.6 } }), 200);
-        setTimeout(() => confetti({ particleCount: 80, spread: 120, origin: { x: 0.9, y: 0.6 } }), 400);
-
-        await new Promise(resolve => setTimeout(resolve, 1400));
+        // Mark new user so dashboard fires confetti on first load
+        sessionStorage.setItem('akademo_new_user', '1');
 
         onClose();
         

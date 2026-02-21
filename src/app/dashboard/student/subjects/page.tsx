@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import confetti from 'canvas-confetti';
 import { apiClient } from '@/lib/api-client';
 import { generateDemoStudentEnrolledClasses } from '@/lib/demo-data';
 import DocumentSigningModal from '@/components/DocumentSigningModal';
@@ -61,6 +62,16 @@ export default function StudentClassesPage() {
 
   useEffect(() => {
     loadData();
+
+    // Confetti for new registrations
+    if (sessionStorage.getItem('akademo_new_user')) {
+      sessionStorage.removeItem('akademo_new_user');
+      setTimeout(() => {
+        confetti({ particleCount: 180, spread: 100, origin: { y: 0.55 } });
+        setTimeout(() => confetti({ particleCount: 80, spread: 120, origin: { x: 0.1, y: 0.6 } }), 200);
+        setTimeout(() => confetti({ particleCount: 80, spread: 120, origin: { x: 0.9, y: 0.6 } }), 400);
+      }, 600);
+    }
     
     // Function to poll active streams
     const pollActiveStreams = () => {
@@ -337,17 +348,7 @@ export default function StudentClassesPage() {
                       </div>
                     )}
                     
-                    {/* Enrollment Approval Status - Show only when PENDING */}
-                    {classItem.enrollmentStatus === 'PENDING' && (
-                      <div className="relative group/approval">
-                        <svg className="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover/approval:opacity-100 transition-opacity z-10">
-                          Aprobación pendiente
-                        </div>
-                      </div>
-                    )}
+
                     
                     {/* Payment Status Icon - Show for any non-PAID/non-COMPLETED status */}
                     {classItem.paymentStatus !== 'PAID' && classItem.paymentStatus !== 'COMPLETED' && (

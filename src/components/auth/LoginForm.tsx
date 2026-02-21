@@ -7,10 +7,11 @@ import { apiClient } from '@/lib/api-client';
 interface LoginFormProps {
   onSuccess: (role: string) => void;
   onSwitchToRegister: () => void;
+  onForgotPassword: () => void;
   onClose: () => void;
 }
 
-export function LoginForm({ onSuccess, onSwitchToRegister, onClose }: LoginFormProps) {
+export function LoginForm({ onSuccess, onSwitchToRegister, onForgotPassword, onClose }: LoginFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -98,7 +99,16 @@ export function LoginForm({ onSuccess, onSwitchToRegister, onClose }: LoginFormP
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">Contraseña</label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="block text-sm font-medium text-gray-700">Contraseña</label>
+            <button
+              type="button"
+              onClick={onForgotPassword}
+              className="text-xs text-brand-600 hover:text-brand-700"
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+          </div>
           <PasswordInput
             required
             minLength={8}

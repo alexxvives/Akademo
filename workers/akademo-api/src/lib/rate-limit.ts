@@ -92,3 +92,8 @@ export const checkEmailRateLimit = rateLimit({
   windowMs: 60_000,      // 1 minute
   maxRequests: 10,        // 10 email checks per minute per IP
 });
+
+export const forgotPasswordRateLimit = rateLimit({
+  windowMs: 3_600_000,   // 1 hour
+  maxRequests: 5,         // 5 password reset attempts per hour per IP
+});

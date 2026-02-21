@@ -5,7 +5,7 @@ import { Bindings } from '../types';
 import { getSession, createSignedSession } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { loginSchema, registerSchema, validateBody } from '../lib/validation';
-import { loginRateLimit, registerRateLimit, checkEmailRateLimit, emailVerificationRateLimit } from '../lib/rate-limit';
+import { loginRateLimit, registerRateLimit, checkEmailRateLimit, emailVerificationRateLimit, forgotPasswordRateLimit } from '../lib/rate-limit';
 
 const auth = new Hono<{ Bindings: Bindings }>();
 
@@ -730,6 +730,105 @@ auth.post('/switch-role', async (c) => {
   } catch (error: any) {
     console.error('[Switch Role] Error:', error);
     return c.json(errorResponse('Failed to switch role'), 500);
+  }
+});
+
+// POST /auth/forgot-password
+auth.post('/forgot-password', forgotPasswordRateLimit, async (c) => {
+  try {
+    const { email } = await c.req.json();
+    if (!email) return c.json(errorResponse('Email is required'), 400);
+
+    // Look up user — always return generic success to prevent email enumeration
+    const user = await c.env.DB
+      .prepare('SELECT id FROM User WHERE email = ?')
+      .bind(email.toLowerCase())
+      .first();
+
+    if (user) {
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      const expires = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+
+      await c.env.DB
+        .prepare('INSERT OR REPLACE INTO VerificationCode (email, code, expiresAt) VALUES (?, ?, ?)')
+        .bind(email.toLowerCase(), code, expires)
+        .run();
+
+      const resendApiKey = c.env.RESEND_API_KEY;
+      if (resendApiKey) {
+        try {
+          await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${resendApiKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              from: 'AKADEMO <onboarding@akademo-edu.com>',
+              to: [email],
+              subject: 'Restablecer contraseña - AKADEMO',
+              html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                  <h2 style="color: #2563eb;">Restablecer contraseña</h2>
+                  <p>Tu código de restablecimiento es:</p>
+                  <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
+                    <h1 style="color: #1f2937; letter-spacing: 8px; margin: 0;">${code}</h1>
+                  </div>
+                  <p style="color: #6b7280;">Este código expirará en 10 minutos.</p>
+                  <p style="color: #6b7280;">Si no solicitaste esto, puedes ignorar este mensaje.</p>
+                </div>
+              `,
+            }),
+          });
+        } catch (emailError) {
+          console.error('[Forgot Password] Email error:', emailError);
+        }
+      }
+    }
+
+    return c.json(successResponse({ message: 'If that email exists, a reset code has been sent' }));
+  } catch (error: any) {
+    console.error('[Forgot Password] Error:', error);
+    return c.json(errorResponse('Failed to process request'), 500);
+  }
+});
+
+// POST /auth/reset-password
+auth.post('/reset-password', async (c) => {
+  try {
+    const { email, code, newPassword } = await c.req.json();
+    if (!email || !code || !newPassword) {
+      return c.json(errorResponse('Email, code, and new password are required'), 400);
+    }
+    if (newPassword.length < 8) {
+      return c.json(errorResponse('La contraseña debe tener al menos 8 caracteres'), 400);
+    }
+
+    const record = await c.env.DB
+      .prepare('SELECT code, expiresAt FROM VerificationCode WHERE email = ?')
+      .bind(email.toLowerCase())
+      .first<{ code: string; expiresAt: string }>();
+
+    if (!record) {
+      return c.json(errorResponse('Código no encontrado. Solicita uno nuevo.'), 400);
+    }
+    if (new Date(record.expiresAt) < new Date()) {
+      await c.env.DB.prepare('DELETE FROM VerificationCode WHERE email = ?').bind(email.toLowerCase()).run();
+      return c.json(errorResponse('Código expirado. Solicita uno nuevo.'), 400);
+    }
+    if (record.code !== code) {
+      return c.json(errorResponse('Código incorrecto'), 400);
+    }
+
+    await c.env.DB.prepare('DELETE FROM VerificationCode WHERE email = ?').bind(email.toLowerCase()).run();
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await c.env.DB
+      .prepare('UPDATE User SET password = ? WHERE email = ?')
+      .bind(hashedPassword, email.toLowerCase())
+      .run();
+
+    return c.json(successResponse({ message: 'Contraseña actualizada correctamente' }));
+  } catch (error: any) {
+    console.error('[Reset Password] Error:', error);
+    return c.json(errorResponse('Failed to reset password'), 500);
   }
 });
 

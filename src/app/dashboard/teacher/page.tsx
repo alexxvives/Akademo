@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { apiClient } from '@/lib/api-client';
+import confetti from 'canvas-confetti';
 import { SkeletonDashboard } from '@/components/ui/SkeletonLoader';
 import { useTeacherDashboard } from '@/hooks/useTeacherDashboard';
 import { TeacherDashboardHeader } from './components/TeacherDashboardHeader';
@@ -30,6 +31,18 @@ export default function TeacherDashboard() {
   const [showBrowse, setShowBrowse] = useState(false);
   const [selectedClass, setSelectedClass] = useState('all');
   const paymentInitRef = useRef(true); // skip first fire after initial load
+
+  // Confetti for new registrations
+  useEffect(() => {
+    if (sessionStorage.getItem('akademo_new_user')) {
+      sessionStorage.removeItem('akademo_new_user');
+      setTimeout(() => {
+        confetti({ particleCount: 180, spread: 100, origin: { y: 0.55 } });
+        setTimeout(() => confetti({ particleCount: 80, spread: 120, origin: { x: 0.1, y: 0.6 } }), 200);
+        setTimeout(() => confetti({ particleCount: 80, spread: 120, origin: { x: 0.9, y: 0.6 } }), 400);
+      }, 600);
+    }
+  }, []);
 
   // Re-fetch payment status counts when class filter changes
   useEffect(() => {

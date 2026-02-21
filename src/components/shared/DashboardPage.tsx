@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { BarChart, DonutChart } from '@/components/Charts';
+import confetti from 'canvas-confetti';
 import { apiClient } from '@/lib/api-client';
 import { useAnimatedNumber } from '@/hooks';
 import {
@@ -64,6 +65,18 @@ export function DashboardPage({ role }: DashboardPageProps) {
   const paymentStatusInitRef = useRef(true); // skip first useEffect fire (loadAcademyData already fetches it)
 
   useEffect(() => { loadData(); }, []);
+
+  // Confetti for new registrations
+  useEffect(() => {
+    if (sessionStorage.getItem('akademo_new_user')) {
+      sessionStorage.removeItem('akademo_new_user');
+      setTimeout(() => {
+        confetti({ particleCount: 180, spread: 100, origin: { y: 0.55 } });
+        setTimeout(() => confetti({ particleCount: 80, spread: 120, origin: { x: 0.1, y: 0.6 } }), 200);
+        setTimeout(() => confetti({ particleCount: 80, spread: 120, origin: { x: 0.9, y: 0.6 } }), 400);
+      }, 600);
+    }
+  }, []);
 
   useEffect(() => {
     if (isAdmin) {
