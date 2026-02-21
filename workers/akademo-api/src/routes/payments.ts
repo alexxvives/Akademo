@@ -850,6 +850,8 @@ payments.patch('/:id/approve-payment', async (c) => {
           p.id,
           p.status,
           p.classId,
+          p.payerId,
+          p.nextPaymentDue,
           c.academyId,
           a.ownerId
         FROM Payment p
@@ -884,6 +886,19 @@ payments.patch('/:id/approve-payment', async (c) => {
       `)
       .bind(newStatus, paymentId)
       .run();
+
+    // If approved, sync nextPaymentDue (and paymentFrequency) back to ClassEnrollment
+    if (approved && payment.payerId && payment.nextPaymentDue) {
+      await c.env.DB
+        .prepare(`
+          UPDATE ClassEnrollment
+          SET nextPaymentDue = ?,
+              paymentFrequency = 'MONTHLY'
+          WHERE userId = ? AND classId = ?
+        `)
+        .bind(payment.nextPaymentDue, payment.payerId, payment.classId)
+        .run();
+    }
 
     return c.json(successResponse({ message: approved ? 'Payment approved' : 'Payment rejected' }));
   } catch (error: any) {
