@@ -1043,14 +1043,52 @@ live.post('/:id/check-recording', async (c) => {
     });
 
 
+    // Get academy name for Bunny collection assignment
+    let bunnyCollectionId: string | undefined;
+    try {
+      const academyRow = await c.env.DB
+        .prepare('SELECT a.name FROM Academy a JOIN Class c ON c.academyId = a.id WHERE c.id = ?')
+        .bind((stream as any).classId)
+        .first() as any;
+
+      if (academyRow?.name) {
+        const collectionsRes = await fetch(
+          `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/collections?itemsPerPage=100`,
+          { headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY } }
+        );
+        if (collectionsRes.ok) {
+          const collectionsData = await collectionsRes.json() as any;
+          const existing = (collectionsData.items || []).find((col: any) => col.name === academyRow.name);
+          if (existing) {
+            bunnyCollectionId = existing.guid;
+          } else {
+            const createRes = await fetch(
+              `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/collections`,
+              {
+                method: 'POST',
+                headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: academyRow.name }),
+              }
+            );
+            if (createRes.ok) {
+              const createData = await createRes.json() as any;
+              bunnyCollectionId = createData.guid;
+            }
+          }
+        }
+      }
+    } catch (collectionError: any) {
+      console.error('[Check Recording] Failed to get/create Bunny collection:', collectionError.message);
+      // Continue without collection
+    }
+
     // Upload each segment to Bunny Stream
     const bunnyGuids: string[] = [];
     
     for (let i = 0; i < mp4Files.length; i++) {
       const mp4File = mp4Files[i];
-      const partSuffix = mp4Files.length > 1 ? ` - PARTE ${i + 1}` : '';
-      const videoTitle = `${stream.title || 'Zoom Recording'}${partSuffix}`;
-      
+      const partSuffix = mp4Files.length > 1 ? ` - Parte ${i + 1}` : '';
+      const videoTitle = `${(stream as any).title || 'Zoom Recording'}${partSuffix}`;
 
       // Prepare download URL safely using OAuth token
       const downloadUrl = await getZoomRecordingDownloadUrl(mp4File.download_url, zoomConfig);
@@ -1076,11 +1114,26 @@ live.post('/:id/check-recording', async (c) => {
       }
 
       const bunnyData = await bunnyResponse.json() as any;
-      
       const bunnyGuid = bunnyData.guid || bunnyData.id;
 
       if (bunnyGuid) {
         bunnyGuids.push(bunnyGuid);
+
+        // Apply academy collection if available
+        if (bunnyCollectionId) {
+          try {
+            await fetch(
+              `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/videos/${bunnyGuid}`,
+              {
+                method: 'POST',
+                headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ collectionId: bunnyCollectionId }),
+              }
+            );
+          } catch (patchErr: any) {
+            console.error('[Check Recording] Failed to set Bunny collection on video:', patchErr.message);
+          }
+        }
       } else {
         console.error(`[Check Recording] Bunny returned success but no GUID for segment ${i + 1}:`, bunnyData);
       }
@@ -1090,8 +1143,8 @@ live.post('/:id/check-recording', async (c) => {
       return c.json(errorResponse('Failed to upload any recording segments to Bunny'), 502);
     }
 
-    // Store all bunnyGuids as JSON array in recordingId field
-    const recordingIds = JSON.stringify(bunnyGuids);
+    // Store single guid as string, multiple as JSON array (consistent with webhook)
+    const recordingIds = bunnyGuids.length === 1 ? bunnyGuids[0] : JSON.stringify(bunnyGuids);
     
     // Update DB
     await c.env.DB

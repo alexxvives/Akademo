@@ -164,53 +164,126 @@ webhooks.post('/zoom', async (c) => {
 
           const recordingsData = await recordingsResponse.json() as any;
 
-          // Find the MP4 recording
-          const mp4Recording = recordingsData.recording_files?.find(
+          // Find ALL MP4 recording segments (handles pause/resume creating multiple files)
+          const mp4Recordings = (recordingsData.recording_files || []).filter(
             (file: any) => file.file_type === 'MP4' && file.recording_type === 'shared_screen_with_speaker_view'
           );
 
-          if (!mp4Recording) {
+          if (mp4Recordings.length === 0) {
             return c.json(successResponse({ received: true, error: 'No MP4 recording found' }));
           }
 
-          const downloadUrl = mp4Recording.download_url;
+          // Sort segments chronologically
+          mp4Recordings.sort((a: any, b: any) =>
+            new Date(a.recording_start || 0).getTime() - new Date(b.recording_start || 0).getTime()
+          );
 
-          // Upload to Bunny Stream using /fetch endpoint
-          const bunnyFetchUrl = `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/videos/fetch`;
-          const bunnyRequestBody = {
-            url: `${downloadUrl}?access_token=${accessToken}`,
-            title: stream.title || `Recording ${new Date().toLocaleDateString()}`,
-          };
-          
-          const bunnyFetchResponse = await fetch(bunnyFetchUrl, {
-            method: 'POST',
-            headers: {
-              'AccessKey': c.env.BUNNY_STREAM_API_KEY,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(bunnyRequestBody),
-          });
+          // Get academy name for Bunny collection assignment
+          let bunnyCollectionId: string | undefined;
+          try {
+            const academyRow = await c.env.DB
+              .prepare('SELECT a.name FROM Academy a JOIN Class c ON c.academyId = a.id WHERE c.id = ?')
+              .bind(streamWithClass.classId)
+              .first() as any;
 
-          if (!bunnyFetchResponse.ok) {
-            const errorText = await bunnyFetchResponse.text();
-            console.error('[Zoom Webhook] ❌ Bunny fetch failed:', bunnyFetchResponse.status, errorText);
-            return c.json(successResponse({ received: true, error: 'Bunny upload failed' }));
+            if (academyRow?.name) {
+              const collectionsRes = await fetch(
+                `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/collections?itemsPerPage=100`,
+                { headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY } }
+              );
+              if (collectionsRes.ok) {
+                const collectionsData = await collectionsRes.json() as any;
+                const existing = (collectionsData.items || []).find((col: any) => col.name === academyRow.name);
+                if (existing) {
+                  bunnyCollectionId = existing.guid;
+                } else {
+                  const createRes = await fetch(
+                    `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/collections`,
+                    {
+                      method: 'POST',
+                      headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY, 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ name: academyRow.name }),
+                    }
+                  );
+                  if (createRes.ok) {
+                    const createData = await createRes.json() as any;
+                    bunnyCollectionId = createData.guid;
+                  }
+                }
+              }
+            }
+          } catch (collectionError: any) {
+            console.error('[Zoom Webhook] Failed to get/create Bunny collection:', collectionError.message);
+            // Continue without collection
           }
 
-          const bunnyData = await bunnyFetchResponse.json() as any;
-          
-          // Bunny /fetch endpoint returns success=true and guid in response
-          const videoGuid = bunnyData.guid || bunnyData.videoGuid || bunnyData.id;
-          
-          if (!videoGuid) {
-            console.error('[Zoom Webhook] ❌ No GUID in Bunny response:', JSON.stringify(bunnyData));
-            return c.json(successResponse({ received: true, error: 'Bunny returned no GUID' }));
+          // Upload each segment to Bunny
+          const bunnyGuids: string[] = [];
+          for (let i = 0; i < mp4Recordings.length; i++) {
+            const mp4File = mp4Recordings[i];
+            const partSuffix = mp4Recordings.length > 1 ? ` - Parte ${i + 1}` : '';
+            const videoTitle = `${stream.title || `Recording ${new Date().toLocaleDateString()}`}${partSuffix}`;
+
+            const bunnyFetchResponse = await fetch(
+              `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/videos/fetch`,
+              {
+                method: 'POST',
+                headers: {
+                  'AccessKey': c.env.BUNNY_STREAM_API_KEY,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  url: `${mp4File.download_url}?access_token=${accessToken}`,
+                  title: videoTitle,
+                }),
+              }
+            );
+
+            if (!bunnyFetchResponse.ok) {
+              const errorText = await bunnyFetchResponse.text();
+              console.error(`[Zoom Webhook] ❌ Bunny fetch failed for segment ${i + 1}:`, bunnyFetchResponse.status, errorText);
+              continue;
+            }
+
+            const bunnyData = await bunnyFetchResponse.json() as any;
+            const videoGuid = bunnyData.guid || bunnyData.videoGuid || bunnyData.id;
+
+            if (!videoGuid) {
+              console.error(`[Zoom Webhook] ❌ No GUID in Bunny response for segment ${i + 1}:`, JSON.stringify(bunnyData));
+              continue;
+            }
+
+            bunnyGuids.push(videoGuid);
+
+            // Apply academy collection if available
+            if (bunnyCollectionId) {
+              try {
+                await fetch(
+                  `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/videos/${videoGuid}`,
+                  {
+                    method: 'POST',
+                    headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ collectionId: bunnyCollectionId }),
+                  }
+                );
+              } catch (patchErr: any) {
+                console.error('[Zoom Webhook] Failed to set Bunny collection on video:', patchErr.message);
+              }
+            }
           }
-          
+
+          if (bunnyGuids.length === 0) {
+            console.error('[Zoom Webhook] ❌ Failed to upload any recording segments');
+            return c.json(successResponse({ received: true, error: 'All Bunny uploads failed' }));
+          }
+
+          // Store single guid as string, multiple as JSON array
+          const recordingIds = bunnyGuids.length === 1 ? bunnyGuids[0] : JSON.stringify(bunnyGuids);
+
           // Update stream with recordingId
-          const updateResult = await c.env.DB
+          await c.env.DB
             .prepare('UPDATE LiveStream SET recordingId = ? WHERE id = ?')
-            .bind(videoGuid, stream.id)
+            .bind(recordingIds, stream.id)
             .run();
 
         } catch (error: any) {
