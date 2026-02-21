@@ -1677,7 +1677,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
           <>
             {/* Active/Scheduled Stream Banner - Shows scheduled, active, and ended streams */}
             {liveClasses.length > 0 && liveClasses[0].status !== 'recording_failed' && (
-              <div className="rounded-xl p-4 bg-gray-100 border-2 border-gray-200 shadow-sm">
+              <div className="relative group rounded-xl p-4 bg-gray-100 border-2 border-gray-200 shadow-sm">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <span className="relative flex h-3 w-3">
@@ -1790,20 +1790,18 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
                       </svg>
                       <span className="text-sm font-medium">Notificar</span>
                     </button>
-                    {/* Only show cancel for scheduled streams to prevent accidental deletion of active ones */}
-                    {liveClasses[0].status === 'scheduled' && (
-                    <button
-                      onClick={() => deleteLiveClass(liveClasses[0].id)}
-                      className="p-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
-                      title="Cancelar stream"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                    )}
                   </div>
                 </div>
+                {/* Delete stream - hover red X at top-right corner of the banner */}
+                <button
+                  onClick={() => deleteLiveClass(liveClasses[0].id)}
+                  className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full items-center justify-center shadow-md transition-all opacity-0 group-hover:opacity-100 flex"
+                  title="Eliminar stream"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
             )}
 

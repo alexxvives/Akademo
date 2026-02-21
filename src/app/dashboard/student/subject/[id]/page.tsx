@@ -505,33 +505,36 @@ export default function ClassPage() {
                 {classData.description && (
                   <p className="text-gray-600 text-base sm:text-lg max-w-3xl">{classData.description}</p>
                 )}
-              </div>
+              </div>              
+            </div>
 
-              {/* Live Stream Indicator - Top right, same position as teacher's stream button */}
-              {activeStream && (
-                <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-lg px-3 py-2 shadow-sm ml-4 flex-shrink-0">
-                  <div className="flex items-center gap-2">
-                    <span className="relative flex h-2.5 w-2.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
-                    </span>
-                    <span className="text-red-600 text-sm font-semibold">En Vivo</span>
-                  </div>
-                  <span className="text-gray-400">·</span>
-                  <span className="text-gray-600 text-sm">{activeStream.teacherName}</span>
-                  <a
-                    href={activeStream.zoomLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 bg-red-500 text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-red-600 transition-colors"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
-                    Unirse
-                  </a>
+            {/* Live Stream Indicator - Fixed top-right of the viewport */}
+            {activeStream && (
+              <div className="fixed top-4 right-4 z-50 flex items-center gap-3 bg-red-50 border border-red-200 rounded-lg px-3 py-2 shadow-lg">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                  </span>
+                  <span className="text-red-600 text-sm font-semibold">En Vivo</span>
                 </div>
-              )}
+                <span className="text-gray-400">·</span>
+                <span className="text-gray-600 text-sm">{activeStream.teacherName}</span>
+                <a
+                  href={activeStream.zoomLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 bg-red-500 text-white px-3 py-1.5 rounded-md text-sm font-semibold hover:bg-red-600 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  Unirse
+                </a>
+              </div>
+            )}
+
+            </div>
             </div>
           </>
         )}
