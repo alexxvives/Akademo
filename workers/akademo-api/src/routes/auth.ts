@@ -192,14 +192,14 @@ auth.post('/register', registerRateLimit, validateBody(registerSchema), async (c
       }
 
     } else if (role === 'STUDENT') {
-      // Student - optionally enroll in class with PENDING status if classId provided
+      // Student - auto-approve enrollment on registration (no manual approval needed)
       // If not provided, student can enroll later via /requests/student endpoint
       if (classId) {
         const enrollmentId = crypto.randomUUID();
         const now = new Date().toISOString();
         await c.env.DB
           .prepare('INSERT INTO ClassEnrollment (id, classId, userId, status, enrolledAt) VALUES (?, ?, ?, ?, ?)')
-          .bind(enrollmentId, classId, userId, 'PENDING', now)
+          .bind(enrollmentId, classId, userId, 'APPROVED', now)
           .run();
       }
     }
