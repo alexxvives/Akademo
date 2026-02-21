@@ -25,6 +25,7 @@ academies.get('/', async (c) => {
           COUNT(DISTINCT c.id) as classCount
         FROM Academy a
         LEFT JOIN Class c ON a.id = c.academyId
+        WHERE a.paymentStatus != 'NOT PAID'
         GROUP BY a.id
         ORDER BY a.name ASC
       `;

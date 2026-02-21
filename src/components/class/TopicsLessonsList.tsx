@@ -439,7 +439,7 @@ export default function TopicsLessonsList({
         }}
         className={`bg-[#1a1d29] rounded-xl overflow-hidden transition-all duration-300 group border shadow-sm ${
           glowLessonId === lesson.id
-            ? 'border-blue-400/50 shadow-[0_0_16px_rgba(96,165,250,0.2)]'
+            ? 'border-blue-400 ring-2 ring-blue-400/70 shadow-[0_0_24px_rgba(96,165,250,0.45)]'
             : 'border-gray-700'
         } ${
           lesson.isUploading

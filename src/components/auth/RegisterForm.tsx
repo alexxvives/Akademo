@@ -79,10 +79,10 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, onClose }: RegisterFo
         firstName,
         lastName,
         role: formData.role,
-        academyId: formData.academyId,
-        classId: formData.classId,
+        academyId: formData.academyId || undefined,
+        classId: formData.classId || undefined,
         classIds: formData.classIds,
-        academyName: formData.academyName,
+        academyName: formData.academyName || undefined,
         monoacademy: formData.monoacademy,
       };
 

@@ -1,12 +1,17 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 
 // Types
 interface ChartData {
   label: string;
   value: number;
   color?: string;
+}
+
+// Stable serialization for chart data to avoid re-animating on reference changes
+function serializeChartData(data: ChartData[]): string {
+  return data.map(d => `${d.label}:${d.value}:${d.color || ''}`).join('|');
 }
 
 interface LineChartData {
@@ -40,6 +45,60 @@ export function BarChart({
   title?: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const prevDataRef = useRef<string>('');
+  const animFrameRef = useRef<number>(0);
+
+  const drawBars = useCallback((ctx: CanvasRenderingContext2D, chartData: ChartData[], width: number, chartHeight: number, padding: number, barWidth: number, maxValue: number, animate: boolean) => {
+    const animationDuration = 1000;
+    const startTime = Date.now();
+
+    const draw = (progress: number) => {
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      ctx.clearRect(0, 0, width, chartHeight + 80);
+
+      chartData.forEach((item, index) => {
+        const targetHeight = (item.value / maxValue) * chartHeight;
+        const stagger = index * 0.1;
+        const staggeredProgress = Math.max(0, Math.min(1, (progress - stagger) / (1 - stagger)));
+        const animatedHeight = targetHeight * easeOut * (staggeredProgress > 0 ? 1 : 0);
+
+        const x = padding + index * (barWidth + 10);
+        const y = chartHeight - animatedHeight + 20;
+
+        ctx.fillStyle = item.color || COLORS[index % COLORS.length];
+        ctx.beginPath();
+        ctx.roundRect(x, y, barWidth, animatedHeight, 4);
+        ctx.fill();
+
+        if (showValues && animatedHeight > 10) {
+          ctx.fillStyle = '#374151';
+          ctx.font = '12px system-ui';
+          ctx.textAlign = 'center';
+          ctx.fillText(item.value.toString(), x + barWidth / 2, y - 8);
+        }
+
+        ctx.fillStyle = '#1F2937';
+        ctx.font = 'bold 18px system-ui';
+        ctx.textAlign = 'center';
+        ctx.fillText(item.label, x + barWidth / 2, chartHeight + 60);
+      });
+    };
+
+    if (!animate) {
+      draw(1);
+      return;
+    }
+
+    const animateFrame = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / animationDuration, 1);
+      draw(progress);
+      if (progress < 1) {
+        animFrameRef.current = requestAnimationFrame(animateFrame);
+      }
+    };
+    animateFrame();
+  }, [showValues]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -48,12 +107,16 @@ export function BarChart({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Validate data
-    if (!data || !Array.isArray(data) || data.length === 0) {
-      return;
-    }
+    if (!data || !Array.isArray(data) || data.length === 0) return;
 
-    // Set canvas size
+    // Check if data actually changed
+    const serialized = serializeChartData(data);
+    const dataChanged = serialized !== prevDataRef.current;
+    prevDataRef.current = serialized;
+
+    // Cancel any running animation
+    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+
     const dpr = window.devicePixelRatio || 1;
     const rect = canvas.getBoundingClientRect();
     canvas.width = rect.width * dpr;
@@ -61,64 +124,15 @@ export function BarChart({
     ctx.scale(dpr, dpr);
 
     const width = rect.width;
-    const chartHeight = rect.height - 80; // Increased space for labels (was 60)
+    const chartHeight = rect.height - 80;
     const padding = 40;
     const maxValue = Math.max(...data.map(d => d.value));
     const barWidth = (width - padding * 2) / data.length - 10;
 
-    // Clear canvas
-    ctx.clearRect(0, 0, width, rect.height);
+    drawBars(ctx, data, width, chartHeight, padding, barWidth, maxValue, dataChanged);
 
-    // Animation state
-    let animationProgress = 0;
-    const animationDuration = 1000; // ms
-    const startTime = Date.now();
-
-    const animate = () => {
-      const elapsed = Date.now() - startTime;
-      animationProgress = Math.min(elapsed / animationDuration, 1);
-      const easeOut = 1 - Math.pow(1 - animationProgress, 3); // cubic ease-out
-
-      ctx.clearRect(0, 0, width, rect.height);
-
-      // Draw bars with animation
-      data.forEach((item, index) => {
-        const targetHeight = (item.value / maxValue) * chartHeight;
-        const stagger = index * 0.1; // Stagger by 10% for each bar
-        const staggeredProgress = Math.max(0, Math.min(1, (animationProgress - stagger) / (1 - stagger)));
-        const animatedHeight = targetHeight * easeOut * (staggeredProgress > 0 ? 1 : 0);
-        
-        const x = padding + index * (barWidth + 10);
-        const y = chartHeight - animatedHeight + 20;
-
-        // Draw bar
-        ctx.fillStyle = item.color || COLORS[index % COLORS.length];
-        ctx.beginPath();
-        ctx.roundRect(x, y, barWidth, animatedHeight, 4);
-        ctx.fill();
-
-        // Draw value
-        if (showValues && animatedHeight > 10) {
-          ctx.fillStyle = '#374151';
-          ctx.font = '12px system-ui';
-          ctx.textAlign = 'center';
-          ctx.fillText(item.value.toString(), x + barWidth / 2, y - 8);
-        }
-
-        // Draw label (horizontal) with better styling and spacing
-        ctx.fillStyle = '#1F2937'; // Darker gray for better readability
-        ctx.font = 'bold 18px system-ui'; // Slightly smaller, cleaner font
-        ctx.textAlign = 'center';
-        ctx.fillText(item.label, x + barWidth / 2, chartHeight + 60); // More space from chart
-      });
-
-      if (animationProgress < 1) {
-        requestAnimationFrame(animate);
-      }
-    };
-
-    animate();
-  }, [data, showValues]);
+    return () => { if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current); };
+  }, [data, showValues, drawBars]);
 
   return (
     <div>
@@ -255,6 +269,8 @@ export function DonutChart({
   title?: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const prevDataRef = useRef<string>('');
+  const animFrameRef = useRef<number>(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -263,10 +279,15 @@ export function DonutChart({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Validate data
-    if (!data || !Array.isArray(data) || data.length === 0) {
-      return;
-    }
+    if (!data || !Array.isArray(data) || data.length === 0) return;
+
+    // Check if data actually changed
+    const serialized = serializeChartData(data);
+    const dataChanged = serialized !== prevDataRef.current;
+    prevDataRef.current = serialized;
+
+    // Cancel any running animation
+    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
 
     const dpr = window.devicePixelRatio || 1;
     canvas.width = size * dpr;
@@ -279,23 +300,20 @@ export function DonutChart({
     const innerRadius = radius * 0.6;
     const total = data.reduce((sum, item) => sum + item.value, 0);
 
-    // If total is 0, show a gray circle indicating no data
     if (total === 0) {
       ctx.clearRect(0, 0, size, size);
-      ctx.fillStyle = '#E5E7EB'; // gray-200
+      ctx.fillStyle = '#E5E7EB';
       ctx.beginPath();
       ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
       ctx.arc(centerX, centerY, innerRadius, 0, Math.PI * 2, true);
       ctx.closePath();
       ctx.fill();
       
-      // Draw center circle
       ctx.fillStyle = 'white';
       ctx.beginPath();
       ctx.arc(centerX, centerY, innerRadius, 0, Math.PI * 2);
       ctx.fill();
       
-      // Draw "0" in center
       ctx.fillStyle = '#6B7280';
       ctx.font = 'bold 24px system-ui';
       ctx.textAlign = 'center';
@@ -307,40 +325,27 @@ export function DonutChart({
       return;
     }
 
-    // Animation state
-    let animationProgress = 0;
-    const animationDuration = 1000; // ms
-    const startTime = Date.now();
-
-    const animate = () => {
-      const elapsed = Date.now() - startTime;
-      animationProgress = Math.min(elapsed / animationDuration, 1);
-      const easeOut = 1 - Math.pow(1 - animationProgress, 3); // cubic ease-out
-
+    const drawDonut = (progress: number) => {
+      const easeOut = 1 - Math.pow(1 - progress, 3);
       ctx.clearRect(0, 0, size, size);
 
       let currentAngle = -Math.PI / 2;
-
       data.forEach((item, index) => {
         const sliceAngle = (item.value / total) * Math.PI * 2 * easeOut;
-        
         ctx.fillStyle = item.color || COLORS[index % COLORS.length];
         ctx.beginPath();
         ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
         ctx.arc(centerX, centerY, innerRadius, currentAngle + sliceAngle, currentAngle, true);
         ctx.closePath();
         ctx.fill();
-
         currentAngle += sliceAngle;
       });
 
-      // Draw center circle
       ctx.fillStyle = 'white';
       ctx.beginPath();
       ctx.arc(centerX, centerY, innerRadius, 0, Math.PI * 2);
       ctx.fill();
 
-      // Draw animated total in center
       const animatedTotal = Math.round(total * easeOut);
       ctx.fillStyle = '#111827';
       ctx.font = 'bold 24px system-ui';
@@ -350,13 +355,26 @@ export function DonutChart({
       ctx.font = '12px system-ui';
       ctx.fillStyle = '#6B7280';
       ctx.fillText('Total', centerX, centerY + 20);
-
-      if (animationProgress < 1) {
-        requestAnimationFrame(animate);
-      }
     };
 
+    if (!dataChanged) {
+      drawDonut(1);
+      return;
+    }
+
+    const animationDuration = 1000;
+    const startTime = Date.now();
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / animationDuration, 1);
+      drawDonut(progress);
+      if (progress < 1) {
+        animFrameRef.current = requestAnimationFrame(animate);
+      }
+    };
     animate();
+
+    return () => { if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current); };
   }, [data, size]);
 
   return (
