@@ -65,20 +65,6 @@ export default function AcademyManagePage() {
     }
   };
 
-  const handleApproveReject = async (membershipId: string, status: 'APPROVED' | 'REJECTED') => {
-    try {
-      const response = await fetch(`/api/memberships/${membershipId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      });
-      const result = await response.json();
-      if (result.success) loadAcademy();
-      else alert(result.error || 'Failed to update membership');
-    } catch (error) {
-      alert('An error occurred');
-    }
-  };
 
   const handleCreateClass = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,9 +104,6 @@ export default function AcademyManagePage() {
     );
   }
 
-  const pendingMemberships = academy.memberships.filter((m) => m.status === 'PENDING');
-  const approvedMemberships = academy.memberships.filter((m) => m.status === 'APPROVED');
-
   return (
     <>
       <div className="max-w-5xl mx-auto space-y-8">
@@ -134,43 +117,10 @@ export default function AcademyManagePage() {
             {academy.description && <p className="text-gray-500 text-sm mt-1">{academy.description}</p>}
           </div>
           <div className="flex gap-4 text-sm text-gray-500">
-            <span>{approvedMemberships.length} members</span>
+            <span>{academy.memberships.length} members</span>
             <span>{academy.classes.length} classes</span>
           </div>
         </div>
-
-        {/* Pending Requests */}
-        {pendingMemberships.length > 0 && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-            <h3 className="font-semibold text-amber-900 mb-3">
-              {pendingMemberships.length} pending request{pendingMemberships.length > 1 ? 's' : ''}
-            </h3>
-            <div className="space-y-3">
-              {pendingMemberships.map((membership) => (
-                <div key={membership.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white rounded-lg p-3 border border-amber-100">
-                  <div>
-                    <p className="font-medium text-gray-900">{membership.user.firstName} {membership.user.lastName}</p>
-                    <p className="text-sm text-gray-500">{membership.user.email}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleApproveReject(membership.id, 'APPROVED')}
-                      className="px-3 py-1.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium text-sm"
-                    >
-                      Approve
-                    </button>
-                    <button
-                      onClick={() => handleApproveReject(membership.id, 'REJECTED')}
-                      className="px-3 py-1.5 text-gray-600 hover:text-gray-900 font-medium text-sm"
-                    >
-                      Reject
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Classes Section */}
         <div>
@@ -264,14 +214,14 @@ export default function AcademyManagePage() {
 
         {/* Members */}
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Members ({approvedMemberships.length})</h2>
-          {approvedMemberships.length === 0 ? (
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Members ({academy.memberships.length})</h2>
+          {academy.memberships.length === 0 ? (
             <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
               <p className="text-gray-500 text-sm">No members yet</p>
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {approvedMemberships.map((membership) => (
+              {academy.memberships.map((membership) => (
                 <div key={membership.id} className="bg-white rounded-xl border border-gray-200 p-4">
                   <p className="font-medium text-gray-900">{membership.user.firstName} {membership.user.lastName}</p>
                   <p className="text-sm text-gray-500">{membership.user.email}</p>

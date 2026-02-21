@@ -146,56 +146,5 @@ requests.get('/teacher', async (c) => {
   }
 });
 
-// POST /requests/teacher - Teacher requests to join an academy
-requests.post('/teacher', async (c) => {
-  try {
-    const session = await requireAuth(c);
-
-    if (session.role !== 'TEACHER') {
-      return c.json(errorResponse('Only teachers can request to join academies'), 403);
-    }
-
-    const { academyId } = await c.req.json();
-
-    if (!academyId) {
-      return c.json(errorResponse('academyId is required'), 400);
-    }
-
-    // Check if academy exists
-    const academy = await c.env.DB
-      .prepare('SELECT * FROM Academy WHERE id = ?')
-      .bind(academyId)
-      .first();
-
-    if (!academy) {
-      return c.json(errorResponse('Academy not found'), 404);
-    }
-
-    // Check if already a teacher in this academy
-    const existing = await c.env.DB
-      .prepare('SELECT * FROM Teacher WHERE userId = ? AND academyId = ?')
-      .bind(session.id, academyId)
-      .first();
-
-    if (existing) {
-      return c.json(errorResponse('Already a teacher in this academy'), 400);
-    }
-
-    // Create teacher record
-    const teacherId = crypto.randomUUID();
-    await c.env.DB
-      .prepare('INSERT INTO Teacher (id, userId, academyId) VALUES (?, ?, ?)')
-      .bind(teacherId, session.id, academyId)
-      .run();
-
-    return c.json(successResponse({ 
-      message: 'Successfully joined academy',
-      teacherId 
-    }));
-  } catch (error: any) {
-    console.error('[Teacher Request] Error:', error);
-    return c.json(errorResponse('Internal server error'), 500);
-  }
-});
 
 export default requests;

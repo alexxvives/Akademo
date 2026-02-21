@@ -101,11 +101,9 @@ auth.post('/register', registerRateLimit, validateBody(registerSchema), async (c
       return c.json(errorResponse('First name and last name are required'), 400);
     }
 
-    // Validate required fields based on role
-    // For STUDENT: academyId and classId are optional (can enroll later via /requests/student)
-    // For TEACHER: academyId and at least one class required
-    if (role === 'TEACHER' && (!academyId || classIds.length === 0)) {
-      return c.json(errorResponse('Academy and at least one class required for teachers'), 400);
+    // TEACHER self-registration is disabled — teachers are invited directly by academies
+    if (role === 'TEACHER') {
+      return c.json(errorResponse('Teachers must be invited directly by an academy'), 400);
     }
 
     // Check if user exists
@@ -169,25 +167,6 @@ auth.post('/register', registerRateLimit, validateBody(registerSchema), async (c
         await c.env.DB
           .prepare('INSERT INTO Teacher (id, userId, academyId, monoacademy, createdAt) VALUES (?, ?, ?, ?, ?)')
           .bind(teacherId, teacherUserId, newAcademyId, monoacademyFlag, now)
-          .run();
-      }
-
-    } else if (role === 'TEACHER') {
-      // Teacher - link to academy with PENDING status
-      const teacherId = crypto.randomUUID();
-      const now = new Date().toISOString();
-      await c.env.DB
-        .prepare('INSERT INTO Teacher (id, userId, academyId, status, createdAt) VALUES (?, ?, ?, ?, ?)')
-        .bind(teacherId, userId, academyId, 'PENDING', now)
-        .run();
-
-      // Enroll teacher in selected classes with PENDING status (awaiting academy approval)
-      for (const cId of classIds) {
-        const enrollmentId = crypto.randomUUID();
-        const now = new Date().toISOString();
-        await c.env.DB
-          .prepare('INSERT INTO ClassEnrollment (id, classId, userId, status, enrolledAt) VALUES (?, ?, ?, ?, ?)')
-          .bind(enrollmentId, cId, userId, 'PENDING', now)
           .run();
       }
 
