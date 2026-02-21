@@ -595,7 +595,7 @@ export function StreamsPage({ role }: StreamsPageProps) {
                               onClick={() =>
                                 (window.location.href = `${dashboardBase}/subject/${stream.classId}?${role === 'ADMIN' ? `action=create-lesson&recordingId=${stream.recordingId}&streamTitle=${encodeURIComponent(stream.title)}` : `createFromStream=${stream.id}`}`)
                               }
-                              className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors"
+                              className="p-1.5 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
                               title="Crear clase"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

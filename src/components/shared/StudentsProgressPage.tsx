@@ -218,8 +218,8 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
       let classBreakdown: ClassBreakdownItem[] | undefined;
       if (student.classes.length > 1) {
         classBreakdown = student.classes.map((cls, ci) => {
-          const maxClsVideos = Math.floor(totalVideos / student.classes.length + 2);
-          const clsVideos = maxClsVideos > 0 ? ((index * 3 + ci * 5 + 2) % maxClsVideos) : 0;
+          const clsMax = Math.floor(totalVideos / student.classes.length);
+          const clsVideos = clsMax > 0 ? ((index * 3 + ci * 5 + 2) % (clsMax + 1)) : 0;
           const clsTime = Math.floor(totalWatchTime / student.classes.length) + ((index * 137 + ci * 89) % 600);
           // For BEHIND students, mark their first class as BEHIND
           const classPaymentStatus: 'UP_TO_DATE' | 'BEHIND' = (isBehind && ci === 0) ? 'BEHIND' : 'UP_TO_DATE';
@@ -231,7 +231,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
             teacherName: student.perClassTeachers[ci] || DEMO_CLASS_TEACHER[student.classIds[ci]] || 'Carlos Rodríguez',
             totalWatchTime: clsTime,
             videosWatched: clsVideos,
-            totalVideos: Math.floor(totalVideos / student.classes.length),
+            totalVideos: clsMax,
             lastActive: student.lastLoginAt ?? null,
             paymentStatus: classPaymentStatus,
             monthsBehind: classMonthsBehind,

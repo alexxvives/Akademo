@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
-import { generateDemoTeachers, generateDemoClasses } from '@/lib/demo-data';
+import { generateDemoTeachers, generateDemoClasses, generateDemoPaymentHistory } from '@/lib/demo-data';
 import { SkeletonTeachers } from '@/components/ui/SkeletonLoader';
 import { AcademySearchDropdown } from '@/components/ui/AcademySearchDropdown';
 
@@ -94,19 +94,29 @@ export function TeachersPage({ role }: TeachersPageProps) {
           if (status === 'NOT PAID') {
             const demoTeachers = generateDemoTeachers();
             const demoClasses = generateDemoClasses();
+            const demoPayments = generateDemoPaymentHistory();
             setTeachers(
               demoTeachers.map((t) => {
+                const teacherFullName = `${t.firstName} ${t.lastName}`;
                 const teacherClasses = demoClasses
                   .filter((c) => c.teacherId === t.id)
                   .map((c) => ({ id: c.id, name: c.name, studentCount: c.studentCount }));
+                // Sum PAID payments for all classes belonging to this teacher (matched by classId)
+                const teacherClassIds = new Set(teacherClasses.map((c) => c.id));
+                const totalRevenue = Math.round(
+                  demoPayments
+                    .filter((p) => p.classId && teacherClassIds.has(p.classId) && p.paymentStatus === 'PAID')
+                    .reduce((sum, p) => sum + p.paymentAmount, 0) * 100
+                ) / 100;
                 return {
                   id: t.id,
-                  name: `${t.firstName} ${t.lastName}`,
+                  name: teacherFullName,
                   email: t.email,
                   classCount: teacherClasses.length,
                   studentCount: teacherClasses.reduce((sum, c) => sum + c.studentCount, 0),
                   classes: teacherClasses,
                   createdAt: new Date().toISOString(),
+                  totalRevenue,
                 };
               })
             );

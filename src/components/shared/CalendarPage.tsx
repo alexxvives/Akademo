@@ -66,20 +66,20 @@ function offsetDate(base: Date, days: number): string {
 
 function generateDemoEvents(today: Date): CalendarEvent[] {
   return [
-    { id: 'demo-l1', title: 'Álgebra Lineal — Matrices',       date: offsetDate(today, -10), type: 'lesson',          className: 'Matemáticas I', startTime: '09:00' },
-    { id: 'demo-l2', title: 'Cálculo diferencial',             date: offsetDate(today, -7),  type: 'lesson',          className: 'Matemáticas I', startTime: '10:30' },
-    { id: 'demo-s1', title: 'Repaso examen parcial',           date: offsetDate(today, -5),  type: 'stream',          className: 'Física General', extra: 'Duración: 67min', startTime: '16:00' },
-    { id: 'demo-a1', title: 'Entrega Práctica 1',              date: offsetDate(today, -3),  type: 'assignment',      className: 'Química Orgánica', startTime: '23:59' },
-    { id: 'demo-l3', title: 'Termodinámica — Entropía',        date: offsetDate(today, -2),  type: 'lesson',          className: 'Física General', startTime: '11:00' },
-    { id: 'demo-pc1', title: 'Clase presencial — Laboratorio', date: offsetDate(today, -1),  type: 'physicalClass',   className: 'Química Orgánica', manual: true, startTime: '14:00' },
-    { id: 'demo-l4', title: 'Vectores y espacios vectoriales', date: offsetDate(today, 0),   type: 'lesson',          className: 'Matemáticas I', startTime: '09:00' },
-    { id: 'demo-a2', title: 'Ejercicio semana 3',              date: offsetDate(today, 2),   type: 'assignment',      className: 'Física General', startTime: '23:59' },
-    { id: 'demo-ss1', title: 'Stream: Dudas parcial',          date: offsetDate(today, 3),   type: 'scheduledStream', className: 'Matemáticas I', manual: true, startTime: '18:00' },
-    { id: 'demo-l5', title: 'Reacciones electroquímicas',      date: offsetDate(today, 5),   type: 'lesson',          className: 'Química Orgánica', startTime: '10:00' },
-    { id: 'demo-pc2', title: 'Tutoría presencial',             date: offsetDate(today, 7),   type: 'physicalClass',   className: 'Física General', manual: true, startTime: '15:30' },
-    { id: 'demo-a3', title: 'Entrega Práctica 2',              date: offsetDate(today, 10),  type: 'assignment',      className: 'Química Orgánica', startTime: '23:59' },
-    { id: 'demo-l6', title: 'Integrales — Cambio de variable', date: offsetDate(today, 12),  type: 'lesson',          className: 'Matemáticas I', startTime: '09:00' },
-    { id: 'demo-ss2', title: 'Stream especial — Examen final', date: offsetDate(today, 14),  type: 'scheduledStream', className: 'Física General', manual: true, startTime: '17:00' },
+    { id: 'demo-l1', title: 'Álgebra Lineal — Matrices',       date: offsetDate(today, -10), type: 'lesson',          className: 'Matemáticas I',    classId: 'demo-c2', startTime: '09:00' },
+    { id: 'demo-l2', title: 'Cálculo diferencial',             date: offsetDate(today, -7),  type: 'lesson',          className: 'Matemáticas I',    classId: 'demo-c2', startTime: '10:30' },
+    { id: 'demo-s1', title: 'Repaso examen parcial',           date: offsetDate(today, -5),  type: 'stream',          className: 'Física General',   classId: 'demo-c4', extra: 'Duración: 67min', startTime: '16:00' },
+    { id: 'demo-a1', title: 'Entrega Práctica 1',              date: offsetDate(today, -3),  type: 'assignment',      className: 'Química Orgánica', classId: 'demo-c3', startTime: '23:59' },
+    { id: 'demo-l3', title: 'Termodinámica — Entropía',        date: offsetDate(today, -2),  type: 'lesson',          className: 'Física General',   classId: 'demo-c4', startTime: '11:00' },
+    { id: 'demo-pc1', title: 'Clase presencial — Laboratorio', date: offsetDate(today, -1),  type: 'physicalClass',   className: 'Química Orgánica', classId: 'demo-c3', manual: true, startTime: '14:00' },
+    { id: 'demo-l4', title: 'Vectores y espacios vectoriales', date: offsetDate(today, 0),   type: 'lesson',          className: 'Matemáticas I',    classId: 'demo-c2', startTime: '09:00' },
+    { id: 'demo-a2', title: 'Ejercicio semana 3',              date: offsetDate(today, 2),   type: 'assignment',      className: 'Física General',   classId: 'demo-c4', startTime: '23:59' },
+    { id: 'demo-ss1', title: 'Stream: Dudas parcial',          date: offsetDate(today, 3),   type: 'scheduledStream', className: 'Matemáticas I',    classId: 'demo-c2', manual: true, startTime: '18:00' },
+    { id: 'demo-l5', title: 'Reacciones electroquímicas',      date: offsetDate(today, 5),   type: 'lesson',          className: 'Química Orgánica', classId: 'demo-c3', startTime: '10:00' },
+    { id: 'demo-pc2', title: 'Tutoría presencial',             date: offsetDate(today, 7),   type: 'physicalClass',   className: 'Física General',   classId: 'demo-c4', manual: true, startTime: '15:30' },
+    { id: 'demo-a3', title: 'Entrega Práctica 2',              date: offsetDate(today, 10),  type: 'assignment',      className: 'Química Orgánica', classId: 'demo-c3', startTime: '23:59' },
+    { id: 'demo-l6', title: 'Integrales — Cambio de variable', date: offsetDate(today, 12),  type: 'lesson',          className: 'Matemáticas I',    classId: 'demo-c2', startTime: '09:00' },
+    { id: 'demo-ss2', title: 'Stream especial — Examen final', date: offsetDate(today, 14),  type: 'scheduledStream', className: 'Física General',   classId: 'demo-c4', manual: true, startTime: '17:00' },
   ];
 }
 
