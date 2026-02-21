@@ -80,7 +80,7 @@ export const loginRateLimit = rateLimit({
 
 export const registerRateLimit = rateLimit({
   windowMs: 3_600_000,   // 1 hour
-  maxRequests: 10,        // 10 registrations per hour per IP (generous for shared WiFi/NAT)
+  maxRequests: 20,        // 20 registrations per hour per IP
 });
 
 export const emailVerificationRateLimit = rateLimit({
