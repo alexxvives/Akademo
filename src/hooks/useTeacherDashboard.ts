@@ -321,6 +321,7 @@ export function useTeacherDashboard() {
     streamStats,
     classWatchTime,
     paymentStatusCounts,
+    setPaymentStatusCounts,
     loadData,
   };
 }

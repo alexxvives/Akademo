@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { apiClient } from '@/lib/api-client';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 import { CustomTimePicker } from '@/components/ui/CustomTimePicker';
@@ -110,10 +111,10 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
     }
   };
 
-  return (
-    <div className="fixed inset-0 m-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" style={{ top: 0, left: 0, right: 0, bottom: 0 }}>
+  return createPortal(
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" onClick={onClose}>
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h3 className="text-lg font-semibold text-gray-900">{isEditMode ? 'Editar evento' : 'Añadir evento'}</h3>
@@ -221,6 +222,7 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

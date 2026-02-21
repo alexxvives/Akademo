@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { SkeletonDashboard } from '@/components/ui/SkeletonLoader';
 import { useTeacherDashboard } from '@/hooks/useTeacherDashboard';
@@ -23,11 +23,31 @@ export default function TeacherDashboard() {
     streamStats,
     classWatchTime,
     paymentStatusCounts,
+    setPaymentStatusCounts,
     loadData,
   } = useTeacherDashboard();
 
   const [showBrowse, setShowBrowse] = useState(false);
   const [selectedClass, setSelectedClass] = useState('all');
+  const paymentInitRef = useRef(true); // skip first fire after initial load
+
+  // Re-fetch payment status counts when class filter changes
+  useEffect(() => {
+    if (paymentInitRef.current) { paymentInitRef.current = false; return; }
+    const url = selectedClass === 'all'
+      ? '/enrollments/payment-status'
+      : `/enrollments/payment-status?classId=${selectedClass}`;
+    apiClient(url).then(r => r.json()).then(result => {
+      if (result.success && result.data) {
+        setPaymentStatusCounts({
+          alDia: result.data.alDia || 0,
+          atrasados: result.data.atrasados || 0,
+          uniqueAlDia: result.data.uniqueAlDia || 0,
+          uniqueAtrasados: result.data.uniqueAtrasados || 0,
+        });
+      }
+    }).catch(() => {/* silent */});
+  }, [selectedClass, setPaymentStatusCounts]);
 
   const handleRequestMembership = async (academyId: string) => {
     try {

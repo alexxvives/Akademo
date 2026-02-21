@@ -72,16 +72,9 @@ export function DashboardChartsGrid({
               <span className="text-sm font-semibold text-gray-900">{avgLessonProgress}%</span>
             </div>
             <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-              <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${avgLessonProgress}%`, animation: 'slideIn 1s ease-out' }} />
+              <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${avgLessonProgress}%`, transition: 'width 1s ease-out' }} />
             </div>
           </div>
-          <style jsx>{`
-            @keyframes slideIn {
-              from {
-                width: 0;
-              }
-            }
-          `}</style>
           <div>
             <div className="flex justify-between mb-2">
               <span className="text-sm text-gray-600">Tiempo Total de Clases</span>
@@ -108,7 +101,7 @@ export function DashboardChartsGrid({
                   width: `${streamStats.total > 0 && filteredStudents.length > 0
                     ? Math.round((streamStats.avgParticipants / filteredStudents.length) * 100)
                     : 0}%`, 
-                  animation: 'slideIn 1s ease-out 0.1s backwards' 
+                  transition: 'width 1s ease-out' 
                 }} 
               />
             </div>
@@ -123,13 +116,6 @@ export function DashboardChartsGrid({
               </span>
             </div>
           </div>
-          <style jsx>{`
-            @keyframes slideIn {
-              from {
-                width: 0;
-              }
-            }
-          `}</style>
           {/* Tiempo de visualización total removed - needs proper tracking */}
         </div>
         ) : (

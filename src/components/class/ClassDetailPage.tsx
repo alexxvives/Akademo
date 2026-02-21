@@ -295,18 +295,13 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lessonParam, watchVideoId, lessons]);
 
-  // Handle ?highlight=lessonId from calendar redirect — expand the lesson's topic and glow the card
+  // Handle ?highlight=lessonId from calendar redirect — set highlightLessonId after lessons load
   useEffect(() => {
     if (!highlightParam || lessons.length === 0) return;
     const lesson = lessons.find(l => l.id === highlightParam);
     if (!lesson) return;
-    // Expand the topic this lesson belongs to
-    if (lesson.topicId) {
-      setExpandTopicId(lesson.topicId);
-    }
-    // Delay highlight so the topic expansion renders before we scroll/glow
-    const timer = setTimeout(() => setHighlightLessonId(highlightParam), 350);
-    return () => clearTimeout(timer);
+    // Set highlight directly — TopicsLessonsList will handle expand + glow
+    setHighlightLessonId(highlightParam);
   }, [highlightParam, lessons]);
 
   // Handle createFromStream param from streams table

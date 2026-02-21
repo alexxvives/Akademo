@@ -120,19 +120,33 @@ export default function TopicsLessonsList({
     }
   }, [expandTopicId]);
 
-  // Glow & scroll when highlightLessonId changes
+  // Glow & scroll when highlightLessonId changes — also expand the lesson's topic
   useEffect(() => {
     if (!highlightLessonId) return;
-    setGlowLessonId(highlightLessonId);
-    // Wait for topic to expand and render before scrolling
-    const scrollTimer = setTimeout(() => {
-      if (highlightCardRef.current) {
-        highlightCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    }, 400);
-    const clearTimer = setTimeout(() => setGlowLessonId(null), 3700);
-    return () => { clearTimeout(scrollTimer); clearTimeout(clearTimer); };
-  }, [highlightLessonId]);
+    // Find the lesson to get its topicId and expand that topic
+    const lesson = lessons.find(l => l.id === highlightLessonId);
+    if (lesson) {
+      const topicKey = lesson.topicId || 'uncategorized';
+      setExpandedTopics(prev => {
+        const newSet = new Set(prev);
+        newSet.add(topicKey);
+        return newSet;
+      });
+    }
+    // Delay glow + scroll so the topic expansion renders first
+    const glowTimer = setTimeout(() => {
+      setGlowLessonId(highlightLessonId);
+      // Scroll to the card after glow is set and rendered
+      const scrollTimer = setTimeout(() => {
+        if (highlightCardRef.current) {
+          highlightCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 200);
+      const clearTimer = setTimeout(() => setGlowLessonId(null), 3500);
+      return () => { clearTimeout(scrollTimer); clearTimeout(clearTimer); };
+    }, 350);
+    return () => clearTimeout(glowTimer);
+  }, [highlightLessonId, lessons]);
   
   // Student time management modal
   const [showTimeModal, setShowTimeModal] = useState(false);

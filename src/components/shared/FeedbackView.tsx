@@ -175,11 +175,18 @@ export function FeedbackView({
                   <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                     <h3 className="text-xl font-bold text-gray-900">{classItem.name}</h3>
                     {(classItem.university || classItem.carrera) && (
-                      <span className="text-xl text-gray-500 font-medium">
-                        {classItem.carrera && classItem.university
-                          ? `${classItem.carrera} (${classItem.university})`
-                          : classItem.carrera || classItem.university}
-                      </span>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {classItem.university && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                            {classItem.university}
+                          </span>
+                        )}
+                        {classItem.carrera && (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                            {classItem.carrera}
+                          </span>
+                        )}
+                      </div>
                     )}
                     {classUnreadCount > 0 && (
                       <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-red-100 text-red-800">

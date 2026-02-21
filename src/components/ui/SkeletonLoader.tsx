@@ -627,44 +627,51 @@ export function SkeletonFeedback() {
   return (
     <div className="space-y-6">
       {/* Class Filter */}
-      <div className="flex items-center gap-4">
-        <SkeletonBox className="h-10 w-64" /> {/* Class dropdown */}
+      <div className="flex justify-end">
+        <SkeletonBox className="h-10 w-56" />
       </div>
 
-      {/* Feedback Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="bg-white rounded-xl border border-gray-200 p-6">
-            <SkeletonBox className="h-4 w-32 mb-2" /> {/* Label */}
-            <SkeletonBox className="h-8 w-20" /> {/* Value */}
-          </div>
-        ))}
-      </div>
-
-      {/* Ratings List */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <SkeletonBox className="h-6 w-48" /> {/* Section title */}
-        </div>
-        <div className="divide-y divide-gray-200">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="p-6">
-              <div className="flex items-start gap-4">
-                <SkeletonBox className="h-10 w-10 rounded-full" /> {/* Avatar */}
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <SkeletonBox className="h-5 w-32" /> {/* Student name */}
-                    <SkeletonBox className="h-5 w-24" /> {/* Rating stars */}
-                  </div>
-                  <SkeletonBox className="h-4 w-48" /> {/* Lesson name */}
-                  <SkeletonBox className="h-4 w-full max-w-md" /> {/* Comment */}
-                  <SkeletonBox className="h-3 w-24" /> {/* Date */}
+      {/* Class feedback cards */}
+      {[1, 2].map((i) => (
+        <div key={i} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          {/* Class header */}
+          <div className="p-4 sm:p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <SkeletonBox className="h-6 w-48" />
+                  <SkeletonBox className="h-5 w-16 rounded-full" />
+                  <SkeletonBox className="h-5 w-20 rounded-full" />
                 </div>
+                <SkeletonBox className="h-4 w-32" />
+              </div>
+              <div className="sm:text-right space-y-1">
+                <div className="flex items-center gap-2">
+                  <SkeletonBox className="h-7 w-10" />
+                  <SkeletonBox className="h-4 w-24" />
+                </div>
+                <SkeletonBox className="h-4 w-28" />
               </div>
             </div>
-          ))}
+          </div>
+          {/* Topic rows */}
+          <div className="divide-y divide-gray-200">
+            {[1, 2, 3].map((j) => (
+              <div key={j} className="px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <SkeletonBox className="h-5 w-5 rounded" />
+                  <SkeletonBox className="h-5 w-36" />
+                </div>
+                <div className="flex items-center gap-4">
+                  <SkeletonBox className="h-5 w-10" />
+                  <SkeletonBox className="h-4 w-24" />
+                  <SkeletonBox className="h-4 w-28" />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      ))}
     </div>
   );
 }

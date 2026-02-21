@@ -366,7 +366,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
                 <span className="text-sm font-semibold text-gray-900">{avgLessonProgress}%</span>
               </div>
               <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${avgLessonProgress}%`, animation: 'slideIn 1s ease-out' }} />
+                <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${avgLessonProgress}%`, transition: 'width 1s ease-out' }} />
               </div>
             </div>
             <div>
@@ -383,7 +383,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
                 <span className="text-sm font-semibold text-gray-900">{attendancePct}%</span>
               </div>
               <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-                <div className="bg-purple-500 h-2 rounded-full" style={{ width: `${Math.min(100, attendancePct)}%`, animation: 'slideIn 1s ease-out 0.1s backwards' }} />
+                <div className="bg-purple-500 h-2 rounded-full" style={{ width: `${Math.min(100, attendancePct)}%`, transition: 'width 1s ease-out' }} />
               </div>
             </div>
             <div>
@@ -394,7 +394,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
                 </span>
               </div>
             </div>
-            <style jsx>{`@keyframes slideIn { from { width: 0; } }`}</style>
+
           </div>
         ) : (
           <EmptyState icon="chart" title="Sin datos de participación" subtitle="Espera a que los estudiantes se inscriban" />

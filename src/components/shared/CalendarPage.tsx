@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useState, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
@@ -189,6 +189,8 @@ export function CalendarPage({ role }: CalendarPageProps) {
   const [draggedEventId, setDraggedEventId] = useState<string | null>(null);
   const [dragOverDate, setDragOverDate] = useState<string | null>(null);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
+  const [scrollToTime, setScrollToTime] = useState<string | null>(null);
+  const dayViewScrollRef = useRef<HTMLDivElement>(null);
 
   const isStudent = role === 'STUDENT';
   const canCreateEvents = ['ACADEMY', 'TEACHER', 'ADMIN'].includes(role);
@@ -440,6 +442,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
       const eventDate = new Date(event.date + (event.date.includes('T') ? '' : 'T12:00:00'));
       setCurrentDate(eventDate);
       setViewMode('day');
+      setScrollToTime(event.startTime || null);
       return;
     }
     if (event.manual) {
@@ -457,6 +460,19 @@ export function CalendarPage({ role }: CalendarPageProps) {
       router.push(`/dashboard/${rolePrefix}/streams?highlight=${rawId}`);
     }
   }, [canCreateEvents, isDemo, rolePrefix, router, handleEditEvent]);
+
+  // Scroll day-view to the event's time slot after navigating
+  useEffect(() => {
+    if (viewMode !== 'day' || !scrollToTime || !dayViewScrollRef.current) return;
+    const [hStr, mStr] = scrollToTime.split(':');
+    const hour = parseInt(hStr, 10);
+    const min = parseInt(mStr || '0', 10);
+    const pixelOffset = (hour - WEEK_HOURS[0]) * 48 + (min / 60) * 48;
+    const containerHeight = dayViewScrollRef.current.clientHeight;
+    // Center the event time in the scroll container
+    dayViewScrollRef.current.scrollTop = Math.max(0, pixelOffset - containerHeight / 2);
+    setScrollToTime(null);
+  }, [viewMode, scrollToTime]);
 
   // ─── Filtered events ───
   const filteredEvents = useMemo(() => {
@@ -996,7 +1012,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
           )}
 
           {/* Time grid */}
-          <div className="overflow-y-auto" style={{ maxHeight: '504px' }}>
+          <div ref={dayViewScrollRef} className="overflow-y-auto" style={{ maxHeight: '504px' }}>
             <div className="flex">
               {/* Time labels */}
               <div className="flex-shrink-0 w-16">
