@@ -46,6 +46,7 @@ export function EmailPasswordSection({
           <input
             type="email"
             required
+            autoComplete="email"
             value={email}
             onChange={(e) => onEmailChange(e.target.value)}
             className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm transition-all"
@@ -59,6 +60,7 @@ export function EmailPasswordSection({
         <PasswordInput
           required
           minLength={8}
+          autoComplete="new-password"
           value={password}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => onPasswordChange(e.target.value)}
           className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm transition-all"

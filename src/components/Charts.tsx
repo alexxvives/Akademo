@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 
 // Types
 interface ChartData {
@@ -45,22 +45,41 @@ export function BarChart({
   title?: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const prevDataRef = useRef<string>('');
-  const animFrameRef = useRef<number>(0);
 
-  const drawBars = useCallback((ctx: CanvasRenderingContext2D, chartData: ChartData[], width: number, chartHeight: number, padding: number, barWidth: number, maxValue: number, animate: boolean) => {
-    const animationDuration = 1000;
-    const startTime = Date.now();
+  // Stabilize data reference — only changes when actual values change
+  const dataKey = serializeChartData(data || []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const stableData = useMemo(() => data, [dataKey]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    if (!stableData || !Array.isArray(stableData) || stableData.length === 0) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+
+    const width = rect.width;
+    const chartHeight = rect.height - 80;
+    const padding = 40;
+    const maxValue = Math.max(...stableData.map(d => d.value));
+    const barWidth = (width - padding * 2) / stableData.length - 10;
+
+    let animFrame = 0;
 
     const draw = (progress: number) => {
-      const easeOut = 1 - Math.pow(1 - progress, 3);
-      ctx.clearRect(0, 0, width, chartHeight + 80);
-
-      chartData.forEach((item, index) => {
-        const targetHeight = (item.value / maxValue) * chartHeight;
+      ctx.clearRect(0, 0, width, rect.height);
+      stableData.forEach((item, index) => {
+        // Per-bar staggered ease-out for smooth sequential reveal
         const stagger = index * 0.1;
         const staggeredProgress = Math.max(0, Math.min(1, (progress - stagger) / (1 - stagger)));
-        const animatedHeight = targetHeight * easeOut * (staggeredProgress > 0 ? 1 : 0);
+        const easeOut = 1 - Math.pow(1 - staggeredProgress, 3);
+        const animatedHeight = (item.value / maxValue) * chartHeight * easeOut;
 
         const x = padding + index * (barWidth + 10);
         const y = chartHeight - animatedHeight + 20;
@@ -84,55 +103,20 @@ export function BarChart({
       });
     };
 
-    if (!animate) {
-      draw(1);
-      return;
-    }
-
-    const animateFrame = () => {
+    const duration = 1000;
+    const startTime = Date.now();
+    const animate = () => {
       const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / animationDuration, 1);
+      const progress = Math.min(elapsed / duration, 1);
       draw(progress);
       if (progress < 1) {
-        animFrameRef.current = requestAnimationFrame(animateFrame);
+        animFrame = requestAnimationFrame(animate);
       }
     };
-    animateFrame();
-  }, [showValues]);
+    animate();
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    if (!data || !Array.isArray(data) || data.length === 0) return;
-
-    // Check if data actually changed
-    const serialized = serializeChartData(data);
-    const dataChanged = serialized !== prevDataRef.current;
-    prevDataRef.current = serialized;
-
-    // Cancel any running animation
-    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-
-    const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    ctx.scale(dpr, dpr);
-
-    const width = rect.width;
-    const chartHeight = rect.height - 80;
-    const padding = 40;
-    const maxValue = Math.max(...data.map(d => d.value));
-    const barWidth = (width - padding * 2) / data.length - 10;
-
-    drawBars(ctx, data, width, chartHeight, padding, barWidth, maxValue, dataChanged);
-
-    return () => { if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current); };
-  }, [data, showValues, drawBars]);
+    return () => { if (animFrame) cancelAnimationFrame(animFrame); };
+  }, [stableData, showValues]);
 
   return (
     <div>
@@ -269,25 +253,18 @@ export function DonutChart({
   title?: string;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const prevDataRef = useRef<string>('');
-  const animFrameRef = useRef<number>(0);
+
+  // Stabilize data reference — only changes when actual values change
+  const dataKey = serializeChartData(data || []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const stableData = useMemo(() => data, [dataKey]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-
-    if (!data || !Array.isArray(data) || data.length === 0) return;
-
-    // Check if data actually changed
-    const serialized = serializeChartData(data);
-    const dataChanged = serialized !== prevDataRef.current;
-    prevDataRef.current = serialized;
-
-    // Cancel any running animation
-    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    if (!stableData || !Array.isArray(stableData) || stableData.length === 0) return;
 
     const dpr = window.devicePixelRatio || 1;
     canvas.width = size * dpr;
@@ -298,7 +275,7 @@ export function DonutChart({
     const centerY = size / 2;
     const radius = size / 2 - 20;
     const innerRadius = radius * 0.6;
-    const total = data.reduce((sum, item) => sum + item.value, 0);
+    const total = stableData.reduce((sum, item) => sum + item.value, 0);
 
     if (total === 0) {
       ctx.clearRect(0, 0, size, size);
@@ -325,12 +302,14 @@ export function DonutChart({
       return;
     }
 
+    let animFrame = 0;
+
     const drawDonut = (progress: number) => {
       const easeOut = 1 - Math.pow(1 - progress, 3);
       ctx.clearRect(0, 0, size, size);
 
       let currentAngle = -Math.PI / 2;
-      data.forEach((item, index) => {
+      stableData.forEach((item, index) => {
         const sliceAngle = (item.value / total) * Math.PI * 2 * easeOut;
         ctx.fillStyle = item.color || COLORS[index % COLORS.length];
         ctx.beginPath();
@@ -357,25 +336,20 @@ export function DonutChart({
       ctx.fillText('Total', centerX, centerY + 20);
     };
 
-    if (!dataChanged) {
-      drawDonut(1);
-      return;
-    }
-
-    const animationDuration = 1000;
+    const duration = 1000;
     const startTime = Date.now();
     const animate = () => {
       const elapsed = Date.now() - startTime;
-      const progress = Math.min(elapsed / animationDuration, 1);
+      const progress = Math.min(elapsed / duration, 1);
       drawDonut(progress);
       if (progress < 1) {
-        animFrameRef.current = requestAnimationFrame(animate);
+        animFrame = requestAnimationFrame(animate);
       }
     };
     animate();
 
-    return () => { if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current); };
-  }, [data, size]);
+    return () => { if (animFrame) cancelAnimationFrame(animFrame); };
+  }, [stableData, size]);
 
   return (
     <div>

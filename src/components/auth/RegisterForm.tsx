@@ -76,14 +76,14 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, onClose }: RegisterFo
       const payload = {
         email: formData.email,
         password: formData.password,
-        firstName,
-        lastName,
+        firstName: firstName || undefined,
+        lastName: lastName || undefined,
         role: formData.role,
         academyId: formData.academyId || undefined,
         classId: formData.classId || undefined,
-        classIds: formData.classIds,
+        classIds: formData.classIds.length > 0 ? formData.classIds : undefined,
         academyName: formData.academyName || undefined,
-        monoacademy: formData.monoacademy,
+        monoacademy: formData.monoacademy || undefined,
       };
 
       const response = await apiClient('/auth/register', {
