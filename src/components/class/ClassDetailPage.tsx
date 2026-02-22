@@ -17,7 +17,7 @@ import { StyledSelect } from '@/components/ui/StyledSelect';
 
 // Import shared components
 import { ClassHeader, PendingEnrollments, TopicsLessonsList } from '@/components/class';
-import StudentsList from '@/components/class/StudentsList';
+
 
 interface Topic {
   id: string;
@@ -2355,10 +2355,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
               />
             )}
 
-            {/* Students - Suspicion tracking */}
-            {!selectedLesson && (
-              <StudentsList enrollments={classData.enrollments} />
-            )}
+
 
             {/* Reschedule Modal */}
             {showRescheduleModal && reschedulingLesson && (

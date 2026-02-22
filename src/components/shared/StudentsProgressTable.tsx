@@ -32,6 +32,7 @@ export interface StudentProgress {
   classBreakdown?: ClassBreakdownItem[];
   paymentStatus?: 'UP_TO_DATE' | 'BEHIND' | 'FREE';
   monthsBehind?: number;
+  suspicionCount?: number;
 }
 
 interface StudentsProgressTableProps {
@@ -233,6 +234,9 @@ export function StudentsProgressTable({
                 <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Pagos
                 </th>
+                <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Sospechas
+                </th>
                 {showBanButton && (
                   <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Acciones
@@ -243,7 +247,7 @@ export function StudentsProgressTable({
             <tbody className="divide-y divide-gray-200">
               {filteredStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={(showTeacherColumn ? 7 : 6) + (showBanButton ? 1 : 0)} className="py-12 text-center">
+                  <td colSpan={(showTeacherColumn ? 8 : 7) + (showBanButton ? 1 : 0)} className="py-12 text-center">
                     <svg className="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
@@ -257,7 +261,7 @@ export function StudentsProgressTable({
                 const activityStatus = getActivityStatus(student.lastActive);
                 const hasBreakdown = student.classBreakdown && student.classBreakdown.length > 1;
                 const isExpanded = expandedStudents.has(student.id);
-                const colCount = (showTeacherColumn ? 7 : 6) + (showBanButton ? 1 : 0);
+                const colCount = (showTeacherColumn ? 8 : 7) + (showBanButton ? 1 : 0);
                 return (
                   <React.Fragment key={`${student.id}-${student.classId}`}>
                     <tr
@@ -349,6 +353,18 @@ export function StudentsProgressTable({
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-400">
                             —
                           </span>
+                        )}
+                      </td>
+                      <td className="py-4 px-6">
+                        {(student.suspicionCount ?? 0) > 0 ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            {student.suspicionCount}
+                          </span>
+                        ) : (
+                          <span className="text-sm text-gray-400">—</span>
                         )}
                       </td>
                       {showBanButton && (

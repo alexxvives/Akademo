@@ -26,6 +26,7 @@ students.get('/progress', async (c) => {
           u.lastName,
           u.email,
           COALESCE(u.lastLoginAt, u.createdAt) as lastActive,
+          u.suspicionCount,
           c.name as className,
           c.id as classId,
           c.academyId,
@@ -56,7 +57,7 @@ students.get('/progress', async (c) => {
         LEFT JOIN Video v ON v.lessonId = l.id
         LEFT JOIN VideoPlayState vps ON vps.videoId = v.id AND vps.studentId = u.id
         LEFT JOIN LessonRating lr ON lr.studentId = u.id AND lr.lessonId = l.id
-        GROUP BY u.id, u.firstName, u.lastName, u.email, u.lastLoginAt, c.id, c.name, c.academyId, e.id, ut.firstName, ut.lastName
+        GROUP BY u.id, u.firstName, u.lastName, u.email, u.lastLoginAt, u.suspicionCount, c.id, c.name, c.academyId, e.id, ut.firstName, ut.lastName
         ORDER BY u.lastName, u.firstName, c.name
       `;
       params = [];
@@ -69,6 +70,7 @@ students.get('/progress', async (c) => {
           u.lastName,
           u.email,
           COALESCE(u.lastLoginAt, u.createdAt) as lastActive,
+          u.suspicionCount,
           c.name as className,
           c.id as classId,
           e.id as enrollmentId,
@@ -96,7 +98,7 @@ students.get('/progress', async (c) => {
         LEFT JOIN Video v ON v.lessonId = l.id
         LEFT JOIN VideoPlayState vps ON vps.videoId = v.id AND vps.studentId = u.id
         LEFT JOIN LessonRating lr ON lr.studentId = u.id AND lr.lessonId = l.id
-        GROUP BY u.id, u.firstName, u.lastName, u.email, u.lastLoginAt, c.id, c.name, e.id
+        GROUP BY u.id, u.firstName, u.lastName, u.email, u.lastLoginAt, u.suspicionCount, c.id, c.name, e.id
         ORDER BY u.lastName, u.firstName, c.name
       `;
       params = [session.id];
@@ -109,6 +111,7 @@ students.get('/progress', async (c) => {
           u.lastName,
           u.email,
           COALESCE(u.lastLoginAt, u.createdAt) as lastActive,
+          u.suspicionCount,
           c.name as className,
           c.id as classId,
           e.id as enrollmentId,
@@ -139,7 +142,7 @@ students.get('/progress', async (c) => {
         LEFT JOIN Video v ON v.lessonId = l.id
         LEFT JOIN VideoPlayState vps ON vps.videoId = v.id AND vps.studentId = u.id
         LEFT JOIN LessonRating lr ON lr.studentId = u.id AND lr.lessonId = l.id
-        GROUP BY u.id, u.firstName, u.lastName, u.email, u.lastLoginAt, c.id, c.name, e.id, ut.firstName, ut.lastName
+        GROUP BY u.id, u.firstName, u.lastName, u.email, u.lastLoginAt, u.suspicionCount, c.id, c.name, e.id, ut.firstName, ut.lastName
         ORDER BY u.lastName, u.firstName, c.name
       `;
       params = [session.id];

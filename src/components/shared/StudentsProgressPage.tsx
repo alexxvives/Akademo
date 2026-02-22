@@ -56,6 +56,7 @@ interface StudentProgressApiRecord {
   classStartDate?: string | null;
   enrolledAt?: string | null;
   totalPaid?: number | null;
+  suspicionCount?: number | null;
 }
 
 interface StudentProgressAggregate {
@@ -72,6 +73,7 @@ interface StudentProgressAggregate {
   lastActive?: string | null;
   enrollmentIds: string[];
   perClassRecords: ClassBreakdownItem[];
+  suspicionCount: number;
 }
 
 function computePaymentStatus(
@@ -327,6 +329,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
               lastActive: student.lastActive ?? undefined,
               enrollmentIds: student.enrollmentId ? [student.enrollmentId] : [],
               perClassRecords: [classRecord],
+              suspicionCount: student.suspicionCount ?? 0,
             });
           } else {
             // Add this class to existing student
@@ -383,6 +386,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
             classBreakdown: student.perClassRecords.length > 1 ? student.perClassRecords : undefined,
             paymentStatus: aggregatePaymentStatus,
             monthsBehind: totalMonthsBehind,
+            suspicionCount: student.suspicionCount,
           };
         });
         
