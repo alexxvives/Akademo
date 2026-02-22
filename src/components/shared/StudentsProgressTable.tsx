@@ -305,8 +305,7 @@ export function StudentsProgressTable({
                         </td>
                       )}
                       <td className="py-4 px-6">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-gray-900">{student.videosWatched} / {student.totalVideos}</span>
+                        <div className="flex flex-col gap-1">
                           <div className="flex-1 max-w-[100px]">
                             <div className="w-full bg-gray-200 rounded-full h-2">
                               <div
@@ -315,6 +314,7 @@ export function StudentsProgressTable({
                               />
                             </div>
                           </div>
+                          <span className="text-xs font-medium text-gray-500">{student.videosWatched} / {student.totalVideos}</span>
                         </div>
                       </td>
                       <td className="py-4 px-6">
@@ -413,8 +413,7 @@ export function StudentsProgressTable({
                             </td>
                           )}
                           <td className="py-3 px-6">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-medium text-gray-700">{cls.videosWatched} / {cls.totalVideos}</span>
+                            <div className="flex flex-col gap-1">
                               <div className="flex-1 max-w-[100px]">
                                 <div className="w-full bg-gray-200 rounded-full h-1.5">
                                   <div
@@ -423,6 +422,7 @@ export function StudentsProgressTable({
                                   />
                                 </div>
                               </div>
+                              <span className="text-xs font-medium text-gray-500">{cls.videosWatched} / {cls.totalVideos}</span>
                             </div>
                           </td>
                           <td className="py-3 px-6">
@@ -456,8 +456,12 @@ export function StudentsProgressTable({
                                 Atrasado{cls.monthsBehind && cls.monthsBehind > 1 ? ` (x${cls.monthsBehind})` : ''}
                               </span>
                             ) : (
-                              <span className="text-xs text-gray-400">€”</span>
+                              <span className="text-xs text-gray-400">—</span>
                             )}
+                          </td>
+                          <td className="py-3 px-6">
+                            {/* Sospechas placeholder for breakdown rows */}
+                            <span className="text-xs text-gray-400">—</span>
                           </td>
                           {showBanButton && (
                             <td className="py-3 px-6">

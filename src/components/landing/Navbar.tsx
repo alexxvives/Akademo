@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 
 interface NavbarTranslations {
   login: string;
@@ -22,7 +23,7 @@ export function Navbar({ t, isScrolled, lang, onLangChange, onOpenModal }: Navba
         <div className="mx-3 sm:mx-6 mt-3 sm:mt-4">
           <div className="max-w-6xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-lg bg-white/10 border border-white/20">
             <div className="flex justify-between items-center relative">
-              <div className="flex items-center gap-2">
+              <Link href="/" className="flex items-center gap-2">
                 <Image 
                   src="/logo/AKADEMO_logo_OTHER2.svg"
                   alt="AKADEMO" 
@@ -33,7 +34,7 @@ export function Navbar({ t, isScrolled, lang, onLangChange, onOpenModal }: Navba
                 <span className={`text-lg sm:text-xl font-bold transition-colors font-[family-name:var(--font-montserrat)] ${
                   isScrolled ? 'text-gray-900' : 'text-white'
                 }`}>AKADEMO</span>
-              </div>
+              </Link>
               
               <div className="flex items-center gap-1.5 sm:gap-3 justify-end">
                 <button

@@ -28,8 +28,6 @@ export function Footer({ t, lang }: FooterProps) {
           <div>
             <h4 className="font-semibold text-white mb-4">{lang === 'es' ? 'Producto' : 'Product'}</h4>
             <ul className="space-y-2">
-              <li><Link href="/features" className="text-gray-400 hover:text-white text-sm transition-colors">{lang === 'es' ? 'Características' : 'Features'}</Link></li>
-              <li><a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">{lang === 'es' ? 'Seguridad' : 'Security'}</a></li>
               <li><Link href="/pricing" className="text-gray-400 hover:text-white text-sm transition-colors">{lang === 'es' ? 'Precios' : 'Pricing'}</Link></li>
             </ul>
           </div>
@@ -38,8 +36,7 @@ export function Footer({ t, lang }: FooterProps) {
             <h4 className="font-semibold text-white mb-4">{lang === 'es' ? 'Compañía' : 'Company'}</h4>
             <ul className="space-y-2">
               <li><a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">{lang === 'es' ? 'Nosotros' : 'About'}</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">Blog</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">{lang === 'es' ? 'Contacto' : 'Contact'}</a></li>
+              <li><a href="#hablemos" className="text-gray-400 hover:text-white text-sm transition-colors">{lang === 'es' ? 'Contacto' : 'Contact'}</a></li>
             </ul>
           </div>
 

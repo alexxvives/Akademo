@@ -216,6 +216,10 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
       // Demo: assign 1-3 months behind for BEHIND students
       const demoMonthsBehind = isBehind ? (index % 3) + 1 : 0;
 
+      // Demo suspicion counts for a few students
+      const SUSPICION_INDICES: Record<number, number> = { 1: 3, 5: 1, 12: 2, 18: 5, 24: 1 };
+      const demoSuspicionCount = SUSPICION_INDICES[index] ?? 0;
+
       // Build per-class breakdown if student is in multiple classes
       let classBreakdown: ClassBreakdownItem[] | undefined;
       if (student.classes.length > 1) {
@@ -259,6 +263,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
         classBreakdown,
         paymentStatus: aggregateStatus,
         monthsBehind: demoMonthsBehind,
+        suspicionCount: demoSuspicionCount,
       };
     });
   }, []);
