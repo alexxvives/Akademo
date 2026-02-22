@@ -1,5 +1,6 @@
 interface AccountSharingSectionProps {
-  t: Record<string, string>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  t: Record<string, any>;
 }
 
 export function AccountSharingSection({ t }: AccountSharingSectionProps) {

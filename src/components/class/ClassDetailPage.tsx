@@ -1080,7 +1080,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
   };
 
   const handleDeleteLesson = async (lessonId: string) => {
-    if (!confirm('¿Eliminar esta clase? Se eliminarán todos los videos y documentos.')) return;
+    if (!confirm('¿Eliminar esta clase?\n\n⚠️ IMPORTANTE: Los videos de esta clase serán eliminados permanentemente de la plataforma y no podrán recuperarse.\n\n¿Estás seguro?')) return;
     try {
       const res = await apiClient(`/lessons/${lessonId}`, { method: 'DELETE' });
       const result = await res.json();

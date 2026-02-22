@@ -1,5 +1,6 @@
 interface WatermarkSectionProps {
-  t: Record<string, string>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  t: Record<string, any>;
 }
 
 export function WatermarkSection({ t }: WatermarkSectionProps) {
@@ -84,7 +85,8 @@ function VideoWatermarkDemo() {
   );
 }
 
-function WatermarkFeatureList({ t }: { t: Record<string, string> }) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function WatermarkFeatureList({ t }: { t: Record<string, any> }) {
   return (
     <div className="order-1 lg:order-2 space-y-8">
       <WatermarkFeature 

@@ -233,6 +233,15 @@ export default function DashboardLayout({
     }
   }, [academyPaymentStatus]);
 
+  // Listen for unread reviews change to immediately clear the valoraciones badge
+  useEffect(() => {
+    const handleUnreadReviewsChanged = () => {
+      loadUnreadValoraciones();
+    };
+    window.addEventListener('unreadReviewsChanged', handleUnreadReviewsChanged);
+    return () => window.removeEventListener('unreadReviewsChanged', handleUnreadReviewsChanged);
+  }, [loadUnreadValoraciones]);
+
   const handleLogout = useCallback(async () => {
     // Check if there's an active upload
     if (typeof window !== 'undefined' && (window as { akademoUploading?: boolean }).akademoUploading) {

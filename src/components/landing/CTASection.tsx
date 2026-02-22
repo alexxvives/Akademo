@@ -1,5 +1,6 @@
 interface CTASectionProps {
-  t: Record<string, string>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  t: Record<string, any>;
   onOpenModal: (mode: 'login' | 'register') => void;
 }
 

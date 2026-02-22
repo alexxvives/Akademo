@@ -166,24 +166,6 @@ export function CalculatorSection({ lang }: CalculatorSectionProps) {
                 <p className="text-zinc-500 text-xs mt-1">{isEs ? 'Ingresos Potenciales/Mes' : 'Potential Revenue/Mo'}</p>
               </div>
             </div>
-
-            {/* How you recover */}
-            <div className="bg-[#1d283a] border border-zinc-800 rounded-xl p-5">
-              <p className="text-sm font-semibold text-zinc-300 mb-3">{isEs ? 'Cómo Recuperas Ingresos' : 'How You Recover Revenue'}</p>
-              {[
-                { label: isEs ? 'Bloqueo de sesiones simultáneas' : 'Simultaneous session blocking', desc: isEs ? '1 cuenta = 1 dispositivo' : '1 account = 1 device' },
-                { label: isEs ? 'Detección de patrones sospechosos' : 'Suspicious pattern detection', desc: isEs ? 'IA identifica compartición' : 'AI identifies sharing' },
-                { label: isEs ? 'Marca de agua personalizada' : 'Custom watermark', desc: isEs ? 'Disuade redistribución' : 'Deters redistribution' },
-              ].map((item, i) => (
-                <div key={i} className="flex items-start gap-3 py-2 border-t border-zinc-800/50 first:border-0">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-sm text-zinc-200">{item.label}</p>
-                    <p className="text-xs text-zinc-500">{item.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </div>

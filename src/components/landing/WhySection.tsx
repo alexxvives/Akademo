@@ -1,5 +1,6 @@
 interface WhySectionProps {
-  t: Record<string, string>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  t: Record<string, any>;
 }
 
 export function WhySection({ t }: WhySectionProps) {
@@ -8,7 +9,9 @@ export function WhySection({ t }: WhySectionProps) {
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12 sm:mb-16 lg:mb-20">
           <h2 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 sm:mb-6 leading-tight px-2">
-            {t.whyTitle}
+            {t.whyTitle}{' '}
+            <span className="bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">{t.whyTitleHighlight}</span>{' '}
+            {t.whyTitleEnd}
           </h2>
           <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto px-2">
             {t.whySubtitle}
