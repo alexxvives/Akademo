@@ -7,10 +7,11 @@ import { ForgotPasswordForm } from './auth/ForgotPasswordForm';
 
 interface AuthModalProps {
   mode: 'login' | 'register';
+  defaultRole?: string;
   onClose: () => void;
 }
 
-export default function AuthModal({ mode, onClose }: AuthModalProps) {
+export default function AuthModal({ mode, defaultRole, onClose }: AuthModalProps) {
   const [view, setView] = useState<'login' | 'register' | 'forgot'>(mode);
 
   useEffect(() => {
@@ -60,6 +61,7 @@ export default function AuthModal({ mode, onClose }: AuthModalProps) {
             onSuccess={handleSuccess}
             onSwitchToLogin={switchToLogin}
             onClose={onClose}
+            defaultRole={defaultRole}
           />
         )}
         {view === 'forgot' && (

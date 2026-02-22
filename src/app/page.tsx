@@ -27,14 +27,18 @@ function HomePageContent() {
   const t = translations[lang];
 
   useEffect(() => {
-    const handleScroll = () => {
-      const heroHeight = window.innerHeight;
-      const scrollPosition = window.scrollY;
-      setIsScrolled(scrollPosition > heroHeight - 100);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            setIsScrolled(entry.target.getAttribute('data-section-dark') !== 'true');
+          }
+        });
+      },
+      { rootMargin: '-60px 0px -80% 0px', threshold: 0 }
+    );
+    document.querySelectorAll('[data-section-dark]').forEach(el => observer.observe(el));
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -47,8 +51,11 @@ function HomePageContent() {
     }
   }, [searchParams]);
 
-  const openModal = (mode: 'login' | 'register') => {
+  const [modalDefaultRole, setModalDefaultRole] = useState<string | undefined>();
+
+  const openModal = (mode: 'login' | 'register', defaultRole?: string) => {
     setModalMode(mode);
+    setModalDefaultRole(defaultRole);
     window.history.pushState({}, '', `/?modal=${mode}`);
     setShowModal(true);
   };
@@ -60,7 +67,7 @@ function HomePageContent() {
 
   return (
     <div className="min-h-screen bg-white">
-      {showModal && <AuthModal mode={modalMode} onClose={closeModal} />}
+      {showModal && <AuthModal mode={modalMode} defaultRole={modalDefaultRole} onClose={closeModal} />}
 
       <Navbar 
         t={t}
@@ -70,20 +77,33 @@ function HomePageContent() {
         onOpenModal={openModal}
       />
 
-      <Hero 
-        t={t}
-        isScrolled={isScrolled}
-        onOpenModal={openModal}
-      />
-
-      <WhySection t={t} />
-      <AccountSharingSection t={t} />
-      <ContentProtectionSection t={t} />
-      <WatermarkSection t={t} />
-      <ManagementSection t={t} />
-      <CalculatorSection lang={lang} />
-      <CTASection t={t} onOpenModal={openModal} />
-      <ContactSection lang={lang} />
+      <div data-section-dark="true">
+        <Hero t={t} isScrolled={isScrolled} onOpenModal={openModal} />
+      </div>
+      <div data-section-dark="false">
+        <WhySection t={t} />
+      </div>
+      <div data-section-dark="true">
+        <AccountSharingSection t={t} />
+      </div>
+      <div data-section-dark="false">
+        <ContentProtectionSection t={t} />
+      </div>
+      <div data-section-dark="true">
+        <WatermarkSection t={t} />
+      </div>
+      <div data-section-dark="false">
+        <ManagementSection t={t} />
+      </div>
+      <div data-section-dark="true">
+        <CalculatorSection lang={lang} />
+      </div>
+      <div data-section-dark="false">
+        <ContactSection lang={lang} />
+      </div>
+      <div data-section-dark="true">
+        <CTASection t={t} onOpenModal={openModal} />
+      </div>
 
       <Footer t={t} lang={lang} />
     </div>

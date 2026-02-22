@@ -41,8 +41,6 @@ export function CalculatorSection({ lang }: CalculatorSectionProps) {
   const recoveredStudents = Math.round(ghostStudents * recoveryRate);
   const monthlyRecovery = recoveredStudents * calcMonthlyFee;
   const annualRecovery = monthlyRecovery * 12;
-  const currentMonthlyRevenue = (calcStudents - ghostStudents) * calcMonthlyFee;
-  const newMonthlyRevenue = currentMonthlyRevenue + monthlyRecovery;
 
   const isEs = lang === 'es';
 
@@ -52,6 +50,9 @@ export function CalculatorSection({ lang }: CalculatorSectionProps) {
       <div className="relative max-w-7xl mx-auto">
         <div className="text-center mb-4">
           <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 rounded-full text-emerald-400 text-xs font-semibold uppercase tracking-wide border border-emerald-500/20">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
             {isEs ? 'CALCULADORA DE INGRESOS' : 'REVENUE CALCULATOR'}
           </span>
         </div>
@@ -154,16 +155,6 @@ export function CalculatorSection({ lang }: CalculatorSectionProps) {
                 <UsersIcon className="w-5 h-5 text-emerald-400 mx-auto mb-2" />
                 <p className="text-2xl font-bold text-emerald-400">+{recoveredStudents}</p>
                 <p className="text-gray-500 text-xs mt-1">{isEs ? 'Estudiantes Recuperados' : 'Recovered Students'}</p>
-              </div>
-              <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-5 text-center">
-                <DollarIcon className="w-5 h-5 text-gray-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-white">€{currentMonthlyRevenue.toLocaleString()}</p>
-                <p className="text-gray-500 text-xs mt-1">{isEs ? 'Ingresos Actuales/Mes' : 'Current Revenue/Mo'}</p>
-              </div>
-              <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-5 text-center">
-                <DollarIcon className="w-5 h-5 text-emerald-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-emerald-400">€{newMonthlyRevenue.toLocaleString()}</p>
-                <p className="text-gray-500 text-xs mt-1">{isEs ? 'Ingresos Potenciales/Mes' : 'Potential Revenue/Mo'}</p>
               </div>
             </div>
           </div>

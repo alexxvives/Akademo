@@ -77,7 +77,7 @@ function FeatureCard({ stat, statLabel, title, description, icon, gradient }: Fe
             {icon}
           </div>
           <div className="text-right">
-            <div className="text-2xl sm:text-3xl font-bold text-emerald-400">{stat}</div>
+            <div className="text-2xl sm:text-3xl font-bold text-white">{stat}</div>
             <div className="text-xs text-gray-400 mt-1">{statLabel}</div>
           </div>
         </div>

@@ -16,7 +16,7 @@ interface HeroTranslations {
 interface HeroProps {
   t: HeroTranslations;
   isScrolled: boolean;
-  onOpenModal: (mode: 'login' | 'register') => void;
+  onOpenModal: (mode: 'login' | 'register', defaultRole?: string) => void;
 }
 
 function CheckCircle({ className = '' }: { className?: string }) {
@@ -62,7 +62,7 @@ export function Hero({ t, isScrolled: _isScrolled, onOpenModal }: HeroProps) {
             </p>
             <div className="flex flex-col sm:flex-row gap-3 mb-10">
               <button
-                onClick={() => onOpenModal('register')}
+                onClick={() => onOpenModal('register', 'ACADEMY')}
                 className="px-8 py-3.5 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-medium rounded-lg hover:from-emerald-400 hover:to-cyan-400 transition-all text-sm sm:text-base text-center shadow-lg shadow-emerald-500/25"
               >
                 {t.startFree}

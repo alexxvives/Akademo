@@ -12,14 +12,15 @@ interface RegisterFormProps {
   onSuccess: (role: string) => void;
   onSwitchToLogin: () => void;
   onClose: () => void;
+  defaultRole?: string;
 }
 
-export function RegisterForm({ onSuccess, onSwitchToLogin, onClose }: RegisterFormProps) {
+export function RegisterForm({ onSuccess, onSwitchToLogin, onClose, defaultRole }: RegisterFormProps) {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     fullName: '',
-    role: 'STUDENT',
+    role: defaultRole || 'STUDENT',
     academyId: '',
     classId: '',
     classIds: [] as string[],
