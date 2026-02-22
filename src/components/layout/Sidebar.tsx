@@ -117,7 +117,7 @@ export function Sidebar({
   };
 
   return (
-    <aside className="hidden lg:flex flex-col bg-[#1a1d29] w-64 h-full">
+    <aside className="hidden lg:flex flex-col bg-[#1a1d29] w-[270px] h-full">
       {/* Logo */}
       <div className="flex-shrink-0 h-20 flex items-center justify-center px-4 gap-2">
         <Link href={`/dashboard/${role.toLowerCase()}`} className="flex items-center gap-2">

@@ -57,6 +57,8 @@ export function StudentsProgressTable({
   onBanStudent,
 }: StudentsProgressTableProps) {
   const [expandedStudents, setExpandedStudents] = useState<Set<string>>(new Set());
+  const [visibleColumns, setVisibleColumns] = useState({ pagos: false, sospechas: false, acciones: false });
+  const [columnDropdownOpen, setColumnDropdownOpen] = useState(false);
 
   const toggleExpand = (studentId: string) => {
     setExpandedStudents(prev => {
@@ -175,7 +177,7 @@ export function StudentsProgressTable({
                 }}
                 height={50}
               />
-              <YAxis stroke="#6b7280" />
+              <YAxis stroke="#6b7280" tickFormatter={(value: number) => value >= 3600 ? `${Math.round(value / 3600)}h` : value >= 60 ? `${Math.round(value / 60)}m` : `${value}s`} />
               <Tooltip
                 content={({ payload }) => {
                   if (payload && payload[0]) {
@@ -206,6 +208,32 @@ export function StudentsProgressTable({
           <p className="text-sm text-gray-600">
             Mostrando <span className="font-semibold">{filteredStudents.length}</span> {filteredStudents.length === 1 ? 'estudiante' : 'estudiantes'}
           </p>
+          <div className="relative">
+            <button
+              onClick={() => setColumnDropdownOpen(prev => !prev)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+              </svg>
+              Columnas
+            </button>
+            {columnDropdownOpen && (
+              <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1">
+                {(['pagos', 'sospechas', ...(showBanButton ? ['acciones'] : [])] as const).map((key) => (
+                  <label key={key} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={visibleColumns[key as keyof typeof visibleColumns]}
+                      onChange={(e) => setVisibleColumns(prev => ({ ...prev, [key]: e.target.checked }))}
+                      className="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <span className="text-sm text-gray-700 capitalize">{key.charAt(0).toUpperCase() + key.slice(1)}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
         <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
           <table className="w-full">
@@ -231,13 +259,17 @@ export function StudentsProgressTable({
                 <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Última Actividad
                 </th>
-                <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Pagos
-                </th>
-                <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Sospechas
-                </th>
-                {showBanButton && (
+                {visibleColumns.pagos && (
+                  <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Pagos
+                  </th>
+                )}
+                {visibleColumns.sospechas && (
+                  <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Sospechas
+                  </th>
+                )}
+                {showBanButton && visibleColumns.acciones && (
                   <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Acciones
                   </th>
@@ -247,7 +279,7 @@ export function StudentsProgressTable({
             <tbody className="divide-y divide-gray-200">
               {filteredStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={(showTeacherColumn ? 8 : 7) + (showBanButton ? 1 : 0)} className="py-12 text-center">
+                  <td colSpan={5 + (showTeacherColumn ? 1 : 0) + (visibleColumns.pagos ? 1 : 0) + (visibleColumns.sospechas ? 1 : 0) + (showBanButton && visibleColumns.acciones ? 1 : 0)} className="py-12 text-center">
                     <svg className="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
@@ -261,7 +293,7 @@ export function StudentsProgressTable({
                 const activityStatus = getActivityStatus(student.lastActive);
                 const hasBreakdown = student.classBreakdown && student.classBreakdown.length > 1;
                 const isExpanded = expandedStudents.has(student.id);
-                const colCount = (showTeacherColumn ? 8 : 7) + (showBanButton ? 1 : 0);
+                const colCount = 5 + (showTeacherColumn ? 1 : 0) + (visibleColumns.pagos ? 1 : 0) + (visibleColumns.sospechas ? 1 : 0) + (showBanButton && visibleColumns.acciones ? 1 : 0);
                 return (
                   <React.Fragment key={`${student.id}-${student.classId}`}>
                     <tr
@@ -336,6 +368,7 @@ export function StudentsProgressTable({
                           </span>
                         </div>
                       </td>
+                      {visibleColumns.pagos && (
                       <td className="py-4 px-6">
                         {student.paymentStatus === 'FREE' ? (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
@@ -355,6 +388,8 @@ export function StudentsProgressTable({
                           </span>
                         )}
                       </td>
+                      )}
+                      {visibleColumns.sospechas && (
                       <td className="py-4 px-6">
                         {(student.suspicionCount ?? 0) > 0 ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
@@ -367,7 +402,8 @@ export function StudentsProgressTable({
                           <span className="text-sm text-gray-400">—</span>
                         )}
                       </td>
-                      {showBanButton && (
+                      )}
+                      {showBanButton && visibleColumns.acciones && (
                         <td className="py-4 px-6">
                           {!hasBreakdown ? (
                             <button
@@ -442,6 +478,7 @@ export function StudentsProgressTable({
                                 : 'Sin actividad'}
                             </span>
                           </td>
+                          {visibleColumns.pagos && (
                           <td className="py-3 px-6">
                             {cls.paymentStatus === 'FREE' ? (
                               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
@@ -459,11 +496,14 @@ export function StudentsProgressTable({
                               <span className="text-xs text-gray-400">—</span>
                             )}
                           </td>
+                          )}
+                          {visibleColumns.sospechas && (
                           <td className="py-3 px-6">
                             {/* Sospechas placeholder for breakdown rows */}
                             <span className="text-xs text-gray-400">—</span>
                           </td>
-                          {showBanButton && (
+                          )}
+                          {showBanButton && visibleColumns.acciones && (
                             <td className="py-3 px-6">
                               {cls.enrollmentId && (
                                 <button
