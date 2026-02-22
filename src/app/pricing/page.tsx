@@ -9,7 +9,7 @@ type Lang = 'es' | 'en';
 
 const translations = {
   es: {
-    nav: { login: 'Iniciar Sesión', getStarted: 'Solicitar acceso' },
+    nav: { login: 'Iniciar Sesión', getStarted: 'Comenzar' },
     footer: {
       footerTagline: 'La plataforma de gestión académica diseñada para academias que se toman en serio su negocio.',
       footerRights: '© 2025 AKADEMO. Todos los derechos reservados.',
@@ -26,7 +26,7 @@ const translations = {
         price: '€499',
         period: '/mes',
         desc: 'Para academias que quieren proteger su contenido, gestionar estudiantes y escalar sin límites.',
-        cta: 'Solicitar acceso',
+        cta: 'Comenzar',
         ctaLink: '/',
         highlight: true,
         badge: 'Más popular',
@@ -111,14 +111,14 @@ const translations = {
     trust: {
       title: '¿Por qué academias eligen AKADEMO?',
       items: [
-        { icon: '🔒', title: 'Contenido protegido', desc: 'Tu material nunca se puede descargar ni compartir. BunnyCDN garantiza que solo tus alumnos vean tus clases.' },
-        { icon: '📊', title: 'Control total', desc: 'Gestiona pagos, asistencia, progreso y documentos desde un único dashboard centralizado.' },
-        { icon: '🛡️', title: 'Anti-fraude integrado', desc: 'Detección automática de suplantación de identidad para que cada alumno sea quien dice ser.' },
+        { title: 'Contenido protegido', desc: 'Tu material nunca se puede descargar ni compartir. BunnyCDN garantiza que solo tus alumnos vean tus clases.' },
+        { title: 'Control total', desc: 'Gestiona pagos, asistencia, progreso y documentos desde un único dashboard centralizado.' },
+        { title: 'Anti-fraude integrado', desc: 'Detección automática de suplantación de identidad para que cada alumno sea quien dice ser.' },
       ],
     },
   },
   en: {
-    nav: { login: 'Log In', getStarted: 'Request access' },
+    nav: { login: 'Log In', getStarted: 'Get started' },
     footer: {
       footerTagline: 'The academic management platform designed for academies that take their business seriously.',
       footerRights: '© 2025 AKADEMO. All rights reserved.',
@@ -135,7 +135,7 @@ const translations = {
         price: '€499',
         period: '/mo',
         desc: 'For academies that want to protect their content, manage students and scale without limits.',
-        cta: 'Request access',
+        cta: 'Get started',
         ctaLink: '/',
         highlight: true,
         badge: 'Most popular',
@@ -205,9 +205,9 @@ const translations = {
     trust: {
       title: 'Why academies choose AKADEMO?',
       items: [
-        { icon: '🔒', title: 'Protected content', desc: 'Your material can never be downloaded or shared. BunnyCDN ensures only your students watch your classes.' },
-        { icon: '📊', title: 'Full control', desc: 'Manage payments, attendance, progress and documents from a single centralized dashboard.' },
-        { icon: '🛡️', title: 'Built-in anti-fraud', desc: 'Automatic identity impersonation detection so every student is who they say they are.' },
+        { title: 'Protected content', desc: 'Your material can never be downloaded or shared. BunnyCDN ensures only your students watch your classes.' },
+        { title: 'Full control', desc: 'Manage payments, attendance, progress and documents from a single centralized dashboard.' },
+        { title: 'Built-in anti-fraud', desc: 'Automatic identity impersonation detection so every student is who they say they are.' },
       ],
     },
   },
@@ -318,7 +318,6 @@ export default function PricingPage() {
           <div className="grid sm:grid-cols-3 gap-6">
             {t.trust.items.map((item) => (
               <div key={item.title} className="bg-gray-900 border border-gray-800 rounded-2xl p-6 text-center">
-                <div className="text-4xl mb-4">{item.icon}</div>
                 <h3 className="text-base font-semibold text-white mb-2">{item.title}</h3>
                 <p className="text-sm text-gray-400 leading-relaxed">{item.desc}</p>
               </div>
@@ -360,7 +359,7 @@ export default function PricingPage() {
 
       {/* FAQ */}
       <section className="px-4 sm:px-6 pb-32">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           <h2 className="text-2xl sm:text-3xl font-bold text-white text-center mb-12">{t.faq.title}</h2>
           <div className="space-y-3">
             {t.faq.items.map((item, i) => (
@@ -397,13 +396,10 @@ export default function PricingPage() {
                 ? 'Únete a las academias que ya confían en AKADEMO para gestionar su negocio educativo.'
                 : 'Join the academies that already trust AKADEMO to manage their educational business.'}
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <div className="flex justify-center">
               <button onClick={() => openModal('register')} className="px-8 py-3.5 bg-white text-indigo-700 rounded-xl font-semibold hover:bg-gray-100 transition-colors shadow">
-                {lang === 'es' ? 'Solicitar acceso' : 'Request access'}
+                {lang === 'es' ? 'Comenzar' : 'Get started'}
               </button>
-              <a href="mailto:hola@akademo.es" className="px-8 py-3.5 bg-white/10 text-white rounded-xl font-semibold hover:bg-white/20 transition-colors border border-white/20">
-                {lang === 'es' ? 'Hablar con ventas' : 'Talk to sales'}
-              </a>
             </div>
           </div>
         </div>

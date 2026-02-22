@@ -339,6 +339,13 @@ auth.post('/login', loginRateLimit, validateBody(loginSchema), async (c) => {
       domain: '.akademo-edu.com', // Share cookie with frontend
     });
 
+    // Re-read suspicionCount in case it was just incremented by impossible travel
+    const freshUser = await c.env.DB
+      .prepare('SELECT suspicionCount FROM User WHERE id = ?')
+      .bind(user.id)
+      .first();
+    const currentSuspicionCount = (freshUser?.suspicionCount as number) || 0;
+
     return c.json(successResponse({
       token: sessionId, // Return signed token for cross-domain auth
       id: user.id,
@@ -346,6 +353,7 @@ auth.post('/login', loginRateLimit, validateBody(loginSchema), async (c) => {
       firstName: user.firstName,
       lastName: user.lastName,
       role: user.role,
+      suspicionCount: currentSuspicionCount,
     }));
   } catch (error: any) {
     console.error('[Login] Error:', error);

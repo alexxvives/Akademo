@@ -808,34 +808,41 @@ export function generateDemoPendingPayments(): DemoPayment[] {
   });
 
   // Only these 4 student indices are BEHIND — must match StudentsProgressPage BEHIND_INDICES
-  const BEHIND_INDICES = new Set([2, 7, 15, 22]);
+  // monthsBehind = (index % 3) + 1:  idx 2 → 3, idx 7 → 2, idx 15 → 1, idx 22 → 2
+  const BEHIND_INDICES: Record<number, number> = { 2: 3, 7: 2, 15: 1, 22: 2 };
 
   const baseDate = new Date('2026-02-05T00:00:00.000Z');
   const payments: DemoPayment[] = [];
   let paymentIdx = 0;
 
   const students = Array.from(studentMap.values());
+  const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000;
   for (let index = 0; index < students.length; index++) {
-    if (!BEHIND_INDICES.has(index)) continue;
+    if (!(index in BEHIND_INDICES)) continue;
     const student = students[index];
-    paymentIdx++;
+    const monthsBehind = BEHIND_INDICES[index];
     // For multi-class students, the pending payment is for their first class
     const cls = student.classes[0];
-    payments.push({
-      enrollmentId: `demo-payment-pending-${paymentIdx}`,
-      studentId: student.id,
-      studentFirstName: student.firstName,
-      studentLastName: student.lastName,
-      studentEmail: `${student.firstName.toLowerCase()}.${student.lastName.toLowerCase()}@demo.com`,
-      className: cls,
-      paymentAmount: CLASS_PRICES[cls] || 49.99,
-      currency: 'EUR',
-      paymentMethod: paymentIdx % 3 === 0 ? 'bizum' : 'cash',
-      paymentStatus: 'CASH_PENDING',
-      enrolledAt: new Date(baseDate.getTime() - paymentIdx * 3 * 24 * 60 * 60 * 1000).toISOString(),
-      createdAt: new Date(baseDate.getTime() - paymentIdx * 3 * 24 * 60 * 60 * 1000).toISOString(),
-      updatedAt: new Date(baseDate.getTime() - paymentIdx * 3 * 24 * 60 * 60 * 1000).toISOString(),
-    });
+    // Generate one pending payment per month behind
+    for (let m = 0; m < monthsBehind; m++) {
+      paymentIdx++;
+      const dueDate = new Date(baseDate.getTime() - (monthsBehind - m) * ONE_MONTH_MS);
+      payments.push({
+        enrollmentId: `demo-payment-pending-${paymentIdx}`,
+        studentId: student.id,
+        studentFirstName: student.firstName,
+        studentLastName: student.lastName,
+        studentEmail: `${student.firstName.toLowerCase()}.${student.lastName.toLowerCase()}@demo.com`,
+        className: cls,
+        paymentAmount: CLASS_PRICES[cls] || 49.99,
+        currency: 'EUR',
+        paymentMethod: paymentIdx % 3 === 0 ? 'bizum' : 'cash',
+        paymentStatus: 'CASH_PENDING',
+        enrolledAt: dueDate.toISOString(),
+        createdAt: dueDate.toISOString(),
+        updatedAt: dueDate.toISOString(),
+      });
+    }
   }
 
   return payments;

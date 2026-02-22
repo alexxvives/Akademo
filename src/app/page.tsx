@@ -105,6 +105,7 @@ function HomePageContent() {
         <CTASection t={t} onOpenModal={openModal} />
       </div>
 
+      <div className="h-px bg-gray-800" />
       <Footer t={t} lang={lang} />
     </div>
   );
