@@ -29,8 +29,11 @@ function CheckCircle({ className = '' }: { className?: string }) {
 
 export function Hero({ t, isScrolled: _isScrolled, onOpenModal }: HeroProps) {
   return (
-    <section className="relative min-h-[100dvh] flex flex-col justify-center pt-28 pb-16 sm:pt-36 sm:pb-24 px-4 sm:px-6 overflow-hidden bg-[#121a2d]">
-      <div className="absolute inset-x-0 top-0 h-[108%] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/15 via-transparent to-transparent" />
+    <section className="relative min-h-[100dvh] flex flex-col justify-center pt-28 pb-16 sm:pt-36 sm:pb-24 px-4 sm:px-6 overflow-hidden bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900">
+      <div className="absolute inset-0 opacity-10 pointer-events-none">
+        <div className="absolute top-20 left-10 w-96 h-96 bg-emerald-500 rounded-full blur-3xl" />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-cyan-500 rounded-full blur-3xl" />
+      </div>
       <div className="relative max-w-7xl mx-auto">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
           {/* Left: Copy */}

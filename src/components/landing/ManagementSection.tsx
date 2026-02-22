@@ -25,24 +25,28 @@ export function ManagementSection({ t }: ManagementSectionProps) {
         <div className="grid sm:grid-cols-2 gap-8">
           <ManagementCard 
             icon={<TeacherIcon />}
+            gradient="from-blue-500 to-cyan-500"
             title={t.managementFeature1}
             description={t.managementFeature1Desc}
             features={['Autonomía total', 'Control individual']}
           />
           <ManagementCard 
             icon={<StudentIcon />}
+            gradient="from-purple-500 to-pink-500"
             title={t.managementFeature2}
             description={t.managementFeature2Desc}
             features={['Inscripciones simples', 'Seguimiento completo']}
           />
           <ManagementCard 
             icon={<ClassIcon />}
+            gradient="from-green-500 to-emerald-500"
             title={t.managementFeature3}
             description={t.managementFeature3Desc}
             features={['Estructura flexible', 'Fácil organización']}
           />
           <ManagementCard 
             icon={<RolesIcon />}
+            gradient="from-orange-500 to-yellow-500"
             title={t.managementFeature4}
             description={t.managementFeature4Desc}
             features={['Permisos claros', 'Accesos definidos']}
@@ -55,17 +59,18 @@ export function ManagementSection({ t }: ManagementSectionProps) {
 
 interface ManagementCardProps {
   icon: React.ReactNode;
+  gradient: string;
   title: string;
   description: string;
   features: string[];
 }
 
-function ManagementCard({ icon, title, description, features }: ManagementCardProps) {
+function ManagementCard({ icon, gradient, title, description, features }: ManagementCardProps) {
   return (
     <div className="group relative">
       <div className="relative bg-white rounded-2xl p-8 border border-gray-200 hover:border-emerald-200 hover:shadow-lg transition-all">
         <div className="flex items-start gap-4 mb-6">
-          <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-xl flex items-center justify-center text-white shadow-lg flex-shrink-0">
+          <div className={`w-14 h-14 bg-gradient-to-br ${gradient} rounded-xl flex items-center justify-center text-white shadow-lg flex-shrink-0`}>
             {icon}
           </div>
           <div>

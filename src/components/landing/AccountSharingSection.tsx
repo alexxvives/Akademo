@@ -35,6 +35,7 @@ export function AccountSharingSection({ t }: AccountSharingSectionProps) {
             title={t.sharingFeature1}
             description={t.sharingFeature1Desc}
             icon={<SingleSessionIcon />}
+            gradient="from-blue-500 to-blue-600"
           />
           <FeatureCard 
             stat="<1s"
@@ -42,6 +43,7 @@ export function AccountSharingSection({ t }: AccountSharingSectionProps) {
             title={t.sharingFeature2}
             description={t.sharingFeature2Desc}
             icon={<DetectionIcon />}
+            gradient="from-purple-500 to-purple-600"
           />
           <FeatureCard 
             stat="24/7"
@@ -49,6 +51,7 @@ export function AccountSharingSection({ t }: AccountSharingSectionProps) {
             title={t.sharingFeature3}
             description={t.sharingFeature3Desc}
             icon={<AlertIcon />}
+            gradient="from-pink-500 to-rose-500"
           />
         </div>
       </div>
@@ -62,14 +65,15 @@ interface FeatureCardProps {
   title: string;
   description: string;
   icon: React.ReactNode;
+  gradient: string;
 }
 
-function FeatureCard({ stat, statLabel, title, description, icon }: FeatureCardProps) {
+function FeatureCard({ stat, statLabel, title, description, icon, gradient }: FeatureCardProps) {
   return (
     <div className="group h-full">
       <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 sm:p-8 border border-white/10 hover:border-emerald-500/30 transition-all hover:shadow-2xl hover:shadow-emerald-500/10 h-full flex flex-col">
         <div className="flex items-start justify-between mb-6">
-          <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+          <div className={`w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br ${gradient} rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
             {icon}
           </div>
           <div className="text-right">
