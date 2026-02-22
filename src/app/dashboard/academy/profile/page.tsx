@@ -46,6 +46,16 @@ interface Academy {
   hiddenMenuItems?: string;
 }
 
+interface AcademicYear {
+  id: string;
+  academyId: string;
+  name: string;
+  startDate: string;
+  endDate?: string | null;
+  isCurrent: number;
+  createdAt: string;
+}
+
 const WATERMARK_OPTIONS = [
   { value: 1, label: '1 minuto' },
   { value: 3, label: '3 minutos' },
@@ -71,6 +81,10 @@ export default function ProfilePage() {
   const [zoomAccounts, setZoomAccounts] = useState<ZoomAccount[]>([]);
   const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
+  const [showAcademicYearModal, setShowAcademicYearModal] = useState(false);
+  const [newYearData, setNewYearData] = useState({ name: '', startDate: '', endDate: '' });
+  const [creatingYear, setCreatingYear] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -92,15 +106,17 @@ export default function ProfilePage() {
 
   const loadData = useCallback(async () => {
     try {
-      const [academyRes, zoomRes, stripeRes] = await Promise.all([
+      const [academyRes, zoomRes, stripeRes, yearsRes] = await Promise.all([
         apiClient('/academies'),
         apiClient('/zoom-accounts'),
-        apiClient('/payments/stripe-status')
+        apiClient('/payments/stripe-status'),
+        apiClient('/academic-years'),
       ]);
 
       const academyResult = await academyRes.json();
       const zoomResult = await zoomRes.json();
       const stripeResult = await stripeRes.json();
+      const yearsResult = await yearsRes.json();
 
       if (academyResult.success && academyResult.data.length > 0) {
         const academyData = academyResult.data[0];
@@ -148,6 +164,41 @@ export default function ProfilePage() {
 
       if (stripeResult.success) {
         setStripeStatus(stripeResult.data);
+      }
+
+      if (yearsResult.success) {
+        setAcademicYears(yearsResult.data || []);
+      }
+
+      // Inject fake connected state for demo users
+      if (user?.email?.toLowerCase().includes('demo')) {
+        setStripeStatus({
+          connected: true,
+          charges_enabled: true,
+          details_submitted: true,
+          accountId: 'acct_1ABCdemoAkademo',
+          email: 'demo@akademo.io',
+        });
+        if (!zoomResult.data || zoomResult.data.length === 0) {
+          setZoomAccounts([{
+            id: 'zoom-demo-1',
+            accountName: 'Academia Demo',
+            accountId: 'demo_zoom_001',
+            createdAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
+            classes: [],
+          }]);
+        }
+        if (!yearsResult.data || yearsResult.data.length === 0) {
+          setAcademicYears([{
+            id: 'year-demo-1',
+            academyId: 'demo',
+            name: '2024-2025',
+            startDate: '2024-09-01',
+            endDate: '2025-06-30',
+            isCurrent: 1,
+            createdAt: new Date(Date.now() - 200 * 24 * 60 * 60 * 1000).toISOString(),
+          }]);
+        }
       }
     } catch (error) {
       console.error('Error loading profile:', error);
@@ -221,6 +272,35 @@ export default function ProfilePage() {
     } catch (error) {
       console.error('Error connecting Stripe:', error);
       alert('Error al conectar con Stripe');
+    }
+  };
+
+  const handleCreateAcademicYear = async () => {
+    if (!newYearData.name.trim() || !newYearData.startDate) return;
+    setCreatingYear(true);
+    try {
+      const res = await apiClient('/academic-years', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newYearData.name.trim(),
+          startDate: newYearData.startDate,
+          endDate: newYearData.endDate || null,
+        }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setAcademicYears(result.data || []);
+        setShowAcademicYearModal(false);
+        setNewYearData({ name: '', startDate: '', endDate: '' });
+      } else {
+        alert('Error al crear el año académico: ' + (result.error || 'Error desconocido'));
+      }
+    } catch (e) {
+      console.error('Error creating academic year:', e);
+      alert('Error de conexión al crear el año académico');
+    } finally {
+      setCreatingYear(false);
     }
   };
 
@@ -1238,6 +1318,128 @@ export default function ProfilePage() {
           )}
         </div>
       </div>
+
+      {/* Academic Year Card */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-12">
+        <div className="px-4 sm:px-8 py-4 sm:py-6 bg-gradient-to-r from-blue-600 to-cyan-600 text-white">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <h2 className="text-lg sm:text-xl font-semibold">Áño Académico</h2>
+              <p className="text-blue-100 mt-1">Gestiona los años académicos de tu academia</p>
+            </div>
+            <button
+              onClick={() => setShowAcademicYearModal(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white text-blue-700 rounded-lg font-medium text-sm hover:bg-blue-50 transition-colors shadow-sm"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Nuevo Año
+            </button>
+          </div>
+        </div>
+        <div className="px-4 sm:px-8 py-4 sm:py-6">
+          {academicYears.length === 0 ? (
+            <div className="text-center py-10">
+              <div className="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                <svg className="w-7 h-7 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <p className="text-gray-900 font-medium mb-1">No hay años académicos</p>
+              <p className="text-sm text-gray-500">Crea tu primer año académico para empezar a organizar tus cursos por período.</p>
+              <button
+                onClick={() => setShowAcademicYearModal(true)}
+                className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+              >
+                Crear primer año académico
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {academicYears.map((year) => (
+                <div key={year.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${year.isCurrent ? 'bg-green-500' : 'bg-gray-300'}`} />
+                    <div>
+                      <p className="font-semibold text-gray-900">{year.name}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {new Date(year.startDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        {year.endDate && ` \u2192 ${new Date(year.endDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}`}
+                      </p>
+                    </div>
+                  </div>
+                  {year.isCurrent === 1 && (
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Año actual</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Academic Year Modal */}
+      {showAcademicYearModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={(e) => { if (e.target === e.currentTarget) setShowAcademicYearModal(false); }}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">Nuevo Año Académico</h3>
+              <button onClick={() => setShowAcademicYearModal(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Nombre del año <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  placeholder="Ej: 2025-2026"
+                  value={newYearData.name}
+                  onChange={(e) => setNewYearData(p => ({ ...p, name: e.target.value }))}
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Fecha de inicio <span className="text-red-500">*</span></label>
+                <input
+                  type="date"
+                  value={newYearData.startDate}
+                  onChange={(e) => setNewYearData(p => ({ ...p, startDate: e.target.value }))}
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Fecha de fin <span className="text-gray-400 text-xs">(opcional)</span></label>
+                <input
+                  type="date"
+                  value={newYearData.endDate}
+                  onChange={(e) => setNewYearData(p => ({ ...p, endDate: e.target.value }))}
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-xs text-blue-700">Al crear un nuevo año académico, pasará a ser el año actual. Los años anteriores se archivarán automáticamente.</p>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowAcademicYearModal(false)}
+                className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleCreateAcademicYear}
+                disabled={!newYearData.name || !newYearData.startDate || creatingYear}
+                className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {creatingYear ? 'Creando...' : 'Crear año académico'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Password Change Card */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">

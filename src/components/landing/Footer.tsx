@@ -20,8 +20,9 @@ export function Footer({ t, lang }: FooterProps) {
       <div className="max-w-7xl mx-auto">
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
           <div>
-            <div className="mb-4">
-              <Image src="/logo/AKADEMO_logo_OTHER2.svg" alt="AKADEMO" width={140} height={36} className="h-8 w-auto brightness-0 invert" />
+            <div className="mb-4 flex items-center gap-2">
+              <Image src="/logo/AKADEMO_logo_OTHER2.svg" alt="AKADEMO" width={32} height={32} className="h-7 w-auto brightness-0 invert" />
+              <span className="font-bold text-white text-lg tracking-tight">AKADEMO</span>
             </div>
             <p className="text-gray-400 text-sm leading-relaxed">{t.footerTagline}</p>
           </div>

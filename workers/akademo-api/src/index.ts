@@ -28,6 +28,7 @@ import { zoomAccounts } from './routes/zoom-accounts';
 import assignmentsRoutes from './routes/assignments';
 import zoomRoutes from './routes/zoom';
 import calendarEventsRoutes from './routes/calendar-events';
+import academicYearsRoutes from './routes/academic-years';
 import { Bindings } from './types';
 
 import { requireAuth } from './lib/auth';
@@ -101,6 +102,7 @@ app.route('/webhooks', webhookRoutes);
 app.route('/zoom-accounts', zoomAccounts);
 app.route('/calendar-events', calendarEventsRoutes);
 app.route('/zoom', zoomRoutes);
+app.route('/academic-years', academicYearsRoutes);
 
 // GET /teacher/academy - Get teacher's academy with paymentStatus (for demo mode detection)
 app.get('/teacher/academy', async (c) => {

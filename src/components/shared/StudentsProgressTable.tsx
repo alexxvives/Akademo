@@ -57,8 +57,18 @@ export function StudentsProgressTable({
   onBanStudent,
 }: StudentsProgressTableProps) {
   const [expandedStudents, setExpandedStudents] = useState<Set<string>>(new Set());
-  const [visibleColumns, setVisibleColumns] = useState({ pagos: false, sospechas: false, acciones: false });
+  const [visibleColumns, setVisibleColumns] = useState({ asignatura: true, videosVistos: true, tiempoTotal: true, ultimaActividad: true, pagos: false, sospechas: false, acciones: false });
   const [columnDropdownOpen, setColumnDropdownOpen] = useState(false);
+
+  const COLUMN_LABELS: Record<string, string> = {
+    asignatura: 'Asignatura',
+    videosVistos: 'Videos Vistos',
+    tiempoTotal: 'Tiempo Total',
+    ultimaActividad: 'Última Actividad',
+    pagos: 'Pagos',
+    sospechas: 'Sospechas',
+    acciones: 'Acciones',
+  };
 
   const toggleExpand = (studentId: string) => {
     setExpandedStudents(prev => {
@@ -219,8 +229,8 @@ export function StudentsProgressTable({
               Columnas
             </button>
             {columnDropdownOpen && (
-              <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1">
-                {(['pagos', 'sospechas', ...(showBanButton ? ['acciones'] : [])] as const).map((key) => (
+              <div className="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1">
+                {(['asignatura', 'videosVistos', 'tiempoTotal', 'ultimaActividad', 'pagos', 'sospechas', ...(showBanButton ? ['acciones'] : [])] as const).map((key) => (
                   <label key={key} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer">
                     <input
                       type="checkbox"
@@ -228,7 +238,7 @@ export function StudentsProgressTable({
                       onChange={(e) => setVisibleColumns(prev => ({ ...prev, [key]: e.target.checked }))}
                       className="w-3.5 h-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                     />
-                    <span className="text-sm text-gray-700 capitalize">{key.charAt(0).toUpperCase() + key.slice(1)}</span>
+                    <span className="text-sm text-gray-700">{COLUMN_LABELS[key]}</span>
                   </label>
                 ))}
               </div>
@@ -242,23 +252,31 @@ export function StudentsProgressTable({
                 <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Estudiante
                 </th>
+                {visibleColumns.asignatura && (
                 <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Asignatura
                 </th>
+                )}
                 {showTeacherColumn && (
                   <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Profesor
                   </th>
                 )}
+                {visibleColumns.videosVistos && (
                 <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Videos Vistos
                 </th>
+                )}
+                {visibleColumns.tiempoTotal && (
                 <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Tiempo Total
                 </th>
+                )}
+                {visibleColumns.ultimaActividad && (
                 <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Última Actividad
                 </th>
+                )}
                 {visibleColumns.pagos && (
                   <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Pagos
@@ -279,7 +297,7 @@ export function StudentsProgressTable({
             <tbody className="divide-y divide-gray-200">
               {filteredStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={5 + (showTeacherColumn ? 1 : 0) + (visibleColumns.pagos ? 1 : 0) + (visibleColumns.sospechas ? 1 : 0) + (showBanButton && visibleColumns.acciones ? 1 : 0)} className="py-12 text-center">
+                  <td colSpan={1 + (visibleColumns.asignatura ? 1 : 0) + (showTeacherColumn ? 1 : 0) + (visibleColumns.videosVistos ? 1 : 0) + (visibleColumns.tiempoTotal ? 1 : 0) + (visibleColumns.ultimaActividad ? 1 : 0) + (visibleColumns.pagos ? 1 : 0) + (visibleColumns.sospechas ? 1 : 0) + (showBanButton && visibleColumns.acciones ? 1 : 0)} className="py-12 text-center">
                     <svg className="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
@@ -293,7 +311,7 @@ export function StudentsProgressTable({
                 const activityStatus = getActivityStatus(student.lastActive);
                 const hasBreakdown = student.classBreakdown && student.classBreakdown.length > 1;
                 const isExpanded = expandedStudents.has(student.id);
-                const colCount = 5 + (showTeacherColumn ? 1 : 0) + (visibleColumns.pagos ? 1 : 0) + (visibleColumns.sospechas ? 1 : 0) + (showBanButton && visibleColumns.acciones ? 1 : 0);
+                const colCount = 1 + (visibleColumns.asignatura ? 1 : 0) + (showTeacherColumn ? 1 : 0) + (visibleColumns.videosVistos ? 1 : 0) + (visibleColumns.tiempoTotal ? 1 : 0) + (visibleColumns.ultimaActividad ? 1 : 0) + (visibleColumns.pagos ? 1 : 0) + (visibleColumns.sospechas ? 1 : 0) + (showBanButton && visibleColumns.acciones ? 1 : 0);
                 return (
                   <React.Fragment key={`${student.id}-${student.classId}`}>
                     <tr
@@ -318,9 +336,11 @@ export function StudentsProgressTable({
                           </div>
                         </div>
                       </td>
+                      {visibleColumns.asignatura && (
                       <td className="py-4 px-6">
                         <span className="text-sm text-gray-900">{student.className}</span>
                       </td>
+                      )}
                       {showTeacherColumn && (
                         <td className="py-4 px-6">
                           {hasBreakdown ? (() => {
@@ -336,6 +356,7 @@ export function StudentsProgressTable({
                           )}
                         </td>
                       )}
+                      {visibleColumns.videosVistos && (
                       <td className="py-4 px-6">
                         <div className="flex flex-col gap-1">
                           <div className="flex-1 max-w-[100px]">
@@ -349,9 +370,13 @@ export function StudentsProgressTable({
                           <span className="text-xs font-medium text-gray-500">{student.videosWatched} / {student.totalVideos}</span>
                         </div>
                       </td>
+                      )}
+                      {visibleColumns.tiempoTotal && (
                       <td className="py-4 px-6">
                         <span className="text-sm text-gray-900">{formatTime(student.totalWatchTime)}</span>
                       </td>
+                      )}
+                      {visibleColumns.ultimaActividad && (
                       <td className="py-4 px-6">
                         <div className="flex items-center gap-2">
                           <span className={`text-sm font-medium ${activityStatus.textColor}`}>
@@ -368,6 +393,7 @@ export function StudentsProgressTable({
                           </span>
                         </div>
                       </td>
+                      )}
                       {visibleColumns.pagos && (
                       <td className="py-4 px-6">
                         {student.paymentStatus === 'FREE' ? (
@@ -440,14 +466,17 @@ export function StudentsProgressTable({
                               <span className="text-xs text-gray-500 italic">↳ detalle por asignatura</span>
                             </div>
                           </td>
+                          {visibleColumns.asignatura && (
                           <td className="py-3 px-6">
                             <span className="text-xs font-medium text-indigo-600">{cls.className}</span>
                           </td>
+                          )}
                           {showTeacherColumn && (
                             <td className="py-3 px-6">
                               <span className="text-xs text-gray-600">{cls.teacherName || '-'}</span>
                             </td>
                           )}
+                          {visibleColumns.videosVistos && (
                           <td className="py-3 px-6">
                             <div className="flex flex-col gap-1">
                               <div className="flex-1 max-w-[100px]">
@@ -461,9 +490,13 @@ export function StudentsProgressTable({
                               <span className="text-xs font-medium text-gray-500">{cls.videosWatched} / {cls.totalVideos}</span>
                             </div>
                           </td>
+                          )}
+                          {visibleColumns.tiempoTotal && (
                           <td className="py-3 px-6">
                             <span className="text-xs text-gray-600">{formatTime(cls.totalWatchTime)}</span>
                           </td>
+                          )}
+                          {visibleColumns.ultimaActividad && (
                           <td className="py-3 px-6">
                             <span className={`text-xs ${clsActivity.textColor}`}>
                               {cls.lastActive
@@ -478,6 +511,7 @@ export function StudentsProgressTable({
                                 : 'Sin actividad'}
                             </span>
                           </td>
+                          )}
                           {visibleColumns.pagos && (
                           <td className="py-3 px-6">
                             {cls.paymentStatus === 'FREE' ? (
