@@ -322,19 +322,34 @@ classes.get('/:id', async (c) => {
       hasAccess = true; // Allow students to see class details
       try {
         const enrollment = await c.env.DB.prepare(`
-          SELECT id, status, documentSigned, enrolledAt
-          FROM ClassEnrollment 
-          WHERE userId = ? AND classId = ?
-        `).bind(session.id, classRecord.id).first();
+          SELECT id, status, documentSigned, enrolledAt, paymentFrequency,
+            (SELECT nextPaymentDue FROM Payment 
+             WHERE payerId = ? AND classId = ce.classId AND type = 'STUDENT_TO_ACADEMY' AND status = 'PAID'
+             ORDER BY createdAt DESC LIMIT 1) as nextPaymentDue
+          FROM ClassEnrollment ce
+          WHERE ce.userId = ? AND ce.classId = ?
+        `).bind(session.id, session.id, classRecord.id).first();
         
         if (enrollment) {
           // Student is enrolled - add enrollment status
           (classRecord as any).isEnrolled = true;
           (classRecord as any).enrollmentStatus = enrollment.status;
           (classRecord as any).documentSigned = enrollment.documentSigned;
+          (classRecord as any).paymentFrequency = enrollment.paymentFrequency;
+          (classRecord as any).nextPaymentDue = enrollment.nextPaymentDue;
+          // Calculate if student is behind on payments (monthly only)
+          if (enrollment.paymentFrequency === 'MONTHLY' && (classRecord as any).monthlyPrice > 0) {
+            const isAccessLocked = enrollment.nextPaymentDue
+              ? new Date(enrollment.nextPaymentDue) < new Date()
+              : false;
+            (classRecord as any).accessLocked = isAccessLocked;
+          } else {
+            (classRecord as any).accessLocked = false;
+          }
         } else {
           // Student is not enrolled - mark as such
           (classRecord as any).isEnrolled = false;
+          (classRecord as any).accessLocked = false;
         }
       } catch (enrollError: unknown) {
         console.error('[Classes/:id] Enrollment check error:', enrollError);

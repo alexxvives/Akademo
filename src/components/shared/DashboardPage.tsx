@@ -56,7 +56,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
   const [academyInfo, setAcademyInfo] = useState<{ id: string; name: string; paymentStatus?: string } | null>(null);
   const [paymentStatus, setPaymentStatus] = useState('NOT PAID');
   const [allCompletedPayments, setAllCompletedPayments] = useState<PaymentHistoryItem[]>([]);
-  const [studentPaymentStatus, setStudentPaymentStatus] = useState<{ alDia: number; atrasados: number; total: number; uniqueAlDia?: number; uniqueAtrasados?: number; uniqueTotal?: number } | null>(null);
+  const [studentPaymentStatus, setStudentPaymentStatus] = useState<{ alDia: number; atrasados: number; total: number; uniqueAlDia?: number; uniqueAtrasados?: number; uniqueTotal?: number }>({ alDia: 0, atrasados: 0, total: 0, uniqueAlDia: 0, uniqueAtrasados: 0, uniqueTotal: 0 });
 
   // Admin-only state
   const [academies, setAcademies] = useState<Academy[]>([]);
@@ -267,7 +267,6 @@ export function DashboardPage({ role }: DashboardPageProps) {
 
   // For demo academies: scale al día/atrasados proportionally when a class filter is applied
   const displayedPaymentStatus = useMemo(() => {
-    if (!studentPaymentStatus) return null;
     // For PAID academies, the re-fetch useEffect supplies exact numbers — use as-is
     if (paymentStatus !== 'NOT PAID') return studentPaymentStatus;
     // Demo mode: scale proportionally by filteredStudents / enrolledStudents
@@ -442,7 +441,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
                 <AnimatedNumber value={uniqueStudentCount} className="text-3xl sm:text-4xl font-bold text-gray-900" />
                 <div className="text-xs text-gray-500">Estudiantes</div>
               </div>
-              {studentPaymentStatus && (studentPaymentStatus.uniqueAlDia != null || studentPaymentStatus.uniqueAtrasados != null) && (
+              {((studentPaymentStatus.uniqueAlDia ?? 0) > 0 || (studentPaymentStatus.uniqueAtrasados ?? 0) > 0 || loading) && (
                 <div className="flex-1 ml-2 pl-2 border-l border-gray-200 space-y-1.5">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs text-gray-500">al día</span>
@@ -461,7 +460,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
                 <AnimatedNumber value={filteredStudents.length} className="text-3xl sm:text-4xl font-bold text-gray-900" />
                 <div className="text-xs text-gray-500">Matrículas</div>
               </div>
-              {studentPaymentStatus && (
+              {(studentPaymentStatus.total > 0 || loading) && (
                 <div className="flex-1 ml-2 pl-2 border-l border-gray-200 space-y-1.5">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs text-gray-500">al día</span>

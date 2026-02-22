@@ -437,20 +437,19 @@ export function CalendarPage({ role }: CalendarPageProps) {
 
   // Navigate to the relevant page when clicking a non-manual event
   const handleEventClick = useCallback((event: CalendarEvent) => {
-    // Student role: clicking an event navigates to day view of that event's date
-    if (isStudent) {
-      const eventDate = new Date(event.date + (event.date.includes('T') ? '' : 'T12:00:00'));
-      setCurrentDate(eventDate);
-      setViewMode('day');
-      setScrollToTime(event.startTime || null);
-      return;
-    }
     if (event.manual) {
-      // physicalClass / scheduledStream → open edit popup
-      if (canCreateEvents && !isDemo) handleEditEvent(event);
+      // physicalClass / scheduledStream manual events — students navigate to day view; others open edit popup
+      if (isStudent) {
+        const eventDate = new Date(event.date + (event.date.includes('T') ? '' : 'T12:00:00'));
+        setCurrentDate(eventDate);
+        setViewMode('day');
+        setScrollToTime(event.startTime || null);
+      } else if (canCreateEvents && !isDemo) {
+        handleEditEvent(event);
+      }
       return;
     }
-    // Strip type prefix to get the raw entity ID for highlight
+    // Strip type prefix to get the raw entity ID for highlight — works for all roles including students
     const rawId = event.id.replace(/^(lesson|stream|assignment|manual)-/, '');
     if (event.type === 'lesson' && event.classId) {
       router.push(`/dashboard/${rolePrefix}/subject/${event.classId}?highlight=${rawId}`);
@@ -459,7 +458,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
     } else if (event.type === 'stream' || event.type === 'scheduledStream') {
       router.push(`/dashboard/${rolePrefix}/streams?highlight=${rawId}`);
     }
-  }, [canCreateEvents, isDemo, rolePrefix, router, handleEditEvent]);
+  }, [isStudent, canCreateEvents, isDemo, rolePrefix, router, handleEditEvent]);
 
   // Scroll day-view to the event's time slot after navigating
   useEffect(() => {

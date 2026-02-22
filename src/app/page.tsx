@@ -11,6 +11,7 @@ import { AccountSharingSection } from '@/components/landing/AccountSharingSectio
 import { ContentProtectionSection } from '@/components/landing/ContentProtectionSection';
 import { WatermarkSection } from '@/components/landing/WatermarkSection';
 import { ManagementSection } from '@/components/landing/ManagementSection';
+import { CalculatorSection } from '@/components/landing/CalculatorSection';
 import { CTASection } from '@/components/landing/CTASection';
 import { ContactSection } from '@/components/landing/ContactSection';
 import { Footer } from '@/components/landing/Footer';
@@ -80,6 +81,7 @@ function HomePageContent() {
       <ContentProtectionSection t={t} />
       <WatermarkSection t={t} />
       <ManagementSection t={t} />
+      <CalculatorSection lang={lang} />
       <CTASection t={t} onOpenModal={openModal} />
       <ContactSection lang={lang} />
 
