@@ -17,6 +17,7 @@ import { StyledSelect } from '@/components/ui/StyledSelect';
 
 // Import shared components
 import { ClassHeader, PendingEnrollments, TopicsLessonsList } from '@/components/class';
+import StudentsList from '@/components/class/StudentsList';
 
 interface Topic {
   id: string;
@@ -138,7 +139,7 @@ interface ClassData {
   academy: { id: string; name: string };
   enrollments: Array<{
     id: string;
-    student: { id: string; firstName: string; lastName: string; email: string };
+    student: { id: string; firstName: string; lastName: string; email: string; lastLoginAt?: string | null; suspicionCount?: number };
     enrolledAt: string;
     status: string;
   }>;
@@ -2352,6 +2353,11 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
                 onTopicsUpdate={setTopics}
                 onLessonsUpdate={setLessons}
               />
+            )}
+
+            {/* Students - Suspicion tracking */}
+            {!selectedLesson && (
+              <StudentsList enrollments={classData.enrollments} />
             )}
 
             {/* Reschedule Modal */}

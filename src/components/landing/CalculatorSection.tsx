@@ -79,7 +79,7 @@ export function CalculatorSection({ lang }: CalculatorSectionProps) {
                 <span className="text-lg font-bold text-emerald-400">{calcStudents}</span>
               </div>
               <input type="range" min="20" max="1000" step="10" value={calcStudents} onChange={e => setCalcStudents(Number(e.target.value))} className="w-full h-1.5 bg-gray-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-emerald-400 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer" />
-              <div className="flex justify-between text-xs text-gray-600 mt-1"><span>20</span><span>1000</span></div>
+              <div className="flex justify-between text-xs text-gray-400 mt-1"><span>20</span><span>1000</span></div>
             </div>
 
             {/* Monthly fee slider */}
@@ -92,7 +92,7 @@ export function CalculatorSection({ lang }: CalculatorSectionProps) {
                 <span className="text-lg font-bold text-emerald-400">€{calcMonthlyFee}</span>
               </div>
               <input type="range" min="10" max="200" step="5" value={calcMonthlyFee} onChange={e => setCalcMonthlyFee(Number(e.target.value))} className="w-full h-1.5 bg-gray-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-emerald-400 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer" />
-              <div className="flex justify-between text-xs text-gray-600 mt-1"><span>€10</span><span>€200</span></div>
+              <div className="flex justify-between text-xs text-gray-400 mt-1"><span>€10</span><span>€200</span></div>
             </div>
 
             {/* Ghost percentage slider */}
@@ -105,7 +105,7 @@ export function CalculatorSection({ lang }: CalculatorSectionProps) {
                 <span className="text-lg font-bold text-red-400">{calcGhostPct}%</span>
               </div>
               <input type="range" min="10" max="90" step="5" value={calcGhostPct} onChange={e => setCalcGhostPct(Number(e.target.value))} className="w-full h-1.5 bg-gray-700 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-red-400 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer" />
-              <div className="flex justify-between text-xs text-gray-600 mt-1"><span>10%</span><span>90%</span></div>
+              <div className="flex justify-between text-xs text-gray-400 mt-1"><span>10%</span><span>90%</span></div>
             </div>
 
             {/* Visual: ghost bar */}
@@ -128,14 +128,14 @@ export function CalculatorSection({ lang }: CalculatorSectionProps) {
           {/* Right: Results */}
           <div className="space-y-4 flex flex-col">
             {/* Annual loss hero */}
-            <div className="bg-gradient-to-r from-red-500/15 to-orange-500/15 border border-red-500/20 rounded-xl p-6 text-center flex-1">
+            <div className="bg-gradient-to-r from-red-500/15 to-orange-500/15 border border-red-500/20 rounded-xl p-6 text-center flex-1 flex flex-col justify-center">
               <p className="text-gray-400 text-sm mb-1">{isEs ? 'Ingresos Perdidos por Año' : 'Annual Revenue Lost'}</p>
               <p className="text-4xl sm:text-5xl font-bold text-red-400">€{(ghostStudents * calcMonthlyFee * 12).toLocaleString()}</p>
               <p className="text-gray-500 text-sm mt-1">{isEs ? 'por cuentas compartidas' : 'from shared accounts'}</p>
             </div>
 
             {/* Recoverable with AKADEMO */}
-            <div className="bg-gradient-to-r from-emerald-500/15 to-cyan-500/15 border border-emerald-500/20 rounded-xl p-6 text-center flex-1">
+            <div className="bg-gradient-to-r from-emerald-500/15 to-cyan-500/15 border border-emerald-500/20 rounded-xl p-6 text-center flex-1 flex flex-col justify-center">
               <p className="text-gray-400 text-sm mb-1">{isEs ? 'Ingresos Recuperables por Año' : 'Recoverable Annual Revenue'}</p>
               <p className="text-4xl sm:text-5xl font-bold text-emerald-400">€{annualRecovery.toLocaleString()}</p>
               <p className="text-gray-500 text-sm mt-1">{isEs ? 'bloqueando cuentas compartidas' : 'by blocking shared accounts'}</p>
