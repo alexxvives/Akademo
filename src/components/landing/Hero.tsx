@@ -29,7 +29,7 @@ function CheckCircle({ className = '' }: { className?: string }) {
 
 export function Hero({ t, isScrolled: _isScrolled, onOpenModal }: HeroProps) {
   return (
-    <section className="relative pt-28 pb-16 sm:pt-36 sm:pb-24 px-4 sm:px-6 overflow-hidden bg-[#121a2d]">
+    <section className="relative min-h-[100dvh] flex flex-col justify-center pt-28 pb-16 sm:pt-36 sm:pb-24 px-4 sm:px-6 overflow-hidden bg-[#121a2d]">
       <div className="absolute inset-x-0 top-0 h-[108%] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/15 via-transparent to-transparent" />
       <div className="relative max-w-7xl mx-auto">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">

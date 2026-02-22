@@ -9,7 +9,7 @@ export function WhySection({ t }: WhySectionProps) {
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12 sm:mb-16 lg:mb-20">
           <div className="mb-3 sm:mb-4">
-            <span className="inline-flex items-center gap-2 px-3 py-1 text-xs font-semibold tracking-[0.2em] uppercase bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
+            <span className="inline-flex items-center gap-2 px-3 py-1 text-xs font-semibold tracking-[0.2em] uppercase bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
               EL PROBLEMA
             </span>
           </div>
