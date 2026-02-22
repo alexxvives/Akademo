@@ -9,7 +9,10 @@ export function CTASection({ t, onOpenModal }: CTASectionProps) {
     <section className="py-20 sm:py-28 px-4 sm:px-6 bg-blue-600">
       <div className="max-w-3xl mx-auto text-center">
         <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-          {t.ctaTitle}
+          {t.ctaTitleBefore}
+          <span className="bg-gradient-to-r from-emerald-300 to-cyan-300 bg-clip-text text-transparent"
+          >{t.ctaTitleHighlight}</span>
+          {t.ctaTitleAfter}
         </h2>
         <p className="text-blue-100 text-lg mb-8">
           {t.ctaSubtitle}
