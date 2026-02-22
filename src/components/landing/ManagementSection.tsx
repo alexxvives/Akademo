@@ -9,15 +9,12 @@ export function ManagementSection({ t }: ManagementSectionProps) {
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-full text-emerald-600 text-xs font-semibold uppercase tracking-wide mb-6">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
             Sistema de Gestión
           </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
             {t.managementTitle}
           </h2>
-          <p className="text-lg text-gray-500 max-w-3xl mx-auto">
+          <p className="text-lg text-gray-500 max-w-4xl mx-auto">
             {t.managementSubtitle}
           </p>
         </div>

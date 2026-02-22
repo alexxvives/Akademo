@@ -101,7 +101,7 @@ function HomePageContent() {
       <div data-section-dark="false">
         <ContactSection lang={lang} />
       </div>
-      <div data-section-dark="true">
+      <div data-section-dark="false">
         <CTASection t={t} onOpenModal={openModal} />
       </div>
 

@@ -50,9 +50,6 @@ export function CalculatorSection({ lang }: CalculatorSectionProps) {
       <div className="relative max-w-7xl mx-auto">
         <div className="text-center mb-4">
           <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 rounded-full text-emerald-400 text-xs font-semibold uppercase tracking-wide border border-emerald-500/20">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-            </svg>
             {isEs ? 'CALCULADORA DE INGRESOS' : 'REVENUE CALCULATOR'}
           </span>
         </div>
@@ -69,9 +66,9 @@ export function CalculatorSection({ lang }: CalculatorSectionProps) {
             : "A ghost student is someone sharing their account with others. You charge for 1, but 3 access. Discover how much money you're leaving on the table."}
         </p>
 
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="grid lg:grid-cols-2 gap-6 items-stretch">
           {/* Left: Inputs */}
-          <div className="bg-gray-800/50 rounded-2xl p-6 sm:p-8 border border-gray-700 space-y-8">
+          <div className="bg-gray-800/50 rounded-2xl p-6 sm:p-8 border border-gray-700 space-y-8 flex flex-col justify-between">
             {/* Total students slider */}
             <div>
               <div className="flex justify-between items-center mb-3">
@@ -129,7 +126,7 @@ export function CalculatorSection({ lang }: CalculatorSectionProps) {
           </div>
 
           {/* Right: Results */}
-          <div className="space-y-4">
+          <div className="space-y-4 flex flex-col">
             {/* Annual loss hero */}
             <div className="bg-gradient-to-r from-red-500/15 to-orange-500/15 border border-red-500/20 rounded-xl p-6 text-center">
               <p className="text-gray-400 text-sm mb-1">{isEs ? 'Ingresos Perdidos por Año' : 'Annual Revenue Lost'}</p>
@@ -138,7 +135,7 @@ export function CalculatorSection({ lang }: CalculatorSectionProps) {
             </div>
 
             {/* Recoverable with AKADEMO */}
-            <div className="bg-gradient-to-r from-emerald-500/15 to-cyan-500/15 border border-emerald-500/20 rounded-xl p-6 text-center">
+            <div className="bg-gradient-to-r from-emerald-500/15 to-cyan-500/15 border border-emerald-500/20 rounded-xl p-6 text-center flex-1">
               <p className="text-gray-400 text-sm mb-1">{isEs ? 'Ingresos Recuperables por Año' : 'Recoverable Annual Revenue'}</p>
               <p className="text-4xl sm:text-5xl font-bold text-emerald-400">€{annualRecovery.toLocaleString()}</p>
               <p className="text-gray-500 text-sm mt-1">{isEs ? 'bloqueando cuentas compartidas' : 'by blocking shared accounts'}</p>

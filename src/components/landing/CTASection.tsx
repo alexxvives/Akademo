@@ -6,19 +6,15 @@ interface CTASectionProps {
 
 export function CTASection({ t, onOpenModal }: CTASectionProps) {
   return (
-    <section className="py-20 sm:py-28 px-4 sm:px-6 bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 relative overflow-hidden">
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-500 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-cyan-500 rounded-full blur-3xl" />
-      </div>
+    <section className="py-20 sm:py-28 px-4 sm:px-6 bg-white relative overflow-hidden">
       <div className="relative max-w-3xl mx-auto text-center">
-        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight text-white mb-6">
+        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight text-gray-900 mb-6">
           {t.ctaTitleBefore}
-          <span className="bg-gradient-to-r from-emerald-300 to-cyan-300 bg-clip-text text-transparent"
+          <span className="bg-gradient-to-r from-emerald-500 to-cyan-500 bg-clip-text text-transparent"
           >{t.ctaTitleHighlight}</span>
           {t.ctaTitleAfter}
         </h2>
-        <p className="text-gray-400 text-lg mb-8">
+        <p className="text-gray-500 text-lg mb-8">
           {t.ctaSubtitle}
         </p>
         <button
