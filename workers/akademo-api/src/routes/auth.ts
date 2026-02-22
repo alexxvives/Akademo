@@ -257,11 +257,59 @@ auth.post('/login', loginRateLimit, validateBody(loginSchema), async (c) => {
     }
     
     // Update lastLoginAt timestamp
+    const now = new Date().toISOString();
     await c.env.DB
       .prepare('UPDATE User SET lastLoginAt = ? WHERE id = ?')
-      .bind(new Date().toISOString(), user.id)
+      .bind(now, user.id)
       .run();
-    
+
+    // --- Impossible Travel Detection ---
+    const cf = (c.req.raw as any).cf || {};
+    const ipAddress = c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For') || null;
+    const country = (cf.country as string) || null;
+    const city = (cf.city as string) || null;
+    const latitude = cf.latitude ? parseFloat(cf.latitude as string) : null;
+    const longitude = cf.longitude ? parseFloat(cf.longitude as string) : null;
+
+    // Check previous login event for impossible travel
+    const prevEvent = await c.env.DB
+      .prepare('SELECT latitude, longitude, createdAt FROM LoginEvent WHERE userId = ? ORDER BY createdAt DESC LIMIT 1')
+      .bind(user.id)
+      .first();
+
+    if (prevEvent && prevEvent.latitude != null && prevEvent.longitude != null && latitude != null && longitude != null) {
+      const prevLat = prevEvent.latitude as number;
+      const prevLon = prevEvent.longitude as number;
+      const prevTime = new Date(prevEvent.createdAt as string).getTime();
+      const curTime = new Date(now).getTime();
+      const hoursElapsed = (curTime - prevTime) / (1000 * 60 * 60);
+
+      if (hoursElapsed > 0) {
+        // Haversine distance in km
+        const R = 6371;
+        const dLat = (latitude - prevLat) * Math.PI / 180;
+        const dLon = (longitude - prevLon) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) ** 2 + Math.cos(prevLat * Math.PI / 180) * Math.cos(latitude * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+        const distKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const speedKmh = distKm / hoursElapsed;
+
+        if (speedKmh > 900) {
+          // Impossible travel detected — increment suspicion counter
+          await c.env.DB
+            .prepare('UPDATE User SET suspicionCount = suspicionCount + 1 WHERE id = ?')
+            .bind(user.id)
+            .run();
+        }
+      }
+    }
+
+    // Save this login event
+    await c.env.DB
+      .prepare('INSERT INTO LoginEvent (id, userId, ipAddress, country, city, latitude, longitude, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+      .bind(crypto.randomUUID(), user.id, ipAddress, country, city, latitude, longitude, now)
+      .run();
+    // --- End Impossible Travel ---
+
     // Create device session record (only for students) and include in token
     let deviceSessionId = null;
     if (user.role === 'STUDENT') {

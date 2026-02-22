@@ -20,7 +20,7 @@ export function AccountSharingSection({ t }: AccountSharingSectionProps) {
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 leading-tight">
             {t.sharingTitle}
           </h2>
-          <p className="text-lg text-gray-400 italic max-w-4xl mx-auto">
+          <p className="text-lg text-gray-400 italic max-w-5xl mx-auto">
             &ldquo;{t.sharingSubtitle}&rdquo;
           </p>
         </div>

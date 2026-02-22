@@ -14,7 +14,7 @@ export function ManagementSection({ t }: ManagementSectionProps) {
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
             {t.managementTitle}
           </h2>
-          <p className="text-lg text-gray-500 max-w-4xl mx-auto">
+          <p className="text-lg text-gray-500 max-w-5xl mx-auto">
             {t.managementSubtitle}
           </p>
         </div>

@@ -128,7 +128,7 @@ export function CalculatorSection({ lang }: CalculatorSectionProps) {
           {/* Right: Results */}
           <div className="space-y-4 flex flex-col">
             {/* Annual loss hero */}
-            <div className="bg-gradient-to-r from-red-500/15 to-orange-500/15 border border-red-500/20 rounded-xl p-6 text-center">
+            <div className="bg-gradient-to-r from-red-500/15 to-orange-500/15 border border-red-500/20 rounded-xl p-6 text-center flex-1">
               <p className="text-gray-400 text-sm mb-1">{isEs ? 'Ingresos Perdidos por Año' : 'Annual Revenue Lost'}</p>
               <p className="text-4xl sm:text-5xl font-bold text-red-400">€{(ghostStudents * calcMonthlyFee * 12).toLocaleString()}</p>
               <p className="text-gray-500 text-sm mt-1">{isEs ? 'por cuentas compartidas' : 'from shared accounts'}</p>

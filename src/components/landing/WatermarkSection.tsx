@@ -24,7 +24,7 @@ export function WatermarkSection({ t }: WatermarkSectionProps) {
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 leading-tight">
             {t.watermarkTitle}
           </h2>
-          <p className="text-lg text-gray-400 max-w-4xl mx-auto">
+          <p className="text-lg text-gray-400 max-w-5xl mx-auto">
             {t.watermarkSubtitle}
           </p>
         </div>

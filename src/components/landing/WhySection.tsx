@@ -18,7 +18,7 @@ export function WhySection({ t }: WhySectionProps) {
             <span className="bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">{t.whyTitleHighlight}</span>{' '}
             {t.whyTitleEnd}
           </h2>
-          <p className="text-lg text-gray-500 max-w-4xl mx-auto">
+          <p className="text-lg text-gray-500 max-w-5xl mx-auto">
             {t.whySubtitle}
           </p>
         </div>
