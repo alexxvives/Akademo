@@ -16,7 +16,7 @@ interface FooterProps {
 export function Footer({ t, lang }: FooterProps) {
   return (
     <footer className="py-16 px-4 sm:px-6 bg-gray-900">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
           <div>
             <div className="mb-4">

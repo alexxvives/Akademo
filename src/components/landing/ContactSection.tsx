@@ -31,7 +31,7 @@ export function ContactSection({ lang }: ContactSectionProps) {
 
   return (
     <section className="py-20 sm:py-28 px-4 sm:px-6 bg-gradient-to-b from-gray-50 to-white">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
           {/* Left: FAQ */}
           <div>

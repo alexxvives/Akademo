@@ -12,7 +12,7 @@ export function AccountSharingSection({ t }: AccountSharingSectionProps) {
         <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-500 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
       </div>
       
-      <div className="max-w-6xl mx-auto relative z-10">
+      <div className="max-w-7xl mx-auto relative z-10">
         <div className="text-center mb-20">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/20 backdrop-blur rounded-full text-blue-300 text-sm font-medium mb-6 border border-blue-500/30">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -34,7 +34,6 @@ export function AccountSharingSection({ t }: AccountSharingSectionProps) {
             statLabel="Tasa de detección"
             title={t.sharingFeature1}
             description={t.sharingFeature1Desc}
-            statusLabel="Activo en tiempo real"
             colorClass="blue"
             icon={<SingleSessionIcon />}
           />
@@ -43,7 +42,6 @@ export function AccountSharingSection({ t }: AccountSharingSectionProps) {
             statLabel="Tiempo de respuesta"
             title={t.sharingFeature2}
             description={t.sharingFeature2Desc}
-            statusLabel="IA de monitoreo"
             colorClass="purple"
             icon={<DetectionIcon />}
           />
@@ -52,7 +50,6 @@ export function AccountSharingSection({ t }: AccountSharingSectionProps) {
             statLabel="Monitoreo activo"
             title={t.sharingFeature3}
             description={t.sharingFeature3Desc}
-            statusLabel="Notificaciones instant"
             colorClass="pink"
             icon={<AlertIcon />}
           />
@@ -67,33 +64,29 @@ interface FeatureCardProps {
   statLabel: string;
   title: string;
   description: string;
-  statusLabel: string;
   colorClass: 'blue' | 'purple' | 'pink';
   icon: React.ReactNode;
 }
 
-function FeatureCard({ stat, statLabel, title, description, statusLabel, colorClass, icon }: FeatureCardProps) {
+function FeatureCard({ stat, statLabel, title, description, colorClass, icon }: FeatureCardProps) {
   const colors = {
     blue: {
       gradient: 'from-blue-500 to-blue-600',
       stat: 'text-blue-400',
       border: 'border-blue-500/50',
       shadow: 'shadow-blue-500/20',
-      status: 'text-blue-400 bg-blue-400'
     },
     purple: {
       gradient: 'from-purple-500 to-purple-600',
       stat: 'text-purple-400',
       border: 'border-purple-500/50',
       shadow: 'shadow-purple-500/20',
-      status: 'text-purple-400 bg-purple-400'
     },
     pink: {
       gradient: 'from-pink-500 to-pink-600',
       stat: 'text-pink-400',
       border: 'border-pink-500/50',
       shadow: 'shadow-pink-500/20',
-      status: 'text-pink-400 bg-pink-400'
     }
   };
 
@@ -113,12 +106,6 @@ function FeatureCard({ stat, statLabel, title, description, statusLabel, colorCl
         </div>
         <h3 className="text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3">{title}</h3>
         <p className="text-sm sm:text-base text-gray-400 leading-relaxed flex-1">{description}</p>
-        <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-white/10">
-          <div className={`flex items-center gap-2 ${c.status} text-xs sm:text-sm font-medium`}>
-            <div className={`w-2 h-2 ${c.status} rounded-full animate-pulse`} />
-            {statusLabel}
-          </div>
-        </div>
       </div>
     </div>
   );

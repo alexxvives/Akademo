@@ -5,7 +5,7 @@ interface WatermarkSectionProps {
 
 export function WatermarkSection({ t }: WatermarkSectionProps) {
   return (
-    <section className="py-20 sm:py-32 px-4 sm:px-6 bg-gradient-to-b from-gray-900 via-blue-900 to-gray-900 text-white relative overflow-hidden">
+    <section className="py-20 sm:py-32 px-4 sm:px-6 bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white relative overflow-hidden">
       {/* Animated grid background */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute inset-0" style={{ 
@@ -14,7 +14,7 @@ export function WatermarkSection({ t }: WatermarkSectionProps) {
         }} />
       </div>
 
-      <div className="max-w-6xl mx-auto relative z-10">
+      <div className="max-w-7xl mx-auto relative z-10">
         <div className="text-center mb-20">
           <h2 className="text-3xl sm:text-5xl font-bold mb-6 leading-tight">
             {t.watermarkTitle}

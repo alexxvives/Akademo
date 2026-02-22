@@ -8,6 +8,11 @@ export function WhySection({ t }: WhySectionProps) {
     <section className="py-12 sm:py-20 lg:py-32 px-4 sm:px-6 bg-white">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12 sm:mb-16 lg:mb-20">
+          <div className="mb-3 sm:mb-4">
+            <span className="inline-flex items-center gap-2 px-3 py-1 text-xs font-semibold tracking-[0.2em] uppercase bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
+              EL PROBLEMA
+            </span>
+          </div>
           <h2 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 sm:mb-6 leading-tight">
             {t.whyTitle}{' '}
             <span className="bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">{t.whyTitleHighlight}</span>{' '}
