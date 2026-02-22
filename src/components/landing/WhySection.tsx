@@ -5,25 +5,25 @@ interface WhySectionProps {
 
 export function WhySection({ t }: WhySectionProps) {
   return (
-    <section className="py-12 sm:py-20 lg:py-32 px-4 sm:px-6 bg-white">
+    <section className="py-20 sm:py-28 px-4 sm:px-6 bg-white">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-12 sm:mb-16 lg:mb-20">
-          <div className="mb-3 sm:mb-4">
-            <span className="inline-flex items-center gap-2 px-3 py-1 text-xs font-semibold tracking-[0.2em] uppercase bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+        <div className="text-center mb-16">
+          <div className="mb-4">
+            <span className="inline-flex items-center px-3 py-1.5 bg-emerald-50 rounded-full text-emerald-600 text-xs font-semibold uppercase tracking-wide">
               EL PROBLEMA
             </span>
           </div>
-          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 sm:mb-6 leading-tight">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
             {t.whyTitle}{' '}
             <span className="bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">{t.whyTitleHighlight}</span>{' '}
             {t.whyTitleEnd}
           </h2>
-          <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-lg text-gray-500 max-w-3xl mx-auto">
             {t.whySubtitle}
           </p>
         </div>
         
-        <div className="grid sm:grid-cols-2 gap-4 sm:gap-6 mb-12 sm:mb-16">
+        <div className="grid sm:grid-cols-2 gap-4 sm:gap-6 mb-16">
           <ProblemCard 
             icon={<AccountsIcon />}
             title={t.whyProblem1Title}
@@ -62,8 +62,8 @@ function ProblemCard({ icon, title, description }: { icon: React.ReactNode; titl
       <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-100 rounded-lg flex items-center justify-center mb-4 sm:mb-6 group-hover:bg-gray-200 transition-colors">
         {icon}
       </div>
-      <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 sm:mb-3">{title}</h3>
-      <p className="text-sm sm:text-base text-gray-600 leading-relaxed">{description}</p>
+      <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+      <p className="text-sm text-gray-500 leading-relaxed">{description}</p>
     </div>
   );
 }

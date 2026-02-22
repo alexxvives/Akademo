@@ -12,7 +12,7 @@ export function CTASection({ t, onOpenModal }: CTASectionProps) {
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-cyan-500 rounded-full blur-3xl" />
       </div>
       <div className="relative max-w-3xl mx-auto text-center">
-        <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight text-white mb-6">
           {t.ctaTitleBefore}
           <span className="bg-gradient-to-r from-emerald-300 to-cyan-300 bg-clip-text text-transparent"
           >{t.ctaTitleHighlight}</span>

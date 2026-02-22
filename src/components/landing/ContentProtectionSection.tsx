@@ -5,21 +5,21 @@ interface ContentProtectionSectionProps {
 
 export function ContentProtectionSection({ t }: ContentProtectionSectionProps) {
   return (
-    <section className="py-20 sm:py-32 px-4 sm:px-6 bg-white relative">
+    <section className="py-20 sm:py-28 px-4 sm:px-6 bg-white relative">
       <div className="max-w-7xl mx-auto">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left: Content */}
           <div>
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 rounded-full text-emerald-700 text-sm font-medium mb-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-full text-emerald-600 text-xs font-semibold uppercase tracking-wide mb-6">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
               Seguridad de Contenido
             </div>
-            <h2 className="text-3xl sm:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
               {t.contentTitle}
             </h2>
-            <p className="text-xl text-gray-600 mb-10">
+            <p className="text-lg text-gray-500 mb-8">
               {t.contentSubtitle}
             </p>
 
@@ -28,19 +28,16 @@ export function ContentProtectionSection({ t }: ContentProtectionSectionProps) {
                 icon={<NoDownloadIcon />}
                 title={t.contentFeature1}
                 description={t.contentFeature1Desc}
-                colorClass="blue"
               />
               <Feature 
                 icon={<TimerIcon />}
                 title={t.contentFeature2}
                 description={t.contentFeature2Desc}
-                colorClass="purple"
               />
               <Feature 
                 icon={<LockIcon />}
                 title={t.contentFeature3}
                 description={t.contentFeature3Desc}
-                colorClass="pink"
               />
             </div>
           </div>
@@ -53,21 +50,15 @@ export function ContentProtectionSection({ t }: ContentProtectionSectionProps) {
   );
 }
 
-function Feature({ icon, title, description, colorClass }: { icon: React.ReactNode; title: string; description: string; colorClass: 'blue' | 'purple' | 'pink' }) {
-  const bgColors = {
-    blue: 'bg-blue-100',
-    purple: 'bg-purple-100',
-    pink: 'bg-pink-100'
-  };
-
+function Feature({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
   return (
     <div className="flex gap-4">
-      <div className={`flex-shrink-0 w-12 h-12 ${bgColors[colorClass]} rounded-xl flex items-center justify-center`}>
+      <div className="flex-shrink-0 w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center">
         {icon}
       </div>
       <div>
-        <h3 className="font-bold text-gray-900 text-lg mb-1">{title}</h3>
-        <p className="text-gray-600">{description}</p>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+        <p className="text-sm text-gray-500 leading-relaxed">{description}</p>
       </div>
     </div>
   );
@@ -76,7 +67,7 @@ function Feature({ icon, title, description, colorClass }: { icon: React.ReactNo
 function ProtectedVideoPreview() {
   return (
     <div className="relative">
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-200 to-purple-200 rounded-3xl blur-3xl opacity-30" />
+      <div className="absolute inset-0 bg-gradient-to-br from-emerald-200 to-cyan-200 rounded-3xl blur-3xl opacity-30" />
       <div className="relative bg-gradient-to-br from-gray-50 to-white rounded-3xl p-8 shadow-2xl border border-gray-200">
         <div className="aspect-video bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl overflow-hidden relative">
           <div className="absolute inset-0 flex items-center justify-center">

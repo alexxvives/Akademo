@@ -30,12 +30,12 @@ export function ContactSection({ lang }: ContactSectionProps) {
   const faqItems = FAQ_ITEMS[lang];
 
   return (
-    <section className="py-20 sm:py-28 px-4 sm:px-6 bg-gradient-to-b from-gray-50 to-white">
+    <section className="py-20 sm:py-28 px-4 sm:px-6 bg-gray-50">
       <div className="max-w-7xl mx-auto">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
           {/* Left: FAQ */}
           <div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 leading-tight">
               {lang === 'es' ? 'Preguntas Frecuentes' : 'Frequently Asked Questions'}
             </h2>
             <p className="text-gray-500 text-sm mb-6">
@@ -68,7 +68,7 @@ export function ContactSection({ lang }: ContactSectionProps) {
 
           {/* Right: Contact form */}
           <div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 leading-tight">
               {lang === 'es' ? 'Hablemos' : "Let's Talk"}
             </h2>
             <p className="text-gray-500 text-sm mb-6">
@@ -85,7 +85,7 @@ export function ContactSection({ lang }: ContactSectionProps) {
                 <input
                   type="text"
                   id="name"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all text-sm"
                   placeholder={lang === 'es' ? 'Tu nombre' : 'Your name'}
                 />
               </div>
@@ -97,7 +97,7 @@ export function ContactSection({ lang }: ContactSectionProps) {
                 <input
                   type="email"
                   id="email"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all text-sm"
                   placeholder={lang === 'es' ? 'tu@email.com' : 'your@email.com'}
                 />
               </div>
@@ -109,7 +109,7 @@ export function ContactSection({ lang }: ContactSectionProps) {
                 <textarea
                   id="message"
                   rows={4}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none text-sm"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all resize-none text-sm"
                   placeholder={lang === 'es' ? 'Cuéntanos sobre tu academia...' : 'Tell us about your academy...'}
                 />
               </div>
@@ -128,7 +128,7 @@ export function ContactSection({ lang }: ContactSectionProps) {
               </p>
               <a 
                 href="mailto:contact@akademo.com"
-                className="text-blue-600 hover:text-blue-700 font-medium transition-colors text-sm"
+                className="text-emerald-600 hover:text-emerald-700 font-medium transition-colors text-sm"
               >
                 contact@akademo.com
               </a>

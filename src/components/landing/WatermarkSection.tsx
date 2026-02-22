@@ -5,21 +5,26 @@ interface WatermarkSectionProps {
 
 export function WatermarkSection({ t }: WatermarkSectionProps) {
   return (
-    <section className="py-20 sm:py-32 px-4 sm:px-6 bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white relative overflow-hidden">
+    <section className="py-20 sm:py-28 px-4 sm:px-6 bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white relative overflow-hidden">
       {/* Animated grid background */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute inset-0" style={{ 
-          backgroundImage: 'linear-gradient(rgba(59, 130, 246, 0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(59, 130, 246, 0.3) 1px, transparent 1px)',
+          backgroundImage: 'linear-gradient(rgba(16, 185, 129, 0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(16, 185, 129, 0.15) 1px, transparent 1px)',
           backgroundSize: '50px 50px'
         }} />
       </div>
 
       <div className="max-w-7xl mx-auto relative z-10">
-        <div className="text-center mb-20">
-          <h2 className="text-3xl sm:text-5xl font-bold mb-6 leading-tight">
+        <div className="text-center mb-16">
+          <div className="mb-4">
+            <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 rounded-full text-emerald-400 text-xs font-semibold uppercase tracking-wide border border-emerald-500/20">
+              Marcas de Agua
+            </span>
+          </div>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 leading-tight">
             {t.watermarkTitle}
           </h2>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
+          <p className="text-lg text-gray-400 max-w-3xl mx-auto">
             {t.watermarkSubtitle}
           </p>
         </div>
@@ -93,39 +98,30 @@ function WatermarkFeatureList({ t }: { t: Record<string, any> }) {
         icon={<WatermarkIcon />}
         title={t.watermarkFeature1}
         description={t.watermarkFeature1Desc}
-        colorClass="blue"
       />
       <WatermarkFeature 
         icon={<TraceIcon />}
         title={t.watermarkFeature2}
         description={t.watermarkFeature2Desc}
-        colorClass="purple"
       />
       <WatermarkFeature 
         icon={<ShieldIcon />}
         title={t.watermarkFeature3}
         description={t.watermarkFeature3Desc}
-        colorClass="green"
       />
     </div>
   );
 }
 
-function WatermarkFeature({ icon, title, description, colorClass }: { icon: React.ReactNode; title: string; description: string; colorClass: 'blue' | 'purple' | 'green' }) {
-  const colors = {
-    blue: 'bg-blue-500/20 border-blue-500/30',
-    purple: 'bg-purple-500/20 border-purple-500/30',
-    green: 'bg-green-500/20 border-green-500/30'
-  };
-
+function WatermarkFeature({ icon, title, description }: { icon: React.ReactNode; title: string; description: string }) {
   return (
     <div className="flex gap-4">
-      <div className={`flex-shrink-0 w-12 h-12 ${colors[colorClass]} rounded-xl flex items-center justify-center border`}>
+      <div className="flex-shrink-0 w-12 h-12 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-center">
         {icon}
       </div>
       <div>
-        <h3 className="font-bold text-white text-xl mb-2">{title}</h3>
-        <p className="text-blue-200">{description}</p>
+        <h3 className="text-lg font-semibold text-white mb-2">{title}</h3>
+        <p className="text-sm text-gray-400 leading-relaxed">{description}</p>
       </div>
     </div>
   );
@@ -134,9 +130,9 @@ function WatermarkFeature({ icon, title, description, colorClass }: { icon: Reac
 function QuoteCard({ quote }: { quote: string }) {
   return (
     <div className="relative">
-      <div className="absolute inset-0 bg-blue-500 rounded-2xl blur-2xl opacity-20" />
-      <div className="relative bg-blue-500/10 backdrop-blur-xl rounded-2xl p-8 sm:p-12 text-center border border-blue-500/30">
-        <p className="text-2xl sm:text-3xl font-bold text-blue-100 leading-relaxed">
+      <div className="absolute inset-0 bg-emerald-500 rounded-2xl blur-2xl opacity-10" />
+      <div className="relative bg-emerald-500/10 backdrop-blur-xl rounded-2xl p-8 sm:p-12 text-center border border-emerald-500/20">
+        <p className="text-lg sm:text-xl font-medium text-white italic leading-relaxed">
           {quote}
         </p>
       </div>
@@ -146,7 +142,7 @@ function QuoteCard({ quote }: { quote: string }) {
 
 function WatermarkIcon() {
   return (
-    <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
     </svg>
   );
@@ -154,7 +150,7 @@ function WatermarkIcon() {
 
 function TraceIcon() {
   return (
-    <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
     </svg>
   );
@@ -162,7 +158,7 @@ function TraceIcon() {
 
 function ShieldIcon() {
   return (
-    <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
     </svg>
   );

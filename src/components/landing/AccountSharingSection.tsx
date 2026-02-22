@@ -5,25 +5,25 @@ interface AccountSharingSectionProps {
 
 export function AccountSharingSection({ t }: AccountSharingSectionProps) {
   return (
-    <section className="py-20 sm:py-32 px-4 sm:px-6 bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white relative overflow-hidden">
+    <section className="py-20 sm:py-28 px-4 sm:px-6 bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white relative overflow-hidden">
       {/* Animated background elements */}
       <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-500 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-20 left-10 w-72 h-72 bg-emerald-500 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-cyan-500 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
       </div>
       
       <div className="max-w-7xl mx-auto relative z-10">
-        <div className="text-center mb-20">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500/20 backdrop-blur rounded-full text-emerald-300 text-sm font-medium mb-6 border border-emerald-500/30">
+        <div className="text-center mb-16">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 rounded-full text-emerald-400 text-xs font-semibold uppercase tracking-wide border border-emerald-500/20 mb-6">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
             Protección Activa
           </div>
-          <h2 className="text-3xl sm:text-5xl font-bold mb-6 leading-tight">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 leading-tight">
             {t.sharingTitle}
           </h2>
-          <p className="text-2xl text-gray-300 italic font-light">
+          <p className="text-lg text-gray-400 italic">
             &ldquo;{t.sharingSubtitle}&rdquo;
           </p>
         </div>
@@ -34,7 +34,6 @@ export function AccountSharingSection({ t }: AccountSharingSectionProps) {
             statLabel="Tasa de detección"
             title={t.sharingFeature1}
             description={t.sharingFeature1Desc}
-            colorClass="blue"
             icon={<SingleSessionIcon />}
           />
           <FeatureCard 
@@ -42,7 +41,6 @@ export function AccountSharingSection({ t }: AccountSharingSectionProps) {
             statLabel="Tiempo de respuesta"
             title={t.sharingFeature2}
             description={t.sharingFeature2Desc}
-            colorClass="purple"
             icon={<DetectionIcon />}
           />
           <FeatureCard 
@@ -50,7 +48,6 @@ export function AccountSharingSection({ t }: AccountSharingSectionProps) {
             statLabel="Monitoreo activo"
             title={t.sharingFeature3}
             description={t.sharingFeature3Desc}
-            colorClass="pink"
             icon={<AlertIcon />}
           />
         </div>
@@ -64,48 +61,24 @@ interface FeatureCardProps {
   statLabel: string;
   title: string;
   description: string;
-  colorClass: 'blue' | 'purple' | 'pink';
   icon: React.ReactNode;
 }
 
-function FeatureCard({ stat, statLabel, title, description, colorClass, icon }: FeatureCardProps) {
-  const colors = {
-    blue: {
-      gradient: 'from-blue-500 to-blue-600',
-      stat: 'text-blue-400',
-      border: 'border-blue-500/50',
-      shadow: 'shadow-blue-500/20',
-    },
-    purple: {
-      gradient: 'from-purple-500 to-purple-600',
-      stat: 'text-purple-400',
-      border: 'border-purple-500/50',
-      shadow: 'shadow-purple-500/20',
-    },
-    pink: {
-      gradient: 'from-pink-500 to-pink-600',
-      stat: 'text-pink-400',
-      border: 'border-pink-500/50',
-      shadow: 'shadow-pink-500/20',
-    }
-  };
-
-  const c = colors[colorClass];
-
+function FeatureCard({ stat, statLabel, title, description, icon }: FeatureCardProps) {
   return (
     <div className="group h-full">
-      <div className={`bg-white/5 backdrop-blur-xl rounded-2xl p-6 sm:p-8 border border-white/10 hover:${c.border} transition-all hover:shadow-2xl hover:${c.shadow} h-full flex flex-col`}>
-        <div className="flex items-start justify-between mb-4 sm:mb-6">
-          <div className={`w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br ${c.gradient} rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
+      <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 sm:p-8 border border-white/10 hover:border-emerald-500/30 transition-all hover:shadow-2xl hover:shadow-emerald-500/10 h-full flex flex-col">
+        <div className="flex items-start justify-between mb-6">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
             {icon}
           </div>
           <div className="text-right">
-            <div className={`text-2xl sm:text-3xl font-bold ${c.stat}`}>{stat}</div>
-            <div className="text-[10px] sm:text-xs text-gray-400 mt-1">{statLabel}</div>
+            <div className="text-2xl sm:text-3xl font-bold text-emerald-400">{stat}</div>
+            <div className="text-xs text-gray-400 mt-1">{statLabel}</div>
           </div>
         </div>
-        <h3 className="text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3">{title}</h3>
-        <p className="text-sm sm:text-base text-gray-400 leading-relaxed flex-1">{description}</p>
+        <h3 className="text-lg font-semibold text-white mb-2">{title}</h3>
+        <p className="text-sm text-gray-400 leading-relaxed flex-1">{description}</p>
       </div>
     </div>
   );
