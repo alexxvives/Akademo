@@ -150,3 +150,25 @@ export function formatDateWithMonth(dateString: string): string {
   }
   return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 }
+
+/**
+ * Formats a date string with long month name + time (HH:mm), capitalized.
+ * Used for lesson release dates where time matters.
+ * @param dateString - ISO date string
+ * @returns Formatted like "29 de Enero, 14:30"
+ */
+export function formatDateTimeWithMonth(dateString: string): string {
+  const date = new Date(dateString);
+  const formatted = date.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
+  const parts = formatted.split(' de ');
+  let datePart = formatted;
+  if (parts.length === 2) {
+    const month = parts[1];
+    datePart = `${parts[0]} de ${month.charAt(0).toUpperCase()}${month.slice(1)}`;
+  } else {
+    datePart = formatted.charAt(0).toUpperCase() + formatted.slice(1);
+  }
+  const hours = date.getHours().toString().padStart(2, '0');
+  const mins = date.getMinutes().toString().padStart(2, '0');
+  return `${datePart}, ${hours}:${mins}`;
+}

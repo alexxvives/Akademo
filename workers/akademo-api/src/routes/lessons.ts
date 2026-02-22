@@ -109,6 +109,9 @@ lessons.get('/', async (c) => {
     let filteredLessons = lessonsResult.results || [];
     if (session && session.role === 'STUDENT') {
       filteredLessons = filteredLessons.filter((l: any) => l.isTranscoding !== 1);
+      // Only show lessons that have been released (releaseDate in the past or null)
+      const now = new Date().toISOString();
+      filteredLessons = filteredLessons.filter((l: any) => !l.releaseDate || l.releaseDate <= now);
     }
 
     // If checkTranscoding is true, update Bunny status for any transcoding videos
@@ -250,6 +253,10 @@ lessons.get('/:id', async (c) => {
 
       if (!enrollment) {
         return c.json(errorResponse('Not enrolled in this class'), 403);
+      }
+      // Block access if lesson is scheduled for the future
+      if (lesson.releaseDate && new Date(lesson.releaseDate as string) > new Date()) {
+        return c.json(errorResponse('Lesson not yet available'), 403);
       }
     } else if (session.role === 'TEACHER') {
       if (lesson.teacherId !== session.id) {

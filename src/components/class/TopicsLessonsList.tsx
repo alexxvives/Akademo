@@ -19,7 +19,7 @@
 
 import { useState, useEffect, useRef, useCallback, DragEvent } from 'react';
 import { getBunnyThumbnailUrl } from '@/lib/bunny-stream';
-import { formatDateWithMonth, isReleased } from '@/lib/formatters';
+import { formatDateWithMonth, formatDateTimeWithMonth, isReleased } from '@/lib/formatters';
 import { apiClient } from '@/lib/api-client';
 import Image from 'next/image';
 
@@ -222,7 +222,7 @@ export default function TopicsLessonsList({
     };
   }, [draggedLesson, handleDragScroll]);
 
-  const formatDate = formatDateWithMonth;
+  const formatDate = formatDateTimeWithMonth;
 
   const toggleTopic = (topicId: string) => {
     setExpandedTopics(prev => {
@@ -539,12 +539,16 @@ export default function TopicsLessonsList({
                   />
                 )}
                 {/* Date Badge - Top Left */}
-                {released && (
-                  <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg backdrop-blur-sm shadow-lg border border-gray-300/50 bg-white/90 text-gray-900">
+                {lesson.releaseDate && (
+                  <div className={`absolute top-2 left-2 z-10 flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg backdrop-blur-sm shadow-lg border ${
+                    released
+                      ? 'border-gray-300/50 bg-white/90 text-gray-900'
+                      : 'border-violet-400/50 bg-violet-900/80 text-violet-200'
+                  }`}>
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    <span className="font-medium">{formatDate(lesson.releaseDate)}</span>
+                    <span className="font-medium">{!released && '🕐 '}{formatDate(lesson.releaseDate)}</span>
                   </div>
                 )}
                 
@@ -584,12 +588,16 @@ export default function TopicsLessonsList({
               </>
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center relative">
-                {released && (
-                  <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg backdrop-blur-sm shadow-lg border border-gray-300/50 bg-white/90 text-gray-900">
+                {lesson.releaseDate && (
+                  <div className={`absolute top-2 left-2 z-10 flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg backdrop-blur-sm shadow-lg border ${
+                    released
+                      ? 'border-gray-300/50 bg-white/90 text-gray-900'
+                      : 'border-violet-400/50 bg-violet-900/80 text-violet-200'
+                  }`}>
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    <span className="font-medium">{formatDate(lesson.releaseDate)}</span>
+                    <span className="font-medium">{!released && '🕐 '}{formatDate(lesson.releaseDate)}</span>
                   </div>
                 )}
                 <svg className="w-16 h-16 text-gray-500" fill="currentColor" viewBox="0 0 20 20">

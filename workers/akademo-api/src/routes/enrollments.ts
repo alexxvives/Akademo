@@ -633,6 +633,24 @@ enrollments.delete('/:id', async (c) => {
       return c.json(errorResponse('Not authorized to ban students from this academy'), 403);
     }
 
+    // Cancel Stripe subscription if exists
+    if (enrollment.stripeSubscriptionId) {
+      try {
+        if (!c.env.STRIPE_SECRET_KEY) {
+          console.warn('[Ban Student] STRIPE_SECRET_KEY not configured, skipping subscription cancellation');
+        } else {
+          const stripe = (await import('stripe')).default;
+          const stripeClient = new stripe(c.env.STRIPE_SECRET_KEY, {
+            apiVersion: '2025-12-15.clover' as any,
+          });
+          await stripeClient.subscriptions.cancel(enrollment.stripeSubscriptionId);
+        }
+      } catch (stripeError: any) {
+        console.error('[Ban Student] Stripe cancellation error:', stripeError);
+        // Continue anyway — ban the student even if Stripe fails
+      }
+    }
+
     // Update enrollment status to BANNED
     await c.env.DB
       .prepare('UPDATE ClassEnrollment SET status = ? WHERE id = ?')
