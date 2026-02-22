@@ -57,7 +57,7 @@ export function StudentsProgressTable({
   onBanStudent,
 }: StudentsProgressTableProps) {
   const [expandedStudents, setExpandedStudents] = useState<Set<string>>(new Set());
-  const [visibleColumns, setVisibleColumns] = useState({ asignatura: true, videosVistos: true, tiempoTotal: true, ultimaActividad: true, pagos: false, sospechas: false, acciones: false });
+  const [visibleColumns, setVisibleColumns] = useState({ asignatura: true, videosVistos: true, tiempoTotal: true, ultimaActividad: true, pagos: true, sospechas: false, acciones: false });
   const [columnDropdownOpen, setColumnDropdownOpen] = useState(false);
 
   const COLUMN_LABELS: Record<string, string> = {

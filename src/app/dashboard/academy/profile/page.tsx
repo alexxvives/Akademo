@@ -7,6 +7,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { refreshAcademyLogo } from '@/hooks/useAcademyLogo';
 import { SkeletonProfile } from '@/components/ui/SkeletonLoader';
 import { PasswordInput } from '@/components/ui';
+import { ModalPortal } from '@/components/ui/ModalPortal';
+import { CustomDatePicker } from '@/components/ui/CustomDatePicker';
 import { ZoomConnectButton, StripeConnectButton } from '@/components/profile';
 
 interface ZoomAccount {
@@ -294,13 +296,29 @@ export default function ProfilePage() {
         setShowAcademicYearModal(false);
         setNewYearData({ name: '', startDate: '', endDate: '' });
       } else {
-        alert('Error al crear el año académico: ' + (result.error || 'Error desconocido'));
+        alert('Error al crear el período: ' + (result.error || 'Error desconocido'));
       }
     } catch (e) {
-      console.error('Error creating academic year:', e);
-      alert('Error de conexión al crear el año académico');
+      console.error('Error creating academic period:', e);
+      alert('Error de conexión al crear el período');
     } finally {
       setCreatingYear(false);
+    }
+  };
+
+  const handleSetCurrentPeriod = async (periodId: string) => {
+    try {
+      const res = await apiClient(`/academic-years/${periodId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isCurrent: 1 }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setAcademicYears(result.data || []);
+      }
+    } catch (e) {
+      console.error('Error switching period:', e);
     }
   };
 
@@ -1319,13 +1337,13 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Academic Year Card */}
+      {/* Academic Period Card */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-12">
         <div className="px-4 sm:px-8 py-4 sm:py-6 bg-gradient-to-r from-blue-600 to-cyan-600 text-white">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h2 className="text-lg sm:text-xl font-semibold">Áño Académico</h2>
-              <p className="text-blue-100 mt-1">Gestiona los años académicos de tu academia</p>
+              <h2 className="text-lg sm:text-xl font-semibold">Períodos Académicos</h2>
+              <p className="text-blue-100 mt-1">Organiza tu academia por períodos — año académico, semestre, verano, etc.</p>
             </div>
             <button
               onClick={() => setShowAcademicYearModal(true)}
@@ -1334,7 +1352,7 @@ export default function ProfilePage() {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              Nuevo Año
+              Nuevo Período
             </button>
           </div>
         </div>
@@ -1346,99 +1364,109 @@ export default function ProfilePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
-              <p className="text-gray-900 font-medium mb-1">No hay años académicos</p>
-              <p className="text-sm text-gray-500">Crea tu primer año académico para empezar a organizar tus cursos por período.</p>
+              <p className="text-gray-900 font-medium mb-1">No hay períodos creados</p>
+              <p className="text-sm text-gray-500">Crea tu primer período para organizar las asignaturas por etapas de tiempo.</p>
               <button
                 onClick={() => setShowAcademicYearModal(true)}
                 className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
               >
-                Crear primer año académico
+                Crear primer período
               </button>
             </div>
           ) : (
             <div className="space-y-3">
               {academicYears.map((year) => (
-                <div key={year.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
+                <div key={year.id} className={`flex items-center justify-between p-4 rounded-xl border transition-all ${year.isCurrent ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200 hover:border-gray-300'}`}>
                   <div className="flex items-center gap-3">
-                    <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${year.isCurrent ? 'bg-green-500' : 'bg-gray-300'}`} />
+                    <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${year.isCurrent ? 'bg-blue-500' : 'bg-gray-300'}`} />
                     <div>
                       <p className="font-semibold text-gray-900">{year.name}</p>
                       <p className="text-xs text-gray-500 mt-0.5">
-                        {new Date(year.startDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
-                        {year.endDate && ` \u2192 ${new Date(year.endDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}`}
+                        {new Date(year.startDate + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        {year.endDate && ` \u2192 ${new Date(year.endDate + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}`}
                       </p>
                     </div>
                   </div>
-                  {year.isCurrent === 1 && (
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Año actual</span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {year.isCurrent === 1 ? (
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Período activo</span>
+                    ) : (
+                      <button
+                        onClick={() => handleSetCurrentPeriod(year.id)}
+                        className="px-3 py-1 text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-colors"
+                      >
+                        Activar
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
+              <p className="text-xs text-gray-400 pt-1">Las asignaturas cuya fecha de inicio se encuentre dentro del período activo se mostrarán en el panel principal.</p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Academic Year Modal */}
+      {/* Academic Period Modal */}
       {showAcademicYearModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={(e) => { if (e.target === e.currentTarget) setShowAcademicYearModal(false); }}>
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Nuevo Año Académico</h3>
-              <button onClick={() => setShowAcademicYearModal(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
-              </button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Nombre del año <span className="text-red-500">*</span></label>
-                <input
-                  type="text"
-                  placeholder="Ej: 2025-2026"
-                  value={newYearData.name}
-                  onChange={(e) => setNewYearData(p => ({ ...p, name: e.target.value }))}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+        <ModalPortal>
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" onClick={(e) => { if (e.target === e.currentTarget) setShowAcademicYearModal(false); }}>
+            <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">Nuevo Período</h3>
+                <button onClick={() => setShowAcademicYearModal(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Fecha de inicio <span className="text-red-500">*</span></label>
-                <input
-                  type="date"
-                  value={newYearData.startDate}
-                  onChange={(e) => setNewYearData(p => ({ ...p, startDate: e.target.value }))}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Nombre del período <span className="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    placeholder="Ej: 2025-2026, Verano 2025, Semestre 1..."
+                    value={newYearData.name}
+                    onChange={(e) => setNewYearData(p => ({ ...p, name: e.target.value }))}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Fecha de inicio <span className="text-red-500">*</span></label>
+                  <CustomDatePicker
+                    value={newYearData.startDate}
+                    onChange={(v) => setNewYearData(p => ({ ...p, startDate: v }))}
+                    className="w-full"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Fecha de fin <span className="text-gray-400 text-xs">(opcional)</span></label>
+                  <CustomDatePicker
+                    value={newYearData.endDate}
+                    onChange={(v) => setNewYearData(p => ({ ...p, endDate: v }))}
+                    className="w-full"
+                  />
+                </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-xs text-blue-700">Al crear un nuevo período, pasará a ser el período activo. Los anteriores se archivarán pero podrás volver a activarlos cuando quieras.</p>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Fecha de fin <span className="text-gray-400 text-xs">(opcional)</span></label>
-                <input
-                  type="date"
-                  value={newYearData.endDate}
-                  onChange={(e) => setNewYearData(p => ({ ...p, endDate: e.target.value }))}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setShowAcademicYearModal(false)}
+                  className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleCreateAcademicYear}
+                  disabled={!newYearData.name || !newYearData.startDate || creatingYear}
+                  className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {creatingYear ? 'Creando...' : 'Crear período'}
+                </button>
               </div>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <p className="text-xs text-blue-700">Al crear un nuevo año académico, pasará a ser el año actual. Los años anteriores se archivarán automáticamente.</p>
-              </div>
-            </div>
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={() => setShowAcademicYearModal(false)}
-                className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleCreateAcademicYear}
-                disabled={!newYearData.name || !newYearData.startDate || creatingYear}
-                className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {creatingYear ? 'Creando...' : 'Crear año académico'}
-              </button>
             </div>
           </div>
-        </div>
+        </ModalPortal>
       )}
 
       {/* Password Change Card */}
