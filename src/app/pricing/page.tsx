@@ -274,10 +274,10 @@ export default function PricingPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-indigo-900/20 via-gray-950 to-gray-950 pointer-events-none" />
         <div className="absolute top-0 left-1/4 w-[600px] h-[400px] bg-indigo-600/8 rounded-full blur-3xl pointer-events-none" />
         <div className="relative max-w-6xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-12 xl:gap-20 items-start">
+          <div className="grid lg:grid-cols-2 gap-12 xl:gap-20 items-stretch">
 
             {/* LEFT: pitch content */}
-            <div className="lg:pt-6 flex flex-col gap-6">
+            <div className="lg:pt-6 flex flex-col gap-6 justify-between">
               <div>
                 <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold uppercase tracking-wider mb-5">
                   {t.side.badge}
@@ -289,9 +289,9 @@ export default function PricingPage() {
               <ul className="space-y-4">
                 {t.side.bullets.map((b) => (
                   <li key={b.title} className="flex items-start gap-3">
-                    <div className="mt-0.5 w-5 h-5 rounded-full bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
-                      <svg className="w-3 h-3 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                    <div className="mt-0.5 w-5 h-5 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-500/40">
+                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
                     <div>
