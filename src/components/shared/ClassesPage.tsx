@@ -8,6 +8,7 @@ import { SkeletonClasses } from '@/components/ui/SkeletonLoader';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 import { AcademySearchDropdown } from '@/components/ui/AcademySearchDropdown';
 import { ClassFormModal } from './ClassFormModal';
+import { usePeriod } from '@/contexts/PeriodContext';
 
 interface Teacher {
   id: string;
@@ -121,6 +122,8 @@ export function ClassesPage({ role }: ClassesPageProps) {
   const [selectedClassId, setSelectedClassId] = useState<string>('all');
 
   const isDemo = role === 'ACADEMY' && paymentStatus === 'NOT PAID';
+
+  const { isClassInPeriod, activePeriodId } = usePeriod();
 
   const loadData = useCallback(async () => {
     try {
@@ -255,12 +258,18 @@ export function ClassesPage({ role }: ClassesPageProps) {
     loadData();
   }, [loadData]);
 
-  const filteredClasses =
-    role === 'ADMIN' && selectedAcademy !== 'all'
-      ? classes.filter((c) => c.academyId === selectedAcademy)
-      : role === 'ACADEMY' && selectedClassId !== 'all'
-        ? classes.filter((c) => c.id === selectedClassId)
-        : classes;
+  const filteredClasses = (() => {
+    let result =
+      role === 'ADMIN' && selectedAcademy !== 'all'
+        ? classes.filter((c) => c.academyId === selectedAcademy)
+        : role === 'ACADEMY' && selectedClassId !== 'all'
+          ? classes.filter((c) => c.id === selectedClassId)
+          : classes;
+    if (role === 'ACADEMY' && activePeriodId !== 'all') {
+      result = result.filter((c) => isClassInPeriod(c.startDate));
+    }
+    return result;
+  })();
 
   // --- CRUD handlers (Academy only) ---
   const validateForm = (): boolean => {

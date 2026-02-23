@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { BarChart, DonutChart } from '@/components/Charts';
-// canvas-confetti loaded dynamically to avoid eval() errors in Cloudflare Workers
+// canvas-confetti removed — caused CSP eval/worker-src violations in Cloudflare Workers
 import { apiClient } from '@/lib/api-client';
 import { useAnimatedNumber } from '@/hooks';
 import {
@@ -68,16 +68,10 @@ export function DashboardPage({ role }: DashboardPageProps) {
 
   useEffect(() => { loadData(); }, []);
 
-  // Confetti for new registrations (dynamic import avoids eval() error in Cloudflare Workers)
+  // New-user welcome effect (confetti removed to avoid CSP violations)
   useEffect(() => {
     if (sessionStorage.getItem('akademo_new_user')) {
       sessionStorage.removeItem('akademo_new_user');
-      setTimeout(async () => {
-        const confetti = (await import('canvas-confetti')).default;
-        confetti({ particleCount: 180, spread: 100, origin: { y: 0.55 } });
-        setTimeout(() => confetti({ particleCount: 80, spread: 120, origin: { x: 0.1, y: 0.6 } }), 200);
-        setTimeout(() => confetti({ particleCount: 80, spread: 120, origin: { x: 0.9, y: 0.6 } }), 400);
-      }, 600);
     }
   }, []);
 

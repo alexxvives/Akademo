@@ -78,6 +78,53 @@ academicYears.post('/', async (c) => {
   }
 });
 
+// PUT /academic-years/:id - Update name, startDate, endDate
+academicYears.put('/:id', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    if (session.role !== 'ACADEMY') {
+      return c.json(errorResponse('Only academy owners can manage academic years'), 403);
+    }
+
+    const yearId = c.req.param('id');
+
+    const academy = await c.env.DB.prepare(
+      'SELECT id FROM Academy WHERE ownerId = ? LIMIT 1'
+    ).bind(session.id).first<{ id: string }>();
+
+    if (!academy) {
+      return c.json(errorResponse('Academy not found'), 404);
+    }
+
+    const year = await c.env.DB.prepare(
+      'SELECT id FROM AcademicYear WHERE id = ? AND academyId = ?'
+    ).bind(yearId, academy.id).first<{ id: string }>();
+
+    if (!year) {
+      return c.json(errorResponse('Academic year not found'), 404);
+    }
+
+    const body = await c.req.json<{ name?: string; startDate?: string; endDate?: string | null }>();
+
+    if (!body.name?.trim() || !body.startDate) {
+      return c.json(errorResponse('Name and start date are required'), 400);
+    }
+
+    await c.env.DB.prepare(
+      'UPDATE AcademicYear SET name = ?, startDate = ?, endDate = ? WHERE id = ?'
+    ).bind(body.name.trim(), body.startDate, body.endDate ?? null, yearId).run();
+
+    const years = await c.env.DB.prepare(
+      'SELECT * FROM AcademicYear WHERE academyId = ? ORDER BY startDate DESC'
+    ).bind(academy.id).all();
+
+    return c.json(successResponse(years.results || []));
+  } catch (error) {
+    console.error('[Academic Years PUT] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
+
 // PATCH /academic-years/:id - Set a year as current
 academicYears.patch('/:id', async (c) => {
   try {

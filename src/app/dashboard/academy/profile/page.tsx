@@ -87,6 +87,9 @@ export default function ProfilePage() {
   const [showAcademicYearModal, setShowAcademicYearModal] = useState(false);
   const [newYearData, setNewYearData] = useState({ name: '', startDate: '', endDate: '' });
   const [creatingYear, setCreatingYear] = useState(false);
+  const [editingYear, setEditingYear] = useState<AcademicYear | null>(null);
+  const [editYearData, setEditYearData] = useState({ name: '', startDate: '', endDate: '' });
+  const [savingEditYear, setSavingEditYear] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -319,6 +322,34 @@ export default function ProfilePage() {
       }
     } catch (e) {
       console.error('Error switching period:', e);
+    }
+  };
+
+  const handleEditAcademicYear = async () => {
+    if (!editingYear || !editYearData.name.trim() || !editYearData.startDate) return;
+    setSavingEditYear(true);
+    try {
+      const res = await apiClient(`/academic-years/${editingYear.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editYearData.name.trim(),
+          startDate: editYearData.startDate,
+          endDate: editYearData.endDate || null,
+        }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setAcademicYears(result.data || []);
+        setEditingYear(null);
+      } else {
+        alert('Error al editar el período: ' + (result.error || 'Error desconocido'));
+      }
+    } catch (e) {
+      console.error('Error editing academic period:', e);
+      alert('Error de conexión al editar el período');
+    } finally {
+      setSavingEditYear(false);
     }
   };
 
@@ -1388,6 +1419,19 @@ export default function ProfilePage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    {/* Edit button */}
+                    <button
+                      onClick={() => {
+                        setEditingYear(year);
+                        setEditYearData({ name: year.name, startDate: year.startDate, endDate: year.endDate || '' });
+                      }}
+                      className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                      title="Editar período"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
                     {year.isCurrent === 1 ? (
                       <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Período activo</span>
                     ) : (
@@ -1462,6 +1506,65 @@ export default function ProfilePage() {
                   className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {creatingYear ? 'Creando...' : 'Crear período'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </ModalPortal>
+      )}
+
+      {/* Edit Academic Period Modal */}
+      {editingYear && (
+        <ModalPortal>
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" onClick={(e) => { if (e.target === e.currentTarget) setEditingYear(null); }}>
+            <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">Editar Período</h3>
+                <button onClick={() => setEditingYear(null)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Nombre del período <span className="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    placeholder="Ej: 2025-2026, Verano 2025, Semestre 1..."
+                    value={editYearData.name}
+                    onChange={(e) => setEditYearData(p => ({ ...p, name: e.target.value }))}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Fecha de inicio <span className="text-red-500">*</span></label>
+                  <CustomDatePicker
+                    value={editYearData.startDate}
+                    onChange={(v) => setEditYearData(p => ({ ...p, startDate: v }))}
+                    className="w-full"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Fecha de fin <span className="text-gray-400 text-xs">(opcional)</span></label>
+                  <CustomDatePicker
+                    value={editYearData.endDate}
+                    onChange={(v) => setEditYearData(p => ({ ...p, endDate: v }))}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => setEditingYear(null)}
+                  className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleEditAcademicYear}
+                  disabled={!editYearData.name || !editYearData.startDate || savingEditYear}
+                  className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {savingEditYear ? 'Guardando...' : 'Guardar cambios'}
                 </button>
               </div>
             </div>
