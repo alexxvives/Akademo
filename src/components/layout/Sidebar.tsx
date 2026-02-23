@@ -222,52 +222,6 @@ export function Sidebar({
             );
           })}
         </nav>
-
-        {/* Period selector (ACADEMY only) */}
-        {role === 'ACADEMY' && periods.length > 0 && (
-          <div className="px-3 pb-3">
-            <div className="relative">
-              <button
-                onClick={() => setPeriodDropdownOpen(!periodDropdownOpen)}
-                className="w-full flex items-center justify-between gap-2 px-3 py-2 bg-gray-800/30 hover:bg-gray-800/50 text-gray-300 rounded-lg text-xs transition-colors"
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${activePeriodId === 'all' ? 'bg-gray-400' : 'bg-green-400'}`} />
-                  <span className="truncate">
-                    {activePeriodId === 'all' ? 'Todos los períodos' : (activePeriod?.name ?? 'Período activo')}
-                  </span>
-                </div>
-                <svg className={`w-3.5 h-3.5 flex-shrink-0 transition-transform ${periodDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {periodDropdownOpen && (
-                <div className="absolute bottom-full mb-1 left-0 right-0 bg-[#20243a] border border-gray-700 rounded-xl shadow-xl overflow-hidden z-10">
-                  <div className="py-1">
-                    <button
-                      onClick={() => { setActivePeriodId('all'); setPeriodDropdownOpen(false); }}
-                      className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors ${activePeriodId === 'all' ? 'text-white bg-gray-700/50' : 'text-gray-400 hover:text-white hover:bg-gray-700/30'}`}
-                    >
-                      <span className="w-2 h-2 rounded-full flex-shrink-0 bg-gray-400" />
-                      Todos los períodos
-                    </button>
-                    {periods.map((p) => (
-                      <button
-                        key={p.id}
-                        onClick={() => { setActivePeriodId(p.id); setPeriodDropdownOpen(false); }}
-                        className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors ${activePeriodId === p.id ? 'text-white bg-gray-700/50' : 'text-gray-400 hover:text-white hover:bg-gray-700/30'}`}
-                      >
-                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${p.isCurrent === 1 ? 'bg-green-400' : 'bg-gray-500'}`} />
-                        <span className="truncate flex-1 text-left">{p.name}</span>
-                        {p.isCurrent === 1 && <span className="text-[10px] text-green-400 ml-auto flex-shrink-0">activo</span>}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Fixed bottom section - always visible */}
@@ -368,6 +322,52 @@ export function Sidebar({
           </div>
         )}
         
+        {/* Period selector (ACADEMY only) */}
+        {role === 'ACADEMY' && periods.length > 0 && (
+          <div className="px-3 py-2 border-t border-gray-800/50">
+            <div className="relative">
+              <button
+                onClick={() => setPeriodDropdownOpen(!periodDropdownOpen)}
+                className="w-full flex items-center justify-between gap-2 px-3 py-2 bg-gray-800/30 hover:bg-gray-800/50 text-gray-300 rounded-lg text-xs transition-colors"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${activePeriodId === 'all' ? 'bg-gray-400' : 'bg-green-400'}`} />
+                  <span className="truncate">
+                    {activePeriodId === 'all' ? 'Todos los períodos' : (activePeriod?.name ?? 'Período activo')}
+                  </span>
+                </div>
+                <svg className={`w-3.5 h-3.5 flex-shrink-0 transition-transform ${periodDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {periodDropdownOpen && (
+                <div className="absolute bottom-full mb-1 left-0 right-0 bg-[#20243a] border border-gray-700 rounded-xl shadow-xl overflow-hidden z-10">
+                  <div className="py-1">
+                    <button
+                      onClick={() => { setActivePeriodId('all'); setPeriodDropdownOpen(false); }}
+                      className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors ${activePeriodId === 'all' ? 'text-white bg-gray-700/50' : 'text-gray-400 hover:text-white hover:bg-gray-700/30'}`}
+                    >
+                      <span className="w-2 h-2 rounded-full flex-shrink-0 bg-gray-400" />
+                      Todos los períodos
+                    </button>
+                    {periods.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => { setActivePeriodId(p.id); setPeriodDropdownOpen(false); }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors ${activePeriodId === p.id ? 'text-white bg-gray-700/50' : 'text-gray-400 hover:text-white hover:bg-gray-700/30'}`}
+                      >
+                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${p.isCurrent === 1 ? 'bg-green-400' : 'bg-gray-500'}`} />
+                        <span className="truncate flex-1 text-left">{p.name}</span>
+                        {p.isCurrent === 1 && <span className="text-[10px] text-green-400 ml-auto flex-shrink-0">activo</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* User Profile */}
         {user && (
           <div className="border-t border-gray-800/50 p-4 pb-6">

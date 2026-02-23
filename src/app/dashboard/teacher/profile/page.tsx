@@ -250,8 +250,8 @@ export default function TeacherProfile() {
         </div>
 
         {/* Card Body */}
-        <div className="px-8 py-6">
-          {showPasswordForm && (
+        {showPasswordForm && (
+          <div className="px-8 py-6">
             <form onSubmit={handleChangePassword} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -294,8 +294,8 @@ export default function TeacherProfile() {
                 </button>
               </div>
             </form>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

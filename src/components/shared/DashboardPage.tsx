@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { BarChart, DonutChart } from '@/components/Charts';
-import confetti from 'canvas-confetti';
+// canvas-confetti loaded dynamically to avoid eval() errors in Cloudflare Workers
 import { apiClient } from '@/lib/api-client';
 import { useAnimatedNumber } from '@/hooks';
 import {
@@ -16,7 +16,7 @@ import { usePeriod } from '@/contexts/PeriodContext';
 
 // ─── Types ───
 interface Academy { id: string; name: string; ownerName: string; ownerEmail: string; status: string; paymentStatus?: string; teacherCount: number; studentCount: number; classCount: number; createdAt: string; }
-interface Class { id: string; name: string; slug?: string | null; description: string | null; academyId?: string; academyName: string; teacherFirstName?: string; teacherLastName?: string; enrollmentCount: number; createdAt?: string; }
+interface Class { id: string; name: string; slug?: string | null; description: string | null; academyId?: string; academyName: string; teacherFirstName?: string; teacherLastName?: string; enrollmentCount: number; createdAt?: string; startDate?: string; }
 interface EnrolledStudent { id: string; name: string; email: string; classId: string; className: string; academyId?: string; lessonsCompleted?: number; totalLessons?: number; lastActive?: string | null; }
 interface PendingEnrollment { id: string; student: { id: string; firstName: string; lastName: string; email: string }; class: { id: string; name: string; academyId?: string }; enrolledAt: string; }
 interface RatingsData { overall: { averageRating: number | null; totalRatings: number; ratedLessons: number }; lessons: Array<{ lessonId: string; lessonTitle: string; className: string; classId: string; academyId?: string; averageRating: number | null; ratingCount: number }>; }
@@ -68,11 +68,12 @@ export function DashboardPage({ role }: DashboardPageProps) {
 
   useEffect(() => { loadData(); }, []);
 
-  // Confetti for new registrations
+  // Confetti for new registrations (dynamic import avoids eval() error in Cloudflare Workers)
   useEffect(() => {
     if (sessionStorage.getItem('akademo_new_user')) {
       sessionStorage.removeItem('akademo_new_user');
-      setTimeout(() => {
+      setTimeout(async () => {
+        const confetti = (await import('canvas-confetti')).default;
         confetti({ particleCount: 180, spread: 100, origin: { y: 0.55 } });
         setTimeout(() => confetti({ particleCount: 80, spread: 120, origin: { x: 0.1, y: 0.6 } }), 200);
         setTimeout(() => confetti({ particleCount: 80, spread: 120, origin: { x: 0.9, y: 0.6 } }), 400);
@@ -241,7 +242,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
     if (selectedClass !== 'all') {
       filtered = filtered.filter(s => s.classId === selectedClass);
     } else if (isAcademy && activePeriodId !== 'all') {
-      const periodClassIds = new Set(classes.filter(c => isClassInPeriod(c.createdAt)).map(c => c.id));
+      const periodClassIds = new Set(classes.filter(c => isClassInPeriod(c.startDate)).map(c => c.id));
       filtered = filtered.filter(s => periodClassIds.has(s.classId));
     }
     return filtered;
@@ -263,7 +264,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
     if (selectedClass !== 'all') {
       filtered = filtered.filter(s => s.classId === selectedClass);
     } else if (isAcademy && activePeriodId !== 'all') {
-      const periodClassIds = new Set(classes.filter(c => isClassInPeriod(c.createdAt)).map(c => c.id));
+      const periodClassIds = new Set(classes.filter(c => isClassInPeriod(c.startDate)).map(c => c.id));
       filtered = filtered.filter(s => s.classId ? periodClassIds.has(s.classId) : false);
     }
     if (filtered.length === 0) return { avgParticipants: 0, total: 0, totalHours: 0, totalMinutes: 0 };
@@ -300,7 +301,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
     if (selectedClass !== 'all') {
       filtered = filtered.filter(p => p.classId === selectedClass);
     } else if (activePeriodId !== 'all') {
-      const periodClassIds = new Set(classes.filter(c => isClassInPeriod(c.createdAt)).map(c => c.id));
+      const periodClassIds = new Set(classes.filter(c => isClassInPeriod(c.startDate)).map(c => c.id));
       filtered = filtered.filter(p => p.classId ? periodClassIds.has(p.classId) : false);
     }
     return {
@@ -361,7 +362,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
           {/* Academy: class filter */}
           {isAcademy && classes.length > 0 && (
             <ClassSearchDropdown
-              classes={activePeriodId === 'all' ? classes : classes.filter(c => isClassInPeriod(c.createdAt))}
+              classes={activePeriodId === 'all' ? classes : classes.filter(c => isClassInPeriod(c.startDate))}
               value={selectedClass}
               onChange={setSelectedClass}
               allLabel="Todas las asignaturas"

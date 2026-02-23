@@ -9,8 +9,8 @@ import { useState, useEffect, useRef } from 'react';
  * @returns The current animated value
  */
 export function useAnimatedNumber(target: number, duration: number = 1000): number {
-  const [current, setCurrent] = useState(target);
-  const prevRef = useRef(target);
+  const [current, setCurrent] = useState(0);
+  const prevRef = useRef(0);
 
   useEffect(() => {
     const startValue = prevRef.current;

@@ -220,8 +220,8 @@ export default function StudentProfile() {
           </div>
         </div>
 
-        <div className="px-4 sm:px-8 py-4 sm:py-6">
-          {showPasswordForm && (
+        {showPasswordForm && (
+          <div className="px-4 sm:px-8 py-4 sm:py-6">
             <form onSubmit={handleChangePassword} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -274,8 +274,8 @@ export default function StudentProfile() {
                 </button>
               </div>
             </form>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
