@@ -32,6 +32,7 @@ interface Stream {
   bunnyStatus?: number | null;
   duration?: number;
   validRecordingId?: string;
+  classDeleted?: boolean;
 }
 
 interface Academy {
@@ -596,6 +597,16 @@ export function StreamsPage({ role }: StreamsPageProps) {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                               </svg>
                             </Link>
+                          ) : stream.classDeleted && stream.recordingId ? (
+                            // Class was deleted — recording orphaned, available in any class dropdown
+                            <div
+                              className="p-1.5 text-amber-500 rounded-lg cursor-help"
+                              title="La asignatura fue eliminada. Ve a cualquier asignatura y selecciona esta grabación desde el formulario de nueva clase."
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
+                              </svg>
+                            </div>
                           ) : stream.recordingId ? (
                             <button
                               onClick={() =>

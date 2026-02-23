@@ -234,36 +234,40 @@ live.get('/history', async (c) => {
         SELECT 
           ls.*,
           c.academyId,
-          c.name as className,
-          c.slug as classSlug,
-          u.firstName || ' ' || u.lastName as teacherName,
+          COALESCE(c.name, '[Clase eliminada]') as className,
+          COALESCE(c.slug, '') as classSlug,
+          COALESCE(u.firstName || ' ' || u.lastName, '') as teacherName,
+          CASE WHEN c.id IS NULL THEN 1 ELSE 0 END as classDeleted,
           (SELECT v.lessonId FROM Video v 
            JOIN Upload up ON v.uploadId = up.id 
            WHERE up.bunnyGuid = ls.recordingId 
            LIMIT 1) as validRecordingId
         FROM LiveStream ls
-        JOIN Class c ON ls.classId = c.id
-        JOIN User u ON ls.teacherId = u.id
-        JOIN Academy a ON c.academyId = a.id
-        WHERE a.ownerId = ? AND ls.status != 'scheduled'
+        LEFT JOIN Class c ON ls.classId = c.id
+        LEFT JOIN User u ON ls.teacherId = u.id
+        LEFT JOIN Academy a ON c.academyId = a.id
+        WHERE (a.ownerId = ? OR (c.id IS NULL AND ls.teacherId IN (
+          SELECT t.userId FROM Teacher t JOIN Academy a2 ON t.academyId = a2.id WHERE a2.ownerId = ?
+        ))) AND ls.status != 'scheduled'
         ORDER BY ls.createdAt DESC
       `;
-      params = [session.id];
+      params = [session.id, session.id];
     } else if (session.role === 'TEACHER') {
       query = `
         SELECT 
           ls.*,
           c.academyId,
-          c.name as className,
-          c.slug as classSlug,
-          u.firstName || ' ' || u.lastName as teacherName,
+          COALESCE(c.name, '[Clase eliminada]') as className,
+          COALESCE(c.slug, '') as classSlug,
+          COALESCE(u.firstName || ' ' || u.lastName, '') as teacherName,
+          CASE WHEN c.id IS NULL THEN 1 ELSE 0 END as classDeleted,
           (SELECT v.lessonId FROM Video v 
            JOIN Upload up ON v.uploadId = up.id 
            WHERE up.bunnyGuid = ls.recordingId 
            LIMIT 1) as validRecordingId
         FROM LiveStream ls
-        JOIN Class c ON ls.classId = c.id
-        JOIN User u ON ls.teacherId = u.id
+        LEFT JOIN Class c ON ls.classId = c.id
+        LEFT JOIN User u ON ls.teacherId = u.id
         WHERE ls.teacherId = ? AND ls.status != 'scheduled'
         ORDER BY ls.createdAt DESC
       `;
@@ -273,18 +277,19 @@ live.get('/history', async (c) => {
         SELECT 
           ls.*,
           c.academyId,
-          c.name as className,
-          c.slug as classSlug,
-          a.name as academyName,
-          u.firstName || ' ' || u.lastName as teacherName,
+          COALESCE(c.name, '[Clase eliminada]') as className,
+          COALESCE(c.slug, '') as classSlug,
+          COALESCE(a.name, '') as academyName,
+          COALESCE(u.firstName || ' ' || u.lastName, '') as teacherName,
+          CASE WHEN c.id IS NULL THEN 1 ELSE 0 END as classDeleted,
           (SELECT v.lessonId FROM Video v 
            JOIN Upload up ON v.uploadId = up.id 
            WHERE up.bunnyGuid = ls.recordingId 
            LIMIT 1) as validRecordingId
         FROM LiveStream ls
-        JOIN Class c ON ls.classId = c.id
-        JOIN Academy a ON c.academyId = a.id
-        JOIN User u ON ls.teacherId = u.id
+        LEFT JOIN Class c ON ls.classId = c.id
+        LEFT JOIN Academy a ON c.academyId = a.id
+        LEFT JOIN User u ON ls.teacherId = u.id
         WHERE ls.status != 'scheduled'
         ORDER BY ls.createdAt DESC
       `;
@@ -629,21 +634,22 @@ live.post('/create-lesson', async (c) => {
       return c.json(errorResponse('Not authorized'), 403);
     }
 
-    const { streamId, title, description, topicId, releaseDate } = await c.req.json();
+    const { streamId, title, description, topicId, releaseDate, classId: targetClassId } = await c.req.json();
 
     if (!streamId) {
       return c.json(errorResponse('streamId is required'), 400);
     }
 
-    // Get the stream with class info
+    // Get the stream with class info (LEFT JOIN so orphaned/deleted-class streams still work)
     const stream = await c.env.DB.prepare(`
       SELECT ls.id, ls.classId, ls.teacherId, ls.status, ls.title, ls.startedAt, ls.endedAt, 
              ls.recordingId, ls.createdAt, ls.zoomLink, ls.zoomMeetingId, ls.zoomStartUrl, 
              ls.participantCount, ls.participantsFetchedAt, ls.participantsData, 
-             c.academyId, c.teacherId as classTeacherId, a.ownerId as academyOwnerId
+             c.academyId, c.teacherId as classTeacherId, a.ownerId as academyOwnerId,
+             CASE WHEN c.id IS NULL THEN 1 ELSE 0 END as classDeleted
       FROM LiveStream ls
-      JOIN Class c ON ls.classId = c.id
-      JOIN Academy a ON c.academyId = a.id
+      LEFT JOIN Class c ON ls.classId = c.id
+      LEFT JOIN Academy a ON c.academyId = a.id
       WHERE ls.id = ?
     `).bind(streamId).first() as any;
 
@@ -651,14 +657,30 @@ live.post('/create-lesson', async (c) => {
       return c.json(errorResponse('Stream not found'), 404);
     }
 
-    // Verify ownership
-    const isOwner = session.role === 'ADMIN' ||
-      (session.role === 'TEACHER' && stream.teacherId === session.id) ||
-      (session.role === 'ACADEMY' && stream.academyOwnerId === session.id);
+    // Verify ownership — for orphaned streams (class deleted), fall back to Teacher table
+    let isOwner = false;
+    if (session.role === 'ADMIN') {
+      isOwner = true;
+    } else if (session.role === 'TEACHER') {
+      isOwner = stream.teacherId === session.id;
+    } else if (session.role === 'ACADEMY') {
+      if (!stream.classDeleted) {
+        isOwner = stream.academyOwnerId === session.id;
+      } else {
+        // Class was deleted — verify teacher belongs to this academy via Teacher table
+        const teacherInAcademy = await c.env.DB.prepare(
+          `SELECT t.userId FROM Teacher t JOIN Academy a ON t.academyId = a.id WHERE t.userId = ? AND a.ownerId = ?`
+        ).bind(stream.teacherId, session.id).first();
+        isOwner = !!teacherInAcademy;
+      }
+    }
 
     if (!isOwner) {
       return c.json(errorResponse('Not authorized to create lesson from this stream'), 403);
     }
+
+    // Determine final classId: use provided override or fall back to stream's classId
+    const finalClassId = targetClassId || stream.classId;
 
     // Check if stream has a recording
     if (!stream.recordingId) {
@@ -756,7 +778,7 @@ live.post('/create-lesson', async (c) => {
       lessonId,
       lessonTitle,
       description || null,
-      stream.classId,
+      finalClassId,
       topicId || null,
       releaseDate || now,
       now

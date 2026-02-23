@@ -123,6 +123,7 @@ interface StreamRecording {
   status?: string;
   recordingId?: string;
   validRecordingId?: string;
+  classDeleted?: boolean;
 }
 
 interface AnalyticsData {
@@ -372,8 +373,8 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
         // 1. Belong to this class
         // 2. Have ended status OR have a valid recording ID (even if status is weird)
         const recordingsForClass = (result.data || []).filter((stream: StreamRecording) => {
-          // Check both classId and classSlug
-          const matchClass = stream.classId === classId || stream.classSlug === classId;
+          // Check both classId and classSlug, OR include orphaned recordings (class was deleted)
+          const matchClass = stream.classId === classId || stream.classSlug === classId || stream.classDeleted;
           const hasRecording = (stream.status === 'ended' || (stream.recordingId && stream.recordingId.length > 5));
           const notUsed = !stream.validRecordingId;
           return matchClass && hasRecording && notUsed;
@@ -925,6 +926,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             streamId: lessonFormData.selectedStreamRecordings[0], // Use first selected recording
+            classId: classId, // Pass current classId so orphaned recordings use the right class
             title: lessonFormData.title || undefined,
             description: lessonFormData.description || undefined,
             topicId: lessonFormData.topicId || undefined,
