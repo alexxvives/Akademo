@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
 import { PasswordInput } from '@/components/ui';
 import Image from 'next/image';
+import Link from 'next/link';
 
 interface Academy {
   id: string;
@@ -63,9 +64,23 @@ export default function AcademyJoinPage() {
   useEffect(() => {
     if (academyId) {
       loadAcademyData();
+      checkAuth();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [academyId]);
+
+  const checkAuth = async () => {
+    try {
+      const response = await apiClient('/auth/me');
+      const result = await response.json();
+      if (result.success && result.data) {
+        setIsLoggedIn(true);
+        setCurrentUser(result.data);
+      }
+    } catch (e) {
+      // Not logged in
+    }
+  };
 
   const loadAcademyData = async () => {
     try {
@@ -191,6 +206,7 @@ export default function AcademyJoinPage() {
         if (regResult.data.token) {
           localStorage.setItem('auth_token', regResult.data.token);
         }
+        sessionStorage.setItem('akademo_new_user', '1');
         
         setTimeout(() => {
           setIsLoggedIn(true);
@@ -304,6 +320,11 @@ export default function AcademyJoinPage() {
       <div className="max-w-2xl mx-auto">
         {/* Header with Logo */}
         <div className="text-center mb-8">
+          <div className="flex justify-start mb-4">
+            <Link href="/" className="text-gray-500 hover:text-gray-700 text-sm flex items-center gap-1">
+              ← Volver
+            </Link>
+          </div>
           <div className="flex justify-center mb-4">
             <Image 
               src="/logo/AKADEMO_logo_OTHER2.svg" 
