@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { StudentsProgressTable, type StudentProgress } from '@/components/shared';
 import type { ClassBreakdownItem } from './StudentsProgressTable';
@@ -507,6 +507,18 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
     }
   };
 
+  // Filter students to only those enrolled in period classes when a period is active
+  const visibleStudents = useMemo(() => {
+    if (activePeriodId === 'all') return students;
+    const periodIds = new Set(filteredClasses.filter(c => isClassInPeriod(c.startDate)).map(c => c.id));
+    return students.filter(s => {
+      if (s.classBreakdown && s.classBreakdown.length > 0) {
+        return s.classBreakdown.some((b: { classId: string }) => periodIds.has(b.classId));
+      }
+      return s.classId ? periodIds.has(s.classId) : false;
+    });
+  }, [students, activePeriodId, filteredClasses, isClassInPeriod]);
+
   if (loading) {
     return (
       <div className="space-y-6 pb-8">
@@ -606,7 +618,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
       </div>
 
       <StudentsProgressTable
-        students={students}
+        students={visibleStudents}
         loading={loading}
         searchQuery={searchQuery}
         selectedClass={selectedClass}

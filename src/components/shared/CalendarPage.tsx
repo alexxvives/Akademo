@@ -478,9 +478,15 @@ export function CalendarPage({ role }: CalendarPageProps) {
 
   // ─── Filtered events ───
   const filteredEvents = useMemo(() => {
-    if (selectedClass === 'all') return events;
-    return events.filter(e => e.classId === selectedClass);
-  }, [events, selectedClass]);
+    let result = events;
+    if (selectedClass !== 'all') {
+      result = result.filter(e => e.classId === selectedClass);
+    } else if (activePeriodId !== 'all') {
+      const periodIds = new Set(classes.filter(c => isClassInPeriod(c.startDate)).map(c => c.id));
+      result = result.filter(e => e.classId ? periodIds.has(e.classId) : false);
+    }
+    return result;
+  }, [events, selectedClass, activePeriodId, classes, isClassInPeriod]);
 
   // ─── Events grouped by date ───
   const eventsByDate = useMemo(() => {

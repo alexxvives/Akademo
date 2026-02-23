@@ -591,6 +591,14 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
     return result;
   })();
 
+  // Period-filtered assignment rows — only show assignments from classes in the active period
+  const periodClassIds = activePeriodId !== 'all'
+    ? new Set(filteredClasses.map(c => c.id))
+    : null;
+  const visibleAssignments = periodClassIds
+    ? assignments.filter(a => a.classId ? periodClassIds.has(a.classId) : false)
+    : assignments;
+
   // â”€â”€â”€ Rendering â”€â”€â”€
   if (loading) {
     return (
@@ -687,7 +695,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
         </div>
 
         {/* Empty state */}
-        {assignments.length === 0 ? (
+        {visibleAssignments.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
             <div className="w-20 h-20 bg-gradient-to-br from-brand-100 to-brand-200 rounded-full flex items-center justify-center mx-auto mb-6">
               <svg className="w-10 h-10 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -779,7 +787,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
           </tr>
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
-          {assignments.map((assignment) => (
+          {visibleAssignments.map((assignment) => (
             <tr key={assignment.id}
               id={`assignment-${assignment.id}`}
               ref={glowId === assignment.id ? highlightRef : null}

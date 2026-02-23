@@ -10,6 +10,7 @@ import { PasswordInput } from '@/components/ui';
 import { ModalPortal } from '@/components/ui/ModalPortal';
 import { CustomDatePicker } from '@/components/ui/CustomDatePicker';
 import { ZoomConnectButton, StripeConnectButton } from '@/components/profile';
+import { usePeriod } from '@/contexts/PeriodContext';
 
 interface ZoomAccount {
   id: string;
@@ -79,6 +80,7 @@ const MULTIPLIER_OPTIONS = [
 
 export default function ProfilePage() {
   const { user } = useAuth();
+  const { activePeriodId, setActivePeriodId } = usePeriod();
   const [academy, setAcademy] = useState<Academy | null>(null);
   const [zoomAccounts, setZoomAccounts] = useState<ZoomAccount[]>([]);
   const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null);
@@ -1406,6 +1408,28 @@ export default function ProfilePage() {
             </div>
           ) : (
             <div className="space-y-3">
+              {/* "All periods" view — controls the dashboard sidebar filter */}
+              <div className={`flex items-center justify-between p-4 rounded-xl border transition-all ${activePeriodId === 'all' ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200 hover:border-gray-300'}`}>
+                <div className="flex items-center gap-3">
+                  <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${activePeriodId === 'all' ? 'bg-blue-500' : 'bg-gray-300'}`} />
+                  <div>
+                    <p className="font-semibold text-gray-900">Todos los períodos</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Ver datos de todos los períodos sin filtro</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {activePeriodId === 'all' ? (
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Vista activa</span>
+                  ) : (
+                    <button
+                      onClick={() => setActivePeriodId('all')}
+                      className="px-3 py-1 text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-colors"
+                    >
+                      Ver todos
+                    </button>
+                  )}
+                </div>
+              </div>
               {academicYears.map((year) => (
                 <div key={year.id} className={`flex items-center justify-between p-4 rounded-xl border transition-all ${year.isCurrent ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200 hover:border-gray-300'}`}>
                   <div className="flex items-center gap-3">
@@ -1488,9 +1512,6 @@ export default function ProfilePage() {
                     onChange={(v) => setNewYearData(p => ({ ...p, endDate: v }))}
                     className="w-full"
                   />
-                </div>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <p className="text-xs text-blue-700">Al crear un nuevo período, pasará a ser el período activo. Los anteriores se archivarán pero podrás volver a activarlos cuando quieras.</p>
                 </div>
               </div>
               <div className="flex gap-3 mt-6">

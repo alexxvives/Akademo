@@ -496,12 +496,17 @@ export default function PagosPage({ role }: PagosPageProps) {
     }
   };
   
+  const periodClassIds = activePeriodId !== 'all' && !isAdmin
+    ? new Set(classes.filter(c => isClassInPeriod(c.startDate)).map(c => c.id))
+    : null;
+
   const filteredPendingPayments = pendingPayments.filter(p => {
     const matchesSearch = searchQuery === '' || 
       `${p.studentFirstName} ${p.studentLastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.studentEmail.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesClass = selectedClass === 'all' || p.classId === selectedClass;
-    return matchesSearch && matchesClass;
+    const matchesPeriod = !periodClassIds || periodClassIds.has(p.classId);
+    return matchesSearch && matchesClass && matchesPeriod;
   });
 
   const filteredPaymentHistory = paymentHistory.filter(p => {
@@ -511,7 +516,8 @@ export default function PagosPage({ role }: PagosPageProps) {
     const matchesClass = selectedClass === 'all' || 
                          (p.classId && p.classId === selectedClass) ||
                          (!p.classId && p.className === classes.find(c => c.id === selectedClass)?.name);
-    return matchesSearch && matchesClass;
+    const matchesPeriod = !periodClassIds || (p.classId ? periodClassIds.has(p.classId) : false);
+    return matchesSearch && matchesClass && matchesPeriod;
   });
 
   if (loading) {

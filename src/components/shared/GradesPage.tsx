@@ -328,6 +328,25 @@ export function GradesPage({ role }: GradesPageProps) {
     }
   }, [selectedClass, loadGrades]);
 
+  // When the active period changes, clear selected class if it's no longer in the period
+  useEffect(() => {
+    if (!selectedClass || selectedClass === '') return;
+    if (activePeriodId === 'all') return;
+    if (selectedClass === 'all') {
+      // 'all' mode is ambiguous with a period active — reset to force user to pick a period class
+      setSelectedClass('');
+      setGrades([]);
+      setAverages([]);
+      return;
+    }
+    const cls = classes.find(c => c.id === selectedClass);
+    if (cls && !isClassInPeriod(cls.startDate ?? null)) {
+      setSelectedClass('');
+      setGrades([]);
+      setAverages([]);
+    }
+  }, [activePeriodId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Filtering
   const filteredGrades = useMemo(() => {
     if (!searchQuery.trim()) return grades;
