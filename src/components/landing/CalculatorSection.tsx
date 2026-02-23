@@ -135,9 +135,13 @@ export function CalculatorSection({ lang }: CalculatorSectionProps) {
 
             {/* Total potential revenue with AKADEMO */}
             <div className="bg-gradient-to-r from-emerald-500/15 to-cyan-500/15 border border-emerald-500/20 rounded-xl p-6 text-center flex-1 flex flex-col justify-center">
-              <p className="text-gray-400 text-sm mb-1">{isEs ? 'Ingresos recuperables por año' : 'Total Potential Annual Revenue'}</p>
+              <p className="text-gray-400 text-sm mb-1">{isEs ? 'Ingresos totales con AKADEMO' : 'Total Revenue with AKADEMO'}</p>
               <p className="text-4xl sm:text-5xl font-bold text-emerald-400">€{totalPotentialRevenue.toLocaleString()}</p>
-              <p className="text-gray-500 text-sm mt-1">{isEs ? 'con todas las cuentas pagando' : 'with all accounts paying'}</p>
+              <p className="text-gray-500 text-sm mt-1">
+                {isEs
+                  ? `€${currentAnnualRevenue.toLocaleString()} actuales + €${lostAnnualRevenue.toLocaleString()} recuperados (100%)`
+                  : `€${currentAnnualRevenue.toLocaleString()} current + €${lostAnnualRevenue.toLocaleString()} recovered (100%)`}
+              </p>
             </div>
 
             {/* Ghost students stat */}

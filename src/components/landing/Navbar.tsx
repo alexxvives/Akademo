@@ -37,6 +37,14 @@ export function Navbar({ t, isScrolled, lang, onLangChange, onOpenModal }: Navba
               </Link>
               
               <div className="flex items-center gap-1.5 sm:gap-3 justify-end">
+                <Link
+                  href="/pricing"
+                  className={`hidden sm:inline-flex px-2.5 sm:px-4 py-1.5 sm:py-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${
+                    isScrolled ? 'text-gray-600 hover:text-gray-900' : 'text-white/90 hover:text-white'
+                  }`}
+                >
+                  {lang === 'es' ? 'Precios' : 'Pricing'}
+                </Link>
                 <button
                   onClick={() => onOpenModal('login')}
                   className={`px-2.5 sm:px-4 py-1.5 sm:py-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${

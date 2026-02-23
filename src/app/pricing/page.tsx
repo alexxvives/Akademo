@@ -101,6 +101,19 @@ const translations = {
       subtitle: 'Hemos recibido tu información. Nuestro equipo se pondrá en contacto contigo en menos de 24h con una propuesta personalizada.',
       cta: 'Volver al inicio',
     },
+    side: {
+      badge: 'Solicitar precios',
+      title: 'Nos adaptamos a tus necesidades',
+      subtitle: 'Cuéntanos sobre tu academia y te preparamos un plan a medida.',
+      bullets: [
+        { title: 'Protección total del contenido', desc: 'Streaming seguro con BunnyCDN. Tu material nunca se puede descargar ni compartir.' },
+        { title: 'Cero cuentas compartidas', desc: 'Detectamos y bloqueamos el acceso de estudiantes fantasma en tiempo real.' },
+        { title: 'Gestión completa en un lugar', desc: 'Pagos, asistencia, ejercicios y documentos desde un único dashboard.' },
+        { title: 'Soporte prioritario', desc: 'Acompañamiento desde el onboarding hasta que tu academia esté en marcha.' },
+      ],
+      testimonial: '«Nos ahorra horas cada semana. Antes gestéionabamos todo en Excel; ahora todo está centralizado y los estudiantes no pueden compartir acceso.»',
+      testimonialAuthor: 'Director de academia',
+    },
     features: [
       { icon: 'shield', title: 'Contenido protegido', desc: 'Streaming seguro con BunnyCDN. Tu material nunca se podrá descargar ni compartir.' },
       { icon: 'users', title: 'Sin límite de estudiantes', desc: 'Todos los planes incluyen estudiantes y clases ilimitadas.' },
@@ -146,6 +159,19 @@ const translations = {
       title: 'Proposal requested!',
       subtitle: 'We\'ve received your information. Our team will contact you within 24h with a personalized proposal.',
       cta: 'Back to home',
+    },
+    side: {
+      badge: 'Request pricing',
+      title: 'We adapt to your needs',
+      subtitle: 'Tell us about your academy and we\'ll prepare a tailored plan.',
+      bullets: [
+        { title: 'Total content protection', desc: 'Secure streaming with BunnyCDN. Your material can never be downloaded or shared.' },
+        { title: 'Zero account sharing', desc: 'We detect and block ghost student access in real time.' },
+        { title: 'Full management in one place', desc: 'Payments, attendance, assignments and documents from a single dashboard.' },
+        { title: 'Priority support', desc: 'Guidance from onboarding until your academy is fully live.' },
+      ],
+      testimonial: '"It saves us hours every week. We used to manage everything in spreadsheets; now it\'s all centralized and students can\'t share access."',
+      testimonialAuthor: 'Academy director',
     },
     features: [
       { icon: 'shield', title: 'Protected content', desc: 'Secure streaming with BunnyCDN. Your material can never be downloaded or shared.' },
@@ -243,22 +269,49 @@ export default function PricingPage() {
     <div className="min-h-screen bg-gray-950 text-white">
       <Navbar t={t.nav} isScrolled={isScrolled} lang={lang} onLangChange={setLang} onOpenModal={openModal} />
 
-      {/* HERO */}
-      <section className="relative pt-40 pb-16 px-4 sm:px-6 overflow-hidden">
+      {/* HERO + FORM SECTION - side by side */}
+      <section className="relative pt-36 pb-24 px-4 sm:px-6 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-indigo-900/20 via-gray-950 to-gray-950 pointer-events-none" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative max-w-4xl mx-auto text-center">
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-sm font-medium mb-6">
-            {t.hero.badge}
-          </span>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">{t.hero.title}</h1>
-          <p className="text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto">{t.hero.subtitle}</p>
-        </div>
-      </section>
+        <div className="absolute top-0 left-1/4 w-[600px] h-[400px] bg-indigo-600/8 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative max-w-6xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 xl:gap-20 items-start">
 
-      {/* FORM SECTION */}
-      <section className="px-4 sm:px-6 pb-24">
-        <div className="max-w-2xl mx-auto">
+            {/* LEFT: pitch content */}
+            <div className="lg:pt-6 flex flex-col gap-6">
+              <div>
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold uppercase tracking-wider mb-5">
+                  {t.side.badge}
+                </span>
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-4">{t.side.title}</h1>
+                <p className="text-gray-400 leading-relaxed">{t.side.subtitle}</p>
+              </div>
+
+              <ul className="space-y-4">
+                {t.side.bullets.map((b) => (
+                  <li key={b.title} className="flex items-start gap-3">
+                    <div className="mt-0.5 w-5 h-5 rounded-full bg-indigo-500/20 flex items-center justify-center flex-shrink-0">
+                      <svg className="w-3 h-3 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-white">{b.title}</p>
+                      <p className="text-sm text-gray-500 leading-relaxed">{b.desc}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="bg-gray-900/60 border border-gray-800 rounded-2xl p-5">
+                <p className="text-sm text-gray-300 italic leading-relaxed mb-3">{t.side.testimonial}</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold">A</div>
+                  <span className="text-xs text-gray-400">{t.side.testimonialAuthor}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* RIGHT: Form */}
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 sm:p-10">
             <h2 className="text-xl sm:text-2xl font-bold text-white mb-8">{t.form.title}</h2>
 
@@ -369,6 +422,7 @@ export default function PricingPage() {
                 {submitting ? t.form.submitting : t.form.submit}
               </button>
             </form>
+          </div>
           </div>
         </div>
       </section>
