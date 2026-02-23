@@ -344,6 +344,7 @@ export default function AcademyJoinPage() {
                   alt={academy.name}
                   width={64}
                   height={64}
+                  unoptimized
                   className="w-16 h-16 rounded-xl object-contain"
                 />
               )}
