@@ -302,6 +302,26 @@ export default function PricingPage() {
                 ))}
               </ul>
 
+              {/* Guarantees */}
+              <div className="mt-2 rounded-2xl border border-gray-800 bg-gray-900/50 p-6 flex flex-col gap-3">
+                <p className="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-1">{lang === 'es' ? 'Incluido siempre' : 'Always included'}</p>
+                {(lang === 'es' ? [
+                  { icon: '⚡', text: 'Respuesta garantizada en menos de 24h' },
+                  { icon: '🔓', text: 'Sin permanencia ni costes ocultos' },
+                  { icon: '🚀', text: 'Setup y onboarding completo incluidos' },
+                  { icon: '🛡️', text: 'Migraciones de datos sin coste' },
+                ] : [
+                  { icon: '⚡', text: 'Guaranteed response in under 24h' },
+                  { icon: '🔓', text: 'No lock-in or hidden fees' },
+                  { icon: '🚀', text: 'Full setup & onboarding included' },
+                  { icon: '🛡️', text: 'Free data migration' },
+                ]).map((item) => (
+                  <div key={item.text} className="flex items-center gap-3">
+                    <span className="text-base leading-none">{item.icon}</span>
+                    <span className="text-sm text-gray-300">{item.text}</span>
+                  </div>
+                ))}
+              </div>
 
             </div>
 

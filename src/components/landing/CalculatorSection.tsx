@@ -144,12 +144,7 @@ export function CalculatorSection({ lang }: CalculatorSectionProps) {
               </p>
             </div>
 
-            {/* Ghost students stat */}
-            <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-5 text-center">
-              <UsersIcon className="w-5 h-5 text-red-400 mx-auto mb-2" />
-              <p className="text-2xl font-bold text-red-400">{ghostStudents}</p>
-              <p className="text-gray-500 text-xs mt-1">{isEs ? 'Estudiantes fantasma' : 'Ghost Students'}</p>
-            </div>
+
           </div>
         </div>
       </div>
