@@ -12,6 +12,7 @@ interface Academy {
   id: string;
   name: string;
   description: string | null;
+  logoUrl: string | null;
   ownerFirstName: string;
   ownerLastName: string;
 }
@@ -44,8 +45,7 @@ export default function AcademyJoinPage() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    firstName: '',
-    lastName: '',
+    fullName: '',
   });
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -198,7 +198,13 @@ export default function AcademyJoinPage() {
       const regResponse = await apiClient('/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, role: 'STUDENT' }),
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          firstName: formData.fullName.split(' ')[0] || formData.fullName,
+          lastName: formData.fullName.split(' ').slice(1).join(' ') || '',
+          role: 'STUDENT',
+        }),
       });
       const regResult = await regResponse.json();
 
@@ -246,9 +252,8 @@ export default function AcademyJoinPage() {
           if (result.data.token) {
             localStorage.setItem('auth_token', result.data.token);
           }
-          
-          setIsLoggedIn(true);
-          setCurrentUser(result.data);
+          router.push('/dashboard/student');
+          return;
         } else {
           setAuthError(result.error || 'Credenciales incorrectas');
         }
@@ -336,9 +341,20 @@ export default function AcademyJoinPage() {
           </div>
           <p className="text-gray-600">Únete a las clases de</p>
           {academy && (
-            <p className="text-xl font-semibold text-gray-900 mt-1">
-              {academy.name}
-            </p>
+            <div className="flex flex-col items-center mt-2 gap-2">
+              {academy.logoUrl && (
+                <Image
+                  src={academy.logoUrl}
+                  alt={academy.name}
+                  width={64}
+                  height={64}
+                  className="w-16 h-16 rounded-xl object-contain"
+                />
+              )}
+              <p className="text-xl font-semibold text-gray-900">
+                {academy.name}
+              </p>
+            </div>
           )}
         </div>
 
@@ -375,32 +391,19 @@ export default function AcademyJoinPage() {
 
               <form onSubmit={handleAuth} className="space-y-4">
                 {!showLogin && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Nombre
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={formData.firstName}
-                        onChange={e => setFormData({ ...formData, firstName: e.target.value })}
-                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-gray-900"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Apellido
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={formData.lastName}
-                        onChange={e => setFormData({ ...formData, lastName: e.target.value })}
-                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-gray-900"
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nombre completo
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.fullName}
+                      onChange={e => setFormData({ ...formData, fullName: e.target.value })}
+                      disabled={showVerification || verifyingCode || verificationSuccess}
+                      placeholder="Juan García"
+                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-500"
+                    />
                   </div>
                 )}
                 

@@ -634,7 +634,7 @@ auth.get('/join/academy/:academyId', async (c) => {
 
     // Get academy details
     const academy = await c.env.DB.prepare(`
-      SELECT a.id, a.name, a.description, u.firstName as ownerFirstName, u.lastName as ownerLastName
+      SELECT a.id, a.name, a.description, a.logoUrl, u.firstName as ownerFirstName, u.lastName as ownerLastName
       FROM Academy a
       JOIN User u ON a.ownerId = u.id
       WHERE a.id = ?
@@ -642,6 +642,7 @@ auth.get('/join/academy/:academyId', async (c) => {
       id: string; 
       name: string; 
       description: string | null;
+      logoUrl: string | null;
       ownerFirstName: string;
       ownerLastName: string;
     } | null;
@@ -664,6 +665,7 @@ auth.get('/join/academy/:academyId', async (c) => {
         id: academy.id,
         name: academy.name,
         description: academy.description,
+        logoUrl: academy.logoUrl || null,
         ownerFirstName: academy.ownerFirstName,
         ownerLastName: academy.ownerLastName
       },

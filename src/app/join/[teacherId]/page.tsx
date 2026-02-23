@@ -43,8 +43,7 @@ export default function JoinPage() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    firstName: '',
-    lastName: '',
+    fullName: '',
   });
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -212,7 +211,13 @@ export default function JoinPage() {
       const regResponse = await apiClient('/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, role: 'STUDENT' }),
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          firstName: formData.fullName.split(' ')[0] || formData.fullName,
+          lastName: formData.fullName.split(' ').slice(1).join(' ') || '',
+          role: 'STUDENT',
+        }),
       });
       const regResult = await regResponse.json();
 
@@ -259,13 +264,11 @@ export default function JoinPage() {
         const result = await response.json();
         
         if (result.success) {
-          // Store auth token for API requests
           if (result.data.token) {
             localStorage.setItem('auth_token', result.data.token);
           }
-          
-          setIsLoggedIn(true);
-          setCurrentUser(result.data);
+          router.push('/dashboard/student');
+          return;
         } else {
           setAuthError(result.error || 'Credenciales incorrectas');
         }
@@ -409,33 +412,18 @@ export default function JoinPage() {
 
               <form onSubmit={handleAuth} className="space-y-4">
                 {!showLogin && (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
-                      <input
-                        type="text"
-                        required={!showLogin}
-                        value={formData.firstName}
-                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                        autoComplete="given-name"
-                        disabled={showVerification}
-                        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-500"
-                        placeholder="Juan"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Apellido</label>
-                      <input
-                        type="text"
-                        required={!showLogin}
-                        value={formData.lastName}
-                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                        autoComplete="family-name"
-                        disabled={showVerification}
-                        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-500"
-                        placeholder="García"
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nombre completo</label>
+                    <input
+                      type="text"
+                      required={!showLogin}
+                      value={formData.fullName}
+                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                      autoComplete="name"
+                      disabled={showVerification}
+                      className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-500"
+                      placeholder="Juan García"
+                    />
                   </div>
                 )}
                 
