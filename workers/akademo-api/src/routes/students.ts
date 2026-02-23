@@ -157,4 +157,25 @@ students.get('/progress', async (c) => {
   }
 });
 
+// PATCH /students/:id/warn — send suspicion warning to student (shown on their next login)
+students.patch('/:id/warn', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    if (session.role !== 'ACADEMY' && session.role !== 'ADMIN') {
+      return c.json(errorResponse('Not authorized'), 403);
+    }
+
+    const studentId = c.req.param('id');
+    await c.env.DB
+      .prepare('UPDATE User SET suspicionWarning = 1 WHERE id = ?')
+      .bind(studentId)
+      .run();
+
+    return c.json(successResponse({ warned: true }));
+  } catch (error: any) {
+    console.error('[Students Warn] Error:', error);
+    return c.json(errorResponse('Failed to send warning'), 500);
+  }
+});
+
 export default students;

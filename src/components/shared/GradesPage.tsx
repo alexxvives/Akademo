@@ -349,18 +349,36 @@ export function GradesPage({ role }: GradesPageProps) {
 
   // Filtering
   const filteredGrades = useMemo(() => {
-    if (!searchQuery.trim()) return grades;
+    let result = grades;
+    // When viewing all classes, restrict to grades from period classes only
+    if (selectedClass === 'all' && activePeriodId !== 'all') {
+      const periodClassNames = new Set(
+        classes.filter(c => isClassInPeriod(c.startDate ?? null)).map(c => c.name)
+      );
+      result = result.filter(g => periodClassNames.has(g.className));
+    }
+    if (!searchQuery.trim()) return result;
     const q = searchQuery.toLowerCase();
-    return grades.filter(
+    return result.filter(
       (g) => g.studentName.toLowerCase().includes(q) || g.studentEmail.toLowerCase().includes(q)
     );
-  }, [grades, searchQuery]);
+  }, [grades, searchQuery, selectedClass, activePeriodId, classes, isClassInPeriod]);
 
   const filteredAverages = useMemo(() => {
-    if (!searchQuery.trim()) return averages;
+    let result = averages;
+    // When viewing all classes, restrict to averages from period classes only
+    if (selectedClass === 'all' && activePeriodId !== 'all') {
+      const periodClassNames = new Set(
+        classes.filter(c => isClassInPeriod(c.startDate ?? null)).map(c => c.name)
+      );
+      result = result.filter(a =>
+        grades.some(g => g.studentId === a.studentId && periodClassNames.has(g.className))
+      );
+    }
+    if (!searchQuery.trim()) return result;
     const q = searchQuery.toLowerCase();
-    return averages.filter((a) => a.studentName.toLowerCase().includes(q));
-  }, [averages, searchQuery]);
+    return result.filter((a) => a.studentName.toLowerCase().includes(q));
+  }, [averages, grades, searchQuery, selectedClass, activePeriodId, classes, isClassInPeriod]);
 
   const top10Averages = filteredAverages.slice(0, 10);
 

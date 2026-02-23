@@ -339,12 +339,21 @@ auth.post('/login', loginRateLimit, validateBody(loginSchema), async (c) => {
       domain: '.akademo-edu.com', // Share cookie with frontend
     });
 
-    // Re-read suspicionCount in case it was just incremented by impossible travel
+    // Re-read suspicionCount and suspicionWarning after possible updates
     const freshUser = await c.env.DB
-      .prepare('SELECT suspicionCount FROM User WHERE id = ?')
+      .prepare('SELECT suspicionCount, suspicionWarning FROM User WHERE id = ?')
       .bind(user.id)
       .first();
     const currentSuspicionCount = (freshUser?.suspicionCount as number) || 0;
+    const hasSuspicionWarning = ((freshUser?.suspicionWarning as number) || 0) === 1;
+
+    // Clear the warning flag so it only shows once per manual trigger
+    if (hasSuspicionWarning) {
+      await c.env.DB
+        .prepare('UPDATE User SET suspicionWarning = 0 WHERE id = ?')
+        .bind(user.id)
+        .run();
+    }
 
     return c.json(successResponse({
       token: sessionId, // Return signed token for cross-domain auth
@@ -354,6 +363,7 @@ auth.post('/login', loginRateLimit, validateBody(loginSchema), async (c) => {
       lastName: user.lastName,
       role: user.role,
       suspicionCount: currentSuspicionCount,
+      suspicionWarning: hasSuspicionWarning,
     }));
   } catch (error: any) {
     console.error('[Login] Error:', error);

@@ -44,6 +44,7 @@ interface StudentsProgressTableProps {
   showBanButton?: boolean;
   disableBanButton?: boolean;
   onBanStudent?: (enrollmentId: string) => void;
+  onAlertStudent?: (studentId: string, studentName: string) => void;
 }
 
 export function StudentsProgressTable({
@@ -55,6 +56,7 @@ export function StudentsProgressTable({
   showBanButton = false,
   disableBanButton = false,
   onBanStudent,
+  onAlertStudent,
 }: StudentsProgressTableProps) {
   const [expandedStudents, setExpandedStudents] = useState<Set<string>>(new Set());
   const [visibleColumns, setVisibleColumns] = useState({ asignatura: true, videosVistos: true, tiempoTotal: true, ultimaActividad: true, pagos: true, sospechas: false, acciones: false });
@@ -418,12 +420,21 @@ export function StudentsProgressTable({
                       {visibleColumns.sospechas && (
                       <td className="py-4 px-6">
                         {(student.suspicionCount ?? 0) > 0 ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onAlertStudent && window.confirm(`¿Enviar alerta de actividad sospechosa a ${student.name}? El estudiante verá el aviso en su próximo inicio de sesión.`)) {
+                                onAlertStudent(student.id, student.name);
+                              }
+                            }}
+                            title="Enviar alerta al estudiante"
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-colors cursor-pointer"
+                          >
                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                             </svg>
                             {student.suspicionCount}
-                          </span>
+                          </button>
                         ) : (
                           <span className="text-sm text-gray-400">—</span>
                         )}

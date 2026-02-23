@@ -633,7 +633,13 @@ export function TeachersPage({ role }: TeachersPageProps) {
                       {/* Expandable class breakdown sub-rows */}
                       {hasClasses &&
                         isExpanded &&
-                        teacher.classes.map((cls, idx) => (
+                        (activePeriodId !== 'all'
+                          ? teacher.classes.filter(cls => {
+                              const pIds = new Set(classes.filter(c => isClassInPeriod(c.startDate)).map(c => c.id));
+                              return cls.id && pIds.has(cls.id);
+                            })
+                          : teacher.classes
+                        ).map((cls, idx) => (
                           <tr key={`${teacher.id}-cls-${idx}`} className="bg-gray-50/70">
                             <td
                               className="px-3 sm:px-6 py-3"

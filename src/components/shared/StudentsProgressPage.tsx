@@ -626,6 +626,19 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
         showBanButton={role === 'ACADEMY'}
         disableBanButton={paymentStatus === 'NOT PAID' && userEmail.toLowerCase().includes('demo')}
         onBanStudent={role === 'ACADEMY' ? handleBanStudent : undefined}
+        onAlertStudent={role === 'ACADEMY' || role === 'ADMIN' ? async (studentId: string, studentName: string) => {
+          try {
+            const res = await apiClient(`/students/${studentId}/warn`, { method: 'PATCH' });
+            const result = await res.json();
+            if (result.success) {
+              alert(`Se ha enviado la alerta de actividad sospechosa a ${studentName}. Verá el aviso en su próximo inicio de sesión.`);
+            } else {
+              alert('Error al enviar la alerta: ' + (result.error || 'Error desconocido'));
+            }
+          } catch {
+            alert('Error de conexión al enviar la alerta.');
+          }
+        } : undefined}
       />
     </div>
   );

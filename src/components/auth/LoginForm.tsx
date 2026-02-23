@@ -53,10 +53,10 @@ export function LoginForm({ onSuccess, onSwitchToRegister, onForgotPassword, onC
 
         if (result.data?.role) {
           const role = result.data.role.toLowerCase();
-          const suspicionCount = result.data?.suspicionCount ?? 0;
+          const hasManualWarning = result.data?.suspicionWarning ?? false;
 
-          // Show warning popup for students with 3+ suspicion flags before redirecting
-          if (role === 'student' && suspicionCount >= 3) {
+          // Show warning popup for students with a manually-triggered suspicion alert
+          if (role === 'student' && hasManualWarning) {
             onClose();
             setPendingRedirect({ role });
             setSuspicionWarning(true);
