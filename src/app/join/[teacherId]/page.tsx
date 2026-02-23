@@ -6,7 +6,6 @@ import { useParams, useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
 import { PasswordInput } from '@/components/ui';
 import Image from 'next/image';
-import Link from 'next/link';
 
 interface Teacher {
   id: string;
@@ -361,11 +360,6 @@ export default function JoinPage() {
       <div className="max-w-2xl mx-auto">
         {/* Header with Logo */}
         <div className="text-center mb-8">
-          <div className="flex justify-start mb-4">
-            <Link href="/" className="text-gray-500 hover:text-gray-700 text-sm flex items-center gap-1">
-              ← Volver
-            </Link>
-          </div>
           <div className="flex justify-center mb-4">
             <Image 
               src="/logo/AKADEMO_logo_OTHER2.svg" 

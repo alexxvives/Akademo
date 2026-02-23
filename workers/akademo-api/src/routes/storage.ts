@@ -54,6 +54,34 @@ function sanitizePath(p: string): string {
 
 const storage = new Hono<{ Bindings: Bindings }>();
 
+// GET /storage/serve/* - Public file serving (no auth required for public assets like logos)
+storage.get('/serve/*', async (c) => {
+  try {
+    const key = c.req.path.replace(/^\/storage\/serve\//, '');
+    const sanitized = sanitizePath(decodeURIComponent(key));
+
+    if (!sanitized) {
+      return c.json(errorResponse('Invalid path'), 400);
+    }
+
+    const object = await c.env.STORAGE.get(sanitized);
+    if (!object) {
+      return c.json(errorResponse('File not found'), 404);
+    }
+
+    const headers = new Headers();
+    const contentType = object.httpMetadata?.contentType || 'application/octet-stream';
+    headers.set('Content-Type', contentType);
+    headers.set('Cache-Control', 'public, max-age=86400');
+    headers.set('Content-Length', String(object.size));
+
+    return new Response(object.body, { status: 200, headers });
+  } catch (error: any) {
+    console.error('[Storage Serve] Error:', error);
+    return c.json(errorResponse('Failed to serve file'), 500);
+  }
+});
+
 // POST /storage/upload - Simple file upload (for small files like logos)
 storage.post('/upload', async (c) => {
   try {
