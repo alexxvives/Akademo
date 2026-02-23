@@ -331,7 +331,7 @@ export function Sidebar({
                 className="w-full flex items-center justify-between gap-2 px-3 py-2 bg-gray-800/30 hover:bg-gray-800/50 text-gray-300 rounded-lg text-xs transition-colors"
               >
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${activePeriodId === 'all' ? 'bg-gray-400' : 'bg-green-400'}`} />
+                  <span className="w-2 h-2 rounded-full flex-shrink-0 bg-green-400" />
                   <span className="truncate">
                     {activePeriodId === 'all' ? 'Todos los períodos' : (activePeriod?.name ?? 'Período activo')}
                   </span>
@@ -347,8 +347,9 @@ export function Sidebar({
                       onClick={() => { setActivePeriodId('all'); setPeriodDropdownOpen(false); }}
                       className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors ${activePeriodId === 'all' ? 'text-white bg-gray-700/50' : 'text-gray-400 hover:text-white hover:bg-gray-700/30'}`}
                     >
-                      <span className="w-2 h-2 rounded-full flex-shrink-0 bg-gray-400" />
-                      Todos los períodos
+                      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${activePeriodId === 'all' ? 'bg-green-400' : 'bg-gray-500'}`} />
+                      <span className="truncate flex-1 text-left">Todos los períodos</span>
+                      {activePeriodId === 'all' && <span className="text-[10px] text-green-400 ml-auto flex-shrink-0">activo</span>}
                     </button>
                     {periods.map((p) => (
                       <button

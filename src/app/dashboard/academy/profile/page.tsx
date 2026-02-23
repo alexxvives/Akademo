@@ -1409,22 +1409,24 @@ export default function ProfilePage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {/* "All periods" view — controls the dashboard sidebar filter */}
-              <div className={`flex items-center justify-between p-4 rounded-xl border transition-all ${activePeriodId === 'all' ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200 hover:border-gray-300'}`}>
+              {/* "All periods" view — treated same as any period (green when active, Activar when not) */}
+              <div className={`flex items-center justify-between p-4 rounded-xl border transition-all ${activePeriodId === 'all' ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200 hover:border-gray-300'}`}>
                 <div className="flex items-center gap-3">
-                  <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${activePeriodId === 'all' ? 'bg-blue-500' : 'bg-gray-300'}`} />
+                  <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${activePeriodId === 'all' ? 'bg-green-500' : 'bg-gray-300'}`} />
                   <div>
                     <p className="font-semibold text-gray-900">Todos los períodos</p>
                     <p className="text-xs text-gray-500 mt-0.5">Ver datos de todos los períodos sin filtro</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {activePeriodId !== 'all' && (
+                  {activePeriodId === 'all' ? (
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Período activo</span>
+                  ) : (
                     <button
                       onClick={() => setActivePeriodId('all')}
                       className="px-3 py-1 text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-colors"
                     >
-                      Ver todos
+                      Activar
                     </button>
                   )}
                 </div>

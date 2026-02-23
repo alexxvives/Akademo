@@ -130,18 +130,30 @@ export function DashboardPage({ role }: DashboardPageProps) {
     }
   }, [selectedAcademy, classes, isAdmin]);
 
-  // Re-fetch payment status when class filter changes (ACADEMY only, not in demo)
+  // Re-fetch payment status when class or period filter changes (ACADEMY only, not in demo)
   useEffect(() => {
     if (!isAcademy || paymentStatus === 'NOT PAID') return;
     // Skip the first trigger caused by paymentStatus changing after loadAcademyData — it already fetched the data
     if (paymentStatusInitRef.current) { paymentStatusInitRef.current = false; return; }
-    const url = selectedClass === 'all' ? '/enrollments/payment-status' : `/enrollments/payment-status?classId=${selectedClass}`;
+    let url: string;
+    if (selectedClass !== 'all') {
+      url = `/enrollments/payment-status?classId=${selectedClass}`;
+    } else if (activePeriodId !== 'all') {
+      const periodIds = classes.filter(c => isClassInPeriod(c.startDate)).map(c => c.id);
+      if (periodIds.length === 0) {
+        setStudentPaymentStatus({ alDia: 0, atrasados: 0, total: 0, uniqueAlDia: 0, uniqueAtrasados: 0, uniqueTotal: 0 });
+        return;
+      }
+      url = `/enrollments/payment-status?classIds=${periodIds.join(',')}`;
+    } else {
+      url = '/enrollments/payment-status';
+    }
     apiClient(url).then(r => r.json()).then(result => {
       if (result.success && result.data) {
         setStudentPaymentStatus(result.data as { alDia: number; atrasados: number; total: number; uniqueAlDia?: number; uniqueAtrasados?: number; uniqueTotal?: number });
       }
     }).catch(() => {/* silent */});
-  }, [selectedClass, isAcademy, paymentStatus]);
+  }, [selectedClass, isAcademy, paymentStatus, activePeriodId, classes, isClassInPeriod]);
 
   const loadData = async () => {
     try {
@@ -585,7 +597,12 @@ export function DashboardPage({ role }: DashboardPageProps) {
 
     let filteredLessons = ratingsData.lessons;
     if (isAdmin && selectedAcademy !== 'all') filteredLessons = filteredLessons.filter(l => l.academyId === selectedAcademy);
-    if (selectedClass !== 'all') filteredLessons = filteredLessons.filter(l => l.classId === selectedClass);
+    if (selectedClass !== 'all') {
+      filteredLessons = filteredLessons.filter(l => l.classId === selectedClass);
+    } else if (isAcademy && activePeriodId !== 'all') {
+      const periodClassIds = new Set(classes.filter(c => isClassInPeriod(c.startDate)).map(c => c.id));
+      filteredLessons = filteredLessons.filter(l => periodClassIds.has(l.classId));
+    }
     const totalRatings = filteredLessons.reduce((sum, l) => sum + l.ratingCount, 0);
 
     if (totalRatings === 0) {

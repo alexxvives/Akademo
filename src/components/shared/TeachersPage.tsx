@@ -322,8 +322,9 @@ export function TeachersPage({ role }: TeachersPageProps) {
 
     // Period filter (ACADEMY role only — ADMIN teacher classes have no id)
     if (role === 'ACADEMY' && activePeriodId !== 'all') {
-      const periodIds = new Set(classes.filter(c => isClassInPeriod(c.startDate)).map(c => c.id));
-      if (periodIds.size > 0) {
+      // Only filter once classes are loaded — if classes is empty, we wait
+      if (classes.length > 0) {
+        const periodIds = new Set(classes.filter(c => isClassInPeriod(c.startDate)).map(c => c.id));
         result = result.filter(t => t.classes.some(c => c.id && periodIds.has(c.id)));
       }
     }

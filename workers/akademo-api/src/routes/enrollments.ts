@@ -679,6 +679,9 @@ enrollments.get('/payment-status', async (c) => {
     }
 
     const classIdFilter = c.req.query('classId') || null;
+    // classIds = comma-separated list of IDs for period-based filtering
+    const classIdsParam = c.req.query('classIds') || null;
+    const classIdsSet = classIdsParam ? new Set(classIdsParam.split(',').filter(Boolean)) : null;
     const now = new Date().toISOString();
     let query = '';
     let params: string[] = [];
@@ -722,14 +725,17 @@ enrollments.get('/payment-status', async (c) => {
       .bind(...params)
       .all();
 
-    const enrollments_data = result.results || [];
+    // Filter by classIds set if period-based multi-class filter was provided
+    const enrollments_data = (classIdsSet
+      ? (result.results || []).filter((e: any) => classIdsSet.has(e.classId))
+      : result.results || []) as any[];
     
     let alDia = 0;
     let atrasados = 0;
     // Track per-student status: a student is "atrasado" if ANY enrollment is atrasado
     const studentStatus: Record<string, 'alDia' | 'atrasado'> = {};
 
-    for (const enrollment of enrollments_data as any[]) {
+    for (const enrollment of enrollments_data) {
       let isAtrasado = false;
 
       if (enrollment.paymentFrequency === 'MONTHLY' && enrollment.nextPaymentDue) {
