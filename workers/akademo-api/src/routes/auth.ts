@@ -97,7 +97,7 @@ auth.post('/register', registerRateLimit, validateBody(registerSchema), async (c
       return c.json(errorResponse('Academy name is required'), 400);
     }
 
-    if ((role === 'STUDENT' || role === 'TEACHER') && (!firstName || !lastName)) {
+    if ((role === 'STUDENT' || role === 'TEACHER') && (!firstName || firstName.trim() === '')) {
       return c.json(errorResponse('First name and last name are required'), 400);
     }
 

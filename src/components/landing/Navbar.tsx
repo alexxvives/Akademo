@@ -35,16 +35,20 @@ export function Navbar({ t, isScrolled, lang, onLangChange, onOpenModal }: Navba
                   isScrolled ? 'text-gray-900' : 'text-white'
                 }`}>AKADEMO</span>
               </Link>
-              
-              <div className="flex items-center gap-1.5 sm:gap-3 justify-end">
+
+              {/* Center nav */}
+              <div className="absolute left-1/2 -translate-x-1/2 hidden sm:flex">
                 <Link
                   href="/pricing"
-                  className={`hidden sm:inline-flex px-2.5 sm:px-4 py-1.5 sm:py-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${
+                  className={`px-4 py-2 font-medium text-sm transition-colors whitespace-nowrap ${
                     isScrolled ? 'text-gray-600 hover:text-gray-900' : 'text-white/90 hover:text-white'
                   }`}
                 >
                   {lang === 'es' ? 'Precios' : 'Pricing'}
                 </Link>
+              </div>
+              
+              <div className="flex items-center gap-1.5 sm:gap-3 justify-end">
                 <button
                   onClick={() => onOpenModal('login')}
                   className={`px-2.5 sm:px-4 py-1.5 sm:py-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${

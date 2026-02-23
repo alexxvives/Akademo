@@ -65,6 +65,8 @@ export default function AcademyJoinPage() {
     if (academyId) {
       loadAcademyData();
       checkAuth();
+      // Store this join origin so logout can redirect back here
+      localStorage.setItem('akademo_join_origin', `/join/academy/${academyId}`);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [academyId]);
@@ -344,7 +346,7 @@ export default function AcademyJoinPage() {
             <div className="flex flex-col items-center mt-2 gap-2">
               {academy.logoUrl && (
                 <Image
-                  src={academy.logoUrl}
+                  src={`/api/storage/serve/${academy.logoUrl}`}
                   alt={academy.name}
                   width={64}
                   height={64}

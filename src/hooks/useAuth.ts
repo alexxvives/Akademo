@@ -81,7 +81,8 @@ export function useAuth(): UseAuthReturn {
       cacheTimestamp = 0;
       setUser(null);
       localStorage.removeItem('auth_token');
-      window.location.href = '/';
+      const joinOrigin = localStorage.getItem('akademo_join_origin');
+      window.location.href = joinOrigin || '/';
     }
   }, []);
 

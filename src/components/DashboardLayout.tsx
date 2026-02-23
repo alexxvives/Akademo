@@ -254,8 +254,11 @@ export default function DashboardLayout({
       }
     }
     await apiClient('/auth/logout', { method: 'POST' });
-    router.push('/');
-  }, [router]);
+    localStorage.removeItem('auth_token');
+    // Students: redirect back to their academy join page
+    const joinOrigin = role === 'STUDENT' ? localStorage.getItem('akademo_join_origin') : null;
+    router.push(joinOrigin || '/');
+  }, [router, role]);
 
   const checkSession = useCallback(async () => {
     try {

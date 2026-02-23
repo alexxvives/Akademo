@@ -64,6 +64,8 @@ export default function JoinPage() {
     if (teacherId) {
       loadTeacherData();
       _checkAuth(); // Check if already logged in
+      // Store this join origin so logout can redirect back here
+      localStorage.setItem('akademo_join_origin', `/join/${teacherId}`);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [teacherId]);
