@@ -16,8 +16,8 @@ export function useAnimatedNumber(target: number, duration: number = 1000): numb
     const startValue = prevRef.current;
     prevRef.current = target;
 
-    // Don't animate from 0 — just snap to the target immediately (initial data load)
-    if (startValue === 0 || startValue === target) {
+    // Snap immediately when there's nothing to animate
+    if (startValue === target) {
       setCurrent(target);
       return;
     }

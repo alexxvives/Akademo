@@ -1,7 +1,7 @@
 interface CTASectionProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   t: Record<string, any>;
-  onOpenModal: (mode: 'login' | 'register') => void;
+  onOpenModal: (mode: 'login' | 'register', defaultRole?: string) => void;
 }
 
 export function CTASection({ t, onOpenModal }: CTASectionProps) {
@@ -18,7 +18,7 @@ export function CTASection({ t, onOpenModal }: CTASectionProps) {
           {t.ctaSubtitle}
         </p>
         <button
-          onClick={() => onOpenModal('register')}
+          onClick={() => onOpenModal('register', 'ACADEMY')}
           className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white rounded-xl hover:from-emerald-400 hover:to-cyan-400 font-semibold text-lg transition-all shadow-lg shadow-emerald-500/25"
         >
           {t.ctaButton}

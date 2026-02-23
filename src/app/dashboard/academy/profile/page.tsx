@@ -1376,9 +1376,9 @@ export default function ProfilePage() {
           ) : (
             <div className="space-y-3">
               {academicYears.map((year) => (
-                <div key={year.id} className={`flex items-center justify-between p-4 rounded-xl border transition-all ${year.isCurrent ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200 hover:border-gray-300'}`}>
+                <div key={year.id} className={`flex items-center justify-between p-4 rounded-xl border transition-all ${year.isCurrent ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200 hover:border-gray-300'}`}>
                   <div className="flex items-center gap-3">
-                    <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${year.isCurrent ? 'bg-blue-500' : 'bg-gray-300'}`} />
+                    <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${year.isCurrent ? 'bg-green-500' : 'bg-gray-300'}`} />
                     <div>
                       <p className="font-semibold text-gray-900">{year.name}</p>
                       <p className="text-xs text-gray-500 mt-0.5">
@@ -1389,7 +1389,7 @@ export default function ProfilePage() {
                   </div>
                   <div className="flex items-center gap-2">
                     {year.isCurrent === 1 ? (
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Período activo</span>
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Período activo</span>
                     ) : (
                       <button
                         onClick={() => handleSetCurrentPeriod(year.id)}

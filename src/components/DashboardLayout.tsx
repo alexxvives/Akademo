@@ -11,6 +11,7 @@ import { MobileSidebar } from '@/components/layout/MobileSidebar';
 import { NotificationPanel } from '@/components/layout/NotificationPanel';
 import { DemoDataBanner } from '@/components/academy/DemoDataBanner';
 import { DemoBanner } from '@/components/shared/DemoBanner';
+import { PeriodProvider } from '@/contexts/PeriodContext';
 
 interface User {
   id: string;
@@ -605,6 +606,7 @@ export default function DashboardLayout({
   }
 
   return (
+    <PeriodProvider role={role}>
     <div className="h-[100dvh] flex flex-col bg-gray-50">
       <DemoBanner userEmail={user?.email} />
       {(role === 'ACADEMY' && academyPaymentStatus === 'NOT PAID' && !user?.email?.toLowerCase().includes("demo")) && (
@@ -703,5 +705,6 @@ export default function DashboardLayout({
       </div>
     </div>
     </div>
+    </PeriodProvider>
   );
 }

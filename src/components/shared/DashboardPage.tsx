@@ -12,10 +12,11 @@ import {
 import { SkeletonDashboard } from '@/components/ui/SkeletonLoader';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 import { AcademySearchDropdown } from '@/components/ui/AcademySearchDropdown';
+import { usePeriod } from '@/contexts/PeriodContext';
 
 // ─── Types ───
 interface Academy { id: string; name: string; ownerName: string; ownerEmail: string; status: string; paymentStatus?: string; teacherCount: number; studentCount: number; classCount: number; createdAt: string; }
-interface Class { id: string; name: string; slug?: string | null; description: string | null; academyId?: string; academyName: string; teacherFirstName?: string; teacherLastName?: string; enrollmentCount: number; }
+interface Class { id: string; name: string; slug?: string | null; description: string | null; academyId?: string; academyName: string; teacherFirstName?: string; teacherLastName?: string; enrollmentCount: number; createdAt?: string; }
 interface EnrolledStudent { id: string; name: string; email: string; classId: string; className: string; academyId?: string; lessonsCompleted?: number; totalLessons?: number; lastActive?: string | null; }
 interface PendingEnrollment { id: string; student: { id: string; firstName: string; lastName: string; email: string }; class: { id: string; name: string; academyId?: string }; enrolledAt: string; }
 interface RatingsData { overall: { averageRating: number | null; totalRatings: number; ratedLessons: number }; lessons: Array<{ lessonId: string; lessonTitle: string; className: string; classId: string; academyId?: string; averageRating: number | null; ratingCount: number }>; }
@@ -40,6 +41,7 @@ interface DashboardPageProps { role: 'ACADEMY' | 'ADMIN'; }
 export function DashboardPage({ role }: DashboardPageProps) {
   const isAcademy = role === 'ACADEMY';
   const isAdmin = role === 'ADMIN';
+  const { activePeriodId, isClassInPeriod } = usePeriod();
 
   // Shared state
   const [classes, setClasses] = useState<Class[]>([]);
@@ -236,9 +238,14 @@ export function DashboardPage({ role }: DashboardPageProps) {
   const filteredStudents = useMemo(() => {
     let filtered = enrolledStudents;
     if (isAdmin && selectedAcademy !== 'all') filtered = filtered.filter(s => s.academyId === selectedAcademy);
-    if (selectedClass !== 'all') filtered = filtered.filter(s => s.classId === selectedClass);
+    if (selectedClass !== 'all') {
+      filtered = filtered.filter(s => s.classId === selectedClass);
+    } else if (isAcademy && activePeriodId !== 'all') {
+      const periodClassIds = new Set(classes.filter(c => isClassInPeriod(c.createdAt)).map(c => c.id));
+      filtered = filtered.filter(s => periodClassIds.has(s.classId));
+    }
     return filtered;
-  }, [enrolledStudents, selectedAcademy, selectedClass, isAdmin]);
+  }, [enrolledStudents, selectedAcademy, selectedClass, isAdmin, isAcademy, activePeriodId, classes, isClassInPeriod]);
 
   const uniqueStudentCount = useMemo(() => new Set(filteredStudents.map(s => s.email)).size, [filteredStudents]);
 
@@ -253,7 +260,12 @@ export function DashboardPage({ role }: DashboardPageProps) {
   const filteredStreamStats = useMemo(() => {
     let filtered = allStreams;
     if (isAdmin && selectedAcademy !== 'all') filtered = filtered.filter(s => s.academyId === selectedAcademy);
-    if (selectedClass !== 'all') filtered = filtered.filter(s => s.classId === selectedClass);
+    if (selectedClass !== 'all') {
+      filtered = filtered.filter(s => s.classId === selectedClass);
+    } else if (isAcademy && activePeriodId !== 'all') {
+      const periodClassIds = new Set(classes.filter(c => isClassInPeriod(c.createdAt)).map(c => c.id));
+      filtered = filtered.filter(s => s.classId ? periodClassIds.has(s.classId) : false);
+    }
     if (filtered.length === 0) return { avgParticipants: 0, total: 0, totalHours: 0, totalMinutes: 0 };
     const withP = filtered.filter(s => s.participantCount != null && s.participantCount > 0);
     const totalP = withP.reduce((sum, s) => sum + (s.participantCount || 0), 0);
@@ -263,7 +275,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
     }, 0);
     const totalMin = Math.floor(totalMs / (1000 * 60));
     return { avgParticipants: withP.length > 0 ? Math.round(totalP / withP.length) : 0, total: filtered.length, totalHours: Math.floor(totalMin / 60), totalMinutes: totalMin % 60 };
-  }, [allStreams, selectedAcademy, selectedClass, isAdmin]);
+  }, [allStreams, selectedAcademy, selectedClass, isAdmin, isAcademy, activePeriodId, classes, isClassInPeriod]);
 
   // For demo academies: scale al día/atrasados proportionally when a class filter is applied
   const displayedPaymentStatus = useMemo(() => {
@@ -284,14 +296,20 @@ export function DashboardPage({ role }: DashboardPageProps) {
 
   const paymentStats = useMemo(() => {
     if (!isAcademy) return { totalPaid: 0, bizumCount: 0, cashCount: 0, stripeCount: 0 };
-    const filtered = selectedClass === 'all' ? allCompletedPayments : allCompletedPayments.filter(p => p.classId === selectedClass);
+    let filtered = allCompletedPayments;
+    if (selectedClass !== 'all') {
+      filtered = filtered.filter(p => p.classId === selectedClass);
+    } else if (activePeriodId !== 'all') {
+      const periodClassIds = new Set(classes.filter(c => isClassInPeriod(c.createdAt)).map(c => c.id));
+      filtered = filtered.filter(p => p.classId ? periodClassIds.has(p.classId) : false);
+    }
     return {
       totalPaid: filtered.reduce((sum, p) => sum + (p.paymentAmount ?? 0), 0),
       bizumCount: filtered.filter(p => p.paymentMethod === 'bizum').length,
       cashCount: filtered.filter(p => p.paymentMethod === 'cash').length,
       stripeCount: filtered.filter(p => p.paymentMethod === 'stripe').length,
     };
-  }, [allCompletedPayments, selectedClass, isAcademy]);
+  }, [allCompletedPayments, selectedClass, isAcademy, activePeriodId, classes, isClassInPeriod]);
 
   const filteredClassWatchTime = useMemo(() => {
     if (isAcademy && paymentStatus === 'NOT PAID') {
@@ -343,7 +361,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
           {/* Academy: class filter */}
           {isAcademy && classes.length > 0 && (
             <ClassSearchDropdown
-              classes={classes}
+              classes={activePeriodId === 'all' ? classes : classes.filter(c => isClassInPeriod(c.createdAt))}
               value={selectedClass}
               onChange={setSelectedClass}
               allLabel="Todas las asignaturas"
