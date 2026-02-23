@@ -57,8 +57,12 @@ const storage = new Hono<{ Bindings: Bindings }>();
 // GET /storage/serve/* - Public file serving (no auth required for public assets like logos)
 storage.get('/serve/*', async (c) => {
   try {
-    const key = c.req.path.replace(/^\/storage\/serve\//, '');
-    const sanitized = sanitizePath(decodeURIComponent(key));
+    // c.req.param('*') gives us the wildcard portion after /serve/
+    const rawKey = c.req.param('*');
+    if (!rawKey) {
+      return c.json(errorResponse('Invalid path'), 400);
+    }
+    const sanitized = sanitizePath(decodeURIComponent(rawKey));
 
     if (!sanitized) {
       return c.json(errorResponse('Invalid path'), 400);

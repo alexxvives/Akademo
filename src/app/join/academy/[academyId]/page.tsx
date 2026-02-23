@@ -411,6 +411,7 @@ export default function AcademyJoinPage() {
                     <input
                       type="email"
                       required
+                      autoComplete="email"
                       value={formData.email}
                       onChange={e => setFormData({ ...formData, email: e.target.value })}
                       disabled={showVerification || verifyingCode || verificationSuccess}
