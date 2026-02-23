@@ -5,6 +5,7 @@ import { apiClient } from '@/lib/api-client';
 import { generateDemoTeachers, generateDemoClasses, generateDemoPaymentHistory } from '@/lib/demo-data';
 import { SkeletonTeachers } from '@/components/ui/SkeletonLoader';
 import { AcademySearchDropdown } from '@/components/ui/AcademySearchDropdown';
+import { usePeriod } from '@/contexts/PeriodContext';
 
 interface TeacherClass {
   id?: string;
@@ -30,6 +31,7 @@ interface ClassSummary {
   name: string;
   university?: string | null;
   carrera?: string | null;
+  startDate?: string | null;
 }
 
 interface Academy {
@@ -66,6 +68,7 @@ export function TeachersPage({ role }: TeachersPageProps) {
   const [updating, setUpdating] = useState(false);
 
   const isDemo = role === 'ACADEMY' && paymentStatus === 'NOT PAID';
+  const { activePeriodId, isClassInPeriod } = usePeriod();
 
   const toggleExpand = (teacherId: string) => {
     setExpandedTeachers((prev) => {
@@ -310,24 +313,32 @@ export function TeachersPage({ role }: TeachersPageProps) {
   // Filtering (admin only + search)
   const filteredTeachers = useMemo(() => {
     let result = teachers;
-    
+
     // Admin academy filter
     if (role === 'ADMIN' && selectedAcademy !== 'ALL') {
       const academy = academies.find((a) => a.id === selectedAcademy);
       result = result.filter((t) => t.academyName === academy?.name);
     }
-    
+
+    // Period filter (ACADEMY role only — ADMIN teacher classes have no id)
+    if (role === 'ACADEMY' && activePeriodId !== 'all') {
+      const periodIds = new Set(classes.filter(c => isClassInPeriod(c.startDate)).map(c => c.id));
+      if (periodIds.size > 0) {
+        result = result.filter(t => t.classes.some(c => c.id && periodIds.has(c.id)));
+      }
+    }
+
     // Search filter
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      result = result.filter((t) => 
-        t.name.toLowerCase().includes(q) || 
+      result = result.filter((t) =>
+        t.name.toLowerCase().includes(q) ||
         t.email.toLowerCase().includes(q)
       );
     }
-    
+
     return result;
-  }, [teachers, role, selectedAcademy, academies, searchQuery]);
+  }, [teachers, role, selectedAcademy, academies, searchQuery, classes, activePeriodId, isClassInPeriod]);
 
   if (loading) return <SkeletonTeachers />;
 

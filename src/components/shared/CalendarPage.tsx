@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 import { CalendarAddEventModal } from './CalendarAddEventModal';
+import { usePeriod } from '@/contexts/PeriodContext';
 
 // ─── Types ───
 type EventType = 'lesson' | 'stream' | 'assignment' | 'physicalClass' | 'scheduledStream';
@@ -29,6 +30,7 @@ interface ClassSummary {
   description: string | null;
   academyName?: string;
   enrollmentCount?: number;
+  startDate?: string | null;
 }
 
 interface CalendarPageProps {
@@ -194,6 +196,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
 
   const isStudent = role === 'STUDENT';
   const canCreateEvents = ['ACADEMY', 'TEACHER', 'ADMIN'].includes(role);
+  const { activePeriodId, isClassInPeriod } = usePeriod();
 
   // ─── Data loading ───
   const loadData = useCallback(async () => {
@@ -618,7 +621,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
         <div className="flex flex-wrap items-center gap-3">
           {classes.length > 0 && !isDemo && (
             <ClassSearchDropdown
-              classes={classes}
+              classes={activePeriodId === 'all' ? classes : classes.filter(c => isClassInPeriod(c.startDate))}
               value={selectedClass}
               onChange={setSelectedClass}
               allLabel="Todas las asignaturas"

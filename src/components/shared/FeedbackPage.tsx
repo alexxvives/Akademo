@@ -7,6 +7,7 @@ import { generateDemoFeedbackData } from '@/lib/demo-data';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 import { AcademySearchDropdown } from '@/components/ui/AcademySearchDropdown';
 import { SkeletonFeedback } from '@/components/ui/SkeletonLoader';
+import { usePeriod } from '@/contexts/PeriodContext';
 
 interface Academy {
   id: string;
@@ -38,6 +39,7 @@ export function FeedbackPage({ role }: FeedbackPageProps) {
   const isAcademy = role === 'ACADEMY';
   const isTeacher = role === 'TEACHER';
   const isAdmin = role === 'ADMIN';
+  const { activePeriodId, isClassInPeriod } = usePeriod();
 
   useEffect(() => {
     loadData();
@@ -142,6 +144,7 @@ export function FeedbackPage({ role }: FeedbackPageProps) {
               ...ratingClass,
               university: cls.university,
               carrera: cls.carrera,
+              startDate: cls.startDate,
             });
           } else {
             allFeedback.push({
@@ -152,6 +155,7 @@ export function FeedbackPage({ role }: FeedbackPageProps) {
                 `${cls.teacherFirstName || ''} ${cls.teacherLastName || ''}`.trim(),
               university: cls.university,
               carrera: cls.carrera,
+              startDate: cls.startDate,
               totalRatings: 0,
               averageRating: 0,
               topics: [],
@@ -218,6 +222,7 @@ export function FeedbackPage({ role }: FeedbackPageProps) {
               ...ratingClass,
               university: cls.university,
               carrera: cls.carrera,
+              startDate: cls.startDate,
             });
           } else {
             allFeedback.push({
@@ -228,6 +233,7 @@ export function FeedbackPage({ role }: FeedbackPageProps) {
                 `${cls.teacherFirstName || ''} ${cls.teacherLastName || ''}`.trim(),
               university: cls.university,
               carrera: cls.carrera,
+              startDate: cls.startDate,
               totalRatings: 0,
               averageRating: 0,
               topics: [],
@@ -289,12 +295,14 @@ export function FeedbackPage({ role }: FeedbackPageProps) {
       if (selectedAcademy !== 'all') {
         result = result.filter((c) => c.academyId === selectedAcademy);
       }
+    } else if (activePeriodId !== 'all') {
+      result = result.filter((c) => isClassInPeriod(c.startDate));
     }
     if (selectedClass !== 'all') {
       result = result.filter((c) => c.id === selectedClass);
     }
     return result;
-  }, [isAdmin, classes, selectedAcademy, selectedClass]);
+  }, [isAdmin, classes, selectedAcademy, selectedClass, activePeriodId, isClassInPeriod]);
 
   const filteredClassOptions = useMemo(() => {
     if (selectedAcademy === 'all') return [];
@@ -323,7 +331,7 @@ export function FeedbackPage({ role }: FeedbackPageProps) {
         {/* Academy/Teacher class filter */}
         {(isAcademy || isTeacher) && classes.length > 1 && (
           <ClassSearchDropdown
-            classes={classes}
+            classes={activePeriodId === 'all' ? classes : classes.filter(c => isClassInPeriod(c.startDate))}
             value={selectedClass}
             onChange={setSelectedClass}
             allLabel="Todas las asignaturas"

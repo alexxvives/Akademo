@@ -8,6 +8,7 @@ import { StudentPaymentDetailModal } from '@/components/shared';
 import { ModalPortal } from '@/components/ui/ModalPortal';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 import { AcademySearchDropdown } from '@/components/ui/AcademySearchDropdown';
+import { usePeriod } from '@/contexts/PeriodContext';
 
 interface PendingPayment {
   enrollmentId: string;
@@ -82,10 +83,11 @@ interface PagosPageProps {
 export default function PagosPage({ role }: PagosPageProps) {
   const isAdmin = role === 'ADMIN';
   const isAcademy = role === 'ACADEMY';
+  const { activePeriodId, isClassInPeriod } = usePeriod();
 
   const [pendingPayments, setPendingPayments] = useState<PendingPayment[]>([]);
   const [paymentHistory, setPaymentHistory] = useState<PaymentHistory[]>([]);
-  const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
+  const [classes, setClasses] = useState<{ id: string; name: string; startDate?: string }[]>([]);
   const [selectedClass, setSelectedClass] = useState('all');
   const [academyName, setAcademyName] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -574,7 +576,7 @@ export default function PagosPage({ role }: PagosPageProps) {
           </div>
           {/* Class Filter */}
           <ClassSearchDropdown
-            classes={classes}
+            classes={activePeriodId === 'all' || isAdmin ? classes : classes.filter(c => isClassInPeriod(c.startDate))}
             value={selectedClass}
             onChange={setSelectedClass}
             allLabel="Todas las asignaturas"

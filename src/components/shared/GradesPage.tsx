@@ -6,6 +6,7 @@ import { Bar } from 'react-chartjs-2';
 import { generateDemoAssignments, generateDemoSubmissions, generateDemoClasses } from '@/lib/demo-data';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 import { AcademySearchDropdown } from '@/components/ui/AcademySearchDropdown';
+import { usePeriod } from '@/contexts/PeriodContext';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -47,6 +48,7 @@ interface ClassSummary {
   name: string;
   university?: string | null;
   carrera?: string | null;
+  startDate?: string | null;
 }
 
 interface Academy {
@@ -103,6 +105,7 @@ export function GradesPage({ role }: GradesPageProps) {
   const [selectedAcademy, setSelectedAcademy] = useState<string>('');
 
   const isDemo = (role === 'ACADEMY' || role === 'TEACHER') && paymentStatus === 'NOT PAID';
+  const { activePeriodId, isClassInPeriod } = usePeriod();
 
   // --- Data loading ---
 
@@ -530,7 +533,7 @@ export function GradesPage({ role }: GradesPageProps) {
 
           {/* Class filter */}
           <ClassSearchDropdown
-            classes={classes}
+            classes={activePeriodId === 'all' ? classes : classes.filter(c => isClassInPeriod(c.startDate))}
             value={selectedClass}
             onChange={setSelectedClass}
             allLabel="Todas las asignaturas"

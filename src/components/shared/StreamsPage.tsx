@@ -8,6 +8,7 @@ import { generateDemoStreams } from '@/lib/demo-data';
 import { SkeletonTable } from '@/components/ui/SkeletonLoader';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 import { AcademySearchDropdown } from '@/components/ui/AcademySearchDropdown';
+import { usePeriod } from '@/contexts/PeriodContext';
 
 interface Stream {
   id: string;
@@ -42,6 +43,7 @@ interface ClassOption {
   id: string;
   name: string;
   academyId?: string;
+  startDate?: string;
 }
 
 interface StreamsPageProps {
@@ -72,6 +74,7 @@ export function StreamsPage({ role }: StreamsPageProps) {
   const isTeacher = role === 'TEACHER';
   const isAdmin = role === 'ADMIN';
   const isDemo = (isAcademy || isTeacher) && paymentStatus === 'NOT PAID';
+  const { activePeriodId, isClassInPeriod } = usePeriod();
   const dashboardBase = isAcademy ? '/dashboard/academy' : isTeacher ? '/dashboard/teacher' : '/dashboard/admin';
 
   const loadStreams = useCallback(async () => {
@@ -229,13 +232,16 @@ export function StreamsPage({ role }: StreamsPageProps) {
     }
     if (selectedClass !== 'all') {
       result = result.filter((s) => s.classId === selectedClass);
+    } else if (!isAdmin && activePeriodId !== 'all') {
+      const periodIds = new Set(classes.filter(c => isClassInPeriod(c.startDate)).map(c => c.id));
+      result = result.filter((s) => periodIds.has(s.classId));
     }
     return result.sort((a, b) => {
       const dateA = a.startedAt ? new Date(a.startedAt).getTime() : 0;
       const dateB = b.startedAt ? new Date(b.startedAt).getTime() : 0;
       return dateB - dateA;
     });
-  }, [streams, selectedClass, selectedAcademy, role]);
+  }, [streams, selectedClass, selectedAcademy, role, isAdmin, classes, activePeriodId, isClassInPeriod]);
 
   // Glow effect on highlighted stream from calendar redirect
   useEffect(() => {
@@ -381,7 +387,7 @@ export function StreamsPage({ role }: StreamsPageProps) {
           {/* Class filter — for academy, or admin when academy selected */}
           {(isAcademy || isTeacher) && classes.length > 0 && (
             <ClassSearchDropdown
-              classes={classes}
+              classes={activePeriodId === 'all' ? classes : classes.filter(c => isClassInPeriod(c.startDate))}
               value={selectedClass}
               onChange={setSelectedClass}
               allLabel="Todas las asignaturas"

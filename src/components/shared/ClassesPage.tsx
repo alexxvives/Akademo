@@ -477,7 +477,7 @@ export function ClassesPage({ role }: ClassesPageProps) {
             {/* Academy or Teacher: class filter */}
             {(role === 'ACADEMY' || role === 'TEACHER') && classes.length > 1 && (
               <ClassSearchDropdown
-                classes={classes}
+                classes={activePeriodId === 'all' ? classes : classes.filter(c => isClassInPeriod(c.startDate))}
                 value={selectedClassId}
                 onChange={setSelectedClassId}
                 allLabel="Todas las asignaturas"
@@ -510,17 +510,7 @@ export function ClassesPage({ role }: ClassesPageProps) {
                   : 'No hay clases en esta academia.'
                 : 'Crea tu primera asignatura y asigna un profesor.'}
             </p>
-            {role === 'ACADEMY' && teachers.length > 0 && (
-              <button
-                onClick={openCreateModal}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Crear Primera Asignatura
-              </button>
-            )}
+
           </div>
         ) : (
           <div className="space-y-4 pb-8">

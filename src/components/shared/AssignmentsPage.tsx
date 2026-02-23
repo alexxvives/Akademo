@@ -7,8 +7,9 @@ import { generateDemoAssignments, generateDemoSubmissions, generateDemoClasses, 
 import { AssignmentModals } from './AssignmentModals';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 import { AcademySearchDropdown } from '@/components/ui/AcademySearchDropdown';
+import { usePeriod } from '@/contexts/PeriodContext';
 
-interface Class { id: string; name: string; academyId?: string; academyName?: string; }
+interface Class { id: string; name: string; academyId?: string; academyName?: string; startDate?: string; }
 interface Assignment {
   id: string; title: string; description?: string; dueDate?: string; maxScore: number;
   submissionCount: number; gradedCount: number; attachmentName?: string; className?: string;
@@ -32,6 +33,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
   const isAdmin = role === 'ADMIN';
   const isTeacher = role === 'TEACHER';
   const canManage = isAcademy || isTeacher || isAdmin; // All roles can create/edit/delete
+  const { activePeriodId, isClassInPeriod } = usePeriod();
 
   // Shared state
   const [classes, setClasses] = useState<Class[]>([]);
@@ -578,10 +580,16 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
     setShowGradeModal(true);
   };
 
-  // Admin filtered classes
-  const filteredClasses = isAdmin && selectedAcademy
-    ? classes.filter(c => c.academyId === selectedAcademy)
-    : classes;
+  // Admin filtered classes + period filter
+  const filteredClasses = (() => {
+    let result = (isAdmin && selectedAcademy)
+      ? classes.filter(c => c.academyId === selectedAcademy)
+      : classes;
+    if (activePeriodId !== 'all') {
+      result = result.filter(c => isClassInPeriod(c.startDate));
+    }
+    return result;
+  })();
 
   // â”€â”€â”€ Rendering â”€â”€â”€
   if (loading) {
@@ -667,7 +675,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
             {/* Class filter (academy/teacher always, admin only when academy selected) */}
             {(isAcademy || isTeacher || (isAdmin && selectedAcademy)) && (
               <ClassSearchDropdown
-                classes={isAdmin ? filteredClasses : classes}
+                classes={filteredClasses}
                 value={(isAcademy || isTeacher) ? selectedClassId : selectedClass}
                 onChange={(v) => (isAcademy || isTeacher) ? setSelectedClassId(v) : setSelectedClass(v)}
                 allLabel="Todas las asignaturas"

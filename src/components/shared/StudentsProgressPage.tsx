@@ -7,6 +7,7 @@ import type { ClassBreakdownItem } from './StudentsProgressTable';
 import { generateDemoStudents } from '@/lib/demo-data';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 import { AcademySearchDropdown } from '@/components/ui/AcademySearchDropdown';
+import { usePeriod } from '@/contexts/PeriodContext';
 
 interface Class {
   id: string;
@@ -14,6 +15,7 @@ interface Class {
   academyId?: string;
   university?: string | null;
   carrera?: string | null;
+  startDate?: string | null;
 }
 
 interface Academy {
@@ -129,6 +131,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
   const [selectedAcademy, setSelectedAcademy] = useState('all');
   const [selectedClass, setSelectedClass] = useState('all');
   const [filteredClasses, setFilteredClasses] = useState<Class[]>([]);
+  const { activePeriodId, isClassInPeriod } = usePeriod();
 
   useEffect(() => {
     // Filter classes when academy is selected (for ADMIN role)
@@ -581,7 +584,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
           {/* Class Filter - Shows when academy is selected for ADMIN or always for others */}
           {(role !== 'ADMIN' || selectedAcademy !== 'all') && (
             <ClassSearchDropdown
-              classes={filteredClasses}
+              classes={activePeriodId === 'all' ? filteredClasses : filteredClasses.filter(c => isClassInPeriod(c.startDate))}
               value={selectedClass}
               onChange={setSelectedClass}
               allLabel="Todas las asignaturas"

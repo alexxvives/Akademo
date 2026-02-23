@@ -1,24 +1,40 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
+  "worker-src blob: 'self'",
+  "style-src 'self' 'unsafe-inline' https:",
+  "img-src 'self' data: blob: https:",
+  "connect-src 'self' https: wss:",
+  "font-src 'self' https: data:",
+  "frame-src 'self' https:",
+  "media-src 'self' blob: https:",
+].join('; ');
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Public paths that don't require authentication
   const publicPaths = ['/', '/login', '/register', '/api/auth', '/join', '/api/join'];
-  
+
   if (publicPaths.some(path => pathname.startsWith(path))) {
-    return NextResponse.next();
+    const res = NextResponse.next();
+    res.headers.set('Content-Security-Policy', CSP);
+    return res;
   }
 
   // Check for session cookie
   const sessionCookie = request.cookies.get('academy_session');
-  
+
   if (!sessionCookie) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  return NextResponse.next();
+  const res = NextResponse.next();
+  res.headers.set('Content-Security-Policy', CSP);
+  return res;
 }
 
 export const config = {

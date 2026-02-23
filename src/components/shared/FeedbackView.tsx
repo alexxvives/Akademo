@@ -39,6 +39,7 @@ export interface ClassFeedback {
   teacherName?: string;
   university?: string | null;
   carrera?: string | null;
+  startDate?: string | null;
   totalRatings: number;
   averageRating: number;
   topics: Topic[];
