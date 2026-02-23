@@ -357,9 +357,9 @@ export function Sidebar({
                         onClick={() => { setActivePeriodId(p.id); setPeriodDropdownOpen(false); }}
                         className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors ${activePeriodId === p.id ? 'text-white bg-gray-700/50' : 'text-gray-400 hover:text-white hover:bg-gray-700/30'}`}
                       >
-                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${p.isCurrent === 1 ? 'bg-green-400' : 'bg-gray-500'}`} />
+                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${activePeriodId === p.id ? 'bg-green-400' : 'bg-gray-500'}`} />
                         <span className="truncate flex-1 text-left">{p.name}</span>
-                        {p.isCurrent === 1 && <span className="text-[10px] text-green-400 ml-auto flex-shrink-0">activo</span>}
+                        {activePeriodId === p.id && <span className="text-[10px] text-green-400 ml-auto flex-shrink-0">activo</span>}
                       </button>
                     ))}
                   </div>

@@ -510,8 +510,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
                 <AnimatedNumber value={uniqueStudentCount} className="text-3xl sm:text-4xl font-bold text-gray-900" />
                 <div className="text-xs text-gray-500">Estudiantes</div>
               </div>
-              {((studentPaymentStatus.uniqueAlDia ?? 0) > 0 || (studentPaymentStatus.uniqueAtrasados ?? 0) > 0 || loading) && (
-                <div className="flex-1 ml-2 pl-2 border-l border-gray-200 space-y-1.5">
+              <div className="flex-1 ml-2 pl-2 border-l border-gray-200 space-y-1.5">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs text-gray-500">al día</span>
                     <AnimatedNumber value={displayedPaymentStatus?.uniqueAlDia ?? 0} className="text-base font-bold text-green-600" />
@@ -521,7 +520,6 @@ export function DashboardPage({ role }: DashboardPageProps) {
                     <AnimatedNumber value={displayedPaymentStatus?.uniqueAtrasados ?? 0} className="text-base font-bold text-red-600" />
                   </div>
                 </div>
-              )}
             </div>
             {/* Matrículas box — count on left, al día/atrasados on right */}
             <div className="flex-1 flex items-center p-3 bg-gray-50 rounded-lg gap-3">
@@ -529,8 +527,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
                 <AnimatedNumber value={filteredStudents.length} className="text-3xl sm:text-4xl font-bold text-gray-900" />
                 <div className="text-xs text-gray-500">Matrículas</div>
               </div>
-              {(studentPaymentStatus.total > 0 || loading) && (
-                <div className="flex-1 ml-2 pl-2 border-l border-gray-200 space-y-1.5">
+              <div className="flex-1 ml-2 pl-2 border-l border-gray-200 space-y-1.5">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs text-gray-500">al día</span>
                     <AnimatedNumber value={displayedPaymentStatus?.alDia ?? 0} className="text-base font-bold text-green-600" />
@@ -540,7 +537,6 @@ export function DashboardPage({ role }: DashboardPageProps) {
                     <AnimatedNumber value={displayedPaymentStatus?.atrasados ?? 0} className="text-base font-bold text-red-600" />
                   </div>
                 </div>
-              )}
             </div>
           </div>
           <div className="flex flex-col gap-3">

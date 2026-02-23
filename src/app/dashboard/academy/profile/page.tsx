@@ -1431,15 +1431,56 @@ export default function ProfilePage() {
                   )}
                 </div>
               </div>
-              {academicYears.map((year) => (
+              {(() => {
+                const sortedYears = [...academicYears].sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+                const getWarning = (year: AcademicYear): { type: 'overlap' | 'gap'; message: string } | null => {
+                  for (const other of academicYears) {
+                    if (other.id === year.id) continue;
+                    const aStart = new Date(year.startDate + 'T12:00:00');
+                    const aEnd = year.endDate ? new Date(year.endDate + 'T12:00:00') : null;
+                    const bStart = new Date(other.startDate + 'T12:00:00');
+                    const bEnd = other.endDate ? new Date(other.endDate + 'T12:00:00') : null;
+                    const bEffectiveEnd = bEnd ?? new Date('9999-12-31');
+                    const aEffectiveEnd = aEnd ?? new Date('9999-12-31');
+                    if (bStart <= aEffectiveEnd && aStart <= bEffectiveEnd) {
+                      return { type: 'overlap', message: `Se solapa con "${other.name}"` };
+                    }
+                  }
+                  const idx = sortedYears.findIndex(y => y.id === year.id);
+                  if (idx > 0) {
+                    const prev = sortedYears[idx - 1];
+                    if (prev.endDate && new Date(prev.endDate + 'T12:00:00') < new Date(year.startDate + 'T12:00:00')) {
+                      return { type: 'gap', message: `Hay un hueco entre "${prev.name}" y este período` };
+                    }
+                  }
+                  if (idx >= 0 && idx < sortedYears.length - 1) {
+                    const next = sortedYears[idx + 1];
+                    if (year.endDate && new Date(year.endDate + 'T12:00:00') < new Date(next.startDate + 'T12:00:00')) {
+                      return { type: 'gap', message: `Hay un hueco entre este período y "${next.name}"` };
+                    }
+                  }
+                  return null;
+                };
+                return academicYears.map((year) => {
+                  const warning = getWarning(year);
+                  return (
                 <div key={year.id} className={`flex items-center justify-between p-4 rounded-xl border transition-all ${activePeriodId === year.id ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200 hover:border-gray-300'}`}>
                   <div className="flex items-center gap-3">
                     <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${activePeriodId === year.id ? 'bg-green-500' : 'bg-gray-300'}`} />
                     <div>
-                      <p className="font-semibold text-gray-900">{year.name}</p>
+                      <p className="font-semibold text-gray-900 inline-flex items-center gap-1">{year.name}{warning && (
+                          <span className="relative group inline-flex items-center ml-1">
+                            <svg className="w-3.5 h-3.5 text-amber-500 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 w-max max-w-56 text-center">
+                              {warning.message}
+                            </span>
+                          </span>
+                        )}</p>
                       <p className="text-xs text-gray-500 mt-0.5">
                         {new Date(year.startDate + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
-                        {year.endDate && ` \u2192 ${new Date(year.endDate + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}`}
+                        {year.endDate && ` → ${new Date(year.endDate + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}`}
                       </p>
                     </div>
                   </div>
@@ -1469,7 +1510,9 @@ export default function ProfilePage() {
                     )}
                   </div>
                 </div>
-              ))}
+              );
+                  });
+              })()}
               <p className="text-xs text-gray-400 pt-1">Las asignaturas cuya fecha de inicio se encuentre dentro del período activo se mostrarán en el panel principal.</p>
             </div>
           )}
