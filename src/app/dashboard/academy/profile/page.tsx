@@ -1449,13 +1449,13 @@ export default function ProfilePage() {
                   const idx = sortedYears.findIndex(y => y.id === year.id);
                   if (idx > 0) {
                     const prev = sortedYears[idx - 1];
-                    if (prev.endDate && new Date(prev.endDate + 'T12:00:00') < new Date(year.startDate + 'T12:00:00')) {
+                    if (prev.endDate && new Date(prev.endDate + 'T12:00:00').getTime() + 86400000 < new Date(year.startDate + 'T12:00:00').getTime()) {
                       return { type: 'gap', message: `Hay un hueco entre "${prev.name}" y este período` };
                     }
                   }
                   if (idx >= 0 && idx < sortedYears.length - 1) {
                     const next = sortedYears[idx + 1];
-                    if (year.endDate && new Date(year.endDate + 'T12:00:00') < new Date(next.startDate + 'T12:00:00')) {
+                    if (year.endDate && new Date(year.endDate + 'T12:00:00').getTime() + 86400000 < new Date(next.startDate + 'T12:00:00').getTime()) {
                       return { type: 'gap', message: `Hay un hueco entre este período y "${next.name}"` };
                     }
                   }
@@ -1473,7 +1473,7 @@ export default function ProfilePage() {
                             <svg className="w-3.5 h-3.5 text-amber-500 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                             </svg>
-                            <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 w-max max-w-56 text-center">
+                            <span className="absolute bottom-full left-0 mb-2 px-2.5 py-1.5 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 w-52">
                               {warning.message}
                             </span>
                           </span>

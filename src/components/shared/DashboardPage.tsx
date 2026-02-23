@@ -108,6 +108,15 @@ export function DashboardPage({ role }: DashboardPageProps) {
   const [selectedAcademy, setSelectedAcademy] = useState('all');
   const [academyClasses, setAcademyClasses] = useState<Class[]>([]);
   const paymentStatusInitRef = useRef(true); // skip first useEffect fire (loadAcademyData already fetches it)
+  const prevPeriodRef = useRef(activePeriodId);
+
+  // Reset class/academy filters when period changes so stale filters don't cause weird state
+  useEffect(() => {
+    if (prevPeriodRef.current === activePeriodId) return;
+    prevPeriodRef.current = activePeriodId;
+    setSelectedClass('all');
+    if (isAdmin) setSelectedAcademy('all');
+  }, [activePeriodId, isAdmin]);
 
   useEffect(() => { loadData(); }, []);
 
