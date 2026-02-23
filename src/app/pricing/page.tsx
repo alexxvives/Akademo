@@ -7,6 +7,60 @@ import AuthModal from '@/components/AuthModal';
 
 type Lang = 'es' | 'en';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://akademo-api.alexxvives.workers.dev';
+
+function FeatureIcon({ type }: { type: string }) {
+  switch (type) {
+    case 'shield':
+      return (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+        </svg>
+      );
+    case 'users':
+      return (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+      );
+    case 'zap':
+      return (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+      );
+    case 'lock':
+      return (
+        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+}
+
+function RangeSelector({ options, value, onChange }: { options: string[]; value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map((opt) => (
+        <button
+          key={opt}
+          type="button"
+          onClick={() => onChange(opt)}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            value === opt
+              ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25'
+              : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'
+          }`}
+        >
+          {opt}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 const translations = {
   es: {
     nav: { login: 'Iniciar Sesión', getStarted: 'Comenzar' },
@@ -15,107 +69,44 @@ const translations = {
       footerRights: '© 2025 AKADEMO. Todos los derechos reservados.',
     },
     hero: {
-      badge: 'Precios claros. Sin sorpresas.',
-      title: 'Elige el plan adecuado para tu academia',
-      subtitle: 'Empieza con todo lo que necesitas para proteger tu contenido, gestionar tus estudiantes y escalar.',
+      badge: 'Planes a medida',
+      title: 'Nos adaptamos a ti',
+      subtitle: 'Cada academia es única. Cuéntanos sobre la tuya y te propondremos el plan que mejor encaja con tu tamaño y necesidades.',
     },
-    plans: [
-      {
-        key: 'pro',
-        name: 'Pro',
-        price: '€499',
-        period: '/mes',
-        desc: 'Para academias que quieren proteger su contenido, gestionar estudiantes y escalar sin límites.',
-        cta: 'Comenzar',
-        ctaLink: '/',
-        highlight: true,
-        badge: 'Más popular',
-        features: [
-          'Clases y estudiantes ilimitados',
-          'Streaming seguro con BunnyCDN',
-          'Clases en directo con Zoom',
-          'Dashboard completo y analíticas',
-          'Gestión de pagos con Stripe',
-          'Firma y distribución de documentos',
-          'Detección de suplantación de identidad',
-          'Soporte prioritario',
-          'Actualizaciones incluidas',
-        ],
+    form: {
+      title: 'Solicita tu propuesta personalizada',
+      name: 'Nombre completo',
+      namePlaceholder: 'Tu nombre',
+      email: 'Email',
+      emailPlaceholder: 'tu@academia.com',
+      phone: 'Teléfono (opcional)',
+      phonePlaceholder: '+34 600 000 000',
+      academyName: 'Nombre de tu academia',
+      academyNamePlaceholder: 'Mi Academia',
+      monthlyEnrollments: '¿Cuántas matrículas al mes?',
+      teacherCount: '¿Cuántos profesores?',
+      subjectCount: '¿Cuántas asignaturas?',
+      message: 'Cuéntanos más (opcional)',
+      messagePlaceholder: '¿Tienes alguna necesidad especial o pregunta?',
+      submit: 'Solicitar propuesta',
+      submitting: 'Enviando...',
+      ranges: {
+        enrollments: ['1-20', '21-50', '51-100', '101-300', '300+'],
+        teachers: ['1', '2-5', '6-10', '11-20', '20+'],
+        subjects: ['1-3', '4-10', '11-20', '20+'],
       },
-      {
-        key: 'enterprise',
-        name: 'Enterprise',
-        price: null as string | null,
-        period: null as string | null,
-        desc: 'Para grupos educativos y redes de academias con necesidades específicas y volumen elevado.',
-        cta: 'Contactar con ventas',
-        ctaLink: 'mailto:hola@akademo.es',
-        highlight: false,
-        badge: null as string | null,
-        features: [
-          'Todo lo incluido en Pro',
-          'Múltiples academias unificadas',
-          'SSO / integración LDAP',
-          'Marca blanca personalizada',
-          'SLA con tiempo de respuesta garantizado',
-          'Gestor de cuenta dedicado',
-          'Incorporación y formación personalizada',
-          'Precio adaptado al volumen',
-        ],
-      },
+    },
+    success: {
+      title: '¡Propuesta solicitada!',
+      subtitle: 'Hemos recibido tu información. Nuestro equipo se pondrá en contacto contigo en menos de 24h con una propuesta personalizada.',
+      cta: 'Volver al inicio',
+    },
+    features: [
+      { icon: 'shield', title: 'Contenido protegido', desc: 'Streaming seguro con BunnyCDN. Tu material nunca se podrá descargar ni compartir.' },
+      { icon: 'users', title: 'Sin límite de estudiantes', desc: 'Todos los planes incluyen estudiantes y clases ilimitadas.' },
+      { icon: 'zap', title: 'Clases en directo', desc: 'Integración con Zoom para clases en vivo sin salir de la plataforma.' },
+      { icon: 'lock', title: 'Anti-fraude integrado', desc: 'Detección automática de suplantación de identidad y cuentas compartidas.' },
     ],
-    comparison: {
-      title: 'Comparativa de planes',
-      headers: ['Funcionalidad', 'Pro', 'Enterprise'],
-      rows: [
-        ['Clases ilimitadas', true, true],
-        ['Estudiantes ilimitados', true, true],
-        ['Streaming BunnyCDN', true, true],
-        ['Clases en directo (Zoom)', true, true],
-        ['Gestión de pagos (Stripe)', true, true],
-        ['Firma de documentos', true, true],
-        ['Detección de suplantación', true, true],
-        ['Analíticas y reportes', true, true],
-        ['Múltiples academias', false, true],
-        ['SSO / integración LDAP', false, true],
-        ['Marca blanca', false, true],
-        ['Gestor de cuenta dedicado', false, true],
-        ['SLA garantizado', false, true],
-      ] as [string, boolean, boolean][],
-    },
-    faq: {
-      title: 'Preguntas frecuentes',
-      items: [
-        {
-          q: '¿Hay períodos de prueba?',
-          a: 'Sí. Ofrecemos una demo personalizada y un período de prueba para que puedas comprobar que AKADEMO encaja antes de comprometerte.',
-        },
-        {
-          q: '¿Qué pasa si supero el número de estudiantes?',
-          a: 'No hay límite de estudiantes. El plan Pro incluye estudiantes y clases ilimitados sin costes adicionales por volumen.',
-        },
-        {
-          q: '¿Puedo cambiar de plan más adelante?',
-          a: 'Por supuesto. Puedes migrar a Enterprise en cualquier momento contactando con nuestro equipo de ventas.',
-        },
-        {
-          q: '¿Qué incluye el soporte?',
-          a: 'El plan Pro incluye soporte prioritario por email y chat. Enterprise incluye un gestor de cuenta dedicado con SLA garantizado.',
-        },
-        {
-          q: '¿El precio incluye el IVA?',
-          a: 'Los precios mostrados no incluyen IVA. El IVA aplicable se calculará en función de tu país de facturación.',
-        },
-      ],
-    },
-    trust: {
-      title: '¿Por qué academias eligen AKADEMO?',
-      items: [
-        { title: 'Contenido protegido', desc: 'Tu material nunca se puede descargar ni compartir. BunnyCDN garantiza que solo tus alumnos vean tus clases.' },
-        { title: 'Control total', desc: 'Gestiona pagos, asistencia, progreso y documentos desde un único dashboard centralizado.' },
-        { title: 'Anti-fraude integrado', desc: 'Detección automática de suplantación de identidad para que cada alumno sea quien dice ser.' },
-      ],
-    },
   },
   en: {
     nav: { login: 'Log In', getStarted: 'Get started' },
@@ -124,117 +115,66 @@ const translations = {
       footerRights: '© 2025 AKADEMO. All rights reserved.',
     },
     hero: {
-      badge: 'Clear pricing. No surprises.',
-      title: 'Choose the right plan for your academy',
-      subtitle: 'Start with everything you need to protect your content, manage your students, and scale.',
+      badge: 'Custom plans',
+      title: 'We adapt to you',
+      subtitle: 'Every academy is unique. Tell us about yours and we\'ll propose the plan that best fits your size and needs.',
     },
-    plans: [
-      {
-        key: 'pro',
-        name: 'Pro',
-        price: '€499',
-        period: '/mo',
-        desc: 'For academies that want to protect their content, manage students and scale without limits.',
-        cta: 'Get started',
-        ctaLink: '/',
-        highlight: true,
-        badge: 'Most popular',
-        features: [
-          'Unlimited classes and students',
-          'Secure streaming with BunnyCDN',
-          'Live classes with Zoom',
-          'Full dashboard and analytics',
-          'Payment management with Stripe',
-          'Document signing and distribution',
-          'Identity impersonation detection',
-          'Priority support',
-          'Updates included',
-        ],
+    form: {
+      title: 'Request your personalized proposal',
+      name: 'Full name',
+      namePlaceholder: 'Your name',
+      email: 'Email',
+      emailPlaceholder: 'you@academy.com',
+      phone: 'Phone (optional)',
+      phonePlaceholder: '+1 555 000 000',
+      academyName: 'Academy name',
+      academyNamePlaceholder: 'My Academy',
+      monthlyEnrollments: 'Monthly enrollments?',
+      teacherCount: 'How many teachers?',
+      subjectCount: 'How many subjects?',
+      message: 'Tell us more (optional)',
+      messagePlaceholder: 'Any special needs or questions?',
+      submit: 'Request proposal',
+      submitting: 'Sending...',
+      ranges: {
+        enrollments: ['1-20', '21-50', '51-100', '101-300', '300+'],
+        teachers: ['1', '2-5', '6-10', '11-20', '20+'],
+        subjects: ['1-3', '4-10', '11-20', '20+'],
       },
-      {
-        key: 'enterprise',
-        name: 'Enterprise',
-        price: null as string | null,
-        period: null as string | null,
-        desc: 'For education groups and academy networks with specific needs and high volume.',
-        cta: 'Contact sales',
-        ctaLink: 'mailto:hola@akademo.es',
-        highlight: false,
-        badge: null as string | null,
-        features: [
-          'Everything in Pro',
-          'Multiple unified academies',
-          'SSO / LDAP integration',
-          'Custom white label',
-          'SLA with guaranteed response time',
-          'Dedicated account manager',
-          'Personalized onboarding and training',
-          'Volume-adapted pricing',
-        ],
-      },
+    },
+    success: {
+      title: 'Proposal requested!',
+      subtitle: 'We\'ve received your information. Our team will contact you within 24h with a personalized proposal.',
+      cta: 'Back to home',
+    },
+    features: [
+      { icon: 'shield', title: 'Protected content', desc: 'Secure streaming with BunnyCDN. Your material can never be downloaded or shared.' },
+      { icon: 'users', title: 'Unlimited students', desc: 'All plans include unlimited students and classes.' },
+      { icon: 'zap', title: 'Live classes', desc: 'Zoom integration for live classes without leaving the platform.' },
+      { icon: 'lock', title: 'Built-in anti-fraud', desc: 'Automatic identity impersonation and account sharing detection.' },
     ],
-    comparison: {
-      title: 'Plan comparison',
-      headers: ['Feature', 'Pro', 'Enterprise'],
-      rows: [
-        ['Unlimited classes', true, true],
-        ['Unlimited students', true, true],
-        ['BunnyCDN streaming', true, true],
-        ['Live classes (Zoom)', true, true],
-        ['Payment management (Stripe)', true, true],
-        ['Document signing', true, true],
-        ['Impersonation detection', true, true],
-        ['Analytics and reports', true, true],
-        ['Multiple academies', false, true],
-        ['SSO / LDAP integration', false, true],
-        ['White label', false, true],
-        ['Dedicated account manager', false, true],
-        ['Guaranteed SLA', false, true],
-      ] as [string, boolean, boolean][],
-    },
-    faq: {
-      title: 'Frequently asked questions',
-      items: [
-        { q: 'Is there a free trial?', a: 'Yes. We offer a personalized demo and trial period so you can confirm AKADEMO fits your academy before committing.' },
-        { q: 'What happens if I exceed the student limit?', a: 'There is no student limit. The Pro plan includes unlimited students and classes with no extra volume costs.' },
-        { q: 'Can I switch plans later?', a: 'Absolutely. You can migrate to Enterprise at any time by contacting our sales team.' },
-        { q: 'What does support include?', a: 'Pro includes priority email and chat support. Enterprise includes a dedicated account manager with a guaranteed SLA.' },
-        { q: 'Are prices VAT inclusive?', a: 'Displayed prices exclude VAT. Applicable VAT is calculated based on your billing country.' },
-      ],
-    },
-    trust: {
-      title: 'Why academies choose AKADEMO?',
-      items: [
-        { title: 'Protected content', desc: 'Your material can never be downloaded or shared. BunnyCDN ensures only your students watch your classes.' },
-        { title: 'Full control', desc: 'Manage payments, attendance, progress and documents from a single centralized dashboard.' },
-        { title: 'Built-in anti-fraud', desc: 'Automatic identity impersonation detection so every student is who they say they are.' },
-      ],
-    },
   },
 };
-
-function CheckIcon() {
-  return (
-    <svg className="w-5 h-5 text-emerald-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-    </svg>
-  );
-}
-
-function XIcon() {
-  return (
-    <svg className="w-5 h-5 text-gray-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-    </svg>
-  );
-}
 
 export default function PricingPage() {
   const [lang, setLang] = useState<Lang>('es');
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'login' | 'register'>('register');
   const [isScrolled] = useState(false);
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    academyName: '',
+    monthlyEnrollments: '',
+    teacherCount: '',
+    subjectCount: '',
+    message: '',
+  });
 
   const t = translations[lang];
 
@@ -243,12 +183,68 @@ export default function PricingPage() {
     setModalOpen(true);
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSubmitting(true);
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/leads`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setSubmitted(true);
+      } else {
+        setError(result.error || 'Error al enviar. Inténtalo de nuevo.');
+      }
+    } catch {
+      setError('Error de conexión. Inténtalo de nuevo.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const updateField = (field: string, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  if (submitted) {
+    return (
+      <div className="min-h-screen bg-gray-950 text-white">
+        <Navbar t={t.nav} isScrolled={isScrolled} lang={lang} onLangChange={setLang} onOpenModal={openModal} />
+        <section className="relative pt-40 pb-32 px-4 sm:px-6">
+          <div className="absolute inset-0 bg-gradient-to-b from-indigo-900/20 via-gray-950 to-gray-950 pointer-events-none" />
+          <div className="relative max-w-lg mx-auto text-center">
+            <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-8">
+              <svg className="w-10 h-10 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-bold text-white mb-4">{t.success.title}</h1>
+            <p className="text-lg text-gray-400 mb-10">{t.success.subtitle}</p>
+            <a
+              href="/"
+              className="inline-flex items-center gap-2 px-8 py-3.5 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-500/25"
+            >
+              {t.success.cta}
+            </a>
+          </div>
+        </section>
+        <Footer t={t.footer} lang={lang} />
+        {modalOpen && <AuthModal mode={modalMode} onClose={() => setModalOpen(false)} />}
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       <Navbar t={t.nav} isScrolled={isScrolled} lang={lang} onLangChange={setLang} onOpenModal={openModal} />
 
       {/* HERO */}
-      <section className="relative pt-40 pb-24 px-4 sm:px-6 overflow-hidden">
+      <section className="relative pt-40 pb-16 px-4 sm:px-6 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-indigo-900/20 via-gray-950 to-gray-950 pointer-events-none" />
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
         <div className="relative max-w-4xl mx-auto text-center">
@@ -260,156 +256,143 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* PLANS */}
+      {/* FORM SECTION */}
       <section className="px-4 sm:px-6 pb-24">
-        <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-6 lg:gap-8">
-          {t.plans.map((plan) => (
-            <div
-              key={plan.key}
-              className={`relative rounded-2xl border p-8 flex flex-col ${
-                plan.highlight ? 'bg-indigo-600 border-indigo-500 shadow-2xl shadow-indigo-900/40' : 'bg-gray-900 border-gray-800'
-              }`}
-            >
-              {plan.badge && (
-                <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-white text-indigo-700 shadow">
-                  {plan.badge}
-                </span>
-              )}
-              <div className="mb-6">
-                <h2 className="text-2xl font-bold text-white mb-2">{plan.name}</h2>
-                <p className={`text-sm leading-relaxed ${plan.highlight ? 'text-indigo-100' : 'text-gray-400'}`}>{plan.desc}</p>
-              </div>
-              <div className="mb-8">
-                {plan.price ? (
-                  <div className="flex items-end gap-1">
-                    <span className="text-5xl font-extrabold text-white">{plan.price}</span>
-                    <span className={`text-base pb-1 ${plan.highlight ? 'text-indigo-200' : 'text-gray-500'}`}>{plan.period}</span>
-                  </div>
-                ) : (
-                  <div className="text-3xl font-bold text-white">{lang === 'es' ? 'A medida' : 'Custom'}</div>
-                )}
-              </div>
-              <ul className="space-y-3 mb-8 flex-1">
-                {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-3">
-                    <CheckIcon />
-                    <span className={`text-sm ${plan.highlight ? 'text-indigo-100' : 'text-gray-300'}`}>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-              {plan.key === 'pro' ? (
-                <button onClick={() => openModal('register')} className="w-full py-3.5 rounded-xl font-semibold text-sm transition-all bg-white text-indigo-700 hover:bg-gray-100 shadow-lg">
-                  {plan.cta}
-                </button>
-              ) : (
-                <a href={plan.ctaLink} className="w-full py-3.5 rounded-xl font-semibold text-sm transition-all bg-gray-800 text-white hover:bg-gray-700 border border-gray-700 text-center block">
-                  {plan.cta}
-                </a>
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
+        <div className="max-w-2xl mx-auto">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 sm:p-10">
+            <h2 className="text-xl sm:text-2xl font-bold text-white mb-8">{t.form.title}</h2>
 
-      {/* TRUST */}
-      <section className="px-4 sm:px-6 pb-24">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white text-center mb-12">{t.trust.title}</h2>
-          <div className="grid sm:grid-cols-3 gap-6">
-            {t.trust.items.map((item) => (
-              <div key={item.title} className="bg-gray-900 border border-gray-800 rounded-2xl p-6 text-center">
-                <h3 className="text-base font-semibold text-white mb-2">{item.title}</h3>
-                <p className="text-sm text-gray-400 leading-relaxed">{item.desc}</p>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Name + Email */}
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">{t.form.name} *</label>
+                  <input
+                    type="text"
+                    required
+                    value={form.name}
+                    onChange={(e) => updateField('name', e.target.value)}
+                    placeholder={t.form.namePlaceholder}
+                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">{t.form.email} *</label>
+                  <input
+                    type="email"
+                    required
+                    value={form.email}
+                    onChange={(e) => updateField('email', e.target.value)}
+                    placeholder={t.form.emailPlaceholder}
+                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  />
+                </div>
               </div>
-            ))}
+
+              {/* Phone + Academy Name */}
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">{t.form.phone}</label>
+                  <input
+                    type="tel"
+                    value={form.phone}
+                    onChange={(e) => updateField('phone', e.target.value)}
+                    placeholder={t.form.phonePlaceholder}
+                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">{t.form.academyName}</label>
+                  <input
+                    type="text"
+                    value={form.academyName}
+                    onChange={(e) => updateField('academyName', e.target.value)}
+                    placeholder={t.form.academyNamePlaceholder}
+                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Monthly Enrollments */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-3">{t.form.monthlyEnrollments}</label>
+                <RangeSelector
+                  options={t.form.ranges.enrollments}
+                  value={form.monthlyEnrollments}
+                  onChange={(v) => updateField('monthlyEnrollments', v)}
+                />
+              </div>
+
+              {/* Teachers */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-3">{t.form.teacherCount}</label>
+                <RangeSelector
+                  options={t.form.ranges.teachers}
+                  value={form.teacherCount}
+                  onChange={(v) => updateField('teacherCount', v)}
+                />
+              </div>
+
+              {/* Subjects */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-3">{t.form.subjectCount}</label>
+                <RangeSelector
+                  options={t.form.ranges.subjects}
+                  value={form.subjectCount}
+                  onChange={(v) => updateField('subjectCount', v)}
+                />
+              </div>
+
+              {/* Message */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">{t.form.message}</label>
+                <textarea
+                  value={form.message}
+                  onChange={(e) => updateField('message', e.target.value)}
+                  placeholder={t.form.messagePlaceholder}
+                  rows={3}
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all resize-none"
+                />
+              </div>
+
+              {error && (
+                <div className="px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full py-4 bg-indigo-600 text-white rounded-xl font-semibold text-base hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-500/25 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submitting ? t.form.submitting : t.form.submit}
+              </button>
+            </form>
           </div>
         </div>
       </section>
 
-      {/* COMPARISON TABLE */}
-      <section className="px-4 sm:px-6 pb-24">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white text-center mb-12">{t.comparison.title}</h2>
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-800">
-                    {t.comparison.headers.map((header, i) => (
-                      <th key={i} className={`py-4 px-6 text-left text-sm font-semibold ${i === 0 ? 'text-gray-400 w-1/2' : i === 1 ? 'text-indigo-400' : 'text-gray-300'}`}>
-                        {header}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {t.comparison.rows.map((row, ri) => (
-                    <tr key={ri} className="border-b border-gray-800/50 last:border-0 hover:bg-gray-800/30 transition-colors">
-                      <td className="py-4 px-6 text-sm text-gray-300">{row[0]}</td>
-                      <td className="py-4 px-6">{row[1] ? <CheckIcon /> : <XIcon />}</td>
-                      <td className="py-4 px-6">{row[2] ? <CheckIcon /> : <XIcon />}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
+      {/* FEATURES */}
       <section className="px-4 sm:px-6 pb-32">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white text-center mb-12">{t.faq.title}</h2>
-          <div className="space-y-3">
-            {t.faq.items.map((item, i) => (
-              <div key={i} className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-                <button
-                  className="w-full flex items-center justify-between gap-4 px-6 py-5 text-left hover:bg-gray-800/50 transition-colors"
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                >
-                  <span className="text-sm font-medium text-white">{item.q}</span>
-                  <svg className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${openFaq === i ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                {openFaq === i && (
-                  <div className="px-6 pb-5">
-                    <p className="text-sm text-gray-400 leading-relaxed">{item.a}</p>
-                  </div>
-                )}
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {t.features.map((feature) => (
+              <div key={feature.title} className="bg-gray-900 border border-gray-800 rounded-2xl p-6 text-center">
+                <div className="w-12 h-12 bg-indigo-500/10 rounded-xl flex items-center justify-center mx-auto mb-4 text-indigo-400">
+                  <FeatureIcon type={feature.icon} />
+                </div>
+                <h3 className="text-base font-semibold text-white mb-2">{feature.title}</h3>
+                <p className="text-sm text-gray-400 leading-relaxed">{feature.desc}</p>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA BANNER */}
-      <section className="px-4 sm:px-6 pb-24">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-700 rounded-3xl p-12 text-center shadow-2xl">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
-              {lang === 'es' ? '¿Listo para empezar?' : 'Ready to get started?'}
-            </h2>
-            <p className="text-indigo-100 mb-8 max-w-xl mx-auto">
-              {lang === 'es'
-                ? 'Únete a las academias que ya confían en AKADEMO para gestionar su negocio educativo.'
-                : 'Join the academies that already trust AKADEMO to manage their educational business.'}
-            </p>
-            <div className="flex justify-center">
-              <button onClick={() => openModal('register')} className="px-8 py-3.5 bg-white text-indigo-700 rounded-xl font-semibold hover:bg-gray-100 transition-colors shadow">
-                {lang === 'es' ? 'Comenzar' : 'Get started'}
-              </button>
-            </div>
           </div>
         </div>
       </section>
 
       <Footer t={t.footer} lang={lang} />
 
-      {modalOpen && (
-        <AuthModal mode={modalMode} onClose={() => setModalOpen(false)} />
-      )}
+      {modalOpen && <AuthModal mode={modalMode} onClose={() => setModalOpen(false)} />}
     </div>
   );
 }

@@ -57,11 +57,11 @@ function VideoWatermarkDemo() {
             </div>
           </div>
           
-          {/* Dynamic watermarks */}
-          <div className="absolute top-6 left-6 bg-black/40 backdrop-blur px-3 py-1.5 rounded text-white/70 text-sm font-mono border border-white/10">
+          {/* Dynamic watermarks - showing our actual watermark format */}
+          <div className="absolute top-4 left-4 bg-black/40 backdrop-blur px-3 py-1.5 rounded text-white/70 text-sm font-mono border border-white/10">
             Juan Pérez
           </div>
-          <div className="absolute top-6 right-6 bg-black/40 backdrop-blur px-3 py-1.5 rounded text-white/70 text-sm font-mono border border-white/10">
+          <div className="absolute top-4 right-4 bg-black/40 backdrop-blur px-3 py-1.5 rounded text-white/70 text-sm font-mono border border-white/10">
             juan.perez@email.com
           </div>
           <div className="absolute bottom-6 left-6 bg-black/40 backdrop-blur px-3 py-1.5 rounded text-white/70 text-xs font-mono border border-white/10">
@@ -71,15 +71,15 @@ function VideoWatermarkDemo() {
             {new Date().toLocaleTimeString()}
           </div>
           
-          {/* Center subtle watermark */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-white/10 text-6xl font-bold transform -rotate-12">
+          {/* Center semi-transparent watermark - mimicking our real overlay */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="text-white/[0.07] text-5xl sm:text-6xl font-bold transform -rotate-12 select-none whitespace-nowrap">
               JUAN PÉREZ
             </div>
           </div>
         </div>
         <div className="p-4 bg-black/30 backdrop-blur border-t border-white/5 flex items-center justify-between">
-          <span className="text-white/60 text-sm">Siempre visible</span>
+          <span className="text-white/60 text-sm">Elige cada cuándo aparece</span>
           <div className="flex items-center gap-2 text-green-400 text-sm">
             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
             Activo

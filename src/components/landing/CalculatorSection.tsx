@@ -37,10 +37,9 @@ export function CalculatorSection({ lang }: CalculatorSectionProps) {
   const [calcGhostPct, setCalcGhostPct] = useState(60);
 
   const ghostStudents = Math.round(calcStudents * (calcGhostPct / 100));
-  const recoveryRate = 0.5;
-  const recoveredStudents = Math.round(ghostStudents * recoveryRate);
-  const monthlyRecovery = recoveredStudents * calcMonthlyFee;
-  const annualRecovery = monthlyRecovery * 12;
+  const currentAnnualRevenue = (calcStudents - ghostStudents) * calcMonthlyFee * 12;
+  const lostAnnualRevenue = ghostStudents * calcMonthlyFee * 12;
+  const totalPotentialRevenue = currentAnnualRevenue + lostAnnualRevenue;
 
   const isEs = lang === 'es';
 
@@ -129,30 +128,23 @@ export function CalculatorSection({ lang }: CalculatorSectionProps) {
           <div className="space-y-4 flex flex-col">
             {/* Annual loss hero */}
             <div className="bg-gradient-to-r from-red-500/15 to-orange-500/15 border border-red-500/20 rounded-xl p-6 text-center flex-1 flex flex-col justify-center">
-              <p className="text-gray-400 text-sm mb-1">{isEs ? 'Ingresos Perdidos por Año' : 'Annual Revenue Lost'}</p>
-              <p className="text-4xl sm:text-5xl font-bold text-red-400">€{(ghostStudents * calcMonthlyFee * 12).toLocaleString()}</p>
+              <p className="text-gray-400 text-sm mb-1">{isEs ? 'Ingresos perdidos por año' : 'Annual Revenue Lost'}</p>
+              <p className="text-4xl sm:text-5xl font-bold text-red-400">€{lostAnnualRevenue.toLocaleString()}</p>
               <p className="text-gray-500 text-sm mt-1">{isEs ? 'por cuentas compartidas' : 'from shared accounts'}</p>
             </div>
 
-            {/* Recoverable with AKADEMO */}
+            {/* Total potential revenue with AKADEMO */}
             <div className="bg-gradient-to-r from-emerald-500/15 to-cyan-500/15 border border-emerald-500/20 rounded-xl p-6 text-center flex-1 flex flex-col justify-center">
-              <p className="text-gray-400 text-sm mb-1">{isEs ? 'Ingresos Recuperables por Año' : 'Recoverable Annual Revenue'}</p>
-              <p className="text-4xl sm:text-5xl font-bold text-emerald-400">€{annualRecovery.toLocaleString()}</p>
-              <p className="text-gray-500 text-sm mt-1">{isEs ? 'bloqueando cuentas compartidas' : 'by blocking shared accounts'}</p>
+              <p className="text-gray-400 text-sm mb-1">{isEs ? 'Ingresos recuperables por año' : 'Total Potential Annual Revenue'}</p>
+              <p className="text-4xl sm:text-5xl font-bold text-emerald-400">€{totalPotentialRevenue.toLocaleString()}</p>
+              <p className="text-gray-500 text-sm mt-1">{isEs ? 'con todas las cuentas pagando' : 'with all accounts paying'}</p>
             </div>
 
-            {/* Stats grid */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-5 text-center">
-                <UsersIcon className="w-5 h-5 text-red-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-red-400">{ghostStudents}</p>
-                <p className="text-gray-500 text-xs mt-1">{isEs ? 'Estudiantes Fantasma' : 'Ghost Students'}</p>
-              </div>
-              <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-5 text-center">
-                <UsersIcon className="w-5 h-5 text-emerald-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-emerald-400">+{recoveredStudents}</p>
-                <p className="text-gray-500 text-xs mt-1">{isEs ? 'Estudiantes Recuperados' : 'Recovered Students'}</p>
-              </div>
+            {/* Ghost students stat */}
+            <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-5 text-center">
+              <UsersIcon className="w-5 h-5 text-red-400 mx-auto mb-2" />
+              <p className="text-2xl font-bold text-red-400">{ghostStudents}</p>
+              <p className="text-gray-500 text-xs mt-1">{isEs ? 'Estudiantes fantasma' : 'Ghost Students'}</p>
             </div>
           </div>
         </div>

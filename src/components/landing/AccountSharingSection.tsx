@@ -27,7 +27,7 @@ export function AccountSharingSection({ t }: AccountSharingSectionProps) {
         
         <div className="grid sm:grid-cols-3 gap-8">
           <FeatureCard 
-            stat="99.9%"
+            stat="100%"
             statLabel="Tasa de detección"
             title={t.sharingFeature1}
             description={t.sharingFeature1Desc}

@@ -10,7 +10,7 @@ const FAQ_ITEMS = {
   es: [
     { q: '¿Cómo funciona la protección anti-compartir?', a: 'Cada estudiante solo puede tener una sesión activa. Si alguien inicia sesión desde otro dispositivo, la sesión anterior se cierra automáticamente.' },
     { q: '¿Qué pasa si un estudiante graba la pantalla?', a: 'Cada vídeo muestra una marca de agua dinámica con el nombre y email del estudiante, permitiendo identificar quién lo grabó.' },
-    { q: '¿Hay límite de vídeos o estudiantes?', a: 'Depende del plan. El plan gratuito incluye funcionalidades básicas. Los planes de pago ofrecen almacenamiento ilimitado.' },
+    { q: '¿Hay límite de vídeos o estudiantes?', a: 'Los planes de pago ofrecen almacenamiento ilimitado.' },
     { q: '¿Cómo funcionan las clases en directo?', a: 'Se integra con Zoom. Puedes programar y lanzar clases en directo desde el panel. Las sesiones se graban automáticamente.' },
     { q: '¿Puedo migrar desde otra plataforma?', a: 'Sí. Nuestro equipo te ayuda con la migración de contenido y estudiantes. Escríbenos para un plan personalizado.' },
     { q: '¿Es seguro el pago?', a: 'Los pagos se procesan a través de Stripe, el procesador de pagos más seguro del mundo.' },
@@ -127,10 +127,10 @@ export function ContactSection({ lang }: ContactSectionProps) {
                 {lang === 'es' ? 'O escríbenos directamente a' : 'Or email us directly at'}
               </p>
               <a 
-                href="mailto:contact@akademo.com"
+                href="mailto:alex@akademo-edu.com"
                 className="text-emerald-600 hover:text-emerald-700 font-medium transition-colors text-sm"
               >
-                contact@akademo.com
+                alex@akademo-edu.com
               </a>
             </div>
           </div>

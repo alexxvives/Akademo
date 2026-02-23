@@ -67,6 +67,12 @@ export function Hero({ t, isScrolled: _isScrolled, onOpenModal }: HeroProps) {
               >
                 {t.startFree}
               </button>
+              <a
+                href="/pricing"
+                className="px-8 py-3.5 bg-transparent border border-white/30 text-white font-medium rounded-lg hover:bg-white/10 transition-all text-sm sm:text-base text-center"
+              >
+                Solicitar demo
+              </a>
             </div>
             {/* "Perfect for:" section */}
             <div>

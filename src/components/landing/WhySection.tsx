@@ -46,11 +46,13 @@ export function WhySection({ t }: WhySectionProps) {
           />
         </div>
         
+        {t.whySolution && (
         <div className="bg-gray-900 rounded-2xl p-6 sm:p-8 lg:p-12 text-center">
           <p className="text-lg sm:text-xl lg:text-2xl font-medium text-white leading-relaxed">
             {t.whySolution}
           </p>
         </div>
+        )}
       </div>
     </section>
   );

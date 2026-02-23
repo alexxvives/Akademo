@@ -525,6 +525,11 @@ export default function DashboardLayout({
             href: '/dashboard/admin/calendar',
             iconType: 'calendar' as const,
           },
+          {
+            label: 'Leads',
+            href: '/dashboard/admin/leads',
+            iconType: 'users' as const,
+          },
         ];
       case 'TEACHER':
         return [
