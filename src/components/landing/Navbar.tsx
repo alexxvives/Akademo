@@ -37,16 +37,7 @@ export function Navbar({ t, isScrolled, lang, onLangChange, onOpenModal }: Navba
               </Link>
 
               {/* Center nav */}
-              <div className="absolute left-1/2 -translate-x-1/2 hidden sm:flex">
-                <Link
-                  href="/pricing"
-                  className={`px-4 py-2 font-medium text-sm transition-colors whitespace-nowrap ${
-                    isScrolled ? 'text-gray-600 hover:text-gray-900' : 'text-white/90 hover:text-white'
-                  }`}
-                >
-                  {lang === 'es' ? 'Precios' : 'Pricing'}
-                </Link>
-              </div>
+
               
               <div className="flex items-center gap-1.5 sm:gap-3 justify-end">
                 <button

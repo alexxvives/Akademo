@@ -1,0 +1,2 @@
+[     749ms] [ERROR] Failed to load resource: the server responded with a status of 500 () @ https://akademo-edu.com/_next/image?url=%2Fapi%2Fstorage%2Fserve%2Facademy-logos%2Facademy1%2Facademy1.png&w=64&q=75:0
+[  427005ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://akademo-edu.com/api/storage/serve/academy-logos/academy1/academy1.png:0

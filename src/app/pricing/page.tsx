@@ -302,13 +302,7 @@ export default function PricingPage() {
                 ))}
               </ul>
 
-              <div className="bg-gray-900/60 border border-gray-800 rounded-2xl p-5">
-                <p className="text-sm text-gray-300 italic leading-relaxed mb-3">{t.side.testimonial}</p>
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xs font-bold">A</div>
-                  <span className="text-xs text-gray-400">{t.side.testimonialAuthor}</span>
-                </div>
-              </div>
+
             </div>
 
             {/* RIGHT: Form */}
@@ -316,7 +310,7 @@ export default function PricingPage() {
             <h2 className="text-xl sm:text-2xl font-bold text-white mb-8">{t.form.title}</h2>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Name + Email */}
+              {/* Name + Academy Name */}
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">{t.form.name} *</label>
@@ -330,6 +324,20 @@ export default function PricingPage() {
                   />
                 </div>
                 <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">{t.form.academyName}</label>
+                  <input
+                    type="text"
+                    value={form.academyName}
+                    onChange={(e) => updateField('academyName', e.target.value)}
+                    placeholder={t.form.academyNamePlaceholder}
+                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Email + Phone */}
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">{t.form.email} *</label>
                   <input
                     type="email"
@@ -340,10 +348,6 @@ export default function PricingPage() {
                     className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                   />
                 </div>
-              </div>
-
-              {/* Phone + Academy Name */}
-              <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">{t.form.phone}</label>
                   <input
@@ -351,16 +355,6 @@ export default function PricingPage() {
                     value={form.phone}
                     onChange={(e) => updateField('phone', e.target.value)}
                     placeholder={t.form.phonePlaceholder}
-                    className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">{t.form.academyName}</label>
-                  <input
-                    type="text"
-                    value={form.academyName}
-                    onChange={(e) => updateField('academyName', e.target.value)}
-                    placeholder={t.form.academyNamePlaceholder}
                     className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                   />
                 </div>
