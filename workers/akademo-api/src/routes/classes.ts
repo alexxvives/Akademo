@@ -657,8 +657,8 @@ classes.delete('/:id', async (c) => {
       await c.env.DB.prepare('DELETE FROM Payment WHERE classId = ?').bind(classId).run();
     } catch { /* Payment cleanup is best-effort */ }
 
-    // 13. Delete live streams
-    await c.env.DB.prepare('DELETE FROM LiveStream WHERE classId = ?').bind(classId).run();
+    // 13. Preserve live stream records (Bunny recordings remain accessible)
+    // Streams are intentionally NOT deleted so their Bunny video recordings stay orphan-free
 
     // 14. Finally delete the class itself
     await c.env.DB.prepare('DELETE FROM Class WHERE id = ?').bind(classId).run();

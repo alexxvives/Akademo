@@ -529,51 +529,56 @@ export function SkeletonStudentClass() {
 export function SkeletonClassDetail() {
   return (
     <div className="space-y-6">
-      {/* Back button + Header */}
-      <SkeletonBox className="h-5 w-40 mb-4" />
-      <div className="flex items-start justify-between">
+      {/* Back link */}
+      <SkeletonBox className="h-4 w-40" />
+
+      {/* Header: title + action buttons */}
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
         <div className="flex-1 space-y-2">
-          <SkeletonBox className="h-8 w-96" /> {/* Class name */}
-          <SkeletonBox className="h-5 w-full max-w-2xl" /> {/* Description */}
+          <SkeletonBox className="h-8 w-72" />
+          <SkeletonBox className="h-5 w-full max-w-xl" />
         </div>
         <div className="flex gap-2">
-          <SkeletonBox className="h-10 w-32" /> {/* Button */}
-          <SkeletonBox className="h-10 w-32" /> {/* Button */}
+          <SkeletonBox className="h-9 w-28 rounded-lg" />
+          <SkeletonBox className="h-9 w-24 rounded-lg" />
         </div>
       </div>
 
-      {/* Stats Row */}
-      <div className="flex items-center gap-6">
-        <SkeletonBox className="h-6 w-24" />
-        <SkeletonBox className="h-6 w-24" />
-      </div>
-
-      {/* Tabs */}
-      <div className="border-b border-gray-200">
-        <div className="flex gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <SkeletonBox key={i} className="h-10 w-24" />
-          ))}
-        </div>
-      </div>
-
-      {/* Content Area - Lessons List */}
-      <div className="space-y-4">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="bg-white rounded-xl border border-gray-200 p-6">
+      {/* Topic group 1 */}
+      <div className="space-y-3">
+        <SkeletonBox className="h-10 w-full rounded-xl" />
+        {Array.from({ length: 2 }).map((_, i) => (
+          <div key={i} className="bg-white rounded-xl border border-gray-200 p-5">
             <div className="flex items-center justify-between gap-4">
               <div className="flex-1 space-y-2">
-                <SkeletonBox className="h-6 w-64" /> {/* Lesson title */}
-                <div className="flex items-center gap-4">
-                  <SkeletonBox className="h-4 w-20" /> {/* Videos */}
-                  <SkeletonBox className="h-4 w-20" /> {/* Documents */}
-                  <SkeletonBox className="h-4 w-28" /> {/* Release date */}
+                <SkeletonBox className="h-5 w-56" />
+                <div className="flex items-center gap-3">
+                  <SkeletonBox className="h-4 w-16" />
+                  <SkeletonBox className="h-4 w-20" />
+                  <SkeletonBox className="h-4 w-24" />
                 </div>
               </div>
-              <SkeletonBox className="h-20 w-36 rounded-lg" /> {/* Thumbnail */}
+              <SkeletonBox className="h-16 w-28 rounded-lg flex-shrink-0" />
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Topic group 2 */}
+      <div className="space-y-3">
+        <SkeletonBox className="h-10 w-full rounded-xl" />
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 space-y-2">
+              <SkeletonBox className="h-5 w-48" />
+              <div className="flex items-center gap-3">
+                <SkeletonBox className="h-4 w-16" />
+                <SkeletonBox className="h-4 w-24" />
+              </div>
+            </div>
+            <SkeletonBox className="h-16 w-28 rounded-lg flex-shrink-0" />
+          </div>
+        </div>
       </div>
     </div>
   );

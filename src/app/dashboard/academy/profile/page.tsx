@@ -20,6 +20,7 @@ interface ZoomAccount {
   classes?: Array<{
     id: string;
     name: string;
+    startDate?: string | null;
   }>;
 }
 
@@ -80,7 +81,7 @@ const MULTIPLIER_OPTIONS = [
 
 export default function ProfilePage() {
   const { user } = useAuth();
-  const { activePeriodId, setActivePeriodId } = usePeriod();
+  const { activePeriodId, setActivePeriodId, isClassInPeriod } = usePeriod();
   const [academy, setAcademy] = useState<Academy | null>(null);
   const [zoomAccounts, setZoomAccounts] = useState<ZoomAccount[]>([]);
   const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null);
@@ -1240,19 +1241,25 @@ export default function ProfilePage() {
                     </div>
                   </div>
                   
-                  <div className="pt-3">
-                    {account.classes && account.classes.length > 0 && (
+                    <div className="pt-3">
+                    {account.classes && account.classes.length > 0 && (() => {
+                      const visibleClasses = activePeriodId === 'all'
+                        ? account.classes
+                        : account.classes.filter(cls => cls.startDate ? isClassInPeriod(cls.startDate) : true);
+                      if (visibleClasses.length === 0) return null;
+                      return (
                       <div className="mt-2">
                         <p className="text-xs font-medium text-gray-700 mb-1">Clases asignadas:</p>
                         <div className="flex flex-wrap gap-1">
-                          {account.classes.map((cls) => (
+                          {visibleClasses.map((cls) => (
                             <span key={cls.id} className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-blue-50 text-blue-700">
                               {cls.name}
                             </span>
                           ))}
                         </div>
                       </div>
-                    )}
+                      );
+                    })()}
                   </div>
                 </div>
               ))}

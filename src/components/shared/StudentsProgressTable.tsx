@@ -286,7 +286,15 @@ export function StudentsProgressTable({
                 )}
                 {visibleColumns.sospechas && (
                   <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Sospechas
+                    <span className="relative group inline-flex items-center gap-1 cursor-help">
+                      Sospechas
+                      <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 w-60 normal-case tracking-normal leading-relaxed">
+                        Se incrementa cuando se detecta un inicio de sesión desde una ubicación geográficamente imposible (viaje imposible): el alumno aparece en dos ubicaciones muy alejadas en un corto período de tiempo.
+                      </span>
+                    </span>
                   </th>
                 )}
                 {showBanButton && visibleColumns.acciones && (

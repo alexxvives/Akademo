@@ -110,12 +110,14 @@ export function DashboardPage({ role }: DashboardPageProps) {
   const paymentStatusInitRef = useRef(true); // skip first useEffect fire (loadAcademyData already fetches it)
   const prevPeriodRef = useRef(activePeriodId);
 
-  // Reset class/academy filters when period changes so stale filters don't cause weird state
+  // Reset class/academy filters AND payment status counters when period changes
   useEffect(() => {
     if (prevPeriodRef.current === activePeriodId) return;
     prevPeriodRef.current = activePeriodId;
     setSelectedClass('all');
     if (isAdmin) setSelectedAcademy('all');
+    // Zero out al día/atrasados immediately so stale data isn't shown while re-fetch is in flight
+    setStudentPaymentStatus({ alDia: 0, atrasados: 0, total: 0, uniqueAlDia: 0, uniqueAtrasados: 0, uniqueTotal: 0 });
   }, [activePeriodId, isAdmin]);
 
   useEffect(() => { loadData(); }, []);

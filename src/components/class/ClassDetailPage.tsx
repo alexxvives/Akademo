@@ -927,12 +927,15 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
             streamId: lessonFormData.selectedStreamRecordings[0], // Use first selected recording
             title: lessonFormData.title || undefined,
             description: lessonFormData.description || undefined,
+            topicId: lessonFormData.topicId || undefined,
             releaseDate: lessonFormData.publishImmediately ? undefined : `${lessonFormData.releaseDate}T${lessonFormData.releaseTime}:00`,
           }),
         });
         
         const result = await response.json();
         if (result.success) {
+          // Expand the topic so the new lesson is visible
+          const topicToExpand = (!lessonFormData.topicId || lessonFormData.topicId === '') ? 'uncategorized' : lessonFormData.topicId;
           // Clean URL params
           const url = new URL(window.location.href);
           if (url.searchParams.has('action')) {
@@ -957,6 +960,8 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
             selectedStreamRecordings: [],
           });
           await loadData(); // Reload all data including lessons
+          setExpandTopicId(topicToExpand);
+          setTimeout(() => setExpandTopicId(null), 500);
         } else {
           console.error('[Create Lesson Error]', result);
           alert(`Error: ${result.error || 'Unknown error'}`);
@@ -1081,7 +1086,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
   };
 
   const handleDeleteLesson = async (lessonId: string) => {
-    if (!confirm('¿Eliminar esta clase?\n\n⚠️ IMPORTANTE: Los videos de esta clase serán eliminados permanentemente de la plataforma y no podrán recuperarse.\n\n¿Estás seguro?')) return;
+    if (!confirm('¿Eliminar esta lección?\n\n⚠️ IMPORTANTE: Los videos de esta lección serán eliminados permanentemente de la plataforma y no podrán recuperarse.\n\nNota: Las grabaciones de streams no se ven afectadas.\n\n¿Estás seguro?')) return;
     try {
       const res = await apiClient(`/lessons/${lessonId}`, { method: 'DELETE' });
       const result = await res.json();

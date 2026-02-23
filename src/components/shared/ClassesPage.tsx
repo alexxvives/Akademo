@@ -409,7 +409,7 @@ export function ClassesPage({ role }: ClassesPageProps) {
 
   const handleDeleteClass = async (cls: Class) => {
     const confirmed = window.confirm(
-      `¿Estás seguro de que quieres eliminar "${cls.name}"?\n\n⚠️ IMPORTANTE: Los videos serán eliminados permanentemente de la plataforma y no podrán recuperarse.\n\nTambién se eliminarán todas las lecciones, documentos, calificaciones y matrículas asociadas.\n\nEsta acción no se puede deshacer.`
+      `¿Estás seguro de que quieres eliminar "${cls.name}"?\n\n⚠️ IMPORTANTE: Los videos serán eliminados permanentemente de la plataforma y no podrán recuperarse.\n\nNota: Las grabaciones de streams quedarán almacenadas en la plataforma.\n\nTambién se eliminarán todas las lecciones, documentos, calificaciones y matrículas asociadas.\n\nEsta acción no se puede deshacer.`
     );
     if (!confirmed) return;
 

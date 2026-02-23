@@ -28,7 +28,7 @@ zoomAccounts.get('/', async (c) => {
     const accountsWithClasses = await Promise.all(
       (accounts.results || []).map(async (account: any) => {
         const classes = await c.env.DB.prepare(
-          'SELECT id, name FROM Class WHERE zoomAccountId = ?'
+          'SELECT id, name, startDate FROM Class WHERE zoomAccountId = ?'
         ).bind(account.id).all();
         
         return {

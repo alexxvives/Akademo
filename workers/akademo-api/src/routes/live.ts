@@ -114,8 +114,11 @@ live.post('/', async (c) => {
         zoomConfig = { accessToken: zoomAccount.accessToken };
       }
     } else {
-      // No Zoom account assigned - teachers must contact academy
-      return c.json(errorResponse('Esta clase no tiene una cuenta de Zoom asignada. Por favor contacta a la academia para que asigne una cuenta de Zoom a esta clase.'), 400);
+      // No Zoom account assigned
+      const msg = session.role === 'ACADEMY'
+        ? 'Esta clase no tiene una cuenta de Zoom asignada. Por favor asigna una cuenta de Zoom a esta clase.'
+        : 'Esta clase no tiene una cuenta de Zoom asignada. Por favor contacta a la academia para que asigne una cuenta de Zoom a esta clase.';
+      return c.json(errorResponse(msg), 400);
     }
 
     // Create Zoom meeting
@@ -626,7 +629,7 @@ live.post('/create-lesson', async (c) => {
       return c.json(errorResponse('Not authorized'), 403);
     }
 
-    const { streamId, title, description, releaseDate } = await c.req.json();
+    const { streamId, title, description, topicId, releaseDate } = await c.req.json();
 
     if (!streamId) {
       return c.json(errorResponse('streamId is required'), 400);
@@ -747,13 +750,14 @@ live.post('/create-lesson', async (c) => {
 
     // Create Lesson record first
     await c.env.DB.prepare(`
-      INSERT INTO Lesson (id, title, description, classId, releaseDate, createdAt)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO Lesson (id, title, description, classId, topicId, releaseDate, createdAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `).bind(
       lessonId,
       lessonTitle,
       description || null,
       stream.classId,
+      topicId || null,
       releaseDate || now,
       now
     ).run();
