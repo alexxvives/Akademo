@@ -74,8 +74,8 @@ export function CalculatorSection({ lang }: CalculatorSectionProps) {
 
         <div className="grid lg:grid-cols-2 gap-6 items-stretch">
           {/* Left: Inputs */}
-          <ScrollReveal direction="left" delay={240}>
-            <div className="bg-gray-800/50 rounded-2xl p-6 sm:p-8 border border-gray-700 space-y-8 flex flex-col justify-between">
+          <ScrollReveal direction="left" delay={240} className="h-full">
+            <div className="bg-gray-800/50 rounded-2xl p-6 sm:p-8 border border-gray-700 space-y-8 flex flex-col justify-between h-full">
             {/* Total students slider */}
             <div>
               <div className="flex justify-between items-center mb-3">
@@ -115,27 +115,12 @@ export function CalculatorSection({ lang }: CalculatorSectionProps) {
               <div className="flex justify-between text-xs text-gray-400 mt-1"><span>10%</span><span>90%</span></div>
             </div>
 
-            {/* Visual: ghost bar */}
-            <div className="bg-gray-800/60 rounded-xl p-4">
-              <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
-                <span>{isEs ? 'Estudiantes que pagan' : 'Paying students'}</span>
-                <span>{isEs ? 'Fantasmas' : 'Ghosts'}</span>
-              </div>
-              <div className="h-3 rounded-full overflow-hidden flex">
-                <div className="bg-emerald-500 transition-all duration-300" style={{ width: `${100 - calcGhostPct}%` }} />
-                <div className="bg-red-500/60 transition-all duration-300" style={{ width: `${calcGhostPct}%` }} />
-              </div>
-              <div className="flex items-center justify-between text-xs mt-1.5">
-                <span className="text-emerald-400 font-medium">{calcStudents - ghostStudents}</span>
-                <span className="text-red-400 font-medium">{ghostStudents}</span>
-              </div>
-            </div>
             </div>
           </ScrollReveal>
 
           {/* Right: Results */}
-          <ScrollReveal direction="right" delay={320}>
-            <div className="space-y-4 flex flex-col">
+          <ScrollReveal direction="right" delay={320} className="h-full">
+            <div className="space-y-4 flex flex-col h-full">
             {/* Annual loss hero */}
             <div className="bg-gradient-to-r from-red-500/15 to-orange-500/15 border border-red-500/20 rounded-xl p-6 text-center flex-1 flex flex-col justify-center">
               <p className="text-gray-400 text-sm mb-1">{isEs ? 'Ingresos perdidos por año' : 'Annual Revenue Lost'}</p>

@@ -7,6 +7,7 @@ import { SkeletonTable } from '@/components/ui/SkeletonLoader';
 interface Academy {
   id: string;
   name: string;
+  ownerId: string;
   ownerName: string;
   ownerEmail: string;
   status: string;
@@ -20,6 +21,7 @@ interface Academy {
 export default function AdminAcademies() {
   const [academies, setAcademies] = useState<Academy[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     loadAcademies();
@@ -36,6 +38,25 @@ export default function AdminAcademies() {
       console.error('Error loading academies:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (ownerId: string, academyName: string) => {
+    if (!confirm(`¿Eliminar la academia "${academyName}" y todos sus datos? Esta acción no se puede deshacer.`)) return;
+    setDeletingId(ownerId);
+    try {
+      const res = await apiClient(`/admin/users/${ownerId}`, { method: 'DELETE' });
+      const result = await res.json();
+      if (result.success) {
+        await loadAcademies();
+      } else {
+        alert('Error: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error deleting academy:', error);
+      alert('Error al eliminar la academia');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -88,6 +109,9 @@ export default function AdminAcademies() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Creada
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Acciones
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -124,6 +148,20 @@ export default function AdminAcademies() {
                     <span className="text-sm text-gray-500">
                       {new Date(academy.createdAt).toLocaleDateString('es')}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <button
+                      onClick={() => handleDelete(academy.ownerId, academy.name)}
+                      disabled={deletingId === academy.ownerId}
+                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Eliminar academia"
+                    >
+                      {deletingId === academy.ownerId ? (
+                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                      ) : (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                      )}
+                    </button>
                   </td>
                 </tr>
               ))}

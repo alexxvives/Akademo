@@ -623,9 +623,9 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
         searchQuery={searchQuery}
         selectedClass={selectedClass}
         showTeacherColumn={role === 'ACADEMY'}
-        showBanButton={role === 'ACADEMY'}
+        showBanButton={role === 'ACADEMY' || role === 'ADMIN'}
         disableBanButton={paymentStatus === 'NOT PAID' && userEmail.toLowerCase().includes('demo')}
-        onBanStudent={role === 'ACADEMY' ? handleBanStudent : undefined}
+        onBanStudent={role === 'ACADEMY' || role === 'ADMIN' ? handleBanStudent : undefined}
         onAlertStudent={role === 'ACADEMY' || role === 'ADMIN' ? async (studentId: string, studentName: string) => {
           try {
             const res = await apiClient(`/students/${studentId}/warn`, { method: 'PATCH' });

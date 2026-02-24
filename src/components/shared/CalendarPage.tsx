@@ -28,6 +28,7 @@ interface ClassSummary {
   name: string;
   slug?: string | null;
   description: string | null;
+  academyId?: string;
   academyName?: string;
   enrollmentCount?: number;
   startDate?: string | null;
@@ -183,6 +184,8 @@ export function CalendarPage({ role }: CalendarPageProps) {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [classes, setClasses] = useState<ClassSummary[]>([]);
   const [selectedClass, setSelectedClass] = useState('all');
+  const [adminAcademies, setAdminAcademies] = useState<{id: string, name: string}[]>([]);
+  const [selectedAdminAcademy, setSelectedAdminAcademy] = useState('all');
   const [loading, setLoading] = useState(true);
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [addEventDate, setAddEventDate] = useState<Date | null>(null);
@@ -236,6 +239,19 @@ export function CalendarPage({ role }: CalendarPageProps) {
               academyName: e.academyName,
             }));
         }
+      } else if (role === 'ADMIN') {
+        // Load academies list for filter dropdown
+        try {
+          const acadRes = await apiClient('/admin/academies');
+          const acadResult = await acadRes.json();
+          if (acadResult.success && Array.isArray(acadResult.data)) {
+            setAdminAcademies(acadResult.data.map((a: { id: string; name: string }) => ({ id: a.id, name: a.name })));
+          }
+        } catch { /* continue */ }
+        // Load all classes with academy info
+        const res = await apiClient('/admin/classes');
+        const result = await res.json();
+        if (result.success && Array.isArray(result.data)) classesData = result.data;
       } else {
         const res = await apiClient('/classes');
         const result = await res.json();
@@ -481,12 +497,15 @@ export function CalendarPage({ role }: CalendarPageProps) {
     let result = events;
     if (selectedClass !== 'all') {
       result = result.filter(e => e.classId === selectedClass);
+    } else if (role === 'ADMIN' && selectedAdminAcademy !== 'all') {
+      const academyClassIds = new Set(classes.filter(c => c.academyId === selectedAdminAcademy).map(c => c.id));
+      result = result.filter(e => e.classId ? academyClassIds.has(e.classId) : false);
     } else if (activePeriodId !== 'all') {
       const periodIds = new Set(classes.filter(c => isClassInPeriod(c.startDate)).map(c => c.id));
       result = result.filter(e => e.classId ? periodIds.has(e.classId) : false);
     }
     return result;
-  }, [events, selectedClass, activePeriodId, classes, isClassInPeriod]);
+  }, [events, selectedClass, selectedAdminAcademy, role, activePeriodId, classes, isClassInPeriod]);
 
   // ─── Events grouped by date ───
   const eventsByDate = useMemo(() => {
@@ -625,14 +644,34 @@ export function CalendarPage({ role }: CalendarPageProps) {
           <p className="text-sm text-gray-500 mt-0.5">{role === 'ADMIN' ? 'AKADEMO PLATFORM' : academyName || 'AKADEMO'}</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          {classes.length > 0 && !isDemo && (
+          {/* Class filter - for non-admin always show; for admin only after academy selected */}
+          {classes.length > 0 && !isDemo && (role !== 'ADMIN' || selectedAdminAcademy !== 'all') && (
             <ClassSearchDropdown
-              classes={activePeriodId === 'all' ? classes : classes.filter(c => isClassInPeriod(c.startDate))}
+              classes={(() => {
+                const byPeriod = activePeriodId === 'all' ? classes : classes.filter(c => isClassInPeriod(c.startDate));
+                if (role === 'ADMIN' && selectedAdminAcademy !== 'all') {
+                  return byPeriod.filter(c => c.academyId === selectedAdminAcademy);
+                }
+                return byPeriod;
+              })()}
               value={selectedClass}
               onChange={setSelectedClass}
               allLabel="Todas las asignaturas"
               className="w-full sm:w-56"
             />
+          )}
+          {/* Academy filter for ADMIN */}
+          {role === 'ADMIN' && adminAcademies.length > 0 && (
+            <select
+              value={selectedAdminAcademy}
+              onChange={e => { setSelectedAdminAcademy(e.target.value); setSelectedClass('all'); }}
+              className="h-10 pl-3 pr-8 text-sm border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 w-full sm:w-56"
+            >
+              <option value="all">Todas las academias</option>
+              {adminAcademies.map(a => (
+                <option key={a.id} value={a.id}>{a.name}</option>
+              ))}
+            </select>
           )}
         </div>
       </div>
