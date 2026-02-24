@@ -252,7 +252,7 @@ export default function AdminLeadsPage() {
               {/* Expanded Detail */}
               {expandedId === lead.id && (
                 <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-4">
                     {lead.phone && (
                       <div>
                         <span className="text-xs text-gray-400 uppercase tracking-wider">Teléfono</span>
@@ -334,12 +334,6 @@ export default function AdminLeadsPage() {
                         ))}
                       </div>
                     </div>
-                    <button
-                      onClick={() => deleteLead(lead.id)}
-                      className="px-3 py-1.5 text-xs text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      Eliminar
-                    </button>
                   </div>
                 </div>
               )}
