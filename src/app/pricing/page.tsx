@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Navbar } from '@/components/landing/Navbar';
 import { Footer } from '@/components/landing/Footer';
 import AuthModal from '@/components/AuthModal';
+import { ScrollReveal } from '@/components/landing/ScrollReveal';
 
 type Lang = 'es' | 'en';
 
@@ -279,16 +280,23 @@ export default function PricingPage() {
             {/* LEFT: pitch content */}
             <div className="lg:pt-6 flex flex-col gap-6 justify-between">
               <div>
-                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold uppercase tracking-wider mb-5">
-                  {t.side.badge}
-                </span>
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-4">{t.side.title}</h1>
-                <p className="text-gray-400 leading-relaxed">{t.side.subtitle}</p>
+                <ScrollReveal direction="none" delay={0}>
+                  <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold uppercase tracking-wider mb-5">
+                    {t.side.badge}
+                  </span>
+                </ScrollReveal>
+                <ScrollReveal direction="blur" delay={80}>
+                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-4">{t.side.title}</h1>
+                </ScrollReveal>
+                <ScrollReveal direction="up" delay={160}>
+                  <p className="text-gray-400 leading-relaxed">{t.side.subtitle}</p>
+                </ScrollReveal>
               </div>
 
               <ul className="space-y-4">
-                {t.side.bullets.map((b) => (
-                  <li key={b.title} className="flex items-start gap-3">
+                {t.side.bullets.map((b, i) => (
+                  <ScrollReveal key={b.title} direction="up" delay={240 + i * 60}>
+                  <li className="flex items-start gap-3">
                     <div className="mt-0.5 w-5 h-5 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-500/40">
                       <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
@@ -299,10 +307,12 @@ export default function PricingPage() {
                       <p className="text-sm text-gray-500 leading-relaxed">{b.desc}</p>
                     </div>
                   </li>
+                  </ScrollReveal>
                 ))}
               </ul>
 
               {/* Social proof mini stats */}
+              <ScrollReveal direction="up" delay={480}>
               <div className="mt-2 rounded-2xl border border-gray-800 bg-gradient-to-br from-indigo-950/60 to-gray-900/60 p-6">
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div>
@@ -322,11 +332,13 @@ export default function PricingPage() {
                   {lang === 'es' ? 'Sin permanencia · Migración incluida · Cancela cuando quieras' : 'No lock-in · Migration included · Cancel anytime'}
                 </p>
               </div>
+              </ScrollReveal>
 
             </div>
 
             {/* RIGHT: Form */}
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 sm:p-10">
+          <ScrollReveal direction="right" delay={160} className="h-full">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 sm:p-10 h-full">
             <h2 className="text-xl sm:text-2xl font-bold text-white mb-8">{t.form.title}</h2>
 
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -437,6 +449,7 @@ export default function PricingPage() {
               </button>
             </form>
           </div>
+          </ScrollReveal>
           </div>
         </div>
       </section>
@@ -445,14 +458,16 @@ export default function PricingPage() {
       <section className="px-4 sm:px-6 pb-32">
         <div className="max-w-5xl mx-auto">
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {t.features.map((feature) => (
-              <div key={feature.title} className="bg-gray-900 border border-gray-800 rounded-2xl p-6 text-center">
+            {t.features.map((feature, i) => (
+              <ScrollReveal key={feature.title} direction="up" delay={i * 80}>
+              <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 text-center h-full">
                 <div className="w-12 h-12 bg-indigo-500/10 rounded-xl flex items-center justify-center mx-auto mb-4 text-indigo-400">
                   <FeatureIcon type={feature.icon} />
                 </div>
                 <h3 className="text-base font-semibold text-white mb-2">{feature.title}</h3>
                 <p className="text-sm text-gray-400 leading-relaxed">{feature.desc}</p>
               </div>
+              </ScrollReveal>
             ))}
           </div>
         </div>

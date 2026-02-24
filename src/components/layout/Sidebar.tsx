@@ -305,10 +305,12 @@ export function Sidebar({
           </div>
         )}
 
-        {/* Period selector (ACADEMY and TEACHER) */}
-        {(role === 'ACADEMY' || role === 'TEACHER') && periods.length > 0 && (
-          <div className="px-3 py-2 border-t border-gray-800/50">
-            <div className="relative">
+        {/* User Profile */}
+        {user && (
+          <div className="border-t border-gray-800/50 p-4 pb-3">
+          {/* Period selector embedded above profile */}
+          {(role === 'ACADEMY' || role === 'TEACHER') && periods.length > 0 && (
+            <div className="relative mb-3">
               <button
                 onClick={() => setPeriodDropdownOpen(!periodDropdownOpen)}
                 className="w-full flex items-center justify-between gap-2 px-3 py-2 bg-gray-800/30 hover:bg-gray-800/50 text-gray-300 rounded-lg text-xs transition-colors"
@@ -349,14 +351,9 @@ export function Sidebar({
                 </div>
               )}
             </div>
-          </div>
-        )}
-
-        {/* User Profile */}
-        {user && (
-          <div className="border-t border-gray-800/50 p-4 pb-3">
+          )}
           {role === 'ADMIN' ? (
-            <div className="flex items-center gap-3 mb-3 p-2 -m-2">
+            <div className="flex items-center gap-3 mb-1 p-2 -m-2">
               <div className="w-10 h-10 bg-[#b1e787] rounded-xl flex items-center justify-center text-sm font-bold text-gray-900 flex-shrink-0 shadow-lg">
                 {user.firstName[0]}{user.lastName[0]}
               </div>
@@ -368,7 +365,7 @@ export function Sidebar({
               </div>
             </div>
           ) : (
-            <div className="flex items-center gap-1 mb-3 -mx-2">
+            <div className="flex items-center gap-1 mb-1 -mx-2">
               <Link
                 href={`/dashboard/${role.toLowerCase()}/profile`}
                 className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer hover:bg-gray-800/30 rounded-xl p-2 transition-colors group"

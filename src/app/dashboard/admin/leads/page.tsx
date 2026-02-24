@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { apiClient } from '@/lib/api-client';
-import { SkeletonTable } from '@/components/ui/SkeletonLoader';
 
 interface Lead {
   id: string;
@@ -167,7 +166,26 @@ export default function AdminLeadsPage() {
 
       {/* Leads List */}
       {loading ? (
-        <SkeletonTable rows={5} cols={4} />
+        <div className="space-y-3">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="bg-white rounded-xl border border-gray-200 px-6 py-4">
+              <div className="flex items-center gap-4">
+                <div className="w-8 h-8 bg-gray-100 rounded-lg animate-pulse flex-shrink-0" />
+                <div className="flex-1 min-w-0 space-y-2">
+                  <div className="h-4 bg-gray-100 rounded animate-pulse w-40" />
+                  <div className="h-3 bg-gray-100 rounded animate-pulse w-56" />
+                </div>
+                <div className="hidden sm:flex flex-1 justify-center gap-6">
+                  <div className="h-8 bg-gray-100 rounded animate-pulse w-16" />
+                  <div className="h-8 bg-gray-100 rounded animate-pulse w-16" />
+                  <div className="h-8 bg-gray-100 rounded animate-pulse w-16" />
+                </div>
+                <div className="h-3 bg-gray-100 rounded animate-pulse w-20" />
+                <div className="w-4 h-4 bg-gray-100 rounded animate-pulse" />
+              </div>
+            </div>
+          ))}
+        </div>
       ) : leads.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -187,6 +205,14 @@ export default function AdminLeadsPage() {
                 className="flex items-center gap-4 px-6 py-4 cursor-pointer hover:bg-gray-50 transition-colors"
                 onClick={() => setExpandedId(expandedId === lead.id ? null : lead.id)}
               >
+                <button
+                  onClick={(e) => { e.stopPropagation(); deleteLead(lead.id); }}
+                  className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg flex-shrink-0 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-semibold text-gray-900">{lead.name}</span>
@@ -197,7 +223,7 @@ export default function AdminLeadsPage() {
                     {lead.academyName && <span>• {lead.academyName}</span>}
                   </div>
                 </div>
-                <div className="hidden sm:flex items-center justify-center gap-6 text-sm text-gray-500">
+                <div className="hidden sm:flex flex-1 justify-center gap-6 text-sm text-gray-500">
                   {lead.monthlyEnrollments && (
                     <div className="text-center">
                       <div className="text-xs text-gray-400">Matrículas</div>
@@ -226,7 +252,7 @@ export default function AdminLeadsPage() {
               {/* Expanded Detail */}
               {expandedId === lead.id && (
                 <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
-                  <div className="grid sm:grid-cols-2 gap-4 mb-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
                     {lead.phone && (
                       <div>
                         <span className="text-xs text-gray-400 uppercase tracking-wider">Teléfono</span>
@@ -258,7 +284,7 @@ export default function AdminLeadsPage() {
                       </div>
                     )}
                     {lead.message && (
-                      <div className="sm:col-span-2">
+                      <div className="col-span-2">
                         <span className="text-xs text-gray-400 uppercase tracking-wider">Mensaje</span>
                         <p className="text-sm text-gray-900 mt-0.5">{lead.message}</p>
                       </div>
