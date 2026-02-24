@@ -160,16 +160,16 @@ export function StudentTeacherFields({
       {role === 'STUDENT' && academyId && (
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">
-            Clase {classes.length > 0 && <span className="text-gray-500">({classes.length} disponibles)</span>}
+            Asignatura <span className="text-gray-400 font-normal">(opcional)</span> {classes.length > 0 && <span className="text-gray-500">({classes.length} disponibles)</span>}
           </label>
           <FormSelect
             options={classOptions}
             value={classId}
             onChange={onClassChange}
-            placeholder="Selecciona una clase"
+            placeholder="Selecciona una asignatura"
             disabled={loadingClasses}
             loading={loadingClasses}
-            emptyMessage="No hay clases disponibles"
+            emptyMessage="No hay asignaturas disponibles"
           />
 
         </div>

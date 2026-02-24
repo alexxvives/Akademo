@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Language } from '@/lib/translations';
+import { ScrollReveal } from '@/components/landing/ScrollReveal';
 
 interface CalculatorSectionProps {
   lang: Language;
@@ -47,27 +48,34 @@ export function CalculatorSection({ lang }: CalculatorSectionProps) {
     <section className="py-20 sm:py-28 px-4 sm:px-6 relative bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900">
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-950/10 to-transparent pointer-events-none" />
       <div className="relative max-w-7xl mx-auto">
-        <div className="text-center mb-4">
-          <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 rounded-full text-emerald-400 text-xs font-semibold uppercase tracking-wide border border-emerald-500/20">
-            {isEs ? 'CALCULADORA DE INGRESOS' : 'REVENUE CALCULATOR'}
-          </span>
-        </div>
-        <h3 className="text-center text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-6 text-white">
-          {isEs ? '¿Cuántos de tus estudiantes son ' : 'How many of your students are '}
-          <span className="bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
-            {isEs ? 'fantasma' : 'ghosts'}
-          </span>
-          ?
-        </h3>
-        <p className="text-center text-gray-400 text-lg max-w-2xl mx-auto mb-10">
-          {isEs
-            ? 'Un estudiante fantasma es alguien que comparte su cuenta con otros. Tú cobras por 1, pero acceden 3. Descubre cuánto dinero estás dejando en la mesa.'
-            : "A ghost student is someone sharing their account with others. You charge for 1, but 3 access. Discover how much money you're leaving on the table."}
-        </p>
+        <ScrollReveal direction="none" delay={0}>
+          <div className="text-center mb-4">
+            <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 rounded-full text-emerald-400 text-xs font-semibold uppercase tracking-wide border border-emerald-500/20">
+              {isEs ? 'CALCULADORA DE INGRESOS' : 'REVENUE CALCULATOR'}
+            </span>
+          </div>
+        </ScrollReveal>
+        <ScrollReveal direction="blur" delay={80}>
+          <h3 className="text-center text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-6 text-white">
+            {isEs ? '¿Cuántos de tus estudiantes son ' : 'How many of your students are '}
+            <span className="bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
+              {isEs ? 'fantasma' : 'ghosts'}
+            </span>
+            ?
+          </h3>
+        </ScrollReveal>
+        <ScrollReveal direction="up" delay={160}>
+          <p className="text-center text-gray-400 text-lg max-w-2xl mx-auto mb-10">
+            {isEs
+              ? 'Un estudiante fantasma es alguien que comparte su cuenta con otros. Tú cobras por 1, pero acceden 3. Descubre cuánto dinero estás dejando en la mesa.'
+              : "A ghost student is someone sharing their account with others. You charge for 1, but 3 access. Discover how much money you're leaving on the table."}
+          </p>
+        </ScrollReveal>
 
         <div className="grid lg:grid-cols-2 gap-6 items-stretch">
           {/* Left: Inputs */}
-          <div className="bg-gray-800/50 rounded-2xl p-6 sm:p-8 border border-gray-700 space-y-8 flex flex-col justify-between">
+          <ScrollReveal direction="left" delay={240}>
+            <div className="bg-gray-800/50 rounded-2xl p-6 sm:p-8 border border-gray-700 space-y-8 flex flex-col justify-between">
             {/* Total students slider */}
             <div>
               <div className="flex justify-between items-center mb-3">
@@ -122,21 +130,23 @@ export function CalculatorSection({ lang }: CalculatorSectionProps) {
                 <span className="text-red-400 font-medium">{ghostStudents}</span>
               </div>
             </div>
-          </div>
+            </div>
+          </ScrollReveal>
 
           {/* Right: Results */}
-          <div className="space-y-4 flex flex-col">
+          <ScrollReveal direction="right" delay={320}>
+            <div className="space-y-4 flex flex-col">
             {/* Annual loss hero */}
             <div className="bg-gradient-to-r from-red-500/15 to-orange-500/15 border border-red-500/20 rounded-xl p-6 text-center flex-1 flex flex-col justify-center">
               <p className="text-gray-400 text-sm mb-1">{isEs ? 'Ingresos perdidos por año' : 'Annual Revenue Lost'}</p>
-              <p className="text-4xl sm:text-5xl font-bold text-red-400">€{lostAnnualRevenue.toLocaleString()}</p>
+              <p key={lostAnnualRevenue} className="text-4xl sm:text-5xl font-bold text-red-400 calc-pop">€{lostAnnualRevenue.toLocaleString()}</p>
               <p className="text-gray-500 text-sm mt-1">{isEs ? 'por cuentas compartidas' : 'from shared accounts'}</p>
             </div>
 
             {/* Total potential revenue with AKADEMO */}
             <div className="bg-gradient-to-r from-emerald-500/15 to-cyan-500/15 border border-emerald-500/20 rounded-xl p-6 text-center flex-1 flex flex-col justify-center">
               <p className="text-gray-400 text-sm mb-1">{isEs ? 'Ingresos totales con AKADEMO' : 'Total Revenue with AKADEMO'}</p>
-              <p className="text-4xl sm:text-5xl font-bold text-emerald-400">€{totalPotentialRevenue.toLocaleString()}</p>
+              <p key={totalPotentialRevenue} className="text-4xl sm:text-5xl font-bold text-emerald-400 calc-pop">€{totalPotentialRevenue.toLocaleString()}</p>
               <p className="text-gray-500 text-sm mt-1">
                 {isEs
                   ? `€${currentAnnualRevenue.toLocaleString()} actuales + €${lostAnnualRevenue.toLocaleString()} recuperados (100%)`
@@ -145,7 +155,8 @@ export function CalculatorSection({ lang }: CalculatorSectionProps) {
             </div>
 
 
-          </div>
+            </div>
+          </ScrollReveal>
         </div>
       </div>
     </section>

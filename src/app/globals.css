@@ -313,3 +313,26 @@ html {
 .animate-fadeIn {
   animation: fadeIn 0.3s ease-out;
 }
+
+/* ── Hero entrance animations ─────────────────────────────── */
+@keyframes heroUp {
+  from { opacity: 0; transform: translateY(36px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes heroRight {
+  from { opacity: 0; transform: translateX(56px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.hero-u1 { animation: heroUp    0.95s cubic-bezier(0.22, 1, 0.36, 1) 0s    both; }
+.hero-u2 { animation: heroUp    0.95s cubic-bezier(0.22, 1, 0.36, 1) 0.18s both; }
+.hero-u3 { animation: heroUp    0.95s cubic-bezier(0.22, 1, 0.36, 1) 0.34s both; }
+.hero-u4 { animation: heroUp    0.95s cubic-bezier(0.22, 1, 0.36, 1) 0.50s both; }
+.hero-r1 { animation: heroRight 0.95s cubic-bezier(0.22, 1, 0.36, 1) 0.14s both; }
+
+/* ── Calculator number pop (plays on key change) ──────────── */
+@keyframes calcPop {
+  0%   { opacity: 0.3; transform: scale(0.90) translateY(14px); }
+  55%  { opacity: 1;   transform: scale(1.05) translateY(-3px); }
+  100% { opacity: 1;   transform: scale(1)    translateY(0); }
+}
+.calc-pop { animation: calcPop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }

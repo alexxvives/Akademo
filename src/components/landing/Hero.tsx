@@ -38,7 +38,7 @@ export function Hero({ t, isScrolled: _isScrolled, onOpenModal }: HeroProps) {
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
           {/* Left: Copy */}
           <div>
-            <h1 className="text-[2.14rem] sm:text-[2.85rem] lg:text-[3.56rem] font-bold tracking-tight leading-[1.1] mb-4 text-white">
+            <h1 className="text-[2.14rem] sm:text-[2.85rem] lg:text-[3.56rem] font-bold tracking-tight leading-[1.1] mb-4 text-white hero-u1">
               <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
                 {t.heroTitle1}
               </span>
@@ -57,10 +57,10 @@ export function Hero({ t, isScrolled: _isScrolled, onOpenModal }: HeroProps) {
                 </svg>
               </span>
             </h1>
-            <p className="text-gray-400 text-base sm:text-lg max-w-lg mb-8 leading-relaxed">
+            <p className="text-gray-400 text-base sm:text-lg max-w-lg mb-8 leading-relaxed hero-u2">
               {t.heroSubtitle}
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 mb-10">
+            <div className="flex flex-col sm:flex-row gap-3 mb-10 hero-u3">
               <button
                 onClick={() => onOpenModal('register', 'ACADEMY')}
                 className="px-8 py-3.5 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-medium rounded-lg hover:from-emerald-400 hover:to-cyan-400 transition-all text-sm sm:text-base text-center shadow-lg shadow-emerald-500/25"
@@ -75,7 +75,7 @@ export function Hero({ t, isScrolled: _isScrolled, onOpenModal }: HeroProps) {
               </a>
             </div>
             {/* "Perfect for:" section */}
-            <div>
+            <div className="hero-u4">
               <p className="text-sm font-medium text-gray-400 mb-3">{t.heroPerfectFor}</p>
               <ul className="space-y-2.5">
                 {t.heroAudiences.map((a, i) => (
@@ -89,7 +89,7 @@ export function Hero({ t, isScrolled: _isScrolled, onOpenModal }: HeroProps) {
           </div>
 
           {/* Right: Dashboard screenshot with floating elements */}
-          <div className="relative mt-8 lg:mt-0">
+          <div className="relative mt-8 lg:mt-0 hero-r1">
             {/* Gradient glow behind image */}
             <div className="absolute -inset-4 bg-gradient-to-r from-emerald-500/20 via-cyan-500/15 to-emerald-500/20 rounded-2xl blur-2xl opacity-60" />
             {/* Main dashboard image */}

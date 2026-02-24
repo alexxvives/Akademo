@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { ScrollReveal } from '@/components/landing/ScrollReveal';
 
 interface ContactSectionProps {
   lang: 'es' | 'en';
@@ -35,15 +36,20 @@ export function ContactSection({ lang }: ContactSectionProps) {
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
           {/* Left: FAQ */}
           <div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 leading-tight">
-              {lang === 'es' ? 'Preguntas Frecuentes' : 'Frequently Asked Questions'}
-            </h2>
-            <p className="text-gray-500 text-sm mb-6">
-              {lang === 'es' ? 'Todo lo que necesitas saber sobre AKADEMO.' : 'Everything you need to know about AKADEMO.'}
-            </p>
+            <ScrollReveal direction="blur" delay={0}>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 leading-tight">
+                {lang === 'es' ? 'Preguntas Frecuentes' : 'Frequently Asked Questions'}
+              </h2>
+            </ScrollReveal>
+            <ScrollReveal direction="up" delay={80}>
+              <p className="text-gray-500 text-sm mb-6">
+                {lang === 'es' ? 'Todo lo que necesitas saber sobre AKADEMO.' : 'Everything you need to know about AKADEMO.'}
+              </p>
+            </ScrollReveal>
             <div className="space-y-2">
               {faqItems.map((faq, i) => (
-                <div key={i} className="rounded-xl border border-gray-200 overflow-hidden bg-white">
+                <ScrollReveal key={i} direction="up" delay={160 + i * 65}>
+                  <div className="rounded-xl border border-gray-200 overflow-hidden bg-white">
                   <button
                     onClick={() => setOpenFaq(openFaq === i ? null : i)}
                     className="w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-gray-50 transition-colors"
@@ -61,23 +67,29 @@ export function ContactSection({ lang }: ContactSectionProps) {
                       <div className="pt-3">{faq.a}</div>
                     </div>
                   )}
-                </div>
+                  </div>
+                </ScrollReveal>
               ))}
             </div>
           </div>
 
           {/* Right: Contact form */}
           <div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 leading-tight">
-              {lang === 'es' ? 'Hablemos' : "Let's Talk"}
-            </h2>
-            <p className="text-gray-500 text-sm mb-6">
-              {lang === 'es' 
-                ? 'Si diriges una academia y te importa tu contenido, deberíamos conversar.'
-                : "If you run an academy and care about your content, we should talk."}
-            </p>
+            <ScrollReveal direction="blur" delay={0}>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 leading-tight">
+                {lang === 'es' ? 'Hablemos' : "Let's Talk"}
+              </h2>
+            </ScrollReveal>
+            <ScrollReveal direction="up" delay={80}>
+              <p className="text-gray-500 text-sm mb-6">
+                {lang === 'es' 
+                  ? 'Si diriges una academia y te importa tu contenido, deberíamos conversar.'
+                  : "If you run an academy and care about your content, we should talk."}
+              </p>
+            </ScrollReveal>
             
-            <form className="space-y-4">
+            <ScrollReveal direction="up" delay={160}>
+              <form className="space-y-4">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1.5">
                   {lang === 'es' ? 'Nombre' : 'Name'}
@@ -120,9 +132,11 @@ export function ContactSection({ lang }: ContactSectionProps) {
               >
                 {lang === 'es' ? 'Enviar Mensaje' : 'Send Message'}
               </button>
-            </form>
+              </form>
+            </ScrollReveal>
             
-            <div className="mt-6 text-center">
+            <ScrollReveal direction="none" delay={360}>
+              <div className="mt-6 text-center">
               <p className="text-xs text-gray-400 mb-2">
                 {lang === 'es' ? 'O escríbenos directamente a' : 'Or email us directly at'}
               </p>
@@ -133,6 +147,7 @@ export function ContactSection({ lang }: ContactSectionProps) {
                 alex@akademo-edu.com
               </a>
             </div>
+            </ScrollReveal>
           </div>
         </div>
       </div>
