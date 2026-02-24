@@ -176,7 +176,7 @@ export function Sidebar({
       {/* Scrollable content - navigation and buttons */}
       <div className="flex-1 overflow-y-auto min-h-0 flex flex-col">
         {/* Navigation */}
-        <nav className="px-3 py-6">
+        <nav className="px-3 pb-6">
           {(() => {
             const groups: { label: string | null; items: MenuItem[] }[] = [];
             for (const item of menuItems) {

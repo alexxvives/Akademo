@@ -115,18 +115,27 @@ admin.get('/classes', async (c) => {
         u.firstName,
         u.lastName,
         u.firstName || ' ' || u.lastName as teacherName,
+        u.email as teacherEmail,
         c.zoomAccountId,
         z.accountName as zoomAccountName,
         COUNT(DISTINCT e.userId) as studentCount,
         COUNT(DISTINCT l.id) as lessonCount,
-        c.createdAt
+        c.createdAt,
+        c.carrera,
+        c.university,
+        c.monthlyPrice,
+        c.oneTimePrice,
+        c.startDate,
+        c.whatsappGroupLink,
+        c.maxStudents
       FROM Class c
       LEFT JOIN Academy a ON c.academyId = a.id
       LEFT JOIN User u ON c.teacherId = u.id
       LEFT JOIN ZoomAccount z ON c.zoomAccountId = z.id
       LEFT JOIN ClassEnrollment e ON c.id = e.classId AND e.status = 'APPROVED'
       LEFT JOIN Lesson l ON c.id = l.classId
-      GROUP BY c.id, c.name, c.slug, c.description, c.academyId, a.name, c.teacherId, u.firstName, u.lastName, c.zoomAccountId, z.accountName, c.createdAt
+      WHERE a.paymentStatus = 'PAID'
+      GROUP BY c.id, c.name, c.slug, c.description, c.academyId, a.name, c.teacherId, u.firstName, u.lastName, u.email, c.zoomAccountId, z.accountName, c.createdAt, c.carrera, c.university, c.monthlyPrice, c.oneTimePrice, c.startDate, c.whatsappGroupLink, c.maxStudents
       ORDER BY c.createdAt DESC
     `;
 
@@ -258,7 +267,7 @@ admin.get('/teachers', async (c) => {
       LEFT JOIN Academy a ON t.academyId = a.id
       LEFT JOIN Class c ON u.id = c.teacherId
       LEFT JOIN ClassEnrollment e ON c.id = e.classId AND e.status = 'APPROVED'
-      WHERE u.role = 'TEACHER'
+      WHERE u.role = 'TEACHER' AND (a.paymentStatus = 'PAID' OR a.paymentStatus IS NULL)
       GROUP BY u.id
       ORDER BY u.createdAt DESC
     `;

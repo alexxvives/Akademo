@@ -271,20 +271,29 @@ export function DashboardPage({ role }: DashboardPageProps) {
 
   // ─── Admin data loading ───
   const loadAdminData = async () => {
-    const [academiesRes, classesRes, pendingRes, ratingsRes, rejectedRes, streamsRes, progressRes, paymentStatusRes] = await Promise.all([
+    const [academiesRes, classesRes, pendingRes, ratingsRes, rejectedRes, streamsRes, progressRes, paymentStatusRes, adminPaymentsRes] = await Promise.all([
       apiClient('/admin/academies'), apiClient('/admin/classes'), apiClient('/enrollments/pending'),
       apiClient('/ratings'), apiClient('/enrollments/rejected'), apiClient('/live/history'), apiClient('/students/progress'),
-      apiClient('/enrollments/payment-status'),
+      apiClient('/enrollments/payment-status'), apiClient('/admin/payments'),
     ]);
-    const [academiesResult, classesResult, pendingResult, ratingsResult, rejectedResult, streamsResult, progressResult, paymentStatusResult] = await Promise.all([
+    const [academiesResult, classesResult, pendingResult, ratingsResult, rejectedResult, streamsResult, progressResult, paymentStatusResult, adminPaymentsResult] = await Promise.all([
       academiesRes.json(), classesRes.json(), pendingRes.json(), ratingsRes.json(), rejectedRes.json(), streamsRes.json(), progressRes.json(),
-      paymentStatusRes.json(),
+      paymentStatusRes.json(), adminPaymentsRes.json(),
     ]);
-    if (academiesResult.success && Array.isArray(academiesResult.data)) setAcademies(academiesResult.data);
+    // Filter out demo (NOT PAID) academies from all admin views
+    const paidAcademies = academiesResult.success && Array.isArray(academiesResult.data)
+      ? academiesResult.data.filter((a: { paymentStatus?: string }) => a.paymentStatus === 'PAID')
+      : [];
+    if (paidAcademies.length > 0) setAcademies(paidAcademies);
+    const paidAcademyIds = new Set(paidAcademies.map((a: { id: string }) => a.id));
+
     if (rejectedResult.success && rejectedResult.data) setRejectedCount(rejectedResult.data.count || 0);
-    if (streamsResult.success && Array.isArray(streamsResult.data)) setAllStreams(streamsResult.data);
+    if (streamsResult.success && Array.isArray(streamsResult.data)) {
+      setAllStreams((streamsResult.data as { academyId?: string }[]).filter(s => !s.academyId || paidAcademyIds.has(s.academyId)));
+    }
     if (progressResult.success && Array.isArray(progressResult.data)) {
-      const totalSeconds = (progressResult.data as ProgressRecord[]).reduce((sum, s) => sum + (s.totalWatchTime ?? 0), 0);
+      const paidProgress = (progressResult.data as ProgressRecord[]).filter(s => !s.academyId || paidAcademyIds.has(s.academyId));
+      const totalSeconds = paidProgress.reduce((sum, s) => sum + (s.totalWatchTime ?? 0), 0);
       const totalMin = Math.floor(totalSeconds / 60);
       setClassWatchTime({ hours: Math.floor(totalMin / 60), minutes: totalMin % 60 });
     }
@@ -292,7 +301,8 @@ export function DashboardPage({ role }: DashboardPageProps) {
     if (ratingsResult.success) setRatingsData(ratingsResult.data);
     if (classesResult.success && Array.isArray(classesResult.data)) setClasses(classesResult.data);
     if (progressResult.success && Array.isArray(progressResult.data)) {
-      setEnrolledStudents((progressResult.data as ProgressRecord[]).map(s => ({
+      const paidProgress = (progressResult.data as ProgressRecord[]).filter(s => !s.academyId || paidAcademyIds.has(s.academyId));
+      setEnrolledStudents(paidProgress.map(s => ({
         id: s.id, name: `${s.firstName} ${s.lastName}`, email: s.email,
         classId: s.classId, className: s.className || 'Sin clase', academyId: s.academyId,
         lessonsCompleted: s.lessonsCompleted ?? 0, totalLessons: s.totalLessons ?? 0, lastActive: s.lastActive,
@@ -300,6 +310,12 @@ export function DashboardPage({ role }: DashboardPageProps) {
     }
     if (paymentStatusResult.success && paymentStatusResult.data) {
       setStudentPaymentStatus(paymentStatusResult.data as { alDia: number; atrasados: number; total: number; uniqueAlDia?: number; uniqueAtrasados?: number; uniqueTotal?: number });
+    }
+    if (adminPaymentsResult.success && Array.isArray(adminPaymentsResult.data)) {
+      const completed = (adminPaymentsResult.data as { status?: string; amount?: number; paymentMethod?: string; classId?: string }[])
+        .filter(p => p.status === 'COMPLETED' || p.status === 'PAID')
+        .map(p => ({ paymentStatus: p.status || 'COMPLETED', paymentAmount: p.amount ?? 0, paymentMethod: p.paymentMethod, classId: p.classId }));
+      setAllCompletedPayments(completed);
     }
     paymentStatusInitRef.current = true;
     setPaymentStatus('PAID');

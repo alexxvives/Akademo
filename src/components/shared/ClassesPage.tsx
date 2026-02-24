@@ -243,8 +243,10 @@ export function ClassesPage({ role }: ClassesPageProps) {
         }
         if (academiesRes.ok) {
           const json = await academiesRes.json();
-          const data = json.success && json.data ? json.data : json;
-          setAcademies(Array.isArray(data) ? data : []);
+          const raw = json.success && json.data ? json.data : json;
+          // Filter out demo (NOT PAID) academies from dropout
+          const paid = Array.isArray(raw) ? raw.filter((a: { paymentStatus?: string }) => a.paymentStatus === 'PAID') : [];
+          setAcademies(paid);
         }
       }
     } catch (err) {
@@ -752,8 +754,8 @@ export function ClassesPage({ role }: ClassesPageProps) {
         />
       )}
 
-      {/* Academy: Edit Modal */}
-      {role === 'ACADEMY' && showEditModal && editingClass && (
+      {/* Academy/Admin: Edit Modal */}
+      {(role === 'ACADEMY' || role === 'ADMIN') && showEditModal && editingClass && (
         <ClassFormModal
           mode="edit"
           formData={formData}

@@ -171,10 +171,12 @@ export function TeachersPage({ role }: TeachersPageProps) {
         }
         if (academiesResult.success) {
           setAcademies(
-            (academiesResult.data || []).map((a: { id: string; name: string }) => ({
-              id: a.id,
-              name: a.name,
-            }))
+            ((academiesResult.data || []) as { id: string; name: string; paymentStatus?: string }[])
+              .filter(a => a.paymentStatus === 'PAID')
+              .map((a) => ({
+                id: a.id,
+                name: a.name,
+              }))
           );
         }
       }

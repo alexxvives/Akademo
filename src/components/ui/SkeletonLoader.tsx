@@ -107,93 +107,98 @@ export function SkeletonStats() {
 export function SkeletonDashboard() {
   return (
     <div className="w-full space-y-6">
-      {/* Page Header with Class Filter */}
+      {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100">
         <div className="space-y-2">
-          <SkeletonBox className="h-8 w-56" /> {/* Title: Panel de Control */}
-          <SkeletonBox className="h-4 w-40" /> {/* Subtitle: Academy name */}
+          <SkeletonBox className="h-8 w-56" />
+          <SkeletonBox className="h-4 w-40" />
         </div>
-        {/* Class Filter Dropdown */}
-        <SkeletonBox className="h-10 w-56" />
+        <div className="flex gap-3">
+          <SkeletonBox className="h-10 w-56" />
+          <SkeletonBox className="h-10 w-56" />
+        </div>
       </div>
 
-      {/* Visual Analytics Grid - 2 columns */}
+      {/* 2×2 Analytics Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Engagement Metrics Card - LEFT */}
+        {/* Card 1: Participación */}
         <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full">
-          <SkeletonBox className="h-6 w-32 mb-6" /> {/* Title: Participación */}
+          <SkeletonBox className="h-6 w-32 mb-6" />
           <div className="space-y-4">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="space-y-2">
                 <div className="flex justify-between">
-                  <SkeletonBox className="h-4 w-48" />
-                  <SkeletonBox className="h-4 w-16" />
+                  <SkeletonBox className="h-4 w-52" />
+                  <SkeletonBox className="h-4 w-10" />
                 </div>
-                <SkeletonBox className="h-2 w-full rounded-full" /> {/* Progress bar */}
+                <SkeletonBox className="h-2 w-full rounded-full" />
               </div>
             ))}
           </div>
         </div>
 
-        {/* Student Summary Card - RIGHT */}
+        {/* Card 2: Estudiantes — 2-col grid layout */}
         <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full">
-          <SkeletonBox className="h-6 w-32 mb-6" /> {/* Title: Estudiantes */}
-          <div className="space-y-6">
-            <div className="text-center">
-              <SkeletonBox className="h-14 w-24 mx-auto mb-2" /> {/* Big number */}
-              <SkeletonBox className="h-4 w-48 mx-auto" /> {/* Description */}
-            </div>
-            {/* Stats row */}
-            <div className="flex justify-between gap-4 pt-4 border-t border-gray-100">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex-1 text-center">
-                  <SkeletonBox className="h-8 w-12 mx-auto mb-1" />
-                  <SkeletonBox className="h-3 w-16 mx-auto" />
+          <SkeletonBox className="h-6 w-32 mb-6" />
+          <div className="grid grid-cols-2 gap-4">
+            {/* Left col: Estudiantes + Matrículas boxes */}
+            <div className="flex flex-col gap-3">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} className="flex items-center p-3 bg-gray-50 rounded-lg gap-3">
+                  <div className="flex flex-col items-center shrink-0 min-w-[72px] gap-1">
+                    <SkeletonBox className="h-10 w-14" />
+                    <SkeletonBox className="h-3 w-16" />
+                  </div>
+                  <div className="flex-1 ml-2 pl-2 border-l border-gray-200 space-y-2">
+                    <div className="flex justify-between">
+                      <SkeletonBox className="h-3 w-10" />
+                      <SkeletonBox className="h-4 w-8" />
+                    </div>
+                    <div className="flex justify-between">
+                      <SkeletonBox className="h-3 w-14" />
+                      <SkeletonBox className="h-4 w-8" />
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom Row - 2 columns */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Classes Card - LEFT */}
-        <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <SkeletonBox className="h-6 w-24" /> {/* Title: Clases */}
-            <SkeletonBox className="h-8 w-24" /> {/* Ver todas button */}
-          </div>
-          <div className="space-y-3">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="flex items-center justify-between p-3 rounded-lg border border-gray-200">
-                <div className="flex-1">
-                  <SkeletonBox className="h-5 w-48 mb-2" />
-                  <SkeletonBox className="h-4 w-32" />
-                </div>
-                <SkeletonBox className="h-8 w-16 rounded-full" />
+            {/* Right col: Total Cobrado + payment methods */}
+            <div className="flex flex-col gap-3">
+              <div className="flex-1 flex flex-col items-center justify-center p-3 bg-green-50 rounded-lg gap-1">
+                <SkeletonBox className="h-10 w-24" />
+                <SkeletonBox className="h-3 w-24" />
               </div>
-            ))}
+              <div className="flex-1 flex items-center justify-center gap-3 p-3 bg-gray-50 rounded-lg">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="text-center min-w-[60px]">
+                    <SkeletonBox className="h-3 w-12 mx-auto mb-1" />
+                    <SkeletonBox className="h-8 w-8 mx-auto" />
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Recent Students Card - RIGHT */}
-        <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <SkeletonBox className="h-6 w-48" /> {/* Title */}
-            <SkeletonBox className="h-8 w-24" /> {/* Ver todos button */}
-          </div>
+        {/* Card 3: Valoraciones — 5 rating bars */}
+        <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full">
+          <SkeletonBox className="h-6 w-32 mb-6" />
           <div className="space-y-3">
-            {Array.from({ length: 3 }).map((_, i) => (
+            {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3">
-                <SkeletonBox className="h-10 w-10 rounded-full" /> {/* Avatar */}
-                <div className="flex-1">
-                  <SkeletonBox className="h-4 w-32 mb-1" />
-                  <SkeletonBox className="h-3 w-24" />
-                </div>
-                <SkeletonBox className="h-6 w-20 rounded-full" /> {/* Badge */}
+                <SkeletonBox className="h-4 w-6 shrink-0" />
+                <SkeletonBox className="h-4 flex-1 rounded-full" />
+                <SkeletonBox className="h-4 w-8 shrink-0" />
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* Card 4: Actividad — donut chart placeholder */}
+        <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full">
+          <SkeletonBox className="h-6 w-24 mb-6" />
+          <div className="flex items-center justify-center h-40">
+            <SkeletonBox className="h-36 w-36 rounded-full" />
           </div>
         </div>
       </div>
