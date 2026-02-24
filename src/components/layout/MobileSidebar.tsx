@@ -22,6 +22,7 @@ interface MenuItem {
   badgeColor?: string;
   matchPaths?: string[];
   showPulse?: boolean;
+  group?: string;
 }
 
 interface MobileSidebarProps {
@@ -125,41 +126,61 @@ export function MobileSidebar({
         </div>
 
         {/* Mobile Navigation */}
-        <nav className="px-3 py-4 space-y-1 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 180px)' }}>
-          {menuItems.map((item) => {
-            const isDashboardRoute = item.href === `/dashboard/${role.toLowerCase()}`;
-            const isActive = isDashboardRoute
-              ? pathname === item.href
-              : pathname === item.href || pathname.startsWith(item.href + '/');
-
-            const showPulse = item.showPulse === true;
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onClose}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
-                  isActive
-                    ? 'bg-brand-50 text-brand-700 font-medium shadow-sm'
-                    : 'text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                <span className={isActive ? 'text-brand-600' : 'text-gray-500'}>
-                  {renderIcon(item)}
-                </span>
-                <span className="text-sm">{item.label}</span>
-                {showPulse && (
-                  <span className="ml-auto w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
+        <nav className="px-3 py-4 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 180px)' }}>
+          {(() => {
+            const groups: { label: string | null; items: MenuItem[] }[] = [];
+            for (const item of menuItems) {
+              const g = item.group ?? null;
+              const last = groups[groups.length - 1];
+              if (!last || last.label !== g) groups.push({ label: g, items: [item] });
+              else last.items.push(item);
+            }
+            return groups.map((group, gi) => (
+              <div key={gi}>
+                {group.label && (
+                  <p className={`px-3 pb-1 text-[10px] font-semibold tracking-widest text-gray-400 uppercase ${gi > 0 ? 'pt-4' : 'pt-1'}`}>
+                    {group.label}
+                  </p>
                 )}
-                {!showPulse && item.badge !== undefined && item.badge > 0 && (
-                  <span className={`ml-auto ${item.badgeColor || 'bg-[#b2e788]'} text-[#1a1c29] text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm`}>
-                    {item.badge}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
+                <div className="space-y-1">
+                  {group.items.map((item) => {
+                    const isDashboardRoute = item.href === `/dashboard/${role.toLowerCase()}`;
+                    const isActive = isDashboardRoute
+                      ? pathname === item.href
+                      : pathname === item.href || pathname.startsWith(item.href + '/');
+
+                    const showPulse = item.showPulse === true;
+
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={onClose}
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
+                          isActive
+                            ? 'bg-brand-50 text-brand-700 font-medium shadow-sm'
+                            : 'text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        <span className={isActive ? 'text-brand-600' : 'text-gray-500'}>
+                          {renderIcon(item)}
+                        </span>
+                        <span className="text-sm">{item.label}</span>
+                        {showPulse && (
+                          <span className="ml-auto w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
+                        )}
+                        {!showPulse && item.badge !== undefined && item.badge > 0 && (
+                          <span className={`ml-auto ${item.badgeColor || 'bg-[#b2e788]'} text-[#1a1c29] text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm`}>
+                            {item.badge}
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ));
+          })()}
         </nav>
 
         {/* Mobile Teacher Invite Link */}

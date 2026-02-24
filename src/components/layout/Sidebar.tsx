@@ -33,6 +33,7 @@ interface MenuItem {
   badgeColor?: string;
   matchPaths?: string[];
   showPulse?: boolean;
+  group?: string;
 }
 
 interface IconHandle {
@@ -166,61 +167,81 @@ export function Sidebar({
       {/* Scrollable content - navigation and buttons */}
       <div className="flex-1 overflow-y-auto min-h-0 flex flex-col">
         {/* Navigation */}
-        <nav className="px-3 py-6 space-y-2">
-          {menuItems.map((item) => {
-            const isDashboardRoute = item.href === `/dashboard/${role.toLowerCase()}`;
-            const matchesPath = item.matchPaths?.some((p: string) => pathname.startsWith(p));
-            const isActive = isDashboardRoute
-              ? pathname === item.href
-              : pathname === item.href || pathname.startsWith(item.href + '/') || matchesPath;
-
-            const showPulse = item.showPulse === true;
-            const iconRef = iconRefs.current[item.href];
-
-            const handleMouseEnter = () => {
-              if (iconRef && iconRef.current && typeof iconRef.current.startAnimation === 'function') {
-                iconRef.current.startAnimation();
-              }
-            };
-
-            const handleMouseLeave = () => {
-              if (iconRef && iconRef.current && typeof iconRef.current.stopAnimation === 'function') {
-                iconRef.current.stopAnimation();
-              }
-            };
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`relative flex items-center gap-3 px-3 py-3 rounded-xl transition-all group ${
-                  isActive
-                    ? 'bg-gray-800/50 text-white'
-                    : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'
-                }`}
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
-              >
-                {isActive && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[#b1e787] rounded-r-full" />
+        <nav className="px-3 py-6">
+          {(() => {
+            const groups: { label: string | null; items: MenuItem[] }[] = [];
+            for (const item of menuItems) {
+              const g = item.group ?? null;
+              const last = groups[groups.length - 1];
+              if (!last || last.label !== g) groups.push({ label: g, items: [item] });
+              else last.items.push(item);
+            }
+            return groups.map((group, gi) => (
+              <div key={gi}>
+                {group.label && (
+                  <p className={`px-3 pb-1 text-[10px] font-semibold tracking-widest text-gray-500 uppercase ${gi > 0 ? 'pt-5' : 'pt-1'}`}>
+                    {group.label}
+                  </p>
                 )}
-                <span className={`relative flex-shrink-0 ${
-                  isActive ? 'text-[#b1e787]' : 'text-gray-400 group-hover:text-white'
-                }`}>
-                  {renderIcon(item)}
-                </span>
-                <span className="text-sm font-medium">{item.label}</span>
-                {showPulse && (
-                  <span className="ml-auto w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
-                )}
-                {!showPulse && item.badge !== undefined && item.badge > 0 && (
-                  <span className={`ml-auto ${item.badgeColor || 'bg-[#b2e788]'} text-[#1a1c29] text-xs font-bold px-2.5 py-1 rounded-full shadow-sm`}>
-                    {item.badge}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
+                <div className="space-y-1">
+                  {group.items.map((item) => {
+                    const isDashboardRoute = item.href === `/dashboard/${role.toLowerCase()}`;
+                    const matchesPath = item.matchPaths?.some((p: string) => pathname.startsWith(p));
+                    const isActive = isDashboardRoute
+                      ? pathname === item.href
+                      : pathname === item.href || pathname.startsWith(item.href + '/') || matchesPath;
+
+                    const showPulse = item.showPulse === true;
+                    const iconRef = iconRefs.current[item.href];
+
+                    const handleMouseEnter = () => {
+                      if (iconRef && iconRef.current && typeof iconRef.current.startAnimation === 'function') {
+                        iconRef.current.startAnimation();
+                      }
+                    };
+
+                    const handleMouseLeave = () => {
+                      if (iconRef && iconRef.current && typeof iconRef.current.stopAnimation === 'function') {
+                        iconRef.current.stopAnimation();
+                      }
+                    };
+
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={`relative flex items-center gap-3 px-3 py-3 rounded-xl transition-all group ${
+                          isActive
+                            ? 'bg-gray-800/50 text-white'
+                            : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'
+                        }`}
+                        onMouseEnter={handleMouseEnter}
+                        onMouseLeave={handleMouseLeave}
+                      >
+                        {isActive && (
+                          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[#b1e787] rounded-r-full" />
+                        )}
+                        <span className={`relative flex-shrink-0 ${
+                          isActive ? 'text-[#b1e787]' : 'text-gray-400 group-hover:text-white'
+                        }`}>
+                          {renderIcon(item)}
+                        </span>
+                        <span className="text-sm font-medium">{item.label}</span>
+                        {showPulse && (
+                          <span className="ml-auto w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
+                        )}
+                        {!showPulse && item.badge !== undefined && item.badge > 0 && (
+                          <span className={`ml-auto ${item.badgeColor || 'bg-[#b2e788]'} text-[#1a1c29] text-xs font-bold px-2.5 py-1 rounded-full shadow-sm`}>
+                            {item.badge}
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ));
+          })()}
         </nav>
       </div>
 
