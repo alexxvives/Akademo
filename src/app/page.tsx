@@ -15,6 +15,7 @@ import { CalculatorSection } from '@/components/landing/CalculatorSection';
 import { CTASection } from '@/components/landing/CTASection';
 import { ContactSection } from '@/components/landing/ContactSection';
 import { Footer } from '@/components/landing/Footer';
+import { ScrollReveal } from '@/components/landing/ScrollReveal';
 import { translations, Language } from '@/lib/translations';
 
 function HomePageContent() {
@@ -81,28 +82,28 @@ function HomePageContent() {
         <Hero t={t} isScrolled={isScrolled} onOpenModal={openModal} />
       </div>
       <div data-section-dark="false">
-        <WhySection t={t} />
+        <ScrollReveal><WhySection t={t} /></ScrollReveal>
       </div>
       <div data-section-dark="true">
-        <AccountSharingSection t={t} />
+        <ScrollReveal><AccountSharingSection t={t} /></ScrollReveal>
       </div>
       <div data-section-dark="false">
-        <ContentProtectionSection t={t} />
+        <ScrollReveal><ContentProtectionSection t={t} /></ScrollReveal>
       </div>
       <div data-section-dark="true">
-        <WatermarkSection t={t} />
+        <ScrollReveal><WatermarkSection t={t} /></ScrollReveal>
       </div>
       <div data-section-dark="false">
-        <ManagementSection t={t} />
+        <ScrollReveal><ManagementSection t={t} /></ScrollReveal>
       </div>
       <div data-section-dark="true">
-        <CalculatorSection lang={lang} />
+        <ScrollReveal><CalculatorSection lang={lang} /></ScrollReveal>
       </div>
       <div data-section-dark="false">
-        <ContactSection lang={lang} />
+        <ScrollReveal><ContactSection lang={lang} /></ScrollReveal>
       </div>
       <div data-section-dark="true">
-        <CTASection t={t} onOpenModal={openModal} />
+        <ScrollReveal><CTASection t={t} onOpenModal={openModal} /></ScrollReveal>
       </div>
 
       <div className="h-px bg-gray-800" />

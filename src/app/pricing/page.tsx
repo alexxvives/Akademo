@@ -302,25 +302,25 @@ export default function PricingPage() {
                 ))}
               </ul>
 
-              {/* Guarantees */}
-              <div className="mt-2 rounded-2xl border border-gray-800 bg-gray-900/50 p-6 flex flex-col gap-3">
-                <p className="text-xs font-semibold uppercase tracking-widest text-gray-500 mb-1">{lang === 'es' ? 'Incluido siempre' : 'Always included'}</p>
-                {(lang === 'es' ? [
-                  { icon: '⚡', text: 'Respuesta garantizada en menos de 24h' },
-                  { icon: '🔓', text: 'Sin permanencia ni costes ocultos' },
-                  { icon: '🚀', text: 'Setup y onboarding completo incluidos' },
-                  { icon: '🛡️', text: 'Migraciones de datos sin coste' },
-                ] : [
-                  { icon: '⚡', text: 'Guaranteed response in under 24h' },
-                  { icon: '🔓', text: 'No lock-in or hidden fees' },
-                  { icon: '🚀', text: 'Full setup & onboarding included' },
-                  { icon: '🛡️', text: 'Free data migration' },
-                ]).map((item) => (
-                  <div key={item.text} className="flex items-center gap-3">
-                    <span className="text-base leading-none">{item.icon}</span>
-                    <span className="text-sm text-gray-300">{item.text}</span>
+              {/* Social proof mini stats */}
+              <div className="mt-2 rounded-2xl border border-gray-800 bg-gradient-to-br from-indigo-950/60 to-gray-900/60 p-6">
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <p className="text-2xl font-bold text-white">50+</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{lang === 'es' ? 'Academias' : 'Academies'}</p>
                   </div>
-                ))}
+                  <div className="border-x border-gray-700/60">
+                    <p className="text-2xl font-bold text-white">&lt;24h</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{lang === 'es' ? 'Soporte' : 'Support'}</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-white">0€</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Setup</p>
+                  </div>
+                </div>
+                <p className="text-center text-xs text-gray-500 mt-4 border-t border-gray-800 pt-4">
+                  {lang === 'es' ? 'Sin permanencia · Migración incluida · Cancela cuando quieras' : 'No lock-in · Migration included · Cancel anytime'}
+                </p>
               </div>
 
             </div>

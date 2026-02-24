@@ -20,10 +20,10 @@ export function Footer({ t, lang }: FooterProps) {
       <div className="max-w-7xl mx-auto">
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
           <div>
-            <div className="mb-4 flex items-center gap-2">
+            <Link href="/" className="mb-4 flex items-center gap-2 hover:opacity-80 transition-opacity">
               <Image src="/logo/AKADEMO_logo_OTHER2.svg" alt="AKADEMO" width={32} height={32} className="h-7 w-auto brightness-0 invert" />
               <span className="font-bold text-white text-lg tracking-tight">AKADEMO</span>
-            </div>
+            </Link>
             <p className="text-gray-400 text-sm leading-relaxed">{t.footerTagline}</p>
           </div>
 
@@ -37,16 +37,15 @@ export function Footer({ t, lang }: FooterProps) {
           <div>
             <h4 className="font-semibold text-white mb-4">{lang === 'es' ? 'Compañía' : 'Company'}</h4>
             <ul className="space-y-2">
-              <li><a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">{lang === 'es' ? 'Nosotros' : 'About'}</a></li>
-              <li><a href="#hablemos" className="text-gray-400 hover:text-white text-sm transition-colors">{lang === 'es' ? 'Contacto' : 'Contact'}</a></li>
+              <li><a href="/#hablemos" className="text-gray-400 hover:text-white text-sm transition-colors">{lang === 'es' ? 'Contacto' : 'Contact'}</a></li>
             </ul>
           </div>
 
           <div>
             <h4 className="font-semibold text-white mb-4">Legal</h4>
             <ul className="space-y-2">
-              <li><a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">{lang === 'es' ? 'Privacidad' : 'Privacy'}</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">{lang === 'es' ? 'Términos' : 'Terms'}</a></li>
+              <li><Link href="/privacidad" className="text-gray-400 hover:text-white text-sm transition-colors">{lang === 'es' ? 'Privacidad' : 'Privacy'}</Link></li>
+              <li><Link href="/terminos" className="text-gray-400 hover:text-white text-sm transition-colors">{lang === 'es' ? 'Términos' : 'Terms'}</Link></li>
             </ul>
           </div>
         </div>

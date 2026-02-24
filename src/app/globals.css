@@ -2,6 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Scroll Reveal Animations ─────────────────────────────── */
+.sr-base {
+  transition: opacity 0.65s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.sr-from-up   { opacity: 0; transform: translateY(32px); }
+.sr-from-left { opacity: 0; transform: translateX(-32px); }
+.sr-from-right{ opacity: 0; transform: translateX(32px); }
+.sr-from-none { opacity: 0; transform: none; }
+
+.sr-visible {
+  opacity: 1 !important;
+  transform: translate(0, 0) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sr-base { transition: none !important; }
+  .sr-from-up, .sr-from-left, .sr-from-right, .sr-from-none {
+    opacity: 1 !important; transform: none !important;
+  }
+}
+
 @layer utilities {
   @keyframes slide-in-right {
     from {
