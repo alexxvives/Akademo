@@ -245,9 +245,6 @@ export function MobileSidebar({
                     </p>
                     <p className="text-xs text-gray-500 truncate">{user.email}</p>
                   </div>
-                  <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
                 </Link>
               ) : (
                 <div className="flex items-center gap-3 flex-1 min-w-0 p-1.5 -m-1.5">

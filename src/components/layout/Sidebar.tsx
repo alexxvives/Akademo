@@ -382,9 +382,6 @@ export function Sidebar({
                   </p>
                   <p className="text-xs text-gray-400 truncate">{user.email}</p>
                 </div>
-                <svg className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
               </Link>
               {(role === 'ACADEMY' || role === 'TEACHER') && (
                 <button
