@@ -204,7 +204,7 @@ export default function AcademyJoinPage() {
           email: formData.email,
           password: formData.password,
           firstName: formData.fullName.split(' ')[0] || formData.fullName,
-          lastName: formData.fullName.split(' ').slice(1).join(' ') || '',
+          lastName: formData.fullName.split(' ').slice(1).join(' ') || undefined,
           role: 'STUDENT',
         }),
       });

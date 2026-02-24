@@ -12,6 +12,8 @@ interface Teacher {
   firstName: string;
   lastName: string;
   email: string;
+  academyLogoUrl?: string | null;
+  academyName?: string | null;
 }
 
 interface Class {
@@ -217,7 +219,7 @@ export default function JoinPage() {
           email: formData.email,
           password: formData.password,
           firstName: formData.fullName.split(' ')[0] || formData.fullName,
-          lastName: formData.fullName.split(' ').slice(1).join(' ') || '',
+          lastName: formData.fullName.split(' ').slice(1).join(' ') || undefined,
           role: 'STUDENT',
         }),
       });
@@ -358,9 +360,21 @@ export default function JoinPage() {
         <div className="text-center mb-8">
           <p className="text-gray-600">Únete a las clases de</p>
           {teacher && (
-            <p className="text-xl font-semibold text-gray-900 mt-1">
-              {teacher.firstName} {teacher.lastName}
-            </p>
+            <div className="flex flex-col items-center mt-2 gap-2">
+              {teacher.academyLogoUrl && (
+                <Image
+                  src={`/api/storage/serve/${teacher.academyLogoUrl}`}
+                  alt={teacher.academyName || teacher.firstName}
+                  width={64}
+                  height={64}
+                  unoptimized
+                  className="w-16 h-16 rounded-xl object-contain"
+                />
+              )}
+              <p className="text-xl font-semibold text-gray-900">
+                {teacher.firstName} {teacher.lastName}
+              </p>
+            </div>
           )}
         </div>
 

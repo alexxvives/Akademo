@@ -611,12 +611,23 @@ auth.get('/join/:teacherId', async (c) => {
       ORDER BY c.name
     `).bind(teacherUser.id).all();
 
+    // Get teacher's academy logo
+    const academyRecord = await c.env.DB.prepare(`
+      SELECT a.logoUrl, a.name as academyName
+      FROM Teacher t
+      JOIN Academy a ON t.academyId = a.id
+      WHERE t.userId = ?
+      LIMIT 1
+    `).bind(teacherUser.id).first() as { logoUrl: string | null; academyName: string } | null;
+
     return c.json(successResponse({
       teacher: {
         id: teacherUser.id,
         firstName: teacherUser.firstName,
         lastName: teacherUser.lastName,
-        email: teacherUser.email
+        email: teacherUser.email,
+        academyLogoUrl: academyRecord?.logoUrl || null,
+        academyName: academyRecord?.academyName || null,
       },
       classes: classesResult.results || []
     }));

@@ -1,3 +1,7 @@
+'use client';
+
+import { ScrollReveal } from '@/components/landing/ScrollReveal';
+
 interface WhySectionProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   t: Record<string, any>;
@@ -8,50 +12,66 @@ export function WhySection({ t }: WhySectionProps) {
     <section className="py-20 sm:py-28 px-4 sm:px-6 bg-white">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
-          <div className="mb-4">
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-full text-emerald-600 text-xs font-semibold uppercase tracking-wide">
-              EL PROBLEMA
-            </span>
-          </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
-            {t.whyTitle}{' '}
-            <span className="bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">{t.whyTitleHighlight}</span>{' '}
-            {t.whyTitleEnd}
-          </h2>
-          <p className="text-lg text-gray-500 max-w-5xl mx-auto">
-            {t.whySubtitle}
-          </p>
+          <ScrollReveal direction="none" delay={0}>
+            <div className="mb-4">
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-full text-emerald-600 text-xs font-semibold uppercase tracking-wide">
+                EL PROBLEMA
+              </span>
+            </div>
+          </ScrollReveal>
+          <ScrollReveal direction="blur" delay={80}>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+              {t.whyTitle}{' '}
+              <span className="bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">{t.whyTitleHighlight}</span>{' '}
+              {t.whyTitleEnd}
+            </h2>
+          </ScrollReveal>
+          <ScrollReveal direction="up" delay={160}>
+            <p className="text-lg text-gray-500 max-w-5xl mx-auto">
+              {t.whySubtitle}
+            </p>
+          </ScrollReveal>
         </div>
         
         <div className="grid sm:grid-cols-2 gap-4 sm:gap-6 mb-16">
-          <ProblemCard 
-            icon={<AccountsIcon />}
-            title={t.whyProblem1Title}
-            description={t.whyProblem1Desc}
-          />
-          <ProblemCard 
-            icon={<LeakIcon />}
-            title={t.whyProblem2Title}
-            description={t.whyProblem2Desc}
-          />
-          <ProblemCard 
-            icon={<ChaosIcon />}
-            title={t.whyProblem3Title}
-            description={t.whyProblem3Desc}
-          />
-          <ProblemCard 
-            icon={<VisibilityIcon />}
-            title={t.whyProblem4Title}
-            description={t.whyProblem4Desc}
-          />
+          <ScrollReveal direction="up" delay={0}>
+            <ProblemCard 
+              icon={<AccountsIcon />}
+              title={t.whyProblem1Title}
+              description={t.whyProblem1Desc}
+            />
+          </ScrollReveal>
+          <ScrollReveal direction="up" delay={80}>
+            <ProblemCard 
+              icon={<LeakIcon />}
+              title={t.whyProblem2Title}
+              description={t.whyProblem2Desc}
+            />
+          </ScrollReveal>
+          <ScrollReveal direction="up" delay={160}>
+            <ProblemCard 
+              icon={<ChaosIcon />}
+              title={t.whyProblem3Title}
+              description={t.whyProblem3Desc}
+            />
+          </ScrollReveal>
+          <ScrollReveal direction="up" delay={240}>
+            <ProblemCard 
+              icon={<VisibilityIcon />}
+              title={t.whyProblem4Title}
+              description={t.whyProblem4Desc}
+            />
+          </ScrollReveal>
         </div>
         
         {t.whySolution && (
-        <div className="bg-gray-900 rounded-2xl p-6 sm:p-8 lg:p-12 text-center">
-          <p className="text-lg sm:text-xl lg:text-2xl font-medium text-white leading-relaxed">
-            {t.whySolution}
-          </p>
-        </div>
+          <ScrollReveal direction="zoom-in">
+            <div className="bg-gray-900 rounded-2xl p-6 sm:p-8 lg:p-12 text-center">
+              <p className="text-lg sm:text-xl lg:text-2xl font-medium text-white leading-relaxed">
+                {t.whySolution}
+              </p>
+            </div>
+          </ScrollReveal>
         )}
       </div>
     </section>

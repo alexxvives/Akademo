@@ -1,3 +1,7 @@
+'use client';
+
+import { ScrollReveal } from '@/components/landing/ScrollReveal';
+
 interface WatermarkSectionProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   t: Record<string, any>;
@@ -16,25 +20,37 @@ export function WatermarkSection({ t }: WatermarkSectionProps) {
 
       <div className="max-w-7xl mx-auto relative z-10">
         <div className="text-center mb-16">
-          <div className="mb-4">
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 rounded-full text-emerald-400 text-xs font-semibold uppercase tracking-wide border border-emerald-500/20">
-              Marcas de Agua
-            </span>
-          </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 leading-tight">
-            {t.watermarkTitle}
-          </h2>
-          <p className="text-lg text-gray-400 max-w-5xl mx-auto">
-            {t.watermarkSubtitle}
-          </p>
+          <ScrollReveal direction="none" delay={0}>
+            <div className="mb-4">
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 rounded-full text-emerald-400 text-xs font-semibold uppercase tracking-wide border border-emerald-500/20">
+                Marcas de Agua
+              </span>
+            </div>
+          </ScrollReveal>
+          <ScrollReveal direction="blur" delay={80}>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 leading-tight">
+              {t.watermarkTitle}
+            </h2>
+          </ScrollReveal>
+          <ScrollReveal direction="up" delay={160}>
+            <p className="text-lg text-gray-400 max-w-5xl mx-auto">
+              {t.watermarkSubtitle}
+            </p>
+          </ScrollReveal>
         </div>
         
         <div className="grid lg:grid-cols-2 gap-12 items-center mb-16">
-          <VideoWatermarkDemo />
-          <WatermarkFeatureList t={t} />
+          <ScrollReveal direction="zoom" delay={0}>
+            <VideoWatermarkDemo />
+          </ScrollReveal>
+          <ScrollReveal direction="right" delay={120}>
+            <WatermarkFeatureList t={t} />
+          </ScrollReveal>
         </div>
         
-        <QuoteCard quote={t.watermarkQuote} />
+        <ScrollReveal direction="zoom-in" delay={0}>
+          <QuoteCard quote={t.watermarkQuote} />
+        </ScrollReveal>
       </div>
     </section>
   );

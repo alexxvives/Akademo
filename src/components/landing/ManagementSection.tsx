@@ -1,3 +1,7 @@
+'use client';
+
+import { ScrollReveal } from '@/components/landing/ScrollReveal';
+
 interface ManagementSectionProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   t: Record<string, any>;
@@ -8,46 +12,60 @@ export function ManagementSection({ t }: ManagementSectionProps) {
     <section className="py-20 sm:py-28 px-4 sm:px-6 bg-white">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-full text-emerald-600 text-xs font-semibold uppercase tracking-wide mb-6">
-            Sistema de Gestión
-          </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
-            {t.managementTitle}
-          </h2>
-          <p className="text-lg text-gray-500 max-w-5xl mx-auto">
-            {t.managementSubtitle}
-          </p>
+          <ScrollReveal direction="none" delay={0}>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-full text-emerald-600 text-xs font-semibold uppercase tracking-wide mb-6">
+              Sistema de Gestión
+            </div>
+          </ScrollReveal>
+          <ScrollReveal direction="blur" delay={80}>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+              {t.managementTitle}
+            </h2>
+          </ScrollReveal>
+          <ScrollReveal direction="up" delay={160}>
+            <p className="text-lg text-gray-500 max-w-5xl mx-auto">
+              {t.managementSubtitle}
+            </p>
+          </ScrollReveal>
         </div>
         
         <div className="grid sm:grid-cols-2 gap-8">
-          <ManagementCard 
-            icon={<TeacherIcon />}
-            gradient="from-blue-500 to-cyan-500"
-            title={t.managementFeature1}
-            description={t.managementFeature1Desc}
-            features={['Autonomía total', 'Control individual']}
-          />
-          <ManagementCard 
-            icon={<StudentIcon />}
-            gradient="from-purple-500 to-pink-500"
-            title={t.managementFeature2}
-            description={t.managementFeature2Desc}
-            features={['Inscripciones simples', 'Seguimiento completo']}
-          />
-          <ManagementCard 
-            icon={<ClassIcon />}
-            gradient="from-green-500 to-emerald-500"
-            title={t.managementFeature3}
-            description={t.managementFeature3Desc}
-            features={['Estructura flexible', 'Fácil organización']}
-          />
-          <ManagementCard 
-            icon={<RolesIcon />}
-            gradient="from-orange-500 to-yellow-500"
-            title={t.managementFeature4}
-            description={t.managementFeature4Desc}
-            features={['Permisos claros', 'Accesos definidos']}
-          />
+          <ScrollReveal direction="flip" delay={0}>
+            <ManagementCard 
+              icon={<TeacherIcon />}
+              gradient="from-blue-500 to-cyan-500"
+              title={t.managementFeature1}
+              description={t.managementFeature1Desc}
+              features={['Autonomía total', 'Control individual']}
+            />
+          </ScrollReveal>
+          <ScrollReveal direction="flip" delay={80}>
+            <ManagementCard 
+              icon={<StudentIcon />}
+              gradient="from-purple-500 to-pink-500"
+              title={t.managementFeature2}
+              description={t.managementFeature2Desc}
+              features={['Inscripciones simples', 'Seguimiento completo']}
+            />
+          </ScrollReveal>
+          <ScrollReveal direction="flip" delay={160}>
+            <ManagementCard 
+              icon={<ClassIcon />}
+              gradient="from-green-500 to-emerald-500"
+              title={t.managementFeature3}
+              description={t.managementFeature3Desc}
+              features={['Estructura flexible', 'Fácil organización']}
+            />
+          </ScrollReveal>
+          <ScrollReveal direction="flip" delay={240}>
+            <ManagementCard 
+              icon={<RolesIcon />}
+              gradient="from-orange-500 to-yellow-500"
+              title={t.managementFeature4}
+              description={t.managementFeature4Desc}
+              features={['Permisos claros', 'Accesos definidos']}
+            />
+          </ScrollReveal>
         </div>
       </div>
     </section>

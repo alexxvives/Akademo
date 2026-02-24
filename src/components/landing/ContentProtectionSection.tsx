@@ -1,3 +1,7 @@
+'use client';
+
+import { ScrollReveal } from '@/components/landing/ScrollReveal';
+
 interface ContentProtectionSectionProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   t: Record<string, any>;
@@ -10,37 +14,51 @@ export function ContentProtectionSection({ t }: ContentProtectionSectionProps) {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left: Content */}
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-full text-emerald-600 text-xs font-semibold uppercase tracking-wide mb-6">
-              Seguridad de Contenido
-            </div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
-              {t.contentTitle}
-            </h2>
-            <p className="text-lg text-gray-500 mb-8 max-w-4xl">
-              {t.contentSubtitle}
-            </p>
+            <ScrollReveal direction="none" delay={0}>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-full text-emerald-600 text-xs font-semibold uppercase tracking-wide mb-6">
+                Seguridad de Contenido
+              </div>
+            </ScrollReveal>
+            <ScrollReveal direction="blur" delay={80}>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+                {t.contentTitle}
+              </h2>
+            </ScrollReveal>
+            <ScrollReveal direction="up" delay={160}>
+              <p className="text-lg text-gray-500 mb-8 max-w-4xl">
+                {t.contentSubtitle}
+              </p>
+            </ScrollReveal>
 
             <div className="space-y-6">
-              <Feature 
-                icon={<NoDownloadIcon />}
-                title={t.contentFeature1}
-                description={t.contentFeature1Desc}
-              />
-              <Feature 
-                icon={<TimerIcon />}
-                title={t.contentFeature2}
-                description={t.contentFeature2Desc}
-              />
-              <Feature 
-                icon={<LockIcon />}
-                title={t.contentFeature3}
-                description={t.contentFeature3Desc}
-              />
+              <ScrollReveal direction="left" delay={0}>
+                <Feature 
+                  icon={<NoDownloadIcon />}
+                  title={t.contentFeature1}
+                  description={t.contentFeature1Desc}
+                />
+              </ScrollReveal>
+              <ScrollReveal direction="left" delay={80}>
+                <Feature 
+                  icon={<TimerIcon />}
+                  title={t.contentFeature2}
+                  description={t.contentFeature2Desc}
+                />
+              </ScrollReveal>
+              <ScrollReveal direction="left" delay={160}>
+                <Feature 
+                  icon={<LockIcon />}
+                  title={t.contentFeature3}
+                  description={t.contentFeature3Desc}
+                />
+              </ScrollReveal>
             </div>
           </div>
 
           {/* Right: Visual */}
-          <ProtectedVideoPreview />
+          <ScrollReveal direction="zoom" delay={80}>
+            <ProtectedVideoPreview />
+          </ScrollReveal>
         </div>
       </div>
     </section>

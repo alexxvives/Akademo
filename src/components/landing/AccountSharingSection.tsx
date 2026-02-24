@@ -1,3 +1,7 @@
+'use client';
+
+import { ScrollReveal } from '@/components/landing/ScrollReveal';
+
 interface AccountSharingSectionProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   t: Record<string, any>;
@@ -14,42 +18,54 @@ export function AccountSharingSection({ t }: AccountSharingSectionProps) {
       
       <div className="max-w-7xl mx-auto relative z-10">
         <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 rounded-full text-emerald-400 text-xs font-semibold uppercase tracking-wide border border-emerald-500/20 mb-6">
-            Protección Activa
-          </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 leading-tight">
-            {t.sharingTitle}
-          </h2>
-          <p className="text-lg text-gray-400 italic max-w-5xl mx-auto">
-            &ldquo;{t.sharingSubtitle}&rdquo;
-          </p>
+          <ScrollReveal direction="none" delay={0}>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 rounded-full text-emerald-400 text-xs font-semibold uppercase tracking-wide border border-emerald-500/20 mb-6">
+              Protección Activa
+            </div>
+          </ScrollReveal>
+          <ScrollReveal direction="blur" delay={80}>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 leading-tight">
+              {t.sharingTitle}
+            </h2>
+          </ScrollReveal>
+          <ScrollReveal direction="up" delay={160}>
+            <p className="text-lg text-gray-400 italic max-w-5xl mx-auto">
+              &ldquo;{t.sharingSubtitle}&rdquo;
+            </p>
+          </ScrollReveal>
         </div>
         
         <div className="grid sm:grid-cols-3 gap-8">
-          <FeatureCard 
-            stat="100%"
-            statLabel="Tasa de detección"
-            title={t.sharingFeature1}
-            description={t.sharingFeature1Desc}
-            icon={<SingleSessionIcon />}
-            gradient="from-blue-500 to-blue-600"
-          />
-          <FeatureCard 
-            stat="<1s"
-            statLabel="Tiempo de respuesta"
-            title={t.sharingFeature2}
-            description={t.sharingFeature2Desc}
-            icon={<DetectionIcon />}
-            gradient="from-purple-500 to-purple-600"
-          />
-          <FeatureCard 
-            stat="24/7"
-            statLabel="Monitoreo activo"
-            title={t.sharingFeature3}
-            description={t.sharingFeature3Desc}
-            icon={<AlertIcon />}
-            gradient="from-pink-500 to-rose-500"
-          />
+          <ScrollReveal direction="flip" delay={0}>
+            <FeatureCard 
+              stat="100%"
+              statLabel="Tasa de detección"
+              title={t.sharingFeature1}
+              description={t.sharingFeature1Desc}
+              icon={<SingleSessionIcon />}
+              gradient="from-blue-500 to-blue-600"
+            />
+          </ScrollReveal>
+          <ScrollReveal direction="flip" delay={100}>
+            <FeatureCard 
+              stat="<1s"
+              statLabel="Tiempo de respuesta"
+              title={t.sharingFeature2}
+              description={t.sharingFeature2Desc}
+              icon={<DetectionIcon />}
+              gradient="from-purple-500 to-purple-600"
+            />
+          </ScrollReveal>
+          <ScrollReveal direction="flip" delay={200}>
+            <FeatureCard 
+              stat="24/7"
+              statLabel="Monitoreo activo"
+              title={t.sharingFeature3}
+              description={t.sharingFeature3Desc}
+              icon={<AlertIcon />}
+              gradient="from-pink-500 to-rose-500"
+            />
+          </ScrollReveal>
         </div>
       </div>
     </section>

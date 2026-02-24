@@ -15,7 +15,6 @@ import { CalculatorSection } from '@/components/landing/CalculatorSection';
 import { CTASection } from '@/components/landing/CTASection';
 import { ContactSection } from '@/components/landing/ContactSection';
 import { Footer } from '@/components/landing/Footer';
-import { ScrollReveal } from '@/components/landing/ScrollReveal';
 import { translations, Language } from '@/lib/translations';
 
 function HomePageContent() {
@@ -28,18 +27,22 @@ function HomePageContent() {
   const t = translations[lang];
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            setIsScrolled(entry.target.getAttribute('data-section-dark') !== 'true');
-          }
-        });
-      },
-      { rootMargin: '-60px 0px -80% 0px', threshold: 0 }
-    );
-    document.querySelectorAll('[data-section-dark]').forEach(el => observer.observe(el));
-    return () => observer.disconnect();
+    // Track exactly which section sits behind the navbar (y≈50px from top)
+    const NAVBAR_Y = 50;
+    const check = () => {
+      const sections = document.querySelectorAll<HTMLElement>('[data-section-dark]');
+      let activeLight = false;
+      sections.forEach(el => {
+        const rect = el.getBoundingClientRect();
+        if (rect.top <= NAVBAR_Y && rect.bottom > NAVBAR_Y) {
+          activeLight = el.dataset.sectionDark !== 'true';
+        }
+      });
+      setIsScrolled(activeLight);
+    };
+    check();
+    window.addEventListener('scroll', check, { passive: true });
+    return () => window.removeEventListener('scroll', check);
   }, []);
 
   useEffect(() => {
@@ -82,28 +85,28 @@ function HomePageContent() {
         <Hero t={t} isScrolled={isScrolled} onOpenModal={openModal} />
       </div>
       <div data-section-dark="false">
-        <ScrollReveal direction="up"><WhySection t={t} /></ScrollReveal>
+        <WhySection t={t} />
       </div>
       <div data-section-dark="true">
-        <ScrollReveal direction="flip"><AccountSharingSection t={t} /></ScrollReveal>
+        <AccountSharingSection t={t} />
       </div>
       <div data-section-dark="false">
-        <ScrollReveal direction="blur"><ContentProtectionSection t={t} /></ScrollReveal>
+        <ContentProtectionSection t={t} />
       </div>
       <div data-section-dark="true">
-        <ScrollReveal direction="zoom"><WatermarkSection t={t} /></ScrollReveal>
+        <WatermarkSection t={t} />
       </div>
       <div data-section-dark="false">
-        <ScrollReveal direction="flip"><ManagementSection t={t} /></ScrollReveal>
+        <ManagementSection t={t} />
       </div>
       <div data-section-dark="true">
-        <ScrollReveal direction="blur"><CalculatorSection lang={lang} /></ScrollReveal>
+        <CalculatorSection lang={lang} />
       </div>
       <div data-section-dark="false">
-        <ScrollReveal direction="up"><ContactSection lang={lang} /></ScrollReveal>
+        <ContactSection lang={lang} />
       </div>
       <div data-section-dark="true">
-        <ScrollReveal direction="zoom-in"><CTASection t={t} onOpenModal={openModal} /></ScrollReveal>
+        <CTASection t={t} onOpenModal={openModal} />
       </div>
 
       <div className="h-px bg-gray-800" />
