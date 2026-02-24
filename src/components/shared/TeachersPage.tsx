@@ -351,7 +351,7 @@ export function TeachersPage({ role }: TeachersPageProps) {
           <div>
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-2xl font-semibold text-gray-900">Profesores</h1>
-              {role === 'ACADEMY' && (
+              {(role === 'ACADEMY' || role === 'ADMIN') && (
                 <button
                   onClick={() => setShowCreateModal(true)}
                   className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium text-sm transition-all flex items-center gap-2"
@@ -444,7 +444,7 @@ export function TeachersPage({ role }: TeachersPageProps) {
                   <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Estudiantes
                   </th>
-                  {role === 'ACADEMY' && (
+                  {(role === 'ACADEMY' || role === 'ADMIN') && (
                     <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Total Generado
                     </th>
@@ -452,12 +452,12 @@ export function TeachersPage({ role }: TeachersPageProps) {
                   <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Unido
                   </th>
-                  {role === 'ACADEMY' && (
+                  {(role === 'ACADEMY' || role === 'ADMIN') && (
                     <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Link de Inscripción
                     </th>
                   )}
-                  {role === 'ACADEMY' && (
+                  {(role === 'ACADEMY' || role === 'ADMIN') && (
                     <th className="px-3 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Acciones
                     </th>
@@ -510,7 +510,7 @@ export function TeachersPage({ role }: TeachersPageProps) {
                         <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                           <span className="text-sm text-gray-900">{teacher.studentCount || 0}</span>
                         </td>
-                        {role === 'ACADEMY' && (
+                        {(role === 'ACADEMY' || role === 'ADMIN') && (
                           <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                             <span className="text-sm font-medium text-gray-900">
                               {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(teacher.totalRevenue || 0)}
@@ -522,7 +522,7 @@ export function TeachersPage({ role }: TeachersPageProps) {
                             {new Date(teacher.createdAt).toLocaleDateString('es')}
                           </span>
                         </td>
-                        {role === 'ACADEMY' && (
+                        {(role === 'ACADEMY' || role === 'ADMIN') && (
                           <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                             <button
                               onClick={(e) => {
@@ -574,7 +574,7 @@ export function TeachersPage({ role }: TeachersPageProps) {
                             </button>
                           </td>
                         )}
-                        {role === 'ACADEMY' && (
+                        {(role === 'ACADEMY' || role === 'ADMIN') && (
                           <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center justify-center gap-2">
                               <button
@@ -660,7 +660,7 @@ export function TeachersPage({ role }: TeachersPageProps) {
                                 </span>
                               )}
                             </td>
-                            {role === 'ACADEMY' && (
+                            {(role === 'ACADEMY' || role === 'ADMIN') && (
                               <td className="px-3 sm:px-6 py-3">
                                 <span className="text-xs font-medium text-gray-700">
                                   {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(cls.revenue || 0)}
@@ -669,7 +669,7 @@ export function TeachersPage({ role }: TeachersPageProps) {
                             )}
                             <td
                               className="px-3 sm:px-6 py-3"
-                              colSpan={role === 'ACADEMY' ? 2 : 1}
+                              colSpan={(role === 'ACADEMY' || role === 'ADMIN') ? 3 : 1}
                             ></td>
                           </tr>
                         ))}
@@ -683,7 +683,7 @@ export function TeachersPage({ role }: TeachersPageProps) {
       </div>
 
       {/* Create Teacher Modal (Academy only) */}
-      {role === 'ACADEMY' && showCreateModal && (
+      {(role === 'ACADEMY' || role === 'ADMIN') && showCreateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Crear Nuevo Profesor</h2>

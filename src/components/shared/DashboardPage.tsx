@@ -143,12 +143,14 @@ export function DashboardPage({ role }: DashboardPageProps) {
 
   // Re-fetch payment status when class or period filter changes (ACADEMY only, not in demo)
   useEffect(() => {
-    if (!isAcademy || paymentStatus === 'NOT PAID') return;
-    // Skip the first trigger caused by paymentStatus changing after loadAcademyData — it already fetched the data
+    if (paymentStatus === 'NOT PAID') return;
+    // Skip the first trigger caused by paymentStatus changing after loadAcademyData/loadAdminData — it already fetched the data
     if (paymentStatusInitRef.current) { paymentStatusInitRef.current = false; return; }
     let url: string;
     if (selectedClass !== 'all') {
       url = `/enrollments/payment-status?classId=${selectedClass}`;
+    } else if (isAdmin && selectedAcademy !== 'all') {
+      url = `/enrollments/payment-status?academyId=${selectedAcademy}`;
     } else if (activePeriodId !== 'all') {
       const periodIds = classes.filter(c => isClassInPeriod(c.startDate)).map(c => c.id);
       if (periodIds.length === 0) {
@@ -164,7 +166,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
         setStudentPaymentStatus(result.data as { alDia: number; atrasados: number; total: number; uniqueAlDia?: number; uniqueAtrasados?: number; uniqueTotal?: number });
       }
     }).catch(() => {/* silent */});
-  }, [selectedClass, isAcademy, paymentStatus, activePeriodId, classes, isClassInPeriod]);
+  }, [selectedClass, isAdmin, selectedAcademy, paymentStatus, activePeriodId, classes, isClassInPeriod]);
 
   const loadData = async () => {
     try {
@@ -269,12 +271,14 @@ export function DashboardPage({ role }: DashboardPageProps) {
 
   // ─── Admin data loading ───
   const loadAdminData = async () => {
-    const [academiesRes, classesRes, pendingRes, ratingsRes, rejectedRes, streamsRes, progressRes] = await Promise.all([
+    const [academiesRes, classesRes, pendingRes, ratingsRes, rejectedRes, streamsRes, progressRes, paymentStatusRes] = await Promise.all([
       apiClient('/admin/academies'), apiClient('/admin/classes'), apiClient('/enrollments/pending'),
       apiClient('/ratings'), apiClient('/enrollments/rejected'), apiClient('/live/history'), apiClient('/students/progress'),
+      apiClient('/enrollments/payment-status'),
     ]);
-    const [academiesResult, classesResult, pendingResult, ratingsResult, rejectedResult, streamsResult, progressResult] = await Promise.all([
+    const [academiesResult, classesResult, pendingResult, ratingsResult, rejectedResult, streamsResult, progressResult, paymentStatusResult] = await Promise.all([
       academiesRes.json(), classesRes.json(), pendingRes.json(), ratingsRes.json(), rejectedRes.json(), streamsRes.json(), progressRes.json(),
+      paymentStatusRes.json(),
     ]);
     if (academiesResult.success && Array.isArray(academiesResult.data)) setAcademies(academiesResult.data);
     if (rejectedResult.success && rejectedResult.data) setRejectedCount(rejectedResult.data.count || 0);
@@ -294,6 +298,11 @@ export function DashboardPage({ role }: DashboardPageProps) {
         lessonsCompleted: s.lessonsCompleted ?? 0, totalLessons: s.totalLessons ?? 0, lastActive: s.lastActive,
       })));
     }
+    if (paymentStatusResult.success && paymentStatusResult.data) {
+      setStudentPaymentStatus(paymentStatusResult.data as { alDia: number; atrasados: number; total: number; uniqueAlDia?: number; uniqueAtrasados?: number; uniqueTotal?: number });
+    }
+    paymentStatusInitRef.current = true;
+    setPaymentStatus('PAID');
   };
 
   // ─── Computed values ───
@@ -357,7 +366,6 @@ export function DashboardPage({ role }: DashboardPageProps) {
   }, [studentPaymentStatus, paymentStatus, selectedClass, filteredStudents, enrolledStudents]);
 
   const paymentStats = useMemo(() => {
-    if (!isAcademy) return { totalPaid: 0, bizumCount: 0, cashCount: 0, stripeCount: 0 };
     let filtered = allCompletedPayments;
     if (selectedClass !== 'all') {
       filtered = filtered.filter(p => p.classId === selectedClass);
@@ -371,7 +379,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
       cashCount: filtered.filter(p => p.paymentMethod === 'cash').length,
       stripeCount: filtered.filter(p => p.paymentMethod === 'stripe').length,
     };
-  }, [allCompletedPayments, selectedClass, isAcademy, activePeriodId, classes, isClassInPeriod]);
+  }, [allCompletedPayments, selectedClass, activePeriodId, classes, isClassInPeriod]);
 
   const filteredClassWatchTime = useMemo(() => {
     if (isAcademy && paymentStatus === 'NOT PAID') {
@@ -502,7 +510,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
       <div className={`bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm h-full ${isAcademy ? 'order-1 lg:order-2' : ''}`}>
         <h3 className="text-lg font-semibold text-gray-900 mb-3 sm:mb-6">Estudiantes</h3>
         {hasData ? (
-          isAcademy ? renderAcademyStudentsContent() : renderAdminStudentsContent()
+          renderAcademyStudentsContent()
         ) : (
           <EmptyState icon="users" title="Sin estudiantes" subtitle="Cuando los estudiantes se inscriban aparecerán aquí" />
         )}

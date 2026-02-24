@@ -645,10 +645,10 @@ export function ClassesPage({ role }: ClassesPageProps) {
                     </div>
                   </div>
 
-                  {/* Right side (academy/teacher: edit + delete + zoom badge) */}
-                  {(role === 'ACADEMY' || role === 'TEACHER') && (
+                  {/* Right side (academy/teacher/admin: edit + delete + zoom badge) */}
+                  {(role === 'ACADEMY' || role === 'TEACHER' || role === 'ADMIN') && (
                     <div className="flex flex-col items-end gap-2 ml-4">
-                      {role === 'ACADEMY' && (
+                      {(role === 'ACADEMY' || role === 'ADMIN') && (
                       <div className="flex items-center gap-1">
                       <button
                         onClick={(e) => {

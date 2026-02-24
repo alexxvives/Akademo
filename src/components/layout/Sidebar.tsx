@@ -192,7 +192,7 @@ export function Sidebar({
                   {group.label && (
                     <button
                       onClick={() => toggleGroup(group.label!)}
-                      className={`w-full flex items-center justify-between px-3 pb-1 text-[10px] font-semibold tracking-widest text-gray-500 hover:text-gray-300 uppercase transition-colors ${gi > 0 ? 'pt-5' : 'pt-1'}`}
+                      className={`w-full flex items-center justify-between px-3 pb-1 text-[10px] font-semibold tracking-widest text-gray-500 hover:text-gray-300 uppercase transition-colors ${gi > 0 ? 'pt-5' : 'pt-0'}`}
                     >
                       <span>{group.label}</span>
                       <svg className={`w-3 h-3 transition-transform ${isCollapsed ? '-rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
