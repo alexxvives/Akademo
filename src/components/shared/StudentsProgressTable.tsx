@@ -263,54 +263,54 @@ export function StudentsProgressTable({
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
               <tr>
-                <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="text-left py-2 px-3 md:py-4 md:px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Estudiante
                 </th>
                 {visibleColumns.asignatura && (
-                <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="text-left py-2 px-3 md:py-4 md:px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Asignatura
                 </th>
                 )}
                 {showTeacherColumn && (
-                  <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="text-left py-2 px-3 md:py-4 md:px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Profesor
                   </th>
                 )}
                 {visibleColumns.videosVistos && (
-                <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="text-left py-2 px-3 md:py-4 md:px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Videos Vistos
                 </th>
                 )}
                 {visibleColumns.tiempoTotal && (
-                <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="text-left py-2 px-3 md:py-4 md:px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Tiempo Total
                 </th>
                 )}
                 {visibleColumns.ultimaActividad && (
-                <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="text-left py-2 px-3 md:py-4 md:px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Última Actividad
                 </th>
                 )}
                 {visibleColumns.pagos && (
-                  <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="text-left py-2 px-3 md:py-4 md:px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Pagos
                   </th>
                 )}
                 {visibleColumns.sospechas && (
-                  <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="text-left py-2 px-3 md:py-4 md:px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     <span className="relative group inline-flex items-center gap-1 cursor-help">
                       Sospechas
                       <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <span className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 w-72 normal-case tracking-normal leading-relaxed whitespace-pre-line">
+                      <span className="absolute top-full left-0 mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 w-72 normal-case tracking-normal leading-relaxed whitespace-pre-line">
                         {`Se incrementa en dos situaciones:\n\n• Viaje imposible: el alumno aparece en dos ubicaciones muy alejadas en muy poco tiempo (movimiento geográficamente imposible).\n\n• Sesión duplicada: alguien inició sesión con esta cuenta mientras ya había otra sesión activa (posible uso compartido de contraseña).`}
                       </span>
                     </span>
                   </th>
                 )}
                 {showBanButton && visibleColumns.acciones && (
-                  <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="text-left py-2 px-3 md:py-4 md:px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Acciones
                   </th>
                 )}
@@ -340,7 +340,7 @@ export function StudentsProgressTable({
                       className={`hover:bg-gray-50 transition-colors ${hasBreakdown ? 'cursor-pointer' : ''}`}
                       onClick={() => hasBreakdown && toggleExpand(student.id)}
                     >
-                      <td className="py-4 px-6">
+                      <td className="py-2 px-3 md:py-4 md:px-6">
                         <div className="flex items-center gap-3">
                           {hasBreakdown ? (
                             <svg
@@ -359,12 +359,12 @@ export function StudentsProgressTable({
                         </div>
                       </td>
                       {visibleColumns.asignatura && (
-                      <td className="py-4 px-6">
+                      <td className="py-2 px-3 md:py-4 md:px-6">
                         <span className="text-sm text-gray-900">{student.className}</span>
                       </td>
                       )}
                       {showTeacherColumn && (
-                        <td className="py-4 px-6">
+                        <td className="py-2 px-3 md:py-4 md:px-6">
                           {hasBreakdown ? (() => {
                             const teacherNames = student.classBreakdown!.map(c => c.teacherName).filter((t): t is string => !!t);
                             const uniqueTeachers = Array.from(new Set(teacherNames));
@@ -379,7 +379,7 @@ export function StudentsProgressTable({
                         </td>
                       )}
                       {visibleColumns.videosVistos && (
-                      <td className="py-4 px-6">
+                      <td className="py-2 px-3 md:py-4 md:px-6">
                         <div className="flex flex-col gap-1">
                           <div className="flex-1 max-w-[100px]">
                             <div className="w-full bg-gray-200 rounded-full h-2">
@@ -394,12 +394,12 @@ export function StudentsProgressTable({
                       </td>
                       )}
                       {visibleColumns.tiempoTotal && (
-                      <td className="py-4 px-6">
+                      <td className="py-2 px-3 md:py-4 md:px-6">
                         <span className="text-sm text-gray-900">{formatTime(student.totalWatchTime)}</span>
                       </td>
                       )}
                       {visibleColumns.ultimaActividad && (
-                      <td className="py-4 px-6">
+                      <td className="py-2 px-3 md:py-4 md:px-6">
                         <div className="flex items-center gap-2">
                           <span className={`text-sm font-medium ${activityStatus.textColor}`}>
                             {student.lastActive
@@ -417,7 +417,7 @@ export function StudentsProgressTable({
                       </td>
                       )}
                       {visibleColumns.pagos && (
-                      <td className="py-4 px-6">
+                      <td className="py-2 px-3 md:py-4 md:px-6">
                         {student.paymentStatus === 'FREE' ? (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
                             Gratis
@@ -438,30 +438,39 @@ export function StudentsProgressTable({
                       </td>
                       )}
                       {visibleColumns.sospechas && (
-                      <td className="py-4 px-6">
+                      <td className="py-2 px-3 md:py-4 md:px-6">
                         {(student.suspicionCount ?? 0) > 0 ? (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (onAlertStudent && window.confirm(`¿Enviar alerta de actividad sospechosa a ${student.name}? El estudiante verá el aviso en su próximo inicio de sesión.`)) {
-                                onAlertStudent(student.id, student.name);
-                              }
-                            }}
-                            title="Enviar alerta al estudiante"
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-colors cursor-pointer"
-                          >
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                            </svg>
-                            {student.suspicionCount}
-                          </button>
+                          <div className="flex items-center gap-1.5">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                              </svg>
+                              {student.suspicionCount}
+                            </span>
+                            {onAlertStudent && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (window.confirm(`¿Enviar alerta de actividad sospechosa a ${student.name}? El estudiante verá el aviso en su próximo inicio de sesión.`)) {
+                                    onAlertStudent(student.id, student.name);
+                                  }
+                                }}
+                                title="Enviar aviso al estudiante"
+                                className="p-1 text-orange-500 hover:text-orange-700 hover:bg-orange-50 rounded transition-colors"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                </svg>
+                              </button>
+                            )}
+                          </div>
                         ) : (
                           <span className="text-sm text-gray-400">—</span>
                         )}
                       </td>
                       )}
                       {showBanButton && visibleColumns.acciones && (
-                        <td className="py-4 px-6">
+                        <td className="py-2 px-3 md:py-4 md:px-6">
                           {!hasBreakdown ? (
                             <button
                               onClick={(e) => {
@@ -492,23 +501,23 @@ export function StudentsProgressTable({
                       const clsActivity = getActivityStatus(cls.lastActive);
                       return (
                         <tr key={`${student.id}-breakdown-${cls.classId}`} className="bg-gray-50/70">
-                          <td className="py-3 px-6">
+                          <td className="py-2 px-3 md:py-3 md:px-6">
                             <div className="flex items-center gap-3 pl-10">
                               <span className="text-xs text-gray-500 italic">↳ detalle por asignatura</span>
                             </div>
                           </td>
                           {visibleColumns.asignatura && (
-                          <td className="py-3 px-6">
+                          <td className="py-2 px-3 md:py-3 md:px-6">
                             <span className="text-xs font-medium text-indigo-600">{cls.className}</span>
                           </td>
                           )}
                           {showTeacherColumn && (
-                            <td className="py-3 px-6">
+                            <td className="py-2 px-3 md:py-3 md:px-6">
                               <span className="text-xs text-gray-600">{cls.teacherName || '-'}</span>
                             </td>
                           )}
                           {visibleColumns.videosVistos && (
-                          <td className="py-3 px-6">
+                          <td className="py-2 px-3 md:py-3 md:px-6">
                             <div className="flex flex-col gap-1">
                               <div className="flex-1 max-w-[100px]">
                                 <div className="w-full bg-gray-200 rounded-full h-1.5">
@@ -523,12 +532,12 @@ export function StudentsProgressTable({
                           </td>
                           )}
                           {visibleColumns.tiempoTotal && (
-                          <td className="py-3 px-6">
+                          <td className="py-2 px-3 md:py-3 md:px-6">
                             <span className="text-xs text-gray-600">{formatTime(cls.totalWatchTime)}</span>
                           </td>
                           )}
                           {visibleColumns.ultimaActividad && (
-                          <td className="py-3 px-6">
+                          <td className="py-2 px-3 md:py-3 md:px-6">
                             <span className={`text-xs ${clsActivity.textColor}`}>
                               {cls.lastActive
                                 ? (() => {
@@ -544,7 +553,7 @@ export function StudentsProgressTable({
                           </td>
                           )}
                           {visibleColumns.pagos && (
-                          <td className="py-3 px-6">
+                          <td className="py-2 px-3 md:py-3 md:px-6">
                             {cls.paymentStatus === 'FREE' ? (
                               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
                                 Gratis
@@ -563,13 +572,13 @@ export function StudentsProgressTable({
                           </td>
                           )}
                           {visibleColumns.sospechas && (
-                          <td className="py-3 px-6">
+                          <td className="py-2 px-3 md:py-3 md:px-6">
                             {/* Sospechas placeholder for breakdown rows */}
                             <span className="text-xs text-gray-400">—</span>
                           </td>
                           )}
                           {showBanButton && visibleColumns.acciones && (
-                            <td className="py-3 px-6">
+                            <td className="py-2 px-3 md:py-3 md:px-6">
                               {cls.enrollmentId && (
                                 <button
                                   onClick={() => {
