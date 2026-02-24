@@ -82,28 +82,28 @@ function HomePageContent() {
         <Hero t={t} isScrolled={isScrolled} onOpenModal={openModal} />
       </div>
       <div data-section-dark="false">
-        <ScrollReveal><WhySection t={t} /></ScrollReveal>
+        <ScrollReveal direction="up"><WhySection t={t} /></ScrollReveal>
       </div>
       <div data-section-dark="true">
-        <ScrollReveal><AccountSharingSection t={t} /></ScrollReveal>
+        <ScrollReveal direction="flip"><AccountSharingSection t={t} /></ScrollReveal>
       </div>
       <div data-section-dark="false">
-        <ScrollReveal><ContentProtectionSection t={t} /></ScrollReveal>
+        <ScrollReveal direction="blur"><ContentProtectionSection t={t} /></ScrollReveal>
       </div>
       <div data-section-dark="true">
-        <ScrollReveal><WatermarkSection t={t} /></ScrollReveal>
+        <ScrollReveal direction="zoom"><WatermarkSection t={t} /></ScrollReveal>
       </div>
       <div data-section-dark="false">
-        <ScrollReveal><ManagementSection t={t} /></ScrollReveal>
+        <ScrollReveal direction="flip"><ManagementSection t={t} /></ScrollReveal>
       </div>
       <div data-section-dark="true">
-        <ScrollReveal><CalculatorSection lang={lang} /></ScrollReveal>
+        <ScrollReveal direction="blur"><CalculatorSection lang={lang} /></ScrollReveal>
       </div>
       <div data-section-dark="false">
-        <ScrollReveal><ContactSection lang={lang} /></ScrollReveal>
+        <ScrollReveal direction="up"><ContactSection lang={lang} /></ScrollReveal>
       </div>
       <div data-section-dark="true">
-        <ScrollReveal><CTASection t={t} onOpenModal={openModal} /></ScrollReveal>
+        <ScrollReveal direction="zoom-in"><CTASection t={t} onOpenModal={openModal} /></ScrollReveal>
       </div>
 
       <div className="h-px bg-gray-800" />

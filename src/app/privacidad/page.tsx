@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import Image from 'next/image';
+import { LegalNavbar } from '@/components/landing/LegalNavbar';
 
 export const metadata = {
   title: 'Política de Privacidad | AKADEMO',
@@ -9,17 +9,9 @@ export const metadata = {
 export default function PrivacidadPage() {
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="border-b border-gray-100 py-4 px-6">
-        <div className="max-w-4xl mx-auto flex items-center gap-2">
-          <Link href="/" className="flex items-center gap-2">
-            <Image src="/logo/AKADEMO_logo_OTHER2.svg" alt="AKADEMO" width={28} height={28} className="h-7 w-auto" />
-            <span className="font-bold text-gray-900 text-lg tracking-tight">AKADEMO</span>
-          </Link>
-        </div>
-      </header>
+      <LegalNavbar />
 
-      <main className="max-w-4xl mx-auto px-6 py-16">
+      <main className="max-w-4xl mx-auto px-6 pt-32 pb-24">
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">Política de Privacidad</h1>
         <p className="text-gray-500 text-sm mb-10">Última actualización: 23 de febrero de 2026</p>
 

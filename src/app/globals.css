@@ -4,23 +4,59 @@
 
 /* ── Scroll Reveal Animations ─────────────────────────────── */
 .sr-base {
-  transition: opacity 0.65s cubic-bezier(0.4, 0, 0.2, 1),
-              transform 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: opacity, transform, filter;
+  transition:
+    opacity    0.8s cubic-bezier(0.22, 1, 0.36, 1),
+    transform  0.8s cubic-bezier(0.22, 1, 0.36, 1),
+    filter     0.8s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.sr-from-up   { opacity: 0; transform: translateY(32px); }
-.sr-from-left { opacity: 0; transform: translateX(-32px); }
-.sr-from-right{ opacity: 0; transform: translateX(32px); }
-.sr-from-none { opacity: 0; transform: none; }
 
+/* Classic slide up */
+.sr-from-up    { opacity: 0; transform: translateY(44px); }
+/* Slide in from sides */
+.sr-from-left  { opacity: 0; transform: translateX(-48px); }
+.sr-from-right { opacity: 0; transform: translateX(48px); }
+/* Pure fade */
+.sr-from-none  { opacity: 0; }
+
+/* Zoom — scales in from slightly smaller, feels weighty */
+.sr-from-zoom  { opacity: 0; transform: scale(0.84) translateY(28px); }
+
+/* Blur up — frosted glass reveal, very modern */
+.sr-from-blur  {
+  opacity: 0;
+  filter: blur(18px) saturate(0.4);
+  transform: translateY(24px) scale(0.97);
+}
+
+/* 3D flip in — hinged on top edge, dramatic depth */
+.sr-from-flip  {
+  opacity: 0;
+  transform: perspective(900px) rotateX(22deg) translateY(40px) scale(0.96);
+  transform-origin: top center;
+}
+
+/* Zoom out — starts slightly oversized, settles down */
+.sr-from-zoom-in {
+  opacity: 0;
+  transform: scale(1.1) translateY(-12px);
+  filter: blur(6px);
+}
+
+/* Visible state — all variants converge here */
 .sr-visible {
   opacity: 1 !important;
-  transform: translate(0, 0) !important;
+  transform: perspective(900px) rotateX(0deg) translateY(0) translateX(0) scale(1) !important;
+  filter: blur(0) saturate(1) !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .sr-base { transition: none !important; }
-  .sr-from-up, .sr-from-left, .sr-from-right, .sr-from-none {
-    opacity: 1 !important; transform: none !important;
+  .sr-from-up, .sr-from-left, .sr-from-right, .sr-from-none,
+  .sr-from-zoom, .sr-from-blur, .sr-from-flip, .sr-from-zoom-in {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
   }
 }
 

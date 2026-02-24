@@ -2,14 +2,34 @@
 
 import { useEffect, useRef } from 'react';
 
+type Direction = 'up' | 'left' | 'right' | 'none' | 'zoom' | 'blur' | 'flip' | 'zoom-in';
+
 interface ScrollRevealProps {
   children: React.ReactNode;
   className?: string;
   delay?: number; // ms
-  direction?: 'up' | 'left' | 'right' | 'none';
+  direction?: Direction;
+  threshold?: number;
 }
 
-export function ScrollReveal({ children, className = '', delay = 0, direction = 'up' }: ScrollRevealProps) {
+const DIR_CLASS: Record<Direction, string> = {
+  up:      'sr-from-up',
+  left:    'sr-from-left',
+  right:   'sr-from-right',
+  none:    'sr-from-none',
+  zoom:    'sr-from-zoom',
+  blur:    'sr-from-blur',
+  flip:    'sr-from-flip',
+  'zoom-in': 'sr-from-zoom-in',
+};
+
+export function ScrollReveal({
+  children,
+  className = '',
+  delay = 0,
+  direction = 'up',
+  threshold = 0.1,
+}: ScrollRevealProps) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -25,22 +45,15 @@ export function ScrollReveal({ children, className = '', delay = 0, direction = 
           observer.unobserve(el);
         }
       },
-      { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
+      { threshold, rootMargin: '0px 0px -48px 0px' }
     );
 
     observer.observe(el);
     return () => observer.disconnect();
-  }, [delay]);
-
-  const dirClass = {
-    up: 'sr-from-up',
-    left: 'sr-from-left',
-    right: 'sr-from-right',
-    none: 'sr-from-none',
-  }[direction];
+  }, [delay, threshold]);
 
   return (
-    <div ref={ref} className={`sr-base ${dirClass} ${className}`}>
+    <div ref={ref} className={`sr-base ${DIR_CLASS[direction]} ${className}`}>
       {children}
     </div>
   );

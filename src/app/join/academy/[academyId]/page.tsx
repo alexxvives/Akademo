@@ -323,15 +323,6 @@ export default function AcademyJoinPage() {
       <div className="max-w-2xl mx-auto">
         {/* Header with Logo */}
         <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <Image 
-              src="/logo/AKADEMO_logo_OTHER2.svg" 
-              alt="AKADEMO" 
-              width={160}
-              height={48}
-              className="h-12 w-auto"
-            />
-          </div>
           <p className="text-gray-600">Únete a las clases de</p>
           {academy && (
             <div className="flex flex-col items-center mt-2 gap-2">
