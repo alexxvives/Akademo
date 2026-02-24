@@ -653,6 +653,7 @@ export default function DashboardLayout({
         linkCopied={linkCopied}
         onClose={() => setMobileMenuOpen(false)}
         onCopyJoinLink={copyJoinLink}
+        onCopyAcademyLink={copyAcademyJoinLink}
         onSwitchRole={handleSwitchRole}
         onLogout={handleLogout}
         user={user}

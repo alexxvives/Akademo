@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -32,6 +32,7 @@ interface MobileSidebarProps {
   linkCopied: boolean;
   onClose: () => void;
   onCopyJoinLink: () => void;
+  onCopyAcademyLink: () => void;
   onSwitchRole: () => void;
   onLogout: () => void;
   user: {
@@ -51,6 +52,7 @@ export function MobileSidebar({
   linkCopied,
   onClose,
   onCopyJoinLink,
+  onCopyAcademyLink,
   onSwitchRole,
   onLogout,
   user,
@@ -59,6 +61,15 @@ export function MobileSidebar({
   const pathname = usePathname();
   const linkIconRef = useRef<LinkIconHandle | null>(null);
   const logoutIconRef = useRef<LogoutIconHandle | null>(null);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const toggleGroup = (label: string) => {
+    setCollapsedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
+      return next;
+    });
+  };
 
   const renderIcon = (item: MenuItem) => {
     const iconMap: Record<string, JSX.Element> = {
@@ -135,74 +146,64 @@ export function MobileSidebar({
               if (!last || last.label !== g) groups.push({ label: g, items: [item] });
               else last.items.push(item);
             }
-            return groups.map((group, gi) => (
-              <div key={gi}>
-                {group.label && (
-                  <p className={`px-3 pb-1 text-[10px] font-semibold tracking-widest text-gray-400 uppercase ${gi > 0 ? 'pt-4' : 'pt-1'}`}>
-                    {group.label}
-                  </p>
-                )}
-                <div className="space-y-1">
-                  {group.items.map((item) => {
-                    const isDashboardRoute = item.href === `/dashboard/${role.toLowerCase()}`;
-                    const isActive = isDashboardRoute
-                      ? pathname === item.href
-                      : pathname === item.href || pathname.startsWith(item.href + '/');
+            return groups.map((group, gi) => {
+              const isCollapsed = group.label ? collapsedGroups.has(group.label) : false;
+              return (
+                <div key={gi}>
+                  {group.label && (
+                    <button
+                      onClick={() => toggleGroup(group.label!)}
+                      className={`w-full flex items-center justify-between px-3 pb-1 text-[10px] font-semibold tracking-widest text-gray-400 hover:text-gray-600 uppercase transition-colors ${gi > 0 ? 'pt-4' : 'pt-1'}`}
+                    >
+                      <span>{group.label}</span>
+                      <svg className={`w-3 h-3 transition-transform ${isCollapsed ? '-rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                  )}
+                  {!isCollapsed && (
+                    <div className="space-y-1">
+                      {group.items.map((item) => {
+                        const isDashboardRoute = item.href === `/dashboard/${role.toLowerCase()}`;
+                        const isActive = isDashboardRoute
+                          ? pathname === item.href
+                          : pathname === item.href || pathname.startsWith(item.href + '/');
 
-                    const showPulse = item.showPulse === true;
+                        const showPulse = item.showPulse === true;
 
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={onClose}
-                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
-                          isActive
-                            ? 'bg-brand-50 text-brand-700 font-medium shadow-sm'
-                            : 'text-gray-700 hover:bg-gray-50'
-                        }`}
-                      >
-                        <span className={isActive ? 'text-brand-600' : 'text-gray-500'}>
-                          {renderIcon(item)}
-                        </span>
-                        <span className="text-sm">{item.label}</span>
-                        {showPulse && (
-                          <span className="ml-auto w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
-                        )}
-                        {!showPulse && item.badge !== undefined && item.badge > 0 && (
-                          <span className={`ml-auto ${item.badgeColor || 'bg-[#b2e788]'} text-[#1a1c29] text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm`}>
-                            {item.badge}
-                          </span>
-                        )}
-                      </Link>
-                    );
-                  })}
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={onClose}
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
+                              isActive
+                                ? 'bg-brand-50 text-brand-700 font-medium shadow-sm'
+                                : 'text-gray-700 hover:bg-gray-50'
+                            }`}
+                          >
+                            <span className={isActive ? 'text-brand-600' : 'text-gray-500'}>
+                              {renderIcon(item)}
+                            </span>
+                            <span className="text-sm">{item.label}</span>
+                            {showPulse && (
+                              <span className="ml-auto w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
+                            )}
+                            {!showPulse && item.badge !== undefined && item.badge > 0 && (
+                              <span className={`ml-auto ${item.badgeColor || 'bg-[#b2e788]'} text-[#1a1c29] text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm`}>
+                                {item.badge}
+                              </span>
+                            )}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ));
+              );
+            });
           })()}
         </nav>
-
-        {/* Mobile Teacher Invite Link */}
-        {role === 'TEACHER' && user && (
-          <div className="px-3 py-2">
-            <button
-              onClick={onCopyJoinLink}
-              onMouseEnter={() => linkIconRef.current?.startAnimation()}
-              onMouseLeave={() => linkIconRef.current?.stopAnimation()}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
-                linkCopied
-                  ? 'bg-green-50 text-green-700'
-                  : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
-              }`}
-            >
-              <LinkIcon ref={linkIconRef} size={20} className="flex-shrink-0" />
-              <span className="text-sm font-medium">
-                {linkCopied ? '¡Enlace copiado!' : 'Copiar enlace de invitación'}
-              </span>
-            </button>
-          </div>
-        )}
 
         {/* Mobile User Profile */}
         {user && (
@@ -228,7 +229,7 @@ export function MobileSidebar({
               </button>
             )}
 
-            <div className="flex items-center gap-3 mb-3">
+            <div className="flex items-center gap-1 mb-3">
               {role !== 'ADMIN' ? (
                 <Link
                   href={`/dashboard/${role.toLowerCase()}/profile`}
@@ -260,6 +261,17 @@ export function MobileSidebar({
                     <p className="text-xs text-gray-500 truncate">{user.email}</p>
                   </div>
                 </div>
+              )}
+              {(role === 'ACADEMY' || role === 'TEACHER') && (
+                <button
+                  onClick={role === 'ACADEMY' ? onCopyAcademyLink : onCopyJoinLink}
+                  onMouseEnter={() => linkIconRef.current?.startAnimation()}
+                  onMouseLeave={() => linkIconRef.current?.stopAnimation()}
+                  title={linkCopied ? '¡Enlace copiado!' : 'Copiar enlace de invitación'}
+                  className={`p-2 rounded-lg flex-shrink-0 transition-colors ${linkCopied ? 'text-green-600' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
+                >
+                  <LinkIcon ref={linkIconRef} size={18} />
+                </button>
               )}
             </div>
             <button
