@@ -303,7 +303,7 @@ export function StudentsProgressTable({
                       <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <span className="absolute top-full left-0 mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 w-72 normal-case tracking-normal leading-relaxed whitespace-pre-line">
+                      <span className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 w-72 normal-case tracking-normal leading-relaxed whitespace-pre-line">
                         {`Se incrementa en dos situaciones:\n\n• Viaje imposible: el alumno aparece en dos ubicaciones muy alejadas en muy poco tiempo (movimiento geográficamente imposible).\n\n• Sesión duplicada: alguien inició sesión con esta cuenta mientras ya había otra sesión activa (posible uso compartido de contraseña).`}
                       </span>
                     </span>
