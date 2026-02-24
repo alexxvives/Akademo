@@ -128,10 +128,6 @@ export default function AdminLeadsPage() {
     return acc;
   }, {});
 
-  if (loading) {
-    return <SkeletonTable rows={8} cols={6} />;
-  }
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -170,7 +166,9 @@ export default function AdminLeadsPage() {
       </div>
 
       {/* Leads List */}
-      {leads.length === 0 ? (
+      {loading ? (
+        <SkeletonTable rows={5} cols={4} />
+      ) : leads.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -199,7 +197,7 @@ export default function AdminLeadsPage() {
                     {lead.academyName && <span>• {lead.academyName}</span>}
                   </div>
                 </div>
-                <div className="hidden sm:flex items-center gap-6 text-sm text-gray-500">
+                <div className="hidden sm:flex items-center justify-center gap-6 text-sm text-gray-500">
                   {lead.monthlyEnrollments && (
                     <div className="text-center">
                       <div className="text-xs text-gray-400">Matrículas</div>
@@ -296,17 +294,19 @@ export default function AdminLeadsPage() {
 
                   {/* Actions */}
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-400 mr-2">Cambiar estado:</span>
-                      {STATUS_OPTIONS.filter((s) => s.value !== lead.status).map((s) => (
-                        <button
-                          key={s.value}
-                          onClick={() => updateStatus(lead.id, s.value)}
-                          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${s.color} hover:opacity-80`}
-                        >
-                          {s.label}
-                        </button>
-                      ))}
+                    <div className="flex flex-col gap-2">
+                      <span className="text-xs text-gray-400">Cambiar estado:</span>
+                      <div className="grid grid-cols-4 gap-2">
+                        {STATUS_OPTIONS.filter((s) => s.value !== lead.status).map((s) => (
+                          <button
+                            key={s.value}
+                            onClick={() => updateStatus(lead.id, s.value)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${s.color} hover:opacity-80 text-center`}
+                          >
+                            {s.label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                     <button
                       onClick={() => deleteLead(lead.id)}

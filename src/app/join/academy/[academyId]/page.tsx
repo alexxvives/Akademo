@@ -454,13 +454,23 @@ export default function AcademyJoinPage() {
                       <p className="text-xs text-gray-500">
                         Código enviado a {formData.email}
                       </p>
-                      <button
-                        type="button"
-                        onClick={() => { setShowVerification(false); setVerificationCode(['', '', '', '', '', '']); }}
-                        className="text-xs text-gray-500 hover:text-gray-700 underline"
-                      >
-                        Cambiar email
-                      </button>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={sendVerificationCode}
+                          disabled={authLoading}
+                          className="text-xs text-indigo-600 hover:text-indigo-800 font-medium disabled:opacity-50"
+                        >
+                          {authLoading ? 'Enviando...' : 'Reenviar código'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setShowVerification(false); setVerificationCode(['', '', '', '', '', '']); }}
+                          className="text-xs text-gray-500 hover:text-gray-700 underline"
+                        >
+                          Cambiar email
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>

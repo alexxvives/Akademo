@@ -171,9 +171,7 @@ export function StudentTeacherFields({
             loading={loadingClasses}
             emptyMessage="No hay clases disponibles"
           />
-          {!loadingClasses && academyId && classes.length > 0 && (
-            <p className="text-xs text-gray-500 mt-1">Necesitarás aprobación del profesor</p>
-          )}
+
         </div>
       )}
 
