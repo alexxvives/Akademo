@@ -406,10 +406,10 @@ export function StudentsProgressTable({
                               ? (() => {
                                   const date = new Date(student.lastActive);
                                   const day = date.getDate();
-                                  const month = date.toLocaleDateString('es-ES', { month: 'long' });
+                                  const month = date.toLocaleDateString('es-ES', { month: 'short' });
                                   const year = date.getFullYear();
                                   const time = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
-                                  return `${day} ${month.charAt(0).toUpperCase() + month.slice(1)} ${year} a las ${time}`;
+                                  return `${day} ${month.charAt(0).toUpperCase() + month.slice(1)} ${year} ${time}`;
                                 })()
                               : 'Sin actividad'}
                           </span>
@@ -441,12 +441,7 @@ export function StudentsProgressTable({
                       <td className="py-2 px-3 md:py-4 md:px-6">
                         {(student.suspicionCount ?? 0) > 0 ? (
                           <div className="flex items-center gap-1.5">
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                              </svg>
-                              {student.suspicionCount}
-                            </span>
+                            <span className="text-sm font-medium text-gray-900">{student.suspicionCount}</span>
                             {onAlertStudent && (
                               <button
                                 onClick={(e) => {
@@ -456,9 +451,9 @@ export function StudentsProgressTable({
                                   }
                                 }}
                                 title="Enviar aviso al estudiante"
-                                className="p-1 text-orange-500 hover:text-orange-700 hover:bg-orange-50 rounded transition-colors"
+                                className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
                               >
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                                 </svg>
                               </button>
@@ -543,10 +538,10 @@ export function StudentsProgressTable({
                                 ? (() => {
                                     const date = new Date(cls.lastActive);
                                     const day = date.getDate();
-                                    const month = date.toLocaleDateString('es-ES', { month: 'long' });
+                                    const month = date.toLocaleDateString('es-ES', { month: 'short' });
                                     const year = date.getFullYear();
                                     const time = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', hour12: false });
-                                    return `${day} ${month.charAt(0).toUpperCase() + month.slice(1)} ${year} a las ${time}`;
+                                    return `${day} ${month.charAt(0).toUpperCase() + month.slice(1)} ${year} ${time}`;
                                   })()
                                 : 'Sin actividad'}
                             </span>

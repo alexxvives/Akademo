@@ -39,6 +39,12 @@ export default function JoinPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [, setCurrentUser] = useState<AuthUser | null>(null);
   const [showLogin, setShowLogin] = useState(false);
+
+  // Pre-select login tab if redirected from logout
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('login') === 'true') setShowLogin(true);
+  }, []);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -270,6 +276,9 @@ export default function JoinPage() {
         if (result.success) {
           if (result.data.token) {
             localStorage.setItem('auth_token', result.data.token);
+          }
+          if (result.data?.suspicionWarning) {
+            sessionStorage.setItem('akademo_suspicion_warning', '1');
           }
           router.push('/dashboard/student');
           return;
