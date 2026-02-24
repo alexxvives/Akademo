@@ -250,6 +250,17 @@ auth.post('/login', loginRateLimit, validateBody(loginSchema), async (c) => {
     // PREVENT CONCURRENT LOGINS FOR STUDENTS ONLY
     // Deactivate all previous sessions for this user (only for STUDENT role)
     if (user.role === 'STUDENT') {
+      // If another session is already active, flag as suspicious (possible account sharing)
+      const activeSessionCheck = await c.env.DB
+        .prepare('SELECT COUNT(*) as count FROM DeviceSession WHERE userId = ? AND isActive = 1')
+        .bind(user.id)
+        .first<{ count: number }>();
+      if ((activeSessionCheck?.count ?? 0) > 0) {
+        await c.env.DB
+          .prepare('UPDATE User SET suspicionCount = suspicionCount + 1 WHERE id = ?')
+          .bind(user.id)
+          .run();
+      }
       await c.env.DB
         .prepare('UPDATE DeviceSession SET isActive = 0 WHERE userId = ? AND isActive = 1')
         .bind(user.id)

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { SkeletonTable } from '@/components/ui/SkeletonLoader';
 
@@ -61,6 +61,18 @@ export function StudentsProgressTable({
   const [expandedStudents, setExpandedStudents] = useState<Set<string>>(new Set());
   const [visibleColumns, setVisibleColumns] = useState({ asignatura: true, videosVistos: true, tiempoTotal: true, ultimaActividad: true, pagos: true, sospechas: false, acciones: false });
   const [columnDropdownOpen, setColumnDropdownOpen] = useState(false);
+  const columnDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!columnDropdownOpen) return;
+    function handleOutsideClick(e: MouseEvent) {
+      if (columnDropdownRef.current && !columnDropdownRef.current.contains(e.target as Node)) {
+        setColumnDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [columnDropdownOpen]);
 
   const COLUMN_LABELS: Record<string, string> = {
     asignatura: 'Asignatura',
@@ -220,7 +232,7 @@ export function StudentsProgressTable({
           <p className="text-sm text-gray-600">
             Mostrando <span className="font-semibold">{filteredStudents.length}</span> {filteredStudents.length === 1 ? 'estudiante' : 'estudiantes'}
           </p>
-          <div className="relative">
+          <div className="relative" ref={columnDropdownRef}>
             <button
               onClick={() => setColumnDropdownOpen(prev => !prev)}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
@@ -291,8 +303,8 @@ export function StudentsProgressTable({
                       <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <span className="absolute top-full left-0 mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 w-60 normal-case tracking-normal leading-relaxed">
-                        Se incrementa cuando se detecta un inicio de sesión desde una ubicación geográficamente imposible (viaje imposible): el alumno aparece en dos ubicaciones muy alejadas en un corto período de tiempo.
+                      <span className="absolute top-full left-0 mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 w-72 normal-case tracking-normal leading-relaxed whitespace-pre-line">
+                        {`Se incrementa en dos situaciones:\n\n• Viaje imposible: el alumno aparece en dos ubicaciones muy alejadas en muy poco tiempo (movimiento geográficamente imposible).\n\n• Sesión duplicada: alguien inició sesión con esta cuenta mientras ya había otra sesión activa (posible uso compartido de contraseña).`}
                       </span>
                     </span>
                   </th>

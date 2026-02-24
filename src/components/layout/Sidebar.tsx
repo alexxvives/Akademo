@@ -305,8 +305,8 @@ export function Sidebar({
           </div>
         )}
 
-        {/* Period selector (ACADEMY only) */}
-        {role === 'ACADEMY' && periods.length > 0 && (
+        {/* Period selector (ACADEMY and TEACHER) */}
+        {(role === 'ACADEMY' || role === 'TEACHER') && periods.length > 0 && (
           <div className="px-3 py-2 border-t border-gray-800/50">
             <div className="relative">
               <button
@@ -354,7 +354,7 @@ export function Sidebar({
 
         {/* User Profile */}
         {user && (
-          <div className="border-t border-gray-800/50 p-4 pb-6">
+          <div className="border-t border-gray-800/50 p-4 pb-3">
           {role === 'ADMIN' ? (
             <div className="flex items-center gap-3 mb-3 p-2 -m-2">
               <div className="w-10 h-10 bg-[#b1e787] rounded-xl flex items-center justify-center text-sm font-bold text-gray-900 flex-shrink-0 shadow-lg">
@@ -408,7 +408,7 @@ export function Sidebar({
                 logoutIconRef.current.stopAnimation();
               }
             }}
-            className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2.5 text-sm text-gray-300 hover:bg-gray-800/50 rounded-xl transition-colors"
+            className="mt-1 w-full flex items-center justify-center gap-2 px-3 py-2.5 text-sm text-gray-300 hover:bg-gray-800/50 rounded-xl transition-colors"
           >
             <LogoutIcon ref={logoutIconRef} size={16} />
             Cerrar Sesión

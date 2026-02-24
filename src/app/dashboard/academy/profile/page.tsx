@@ -666,15 +666,50 @@ export default function ProfilePage() {
                 </label>
                 <div className="flex items-center justify-center gap-3">
                   {academy.logoUrl ? (
-                    <div className="w-16 h-16 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
-                      <Image
-                        src={`/api/storage/serve/${academy.logoUrl}`}
-                        alt="Logo"
-                        width={64}
-                        height={64}
-                        className="w-full h-full object-contain"
-                        unoptimized
-                      />
+                    <div className="relative w-16 h-16 group flex-shrink-0">
+                      <div className="w-16 h-16 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
+                        <Image
+                          src={`/api/storage/serve/${academy.logoUrl}`}
+                          alt="Logo"
+                          width={64}
+                          height={64}
+                          className="w-full h-full object-contain"
+                          unoptimized
+                        />
+                      </div>
+                      <button
+                        onClick={async () => {
+                          if (confirm('¿Estás seguro de que quieres eliminar el logo?')) {
+                            try {
+                              const token = localStorage.getItem('auth_token') || '';
+                              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/academies/${academy.id}`, {
+                                method: 'PATCH',
+                                credentials: 'include',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                                },
+                                body: JSON.stringify({ logoUrl: null }),
+                              });
+                              if (response.ok) {
+                                setAcademy({ ...academy, logoUrl: undefined });
+                                refreshAcademyLogo();
+                              } else {
+                                const errorData = await response.json();
+                                alert(`Error: ${errorData.error || 'Error al eliminar el logo'}`);
+                              }
+                            } catch (error) {
+                              alert('Error al eliminar el logo');
+                            }
+                          }
+                        }}
+                        className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md"
+                        title="Eliminar logo"
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
                     </div>
                   ) : (
                     <div className="w-16 h-16 bg-gray-100 border border-gray-300 border-dashed rounded-lg flex items-center justify-center flex-shrink-0">
@@ -706,42 +741,6 @@ export default function ProfilePage() {
                         </>
                       )}
                     </label>
-                    {academy.logoUrl && (
-                      <button
-                        onClick={async () => {
-                          if (confirm('¿Estás seguro de que quieres eliminar el logo?')) {
-                            try {
-                              const token = localStorage.getItem('auth_token') || '';
-                              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/academies/${academy.id}`, {
-                                method: 'PATCH',
-                                credentials: 'include',
-                                headers: {
-                                  'Content-Type': 'application/json',
-                                  ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-                                },
-                                body: JSON.stringify({ logoUrl: null }),
-                              });
-                              if (response.ok) {
-                                setAcademy({ ...academy, logoUrl: undefined });
-                                // Update sidebar logo immediately without page reload
-                                refreshAcademyLogo();
-                              } else {
-                                const errorData = await response.json();
-                                alert(`Error: ${errorData.error || 'Error al eliminar el logo'}`);
-                              }
-                            } catch (error) {
-                              alert('Error al eliminar el logo');
-                            }
-                          }
-                        }}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                        title="Eliminar logo"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    )}
                   </div>
                 </div>
               </div>

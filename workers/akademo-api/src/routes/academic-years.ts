@@ -9,21 +9,32 @@ const academicYears = new Hono<{ Bindings: Bindings }>();
 academicYears.get('/', async (c) => {
   try {
     const session = await requireAuth(c);
-    if (session.role !== 'ACADEMY') {
-      return c.json(errorResponse('Only academy owners can manage academic years'), 403);
+    if (session.role !== 'ACADEMY' && session.role !== 'TEACHER') {
+      return c.json(errorResponse('Only academy owners and teachers can view academic years'), 403);
     }
 
-    const academy = await c.env.DB.prepare(
-      'SELECT id FROM Academy WHERE ownerId = ? LIMIT 1'
-    ).bind(session.id).first<{ id: string }>();
+    let academyId: string | undefined;
 
-    if (!academy) {
+    if (session.role === 'ACADEMY') {
+      const academy = await c.env.DB.prepare(
+        'SELECT id FROM Academy WHERE ownerId = ? LIMIT 1'
+      ).bind(session.id).first<{ id: string }>();
+      academyId = academy?.id;
+    } else {
+      // TEACHER — find their associated academy
+      const teacher = await c.env.DB.prepare(
+        'SELECT academyId FROM Teacher WHERE userId = ? LIMIT 1'
+      ).bind(session.id).first<{ academyId: string }>();
+      academyId = teacher?.academyId;
+    }
+
+    if (!academyId) {
       return c.json(errorResponse('Academy not found'), 404);
     }
 
     const years = await c.env.DB.prepare(
       'SELECT * FROM AcademicYear WHERE academyId = ? ORDER BY startDate DESC'
-    ).bind(academy.id).all();
+    ).bind(academyId).all();
 
     return c.json(successResponse(years.results || []));
   } catch (error) {

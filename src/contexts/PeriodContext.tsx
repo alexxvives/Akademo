@@ -42,7 +42,7 @@ export function PeriodProvider({
   const [activePeriodId, setActivePeriodIdState] = useState<string>('all');
 
   useEffect(() => {
-    if (role !== 'ACADEMY') return;
+    if (role !== 'ACADEMY' && role !== 'TEACHER') return;
 
     apiClient('/academic-years')
       .then((r) => r.json())
