@@ -90,7 +90,6 @@ export default function AcademyClassesPage() {
       const result = await response.json();
 
       if (result.success) {
-        alert('¡Te has inscrito exitosamente! Ahora puedes acceder a la clase.');
         router.push('/dashboard/student/subjects');
       } else {
         alert(result.error || 'Failed to send request');

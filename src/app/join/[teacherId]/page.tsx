@@ -55,8 +55,9 @@ export default function JoinPage() {
   const [verifyingCode, setVerifyingCode] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   
-  // Selected class
-  const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
+  // Selected classes (multi-select)
+  const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
+  const toggleClass = (id: string) => setSelectedClassIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   const [requestSent, _setRequestSent] = useState(false);
 
   useEffect(() => {
@@ -286,25 +287,20 @@ export default function JoinPage() {
   };
 
   const handleRequestAccess = async () => {
-    if (!selectedClassId) return;
+    if (selectedClassIds.length === 0) return;
     
     setAuthLoading(true);
     setAuthError(null);
 
     try {
-      const response = await apiClient('/requests/student', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ classId: selectedClassId }),
-      });
-      const result = await response.json();
-      
-      if (result.success) {
-        // Redirect directly to dashboard
-        router.push('/dashboard/student');
-      } else {
-        setAuthError(result.error || 'Error al solicitar acceso');
-      }
+      await Promise.all(selectedClassIds.map(classId =>
+        apiClient('/requests/student', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ classId }),
+        })
+      ));
+      router.push('/dashboard/student');
     } catch (e) {
       setAuthError('Error de conexión');
     } finally {
@@ -534,7 +530,7 @@ export default function JoinPage() {
         ) : (
           /* Class Selection */
           <div className="bg-white rounded-2xl shadow-lg p-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Selecciona una clase</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-6">Selecciona tus clases</h2>
 
             {authError && (
               <div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-600 text-sm rounded-lg">
@@ -546,18 +542,31 @@ export default function JoinPage() {
               {classes.map((cls) => (
                 <div
                   key={cls.id}
-                  onClick={() => setSelectedClassId(cls.id)}
+                  onClick={() => toggleClass(cls.id)}
                   className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${
-                    selectedClassId === cls.id
+                    selectedClassIds.includes(cls.id)
                       ? 'border-gray-900 bg-gray-50'
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
-                  <h3 className="font-semibold text-gray-900">{cls.name}</h3>
-                  {cls.description && (
-                    <p className="text-sm text-gray-600 mt-1">{cls.description}</p>
-                  )}
-                  <p className="text-xs text-gray-500 mt-2">{cls.academyName}</p>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{cls.name}</h3>
+                      {cls.description && (
+                        <p className="text-sm text-gray-600 mt-1">{cls.description}</p>
+                      )}
+                      <p className="text-xs text-gray-500 mt-2">{cls.academyName}</p>
+                    </div>
+                    <div className={`flex-shrink-0 w-6 h-6 rounded border-2 flex items-center justify-center transition-all ${
+                      selectedClassIds.includes(cls.id) ? 'bg-gray-900 border-gray-900' : 'border-gray-300'
+                    }`}>
+                      {selectedClassIds.includes(cls.id) && (
+                        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
                 </div>
               ))}
               
@@ -570,7 +579,7 @@ export default function JoinPage() {
 
             <button
               onClick={handleRequestAccess}
-              disabled={!selectedClassId || authLoading}
+              disabled={selectedClassIds.length === 0 || authLoading}
               className="w-full py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {authLoading ? 'Enviando...' : 'Solicitar Acceso'}

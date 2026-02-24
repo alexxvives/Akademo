@@ -38,6 +38,38 @@ leads.post('/', async (c) => {
       message?.trim() || null
     ).run();
 
+    // Send notification email to team
+    const resendApiKey = c.env.RESEND_API_KEY;
+    if (resendApiKey) {
+      const htmlBody = `
+        <h2>Nueva solicitud de precios</h2>
+        <table style="border-collapse:collapse;width:100%">
+          <tr><td style="padding:6px 12px;font-weight:bold">Nombre</td><td style="padding:6px 12px">${name.trim()}</td></tr>
+          <tr style="background:#f9f9f9"><td style="padding:6px 12px;font-weight:bold">Email</td><td style="padding:6px 12px">${email.trim().toLowerCase()}</td></tr>
+          <tr><td style="padding:6px 12px;font-weight:bold">Teléfono</td><td style="padding:6px 12px">${phone?.trim() || '—'}</td></tr>
+          <tr style="background:#f9f9f9"><td style="padding:6px 12px;font-weight:bold">Academia</td><td style="padding:6px 12px">${academyName?.trim() || '—'}</td></tr>
+          <tr><td style="padding:6px 12px;font-weight:bold">Inscripciones/mes</td><td style="padding:6px 12px">${monthlyEnrollments || '—'}</td></tr>
+          <tr style="background:#f9f9f9"><td style="padding:6px 12px;font-weight:bold">Profesores</td><td style="padding:6px 12px">${teacherCount || '—'}</td></tr>
+          <tr><td style="padding:6px 12px;font-weight:bold">Asignaturas</td><td style="padding:6px 12px">${subjectCount || '—'}</td></tr>
+          <tr style="background:#f9f9f9"><td style="padding:6px 12px;font-weight:bold">Mensaje</td><td style="padding:6px 12px">${message?.trim() || '—'}</td></tr>
+        </table>
+      `;
+      try {
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${resendApiKey}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: 'AKADEMO <noreply@akademo-edu.com>',
+            to: ['alex@akademo-edu.com', 'david@akademo-edu.com'],
+            subject: `Nueva solicitud de precios de ${name.trim()} (${academyName?.trim() || email.trim()})`,
+            html: htmlBody,
+          }),
+        });
+      } catch (emailErr) {
+        console.error('[Leads] Email notification failed:', emailErr);
+      }
+    }
+
     return c.json(successResponse({ id }), 201);
   } catch (error: unknown) {
     console.error('[Leads] Create error:', error);
