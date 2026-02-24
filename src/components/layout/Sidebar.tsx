@@ -20,6 +20,7 @@ import { UsersIcon } from '@/components/ui/UsersIcon';
 import { BotMessageSquareIcon } from '@/components/ui/BotMessageSquareIcon';
 import { HandCoinsIcon } from '@/components/ui/HandCoinsIcon';
 import { PenToolIcon, type PenToolIconHandle } from '@/components/ui/PenToolIcon';
+import { HomeIcon, type HomeIconHandle } from '@/components/ui/HomeIcon';
 import { CalendarDaysIcon } from '@/components/ui/CalendarDaysIcon';
 import { useAcademyLogo } from '@/hooks/useAcademyLogo';
 import { usePeriod } from '@/contexts/PeriodContext';
@@ -28,7 +29,7 @@ interface MenuItem {
   label: string;
   href: string;
   icon?: JSX.Element;
-  iconType?: 'chart' | 'book' | 'userPlus' | 'message' | 'clap' | 'fileText' | 'clipboard' | 'activity' | 'users' | 'botMessage' | 'handCoins' | 'star' | 'calendar';
+  iconType?: 'chart' | 'book' | 'userPlus' | 'message' | 'clap' | 'fileText' | 'clipboard' | 'activity' | 'users' | 'botMessage' | 'handCoins' | 'star' | 'calendar' | 'home';
   badge?: number;
   badgeColor?: string;
   matchPaths?: string[];
@@ -123,6 +124,8 @@ export function Sidebar({
       return <PenToolIcon ref={iconRef as RefObject<PenToolIconHandle>} size={20} />;
     } else if (iconType === 'calendar') {
       return <CalendarDaysIcon ref={iconRef} size={20} />;
+    } else if (iconType === 'home') {
+      return <HomeIcon ref={iconRef as RefObject<HomeIconHandle>} size={20} />;
     } else if (item.icon) {
       return item.icon;
     }
@@ -201,7 +204,7 @@ export function Sidebar({
                     </button>
                   )}
                   {!isCollapsed && (
-                    <div className="space-y-1">
+                    <div className="space-y-0">
                       {group.items.map((item) => {
                         const isDashboardRoute = item.href === `/dashboard/${role.toLowerCase()}`;
                         const matchesPath = item.matchPaths?.some((p: string) => pathname.startsWith(p));

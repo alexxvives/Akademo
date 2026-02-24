@@ -22,6 +22,7 @@ import { getBunnyThumbnailUrl } from '@/lib/bunny-stream';
 import { formatDateWithMonth, formatDateTimeWithMonth, isReleased } from '@/lib/formatters';
 import { apiClient } from '@/lib/api-client';
 import Image from 'next/image';
+import { DeleteIcon } from '@/components/ui/DeleteIcon';
 
 export interface Lesson {
   id: string;
@@ -505,9 +506,7 @@ export default function TopicsLessonsList({
                     className="p-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 hover:scale-105 transition-all border border-red-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
                     title={isDisabled ? 'Active su academia para eliminar lecciones' : 'Eliminar lección'}
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
+                    <DeleteIcon size={16} />
                   </button>
                 </div>
               </div>
@@ -759,9 +758,7 @@ export default function TopicsLessonsList({
                   }}
                   className="p-1.5 text-red-500 hover:text-red-600 hover:bg-red-500/15 rounded-lg transition-all duration-200"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
+                  <DeleteIcon size={16} />
                 </button>
                 <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 px-3 py-2 bg-slate-800 text-slate-200 text-xs rounded-lg shadow-xl border border-slate-700 opacity-0 invisible group-hover/delete:opacity-100 group-hover/delete:visible transition-all duration-200 whitespace-nowrap z-20">
                   <div className="absolute top-1/2 -translate-y-1/2 -right-1 w-2 h-2 bg-slate-800 border-r border-b border-slate-700 rotate-45"></div>

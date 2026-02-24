@@ -27,7 +27,7 @@ interface MenuItem {
   label: string;
   href: string;
   icon?: JSX.Element;
-  iconType?: 'chart' | 'book' | 'userPlus' | 'message' | 'clap' | 'fileText' | 'clipboard' | 'activity' | 'users' | 'botMessage' | 'handCoins' | 'star' | 'calendar';
+  iconType?: 'chart' | 'book' | 'userPlus' | 'message' | 'clap' | 'fileText' | 'clipboard' | 'activity' | 'users' | 'botMessage' | 'handCoins' | 'star' | 'calendar' | 'home';
   badge?: number;
   badgeColor?: string;
   matchPaths?: string[];
@@ -521,7 +521,7 @@ export default function DashboardLayout({
           {
             label: 'Academias',
             href: '/dashboard/admin/academies',
-            icon: (<svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>),
+            iconType: 'home' as const,
             group: 'Comunidad',
           },
           ...(academy?.feedbackEnabled !== 0 ? [{
