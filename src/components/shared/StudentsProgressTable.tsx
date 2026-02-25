@@ -59,7 +59,7 @@ export function StudentsProgressTable({
   onAlertStudent,
 }: StudentsProgressTableProps) {
   const [expandedStudents, setExpandedStudents] = useState<Set<string>>(new Set());
-  const [visibleColumns, setVisibleColumns] = useState({ asignatura: true, videosVistos: true, tiempoTotal: true, ultimaActividad: true, pagos: true, sospechas: false, acciones: false });
+  const [visibleColumns, setVisibleColumns] = useState({ asignatura: true, videosVistos: true, tiempoTotal: true, ultimaActividad: true, pagos: true, sospechas: true, acciones: false });
   const [columnDropdownOpen, setColumnDropdownOpen] = useState(false);
   const columnDropdownRef = useRef<HTMLDivElement>(null);
 

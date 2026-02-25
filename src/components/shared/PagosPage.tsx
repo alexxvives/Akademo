@@ -592,289 +592,301 @@ export default function PagosPage({ role }: PagosPageProps) {
         </div>
       </div>
 
-      {/* Payments Table */}
-      <div className="space-y-2">
-      {/* Payments Table */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <div className="max-h-[700px] overflow-y-auto overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
-            <tr>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                <div className="flex items-center gap-1.5">
-                  <span>Estado</span>
-                  {filteredPendingPayments.length > 0 && (
-                    <button
-                      onClick={() => setPendingPaymentsCollapsed(!pendingPaymentsCollapsed)}
-                      title={pendingPaymentsCollapsed ? 'Mostrar pendientes' : 'Ocultar pendientes'}
-                      className="inline-flex items-center justify-center w-4 h-4 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition-colors"
-                    >
-                      <svg
-                        className={`w-3 h-3 transition-transform ${pendingPaymentsCollapsed ? 'rotate-0' : 'rotate-90'}`}
-                        fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              </th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estudiante</th>
-              {isAdmin && <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Academia</th>}
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asignatura</th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Método</th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
-              <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {/* Pending Payments */}
-            {!pendingPaymentsCollapsed && filteredPendingPayments.map((payment) => (
-              <tr
-                key={`pending-${payment.enrollmentId}`}
-                className="bg-amber-50 hover:bg-amber-100 border-l-4 border-amber-400 transition-colors"
+      {/* Payments Sections */}
+      <div className="space-y-4">
+        {/* Empty State */}
+        {filteredPendingPayments.length === 0 && filteredPaymentHistory.length === 0 && (
+          <div className="bg-white border border-gray-200 rounded-xl p-8 sm:p-12 text-center">
+            <div className="text-gray-400">
+              <svg className="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+              </svg>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay pagos</h3>
+              <p className="text-gray-500">
+                {searchQuery || selectedClass !== 'all' || (isAdmin && selectedAcademy !== 'all')
+                  ? 'No se encontraron pagos con los filtros aplicados'
+                  : 'Los pagos aparecerán aquí cuando se registren'}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Pending Section */}
+        {filteredPendingPayments.length > 0 && (
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <button
+              onClick={() => setPendingPaymentsCollapsed(!pendingPaymentsCollapsed)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-yellow-50 border-b border-yellow-100 hover:bg-yellow-100/60 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-yellow-800">Pendiente de pago</span>
+                <span className="text-xs bg-yellow-200 text-yellow-700 px-2 py-0.5 rounded-full font-medium">{filteredPendingPayments.length}</span>
+              </div>
+              <svg
+                className={`w-4 h-4 text-yellow-600 transition-transform ${pendingPaymentsCollapsed ? '' : 'rotate-90'}`}
+                fill="none" stroke="currentColor" viewBox="0 0 24 24"
               >
-                <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                  <span className="px-3 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 border border-amber-200">
-                    Pendiente
-                  </span>
-                </td>
-                <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">
-                      {payment.studentFirstName} {payment.studentLastName}
-                    </div>
-                    <div className="text-sm text-gray-500">{payment.studentEmail}</div>
-                  </div>
-                </td>
-                {isAdmin && (
-                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{payment.academyName}</div>
-                  </td>
-                )}
-                <td className="px-3 sm:px-6 py-4">
-                  <div className="text-sm text-gray-900">{payment.className}</div>
-                </td>
-                <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-semibold text-gray-900">
-                    {formatCurrency(payment.paymentAmount, payment.currency)}
-                  </div>
-                </td>
-                <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-700 capitalize">
-                    {payment.paymentMethod?.toUpperCase() === 'CASH' ? 'Efectivo' : payment.paymentMethod}
-                  </div>
-                </td>
-                <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {new Date(payment.enrolledAt).toLocaleDateString('es-ES', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric'
-                  })}
-                </td>
-                <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-right">
-                  <div className="flex items-center justify-end gap-1">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        showStudentPaymentHistory(
-                          payment.studentId,
-                          `${payment.studentFirstName} ${payment.studentLastName}`,
-                          payment.studentEmail,
-                          payment.className,
-                          payment.enrolledAt,
-                          payment.classId
-                        );
-                      }}
-                      className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-gray-100 rounded-lg transition-colors"
-                      title="Ver historial"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                    </button>
-                    {(isAcademy || isAdmin) && (
-                      <button
-                        onClick={(e) => {
-                          if (paymentStatus === 'NOT PAID') { e.preventDefault(); e.stopPropagation(); return; }
-                          e.stopPropagation();
-                          handleApprove(payment.enrollmentId);
-                        }}
-                        disabled={processingIds.has(payment.enrollmentId) || paymentStatus === 'NOT PAID'}
-                        className="p-1.5 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                        title={paymentStatus === 'NOT PAID' ? 'Disponible solo en academias activadas' : 'Confirmar pago'}
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+            {!pendingPaymentsCollapsed && (
+              <div className="max-h-[500px] overflow-y-auto overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
+                    <tr>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estudiante</th>
+                      {isAdmin && <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Academia</th>}
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asignatura</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Método</th>
+                      <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                      <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {filteredPendingPayments.map((payment) => (
+                      <tr
+                        key={`pending-${payment.enrollmentId}`}
+                        className="hover:bg-gray-50 transition-colors"
                       >
-                        {processingIds.has(payment.enrollmentId) ? (
-                          <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
-                        ) : (
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {payment.studentFirstName} {payment.studentLastName}
+                            </div>
+                            <div className="text-sm text-gray-500">{payment.studentEmail}</div>
+                          </div>
+                        </td>
+                        {isAdmin && (
+                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">{payment.academyName}</div>
+                          </td>
                         )}
-                      </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-
-            {/* Paid Payments */}
-            {filteredPaymentHistory.map((history, index) => (
-              <tr
-                key={`history-${history.enrollmentId}-${index}`}
-                className="hover:bg-gray-50 transition-colors"
-              >
-                <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                  <span className="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                    Pagado
-                  </span>
-                </td>
-                <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">
-                      {history.studentFirstName} {history.studentLastName}
-                    </div>
-                    <div className="text-sm text-gray-500">{history.studentEmail}</div>
-                  </div>
-                </td>
-                {isAdmin && (
-                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{history.academyName || '-'}</div>
-                  </td>
-                )}
-                <td className="px-3 sm:px-6 py-4">
-                  <div className="text-sm text-gray-900">{history.className}</div>
-                </td>
-                <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-semibold text-gray-900">
-                    {formatCurrency(history.paymentAmount, history.currency)}
-                  </div>
-                </td>
-                <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-700 capitalize">
-                    {history.paymentMethod.toLowerCase() === 'cash' || history.paymentMethod === 'CASH'
-                      ? 'Efectivo'
-                      : history.paymentMethod.toLowerCase() === 'bizum' || history.paymentMethod === 'BIZUM'
-                      ? 'Bizum'
-                      : history.paymentMethod.toLowerCase() === 'stripe' || history.paymentMethod === 'STRIPE'
-                      ? 'Stripe'
-                      : history.paymentMethod}
-                  </div>
-                </td>
-                <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {new Date(history.createdAt || history.updatedAt || history.approvedAt).toLocaleDateString('es-ES', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric'
-                  })}
-                </td>
-                <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-right">
-                  <div className="flex items-center justify-end gap-1">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        showStudentPaymentHistory(
-                          history.studentId || '',
-                          `${history.studentFirstName} ${history.studentLastName}`,
-                          history.studentEmail,
-                          history.className,
-                          history.createdAt || history.updatedAt || history.approvedAt,
-                          history.classId
-                        );
-                      }}
-                      className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-gray-100 rounded-lg transition-colors"
-                      title="Ver historial"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                    </button>
-                    {(isAcademy || isAdmin) && (
-                      <>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setRegisterForm({
-                              studentId: history.studentId || '',
-                              classId: history.classId || '',
-                              amount: history.paymentAmount.toString(),
-                              paymentMethod: (history.paymentMethod.toLowerCase() === 'cash' || history.paymentMethod === 'CASH') ? 'cash' : 'bizum',
-                              status: 'PAID',
-                            });
-                            setEditingPaymentId(history.paymentId || null);
-                            setShowRegisterModal(true);
-                          }}
-                          className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-gray-100 rounded-lg transition-colors"
-                          title="Editar pago"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={async (e) => {
-                            if (paymentStatus === 'NOT PAID') { e.preventDefault(); e.stopPropagation(); return; }
-                            e.stopPropagation();
-                            if (!confirm('¿Estás seguro de que quieres eliminar este pago? Esta acción no se puede deshacer.')) return;
-                            try {
-                              setDeletingPaymentId(history.paymentId || null);
-                              const response = await apiClient(`/payments/${history.paymentId}`, { method: 'DELETE' });
-                              if (response.ok) {
-                                await loadData();
-                              } else {
-                                alert('Error al eliminar el pago');
-                              }
-                            } catch (error) {
-                              console.error('Error deleting payment:', error);
-                              alert('Error al eliminar el pago');
-                            } finally {
-                              setDeletingPaymentId(null);
-                            }
-                          }}
-                          disabled={deletingPaymentId === history.paymentId || paymentStatus === 'NOT PAID'}
-                          className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                          title={paymentStatus === 'NOT PAID' ? 'Disponible solo en academias activadas' : 'Eliminar pago'}
-                        >
-                          {deletingPaymentId === history.paymentId ? (
-                            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                          ) : (
-                            <DeleteIcon size={16} />
-                          )}
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-
-            {/* Empty State */}
-            {filteredPendingPayments.length === 0 && filteredPaymentHistory.length === 0 && (
-              <tr>
-                <td colSpan={isAdmin ? 8 : 7} className="px-6 py-8 sm:py-12 text-center">
-                  <div className="text-gray-400">
-                    <svg className="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                    </svg>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No hay pagos</h3>
-                    <p className="text-gray-500">
-                      {searchQuery || selectedClass !== 'all' || (isAdmin && selectedAcademy !== 'all')
-                        ? 'No se encontraron pagos con los filtros aplicados'
-                        : 'Los pagos aparecerán aquí cuando se registren'}
-                    </p>
-                  </div>
-                </td>
-              </tr>
+                        <td className="px-3 sm:px-6 py-4">
+                          <div className="text-sm text-gray-900">{payment.className}</div>
+                        </td>
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-semibold text-gray-900">
+                            {formatCurrency(payment.paymentAmount, payment.currency)}
+                          </div>
+                        </td>
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-700 capitalize">
+                            {payment.paymentMethod?.toUpperCase() === 'CASH' ? 'Efectivo' : payment.paymentMethod}
+                          </div>
+                        </td>
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(payment.enrolledAt).toLocaleDateString('es-ES', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                          })}
+                        </td>
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                showStudentPaymentHistory(
+                                  payment.studentId,
+                                  `${payment.studentFirstName} ${payment.studentLastName}`,
+                                  payment.studentEmail,
+                                  payment.className,
+                                  payment.enrolledAt,
+                                  payment.classId
+                                );
+                              }}
+                              className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-gray-100 rounded-lg transition-colors"
+                              title="Ver historial"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                            </button>
+                            {(isAcademy || isAdmin) && (
+                              <button
+                                onClick={(e) => {
+                                  if (paymentStatus === 'NOT PAID') { e.preventDefault(); e.stopPropagation(); return; }
+                                  e.stopPropagation();
+                                  handleApprove(payment.enrollmentId);
+                                }}
+                                disabled={processingIds.has(payment.enrollmentId) || paymentStatus === 'NOT PAID'}
+                                className="p-1.5 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                                title={paymentStatus === 'NOT PAID' ? 'Disponible solo en academias activadas' : 'Confirmar pago'}
+                              >
+                                {processingIds.has(payment.enrollmentId) ? (
+                                  <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+                                ) : (
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
-          </tbody>
-        </table>
-        </div>
+          </div>
+        )}
+
+        {/* History Section */}
+        {filteredPaymentHistory.length > 0 && (
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
+              <span className="text-sm font-semibold text-gray-700">Historial de pagos</span>
+              <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full font-medium">{filteredPaymentHistory.length}</span>
+            </div>
+            <div className="max-h-[700px] overflow-y-auto overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
+                  <tr>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estudiante</th>
+                    {isAdmin && <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Academia</th>}
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asignatura</th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Método</th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                    <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredPaymentHistory.map((history, index) => (
+                    <tr
+                      key={`history-${history.enrollmentId}-${index}`}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {history.studentFirstName} {history.studentLastName}
+                          </div>
+                          <div className="text-sm text-gray-500">{history.studentEmail}</div>
+                        </div>
+                      </td>
+                      {isAdmin && (
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{history.academyName || '-'}</div>
+                        </td>
+                      )}
+                      <td className="px-3 sm:px-6 py-4">
+                        <div className="text-sm text-gray-900">{history.className}</div>
+                      </td>
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-semibold text-gray-900">
+                          {formatCurrency(history.paymentAmount, history.currency)}
+                        </div>
+                      </td>
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-700 capitalize">
+                          {history.paymentMethod.toLowerCase() === 'cash' || history.paymentMethod === 'CASH'
+                            ? 'Efectivo'
+                            : history.paymentMethod.toLowerCase() === 'bizum' || history.paymentMethod === 'BIZUM'
+                            ? 'Bizum'
+                            : history.paymentMethod.toLowerCase() === 'stripe' || history.paymentMethod === 'STRIPE'
+                            ? 'Stripe'
+                            : history.paymentMethod}
+                        </div>
+                      </td>
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(history.createdAt || history.updatedAt || history.approvedAt).toLocaleDateString('es-ES', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric'
+                        })}
+                      </td>
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              showStudentPaymentHistory(
+                                history.studentId || '',
+                                `${history.studentFirstName} ${history.studentLastName}`,
+                                history.studentEmail,
+                                history.className,
+                                history.createdAt || history.updatedAt || history.approvedAt,
+                                history.classId
+                              );
+                            }}
+                            className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-gray-100 rounded-lg transition-colors"
+                            title="Ver historial"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                          </button>
+                          {(isAcademy || isAdmin) && (
+                            <>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setRegisterForm({
+                                    studentId: history.studentId || '',
+                                    classId: history.classId || '',
+                                    amount: history.paymentAmount.toString(),
+                                    paymentMethod: (history.paymentMethod.toLowerCase() === 'cash' || history.paymentMethod === 'CASH') ? 'cash' : 'bizum',
+                                    status: 'PAID',
+                                  });
+                                  setEditingPaymentId(history.paymentId || null);
+                                  setShowRegisterModal(true);
+                                }}
+                                className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                title="Editar pago"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={async (e) => {
+                                  if (paymentStatus === 'NOT PAID') { e.preventDefault(); e.stopPropagation(); return; }
+                                  e.stopPropagation();
+                                  if (!confirm('¿Estás seguro de que quieres eliminar este pago? Esta acción no se puede deshacer.')) return;
+                                  try {
+                                    setDeletingPaymentId(history.paymentId || null);
+                                    const response = await apiClient(`/payments/${history.paymentId}`, { method: 'DELETE' });
+                                    if (response.ok) {
+                                      await loadData();
+                                    } else {
+                                      alert('Error al eliminar el pago');
+                                    }
+                                  } catch (error) {
+                                    console.error('Error deleting payment:', error);
+                                    alert('Error al eliminar el pago');
+                                  } finally {
+                                    setDeletingPaymentId(null);
+                                  }
+                                }}
+                                disabled={deletingPaymentId === history.paymentId || paymentStatus === 'NOT PAID'}
+                                className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                                title={paymentStatus === 'NOT PAID' ? 'Disponible solo en academias activadas' : 'Eliminar pago'}
+                              >
+                                {deletingPaymentId === history.paymentId ? (
+                                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                  </svg>
+                                ) : (
+                                  <DeleteIcon size={16} />
+                                )}
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
-      </div>{/* end space-y-2 */}
 
       {/* Register Payment Modal (Academy only) */}
       {isAcademy && showRegisterModal && (

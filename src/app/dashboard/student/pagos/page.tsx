@@ -111,23 +111,7 @@ export default function StudentPagosPage() {
         <p className="text-sm text-gray-500 mt-1">Historial de pagos a tus academias</p>
       </div>
 
-      {/* Stats */}
-      {!loading && payments.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <p className="text-xs text-gray-500 mb-1">Total abonado</p>
-            <p className="text-xl font-bold text-gray-900">{fmt(totalPaid)}</p>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <p className="text-xs text-gray-500 mb-1">Pendiente</p>
-            <p className={`text-xl font-bold ${totalPending > 0 ? 'text-yellow-600' : 'text-gray-400'}`}>{fmt(totalPending)}</p>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-xl p-4 col-span-2 sm:col-span-1">
-            <p className="text-xs text-gray-500 mb-1">Total pagos</p>
-            <p className="text-xl font-bold text-gray-900">{payments.length}</p>
-          </div>
-        </div>
-      )}
+
 
       {loading ? (
         <div className="space-y-3">
@@ -150,7 +134,6 @@ export default function StudentPagosPage() {
                 className="w-full flex items-center justify-between px-4 py-3 bg-yellow-50 border-b border-yellow-100 hover:bg-yellow-100/60 transition-colors"
               >
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-yellow-500" />
                   <span className="text-sm font-semibold text-yellow-800">Pendiente de pago</span>
                   <span className="text-xs bg-yellow-200 text-yellow-700 px-2 py-0.5 rounded-full font-medium">{pending.length}</span>
                 </div>
@@ -178,7 +161,6 @@ export default function StudentPagosPage() {
           {history.length > 0 && (
             <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
               <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-green-500" />
                 <span className="text-sm font-semibold text-gray-700">Historial de pagos</span>
                 <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full font-medium">{history.length}</span>
               </div>
