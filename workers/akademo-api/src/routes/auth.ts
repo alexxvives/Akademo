@@ -72,7 +72,27 @@ auth.post('/session/check', async (c) => {
     return c.json(errorResponse('Not authenticated'), 401);
   }
 
-  return c.json(successResponse(session));
+  // Check for pending suspicion warning (and clear it so it shows only once)
+  let suspicionWarning = false;
+  if (session.role === 'STUDENT') {
+    try {
+      const freshUser = await c.env.DB
+        .prepare('SELECT suspicionWarning FROM User WHERE id = ?')
+        .bind(session.id)
+        .first<{ suspicionWarning: number }>();
+      if (freshUser?.suspicionWarning === 1) {
+        suspicionWarning = true;
+        await c.env.DB
+          .prepare('UPDATE User SET suspicionWarning = 0 WHERE id = ?')
+          .bind(session.id)
+          .run();
+      }
+    } catch {
+      // non-fatal
+    }
+  }
+
+  return c.json(successResponse({ ...session, suspicionWarning }));
 });
 
 // POST /auth/register

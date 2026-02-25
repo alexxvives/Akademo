@@ -225,17 +225,17 @@ calendarEvents.post('/', async (c) => {
         const cls = await c.env.DB
           .prepare('SELECT teacherId FROM Class WHERE id = ?')
           .bind(body.classId)
-          .first<{ teacherId: string }>();
-        if (cls?.teacherId) {
-          const streamId = nanoid();
-          const scheduledAt = body.startTime
-            ? `${body.eventDate}T${body.startTime}:00`
-            : body.eventDate;
-          await c.env.DB
-            .prepare(`INSERT INTO LiveStream (id, classId, teacherId, title, status, zoomLink, scheduledAt, createdAt) VALUES (?,?,?,?,?,?,?,datetime('now'))`)
-            .bind(streamId, body.classId, cls.teacherId, body.title, 'scheduled', body.zoomLink ?? null, scheduledAt)
-            .run();
-        }
+          .first<{ teacherId: string | null }>();
+        // Use class teacherId, or fall back to the current user (academy owner creating the event)
+        const resolvedTeacherId = cls?.teacherId ?? session.id;
+        const streamId = nanoid();
+        const scheduledAt = body.startTime
+          ? `${body.eventDate}T${body.startTime}:00`
+          : body.eventDate;
+        await c.env.DB
+          .prepare(`INSERT INTO LiveStream (id, classId, teacherId, title, status, zoomLink, scheduledAt, calendarEventId, createdAt) VALUES (?,?,?,?,?,?,?,?,datetime('now'))`)
+          .bind(streamId, body.classId, resolvedTeacherId, body.title, 'scheduled', body.zoomLink ?? null, scheduledAt, id)
+          .run();
       } catch (streamErr) {
         // Non-fatal — log but don't fail the calendar event creation
         console.error('[calendar-events POST] LiveStream insert failed:', streamErr);

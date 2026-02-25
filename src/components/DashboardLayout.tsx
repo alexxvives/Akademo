@@ -272,6 +272,9 @@ export default function DashboardLayout({
           alert(result.data.message);
         }
         handleLogout();
+      } else if (result.data?.suspicionWarning) {
+        // Show suspicion warning immediately if academy flagged the student while they were online
+        setShowSuspicionWarning(true);
       }
     } catch (error) {
       console.error('Session check error:', error);

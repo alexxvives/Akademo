@@ -612,10 +612,27 @@ live.delete('/:id', async (c) => {
     }
 
     // Permanently delete the record
+    const streamToDelete = await c.env.DB
+      .prepare('SELECT calendarEventId FROM LiveStream WHERE id = ?')
+      .bind(streamId)
+      .first<{ calendarEventId: string | null }>();
+
     await c.env.DB
       .prepare('DELETE FROM LiveStream WHERE id = ?')
       .bind(streamId)
       .run();
+
+    // Cascade: delete the linked calendar event if any
+    if (streamToDelete?.calendarEventId) {
+      try {
+        await c.env.DB
+          .prepare('DELETE FROM CalendarScheduledEvent WHERE id = ?')
+          .bind(streamToDelete.calendarEventId)
+          .run();
+      } catch (calErr) {
+        console.error('[Delete Stream] CalendarScheduledEvent delete failed:', calErr);
+      }
+    }
 
     return c.json(successResponse({ message: 'Stream deleted' }));
   } catch (error: any) {
@@ -940,6 +957,17 @@ live.delete('/:id', async (c) => {
       .bind(streamId)
       .run();
 
+    // Cascade: delete the linked calendar event if any
+    if ((stream as any).calendarEventId) {
+      try {
+        await c.env.DB
+          .prepare('DELETE FROM CalendarScheduledEvent WHERE id = ?')
+          .bind((stream as any).calendarEventId)
+          .run();
+      } catch (calErr) {
+        console.error('[Delete Stream v2] CalendarScheduledEvent delete failed:', calErr);
+      }
+    }
 
     // Verify deletion
     const verification = await c.env.DB
