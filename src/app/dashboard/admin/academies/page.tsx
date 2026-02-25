@@ -65,7 +65,6 @@ function AddBillingForm({ academyId, onAdded }: { academyId: string; onAdded: (r
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    const today = new Date();
     try {
       const res = await apiClient(`/admin/academy/${academyId}/billing`, {
         method: 'POST',
@@ -85,7 +84,7 @@ function AddBillingForm({ academyId, onAdded }: { academyId: string; onAdded: (r
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-wrap gap-2 items-end pt-2 border-t border-gray-100 mt-2">
+    <form onSubmit={handleSubmit} className="flex flex-wrap gap-2 items-end">
       <div className="flex flex-col gap-0.5">
         <label className="text-[10px] text-gray-500 uppercase tracking-wide">Mes</label>
         <select value={month} onChange={e => setMonth(e.target.value)} className="text-xs border border-gray-200 rounded px-2 py-1 w-20">
@@ -124,8 +123,7 @@ export default function AdminAcademies() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [billingByAcademy, setBillingByAcademy] = useState<Record<string, BillingRecord[]>>({});
-  const [showDemo, setShowDemo] = useState(false);
-  const filteredAcademies = academies.filter(a => showDemo || !a.name.toLowerCase().includes('demo'));
+  const filteredAcademies = academies;
 
   useEffect(() => { loadAcademies(); }, []);
 
@@ -198,19 +196,9 @@ export default function AdminAcademies() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Academias</h1>
-          <p className="text-sm text-gray-500 mt-1">AKADEMO PLATFORM</p>
-        </div>
-        <button
-          onClick={() => setShowDemo(prev => !prev)}
-          className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
-            showDemo ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
-          }`}
-        >
-          {showDemo ? 'Ocultar demo' : 'Mostrar demo'}
-        </button>
+      <div>
+        <h1 className="text-2xl font-semibold text-gray-900">Academias</h1>
+        <p className="text-sm text-gray-500 mt-1">AKADEMO PLATFORM</p>
       </div>
 
       {filteredAcademies.length === 0 ? (
@@ -295,13 +283,21 @@ export default function AdminAcademies() {
                     {expandedId === academy.id && (
                       <tr key={`billing-${academy.id}`}>
                         <td colSpan={8} className="bg-gray-50 px-6 py-4 border-b border-gray-200">
-                          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Facturación mensual — {academy.ownerName}</p>
+                          {/* Title + form inline */}
+                          <div className="flex flex-wrap items-end justify-between gap-3 mb-3">
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Facturación mensual — {academy.ownerName}</p>
+                            <AddBillingForm
+                              academyId={academy.id}
+                              onAdded={(r) => handleBillingAdded(academy.id, r)}
+                            />
+                          </div>
+                          {/* Records table */}
                           {!billingByAcademy[academy.id] ? (
                             <p className="text-xs text-gray-400">Cargando...</p>
                           ) : billingByAcademy[academy.id].length === 0 ? (
-                            <p className="text-xs text-gray-400 mb-3">Sin registros de facturación todavía.</p>
+                            <p className="text-xs text-gray-400">Sin registros de facturación todavía.</p>
                           ) : (
-                            <div className="overflow-x-auto mb-3">
+                            <div className="overflow-x-auto">
                               <table className="w-full text-xs">
                                 <thead>
                                   <tr className="text-gray-400 uppercase tracking-wider">
@@ -325,10 +321,6 @@ export default function AdminAcademies() {
                               </table>
                             </div>
                           )}
-                          <AddBillingForm
-                            academyId={academy.id}
-                            onAdded={(r) => handleBillingAdded(academy.id, r)}
-                          />
                         </td>
                       </tr>
                     )}

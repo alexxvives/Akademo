@@ -133,7 +133,7 @@ export function ContactSection({ lang }: ContactSectionProps) {
             
             <div className="mt-6 text-center">
               <p className="text-xs text-gray-400 mb-2">
-                {lang === 'es' ? 'O escrí¾nos directamente a' : 'Or email us directly at'}
+                {lang === 'es' ? 'O escríbenos directamente a' : 'Or email us directly at'}
               </p>
               <a 
                 href="mailto:alex@akademo-edu.com"

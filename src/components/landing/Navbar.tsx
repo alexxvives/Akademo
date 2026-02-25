@@ -71,7 +71,7 @@ export function Navbar({ t, isScrolled, lang, onLangChange, onOpenModal }: Navba
                 </button>
                 <button
                   onClick={() => onOpenModal('register')}
-                  className={`px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-medium text-xs sm:text-sm transition-all shadow-sm whitespace-nowrap ${
+                  className={`hidden sm:block px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-medium text-xs sm:text-sm transition-all shadow-sm whitespace-nowrap ${
                     isScrolled 
                       ? 'bg-gray-900 text-white hover:bg-gray-800' 
                       : 'bg-white text-gray-900 hover:bg-white/90'

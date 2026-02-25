@@ -269,6 +269,7 @@ auth.post('/login', loginRateLimit, validateBody(loginSchema), async (c) => {
 
     // PREVENT CONCURRENT LOGINS FOR STUDENTS ONLY
     // Deactivate all previous sessions for this user (only for STUDENT role)
+    let suspicionAlreadyIncremented = false;
     if (user.role === 'STUDENT') {
       // If another session is already active, flag as suspicious (possible account sharing)
       const activeSessionCheck = await c.env.DB
@@ -280,6 +281,7 @@ auth.post('/login', loginRateLimit, validateBody(loginSchema), async (c) => {
           .prepare('UPDATE User SET suspicionCount = suspicionCount + 1 WHERE id = ?')
           .bind(user.id)
           .run();
+        suspicionAlreadyIncremented = true;
       }
       await c.env.DB
         .prepare('UPDATE DeviceSession SET isActive = 0 WHERE userId = ? AND isActive = 1')
@@ -324,8 +326,9 @@ auth.post('/login', loginRateLimit, validateBody(loginSchema), async (c) => {
         const distKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         const speedKmh = distKm / hoursElapsed;
 
-        if (speedKmh > 900) {
-          // Impossible travel detected — increment suspicion counter
+        if (speedKmh > 900 && !suspicionAlreadyIncremented) {
+          // Impossible travel detected — increment suspicion counter only if not already counted
+          // (avoids double-counting when both session duplicate + impossible travel fire on the same login)
           await c.env.DB
             .prepare('UPDATE User SET suspicionCount = suspicionCount + 1 WHERE id = ?')
             .bind(user.id)
