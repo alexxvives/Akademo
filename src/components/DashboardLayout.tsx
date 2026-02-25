@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -114,9 +114,6 @@ export default function DashboardLayout({
   const [academyPaymentStatus, setAcademyPaymentStatus] = useState<string | null>(null);
   const [academy, setAcademy] = useState<Academy | null>(null);
 
-  // Auto-show flag so we only pop the panel once per session
-  const hasAutoShownNotifications = useRef(false);
-
   const loadNotifications = useCallback(async () => {
     try {
       const response = await apiClient('/notifications?unread=true');
@@ -125,11 +122,6 @@ export default function DashboardLayout({
         setNotifications(result.data);
         const newCount = result.data.filter((n: Notification) => !n.isRead).length;
         setUnreadCount(newCount);
-        // Auto-open panel once on login if there are unread notifications
-        if (newCount > 0 && !hasAutoShownNotifications.current) {
-          hasAutoShownNotifications.current = true;
-          setShowNotifications(true);
-        }
       }
       // On failure, keep previous count to avoid flickering
     } catch (error) {
@@ -662,8 +654,6 @@ export default function DashboardLayout({
         onLogout={handleLogout}
         user={user}
         academyPaymentStatus={academyPaymentStatus}
-        unreadCount={unreadCount}
-        onBellClick={() => setShowNotifications(v => !v)}
       />
 
       <MobileSidebar

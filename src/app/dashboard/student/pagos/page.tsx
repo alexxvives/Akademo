@@ -15,114 +15,183 @@ interface StudentPayment {
   createdAt: string;
 }
 
-const STATUS_LABELS: Record<string, { label: string; className: string }> = {
-  PAID: { label: 'Pagado', className: 'bg-green-100 text-green-700' },
-  COMPLETED: { label: 'Completado', className: 'bg-green-100 text-green-700' },
-  PENDING: { label: 'Pendiente', className: 'bg-yellow-100 text-yellow-700' },
-  REJECTED: { label: 'Rechazado', className: 'bg-red-100 text-red-700' },
+const STATUS_CONFIG: Record<string, { label: string; dotColor: string; textColor: string; bgColor: string }> = {
+  PAID:         { label: 'Pagado',            dotColor: 'bg-green-500',  textColor: 'text-green-700',  bgColor: 'bg-green-50'  },
+  COMPLETED:    { label: 'Completado',        dotColor: 'bg-green-500',  textColor: 'text-green-700',  bgColor: 'bg-green-50'  },
+  PENDING:      { label: 'Pendiente',         dotColor: 'bg-yellow-500', textColor: 'text-yellow-700', bgColor: 'bg-yellow-50' },
+  CASH_PENDING: { label: 'Pago en efectivo',  dotColor: 'bg-yellow-500', textColor: 'text-yellow-700', bgColor: 'bg-yellow-50' },
+  REJECTED:     { label: 'Rechazado',         dotColor: 'bg-red-500',    textColor: 'text-red-700',    bgColor: 'bg-red-50'    },
 };
 
 const METHOD_LABELS: Record<string, string> = {
-  cash: 'Efectivo',
-  bizum: 'Bizum',
-  stripe: 'Tarjeta / Stripe',
+  cash:   'Efectivo',
+  bizum:  'Bizum',
+  stripe: 'Tarjeta',
   manual: 'Manual',
 };
+
+function StatusBadge({ status }: { status: string }) {
+  const cfg = STATUS_CONFIG[status] ?? { label: status, dotColor: 'bg-gray-400', textColor: 'text-gray-600', bgColor: 'bg-gray-50' };
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${cfg.bgColor} ${cfg.textColor}`}>
+      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${cfg.dotColor}`} />
+      {cfg.label}
+    </span>
+  );
+}
+
+function isPending(status: string) {
+  return status === 'PENDING' || status === 'CASH_PENDING';
+}
 
 export default function StudentPagosPage() {
   const [payments, setPayments] = useState<StudentPayment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pendingCollapsed, setPendingCollapsed] = useState(false);
 
   useEffect(() => {
-    const load = async () => {
+    (async () => {
       try {
         const res = await apiClient('/payments/my-payments');
         const json = await res.json() as { data: StudentPayment[]; success: boolean };
         if (json?.success && json.data) setPayments(json.data);
-      } catch {
-        // silently fail — empty state shown
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+      } catch { /* show empty state */ }
+      finally { setLoading(false); }
+    })();
   }, []);
 
-  const totalPaid = payments
-    .filter(p => p.paymentStatus === 'PAID' || p.paymentStatus === 'COMPLETED')
-    .reduce((sum, p) => sum + (p.paymentAmount ?? 0), 0);
-
   const currency = payments[0]?.currency ?? 'EUR';
-  const currencySymbol = currency === 'EUR' ? '€' : currency === 'USD' ? '$' : currency;
+  const symbol   = currency === 'EUR' ? '€' : currency === 'USD' ? '$' : currency;
+  const fmt      = (n: number) => `${symbol}${n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const fmtDate  = (s: string) => s ? new Date(s).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+
+  const pending      = payments.filter(p => isPending(p.paymentStatus));
+  const history      = payments.filter(p => !isPending(p.paymentStatus));
+  const totalPaid    = history.filter(p => p.paymentStatus === 'PAID' || p.paymentStatus === 'COMPLETED').reduce((s, p) => s + (p.paymentAmount ?? 0), 0);
+  const totalPending = pending.reduce((s, p) => s + (p.paymentAmount ?? 0), 0);
+
+  const TableRow = ({ p }: { p: StudentPayment }) => (
+    <tr className="hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0">
+      <td className="px-4 py-3 whitespace-nowrap">
+        <StatusBadge status={p.paymentStatus} />
+      </td>
+      <td className="px-4 py-3">
+        <p className="text-sm font-medium text-gray-900">{p.className}</p>
+        <p className="text-xs text-gray-400 mt-0.5">{p.academyName}</p>
+      </td>
+      <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap hidden sm:table-cell">
+        {METHOD_LABELS[p.paymentMethod] ?? p.paymentMethod ?? '—'}
+      </td>
+      <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap hidden md:table-cell">
+        {fmtDate(p.createdAt)}
+      </td>
+      <td className="px-4 py-3 text-sm font-semibold text-gray-900 text-right whitespace-nowrap">
+        {fmt(p.paymentAmount ?? 0)}
+      </td>
+    </tr>
+  );
+
+  const TableHead = () => (
+    <thead className="bg-gray-50 border-b border-gray-200">
+      <tr>
+        <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+        <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asignatura</th>
+        <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Método</th>
+        <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Fecha</th>
+        <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Importe</th>
+      </tr>
+    </thead>
+  );
 
   return (
-    <div className="p-4 sm:p-6 max-w-4xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-gray-900">Mis Pagos</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Historial de pagos realizados a tus academias
-        </p>
+    <div className="space-y-6 pb-8">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-semibold text-gray-900">Mis Pagos</h1>
+        <p className="text-sm text-gray-500 mt-1">Historial de pagos a tus academias</p>
       </div>
 
-      {/* Summary card */}
+      {/* Stats */}
       {!loading && payments.length > 0 && (
-        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6 flex items-center gap-4">
-          <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center flex-shrink-0">
-            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div className="bg-white border border-gray-200 rounded-xl p-4">
+            <p className="text-xs text-gray-500 mb-1">Total abonado</p>
+            <p className="text-xl font-bold text-gray-900">{fmt(totalPaid)}</p>
           </div>
-          <div>
-            <p className="text-xs text-gray-500">Total abonado</p>
-            <p className="text-xl font-bold text-gray-900">
-              {currencySymbol}{totalPaid.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </p>
+          <div className="bg-white border border-gray-200 rounded-xl p-4">
+            <p className="text-xs text-gray-500 mb-1">Pendiente</p>
+            <p className={`text-xl font-bold ${totalPending > 0 ? 'text-yellow-600' : 'text-gray-400'}`}>{fmt(totalPending)}</p>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-xl p-4 col-span-2 sm:col-span-1">
+            <p className="text-xs text-gray-500 mb-1">Total pagos</p>
+            <p className="text-xl font-bold text-gray-900">{payments.length}</p>
           </div>
         </div>
       )}
 
-      {/* Payments list */}
       {loading ? (
         <div className="space-y-3">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="h-16 bg-gray-100 rounded-xl animate-pulse" />
-          ))}
+          {[1, 2, 3].map(i => <div key={i} className="h-16 bg-gray-100 rounded-xl animate-pulse" />)}
         </div>
       ) : payments.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
-          <svg className="w-10 h-10 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="bg-white border border-gray-200 rounded-xl flex flex-col items-center justify-center py-20 text-gray-400">
+          <svg className="w-10 h-10 mb-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
           </svg>
           <p className="text-sm">No tienes pagos registrados</p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {payments.map((p) => {
-            const status = STATUS_LABELS[p.paymentStatus] ?? { label: p.paymentStatus, className: 'bg-gray-100 text-gray-600' };
-            const method = METHOD_LABELS[p.paymentMethod] ?? p.paymentMethod;
-            const date = p.createdAt
-              ? new Date(p.createdAt).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
-              : '—';
-            return (
-              <div
-                key={p.enrollmentId}
-                className="bg-white border border-gray-200 rounded-xl px-4 py-3 flex items-center justify-between gap-3"
+        <div className="space-y-4">
+          {/* Pending section */}
+          {pending.length > 0 && (
+            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+              <button
+                onClick={() => setPendingCollapsed(v => !v)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-yellow-50 border-b border-yellow-100 hover:bg-yellow-100/60 transition-colors"
               >
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{p.className}</p>
-                  <p className="text-xs text-gray-400 truncate">{p.academyName} · {method} · {date}</p>
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                  <span className="text-sm font-semibold text-yellow-800">Pendiente de pago</span>
+                  <span className="text-xs bg-yellow-200 text-yellow-700 px-2 py-0.5 rounded-full font-medium">{pending.length}</span>
                 </div>
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${status.className}`}>
-                    {status.label}
-                  </span>
-                  <span className="text-sm font-semibold text-gray-800 whitespace-nowrap">
-                    {currencySymbol}{(p.paymentAmount ?? 0).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
+                <svg
+                  className={`w-4 h-4 text-yellow-600 transition-transform ${pendingCollapsed ? '' : 'rotate-90'}`}
+                  fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+              {!pendingCollapsed && (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <TableHead />
+                    <tbody>
+                      {pending.map(p => <TableRow key={p.enrollmentId} p={p} />)}
+                    </tbody>
+                  </table>
                 </div>
+              )}
+            </div>
+          )}
+
+          {/* History section */}
+          {history.length > 0 && (
+            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+              <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-green-500" />
+                <span className="text-sm font-semibold text-gray-700">Historial de pagos</span>
+                <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full font-medium">{history.length}</span>
               </div>
-            );
-          })}
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <TableHead />
+                  <tbody>
+                    {history.map(p => <TableRow key={p.enrollmentId} p={p} />)}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -57,7 +57,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister, onForgotPassword, onC
 
           // Show warning popup for students with a manually-triggered suspicion alert
           if (role === 'student' && hasManualWarning) {
-            onClose();
+            // Show warning BEFORE closing — don't unmount component yet
             setPendingRedirect({ role });
             setSuspicionWarning(true);
           } else {
@@ -120,6 +120,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister, onForgotPassword, onC
               onClick={() => {
                 setSuspicionWarning(false);
                 if (pendingRedirect) {
+                  onClose();
                   doRedirect(pendingRedirect.role);
                 }
               }}
