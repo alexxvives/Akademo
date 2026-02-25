@@ -828,6 +828,7 @@ payments.get('/my-payments', async (c) => {
           p.paymentMethod,
           p.amount as paymentAmount,
           p.completedAt as createdAt,
+          p.nextPaymentDue,
           p.classId,
           c.name as className,
           p.currency,

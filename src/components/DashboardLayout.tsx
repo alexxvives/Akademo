@@ -348,8 +348,8 @@ export default function DashboardLayout({
       }
       // Create initial device session
       apiClient('/auth/session/check', { method: 'POST' });
-      // Then check every 10 seconds for faster logout detection
-      const interval = setInterval(checkSession, 10000);
+      // Then check every 3 seconds for near-realtime logout/alert detection
+      const interval = setInterval(checkSession, 3000);
       
       // Load notifications and poll for new ones
       loadNotifications();

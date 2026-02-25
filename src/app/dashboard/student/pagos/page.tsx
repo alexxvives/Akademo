@@ -13,15 +13,8 @@ interface StudentPayment {
   className: string;
   academyName: string;
   createdAt: string;
+  nextPaymentDue?: string | null;
 }
-
-const STATUS_CONFIG: Record<string, { label: string; dotColor: string; textColor: string; bgColor: string }> = {
-  PAID:         { label: 'Pagado',            dotColor: 'bg-green-500',  textColor: 'text-green-700',  bgColor: 'bg-green-50'  },
-  COMPLETED:    { label: 'Completado',        dotColor: 'bg-green-500',  textColor: 'text-green-700',  bgColor: 'bg-green-50'  },
-  PENDING:      { label: 'Pendiente',         dotColor: 'bg-yellow-500', textColor: 'text-yellow-700', bgColor: 'bg-yellow-50' },
-  CASH_PENDING: { label: 'Pago en efectivo',  dotColor: 'bg-yellow-500', textColor: 'text-yellow-700', bgColor: 'bg-yellow-50' },
-  REJECTED:     { label: 'Rechazado',         dotColor: 'bg-red-500',    textColor: 'text-red-700',    bgColor: 'bg-red-50'    },
-};
 
 const METHOD_LABELS: Record<string, string> = {
   cash:   'Efectivo',
@@ -30,16 +23,6 @@ const METHOD_LABELS: Record<string, string> = {
   manual: 'Manual',
 };
 
-function StatusBadge({ status }: { status: string }) {
-  const cfg = STATUS_CONFIG[status] ?? { label: status, dotColor: 'bg-gray-400', textColor: 'text-gray-600', bgColor: 'bg-gray-50' };
-  return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${cfg.bgColor} ${cfg.textColor}`}>
-      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${cfg.dotColor}`} />
-      {cfg.label}
-    </span>
-  );
-}
-
 function isPending(status: string) {
   return status === 'PENDING' || status === 'CASH_PENDING';
 }
@@ -47,7 +30,7 @@ function isPending(status: string) {
 export default function StudentPagosPage() {
   const [payments, setPayments] = useState<StudentPayment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [pendingCollapsed, setPendingCollapsed] = useState(false);
+  const [pendingCollapsed, setPendingCollapsed] = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -65,16 +48,11 @@ export default function StudentPagosPage() {
   const fmt      = (n: number) => `${symbol}${n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const fmtDate  = (s: string) => s ? new Date(s).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
-  const pending      = payments.filter(p => isPending(p.paymentStatus));
-  const history      = payments.filter(p => !isPending(p.paymentStatus));
-  const totalPaid    = history.filter(p => p.paymentStatus === 'PAID' || p.paymentStatus === 'COMPLETED').reduce((s, p) => s + (p.paymentAmount ?? 0), 0);
-  const totalPending = pending.reduce((s, p) => s + (p.paymentAmount ?? 0), 0);
+  const pending = payments.filter(p => isPending(p.paymentStatus));
+  const history = payments.filter(p => !isPending(p.paymentStatus));
 
   const TableRow = ({ p }: { p: StudentPayment }) => (
     <tr className="hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0">
-      <td className="px-4 py-3 whitespace-nowrap">
-        <StatusBadge status={p.paymentStatus} />
-      </td>
       <td className="px-4 py-3">
         <p className="text-sm font-medium text-gray-900">{p.className}</p>
         <p className="text-xs text-gray-400 mt-0.5">{p.academyName}</p>
@@ -83,7 +61,9 @@ export default function StudentPagosPage() {
         {METHOD_LABELS[p.paymentMethod] ?? p.paymentMethod ?? '—'}
       </td>
       <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap hidden md:table-cell">
-        {fmtDate(p.createdAt)}
+        {isPending(p.paymentStatus)
+          ? (p.nextPaymentDue ? fmtDate(p.nextPaymentDue) : '—')
+          : fmtDate(p.createdAt)}
       </td>
       <td className="px-4 py-3 text-sm font-semibold text-gray-900 text-right whitespace-nowrap">
         {fmt(p.paymentAmount ?? 0)}
@@ -91,13 +71,12 @@ export default function StudentPagosPage() {
     </tr>
   );
 
-  const TableHead = () => (
+  const TableHead = ({ dateLabel }: { dateLabel: string }) => (
     <thead className="bg-gray-50 border-b border-gray-200">
       <tr>
-        <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
         <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asignatura</th>
         <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Método</th>
-        <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Fecha</th>
+        <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">{dateLabel}</th>
         <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Importe</th>
       </tr>
     </thead>
@@ -147,7 +126,7 @@ export default function StudentPagosPage() {
               {!pendingCollapsed && (
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <TableHead />
+                    <TableHead dateLabel="Vencimiento" />
                     <tbody>
                       {pending.map(p => <TableRow key={p.enrollmentId} p={p} />)}
                     </tbody>
@@ -160,13 +139,13 @@ export default function StudentPagosPage() {
           {/* History section */}
           {history.length > 0 && (
             <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-              <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
-                <span className="text-sm font-semibold text-gray-700">Historial de pagos</span>
-                <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full font-medium">{history.length}</span>
+              <div className="px-4 py-3 bg-green-50 border-b border-green-100 flex items-center gap-2">
+                <span className="text-sm font-semibold text-green-800">Historial de pagos</span>
+                <span className="text-xs bg-green-200 text-green-700 px-2 py-0.5 rounded-full font-medium">{history.length}</span>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <TableHead />
+                  <TableHead dateLabel="Fecha de pago" />
                   <tbody>
                     {history.map(p => <TableRow key={p.enrollmentId} p={p} />)}
                   </tbody>

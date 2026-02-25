@@ -118,7 +118,7 @@ export default function PagosPage({ role }: PagosPageProps) {
   const [studentSearchTerm, setStudentSearchTerm] = useState('');
   const [showStudentDropdown, setShowStudentDropdown] = useState(false);
   const [studentEnrollments, setStudentEnrollments] = useState<{[key: string]: {classId: string; className: string}[]}>({});
-  const [pendingPaymentsCollapsed, setPendingPaymentsCollapsed] = useState(false);
+  const [pendingPaymentsCollapsed, setPendingPaymentsCollapsed] = useState(true);
 
   // Admin-only state
   const [academies, setAcademies] = useState<Academy[]>([]);
@@ -630,7 +630,7 @@ export default function PagosPage({ role }: PagosPageProps) {
               </svg>
             </button>
             {!pendingPaymentsCollapsed && (
-              <div className="max-h-[500px] overflow-y-auto overflow-x-auto">
+              <div className="max-h-[250px] overflow-y-auto overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
                     <tr>
@@ -737,9 +737,9 @@ export default function PagosPage({ role }: PagosPageProps) {
         {/* History Section */}
         {filteredPaymentHistory.length > 0 && (
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
-              <span className="text-sm font-semibold text-gray-700">Historial de pagos</span>
-              <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full font-medium">{filteredPaymentHistory.length}</span>
+            <div className="px-4 py-3 bg-green-50 border-b border-green-100 flex items-center gap-2">
+              <span className="text-sm font-semibold text-green-800">Historial de pagos</span>
+              <span className="text-xs bg-green-200 text-green-700 px-2 py-0.5 rounded-full font-medium">{filteredPaymentHistory.length}</span>
             </div>
             <div className="max-h-[700px] overflow-y-auto overflow-x-auto">
               <table className="w-full">

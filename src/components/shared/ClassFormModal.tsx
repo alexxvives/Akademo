@@ -2,6 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { StyledSelect } from '@/components/ui/StyledSelect';
+import { DatePickerInput } from '@/components/ui/DatePickerInput';
 
 interface Teacher {
   id: string;
@@ -99,7 +100,7 @@ export function ClassFormModal({
     });
     return [
       { value: '', label: 'Sin profesor asignado' },
-      ...filtered.map((t) => ({ value: t.userId, label: `${t.firstName} ${t.lastName} (${t.email})` })),
+      ...filtered.map((t) => ({ value: t.userId, label: `${t.firstName} ${t.lastName}` })),
     ];
   }, [teachers, allowMultipleTeachers, editingClass, classes]);
 
@@ -164,11 +165,9 @@ export function ClassFormModal({
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Fecha de inicio <span className="text-red-500">*</span>
               </label>
-              <input
-                type="date"
+              <DatePickerInput
                 value={formData.startDate}
-                onChange={(e) => setFormData((f) => ({ ...f, startDate: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                onChange={(v) => setFormData((f) => ({ ...f, startDate: v }))}
                 required
               />
             </div>
