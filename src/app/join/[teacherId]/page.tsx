@@ -45,6 +45,11 @@ export default function JoinPage() {
     const params = new URLSearchParams(window.location.search);
     if (params.get('login') === 'true') setShowLogin(true);
   }, []);
+
+  // Skip class selection — redirect to dashboard when logged in
+  useEffect(() => {
+    if (isLoggedIn) router.push('/dashboard/student');
+  }, [isLoggedIn, router]);
   
   // Form state
   const [formData, setFormData] = useState({

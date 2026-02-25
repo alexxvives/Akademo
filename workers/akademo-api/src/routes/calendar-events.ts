@@ -3,6 +3,7 @@ import { Bindings } from '../types';
 import { requireAuth } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { nanoid } from 'nanoid';
+import { createZoomMeeting } from '../lib/zoom';
 
 const calendarEvents = new Hono<{ Bindings: Bindings }>();
 
@@ -20,6 +21,78 @@ interface CalendarEventRow {
   zoomLink: string | null;
   createdAt: string;
 }
+
+// POST /calendar-events/create-zoom — auto-create a scheduled Zoom meeting for a class event
+calendarEvents.post('/create-zoom', async (c) => {
+  try {
+    const session = await requireAuth(c);
+
+    if (!['ACADEMY', 'TEACHER', 'ADMIN'].includes(session.role)) {
+      return c.json(errorResponse('Forbidden'), 403);
+    }
+
+    const body = await c.req.json<{
+      classId: string;
+      title: string;
+      eventDate?: string;
+      startTime?: string;
+    }>();
+
+    if (!body.classId) {
+      return c.json(errorResponse('classId requerido. Selecciona una asignatura primero.'), 400);
+    }
+    if (!body.title?.trim()) {
+      return c.json(errorResponse('Escribe un título primero.'), 400);
+    }
+
+    // Look up class Zoom account
+    const classInfo = await c.env.DB.prepare(
+      'SELECT zoomAccountId, name FROM Class WHERE id = ?'
+    ).bind(body.classId).first<{ zoomAccountId: string | null; name: string }>();
+
+    if (!classInfo) {
+      return c.json(errorResponse('Clase no encontrada.'), 404);
+    }
+    if (!classInfo.zoomAccountId) {
+      return c.json(errorResponse('Esta clase no tiene una cuenta de Zoom asignada.'), 400);
+    }
+
+    // Get / refresh Zoom token
+    const zoomAccount = await c.env.DB
+      .prepare('SELECT accessToken, refreshToken, expiresAt FROM ZoomAccount WHERE id = ?')
+      .bind(classInfo.zoomAccountId)
+      .first() as { accessToken: string; refreshToken: string; expiresAt: string } | null;
+
+    if (!zoomAccount) {
+      return c.json(errorResponse('Cuenta Zoom no encontrada.'), 404);
+    }
+
+    let accessToken = zoomAccount.accessToken;
+    const expiresAt = new Date(zoomAccount.expiresAt);
+    if (expiresAt <= new Date(Date.now() + 5 * 60 * 1000)) {
+      const { refreshZoomToken } = await import('./zoom-accounts');
+      const newToken = await refreshZoomToken(c, classInfo.zoomAccountId);
+      if (!newToken) {
+        return c.json(errorResponse('Error al renovar el token de Zoom.'), 500);
+      }
+      accessToken = newToken;
+    }
+
+    const meeting = await createZoomMeeting({
+      topic: `${body.title.trim()} - ${classInfo.name}`,
+      duration: 120,
+      waitingRoom: false,
+      config: { accessToken },
+    });
+
+    return c.json(successResponse({ joinUrl: meeting.join_url, startUrl: meeting.start_url, meetingId: String(meeting.id) }), 201);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('[calendar-events create-zoom]', msg);
+    if (msg === 'Unauthorized') return c.json(errorResponse('Unauthorized'), 401);
+    return c.json(errorResponse('Error al crear reunión Zoom'), 500);
+  }
+});
 
 // GET /calendar-events — list events for the user's academy
 calendarEvents.get('/', async (c) => {
@@ -145,6 +218,29 @@ calendarEvents.post('/', async (c) => {
     const event = await c.env.DB.prepare('SELECT * FROM CalendarScheduledEvent WHERE id = ?')
       .bind(id)
       .first<CalendarEventRow>();
+
+    // Also create a corresponding LiveStream record with status='scheduled'
+    if (body.classId) {
+      try {
+        const cls = await c.env.DB
+          .prepare('SELECT teacherId FROM Class WHERE id = ?')
+          .bind(body.classId)
+          .first<{ teacherId: string }>();
+        if (cls?.teacherId) {
+          const streamId = nanoid();
+          const scheduledAt = body.startTime
+            ? `${body.eventDate}T${body.startTime}:00`
+            : body.eventDate;
+          await c.env.DB
+            .prepare(`INSERT INTO LiveStream (id, classId, teacherId, title, status, zoomLink, scheduledAt, createdAt) VALUES (?,?,?,?,?,?,?,datetime('now'))`)
+            .bind(streamId, body.classId, cls.teacherId, body.title, 'scheduled', body.zoomLink ?? null, scheduledAt)
+            .run();
+        }
+      } catch (streamErr) {
+        // Non-fatal — log but don't fail the calendar event creation
+        console.error('[calendar-events POST] LiveStream insert failed:', streamErr);
+      }
+    }
 
     return c.json(successResponse(event), 201);
   } catch (error) {

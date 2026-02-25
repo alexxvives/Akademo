@@ -730,7 +730,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
 
           {/* Legend */}
           <div className="flex flex-wrap items-center gap-2">
-            {([['lesson','Clase'],['assignment','Ejercicio'],['stream','Stream'],['scheduledStream','Stream prog.'],['physicalClass','Presencial']] as [EventType,string][]).map(([type, label]) => (
+            {([['lesson','Clase'],['assignment','Ejercicio'],['stream','Stream']] as [EventType,string][]).map(([type, label]) => (
               <div key={type} className="flex items-center gap-1">
                 <div className={`w-2 h-2 rounded-full ${EVENT_COLORS[type].dot}`} />
                 <span className="text-[11px] text-gray-500">{label}</span>

@@ -110,12 +110,12 @@ export function ClassFormModal({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl w-full max-w-3xl p-6 my-8">
+      <div className="bg-white rounded-2xl w-full max-w-4xl p-6 my-8">
         <h2 className="text-xl font-bold text-gray-900 mb-4">{title}</h2>
 
         <form onSubmit={onSubmit} className="space-y-4">
-          {/* Row 1: Name and Teacher */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Row 1: Name, Teacher, University */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Nombre de la asignatura *</label>
               <input
@@ -137,11 +137,8 @@ export function ClassFormModal({
               />
             </div>
 
-            {/* University field */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Universidad (opcional)
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Universidad (opcional)</label>
               <input
                 type="text"
                 value={formData.university}
@@ -153,9 +150,7 @@ export function ClassFormModal({
 
             {/* Carrera field */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Carrera (opcional)
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Carrera (opcional)</label>
               <input
                 type="text"
                 value={formData.carrera}

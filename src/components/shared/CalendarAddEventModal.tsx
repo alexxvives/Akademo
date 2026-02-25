@@ -55,6 +55,35 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
   const [error, setError] = useState('');
   const [zoomLink, setZoomLink] = useState(editEvent?.zoomLink ?? '');
   const [showZoomLink, setShowZoomLink] = useState(!!editEvent?.zoomLink);
+  const [creatingZoom, setCreatingZoom] = useState(false);
+  const [zoomError, setZoomError] = useState('');
+
+  const handleCreateZoomMeeting = async () => {
+    if (!classId) { setZoomError('Selecciona una asignatura primero.'); return; }
+    if (!title.trim()) { setZoomError('Escribe un título primero.'); return; }
+    setCreatingZoom(true);
+    setZoomError('');
+    try {
+      const res = await apiClient('/calendar-events/create-zoom', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ classId, title: title.trim(), eventDate, startTime }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setZoomLink(result.data.joinUrl);
+        setShowZoomLink(true);
+      } else {
+        setZoomError(result.error || 'Error al crear reunión Zoom.');
+        setShowZoomLink(true);
+      }
+    } catch {
+      setZoomError('Error de conexión con Zoom.');
+      setShowZoomLink(true);
+    } finally {
+      setCreatingZoom(false);
+    }
+  };
 
   const isEditMode = !!editEvent;
 
@@ -129,11 +158,7 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
         </div>
 
         <div className="px-6 py-5 space-y-4">
-          {/* Type label */}
-          <div className="flex items-center gap-2 px-3 py-2 bg-red-50 rounded-xl">
-            <div className="w-2 h-2 rounded-full bg-red-500" />
-            <span className="text-sm font-medium text-red-700">Stream programado</span>
-          </div>
+          {/* Type label removed — all events are streams */}
 
           {/* Title */}
           <div>
@@ -190,18 +215,23 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
             <div className="flex items-center justify-between mb-1.5">
               <label className="block text-sm font-semibold text-gray-700">Zoom link</label>
               {!showZoomLink && (
-                <button
-                  type="button"
-                  onClick={() => setShowZoomLink(true)}
-                  className="text-xs font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  Añadir zoom link
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleCreateZoomMeeting}
+                    disabled={creatingZoom}
+                    className="text-xs font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1 disabled:opacity-50"
+                  >
+                    {creatingZoom ? (
+                      <><div className="w-3 h-3 border border-blue-400 border-t-blue-700 rounded-full animate-spin" /> Creando Zoom...</>
+                    ) : (
+                      <><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.069A1 1 0 0121 8.867V15.133a1 1 0 01-1.447.902L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg> Añadir zoom link</>
+                    )}
+                  </button>
+                </div>
               )}
             </div>
+            {zoomError && <p className="text-xs text-red-500 mb-1.5">{zoomError}</p>}
             {showZoomLink && (
               <div className="flex gap-2">
                 <input
@@ -213,7 +243,7 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
                 />
                 <button
                   type="button"
-                  onClick={() => { setShowZoomLink(false); setZoomLink(''); }}
+                  onClick={() => { setShowZoomLink(false); setZoomLink(''); setZoomError(''); }}
                   className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
