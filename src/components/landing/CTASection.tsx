@@ -11,17 +11,17 @@ interface CTASectionProps {
 
 export function CTASection({ t }: CTASectionProps) {
   return (
-    <section className="py-20 sm:py-28 px-4 sm:px-6 relative overflow-hidden" style={{ backgroundColor: '#111828' }}>
+    <section className="py-14 sm:py-28 px-4 sm:px-6 relative overflow-hidden" style={{ backgroundColor: '#111828' }}>
       <div className="relative max-w-3xl mx-auto text-center">
         <ScrollReveal direction="blur" delay={0}>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight text-white mb-6">
+          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-bold leading-tight text-white mb-6">
             {t.ctaTitleBefore}
             <span className="bg-gradient-to-r from-emerald-300 to-cyan-300 bg-clip-text text-transparent"
             >{t.ctaTitleHighlight}</span>
             {t.ctaTitleAfter}
           </h2>
         </ScrollReveal>
-        <p className="text-gray-400 text-lg mb-8">
+        <p className="text-gray-400 text-sm sm:text-base mb-8">
           {t.ctaSubtitle}
         </p>
         <ScrollReveal direction="zoom" delay={240}>

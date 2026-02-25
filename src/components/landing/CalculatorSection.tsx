@@ -54,7 +54,7 @@ export function CalculatorSection({ lang }: CalculatorSectionProps) {
           </span>
         </div>
         <ScrollReveal direction="blur" delay={80}>
-          <h3 className="text-center text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-6 text-white">
+          <h3 className="text-center text-2xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-6 text-white">
             {isEs ? '¿Cuántos de tus estudiantes son ' : 'How many of your students are '}
             <span className="bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">
               {isEs ? 'fantasma' : 'ghosts'}
@@ -62,7 +62,7 @@ export function CalculatorSection({ lang }: CalculatorSectionProps) {
             ?
           </h3>
         </ScrollReveal>
-        <p className="text-center text-gray-400 text-lg max-w-2xl mx-auto mb-10">
+        <p className="text-center text-gray-400 text-sm sm:text-base max-w-2xl mx-auto mb-10">
           {isEs
             ? 'Un estudiante fantasma es alguien que comparte su cuenta con otros. Tú cobras por 1, pero acceden 3. Descubre cuánto dinero estás dejando en la mesa.'
             : "A ghost student is someone sharing their account with others. You charge for 1, but 3 access. Discover how much money you're leaving on the table."}

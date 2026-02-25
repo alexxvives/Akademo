@@ -9,18 +9,18 @@ interface ManagementSectionProps {
 
 export function ManagementSection({ t }: ManagementSectionProps) {
   return (
-    <section className="py-20 sm:py-28 px-4 sm:px-6 bg-white">
+    <section className="py-14 sm:py-28 px-4 sm:px-6 bg-white">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16">
+        <div className="text-center mb-10 sm:mb-16">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-full text-emerald-600 text-xs font-semibold uppercase tracking-wide mb-6">
             Sistema de Gestión
           </div>
           <ScrollReveal direction="blur" delay={80}>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
               {t.managementTitle}
             </h2>
           </ScrollReveal>
-          <p className="text-lg text-gray-500 max-w-5xl mx-auto">
+          <p className="text-sm sm:text-base text-gray-500 max-w-5xl mx-auto">
             {t.managementSubtitle}
           </p>
         </div>

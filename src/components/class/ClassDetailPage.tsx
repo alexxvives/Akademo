@@ -974,7 +974,6 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
           });
           await loadData(); // Reload all data including lessons
           setExpandTopicId(topicToExpand);
-          setTimeout(() => setExpandTopicId(null), 500);
         } else {
           console.error('[Create Lesson Error]', result);
           alert(`Error: ${result.error || 'Unknown error'}`);
@@ -1029,7 +1028,6 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
       ? 'uncategorized' 
       : lessonFormData.topicId;
     setExpandTopicId(topicToExpand);
-    setTimeout(() => setExpandTopicId(null), 500);
     
     // Remove ?action=create from URL immediately
     const url = new URL(window.location.href);

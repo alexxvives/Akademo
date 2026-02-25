@@ -9,22 +9,22 @@ interface WhySectionProps {
 
 export function WhySection({ t }: WhySectionProps) {
   return (
-    <section className="py-20 sm:py-28 px-4 sm:px-6 bg-white">
+    <section className="py-14 sm:py-28 px-4 sm:px-6 bg-white">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-16">
+        <div className="text-center mb-10 sm:mb-16">
           <div className="mb-4">
             <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-full text-emerald-600 text-xs font-semibold uppercase tracking-wide">
               EL PROBLEMA
             </span>
           </div>
           <ScrollReveal direction="blur" delay={80}>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
               {t.whyTitle}{' '}
               <span className="bg-gradient-to-r from-red-400 to-orange-400 bg-clip-text text-transparent">{t.whyTitleHighlight}</span>{' '}
               {t.whyTitleEnd}
             </h2>
           </ScrollReveal>
-          <p className="text-lg text-gray-500 max-w-5xl mx-auto">
+          <p className="text-sm sm:text-base text-gray-500 max-w-5xl mx-auto">
             {t.whySubtitle}
           </p>
         </div>
@@ -63,7 +63,7 @@ export function WhySection({ t }: WhySectionProps) {
         {t.whySolution && (
           <ScrollReveal direction="zoom-in">
             <div className="bg-gray-900 rounded-2xl p-6 sm:p-8 lg:p-12 text-center">
-              <p className="text-lg sm:text-xl lg:text-2xl font-medium text-white leading-relaxed">
+              <p className="text-base sm:text-xl lg:text-2xl font-medium text-white leading-relaxed">
                 {t.whySolution}
               </p>
             </div>

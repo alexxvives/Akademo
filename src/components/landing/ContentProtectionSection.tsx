@@ -9,20 +9,20 @@ interface ContentProtectionSectionProps {
 
 export function ContentProtectionSection({ t }: ContentProtectionSectionProps) {
   return (
-    <section className="py-20 sm:py-28 px-4 sm:px-6 bg-white relative">
+    <section className="py-14 sm:py-28 px-4 sm:px-6 bg-white relative">
       <div className="max-w-7xl mx-auto">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left: Content */}
-          <div>
+          <div className="text-center lg:text-left">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-full text-emerald-600 text-xs font-semibold uppercase tracking-wide mb-6">
               Seguridad de Contenido
             </div>
             <ScrollReveal direction="blur" delay={80}>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+              <h2 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight text-center lg:text-left">
                 {t.contentTitle}
               </h2>
             </ScrollReveal>
-            <p className="text-lg text-gray-500 mb-8 max-w-4xl">
+            <p className="text-sm sm:text-base text-gray-500 mb-8 max-w-4xl text-center lg:text-left">
               {t.contentSubtitle}
             </p>
 

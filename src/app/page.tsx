@@ -70,7 +70,7 @@ function HomePageContent() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white overflow-x-hidden">
       {showModal && <AuthModal mode={modalMode} defaultRole={modalDefaultRole} onClose={closeModal} />}
 
       <Navbar 

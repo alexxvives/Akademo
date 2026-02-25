@@ -9,7 +9,7 @@ interface WatermarkSectionProps {
 
 export function WatermarkSection({ t }: WatermarkSectionProps) {
   return (
-    <section className="py-20 sm:py-28 px-4 sm:px-6 bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white relative overflow-hidden">
+    <section className="py-14 sm:py-28 px-4 sm:px-6 bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white relative overflow-hidden">
       {/* Animated grid background */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute inset-0" style={{ 
@@ -19,18 +19,18 @@ export function WatermarkSection({ t }: WatermarkSectionProps) {
       </div>
 
       <div className="max-w-7xl mx-auto relative z-10">
-        <div className="text-center mb-16">
+        <div className="text-center mb-10 sm:mb-16">
           <div className="mb-4">
             <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 rounded-full text-emerald-400 text-xs font-semibold uppercase tracking-wide border border-emerald-500/20">
               Marcas de Agua
             </span>
           </div>
           <ScrollReveal direction="blur" delay={80}>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 leading-tight">
+            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-bold mb-6 leading-tight">
               {t.watermarkTitle}
             </h2>
           </ScrollReveal>
-          <p className="text-lg text-gray-400 max-w-5xl mx-auto">
+          <p className="text-sm sm:text-base text-gray-400 max-w-5xl mx-auto">
             {t.watermarkSubtitle}
           </p>
         </div>
@@ -144,7 +144,7 @@ function QuoteCard({ quote }: { quote: string }) {
     <div className="relative">
       <div className="absolute inset-0 bg-emerald-500 rounded-2xl blur-2xl opacity-10" />
       <div className="relative bg-emerald-500/10 backdrop-blur-xl rounded-2xl p-8 sm:p-12 text-center border border-emerald-500/20">
-        <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-white italic leading-tight">
+        <p className="text-lg sm:text-2xl lg:text-3xl font-bold text-white italic leading-tight">
           {quote}
         </p>
       </div>

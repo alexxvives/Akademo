@@ -9,7 +9,7 @@ interface AccountSharingSectionProps {
 
 export function AccountSharingSection({ t }: AccountSharingSectionProps) {
   return (
-    <section className="py-20 sm:py-28 px-4 sm:px-6 bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white relative overflow-hidden">
+    <section className="py-14 sm:py-28 px-4 sm:px-6 bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white relative overflow-hidden">
       {/* Animated background elements */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute top-20 left-10 w-72 h-72 bg-emerald-500 rounded-full blur-3xl animate-pulse" />
@@ -17,16 +17,16 @@ export function AccountSharingSection({ t }: AccountSharingSectionProps) {
       </div>
       
       <div className="max-w-7xl mx-auto relative z-10">
-        <div className="text-center mb-16">
+        <div className="text-center mb-10 sm:mb-16">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 rounded-full text-emerald-400 text-xs font-semibold uppercase tracking-wide border border-emerald-500/20 mb-6">
             Protección Activa
           </div>
           <ScrollReveal direction="blur" delay={80}>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 leading-tight">
+            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-bold mb-6 leading-tight">
               {t.sharingTitle}
             </h2>
           </ScrollReveal>
-          <p className="text-lg text-gray-400 italic max-w-5xl mx-auto">
+          <p className="text-sm sm:text-base text-gray-400 italic max-w-5xl mx-auto">
             &ldquo;{t.sharingSubtitle}&rdquo;
           </p>
         </div>
