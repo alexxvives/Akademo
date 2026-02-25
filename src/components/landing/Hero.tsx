@@ -119,7 +119,7 @@ export function Hero({ t, isScrolled: _isScrolled, onOpenModal }: HeroProps) {
             `}</style>
 
             {/* Top-left: 0% Cuentas compartidas */}
-            <div className="absolute -top-4 -left-4 sm:-top-6 sm:-left-6 px-4 py-3 bg-gray-800 border border-gray-700/50 rounded-xl shadow-xl backdrop-blur-sm" style={{ animation: 'float 3s ease-in-out infinite' }}>
+            <div className="hidden sm:flex absolute -top-4 -left-4 sm:-top-6 sm:-left-6 px-4 py-3 bg-gray-800 border border-gray-700/50 rounded-xl shadow-xl backdrop-blur-sm" style={{ animation: 'float 3s ease-in-out infinite' }}>
               <div className="flex items-center gap-2.5">
                 <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center">
                   <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -134,7 +134,7 @@ export function Hero({ t, isScrolled: _isScrolled, onOpenModal }: HeroProps) {
             </div>
 
             {/* Top-right: 100% Control */}
-            <div className="absolute -top-4 -right-4 sm:-top-6 sm:-right-6 px-4 py-3 bg-gray-800 border border-gray-700/50 rounded-xl shadow-xl backdrop-blur-sm" style={{ animation: 'float 3s ease-in-out infinite 0.75s' }}>
+            <div className="hidden sm:flex absolute -top-4 -right-4 sm:-top-6 sm:-right-6 px-4 py-3 bg-gray-800 border border-gray-700/50 rounded-xl shadow-xl backdrop-blur-sm" style={{ animation: 'float 3s ease-in-out infinite 0.75s' }}>
               <div className="flex items-center gap-2.5">
                 <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
                   <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -149,7 +149,7 @@ export function Hero({ t, isScrolled: _isScrolled, onOpenModal }: HeroProps) {
             </div>
 
             {/* Bottom-left: 24/7 Monitoreo AI */}
-            <div className="absolute -bottom-4 -left-4 sm:-bottom-6 sm:-left-6 px-4 py-3 bg-gray-800 border border-gray-700/50 rounded-xl shadow-xl backdrop-blur-sm" style={{ animation: 'float 3s ease-in-out infinite 1.5s' }}>
+            <div className="hidden sm:flex absolute -bottom-4 -left-4 sm:-bottom-6 sm:-left-6 px-4 py-3 bg-gray-800 border border-gray-700/50 rounded-xl shadow-xl backdrop-blur-sm" style={{ animation: 'float 3s ease-in-out infinite 1.5s' }}>
               <div className="flex items-center gap-2.5">
                 <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
                   <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -165,7 +165,7 @@ export function Hero({ t, isScrolled: _isScrolled, onOpenModal }: HeroProps) {
             </div>
 
             {/* Bottom-right: 25+ Funcionalidades */}
-            <div className="absolute -bottom-4 -right-4 sm:-bottom-6 sm:-right-6 px-4 py-3 bg-gray-800 border border-gray-700/50 rounded-xl shadow-xl backdrop-blur-sm" style={{ animation: 'float 3s ease-in-out infinite 2.25s' }}>
+            <div className="hidden sm:flex absolute -bottom-4 -right-4 sm:-bottom-6 sm:-right-6 px-4 py-3 bg-gray-800 border border-gray-700/50 rounded-xl shadow-xl backdrop-blur-sm" style={{ animation: 'float 3s ease-in-out infinite 2.25s' }}>
               <div className="flex items-center gap-2.5">
                 <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
                   <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">

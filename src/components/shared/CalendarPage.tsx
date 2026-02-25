@@ -191,9 +191,15 @@ export function CalendarPage({ role }: CalendarPageProps) {
   });
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [classes, setClasses] = useState<ClassSummary[]>([]);
-  const [selectedClass, setSelectedClass] = useState('all');
+  const [selectedClass, setSelectedClass] = useState<string>(() => {
+    if (typeof window !== 'undefined') return sessionStorage.getItem('cal_class') || 'all';
+    return 'all';
+  });
   const [adminAcademies, setAdminAcademies] = useState<{id: string, name: string}[]>([]);
-  const [selectedAdminAcademy, setSelectedAdminAcademy] = useState('all');
+  const [selectedAdminAcademy, setSelectedAdminAcademy] = useState<string>(() => {
+    if (typeof window !== 'undefined') return sessionStorage.getItem('cal_academy') || 'all';
+    return 'all';
+  });
   const [loading, setLoading] = useState(true);
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [addEventDate, setAddEventDate] = useState<Date | null>(null);
@@ -207,18 +213,18 @@ export function CalendarPage({ role }: CalendarPageProps) {
 
   // Persist selected view across navigation within the session
   useEffect(() => { sessionStorage.setItem('cal_view', viewMode); }, [viewMode]);
+  // Persist class and academy filters
+  useEffect(() => { sessionStorage.setItem('cal_class', selectedClass); }, [selectedClass]);
+  useEffect(() => { sessionStorage.setItem('cal_academy', selectedAdminAcademy); }, [selectedAdminAcademy]);
 
   // Lock body scroll when popup is open to prevent layout shift
   useEffect(() => {
     if (popupEvent) {
-      const sw = window.innerWidth - document.documentElement.clientWidth;
       document.body.style.overflow = 'hidden';
-      document.body.style.paddingRight = `${sw}px`;
     } else {
       document.body.style.overflow = '';
-      document.body.style.paddingRight = '';
     }
-    return () => { document.body.style.overflow = ''; document.body.style.paddingRight = ''; };
+    return () => { document.body.style.overflow = ''; };
   }, [popupEvent]);
   const dayViewScrollRef = useRef<HTMLDivElement>(null);
 
@@ -668,7 +674,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
 
   // ─── Render ───
   return (
-    <div className="space-y-6">
+    <>
 
       {/* ── Event Preview Popup ── */}
       {popupEvent && (() => {
@@ -823,6 +829,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
         );
       })()}
 
+      <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -972,7 +979,8 @@ export function CalendarPage({ role }: CalendarPageProps) {
           }}
         />
       )}
-    </div>
+      </div>
+    </>
   );
 
   // ─── Month view ───

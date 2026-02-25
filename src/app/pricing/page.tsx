@@ -338,7 +338,7 @@ export default function PricingPage() {
 
             {/* RIGHT: Form */}
           <ScrollReveal direction="right" delay={160} className="h-full">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 sm:p-10 h-full">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 sm:p-10 h-auto lg:h-full">
             <h2 className="text-xl sm:text-2xl font-bold text-white mb-8">{t.form.title}</h2>
 
             <form onSubmit={handleSubmit} className="space-y-6">

@@ -35,17 +35,14 @@ function BillingRow({ record, onDelete }: { record: BillingRecord; onDelete: (id
   return (
     <tr className="hover:bg-gray-50 text-xs">
       <td className="px-4 py-2 font-medium text-gray-800">{MONTHS[record.month - 1]} {record.year}</td>
-      <td className="px-4 py-2 text-gray-600 text-center">{record.studentCount}</td>
       <td className="px-4 py-2 text-gray-600 text-center">{record.enrollmentCount}</td>
-      <td className="px-4 py-2 text-gray-600 text-center">{record.teacherCount}</td>
       <td className="px-4 py-2 text-gray-600 text-center">€{record.pricePerEnrollment.toFixed(2)}</td>
       <td className="px-4 py-2 font-semibold text-gray-900 text-center">€{total.toFixed(2)}</td>
       <td className="px-4 py-2 text-center">
         {record.paidAt
-          ? <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Pagado</span>
+          ? <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">{new Date(record.paidAt).toLocaleDateString('es')}</span>
           : <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Pendiente</span>}
       </td>
-      <td className="px-4 py-2 text-gray-500">{record.notes ?? '—'}</td>
       <td className="px-4 py-2">
         <button onClick={() => onDelete(record.id)} className="text-gray-300 hover:text-red-500 transition-colors">
           <DeleteIcon size={14} />
@@ -99,7 +96,7 @@ function AddBillingForm({ academyId, onAdded }: { academyId: string; onAdded: (r
         <input type="date" value={paidAt} onChange={e => setPaidAt(e.target.value)} className="text-xs border border-gray-200 rounded px-2 py-1" />
       </div>
       <button type="submit" disabled={saving} className="px-3 py-1.5 bg-brand-600 text-white text-xs font-medium rounded-lg hover:bg-brand-700 disabled:opacity-50 transition-colors">
-        {saving ? '...' : '+ Mes actual'}
+        {saving ? '...' : 'Guardar'}
       </button>
     </form>
   );
@@ -112,6 +109,8 @@ export default function AdminAcademies() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [billingByAcademy, setBillingByAcademy] = useState<Record<string, BillingRecord[]>>({});
+  const [showDemo, setShowDemo] = useState(false);
+  const filteredAcademies = academies.filter(a => showDemo || !a.name.toLowerCase().includes('demo'));
 
   useEffect(() => { loadAcademies(); }, []);
 
@@ -184,12 +183,22 @@ export default function AdminAcademies() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Academias</h1>
-        <p className="text-sm text-gray-500 mt-1">AKADEMO PLATFORM</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">Academias</h1>
+          <p className="text-sm text-gray-500 mt-1">AKADEMO PLATFORM</p>
+        </div>
+        <button
+          onClick={() => setShowDemo(prev => !prev)}
+          className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+            showDemo ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+          }`}
+        >
+          {showDemo ? 'Ocultar demo' : 'Mostrar demo'}
+        </button>
       </div>
 
-      {academies.length === 0 ? (
+      {filteredAcademies.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
           <p className="text-gray-500">Las academias aparecerán aquí cuando se registren</p>
         </div>
@@ -210,7 +219,7 @@ export default function AdminAcademies() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {academies.map((academy) => (
+                {filteredAcademies.map((academy) => (
                   <>
                     <tr key={academy.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap cursor-pointer" onClick={() => handleToggleExpand(academy.id)}>
@@ -282,13 +291,10 @@ export default function AdminAcademies() {
                                 <thead>
                                   <tr className="text-gray-400 uppercase tracking-wider">
                                     <th className="px-4 py-1.5 text-left font-medium">Mes</th>
-                                    <th className="px-4 py-1.5 text-center font-medium">Alumnos</th>
                                     <th className="px-4 py-1.5 text-center font-medium">Matrículas</th>
-                                    <th className="px-4 py-1.5 text-center font-medium">Profesores</th>
                                     <th className="px-4 py-1.5 text-center font-medium">€/matrícula</th>
                                     <th className="px-4 py-1.5 text-center font-medium">Total</th>
-                                    <th className="px-4 py-1.5 text-center font-medium">Estado</th>
-                                    <th className="px-4 py-1.5 text-left font-medium">Notas</th>
+                                    <th className="px-4 py-1.5 text-center font-medium">Pagado</th>
                                     <th className="px-4 py-1.5" />
                                   </tr>
                                 </thead>
