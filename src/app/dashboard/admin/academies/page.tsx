@@ -15,6 +15,7 @@ interface Academy {
   paymentStatus?: string;
   teacherCount: number;
   studentCount: number;
+  enrollmentCount: number;
   classCount: number;
   createdAt: string;
 }
@@ -56,35 +57,29 @@ function BillingRow({ record, onDelete }: { record: BillingRecord; onDelete: (id
 
 function AddBillingForm({ academyId, onAdded }: { academyId: string; onAdded: (r: BillingRecord) => void }) {
   const now = new Date();
-  const [month, setMonth] = useState(now.getMonth() + 1);
-  const [year, setYear] = useState(now.getFullYear());
-  const [studentCount, setStudentCount] = useState('');
   const [enrollmentCount, setEnrollmentCount] = useState('');
-  const [teacherCount, setTeacherCount] = useState('');
   const [price, setPrice] = useState('');
-  const [notes, setNotes] = useState('');
   const [paidAt, setPaidAt] = useState('');
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    const today = new Date();
     try {
       const res = await apiClient(`/admin/academy/${academyId}/billing`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          month, year,
-          studentCount: studentCount !== '' ? Number(studentCount) : undefined,
+          month: today.getMonth() + 1,
+          year: today.getFullYear(),
           enrollmentCount: enrollmentCount !== '' ? Number(enrollmentCount) : undefined,
-          teacherCount: teacherCount !== '' ? Number(teacherCount) : undefined,
           pricePerEnrollment: price !== '' ? Number(price) : 0,
-          notes: notes || null,
           paidAt: paidAt || null,
         }),
       });
       const result = await res.json();
-      if (result.success && result.data) onAdded(result.data as BillingRecord);
+      if (result.success && result.data) { onAdded(result.data as BillingRecord); setEnrollmentCount(''); setPrice(''); setPaidAt(''); }
     } catch { /* skip */ }
     setSaving(false);
   };
@@ -92,26 +87,8 @@ function AddBillingForm({ academyId, onAdded }: { academyId: string; onAdded: (r
   return (
     <form onSubmit={handleSubmit} className="flex flex-wrap gap-2 items-end pt-2 border-t border-gray-100 mt-2">
       <div className="flex flex-col gap-0.5">
-        <label className="text-[10px] text-gray-500 uppercase tracking-wide">Mes</label>
-        <select value={month} onChange={e => setMonth(Number(e.target.value))} className="text-xs border border-gray-200 rounded px-2 py-1">
-          {MONTHS.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
-        </select>
-      </div>
-      <div className="flex flex-col gap-0.5">
-        <label className="text-[10px] text-gray-500 uppercase tracking-wide">Año</label>
-        <input type="number" value={year} onChange={e => setYear(Number(e.target.value))} className="text-xs border border-gray-200 rounded px-2 py-1 w-16" />
-      </div>
-      <div className="flex flex-col gap-0.5">
-        <label className="text-[10px] text-gray-500 uppercase tracking-wide">Alum.</label>
-        <input placeholder="auto" type="number" value={studentCount} onChange={e => setStudentCount(e.target.value)} className="text-xs border border-gray-200 rounded px-2 py-1 w-14" />
-      </div>
-      <div className="flex flex-col gap-0.5">
         <label className="text-[10px] text-gray-500 uppercase tracking-wide">Matrículas</label>
-        <input placeholder="auto" type="number" value={enrollmentCount} onChange={e => setEnrollmentCount(e.target.value)} className="text-xs border border-gray-200 rounded px-2 py-1 w-16" />
-      </div>
-      <div className="flex flex-col gap-0.5">
-        <label className="text-[10px] text-gray-500 uppercase tracking-wide">Profes.</label>
-        <input placeholder="auto" type="number" value={teacherCount} onChange={e => setTeacherCount(e.target.value)} className="text-xs border border-gray-200 rounded px-2 py-1 w-14" />
+        <input placeholder="auto" type="number" value={enrollmentCount} onChange={e => setEnrollmentCount(e.target.value)} className="text-xs border border-gray-200 rounded px-2 py-1 w-20" />
       </div>
       <div className="flex flex-col gap-0.5">
         <label className="text-[10px] text-gray-500 uppercase tracking-wide">€/matrícula</label>
@@ -121,12 +98,8 @@ function AddBillingForm({ academyId, onAdded }: { academyId: string; onAdded: (r
         <label className="text-[10px] text-gray-500 uppercase tracking-wide">Pagado el</label>
         <input type="date" value={paidAt} onChange={e => setPaidAt(e.target.value)} className="text-xs border border-gray-200 rounded px-2 py-1" />
       </div>
-      <div className="flex flex-col gap-0.5 flex-1 min-w-[120px]">
-        <label className="text-[10px] text-gray-500 uppercase tracking-wide">Notas</label>
-        <input value={notes} onChange={e => setNotes(e.target.value)} className="text-xs border border-gray-200 rounded px-2 py-1" />
-      </div>
       <button type="submit" disabled={saving} className="px-3 py-1.5 bg-brand-600 text-white text-xs font-medium rounded-lg hover:bg-brand-700 disabled:opacity-50 transition-colors">
-        {saving ? '...' : 'Guardar'}
+        {saving ? '...' : '+ Mes actual'}
       </button>
     </form>
   );
@@ -230,6 +203,7 @@ export default function AdminAcademies() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clases</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Profesores</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estudiantes</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Matrículas</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado de Pago</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Creada</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
@@ -253,6 +227,7 @@ export default function AdminAcademies() {
                       <td className="px-6 py-4 whitespace-nowrap"><span className="text-sm text-gray-900">{academy.classCount || 0}</span></td>
                       <td className="px-6 py-4 whitespace-nowrap"><span className="text-sm text-gray-900">{academy.teacherCount || 0}</span></td>
                       <td className="px-6 py-4 whitespace-nowrap"><span className="text-sm text-gray-900">{academy.studentCount || 0}</span></td>
+                      <td className="px-6 py-4 whitespace-nowrap"><span className="text-sm text-gray-900">{academy.enrollmentCount || 0}</span></td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <button
                           disabled={togglingId === academy.id}
@@ -295,7 +270,7 @@ export default function AdminAcademies() {
 
                     {expandedId === academy.id && (
                       <tr key={`billing-${academy.id}`}>
-                        <td colSpan={7} className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                        <td colSpan={8} className="bg-gray-50 px-6 py-4 border-b border-gray-200">
                           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Facturación mensual — {academy.ownerName}</p>
                           {!billingByAcademy[academy.id] ? (
                             <p className="text-xs text-gray-400">Cargando...</p>

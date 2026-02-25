@@ -182,7 +182,13 @@ export function CalendarPage({ role }: CalendarPageProps) {
   const router = useRouter();
   const rolePrefix = role === 'ACADEMY' ? 'academy' : role === 'TEACHER' ? 'teacher' : role === 'STUDENT' ? 'student' : 'admin';
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<ViewMode>('week');
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = sessionStorage.getItem('cal_view') as ViewMode | null;
+      if (saved === 'month' || saved === 'week' || saved === 'day') return saved;
+    }
+    return 'week';
+  });
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [classes, setClasses] = useState<ClassSummary[]>([]);
   const [selectedClass, setSelectedClass] = useState('all');
@@ -198,6 +204,22 @@ export function CalendarPage({ role }: CalendarPageProps) {
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [scrollToTime, setScrollToTime] = useState<string | null>(null);
   const [popupEvent, setPopupEvent] = useState<CalendarEvent | null>(null);
+
+  // Persist selected view across navigation within the session
+  useEffect(() => { sessionStorage.setItem('cal_view', viewMode); }, [viewMode]);
+
+  // Lock body scroll when popup is open to prevent layout shift
+  useEffect(() => {
+    if (popupEvent) {
+      const sw = window.innerWidth - document.documentElement.clientWidth;
+      document.body.style.overflow = 'hidden';
+      document.body.style.paddingRight = `${sw}px`;
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+    }
+    return () => { document.body.style.overflow = ''; document.body.style.paddingRight = ''; };
+  }, [popupEvent]);
   const dayViewScrollRef = useRef<HTMLDivElement>(null);
 
   const isStudent = role === 'STUDENT';
@@ -406,10 +428,13 @@ export function CalendarPage({ role }: CalendarPageProps) {
   const handleDeleteStream = useCallback(async (streamEventId: string) => {
     const streamId = streamEventId.replace('stream-', '');
     try {
-      const res = await apiClient(`/live/streams/${streamId}`, { method: 'DELETE' });
+      const res = await apiClient(`/live/${streamId}`, { method: 'DELETE' });
       const result = await res.json();
-      if (result.success) setEvents(prev => prev.filter(e => e.id !== streamEventId));
-    } catch { /* skip */ }
+      // Remove from calendar even on 404 – stream was already deleted elsewhere
+      if (result.success || res.status === 404) {
+        setEvents(prev => prev.filter(e => e.id !== streamEventId));
+      }
+    } catch { setEvents(prev => prev.filter(e => e.id !== streamEventId)); }
   }, []);
 
   const handleDragStart = useCallback((e: React.DragEvent, eventId: string) => {

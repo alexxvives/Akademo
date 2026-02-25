@@ -28,7 +28,8 @@ admin.get('/academies', async (c) => {
         u.email as ownerEmail,
         COUNT(DISTINCT c.id) as classCount,
         COUNT(DISTINCT t.id) as teacherCount,
-        COUNT(DISTINCT e.id) as studentCount
+        COUNT(DISTINCT e.userId) as studentCount,
+        COUNT(DISTINCT e.id) as enrollmentCount
       FROM Academy a
       LEFT JOIN User u ON a.ownerId = u.id
       LEFT JOIN Class c ON a.id = c.academyId
