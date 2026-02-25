@@ -50,7 +50,7 @@ const EVENT_COLORS: Record<EventType, { bg: string; text: string; dot: string }>
   assignment:      { bg: 'bg-green-600',  text: 'text-white',   dot: 'bg-green-700' },
   stream:          { bg: 'bg-red-600',    text: 'text-white',   dot: 'bg-red-700' },
   scheduledStream: { bg: 'bg-red-600',    text: 'text-white',   dot: 'bg-red-700' },
-  physicalClass:   { bg: 'bg-violet-600', text: 'text-white',   dot: 'bg-violet-700' },
+  physicalClass:   { bg: 'bg-red-600',    text: 'text-white',   dot: 'bg-red-700' },
 };
 
 const EVENT_LABELS: Record<EventType, string> = {
@@ -127,7 +127,7 @@ const EVENT_BORDER_COLORS: Record<EventType, string> = {
   assignment:      '#15803d',
   stream:          '#dc2626',
   scheduledStream: '#dc2626',
-  physicalClass:   '#7c3aed',
+  physicalClass:   '#dc2626',
 };
 
 // ─── Overlap layout algorithm (Google Calendar style) ───

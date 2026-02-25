@@ -248,7 +248,7 @@ live.get('/history', async (c) => {
         LEFT JOIN Academy a ON c.academyId = a.id
         WHERE (a.ownerId = ? OR (c.id IS NULL AND ls.teacherId IN (
           SELECT t.userId FROM Teacher t JOIN Academy a2 ON t.academyId = a2.id WHERE a2.ownerId = ?
-        ))) AND ls.status != 'scheduled'
+        )))
         ORDER BY ls.createdAt DESC
       `;
       params = [session.id, session.id];
@@ -268,7 +268,7 @@ live.get('/history', async (c) => {
         FROM LiveStream ls
         LEFT JOIN Class c ON ls.classId = c.id
         LEFT JOIN User u ON ls.teacherId = u.id
-        WHERE ls.teacherId = ? AND ls.status != 'scheduled'
+        WHERE ls.teacherId = ?
         ORDER BY ls.createdAt DESC
       `;
       params = [session.id];
@@ -290,7 +290,6 @@ live.get('/history', async (c) => {
         LEFT JOIN Class c ON ls.classId = c.id
         LEFT JOIN Academy a ON c.academyId = a.id
         LEFT JOIN User u ON ls.teacherId = u.id
-        WHERE ls.status != 'scheduled'
         ORDER BY ls.createdAt DESC
       `;
     }

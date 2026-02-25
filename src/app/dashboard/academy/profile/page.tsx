@@ -956,8 +956,6 @@ export default function ProfilePage() {
               { label: 'Streams', description: 'Clases en vivo por Zoom' },
               { label: 'Ejercicios', description: 'Gestión de ejercicios y entregas' },
               { label: 'Calificaciones', description: 'Sistema de calificaciones' },
-              { label: 'Profesores', description: 'Gestión de profesores' },
-              { label: 'Estudiantes', description: 'Lista de estudiantes' },
             ].map(item => {
               const isHidden = formData.hiddenMenuItems.includes(item.label);
               return (

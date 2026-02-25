@@ -239,8 +239,8 @@ export default function AccountsPage() {
       </div>
 
       {/* Users Table */}
-      <div className="overflow-hidden">
-        <div className="overflow-x-auto bg-white rounded-xl border border-gray-200">
+      <div className="bg-white rounded-xl border border-gray-200">
+        <div className="overflow-x-auto max-h-[700px] overflow-y-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>

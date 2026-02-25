@@ -85,7 +85,8 @@ export default function AdminAcademies() {
           <p className="text-gray-500">Las academias aparecerán aquí cuando se registren</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
+        <div className="bg-white rounded-xl border border-gray-200">
+          <div className="overflow-x-auto max-h-[700px] overflow-y-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
@@ -162,6 +163,7 @@ export default function AdminAcademies() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>
