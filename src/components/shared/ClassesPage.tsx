@@ -73,6 +73,8 @@ interface ClassFormData {
   oneTimePrice: string;
   allowMonthly: boolean;
   allowOneTime: boolean;
+  price: string;
+  numCobros: string;
   zoomAccountId: string;
   whatsappGroupLink: string;
   maxStudents: string;
@@ -89,6 +91,8 @@ const emptyForm: ClassFormData = {
   oneTimePrice: '',
   allowMonthly: true,
   allowOneTime: false,
+  price: '',
+  numCobros: '',
   zoomAccountId: '',
   whatsappGroupLink: '',
   maxStudents: '',
@@ -393,6 +397,10 @@ export function ClassesPage({ role }: ClassesPageProps) {
       oneTimePrice: cls.oneTimePrice?.toString() || '',
       allowMonthly: cls.monthlyPrice != null && cls.monthlyPrice > 0,
       allowOneTime: cls.oneTimePrice != null && cls.oneTimePrice > 0,
+      price: cls.oneTimePrice?.toString() || '',
+      numCobros: (cls.monthlyPrice && cls.oneTimePrice && cls.monthlyPrice > 0)
+        ? Math.round(cls.oneTimePrice / cls.monthlyPrice).toString()
+        : '',
       zoomAccountId: cls.zoomAccountId || '',
       whatsappGroupLink: cls.whatsappGroupLink || '',
       maxStudents: cls.maxStudents?.toString() || '',

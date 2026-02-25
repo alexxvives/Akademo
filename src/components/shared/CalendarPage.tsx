@@ -21,6 +21,7 @@ interface CalendarEvent {
   manual?: boolean; // true = CalendarScheduledEvent (deletable)
   startTime?: string; // HH:MM format e.g. "09:30"
   location?: string;
+  zoomLink?: string;
 }
 
 interface ClassSummary {
@@ -53,7 +54,7 @@ const EVENT_COLORS: Record<EventType, { bg: string; text: string; dot: string }>
 };
 
 const EVENT_LABELS: Record<EventType, string> = {
-  lesson:          'Clase online',
+  lesson:          'Clase',
   assignment:      'Ejercicio',
   stream:          'Stream',
   scheduledStream: 'Stream programado',
@@ -362,6 +363,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
                 extra: ev.notes || undefined, manual: true,
                 startTime: ev.startTime || undefined,
                 location: ev.location || undefined,
+                zoomLink: ev.zoomLink || undefined,
               });
             }
           }
@@ -378,13 +380,14 @@ export function CalendarPage({ role }: CalendarPageProps) {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  const handleEventAdded = useCallback((ev: { id: string; title: string; type: 'physicalClass' | 'scheduledStream'; eventDate: string; notes?: string | null; classId?: string | null; startTime?: string | null; location?: string | null }) => {
+  const handleEventAdded = useCallback((ev: { id: string; title: string; type: 'physicalClass' | 'scheduledStream'; eventDate: string; notes?: string | null; classId?: string | null; startTime?: string | null; location?: string | null; zoomLink?: string | null }) => {
     const cls = classes.find(c => c.id === ev.classId);
     setEvents(prev => [...prev, {
       id: `manual-${ev.id}`, title: ev.title, date: ev.eventDate, type: ev.type,
       className: cls?.name || '', classId: ev.classId || '', extra: ev.notes || undefined, manual: true,
       startTime: ev.startTime || undefined,
       location: ev.location || undefined,
+      zoomLink: ev.zoomLink || undefined,
     }]);
   }, [classes]);
 
@@ -727,7 +730,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
 
           {/* Legend */}
           <div className="flex flex-wrap items-center gap-2">
-            {([['lesson','Clase online'],['assignment','Ejercicio'],['stream','Stream'],['physicalClass','Clase presencial']] as [EventType,string][]).map(([type, label]) => (
+            {([['lesson','Clase'],['assignment','Ejercicio'],['stream','Stream'],['scheduledStream','Stream prog.'],['physicalClass','Presencial']] as [EventType,string][]).map(([type, label]) => (
               <div key={type} className="flex items-center gap-1">
                 <div className={`w-2 h-2 rounded-full ${EVENT_COLORS[type].dot}`} />
                 <span className="text-[11px] text-gray-500">{label}</span>
@@ -758,6 +761,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
             extra: editingEvent.extra,
             location: editingEvent.location,
             startTime: editingEvent.startTime,
+            zoomLink: editingEvent.zoomLink,
           } : undefined}
           onClose={() => { setAddEventDate(null); setEditingEvent(null); }}
           onSaved={(ev) => {
@@ -765,7 +769,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
               // Update existing event
               setEvents(prev => prev.map(e =>
                 e.id === editingEvent.id
-                  ? { ...e, title: ev.title, type: ev.type as EventType, date: ev.eventDate, classId: ev.classId || '', extra: ev.notes || undefined, startTime: ev.startTime || undefined, location: ev.location || undefined }
+                  ? { ...e, title: ev.title, type: ev.type as EventType, date: ev.eventDate, classId: ev.classId || '', extra: ev.notes || undefined, startTime: ev.startTime || undefined, location: ev.location || undefined, zoomLink: ev.zoomLink || undefined }
                   : e
               ));
               setEditingEvent(null);
@@ -1016,6 +1020,9 @@ export function CalendarPage({ role }: CalendarPageProps) {
                       {event.location && (
                         <div className="text-[9px] opacity-70 truncate">📍 {event.location}</div>
                       )}
+                      {event.zoomLink && (
+                        <a href={event.zoomLink} target="_blank" rel="noopener noreferrer" className="text-[9px] opacity-70 truncate block" onClick={e => e.stopPropagation()}>🎥 Zoom</a>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1131,6 +1138,9 @@ export function CalendarPage({ role }: CalendarPageProps) {
                     )}
                     {event.location && (
                       <div className="text-[10px] opacity-70 truncate">📍 {event.location}</div>
+                    )}
+                    {event.zoomLink && (
+                      <a href={event.zoomLink} target="_blank" rel="noopener noreferrer" className="text-[10px] opacity-70 truncate block" onClick={e => e.stopPropagation()}>🎥 Zoom</a>
                     )}
                   </div>
                 ))}

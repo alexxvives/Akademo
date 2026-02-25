@@ -19,7 +19,7 @@ interface CalendarAddEventModalProps {
   classes: ClassOption[];
   onClose: () => void;
   disabled?: boolean; // disables saving (e.g. demo mode)
-  editEvent?: { id: string; title: string; type: string; classId?: string; extra?: string; location?: string; startTime?: string };
+  editEvent?: { id: string; title: string; type: string; classId?: string; extra?: string; location?: string; startTime?: string; zoomLink?: string };
   onSaved: (event: {
     id: string;
     title: string;
@@ -29,6 +29,7 @@ interface CalendarAddEventModalProps {
     classId?: string | null;
     location?: string | null;
     startTime?: string | null;
+    zoomLink?: string | null;
   }) => void;
 }
 
@@ -45,15 +46,15 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
     return `${pad(h % 24)}:${pad(m)}`;
   })();
   const [title, setTitle] = useState(editEvent?.title ?? '');
-  const [type, setType] = useState<'physicalClass' | 'scheduledStream'>(
-    (editEvent?.type === 'physicalClass' || editEvent?.type === 'scheduledStream') ? editEvent.type : 'physicalClass'
-  );
+  const type = 'scheduledStream' as const;
   const [eventDate, setEventDate] = useState(defaultDate);
   const [classId, setClassId] = useState(editEvent?.classId ?? '');
   const [location, setLocation] = useState(editEvent?.location ?? '');
   const [startTime, setStartTime] = useState(defaultTime);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [zoomLink, setZoomLink] = useState(editEvent?.zoomLink ?? '');
+  const [showZoomLink, setShowZoomLink] = useState(!!editEvent?.zoomLink);
 
   const isEditMode = !!editEvent;
 
@@ -74,6 +75,7 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
             classId: classId || null,
             location: location.trim() || null,
             startTime: startTime || null,
+            zoomLink: zoomLink.trim() || null,
           }),
         });
         const result = await res.json();
@@ -94,6 +96,7 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
             classId: classId || undefined,
             location: location.trim() || undefined,
             startTime: startTime || undefined,
+            zoomLink: zoomLink.trim() || undefined,
           }),
         });
         const result = await res.json();
@@ -126,24 +129,10 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
         </div>
 
         <div className="px-6 py-5 space-y-4">
-          {/* Type toggle */}
-          <div className="flex gap-2 p-1 bg-gray-100 rounded-xl">
-            {(['physicalClass', 'scheduledStream'] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setType(t)}
-                className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all ${
-                  type === t
-                    ? t === 'physicalClass'
-                      ? 'bg-white text-violet-700 shadow-sm'
-                      : 'bg-white text-red-600 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                {t === 'physicalClass' ? 'Clase presencial' : 'Stream programado'}
-              </button>
-            ))}
+          {/* Type label */}
+          <div className="flex items-center gap-2 px-3 py-2 bg-red-50 rounded-xl">
+            <div className="w-2 h-2 rounded-full bg-red-500" />
+            <span className="text-sm font-medium text-red-700">Stream programado</span>
           </div>
 
           {/* Title */}
@@ -184,19 +173,56 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
             </div>
           )}
 
-          {/* Location — only for physicalClass */}
-          {type === 'physicalClass' && (
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Ubicación</label>
-              <input
-                type="text"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                placeholder="p.ej. Aula 3, Campus Norte"
-                className="w-full px-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-              />
+          {/* Location */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Ubicación (opcional)</label>
+            <input
+              type="text"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="p.ej. Aula 3, Campus Norte"
+              className="w-full px-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            />
+          </div>
+
+          {/* Zoom link */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-sm font-semibold text-gray-700">Zoom link</label>
+              {!showZoomLink && (
+                <button
+                  type="button"
+                  onClick={() => setShowZoomLink(true)}
+                  className="text-xs font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Añadir zoom link
+                </button>
+              )}
             </div>
-          )}
+            {showZoomLink && (
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  value={zoomLink}
+                  onChange={(e) => setZoomLink(e.target.value)}
+                  placeholder="https://zoom.us/j/..."
+                  className="flex-1 px-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                />
+                <button
+                  type="button"
+                  onClick={() => { setShowZoomLink(false); setZoomLink(''); }}
+                  className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
+          </div>
 
           {error && <p className="text-xs text-red-500 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
         </div>

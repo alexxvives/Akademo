@@ -40,6 +40,8 @@ interface ClassFormData {
   oneTimePrice: string;
   allowMonthly: boolean;
   allowOneTime: boolean;
+  price: string;
+  numCobros: string;
   zoomAccountId: string;
   whatsappGroupLink: string;
   maxStudents: string;
@@ -125,6 +127,16 @@ export function ClassFormModal({
               />
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Profesor asignado (opcional)</label>
+              <StyledSelect
+                value={formData.teacherId}
+                onChange={(v) => setFormData((f) => ({ ...f, teacherId: v }))}
+                options={teacherOptions}
+                placeholder="Sin profesor asignado"
+              />
+            </div>
+
             {/* University field */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -150,16 +162,6 @@ export function ClassFormModal({
                 onChange={(e) => setFormData((f) => ({ ...f, carrera: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder=""
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Profesor asignado (opcional)</label>
-              <StyledSelect
-                value={formData.teacherId}
-                onChange={(v) => setFormData((f) => ({ ...f, teacherId: v }))}
-                options={teacherOptions}
-                placeholder="Sin profesor asignado"
               />
             </div>
 
@@ -202,26 +204,39 @@ export function ClassFormModal({
             />
           </div>
 
+          {/* Price */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Precio de la asignatura <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm pointer-events-none">$</span>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.price}
+                onChange={(e) => {
+                  const price = e.target.value;
+                  setFormData((f) => ({
+                    ...f,
+                    price,
+                    oneTimePrice: price,
+                    monthlyPrice: f.numCobros && price
+                      ? (parseFloat(price) / parseInt(f.numCobros)).toFixed(2)
+                      : f.monthlyPrice,
+                  }));
+                }}
+                className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="0.00"
+              />
+            </div>
+          </div>
+
           {/* Payment Options */}
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <div className="flex items-center gap-2 group relative">
-                <label className="block text-sm font-medium text-gray-700">Opciones de pago *</label>
-                <svg className="w-4 h-4 text-gray-400 cursor-help" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    fillRule="evenodd"
-                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <div className="absolute left-0 top-6 w-64 bg-gray-900 text-white text-xs rounded-lg p-3 shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
-                  <p className="font-medium mb-1">Consejo:</p>
-                  <p>
-                    Si seleccionas ambas opciones, los estudiantes podrán elegir entre pago mensual o pago
-                    único al inscribirse.
-                  </p>
-                </div>
-              </div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-700">Opciones de pago *</label>
               <span
                 className={`text-xs px-2 py-1 rounded-full transition-all ${
                   paymentOptionsError
@@ -234,26 +249,82 @@ export function ClassFormModal({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Monthly */}
-              <PaymentOptionCard
-                active={formData.allowMonthly}
-                onToggle={() => setFormData((f) => ({ ...f, allowMonthly: !f.allowMonthly }))}
-                label="Pago Mensual"
-                color="blue"
-                value={formData.monthlyPrice}
-                onChange={(v) => setFormData((f) => ({ ...f, monthlyPrice: v, allowMonthly: true }))}
-                placeholder="10.00"
-              />
-              {/* One-time */}
-              <PaymentOptionCard
-                active={formData.allowOneTime}
-                onToggle={() => setFormData((f) => ({ ...f, allowOneTime: !f.allowOneTime }))}
-                label="Pago Único"
-                color="green"
-                value={formData.oneTimePrice}
-                onChange={(v) => setFormData((f) => ({ ...f, oneTimePrice: v, allowOneTime: true }))}
-                placeholder="100.00"
-              />
+              {/* Pago Único */}
+              <button
+                type="button"
+                onClick={() => setFormData((f) => ({ ...f, allowOneTime: !f.allowOneTime }))}
+                className={`relative p-4 border-2 rounded-xl transition-all duration-200 text-left ${
+                  formData.allowOneTime ? 'border-green-500 bg-green-50 shadow-md' : 'border-gray-200 bg-white hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                    formData.allowOneTime ? 'border-green-500 bg-green-500' : 'border-gray-300'
+                  }`}>
+                    {formData.allowOneTime && (
+                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className={`text-sm font-semibold ${formData.allowOneTime ? 'text-green-900' : 'text-gray-700'}`}>Pago Único</span>
+                </div>
+                {formData.allowOneTime && (
+                  <p className="text-sm font-medium text-green-700">
+                    Total: ${formData.price ? parseFloat(formData.price).toFixed(2) : '0.00'}
+                  </p>
+                )}
+              </button>
+
+              {/* Pago Mensual */}
+              <button
+                type="button"
+                onClick={() => setFormData((f) => ({ ...f, allowMonthly: !f.allowMonthly }))}
+                className={`relative p-4 border-2 rounded-xl transition-all duration-200 text-left ${
+                  formData.allowMonthly ? 'border-blue-500 bg-blue-50 shadow-md' : 'border-gray-200 bg-white hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                    formData.allowMonthly ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
+                  }`}>
+                    {formData.allowMonthly && (
+                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className={`text-sm font-semibold ${formData.allowMonthly ? 'text-blue-900' : 'text-gray-700'}`}>Pago Mensual</span>
+                </div>
+                {formData.allowMonthly && (
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <label className="block text-xs font-medium text-blue-700 mb-1">Número de cuotas</label>
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={formData.numCobros}
+                      onChange={(e) => {
+                        const numCobros = e.target.value;
+                        setFormData((f) => ({
+                          ...f,
+                          numCobros,
+                          monthlyPrice: numCobros && f.price
+                            ? (parseFloat(f.price) / parseInt(numCobros)).toFixed(2)
+                            : '',
+                        }));
+                      }}
+                      className="w-full px-3 py-1.5 border border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                      placeholder="p.ej. 12"
+                    />
+                    {formData.numCobros && formData.price && parseInt(formData.numCobros) > 0 && (
+                      <p className="text-xs text-blue-600 mt-1.5 font-medium">
+                        ${(parseFloat(formData.price) / parseInt(formData.numCobros)).toFixed(2)}/mes × {formData.numCobros} mes{parseInt(formData.numCobros) !== 1 ? 'es' : ''}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </button>
             </div>
           </div>
 
@@ -317,7 +388,8 @@ export function ClassFormModal({
   );
 }
 
-function PaymentOptionCard({
+// PaymentOptionCard kept for reference but not currently used
+function _PaymentOptionCard({
   active,
   onToggle,
   label,

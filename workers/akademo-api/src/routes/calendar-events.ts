@@ -17,6 +17,7 @@ interface CalendarEventRow {
   classId: string | null;
   location: string | null;
   startTime: string | null;
+  zoomLink: string | null;
   createdAt: string;
 }
 
@@ -95,6 +96,7 @@ calendarEvents.post('/', async (c) => {
       classId?: string;
       location?: string;
       startTime?: string;
+      zoomLink?: string;
     }>();
 
     if (!body.title || !body.type || !body.eventDate) {
@@ -134,10 +136,10 @@ calendarEvents.post('/', async (c) => {
 
     const id = nanoid();
     await c.env.DB.prepare(
-      `INSERT INTO CalendarScheduledEvent (id, academyId, createdBy, title, type, eventDate, notes, classId, location, startTime, createdAt)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+      `INSERT INTO CalendarScheduledEvent (id, academyId, createdBy, title, type, eventDate, notes, classId, location, startTime, zoomLink, createdAt)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
     )
-      .bind(id, academyId, session.id, body.title, body.type, body.eventDate, body.notes ?? null, body.classId ?? null, body.location ?? null, body.startTime ?? null)
+      .bind(id, academyId, session.id, body.title, body.type, body.eventDate, body.notes ?? null, body.classId ?? null, body.location ?? null, body.startTime ?? null, body.zoomLink ?? null)
       .run();
 
     const event = await c.env.DB.prepare('SELECT * FROM CalendarScheduledEvent WHERE id = ?')
@@ -190,6 +192,8 @@ calendarEvents.patch('/:id', async (c) => {
     if (location !== undefined) { updateFields.push('location = ?'); bindings.push(location ?? null); }
     if (type !== undefined) { updateFields.push('type = ?'); bindings.push(type); }
     if (startTime !== undefined) { updateFields.push('startTime = ?'); bindings.push(startTime ?? null); }
+    const { zoomLink } = body;
+    if (zoomLink !== undefined) { updateFields.push('zoomLink = ?'); bindings.push(zoomLink ?? null); }
 
     if (updateFields.length === 0) {
       return c.json(errorResponse('No fields to update'), 400);
