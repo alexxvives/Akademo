@@ -609,7 +609,7 @@ export function GradesPage({ role }: GradesPageProps) {
                 {filteredAverages.length !== 1 ? 's' : ''}
               </span>
             </div>
-            <div className="max-h-[600px] overflow-y-auto overflow-x-auto">
+            <div className="max-h-[700px] overflow-y-auto overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50 sticky top-0 z-10">
                   <tr>

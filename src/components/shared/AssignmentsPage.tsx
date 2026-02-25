@@ -729,7 +729,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
             }}
           />
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-            <div className="overflow-x-auto max-h-[750px] overflow-y-auto">
+            <div className="overflow-x-auto max-h-[700px] overflow-y-auto">
               {renderTable()}
             </div>
           </div>

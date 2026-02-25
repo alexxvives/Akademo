@@ -95,7 +95,7 @@ function VideoWatermarkDemo() {
           </div>
         </div>
         <div className="p-4 bg-black/30 backdrop-blur border-t border-white/5 flex items-center justify-between">
-          <span className="text-white/60 text-sm">Elige cada cuándo aparece</span>
+          <span className="text-white/60 text-sm">Elige cada cuánto aparece</span>
           <div className="flex items-center gap-2 text-green-400 text-sm">
             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
             Activo

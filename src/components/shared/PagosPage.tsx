@@ -596,7 +596,7 @@ export default function PagosPage({ role }: PagosPageProps) {
       <div className="space-y-2">
       {/* Payments Table */}
       <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <div className="max-h-[637px] overflow-y-auto overflow-x-auto">
+        <div className="max-h-[700px] overflow-y-auto overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
             <tr>

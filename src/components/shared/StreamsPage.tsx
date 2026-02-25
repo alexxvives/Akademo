@@ -351,9 +351,9 @@ export function StreamsPage({ role }: StreamsPageProps) {
         );
       case 'scheduled':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
-            <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
-            Esperando
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+            <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
+            Programado
           </span>
         );
       case 'ended':
@@ -427,7 +427,7 @@ export function StreamsPage({ role }: StreamsPageProps) {
         <SkeletonTable rows={8} cols={6} />
       ) : (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-          <div className="overflow-x-auto max-h-[750px] overflow-y-auto">
+          <div className="overflow-x-auto max-h-[700px] overflow-y-auto">
             <table className="w-full">
               <thead className="bg-gray-50/50 border-b border-gray-200 sticky top-0 z-10">
                 <tr>
@@ -544,7 +544,9 @@ export function StreamsPage({ role }: StreamsPageProps) {
                       </td>
                       <td className="py-3 px-2 sm:px-4">{getStatusBadge(stream.status)}</td>
                       <td className="py-3 px-2 sm:px-4">
-                        {stream.participantCount != null ? (
+                        {stream.status === 'scheduled' ? (
+                          <span className="text-sm text-gray-400">—</span>
+                        ) : stream.participantCount != null ? (
                           <span className="text-sm text-gray-600 font-medium">{stream.participantCount}</span>
                         ) : (
                           <span className="text-sm text-gray-400">0</span>
