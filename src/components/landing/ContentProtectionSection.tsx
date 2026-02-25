@@ -104,7 +104,7 @@ function ProtectedVideoPreview() {
             </div>
           </div>
         </div>
-        <div className="mt-6 flex items-center justify-between text-sm text-gray-500">
+        <div className="mt-3 flex items-center justify-between text-sm text-gray-500">
           <span className="flex items-center gap-2">
             <div className="w-2 h-2 bg-green-500 rounded-full" />
             Streaming seguro

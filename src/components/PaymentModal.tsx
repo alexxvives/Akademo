@@ -50,6 +50,14 @@ export default function PaymentModal({
   const [_confirmingBizum, _setConfirmingBizum] = useState(false);
   const [allowedPaymentMethods, setAllowedPaymentMethods] = useState<string[]>(['stripe', 'cash', 'bizum']);
 
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [isOpen]);
+
   // Fetch academy's allowed payment methods
   useEffect(() => {
     if (isOpen && classId) {

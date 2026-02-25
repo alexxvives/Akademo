@@ -18,6 +18,12 @@ export default function AuthModal({ mode, defaultRole, onClose }: AuthModalProps
     setView(mode);
   }, [mode]);
 
+  // Lock body scroll while modal is visible
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = ''; };
+  }, []);
+
   const handleSuccess = (_role: string) => {
     // Navigation handled by form components
   };

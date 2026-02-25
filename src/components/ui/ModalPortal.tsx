@@ -12,6 +12,12 @@ export function ModalPortal({ children }: ModalPortalProps) {
 
   useEffect(() => {
     setMounted(true);
+    // Lock body scroll when any portaled modal is open
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
   }, []);
 
   if (!mounted) return null;
