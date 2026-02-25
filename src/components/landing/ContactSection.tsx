@@ -31,7 +31,7 @@ export function ContactSection({ lang }: ContactSectionProps) {
   const faqItems = FAQ_ITEMS[lang];
 
   return (
-    <section id="hablemos" className="py-20 sm:py-28 px-4 sm:px-6 bg-gray-50">
+    <section id="hablemos" className="py-14 sm:py-28 px-4 sm:px-6 bg-gray-50">
       <div className="max-w-7xl mx-auto">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16">
           {/* Left: FAQ */}

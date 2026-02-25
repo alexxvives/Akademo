@@ -45,7 +45,7 @@ export function CalculatorSection({ lang }: CalculatorSectionProps) {
   const isEs = lang === 'es';
 
   return (
-    <section className="py-20 sm:py-28 px-4 sm:px-6 relative bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900">
+    <section className="py-14 sm:py-28 px-4 sm:px-6 relative bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900">
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-950/10 to-transparent pointer-events-none" />
       <div className="relative max-w-7xl mx-auto">
         <div className="text-center mb-4">

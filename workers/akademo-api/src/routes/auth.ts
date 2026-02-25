@@ -326,9 +326,10 @@ auth.post('/login', loginRateLimit, validateBody(loginSchema), async (c) => {
         const distKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         const speedKmh = distKm / hoursElapsed;
 
-        if (speedKmh > 900 && !suspicionAlreadyIncremented) {
+        if (speedKmh > 300 && !suspicionAlreadyIncremented) {
           // Impossible travel detected — increment suspicion counter only if not already counted
           // (avoids double-counting when both session duplicate + impossible travel fire on the same login)
+          // 300 km/h threshold: above TGV speed but safely above IP geolocation error margin (±50km = ~100km/h false positive risk)
           await c.env.DB
             .prepare('UPDATE User SET suspicionCount = suspicionCount + 1 WHERE id = ?')
             .bind(user.id)

@@ -25,7 +25,7 @@ export function ManagementSection({ t }: ManagementSectionProps) {
           </p>
         </div>
         
-        <div className="grid sm:grid-cols-2 gap-8">
+        <div className="grid sm:grid-cols-2 gap-4 sm:gap-8">
           <ScrollReveal direction="flip" delay={0}>
             <ManagementCard 
               icon={<TeacherIcon />}
@@ -79,13 +79,13 @@ interface ManagementCardProps {
 function ManagementCard({ icon, gradient, title, description, features }: ManagementCardProps) {
   return (
     <div className="group relative">
-      <div className="relative bg-white rounded-2xl p-8 border border-gray-200 hover:border-emerald-200 hover:shadow-lg transition-all">
+      <div className="relative bg-white rounded-2xl p-5 sm:p-8 border border-gray-200 hover:border-emerald-200 hover:shadow-lg transition-all">
         <div className="flex items-start gap-4 mb-6">
           <div className={`w-14 h-14 bg-gradient-to-br ${gradient} rounded-xl flex items-center justify-center text-white shadow-lg flex-shrink-0`}>
             {icon}
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">{title}</h3>
             <p className="text-sm text-gray-500">{description}</p>
           </div>
         </div>

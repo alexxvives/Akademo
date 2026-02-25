@@ -68,7 +68,7 @@ function Feature({ icon, title, description }: { icon: React.ReactNode; title: s
         {icon}
       </div>
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">{title}</h3>
         <p className="text-sm text-gray-500 leading-relaxed">{description}</p>
       </div>
     </div>
@@ -79,7 +79,7 @@ function ProtectedVideoPreview() {
   return (
     <div className="relative">
       <div className="absolute inset-0 bg-gradient-to-br from-emerald-200 to-cyan-200 rounded-3xl blur-3xl opacity-30" />
-      <div className="relative bg-gradient-to-br from-gray-50 to-white rounded-3xl p-8 shadow-2xl border border-gray-200">
+      <div className="relative bg-gradient-to-br from-gray-50 to-white rounded-3xl p-4 sm:p-8 shadow-2xl border border-gray-200">
         <div className="aspect-video bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl overflow-hidden relative">
           <div className="absolute inset-0 flex items-center justify-center">
             <svg className="w-20 h-20 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">

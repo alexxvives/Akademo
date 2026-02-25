@@ -31,7 +31,7 @@ export function AccountSharingSection({ t }: AccountSharingSectionProps) {
           </p>
         </div>
         
-        <div className="grid sm:grid-cols-3 gap-8">
+        <div className="grid sm:grid-cols-3 gap-4 sm:gap-8">
           <ScrollReveal direction="flip" delay={0}>
             <FeatureCard 
               stat="100%"
@@ -90,7 +90,7 @@ function FeatureCard({ stat, statLabel, title, description, icon, gradient }: Fe
             <div className="text-xs text-gray-400 mt-1">{statLabel}</div>
           </div>
         </div>
-        <h3 className="text-lg font-semibold text-white mb-2">{title}</h3>
+        <h3 className="text-base sm:text-lg font-semibold text-white mb-2">{title}</h3>
         <p className="text-sm text-gray-400 leading-relaxed flex-1">{description}</p>
       </div>
     </div>

@@ -570,6 +570,7 @@ export default function DashboardLayout({
         return [
           { label: 'Mis Asignaturas', href: '/dashboard/student/subjects', matchPaths: ['/dashboard/student/subject'], showPulse: activeStreams.length > 0, iconType: 'book' as const, badge: unpaidClassesCount > 0 ? unpaidClassesCount : undefined, badgeColor: 'bg-[#b0e788]' },
           { label: 'Ejercicios', href: '/dashboard/student/assignments', badge: academy?.requireGrading !== 0 && newGradesCount > 0 ? newGradesCount : undefined, badgeColor: 'bg-[#b0e788]', iconType: 'fileText' as const },
+          { label: 'Mis Pagos', href: '/dashboard/student/pagos', iconType: 'handCoins' as const },
           { label: 'Calendario', href: '/dashboard/student/calendar', iconType: 'calendar' as const },
         ];
       case 'ACADEMY':

@@ -132,7 +132,7 @@ function WatermarkFeature({ icon, title, description }: { icon: React.ReactNode;
         {icon}
       </div>
       <div>
-        <h3 className="text-lg font-semibold text-white mb-2">{title}</h3>
+        <h3 className="text-base sm:text-lg font-semibold text-white mb-2">{title}</h3>
         <p className="text-sm text-gray-400 leading-relaxed">{description}</p>
       </div>
     </div>
