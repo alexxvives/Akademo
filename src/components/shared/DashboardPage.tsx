@@ -116,8 +116,8 @@ export function DashboardPage({ role }: DashboardPageProps) {
     prevPeriodRef.current = activePeriodId;
     setSelectedClass('all');
     if (isAdmin) setSelectedAcademy('all');
-    // Zero out al día/atrasados immediately so stale data isn't shown while re-fetch is in flight
-    setStudentPaymentStatus({ alDia: 0, atrasados: 0, total: 0, uniqueAlDia: 0, uniqueAtrasados: 0, uniqueTotal: 0 });
+    // Note: intentionally NOT zeroing studentPaymentStatus here — the animated number
+    // will transition smoothly from the old value to the new one once the re-fetch completes.
   }, [activePeriodId, isAdmin]);
 
   useEffect(() => { loadData(); }, []);

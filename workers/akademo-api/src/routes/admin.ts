@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { requireAuth } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
+import { nanoid } from 'nanoid';
 
 const admin = new Hono<{ Bindings: Bindings }>();
 
@@ -484,6 +485,93 @@ admin.delete('/users/:id', async (c) => {
     console.error('[Admin Delete Account] Error:', error);
     return c.json(errorResponse('Failed to delete user account'), 500);
   }
+});
+
+// ─── Academy Billing ───────────────────────────────────────────────────────
+
+// GET /admin/academy/:id/billing
+admin.get('/academy/:id/billing', async (c) => {
+  const session = await requireAuth(c);
+  if (session.role !== 'ADMIN') return c.json(errorResponse('Forbidden'), 403);
+  const academyId = c.req.param('id');
+  const rows = await c.env.DB
+    .prepare('SELECT * FROM AcademyBilling WHERE academyId = ? ORDER BY year DESC, month DESC')
+    .bind(academyId).all();
+  return c.json(successResponse(rows.results ?? []));
+});
+
+// POST /admin/academy/:id/billing — upsert a billing record
+admin.post('/academy/:id/billing', async (c) => {
+  const session = await requireAuth(c);
+  if (session.role !== 'ADMIN') return c.json(errorResponse('Forbidden'), 403);
+  const academyId = c.req.param('id');
+  const body = await c.req.json<{
+    month: number; year: number;
+    studentCount?: number; enrollmentCount?: number; teacherCount?: number;
+    pricePerEnrollment?: number; notes?: string; paidAt?: string | null;
+  }>();
+  const { month, year } = body;
+  if (!month || !year) return c.json(errorResponse('month and year required'), 400);
+
+  // Try to auto-fill counts from DB if not provided
+  let { studentCount, enrollmentCount, teacherCount } = body;
+  if (studentCount === undefined || enrollmentCount === undefined || teacherCount === undefined) {
+    try {
+      const counts = await c.env.DB.prepare(`
+        SELECT
+          COUNT(DISTINCT ce.userId) AS enrollmentCount,
+          COUNT(DISTINCT c.id) AS classCount
+        FROM Class c
+        LEFT JOIN ClassEnrollment ce ON ce.classId = c.id AND ce.status = 'active'
+        WHERE c.academyId = (SELECT id FROM Academy WHERE id = ?)
+      `).bind(academyId).first<{ enrollmentCount: number; classCount: number }>();
+      if (enrollmentCount === undefined) enrollmentCount = counts?.enrollmentCount ?? 0;
+      if (studentCount === undefined) studentCount = counts?.enrollmentCount ?? 0;
+
+      if (teacherCount === undefined) {
+        const tc = await c.env.DB.prepare(
+          `SELECT COUNT(*) AS cnt FROM Teacher WHERE academyId = ?`
+        ).bind(academyId).first<{ cnt: number }>();
+        teacherCount = tc?.cnt ?? 0;
+      }
+    } catch { /* use 0 */ }
+  }
+
+  // Upsert
+  const existing = await c.env.DB
+    .prepare('SELECT id FROM AcademyBilling WHERE academyId = ? AND month = ? AND year = ?')
+    .bind(academyId, month, year).first<{ id: string }>();
+  const id = existing?.id ?? nanoid();
+  await c.env.DB.prepare(`
+    INSERT INTO AcademyBilling (id, academyId, month, year, studentCount, enrollmentCount, teacherCount, pricePerEnrollment, notes, paidAt, createdAt)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+    ON CONFLICT(academyId, month, year) DO UPDATE SET
+      studentCount = excluded.studentCount,
+      enrollmentCount = excluded.enrollmentCount,
+      teacherCount = excluded.teacherCount,
+      pricePerEnrollment = excluded.pricePerEnrollment,
+      notes = excluded.notes,
+      paidAt = excluded.paidAt
+  `).bind(
+    id, academyId, month, year,
+    studentCount ?? 0, enrollmentCount ?? 0, teacherCount ?? 0,
+    body.pricePerEnrollment ?? 0,
+    body.notes ?? null,
+    body.paidAt ?? null,
+  ).run();
+  const record = await c.env.DB
+    .prepare('SELECT * FROM AcademyBilling WHERE id = ?')
+    .bind(id).first();
+  return c.json(successResponse(record));
+});
+
+// DELETE /admin/academy/:id/billing/:billingId
+admin.delete('/academy/:id/billing/:billingId', async (c) => {
+  const session = await requireAuth(c);
+  if (session.role !== 'ADMIN') return c.json(errorResponse('Forbidden'), 403);
+  const billingId = c.req.param('billingId');
+  await c.env.DB.prepare('DELETE FROM AcademyBilling WHERE id = ?').bind(billingId).run();
+  return c.json(successResponse({ deleted: true }));
 });
 
 export default admin;
