@@ -89,7 +89,7 @@ const emptyForm: ClassFormData = {
   teacherId: '',
   monthlyPrice: '',
   oneTimePrice: '',
-  allowMonthly: true,
+  allowMonthly: false,
   allowOneTime: false,
   price: '',
   numCobros: '',

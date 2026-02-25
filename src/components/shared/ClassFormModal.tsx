@@ -183,7 +183,6 @@ export function ClassFormModal({
                 onChange={(e) => setFormData((f) => ({ ...f, maxStudents: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
-              <p className="text-xs text-gray-500 mt-1">Dejar vacío para sin límite</p>
             </div>
           </div>
 
@@ -278,8 +277,8 @@ export function ClassFormModal({
                   formData.allowMonthly ? 'border-blue-500 bg-blue-50 shadow-md' : 'border-gray-200 bg-white hover:border-gray-300'
                 }`}
               >
-                <div className="flex items-center gap-2 mb-2">
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                <div className="flex items-center gap-2">
+                  <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors ${
                     formData.allowMonthly ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
                   }`}>
                     {formData.allowMonthly && (
@@ -289,70 +288,73 @@ export function ClassFormModal({
                     )}
                   </div>
                   <span className={`text-sm font-semibold ${formData.allowMonthly ? 'text-blue-900' : 'text-gray-700'}`}>Pago Mensual</span>
+                  {formData.allowMonthly && (
+                    <div className="flex-1 flex items-center gap-2 justify-end" onClick={(e) => e.stopPropagation()}>
+                      <span className="text-xs text-blue-700 font-medium whitespace-nowrap">Nº cuotas</span>
+                      <input
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={formData.numCobros}
+                        onChange={(e) => {
+                          const numCobros = e.target.value;
+                          setFormData((f) => ({
+                            ...f,
+                            numCobros,
+                            monthlyPrice: numCobros && f.price
+                              ? (parseFloat(f.price) / parseInt(numCobros)).toFixed(2)
+                              : '',
+                          }));
+                        }}
+                        className="w-20 px-2 py-1 border border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                        placeholder="12"
+                      />
+                    </div>
+                  )}
                 </div>
-                {formData.allowMonthly && (
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <label className="block text-xs font-medium text-blue-700 mb-1">Número de cuotas</label>
-                    <input
-                      type="number"
-                      min="1"
-                      step="1"
-                      value={formData.numCobros}
-                      onChange={(e) => {
-                        const numCobros = e.target.value;
-                        setFormData((f) => ({
-                          ...f,
-                          numCobros,
-                          monthlyPrice: numCobros && f.price
-                            ? (parseFloat(f.price) / parseInt(numCobros)).toFixed(2)
-                            : '',
-                        }));
-                      }}
-                      className="w-full px-3 py-1.5 border border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                      placeholder="p.ej. 12"
-                    />
-                    {formData.numCobros && formData.price && parseInt(formData.numCobros) > 0 && (
-                      <p className="text-xs text-blue-600 mt-1.5 font-medium">
-                        ${(parseFloat(formData.price) / parseInt(formData.numCobros)).toFixed(2)}/mes × {formData.numCobros} mes{parseInt(formData.numCobros) !== 1 ? 'es' : ''}
-                      </p>
-                    )}
-                  </div>
+                {formData.allowMonthly && formData.numCobros && formData.price && parseInt(formData.numCobros) > 0 && (
+                  <p className="text-xs text-blue-600 mt-1.5 font-medium">
+                    ${(parseFloat(formData.price) / parseInt(formData.numCobros)).toFixed(2)}/mes × {formData.numCobros} mes{parseInt(formData.numCobros) !== 1 ? 'es' : ''}
+                  </p>
                 )}
               </button>
             </div>
           </div>
 
-          {/* Zoom */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Cuenta de Zoom (opcional)</label>
-            <StyledSelect
-              value={formData.zoomAccountId}
-              onChange={(v) => setFormData((f) => ({ ...f, zoomAccountId: v }))}
-              options={zoomOptions}
-              placeholder="Sin cuenta de Zoom"
-            />
-            {zoomAccounts.length === 0 && (
-              <p className="text-xs text-gray-500 mt-1">
-                No hay cuentas de Zoom conectadas.{' '}
-                <a href="/dashboard/academy/profile" className="text-blue-600 hover:underline">
-                  Conectar cuenta
-                </a>
-              </p>
-            )}
-          </div>
+          {/* Zoom + WhatsApp side by side */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Zoom */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Cuenta de Zoom (opcional)</label>
+              <StyledSelect
+                value={formData.zoomAccountId}
+                onChange={(v) => setFormData((f) => ({ ...f, zoomAccountId: v }))}
+                options={zoomOptions}
+                placeholder="Sin cuenta de Zoom"
+              />
+              {zoomAccounts.length === 0 && (
+                <p className="text-xs text-gray-500 mt-1">
+                  No hay cuentas de Zoom conectadas.{' '}
+                  <a href="/dashboard/academy/profile" className="text-blue-600 hover:underline">
+                    Conectar cuenta
+                  </a>
+                </p>
+              )}
+            </div>
 
-          {/* WhatsApp */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Enlace de grupo de WhatsApp (opcional)
-            </label>
-            <input
-              type="url"
-              value={formData.whatsappGroupLink}
-              onChange={(e) => setFormData((f) => ({ ...f, whatsappGroupLink: e.target.value }))}
-              placeholder="https://chat.whatsapp.com/..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
+            {/* WhatsApp */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Enlace de WhatsApp (opcional)
+              </label>
+              <input
+                type="url"
+                value={formData.whatsappGroupLink}
+                onChange={(e) => setFormData((f) => ({ ...f, whatsappGroupLink: e.target.value }))}
+                placeholder="https://chat.whatsapp.com/..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
           </div>
 
           {error && (

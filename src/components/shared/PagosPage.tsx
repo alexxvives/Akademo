@@ -118,7 +118,10 @@ export default function PagosPage({ role }: PagosPageProps) {
   const [studentSearchTerm, setStudentSearchTerm] = useState('');
   const [showStudentDropdown, setShowStudentDropdown] = useState(false);
   const [studentEnrollments, setStudentEnrollments] = useState<{[key: string]: {classId: string; className: string}[]}>({});
-  const [pendingPaymentsCollapsed, setPendingPaymentsCollapsed] = useState(true);
+  const [pendingPaymentsCollapsed, setPendingPaymentsCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return sessionStorage.getItem('pagos_pending_collapsed') !== 'false';
+  });
 
   // Admin-only state
   const [academies, setAcademies] = useState<Academy[]>([]);
@@ -615,7 +618,11 @@ export default function PagosPage({ role }: PagosPageProps) {
         {filteredPendingPayments.length > 0 && (
           <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
             <button
-              onClick={() => setPendingPaymentsCollapsed(!pendingPaymentsCollapsed)}
+              onClick={() => {
+                const next = !pendingPaymentsCollapsed;
+                setPendingPaymentsCollapsed(next);
+                sessionStorage.setItem('pagos_pending_collapsed', String(next));
+              }}
               className="w-full flex items-center justify-between px-4 py-3 bg-yellow-50 border-b border-yellow-100 hover:bg-yellow-100/60 transition-colors"
             >
               <div className="flex items-center gap-2">

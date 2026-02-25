@@ -108,6 +108,7 @@ export default function DashboardLayout({
   
   // Unpaid classes count for student sidebar badge
   const [unpaidClassesCount, setUnpaidClassesCount] = useState(0);
+  const [studentPendingPaymentsCount, setStudentPendingPaymentsCount] = useState(0);
   
   // Academy state for academy join link and feedbackEnabled
   const [academyId, setAcademyId] = useState<string | null>(null);
@@ -337,6 +338,21 @@ export default function DashboardLayout({
     }
   }, []);
 
+  const loadStudentPendingPayments = useCallback(async () => {
+    try {
+      const res = await apiClient('/payments/my-payments');
+      const json = await res.json() as { success: boolean; data: Array<{ paymentStatus: string }> };
+      if (json?.success && Array.isArray(json.data)) {
+        const count = json.data.filter(p =>
+          p.paymentStatus === 'PENDING' || p.paymentStatus === 'CASH_PENDING'
+        ).length;
+        setStudentPendingPaymentsCount(count);
+      }
+    } catch (error) {
+      console.error('Failed to load student pending payments:', error);
+    }
+  }, []);
+
   useEffect(() => {
     checkAuth();
     
@@ -366,11 +382,16 @@ export default function DashboardLayout({
       // Load unpaid classes count for sidebar badge
       loadUnpaidClasses();
       
+      // Load student pending payments count for sidebar badge
+      loadStudentPendingPayments();
+      const paymentsInterval = setInterval(loadStudentPendingPayments, 15000);
+      
       return () => {
         clearInterval(interval);
         clearInterval(notificationInterval);
         clearInterval(streamInterval);
         clearInterval(gradesInterval);
+        clearInterval(paymentsInterval);
       };
     }
     
@@ -570,7 +591,7 @@ export default function DashboardLayout({
         return [
           { label: 'Mis Asignaturas', href: '/dashboard/student/subjects', matchPaths: ['/dashboard/student/subject'], showPulse: activeStreams.length > 0, iconType: 'book' as const, badge: unpaidClassesCount > 0 ? unpaidClassesCount : undefined, badgeColor: 'bg-[#b0e788]' },
           { label: 'Ejercicios', href: '/dashboard/student/assignments', badge: academy?.requireGrading !== 0 && newGradesCount > 0 ? newGradesCount : undefined, badgeColor: 'bg-[#b0e788]', iconType: 'fileText' as const },
-          { label: 'Mis Pagos', href: '/dashboard/student/pagos', iconType: 'handCoins' as const },
+          { label: 'Mis Pagos', href: '/dashboard/student/pagos', iconType: 'handCoins' as const, badge: studentPendingPaymentsCount > 0 ? studentPendingPaymentsCount : undefined, badgeColor: 'bg-yellow-200' },
           { label: 'Calendario', href: '/dashboard/student/calendar', iconType: 'calendar' as const },
         ];
       case 'ACADEMY':

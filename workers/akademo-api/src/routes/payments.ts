@@ -782,8 +782,8 @@ payments.post('/stripe-session', async (c) => {
       }],
       mode: isRecurring ? 'subscription' : 'payment',
       customer_email: session.email, // Pre-fill email field
-      success_url: `${c.env.FRONTEND_URL || 'https://akademo-edu.com'}/dashboard/student/classes?payment=success&classId=${classId}`,
-      cancel_url: `${c.env.FRONTEND_URL || 'https://akademo-edu.com'}/dashboard/student/classes?payment=cancel`,
+      success_url: `${c.env.FRONTEND_URL || 'https://akademo-edu.com'}/dashboard/student/subjects?payment=success&classId=${classId}`,
+      cancel_url: `${c.env.FRONTEND_URL || 'https://akademo-edu.com'}/dashboard/student/subjects?payment=cancel`,
       metadata: {
         enrollmentId: enrollment.id,
         classId,
@@ -827,8 +827,8 @@ payments.get('/my-payments', async (c) => {
           p.status as paymentStatus,
           p.paymentMethod,
           p.amount as paymentAmount,
-          p.completedAt as createdAt,
-          p.nextPaymentDue,
+          COALESCE(p.completedAt, p.createdAt) as createdAt,
+          COALESCE(p.nextPaymentDue, p.billingCycleEnd) as nextPaymentDue,
           p.classId,
           c.name as className,
           p.currency,
@@ -837,7 +837,7 @@ payments.get('/my-payments', async (c) => {
         JOIN Class c ON p.classId = c.id
         JOIN Academy a ON p.receiverId = a.id
         WHERE p.payerId = ? AND p.type = 'STUDENT_TO_ACADEMY'
-        ORDER BY p.completedAt DESC
+        ORDER BY p.createdAt DESC
       `)
       .bind(session.id)
       .all();

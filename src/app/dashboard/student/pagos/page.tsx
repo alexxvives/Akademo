@@ -30,7 +30,10 @@ function isPending(status: string) {
 export default function StudentPagosPage() {
   const [payments, setPayments] = useState<StudentPayment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [pendingCollapsed, setPendingCollapsed] = useState(true);
+  const [pendingCollapsed, setPendingCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return sessionStorage.getItem('student_pagos_pending_collapsed') !== 'false';
+  });
 
   useEffect(() => {
     (async () => {
@@ -109,7 +112,11 @@ export default function StudentPagosPage() {
           {pending.length > 0 && (
             <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
               <button
-                onClick={() => setPendingCollapsed(v => !v)}
+                onClick={() => {
+                  const next = !pendingCollapsed;
+                  setPendingCollapsed(next);
+                  sessionStorage.setItem('student_pagos_pending_collapsed', String(next));
+                }}
                 className="w-full flex items-center justify-between px-4 py-3 bg-yellow-50 border-b border-yellow-100 hover:bg-yellow-100/60 transition-colors"
               >
                 <div className="flex items-center gap-2">
