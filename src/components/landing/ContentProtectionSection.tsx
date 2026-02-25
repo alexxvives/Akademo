@@ -14,21 +14,17 @@ export function ContentProtectionSection({ t }: ContentProtectionSectionProps) {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left: Content */}
           <div>
-            <ScrollReveal direction="none" delay={0}>
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-full text-emerald-600 text-xs font-semibold uppercase tracking-wide mb-6">
-                Seguridad de Contenido
-              </div>
-            </ScrollReveal>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-full text-emerald-600 text-xs font-semibold uppercase tracking-wide mb-6">
+              Seguridad de Contenido
+            </div>
             <ScrollReveal direction="blur" delay={80}>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
                 {t.contentTitle}
               </h2>
             </ScrollReveal>
-            <ScrollReveal direction="up" delay={160}>
-              <p className="text-lg text-gray-500 mb-8 max-w-4xl">
-                {t.contentSubtitle}
-              </p>
-            </ScrollReveal>
+            <p className="text-lg text-gray-500 mb-8 max-w-4xl">
+              {t.contentSubtitle}
+            </p>
 
             <div className="space-y-6">
               <ScrollReveal direction="left" delay={0}>

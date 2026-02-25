@@ -41,11 +41,9 @@ export function ContactSection({ lang }: ContactSectionProps) {
                 {lang === 'es' ? 'Preguntas Frecuentes' : 'Frequently Asked Questions'}
               </h2>
             </ScrollReveal>
-            <ScrollReveal direction="up" delay={80}>
-              <p className="text-gray-500 text-sm mb-6">
-                {lang === 'es' ? 'Todo lo que necesitas saber sobre AKADEMO.' : 'Everything you need to know about AKADEMO.'}
-              </p>
-            </ScrollReveal>
+            <p className="text-gray-500 text-sm mb-6">
+              {lang === 'es' ? 'Todo lo que necesitas saber sobre AKADEMO.' : 'Everything you need to know about AKADEMO.'}
+            </p>
             <div className="space-y-2">
               {faqItems.map((faq, i) => (
                 <ScrollReveal key={i} direction="up" delay={160 + i * 65}>
@@ -80,13 +78,11 @@ export function ContactSection({ lang }: ContactSectionProps) {
                 {lang === 'es' ? 'Hablemos' : "Let's Talk"}
               </h2>
             </ScrollReveal>
-            <ScrollReveal direction="up" delay={80}>
-              <p className="text-gray-500 text-sm mb-6">
-                {lang === 'es' 
-                  ? 'Si diriges una academia y te importa tu contenido, deberíamos conversar.'
-                  : "If you run an academy and care about your content, we should talk."}
-              </p>
-            </ScrollReveal>
+            <p className="text-gray-500 text-sm mb-6">
+              {lang === 'es' 
+                ? 'Si diriges una academia y te importa tu contenido, deberíamos conversar.'
+                : "If you run an academy and care about your content, we should talk."}
+            </p>
             
             <ScrollReveal direction="up" delay={160}>
               <form className="space-y-4">
@@ -135,10 +131,9 @@ export function ContactSection({ lang }: ContactSectionProps) {
               </form>
             </ScrollReveal>
             
-            <ScrollReveal direction="none" delay={360}>
-              <div className="mt-6 text-center">
+            <div className="mt-6 text-center">
               <p className="text-xs text-gray-400 mb-2">
-                {lang === 'es' ? 'O escríbenos directamente a' : 'Or email us directly at'}
+                {lang === 'es' ? 'O escrí¾nos directamente a' : 'Or email us directly at'}
               </p>
               <a 
                 href="mailto:alex@akademo-edu.com"
@@ -147,7 +142,6 @@ export function ContactSection({ lang }: ContactSectionProps) {
                 alex@akademo-edu.com
               </a>
             </div>
-            </ScrollReveal>
           </div>
         </div>
       </div>

@@ -12,13 +12,11 @@ export function WhySection({ t }: WhySectionProps) {
     <section className="py-20 sm:py-28 px-4 sm:px-6 bg-white">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
-          <ScrollReveal direction="none" delay={0}>
-            <div className="mb-4">
-              <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-full text-emerald-600 text-xs font-semibold uppercase tracking-wide">
-                EL PROBLEMA
-              </span>
-            </div>
-          </ScrollReveal>
+          <div className="mb-4">
+            <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-full text-emerald-600 text-xs font-semibold uppercase tracking-wide">
+              EL PROBLEMA
+            </span>
+          </div>
           <ScrollReveal direction="blur" delay={80}>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
               {t.whyTitle}{' '}
@@ -26,11 +24,9 @@ export function WhySection({ t }: WhySectionProps) {
               {t.whyTitleEnd}
             </h2>
           </ScrollReveal>
-          <ScrollReveal direction="up" delay={160}>
-            <p className="text-lg text-gray-500 max-w-5xl mx-auto">
-              {t.whySubtitle}
-            </p>
-          </ScrollReveal>
+          <p className="text-lg text-gray-500 max-w-5xl mx-auto">
+            {t.whySubtitle}
+          </p>
         </div>
         
         <div className="grid sm:grid-cols-2 gap-4 sm:gap-6 mb-16">

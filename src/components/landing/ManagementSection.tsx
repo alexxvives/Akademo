@@ -12,21 +12,17 @@ export function ManagementSection({ t }: ManagementSectionProps) {
     <section className="py-20 sm:py-28 px-4 sm:px-6 bg-white">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
-          <ScrollReveal direction="none" delay={0}>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-full text-emerald-600 text-xs font-semibold uppercase tracking-wide mb-6">
-              Sistema de Gestión
-            </div>
-          </ScrollReveal>
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-50 rounded-full text-emerald-600 text-xs font-semibold uppercase tracking-wide mb-6">
+            Sistema de Gestión
+          </div>
           <ScrollReveal direction="blur" delay={80}>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
               {t.managementTitle}
             </h2>
           </ScrollReveal>
-          <ScrollReveal direction="up" delay={160}>
-            <p className="text-lg text-gray-500 max-w-5xl mx-auto">
-              {t.managementSubtitle}
-            </p>
-          </ScrollReveal>
+          <p className="text-lg text-gray-500 max-w-5xl mx-auto">
+            {t.managementSubtitle}
+          </p>
         </div>
         
         <div className="grid sm:grid-cols-2 gap-8">

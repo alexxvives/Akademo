@@ -48,13 +48,11 @@ export function CalculatorSection({ lang }: CalculatorSectionProps) {
     <section className="py-20 sm:py-28 px-4 sm:px-6 relative bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900">
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-950/10 to-transparent pointer-events-none" />
       <div className="relative max-w-7xl mx-auto">
-        <ScrollReveal direction="none" delay={0}>
-          <div className="text-center mb-4">
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 rounded-full text-emerald-400 text-xs font-semibold uppercase tracking-wide border border-emerald-500/20">
-              {isEs ? 'CALCULADORA DE INGRESOS' : 'REVENUE CALCULATOR'}
-            </span>
-          </div>
-        </ScrollReveal>
+        <div className="text-center mb-4">
+          <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 rounded-full text-emerald-400 text-xs font-semibold uppercase tracking-wide border border-emerald-500/20">
+            {isEs ? 'CALCULADORA DE INGRESOS' : 'REVENUE CALCULATOR'}
+          </span>
+        </div>
         <ScrollReveal direction="blur" delay={80}>
           <h3 className="text-center text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-6 text-white">
             {isEs ? '¿Cuántos de tus estudiantes son ' : 'How many of your students are '}
@@ -64,13 +62,11 @@ export function CalculatorSection({ lang }: CalculatorSectionProps) {
             ?
           </h3>
         </ScrollReveal>
-        <ScrollReveal direction="up" delay={160}>
-          <p className="text-center text-gray-400 text-lg max-w-2xl mx-auto mb-10">
-            {isEs
-              ? 'Un estudiante fantasma es alguien que comparte su cuenta con otros. Tú cobras por 1, pero acceden 3. Descubre cuánto dinero estás dejando en la mesa.'
-              : "A ghost student is someone sharing their account with others. You charge for 1, but 3 access. Discover how much money you're leaving on the table."}
-          </p>
-        </ScrollReveal>
+        <p className="text-center text-gray-400 text-lg max-w-2xl mx-auto mb-10">
+          {isEs
+            ? 'Un estudiante fantasma es alguien que comparte su cuenta con otros. Tú cobras por 1, pero acceden 3. Descubre cuánto dinero estás dejando en la mesa.'
+            : "A ghost student is someone sharing their account with others. You charge for 1, but 3 access. Discover how much money you're leaving on the table."}
+        </p>
 
         <div className="grid lg:grid-cols-2 gap-6 items-stretch">
           {/* Left: Inputs */}

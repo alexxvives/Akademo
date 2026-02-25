@@ -38,7 +38,7 @@ export function Hero({ t, isScrolled: _isScrolled, onOpenModal }: HeroProps) {
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
           {/* Left: Copy */}
           <div>
-            <h1 className="text-[2.14rem] sm:text-[2.85rem] lg:text-[3.56rem] font-bold tracking-tight leading-[1.1] mb-4 text-white hero-u1">
+            <h1 className="text-[1.75rem] sm:text-[2.85rem] lg:text-[3.56rem] font-bold tracking-tight leading-[1.1] mb-4 text-white hero-u1">
               <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
                 {t.heroTitle1}
               </span>
@@ -118,7 +118,23 @@ export function Hero({ t, isScrolled: _isScrolled, onOpenModal }: HeroProps) {
               }
             `}</style>
 
-            {/* Top-left: 0% Cuentas compartidas */}
+            {/* Mobile stat chips — show below image on xs, hidden on sm+ */}
+            <div className="flex sm:hidden flex-wrap gap-2 mt-4 justify-center">
+              {[
+                { val: '0%', label: 'Cuentas compartidas', from: 'from-red-500', to: 'to-orange-500' },
+                { val: '100%', label: 'Control total', from: 'from-blue-500', to: 'to-cyan-500' },
+                { val: '24/7', label: 'Monitoreo AI', from: 'from-purple-500', to: 'to-pink-500' },
+                { val: '25+', label: 'Funcionalidades', from: 'from-emerald-500', to: 'to-teal-500' },
+              ].map(({ val, label, from, to }) => (
+                <div key={val} className="flex items-center gap-2 px-3 py-2 bg-gray-800/80 border border-gray-700/50 rounded-xl backdrop-blur-sm">
+                  <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${from} ${to} flex-shrink-0`} />
+                  <div>
+                    <div className="text-sm font-bold text-white leading-none">{val}</div>
+                    <div className="text-[10px] text-gray-400 leading-tight">{label}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
             <div className="hidden sm:flex absolute -top-4 -left-4 sm:-top-6 sm:-left-6 px-4 py-3 bg-gray-800 border border-gray-700/50 rounded-xl shadow-xl backdrop-blur-sm" style={{ animation: 'float 3s ease-in-out infinite' }}>
               <div className="flex items-center gap-2.5">
                 <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center">

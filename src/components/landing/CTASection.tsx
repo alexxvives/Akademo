@@ -21,11 +21,9 @@ export function CTASection({ t }: CTASectionProps) {
             {t.ctaTitleAfter}
           </h2>
         </ScrollReveal>
-        <ScrollReveal direction="up" delay={120}>
-          <p className="text-gray-400 text-lg mb-8">
-            {t.ctaSubtitle}
-          </p>
-        </ScrollReveal>
+        <p className="text-gray-400 text-lg mb-8">
+          {t.ctaSubtitle}
+        </p>
         <ScrollReveal direction="zoom" delay={240}>
           <Link
             href="/pricing"

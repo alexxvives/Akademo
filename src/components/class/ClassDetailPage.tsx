@@ -191,7 +191,13 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
   const activeUploadRef = useRef<XMLHttpRequest | AbortController | null>(null);
   const uploadStartTimeRef = useRef<number>(0);
   const lastProgressRef = useRef<{loaded: number, time: number}>({loaded: 0, time: 0});
-  const [expandTopicId, setExpandTopicId] = useState<string | null>(null);
+  const [expandTopicId, setExpandTopicId] = useState<string | null>(() => {
+    if (typeof window !== 'undefined' && classId) {
+      const saved = sessionStorage.getItem(`topic_expand_${classId}`);
+      return saved || null;
+    }
+    return null;
+  });
   const [academyDefaults, setAcademyDefaults] = useState({ maxWatchTimeMultiplier: 2.0, watermarkIntervalMins: 5 });
   const [lessonFormData, setLessonFormData] = useState({
     title: '',
@@ -272,6 +278,11 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
 
   // Poll for transcoding status updates
   useTranscodingPoll(lessons, classData?.id, setLessons);
+
+  // Persist topic expand/collapse for this class in session
+  useEffect(() => {
+    if (classId) sessionStorage.setItem(`topic_expand_${classId}`, expandTopicId ?? '');
+  }, [expandTopicId, classId]);
 
   // Handle URL params for lesson/video selection
   useEffect(() => {

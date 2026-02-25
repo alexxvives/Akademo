@@ -40,27 +40,6 @@ export function Navbar({ t, isScrolled, lang, onLangChange, onOpenModal }: Navba
 
               
               <div className="flex items-center gap-1.5 sm:gap-3 justify-end">
-                {/* Language switcher — compact, inline on mobile only */}
-                <div className="flex sm:hidden items-center gap-1">
-                  <button
-                    onClick={() => onLangChange('es')}
-                    className={`w-7 h-7 rounded-md flex items-center justify-center overflow-hidden transition-all ${
-                      lang === 'es' ? 'ring-2 ring-white/60 scale-110' : 'opacity-60 hover:opacity-100'
-                    }`}
-                    title="Español"
-                  >
-                    <Image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 900 600'%3E%3Cpath fill='%23c60b1e' d='M0 0h900v600H0z'/%3E%3Cpath fill='%23ffc400' d='M0 150h900v300H0z'/%3E%3C/svg%3E" alt="ES" width={20} height={14} unoptimized className="w-5 h-auto" />
-                  </button>
-                  <button
-                    onClick={() => onLangChange('en')}
-                    className={`w-7 h-7 rounded-md flex items-center justify-center overflow-hidden transition-all ${
-                      lang === 'en' ? 'ring-2 ring-white/60 scale-110' : 'opacity-60 hover:opacity-100'
-                    }`}
-                    title="English"
-                  >
-                    <Image src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30'%3E%3Cpath fill='%23012169' d='M0 0h60v30H0z'/%3E%3Cpath stroke='%23fff' stroke-width='6' d='M0 0l60 30m0-30L0 30'/%3E%3Cpath stroke='%23C8102E' stroke-width='4' d='M0 0l60 30m0-30L0 30'/%3E%3Cpath stroke='%23fff' stroke-width='10' d='M30 0v30M0 15h60'/%3E%3Cpath stroke='%23C8102E' stroke-width='6' d='M30 0v30M0 15h60'/%3E%3C/svg%3E" alt="EN" width={20} height={10} unoptimized className="w-5 h-auto" />
-                  </button>
-                </div>
                 <button
                   onClick={() => onOpenModal('login')}
                   className={`px-2.5 sm:px-4 py-1.5 sm:py-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${
@@ -123,6 +102,34 @@ export function Navbar({ t, isScrolled, lang, onLangChange, onOpenModal }: Navba
           </button>
         </div>
       </header>
+
+      {/* Mobile language flags — fixed below navbar, right side */}
+      <div className="flex sm:hidden fixed top-[62px] right-3 z-50 gap-1.5">
+        <button
+          onClick={() => onLangChange('es')}
+          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all overflow-hidden shadow-lg backdrop-blur-sm ${
+            lang === 'es' ? 'bg-white/90 ring-2 ring-white/60 scale-110' : 'bg-white/50 hover:bg-white/80'
+          }`}
+          title="Español"
+        >
+          <Image
+            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 900 600'%3E%3Cpath fill='%23c60b1e' d='M0 0h900v600H0z'/%3E%3Cpath fill='%23ffc400' d='M0 150h900v300H0z'/%3E%3C/svg%3E"
+            alt="ES" width={20} height={14} unoptimized className="w-5 h-auto"
+          />
+        </button>
+        <button
+          onClick={() => onLangChange('en')}
+          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all overflow-hidden shadow-lg backdrop-blur-sm ${
+            lang === 'en' ? 'bg-white/90 ring-2 ring-white/60 scale-110' : 'bg-white/50 hover:bg-white/80'
+          }`}
+          title="English"
+        >
+          <Image
+            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 30'%3E%3Cpath fill='%23012169' d='M0 0h60v30H0z'/%3E%3Cpath stroke='%23fff' stroke-width='6' d='M0 0l60 30m0-30L0 30'/%3E%3Cpath stroke='%23C8102E' stroke-width='4' d='M0 0l60 30m0-30L0 30'/%3E%3Cpath stroke='%23fff' stroke-width='10' d='M30 0v30M0 15h60'/%3E%3Cpath stroke='%23C8102E' stroke-width='6' d='M30 0v30M0 15h60'/%3E%3C/svg%3E"
+            alt="EN" width={20} height={14} unoptimized className="w-5 h-auto"
+          />
+        </button>
+      </div>
     </>
   );
 }

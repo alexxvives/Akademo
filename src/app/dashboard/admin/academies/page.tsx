@@ -53,10 +53,13 @@ function BillingRow({ record, onDelete }: { record: BillingRecord; onDelete: (id
 }
 
 function AddBillingForm({ academyId, onAdded }: { academyId: string; onAdded: (r: BillingRecord) => void }) {
-  const now = new Date();
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const [month, setMonth] = useState(String(today.getMonth() + 1));
+  const [year, setYear] = useState(String(today.getFullYear()));
   const [enrollmentCount, setEnrollmentCount] = useState('');
   const [price, setPrice] = useState('');
-  const [paidAt, setPaidAt] = useState('');
+  const [paidAt, setPaidAt] = useState(todayStr);
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -68,21 +71,33 @@ function AddBillingForm({ academyId, onAdded }: { academyId: string; onAdded: (r
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          month: today.getMonth() + 1,
-          year: today.getFullYear(),
+          month: Number(month),
+          year: Number(year),
           enrollmentCount: enrollmentCount !== '' ? Number(enrollmentCount) : undefined,
           pricePerEnrollment: price !== '' ? Number(price) : 0,
           paidAt: paidAt || null,
         }),
       });
       const result = await res.json();
-      if (result.success && result.data) { onAdded(result.data as BillingRecord); setEnrollmentCount(''); setPrice(''); setPaidAt(''); }
+      if (result.success && result.data) { onAdded(result.data as BillingRecord); setEnrollmentCount(''); setPrice(''); }
     } catch { /* skip */ }
     setSaving(false);
   };
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-wrap gap-2 items-end pt-2 border-t border-gray-100 mt-2">
+      <div className="flex flex-col gap-0.5">
+        <label className="text-[10px] text-gray-500 uppercase tracking-wide">Mes</label>
+        <select value={month} onChange={e => setMonth(e.target.value)} className="text-xs border border-gray-200 rounded px-2 py-1 w-20">
+          {['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'].map((m, i) => (
+            <option key={i+1} value={String(i+1)}>{m}</option>
+          ))}
+        </select>
+      </div>
+      <div className="flex flex-col gap-0.5">
+        <label className="text-[10px] text-gray-500 uppercase tracking-wide">Año</label>
+        <input type="number" value={year} onChange={e => setYear(e.target.value)} className="text-xs border border-gray-200 rounded px-2 py-1 w-20" />
+      </div>
       <div className="flex flex-col gap-0.5">
         <label className="text-[10px] text-gray-500 uppercase tracking-wide">Matrículas</label>
         <input placeholder="auto" type="number" value={enrollmentCount} onChange={e => setEnrollmentCount(e.target.value)} className="text-xs border border-gray-200 rounded px-2 py-1 w-20" />
