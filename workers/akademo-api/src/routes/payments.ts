@@ -834,6 +834,106 @@ payments.get('/my-payments', async (c) => {
   try {
     const session = await requireAuth(c);
 
+    // AUTO-CREATE pending payments for the student's own approved enrollments
+    // (mirrors the academy-side logic in pending-cash so students always see upcoming payments)
+    try {
+      const enrollments = await c.env.DB
+        .prepare(`
+          SELECT 
+            ce.id as enrollmentId,
+            ce.userId as studentId,
+            ce.classId,
+            ce.enrolledAt,
+            ce.paymentFrequency,
+            c.monthlyPrice,
+            c.oneTimePrice,
+            c.startDate as classStartDate,
+            u.firstName,
+            u.lastName,
+            u.email,
+            a.id as academyId,
+            a.name as academyName,
+            COALESCE(
+              (SELECT SUM(p2.amount) FROM Payment p2 
+               WHERE p2.payerId = ce.userId AND p2.classId = ce.classId 
+               AND p2.status IN ('PAID', 'COMPLETED') AND p2.type = 'STUDENT_TO_ACADEMY'), 0
+            ) as totalPaid
+          FROM ClassEnrollment ce
+          JOIN Class c ON ce.classId = c.id
+          JOIN Academy a ON c.academyId = a.id
+          JOIN User u ON ce.userId = u.id
+          WHERE ce.userId = ? AND ce.status = 'APPROVED'
+        `)
+        .bind(session.id)
+        .all();
+
+      for (const enrollment of (enrollments.results || []) as any[]) {
+        const totalPaid = enrollment.totalPaid || 0;
+        const isMonthly = enrollment.paymentFrequency === 'MONTHLY';
+        const monthlyPrice = enrollment.monthlyPrice;
+        const oneTimePrice = enrollment.oneTimePrice;
+
+        let amountOwed = 0;
+        let description = '';
+        let monthsOwed = 0;
+        let nextPaymentDue: string | null = null;
+        let billingCycleEnd: string | null = null;
+
+        if (isMonthly && monthlyPrice > 0) {
+          const classStart = new Date(enrollment.classStartDate || enrollment.enrolledAt);
+          const today = new Date();
+          if (today >= classStart) {
+            const elapsedCycles = countElapsedCycles(classStart, today);
+            const maxCycles = (oneTimePrice && monthlyPrice > 0) ? Math.ceil(oneTimePrice / monthlyPrice) : 9999;
+            const cappedCycles = Math.min(elapsedCycles, maxCycles);
+            const totalExpected = cappedCycles * monthlyPrice;
+            amountOwed = Math.max(0, totalExpected - totalPaid);
+            monthsOwed = Math.max(0, cappedCycles - Math.floor(totalPaid / monthlyPrice));
+            const cycleEnd = addMonths(classStart, elapsedCycles);
+            nextPaymentDue = cycleEnd.toISOString();
+            billingCycleEnd = cycleEnd.toISOString();
+            if (monthsOwed > 1) description = `Pago pendiente (${monthsOwed} meses × ${monthlyPrice}€)`;
+            else if (monthsOwed === 1) description = 'Pago pendiente mensual';
+            if (amountOwed === 0 && cappedCycles < maxCycles) {
+              const nextDueDate = addMonths(classStart, elapsedCycles);
+              amountOwed = monthlyPrice;
+              monthsOwed = 1;
+              description = 'Pago próximo mensual';
+              nextPaymentDue = nextDueDate.toISOString();
+              billingCycleEnd = nextDueDate.toISOString();
+            }
+          }
+        } else if (!isMonthly && oneTimePrice > 0) {
+          if (totalPaid < oneTimePrice) {
+            amountOwed = oneTimePrice - totalPaid;
+            description = 'Pago único pendiente';
+          }
+        }
+
+        if (amountOwed > 0) {
+          const existingPayment = await c.env.DB
+            .prepare(`SELECT id, amount FROM Payment WHERE payerId = ? AND classId = ? AND status = 'PENDING' AND type = 'STUDENT_TO_ACADEMY' LIMIT 1`)
+            .bind(enrollment.studentId, enrollment.classId)
+            .first() as { id: string; amount: number } | null;
+          if (!existingPayment) {
+            const paymentId = `payment-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+            await c.env.DB
+              .prepare(`INSERT INTO Payment (id, type, payerId, payerType, payerName, payerEmail, receiverId, receiverName, amount, currency, status, paymentMethod, classId, description, metadata, nextPaymentDue, billingCycleEnd, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`)
+              .bind(paymentId, 'STUDENT_TO_ACADEMY', enrollment.studentId, 'STUDENT', `${enrollment.firstName} ${enrollment.lastName}`, enrollment.email, enrollment.academyId, enrollment.academyName, amountOwed, 'EUR', 'PENDING', 'cash', enrollment.classId, description, JSON.stringify({ enrollmentId: enrollment.enrollmentId, monthsOwed, autoCreated: true }), nextPaymentDue, billingCycleEnd)
+              .run();
+          } else if (Math.abs(existingPayment.amount - amountOwed) > 0.01) {
+            await c.env.DB
+              .prepare(`UPDATE Payment SET amount = ?, description = ?, metadata = ?, nextPaymentDue = ?, billingCycleEnd = ? WHERE id = ?`)
+              .bind(amountOwed, description, JSON.stringify({ enrollmentId: enrollment.enrollmentId, monthsOwed, autoUpdated: true }), nextPaymentDue, billingCycleEnd, existingPayment.id)
+              .run();
+          }
+        }
+      }
+    } catch (autoErr) {
+      console.error('[my-payments auto-create]', autoErr);
+      // Non-fatal; continue and return what's in the DB
+    }
+
     const result = await c.env.DB
       .prepare(`
         SELECT 
