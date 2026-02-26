@@ -72,6 +72,7 @@ export interface CreateMeetingOptions {
   duration?: number; // in minutes, default 60
   password?: string;
   waitingRoom?: boolean;
+  startTime?: string; // ISO 8601 e.g. "2024-11-30T10:00:00Z" — schedules the meeting for a specific date/time
   config: ZoomConfig; // Required: pass env config
 }
 
@@ -90,6 +91,7 @@ export async function createZoomMeeting(options: CreateMeetingOptions): Promise<
     body: JSON.stringify({
       topic: options.topic,
       type: 2, // Scheduled meeting
+      ...(options.startTime ? { start_time: options.startTime } : {}),
       duration: options.duration || 60,
       settings: {
         waiting_room: options.waitingRoom ?? false,

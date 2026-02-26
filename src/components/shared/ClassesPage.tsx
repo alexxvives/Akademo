@@ -397,10 +397,12 @@ export function ClassesPage({ role }: ClassesPageProps) {
       oneTimePrice: cls.oneTimePrice?.toString() || '',
       allowMonthly: cls.monthlyPrice != null && cls.monthlyPrice > 0,
       allowOneTime: cls.oneTimePrice != null && cls.oneTimePrice > 0,
-      price: cls.oneTimePrice?.toString() || '',
+      // For monthly-only classes (no oneTimePrice), show monthlyPrice as the price with numCobros=1
+      // so the user can directly edit the monthly amount.
+      price: cls.oneTimePrice?.toString() || cls.monthlyPrice?.toString() || '',
       numCobros: (cls.monthlyPrice && cls.oneTimePrice && cls.monthlyPrice > 0)
         ? Math.round(cls.oneTimePrice / cls.monthlyPrice).toString()
-        : '',
+        : (cls.monthlyPrice && !cls.oneTimePrice ? '1' : ''),
       zoomAccountId: cls.zoomAccountId || '',
       whatsappGroupLink: cls.whatsappGroupLink || '',
       maxStudents: cls.maxStudents?.toString() || '',

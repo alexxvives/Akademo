@@ -82,6 +82,9 @@ calendarEvents.post('/create-zoom', async (c) => {
       topic: `${body.title.trim()} - ${classInfo.name}`,
       duration: 120,
       waitingRoom: false,
+      startTime: body.eventDate
+        ? `${body.eventDate}T${body.startTime || '09:00'}:00Z`
+        : undefined,
       config: { accessToken },
     });
 

@@ -51,6 +51,13 @@ export default function StudentPagosPage() {
   const fmt      = (n: number) => `${symbol}${n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const fmtDate  = (s: string) => s ? new Date(s).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
+  function getDueDateClass(dateStr?: string | null): string {
+    if (!dateStr) return 'text-gray-500';
+    const due = new Date(dateStr);
+    const now = new Date();
+    return due <= now ? 'text-red-600 font-semibold' : 'text-gray-500';
+  }
+
   const pending = payments.filter(p => isPending(p.paymentStatus));
   const history = payments.filter(p => !isPending(p.paymentStatus));
 
@@ -63,10 +70,19 @@ export default function StudentPagosPage() {
       <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap hidden sm:table-cell">
         {METHOD_LABELS[p.paymentMethod] ?? p.paymentMethod ?? '—'}
       </td>
-      <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap hidden md:table-cell">
+      <td className="px-4 py-3 text-sm whitespace-nowrap hidden md:table-cell">
         {isPending(p.paymentStatus)
-          ? (p.nextPaymentDue ? fmtDate(p.nextPaymentDue) : '—')
-          : fmtDate(p.createdAt)}
+          ? p.nextPaymentDue
+            ? (
+              <span
+                className={`${getDueDateClass(p.nextPaymentDue)} cursor-default`}
+                title="Si el pago no se registra antes de esta fecha, el acceso a la asignatura será suspendido"
+              >
+                {fmtDate(p.nextPaymentDue)}
+              </span>
+            )
+            : <span className="text-gray-500">—</span>
+          : <span className="text-gray-500">{fmtDate(p.createdAt)}</span>}
       </td>
       <td className="px-4 py-3 text-sm font-semibold text-gray-900 text-right whitespace-nowrap">
         {fmt(p.paymentAmount ?? 0)}

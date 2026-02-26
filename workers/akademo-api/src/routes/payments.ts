@@ -350,20 +350,6 @@ payments.get('/pending-cash', async (c) => {
             } else if (monthsOwed === 1) {
               description = `Pago pendiente mensual`;
             }
-
-            // 7-day early warning: if the next cycle is ≤ 7 days away and not yet paid
-            if (amountOwed === 0 && cappedCycles < maxCycles) {
-              const nextDueDate = addMonths(classStart, elapsedCycles);
-              const msUntilDue = nextDueDate.getTime() - today.getTime();
-              const daysUntilDue = msUntilDue / (1000 * 60 * 60 * 24);
-              if (daysUntilDue <= 7 && daysUntilDue > 0) {
-                amountOwed = monthlyPrice;
-                monthsOwed = 1;
-                description = `Pago próximo (vence en ${Math.ceil(daysUntilDue)} día${Math.ceil(daysUntilDue) === 1 ? '' : 's'})`;
-                nextPaymentDue = nextDueDate.toISOString();
-                billingCycleEnd = nextDueDate.toISOString();
-              }
-            }
           }
         } else if (!isMonthly && oneTimePrice > 0) {
           // ONE_TIME: check if they've paid the full oneTimePrice

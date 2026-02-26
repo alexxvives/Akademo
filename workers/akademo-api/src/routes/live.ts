@@ -461,12 +461,11 @@ live.get('/:id/check-recording', async (c) => {
   }
 });
 
-// PATCH /live/:id - Update stream
+// PATCH /live/:id - Update stream (status changes OR scheduled stream edits)
 live.patch('/:id', async (c) => {
   try {
     const session = await requireAuth(c);
     const streamId = c.req.param('id');
-    const { status, title } = await c.req.json();
 
     if (!['ADMIN', 'TEACHER', 'ACADEMY'].includes(session.role)) {
       return c.json(errorResponse('Not authorized'), 403);
@@ -490,8 +489,10 @@ live.patch('/:id', async (c) => {
       return c.json(errorResponse('Not authorized'), 403);
     }
 
+    const body = await c.req.json<{ status?: string; title?: string; scheduledAt?: string; zoomLink?: string | null }>();
+    const { status, title, scheduledAt, zoomLink } = body;
+
     const now = new Date().toISOString();
-    let query = 'UPDATE LiveStream SET ';
     const updates: string[] = [];
     const params: any[] = [];
 
@@ -507,16 +508,26 @@ live.patch('/:id', async (c) => {
       }
     }
 
-    if (title) {
+    if (title !== undefined) {
       updates.push('title = ?');
-      params.push(title);
+      params.push(title?.trim() || stream.title);
+    }
+
+    if (scheduledAt !== undefined) {
+      updates.push('scheduledAt = ?');
+      params.push(scheduledAt || stream.scheduledAt);
+    }
+
+    if (zoomLink !== undefined) {
+      updates.push('zoomLink = ?');
+      params.push(zoomLink?.trim() || null);
     }
 
     if (updates.length === 0) {
       return c.json(errorResponse('No updates provided'), 400);
     }
 
-    query += updates.join(', ') + ' WHERE id = ?';
+    const query = 'UPDATE LiveStream SET ' + updates.join(', ') + ' WHERE id = ?';
     params.push(streamId);
 
     await c.env.DB.prepare(query).bind(...params).run();
@@ -529,71 +540,6 @@ live.patch('/:id', async (c) => {
     return c.json(successResponse(updated));
   } catch (error: any) {
     console.error('[Update Stream] Error:', error);
-    return c.json(errorResponse('Internal server error'), 500);
-  }
-});
-
-// PATCH /live/:id - Update scheduled stream (title, scheduledAt, zoomLink)
-live.patch('/:id', async (c) => {
-  try {
-    const session = await requireAuth(c);
-    const streamId = c.req.param('id');
-
-    if (!['ADMIN', 'TEACHER', 'ACADEMY'].includes(session.role)) {
-      return c.json(errorResponse('Not authorized'), 403);
-    }
-
-    const stream = await c.env.DB
-      .prepare('SELECT * FROM LiveStream WHERE id = ?')
-      .bind(streamId)
-      .first() as any;
-
-    if (!stream) {
-      return c.json(errorResponse('Stream not found'), 404);
-    }
-
-    if (stream.status !== 'scheduled') {
-      return c.json(errorResponse('Only scheduled streams can be edited'), 400);
-    }
-
-    if (session.role === 'TEACHER' && stream.teacherId !== session.id) {
-      return c.json(errorResponse('Not authorized'), 403);
-    }
-
-    if (session.role === 'ACADEMY') {
-      const classInfo = await c.env.DB
-        .prepare('SELECT academyId FROM Class WHERE id = ?')
-        .bind(stream.classId)
-        .first() as any;
-      const academy = await c.env.DB
-        .prepare('SELECT id FROM Academy WHERE ownerId = ?')
-        .bind(session.id)
-        .first() as any;
-      if (!classInfo || !academy || classInfo.academyId !== academy.id) {
-        return c.json(errorResponse('Not authorized'), 403);
-      }
-    }
-
-    const { title, scheduledAt, zoomLink } = await c.req.json();
-
-    await c.env.DB
-      .prepare('UPDATE LiveStream SET title = ?, scheduledAt = ?, zoomLink = ? WHERE id = ?')
-      .bind(
-        title?.trim() || stream.title,
-        scheduledAt || stream.scheduledAt,
-        zoomLink?.trim() || null,
-        streamId
-      )
-      .run();
-
-    return c.json(successResponse({
-      id: streamId,
-      title: title?.trim() || stream.title,
-      scheduledAt: scheduledAt || stream.scheduledAt,
-      zoomLink: zoomLink?.trim() || null,
-    }));
-  } catch (error: any) {
-    console.error('[Patch Stream] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
 });
