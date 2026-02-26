@@ -178,6 +178,7 @@ calendarEvents.post('/', async (c) => {
       location?: string;
       startTime?: string;
       zoomLink?: string;
+      zoomMeetingId?: string;
     }>();
 
     if (!body.title || !body.type || !body.eventDate) {
@@ -241,8 +242,8 @@ calendarEvents.post('/', async (c) => {
           ? `${body.eventDate}T${body.startTime}:00`
           : body.eventDate;
         await c.env.DB
-          .prepare(`INSERT INTO LiveStream (id, classId, teacherId, title, status, zoomLink, scheduledAt, calendarEventId, createdAt) VALUES (?,?,?,?,?,?,?,?,datetime('now'))`)
-          .bind(streamId, body.classId, resolvedTeacherId, body.title, 'scheduled', body.zoomLink ?? null, scheduledAt, id)
+          .prepare(`INSERT INTO LiveStream (id, classId, teacherId, title, status, zoomLink, zoomMeetingId, scheduledAt, calendarEventId, createdAt) VALUES (?,?,?,?,?,?,?,?,?,datetime('now'))`)
+          .bind(streamId, body.classId, resolvedTeacherId, body.title, 'scheduled', body.zoomLink ?? null, body.zoomMeetingId ?? null, scheduledAt, id)
           .run();
       } catch (streamErr) {
         // Non-fatal — log but don't fail the calendar event creation

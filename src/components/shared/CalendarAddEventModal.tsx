@@ -165,6 +165,7 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
             location: location.trim() || undefined,
             startTime: startTime || undefined,
             zoomLink: zoomLink.trim() || undefined,
+            zoomMeetingId: zoomMeetingId || undefined,
           }),
         });
         const result = await res.json();
