@@ -324,6 +324,8 @@ payments.get('/pending-cash', async (c) => {
         let amountOwed = 0;
         let description = '';
         let monthsOwed = 0;
+        let nextPaymentDue: string | null = null;
+        let billingCycleEnd: string | null = null;
 
         if (isMonthly && monthlyPrice > 0) {
           // MONTHLY: calculate elapsed cycles and subtract paid
@@ -331,9 +333,18 @@ payments.get('/pending-cash', async (c) => {
           const today = new Date();
           if (today >= classStart) {
             const elapsedCycles = countElapsedCycles(classStart, today);
-            const totalExpected = elapsedCycles * monthlyPrice;
+            // Cap at total price (oneTimePrice holds the total for monthly plans)
+            const maxCycles = (oneTimePrice && monthlyPrice > 0) ? Math.ceil(oneTimePrice / monthlyPrice) : 9999;
+            const cappedCycles = Math.min(elapsedCycles, maxCycles);
+            const totalExpected = cappedCycles * monthlyPrice;
             amountOwed = Math.max(0, totalExpected - totalPaid);
-            monthsOwed = Math.max(0, elapsedCycles - Math.floor(totalPaid / monthlyPrice));
+            monthsOwed = Math.max(0, cappedCycles - Math.floor(totalPaid / monthlyPrice));
+
+            // nextPaymentDue = end of current billing cycle (when payment was/is due)
+            const cycleEnd = addMonths(classStart, elapsedCycles);
+            nextPaymentDue = cycleEnd.toISOString();
+            billingCycleEnd = cycleEnd.toISOString();
+
             if (monthsOwed > 1) {
               description = `Pago pendiente (${monthsOwed} meses × ${monthlyPrice}€)`;
             } else if (monthsOwed === 1) {
@@ -341,7 +352,7 @@ payments.get('/pending-cash', async (c) => {
             }
 
             // 7-day early warning: if the next cycle is ≤ 7 days away and not yet paid
-            if (amountOwed === 0) {
+            if (amountOwed === 0 && cappedCycles < maxCycles) {
               const nextDueDate = addMonths(classStart, elapsedCycles);
               const msUntilDue = nextDueDate.getTime() - today.getTime();
               const daysUntilDue = msUntilDue / (1000 * 60 * 60 * 24);
@@ -349,6 +360,8 @@ payments.get('/pending-cash', async (c) => {
                 amountOwed = monthlyPrice;
                 monthsOwed = 1;
                 description = `Pago próximo (vence en ${Math.ceil(daysUntilDue)} día${Math.ceil(daysUntilDue) === 1 ? '' : 's'})`;
+                nextPaymentDue = nextDueDate.toISOString();
+                billingCycleEnd = nextDueDate.toISOString();
               }
             }
           }
@@ -380,8 +393,8 @@ payments.get('/pending-cash', async (c) => {
                 INSERT INTO Payment (
                   id, type, payerId, payerType, payerName, payerEmail,
                   receiverId, receiverName, amount, currency, status,
-                  paymentMethod, classId, description, metadata, createdAt
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                  paymentMethod, classId, description, metadata, nextPaymentDue, billingCycleEnd, createdAt
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
               `)
               .bind(
                 paymentId, 'STUDENT_TO_ACADEMY', enrollment.studentId, 'STUDENT',
@@ -389,16 +402,20 @@ payments.get('/pending-cash', async (c) => {
                 enrollment.academyId, enrollment.academyName,
                 amountOwed, 'EUR', 'PENDING', 'cash', enrollment.classId,
                 description,
-                JSON.stringify({ enrollmentId: enrollment.enrollmentId, monthsOwed, autoCreated: true })
+                JSON.stringify({ enrollmentId: enrollment.enrollmentId, monthsOwed, autoCreated: true }),
+                nextPaymentDue,
+                billingCycleEnd
               )
               .run();
           } else if (Math.abs(existingPayment.amount - amountOwed) > 0.01) {
             // Amount changed (more months passed or partial payment made) - update
             await c.env.DB
-              .prepare(`UPDATE Payment SET amount = ?, description = ?, metadata = ? WHERE id = ?`)
+              .prepare(`UPDATE Payment SET amount = ?, description = ?, metadata = ?, nextPaymentDue = ?, billingCycleEnd = ? WHERE id = ?`)
               .bind(
                 amountOwed, description,
                 JSON.stringify({ enrollmentId: enrollment.enrollmentId, monthsOwed, autoUpdated: true }),
+                nextPaymentDue,
+                billingCycleEnd,
                 existingPayment.id
               )
               .run();

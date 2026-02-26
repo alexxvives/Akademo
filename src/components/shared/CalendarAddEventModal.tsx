@@ -93,6 +93,33 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
     setError('');
     try {
       if (isEditMode) {
+        if (editEvent!.id.startsWith('stream-')) {
+          // Edit actual LiveStream scheduled record
+          const streamId = editEvent!.id.replace('stream-', '');
+          const scheduledAt = `${eventDate}T${startTime || '00:00'}:00.000Z`;
+          const res = await apiClient(`/live/${streamId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: title.trim(), scheduledAt, zoomLink: zoomLink.trim() || null }),
+          });
+          const result = await res.json();
+          if (result.success) {
+            onSaved({
+              id: editEvent!.id,
+              title: result.data.title,
+              type: 'scheduledStream',
+              eventDate: result.data.scheduledAt ? result.data.scheduledAt.split('T')[0] : eventDate,
+              startTime: startTime || null,
+              zoomLink: zoomLink.trim() || null,
+              classId: classId || null,
+              notes: null,
+              location: null,
+            });
+            onClose();
+          } else {
+            setError(result.error || 'Error al guardar.');
+          }
+        } else {
         const rawId = editEvent!.id.replace('manual-', '');
         const res = await apiClient(`/calendar-events/${rawId}`, {
           method: 'PATCH',
@@ -113,6 +140,7 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
           onClose();
         } else {
           setError(result.error || 'Error al guardar.');
+        }
         }
       } else {
         const res = await apiClient('/calendar-events', {

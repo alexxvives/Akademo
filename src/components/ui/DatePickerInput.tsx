@@ -89,7 +89,7 @@ export function DatePickerInput({ value, onChange, required, className }: DatePi
         role="button"
         tabIndex={0}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setOpen(v => !v); }}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg cursor-pointer flex items-center justify-between bg-white hover:border-blue-400 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        className="w-full px-3 py-2 min-h-[42px] border border-gray-300 rounded-lg cursor-pointer flex items-center justify-between bg-white hover:border-blue-400 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
       >
         <span className={displayValue ? 'text-gray-900 text-sm' : 'text-gray-400 text-sm'}>
           {displayValue || 'DD/MM/AAAA'}

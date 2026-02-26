@@ -495,9 +495,12 @@ export function CalendarPage({ role }: CalendarPageProps) {
   }, [draggedEventId, events]);
 
   const handleEditEvent = useCallback((event: CalendarEvent) => {
-    if (!canCreateEvents || !event.manual || isDemo) return;
+    if (!canCreateEvents || isDemo) return;
+    // Allow manual calendar events OR scheduled (not-started) streams
+    const isScheduledStreamEvent = event.id.startsWith('stream-') && event.status === 'scheduled';
+    if (!event.manual && !isScheduledStreamEvent) return;
     setEditingEvent(event);
-    setAddEventDate(new Date(event.date + 'T12:00:00'));
+    setAddEventDate(new Date((event.date.includes('T') ? event.date : event.date + 'T12:00:00')));
   }, [canCreateEvents, isDemo]);
 
   // Navigate to the event's destination (used by the popup eye button)
@@ -788,8 +791,8 @@ export function CalendarPage({ role }: CalendarPageProps) {
                   Ver
                 </button>
 
-                {/* Edit — only for real manual CalendarScheduledEvent events */}
-                {canCreateEvents && popupEvent.manual && !popupEvent.id.startsWith('stream-') && !isDemo && (
+                {/* Edit — manual CalendarScheduledEvent events OR scheduled (not-yet-started) streams */}
+                {canCreateEvents && !isDemo && (popupEvent.manual && !popupEvent.id.startsWith('stream-') || isScheduledStream) && (
                   <button
                     onClick={() => { setPopupEvent(null); handleEditEvent(popupEvent); }}
                     className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-gray-50 text-gray-700 hover:bg-gray-100 text-sm font-medium transition-colors"
