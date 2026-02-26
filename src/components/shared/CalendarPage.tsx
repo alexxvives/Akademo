@@ -22,6 +22,7 @@ interface CalendarEvent {
   startTime?: string; // HH:MM format e.g. "09:30"
   location?: string;
   zoomLink?: string;
+  zoomMeetingId?: string;
   status?: string; // 'scheduled' | 'active' | 'ended' — for stream events
 }
 
@@ -376,6 +377,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
                   startTime: extractTime(date),
                   status: stream.status,
                   zoomLink: stream.zoomLink || undefined,
+                  zoomMeetingId: stream.zoomMeetingId || undefined,
                   location: stream.location || undefined,
                 });
               }
@@ -966,14 +968,16 @@ export function CalendarPage({ role }: CalendarPageProps) {
             location: editingEvent.location,
             startTime: editingEvent.startTime,
             zoomLink: editingEvent.zoomLink,
+            zoomMeetingId: editingEvent.zoomMeetingId,
           } : undefined}
           onClose={() => { setAddEventDate(null); setEditingEvent(null); }}
           onSaved={(ev) => {
             if (editingEvent) {
               // Update existing event
+              const updatedClassName = ev.classId ? (classes.find(c => c.id === ev.classId)?.name || '') : '';
               setEvents(prev => prev.map(e =>
                 e.id === editingEvent.id
-                  ? { ...e, title: ev.title, type: ev.type as EventType, date: ev.eventDate, classId: ev.classId || '', extra: ev.notes || undefined, startTime: ev.startTime || undefined, location: ev.location || undefined, zoomLink: ev.zoomLink || undefined }
+                  ? { ...e, title: ev.title, type: ev.type as EventType, date: ev.eventDate, classId: ev.classId || '', className: updatedClassName, extra: ev.notes || undefined, startTime: ev.startTime || undefined, location: ev.location || undefined, zoomLink: ev.zoomLink || undefined, zoomMeetingId: ev.zoomMeetingId || undefined }
                   : e
               ));
               setEditingEvent(null);

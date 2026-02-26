@@ -19,7 +19,7 @@ interface CalendarAddEventModalProps {
   classes: ClassOption[];
   onClose: () => void;
   disabled?: boolean; // disables saving (e.g. demo mode)
-  editEvent?: { id: string; title: string; type: string; classId?: string; extra?: string; location?: string; startTime?: string; zoomLink?: string };
+  editEvent?: { id: string; title: string; type: string; classId?: string; extra?: string; location?: string; startTime?: string; zoomLink?: string; zoomMeetingId?: string };
   onSaved: (event: {
     id: string;
     title: string;
@@ -30,6 +30,7 @@ interface CalendarAddEventModalProps {
     location?: string | null;
     startTime?: string | null;
     zoomLink?: string | null;
+    zoomMeetingId?: string | null;
   }) => void;
 }
 
@@ -55,6 +56,7 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
   const [error, setError] = useState('');
   const [zoomLink, setZoomLink] = useState(editEvent?.zoomLink ?? '');
   const [showZoomLink, setShowZoomLink] = useState(!!editEvent?.zoomLink);
+  const [zoomMeetingId, setZoomMeetingId] = useState(editEvent?.zoomMeetingId ?? '');
   const [creatingZoom, setCreatingZoom] = useState(false);
   const [zoomError, setZoomError] = useState('');
 
@@ -72,6 +74,7 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
       const result = await res.json();
       if (result.success) {
         setZoomLink(result.data.joinUrl);
+        setZoomMeetingId(result.data.meetingId || '');
         setShowZoomLink(true);
       } else {
         setZoomError(result.error || 'Error al crear reunión Zoom.');
@@ -104,6 +107,7 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
               title: title.trim(),
               scheduledAt,
               zoomLink: zoomLink.trim() || null,
+              zoomMeetingId: zoomMeetingId || null,
               classId: classId || null,
               location: location.trim() || null,
             }),
@@ -117,6 +121,7 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
               eventDate: result.data.scheduledAt ? result.data.scheduledAt.split('T')[0] : eventDate,
               startTime: startTime || null,
               zoomLink: zoomLink.trim() || null,
+              zoomMeetingId: zoomMeetingId || null,
               classId: classId || null,
               notes: null,
               location: location.trim() || null,
@@ -277,7 +282,7 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
                 />
                 <button
                   type="button"
-                  onClick={() => { setShowZoomLink(false); setZoomLink(''); setZoomError(''); }}
+                  onClick={() => { setShowZoomLink(false); setZoomLink(''); setZoomMeetingId(''); setZoomError(''); }}
                   className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

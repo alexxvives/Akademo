@@ -132,7 +132,9 @@ calendarEvents.get('/', async (c) => {
         academyId = filterAcademyId;
       } else {
         const rows = await c.env.DB.prepare(
-          'SELECT * FROM CalendarScheduledEvent ORDER BY eventDate DESC LIMIT 200'
+          `SELECT * FROM CalendarScheduledEvent
+           WHERE NOT EXISTS (SELECT 1 FROM LiveStream ls WHERE ls.calendarEventId = CalendarScheduledEvent.id)
+           ORDER BY eventDate DESC LIMIT 200`
         ).all<CalendarEventRow>();
         return c.json(successResponse(rows.results ?? []));
       }
@@ -143,7 +145,10 @@ calendarEvents.get('/', async (c) => {
     }
 
     const rows = await c.env.DB.prepare(
-      'SELECT * FROM CalendarScheduledEvent WHERE academyId = ? ORDER BY eventDate ASC'
+      `SELECT * FROM CalendarScheduledEvent
+       WHERE academyId = ?
+         AND NOT EXISTS (SELECT 1 FROM LiveStream ls WHERE ls.calendarEventId = CalendarScheduledEvent.id)
+       ORDER BY eventDate ASC`
     ).bind(academyId).all<CalendarEventRow>();
 
     return c.json(successResponse(rows.results ?? []));

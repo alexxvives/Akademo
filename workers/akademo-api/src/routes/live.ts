@@ -489,8 +489,41 @@ live.patch('/:id', async (c) => {
       return c.json(errorResponse('Not authorized'), 403);
     }
 
-    const body = await c.req.json<{ status?: string; title?: string; scheduledAt?: string; zoomLink?: string | null; classId?: string | null; location?: string | null }>();
-    const { status, title, scheduledAt, zoomLink, classId, location } = body;
+    const body = await c.req.json<{ status?: string; title?: string; scheduledAt?: string; zoomLink?: string | null; zoomMeetingId?: string | null; classId?: string | null; location?: string | null }>();
+    const { status, title, scheduledAt, zoomLink, zoomMeetingId, classId, location } = body;
+
+    // ── Delete old Zoom meeting when zoom link is being removed ──
+    // Trigger when zoomLink is explicitly set to null/empty AND the stream had a zoomMeetingId
+    const zoomLinkBeingCleared = zoomLink !== undefined && !zoomLink?.trim();
+    const oldZoomMeetingId = (stream.zoomMeetingId as string | null);
+    if (zoomLinkBeingCleared && oldZoomMeetingId) {
+      try {
+        const { deleteZoomMeeting } = await import('../lib/zoom');
+        const classInfo2 = await c.env.DB
+          .prepare('SELECT zoomAccountId FROM Class WHERE id = ?')
+          .bind(stream.classId)
+          .first<{ zoomAccountId: string | null }>();
+        let zoomToken2: string | undefined;
+        if (classInfo2?.zoomAccountId) {
+          const zoomAccount2 = await c.env.DB
+            .prepare('SELECT accessToken, refreshToken, expiresAt FROM ZoomAccount WHERE id = ?')
+            .bind(classInfo2.zoomAccountId)
+            .first() as { accessToken: string; refreshToken: string; expiresAt: string } | null;
+          if (zoomAccount2) {
+            let token2 = zoomAccount2.accessToken;
+            if (new Date(zoomAccount2.expiresAt) <= new Date(Date.now() + 5 * 60 * 1000)) {
+              const { refreshZoomToken } = await import('./zoom-accounts');
+              token2 = (await refreshZoomToken(c, classInfo2.zoomAccountId)) ?? token2;
+            }
+            zoomToken2 = token2;
+          }
+        }
+        await deleteZoomMeeting(oldZoomMeetingId, zoomToken2 ? { accessToken: zoomToken2 } : undefined);
+      } catch (zoomDeleteErr) {
+        console.error('[PATCH Stream] Failed to delete Zoom meeting on unlink:', zoomDeleteErr);
+        // Non-fatal — continue
+      }
+    }
 
     const now = new Date().toISOString();
     const updates: string[] = [];
@@ -523,6 +556,16 @@ live.patch('/:id', async (c) => {
       params.push(zoomLink?.trim() || null);
     }
 
+    // Update or clear zoomMeetingId
+    if (zoomMeetingId !== undefined) {
+      updates.push('zoomMeetingId = ?');
+      params.push(zoomMeetingId || null);
+    } else if (zoomLinkBeingCleared && oldZoomMeetingId) {
+      // Also clear stored meeting id when zoom link is removed
+      updates.push('zoomMeetingId = ?');
+      params.push(null);
+    }
+
     if (classId !== undefined) {
       updates.push('classId = ?');
       params.push(classId || stream.classId);
@@ -541,6 +584,32 @@ live.patch('/:id', async (c) => {
     params.push(streamId);
 
     await c.env.DB.prepare(query).bind(...params).run();
+
+    // ── Sync linked CalendarScheduledEvent ──
+    if (stream.calendarEventId) {
+      try {
+        const calUpdates: string[] = [];
+        const calParams: any[] = [];
+        if (title !== undefined) { calUpdates.push('title = ?'); calParams.push(title?.trim() || stream.title); }
+        if (scheduledAt !== undefined) {
+          calUpdates.push('eventDate = ?');
+          calParams.push((scheduledAt || stream.scheduledAt)?.split('T')[0] ?? null);
+        }
+        if (classId !== undefined) { calUpdates.push('classId = ?'); calParams.push(classId || stream.classId); }
+        if (location !== undefined) { calUpdates.push('location = ?'); calParams.push(location?.trim() || null); }
+        if (zoomLink !== undefined) { calUpdates.push('zoomLink = ?'); calParams.push(zoomLink?.trim() || null); }
+        if (calUpdates.length > 0) {
+          calParams.push(stream.calendarEventId);
+          await c.env.DB
+            .prepare('UPDATE CalendarScheduledEvent SET ' + calUpdates.join(', ') + ' WHERE id = ?')
+            .bind(...calParams)
+            .run();
+        }
+      } catch (calErr) {
+        console.error('[PATCH Stream] CalendarScheduledEvent sync failed:', calErr);
+        // Non-fatal
+      }
+    }
 
     const updated = await c.env.DB
       .prepare('SELECT * FROM LiveStream WHERE id = ?')
