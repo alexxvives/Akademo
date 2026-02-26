@@ -136,8 +136,9 @@ export async function getZoomMeeting(meetingId: string | number): Promise<ZoomMe
 }
 
 // Delete a meeting
-export async function deleteZoomMeeting(meetingId: string | number): Promise<void> {
-  const token = await getAccessToken();
+// Pass config.accessToken to use a specific class-level Zoom OAuth token; omit to use the global token
+export async function deleteZoomMeeting(meetingId: string | number, config?: { accessToken?: string }): Promise<void> {
+  const token = config?.accessToken ?? await getAccessToken();
   
   const response = await fetch(`https://api.zoom.us/v2/meetings/${meetingId}`, {
     method: 'DELETE',

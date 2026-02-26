@@ -350,6 +350,17 @@ payments.get('/pending-cash', async (c) => {
             } else if (monthsOwed === 1) {
               description = `Pago pendiente mensual`;
             }
+
+            // After current cycle is fully paid, immediately show the NEXT cycle as pending
+            // so both academy and student always see the upcoming payment with its due date
+            if (amountOwed === 0 && cappedCycles < maxCycles) {
+              const nextDueDate = addMonths(classStart, elapsedCycles);
+              amountOwed = monthlyPrice;
+              monthsOwed = 1;
+              description = 'Pago próximo mensual';
+              nextPaymentDue = nextDueDate.toISOString();
+              billingCycleEnd = nextDueDate.toISOString();
+            }
           }
         } else if (!isMonthly && oneTimePrice > 0) {
           // ONE_TIME: check if they've paid the full oneTimePrice

@@ -100,7 +100,13 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
           const res = await apiClient(`/live/${streamId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title: title.trim(), scheduledAt, zoomLink: zoomLink.trim() || null }),
+            body: JSON.stringify({
+              title: title.trim(),
+              scheduledAt,
+              zoomLink: zoomLink.trim() || null,
+              classId: classId || null,
+              location: location.trim() || null,
+            }),
           });
           const result = await res.json();
           if (result.success) {
@@ -113,7 +119,7 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
               zoomLink: zoomLink.trim() || null,
               classId: classId || null,
               notes: null,
-              location: null,
+              location: location.trim() || null,
             });
             onClose();
           } else {

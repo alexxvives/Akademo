@@ -375,6 +375,8 @@ export function CalendarPage({ role }: CalendarPageProps) {
                     : stream.status === 'scheduled' ? 'Programado' : 'En vivo',
                   startTime: extractTime(date),
                   status: stream.status,
+                  zoomLink: stream.zoomLink || undefined,
+                  location: stream.location || undefined,
                 });
               }
             }

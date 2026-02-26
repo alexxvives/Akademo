@@ -489,8 +489,8 @@ live.patch('/:id', async (c) => {
       return c.json(errorResponse('Not authorized'), 403);
     }
 
-    const body = await c.req.json<{ status?: string; title?: string; scheduledAt?: string; zoomLink?: string | null }>();
-    const { status, title, scheduledAt, zoomLink } = body;
+    const body = await c.req.json<{ status?: string; title?: string; scheduledAt?: string; zoomLink?: string | null; classId?: string | null; location?: string | null }>();
+    const { status, title, scheduledAt, zoomLink, classId, location } = body;
 
     const now = new Date().toISOString();
     const updates: string[] = [];
@@ -521,6 +521,16 @@ live.patch('/:id', async (c) => {
     if (zoomLink !== undefined) {
       updates.push('zoomLink = ?');
       params.push(zoomLink?.trim() || null);
+    }
+
+    if (classId !== undefined) {
+      updates.push('classId = ?');
+      params.push(classId || stream.classId);
+    }
+
+    if (location !== undefined) {
+      updates.push('location = ?');
+      params.push(location?.trim() || null);
     }
 
     if (updates.length === 0) {
@@ -619,6 +629,37 @@ live.delete('/:id', async (c) => {
       } catch (bunnyError) {
         console.error('[Delete Stream] Failed to delete from Bunny:', bunnyError);
         // Continue with DB deletion even if Bunny fails
+      }
+    }
+
+    // Delete the associated Zoom meeting if one was created
+    if (stream.zoomMeetingId) {
+      try {
+        const { deleteZoomMeeting } = await import('../lib/zoom');
+        // Look up the class's Zoom account for per-account OAuth token
+        const classInfo = await c.env.DB
+          .prepare('SELECT zoomAccountId FROM Class WHERE id = ?')
+          .bind(stream.classId)
+          .first<{ zoomAccountId: string | null }>();
+        let zoomToken: string | undefined;
+        if (classInfo?.zoomAccountId) {
+          const zoomAccount = await c.env.DB
+            .prepare('SELECT accessToken, refreshToken, expiresAt FROM ZoomAccount WHERE id = ?')
+            .bind(classInfo.zoomAccountId)
+            .first() as { accessToken: string; refreshToken: string; expiresAt: string } | null;
+          if (zoomAccount) {
+            let token = zoomAccount.accessToken;
+            if (new Date(zoomAccount.expiresAt) <= new Date(Date.now() + 5 * 60 * 1000)) {
+              const { refreshZoomToken } = await import('./zoom-accounts');
+              token = (await refreshZoomToken(c, classInfo.zoomAccountId)) ?? token;
+            }
+            zoomToken = token;
+          }
+        }
+        await deleteZoomMeeting(stream.zoomMeetingId, zoomToken ? { accessToken: zoomToken } : undefined);
+      } catch (zoomErr) {
+        console.error('[Delete Stream] Failed to delete Zoom meeting:', zoomErr);
+        // Continue with DB deletion even if Zoom API fails
       }
     }
 

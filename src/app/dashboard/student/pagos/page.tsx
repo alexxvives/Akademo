@@ -55,7 +55,9 @@ export default function StudentPagosPage() {
     if (!dateStr) return 'text-gray-500';
     const due = new Date(dateStr);
     const now = new Date();
-    return due <= now ? 'text-red-600 font-semibold' : 'text-gray-500';
+    const daysUntil = (due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+    // Red when overdue OR within 7 days of the deadline
+    return daysUntil <= 7 ? 'text-red-600 font-semibold' : 'text-gray-500';
   }
 
   const pending = payments.filter(p => isPending(p.paymentStatus));
