@@ -387,12 +387,25 @@ live.get('/:id/check-recording', async (c) => {
       return c.json(errorResponse('Stream not found'), 404);
     }
 
-    // If already has recording, return it
+    // If already has recording, check actual Bunny status
     if (stream.recordingId) {
-      return c.json(successResponse({ 
-        recordingId: stream.recordingId,
-        bunnyStatus: 4 // Assume ready if we have the ID
-      }));
+      try {
+        const guidToCheck = (() => {
+          try {
+            const parsed = JSON.parse(stream.recordingId as string);
+            return Array.isArray(parsed) ? parsed[0] : stream.recordingId;
+          } catch { return stream.recordingId; }
+        })();
+        const bunnyResp = await fetch(
+          `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/videos/${guidToCheck}`,
+          { headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY } }
+        );
+        if (bunnyResp.ok) {
+          const bunnyData = await bunnyResp.json() as { status: number };
+          return c.json(successResponse({ recordingId: stream.recordingId, bunnyStatus: bunnyData.status }));
+        }
+      } catch { /* fall through to default */ }
+      return c.json(successResponse({ recordingId: stream.recordingId, bunnyStatus: 4 }));
     }
 
     // If not ended yet, can't have recording
@@ -821,7 +834,7 @@ live.post('/create-lesson', async (c) => {
 
     // Check if stream has a recording
     if (!stream.recordingId) {
-      return c.json(errorResponse('Stream does not have a recording yet. Wait for Zoom to process the recording.'), 400);
+      return c.json(errorResponse('El stream aún no tiene una grabación. Espera a que Zoom procese la grabación e inténtalo de nuevo.'), 400);
     }
 
     // Parse recording IDs (can be single GUID string or JSON array of GUIDs)
@@ -878,24 +891,22 @@ live.post('/create-lesson', async (c) => {
           });
         } else {
           console.error(`[Create Lesson] Bunny video not found: ${guid}`);
-          return c.json(errorResponse(`Recording segment ${i + 1} not found in Bunny. It may have been deleted.`), 404);
+          return c.json(errorResponse(`La grabación "${stream.title || 'stream'}" no se encontró en Bunny. Es posible que haya sido eliminada.`), 404);
         }
       } catch (e) {
         console.error(`[Create Lesson] Failed to check Bunny status for ${guid}:`, e);
-        return c.json(errorResponse(`Failed to check status for recording segment ${i + 1}`), 500);
+        return c.json(errorResponse(`Error al verificar la grabación "${stream.title || 'stream'}". Por favor inténtalo de nuevo.`), 500);
       }
     }
 
     // Warn if any video is still processing
     for (let i = 0; i < videoStatuses.length; i++) {
       const videoStatus = videoStatuses[i];
-      if (videoStatus.status === 0) {
-        return c.json(errorResponse(`Recording segment ${i + 1} is still being uploaded to Bunny. Please wait a few minutes.`), 400);
+      if (videoStatus.status === 0 || videoStatus.status === 1 || videoStatus.status === 2 || videoStatus.status === 3) {
+        return c.json(errorResponse(`La grabación "${stream.title}" aún se está procesando en Bunny. Por favor espera unos minutos e inténtalo de nuevo.`), 400);
       }
       if (videoStatus.status === 6) {
-        return c.json(errorResponse(`Recording segment ${i + 1} failed to process. Please contact support.`), 400);
-      }
-      if (videoStatus.status === 1 || videoStatus.status === 2 || videoStatus.status === 3) {
+        return c.json(errorResponse(`La grabación "${stream.title}" tuvo un error al procesarse en Bunny. Por favor contacta a soporte.`), 400);
       }
     }
 

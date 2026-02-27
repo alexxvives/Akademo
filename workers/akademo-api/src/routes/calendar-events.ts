@@ -347,7 +347,45 @@ calendarEvents.delete('/:id', async (c) => {
       return c.json(errorResponse('Forbidden'), 403);
     }
 
+    // Find any linked LiveStream before deleting (reverse lookup via calendarEventId)
+    const linkedStream = await c.env.DB
+      .prepare('SELECT id, zoomMeetingId, classId FROM LiveStream WHERE calendarEventId = ?')
+      .bind(eventId)
+      .first() as { id: string; zoomMeetingId: string | null; classId: string | null } | null;
+
     await c.env.DB.prepare('DELETE FROM CalendarScheduledEvent WHERE id = ?').bind(eventId).run();
+
+    // Also delete the linked stream (and its Zoom meeting)
+    if (linkedStream) {
+      if (linkedStream.zoomMeetingId && linkedStream.classId) {
+        try {
+          const { deleteZoomMeeting } = await import('../lib/zoom');
+          const classInfo = await c.env.DB
+            .prepare('SELECT zoomAccountId FROM Class WHERE id = ?')
+            .bind(linkedStream.classId)
+            .first<{ zoomAccountId: string | null }>();
+          let zoomToken: string | undefined;
+          if (classInfo?.zoomAccountId) {
+            const zoomAccount = await c.env.DB
+              .prepare('SELECT accessToken, refreshToken, expiresAt FROM ZoomAccount WHERE id = ?')
+              .bind(classInfo.zoomAccountId)
+              .first() as { accessToken: string; refreshToken: string; expiresAt: string } | null;
+            if (zoomAccount) {
+              let token = zoomAccount.accessToken;
+              if (new Date(zoomAccount.expiresAt) <= new Date(Date.now() + 5 * 60 * 1000)) {
+                const { refreshZoomToken } = await import('./zoom-accounts');
+                token = (await refreshZoomToken(c, classInfo.zoomAccountId)) ?? token;
+              }
+              zoomToken = token;
+            }
+          }
+          await deleteZoomMeeting(linkedStream.zoomMeetingId, zoomToken ? { accessToken: zoomToken } : undefined);
+        } catch (zoomErr) {
+          console.error('[calendar DELETE] Zoom meeting delete failed:', zoomErr);
+        }
+      }
+      await c.env.DB.prepare('DELETE FROM LiveStream WHERE id = ?').bind(linkedStream.id).run();
+    }
 
     return c.json(successResponse({ deleted: true }));
   } catch (error) {

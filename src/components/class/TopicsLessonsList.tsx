@@ -901,25 +901,8 @@ export default function TopicsLessonsList({
             
             <div className="flex-1 overflow-y-auto p-6">
               {isLoadingStudentTimes ? (
-                <div className="space-y-4 py-2">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="bg-gray-50 rounded-xl p-4 animate-pulse">
-                      <div className="h-4 w-1/3 bg-gray-200 rounded mb-3"></div>
-                      <div className="space-y-2">
-                        {[1, 2].map((j) => (
-                          <div key={j} className="bg-white rounded-lg p-3 border border-gray-200">
-                            <div className="flex items-center justify-between gap-4">
-                              <div className="flex-1 space-y-2">
-                                <div className="h-3 w-1/2 bg-gray-200 rounded"></div>
-                                <div className="h-2 w-full bg-gray-200 rounded-full"></div>
-                              </div>
-                              <div className="h-6 w-14 bg-gray-200 rounded"></div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+                <div className="flex items-center justify-center py-16">
+                  <div className="w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
               ) : studentTimesData.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
