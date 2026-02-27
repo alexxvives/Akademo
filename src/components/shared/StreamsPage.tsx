@@ -306,7 +306,8 @@ export function StreamsPage({ role }: StreamsPageProps) {
     try {
       const response = await apiClient(`/live/${streamId}`, { method: 'DELETE' });
       const result = await response.json();
-      if (result.success) {
+      if (result.success || response.status === 404) {
+        // 404 means already deleted (e.g. cascade from calendar) — just remove from list
         setStreams(streams.filter((s) => s.id !== streamId));
       } else {
         alert(`Error: ${result.error}`);

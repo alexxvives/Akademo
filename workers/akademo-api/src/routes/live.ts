@@ -486,7 +486,7 @@ live.patch('/:id', async (c) => {
 
     // Verify ownership
     const stream = await c.env.DB
-      .prepare(`SELECT ls.*, a.ownerId as academyOwnerId FROM LiveStream ls JOIN Class c ON ls.classId = c.id JOIN Academy a ON c.academyId = a.id WHERE ls.id = ?`)
+      .prepare(`SELECT ls.*, COALESCE(a.ownerId, '') as academyOwnerId FROM LiveStream ls LEFT JOIN Class c ON ls.classId = c.id LEFT JOIN Academy a ON c.academyId = a.id WHERE ls.id = ?`)
       .bind(streamId)
       .first() as any;
 
