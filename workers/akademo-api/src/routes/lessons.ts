@@ -625,6 +625,15 @@ lessons.delete('/:id', async (c) => {
       const bunnyGuid = (video as any).bunnyGuid;
       if (bunnyGuid) {
         try {
+          // Skip Bunny deletion if this video is linked to a stream recording
+          // (so the stream row stays available to re-add to a new lesson)
+          const isStreamRecording = await c.env.DB
+            .prepare('SELECT 1 FROM LiveStream WHERE recordingId = ? LIMIT 1')
+            .bind(bunnyGuid)
+            .first();
+          if (isStreamRecording) {
+            continue;
+          }
           const deleteUrl = `https://video.bunnycdn.com/library/${libraryId}/videos/${bunnyGuid}`;
           const response = await fetch(deleteUrl, {
             method: 'DELETE',

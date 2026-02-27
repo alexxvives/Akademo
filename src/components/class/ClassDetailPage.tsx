@@ -14,6 +14,8 @@ import { multipartUpload } from '@/lib/multipart-upload';
 import { uploadToBunny } from '@/lib/bunny-upload';
 import { formatDuration } from '@/lib/formatters';
 import { StyledSelect } from '@/components/ui/StyledSelect';
+import { CustomDatePicker } from '@/components/ui/CustomDatePicker';
+import { CustomTimePicker } from '@/components/ui/CustomTimePicker';
 
 // Import shared components
 import { ClassHeader, PendingEnrollments, TopicsLessonsList } from '@/components/class';
@@ -184,6 +186,8 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
   const [streamNameInput, setStreamNameInput] = useState('');
   const [showRescheduleModal, setShowRescheduleModal] = useState(false);
   const [reschedulingLesson, setReschedulingLesson] = useState<Lesson | null>(null);
+  const [rescheduleDate, setRescheduleDate] = useState('');
+  const [rescheduleTime, setRescheduleTime] = useState('');
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadSpeed, setUploadSpeed] = useState(0); // bytes per second
@@ -253,27 +257,33 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [classId]);
 
-  // Poll for active live streams every 10 seconds
+  // Poll for active live streams — 2s when active (fast close), 10s when scheduled only
   useEffect(() => {
     if (!classData?.id) return;
-    
+    let timeoutId: ReturnType<typeof setTimeout>;
+
     const pollLiveStreams = async () => {
       try {
         const res = await apiClient(`/live?classId=${classData.id}`);
         const result = await res.json();
         if (result.success) {
-          setLiveClasses((result.data || []).filter((s: { status: string }) => 
+          const filtered = (result.data || []).filter((s: { status: string }) =>
             s.status === 'active' || s.status === 'scheduled'
-          ));
+          );
+          setLiveClasses(filtered);
+          const hasActive = filtered.some((s: { status: string }) => s.status === 'active');
+          timeoutId = setTimeout(pollLiveStreams, hasActive ? 2000 : 10000);
+        } else {
+          timeoutId = setTimeout(pollLiveStreams, 10000);
         }
       } catch (e) {
         console.error('Failed to poll live classes:', e);
+        timeoutId = setTimeout(pollLiveStreams, 10000);
       }
     };
 
     pollLiveStreams();
-    const interval = setInterval(pollLiveStreams, 10000);
-    return () => clearInterval(interval);
+    return () => clearTimeout(timeoutId);
   }, [classData?.id]);
 
   // Poll for transcoding status updates
@@ -1174,6 +1184,11 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
 
   const handleRescheduleLesson = (lesson: Lesson) => {
     setReschedulingLesson(lesson);
+    // Init date/time to today
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    setRescheduleDate(`${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`);
+    setRescheduleTime(`${pad(now.getHours())}:${pad(now.getMinutes())}`);
     setShowRescheduleModal(true);
   };
 
@@ -2308,7 +2323,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
                       <button 
                         type="submit" 
                         disabled={paymentStatus === 'NOT PAID'}
-                        className="px-6 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                         title={paymentStatus === 'NOT PAID' ? 'Active su academia para crear lecciones' : ''}
                       >
                         {uploading ? 'Creando...' : editingLessonId ? 'Actualizar Lección' : 'Crear Lección'}
@@ -2380,57 +2395,35 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
                 <div className="bg-white rounded-2xl max-w-md w-full p-6">
                   <h3 className="text-xl font-semibold text-gray-900 mb-4">Reprogramar Lección</h3>
 
-                  <form onSubmit={(e) => {
-                    e.preventDefault();
-                    const form = e.target as HTMLFormElement;
-                    const date = (form.elements.namedItem('rescheduleDate') as HTMLInputElement).value;
-                    const time = (form.elements.namedItem('rescheduleTime') as HTMLInputElement).value;
-                    handleRescheduleSubmit(date, time);
-                  }}>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Nueva Fecha</label>
-                        <input 
-                          type="date" 
-                          name="rescheduleDate"
-                          defaultValue={(() => {
-                            const d = new Date();
-                            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-                          })()}
-                          className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Nueva Hora</label>
-                        <input 
-                          type="time"
-                          name="rescheduleTime"
-                          defaultValue={new Date().toTimeString().slice(0, 5)}
-                          className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl text-sm focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
-                          required
-                        />
-                      </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Nueva Fecha</label>
+                      <CustomDatePicker value={rescheduleDate} onChange={setRescheduleDate} />
                     </div>
-                    
-                    <div className="flex gap-3">
-                      <button 
-                        type="submit" 
-                        disabled={paymentStatus === 'NOT PAID'}
-                        className="flex-1 px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                        title={paymentStatus === 'NOT PAID' ? 'No disponible en modo demo' : undefined}
-                      >
-                        Reprogramar
-                      </button>
-                      <button 
-                        type="button" 
-                        onClick={() => { setShowRescheduleModal(false); setReschedulingLesson(null); }}
-                        className="px-6 py-2.5 border-2 border-gray-900 text-gray-900 hover:bg-gray-50 rounded-lg font-medium text-sm"
-                      >
-                        Cancelar
-                      </button>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Nueva Hora</label>
+                      <CustomTimePicker value={rescheduleTime} onChange={setRescheduleTime} />
                     </div>
-                  </form>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      disabled={paymentStatus === 'NOT PAID' || !rescheduleDate}
+                      onClick={() => rescheduleDate && rescheduleTime && handleRescheduleSubmit(rescheduleDate, rescheduleTime)}
+                      className="flex-1 px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      title={paymentStatus === 'NOT PAID' ? 'No disponible en modo demo' : undefined}
+                    >
+                      Reprogramar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setShowRescheduleModal(false); setReschedulingLesson(null); }}
+                      className="px-6 py-2.5 border-2 border-gray-900 text-gray-900 hover:bg-gray-50 rounded-lg font-medium text-sm"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
                 </div>
               </div>
               </ModalPortal>

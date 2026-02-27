@@ -108,6 +108,26 @@ webhooks.post('/zoom', async (c) => {
         .bind('ended', new Date().toISOString(), meetingId.toString())
         .run();
 
+    } else if (event === 'meeting.deleted') {
+      const meetingId = data.object.id;
+
+      // If the meeting was still scheduled (not yet started), remove it from the platform
+      const stream = await c.env.DB
+        .prepare(`SELECT id, status, calendarEventId FROM LiveStream WHERE zoomMeetingId = ? AND status = 'scheduled'`)
+        .bind(meetingId.toString())
+        .first() as { id: string; status: string; calendarEventId: string | null } | null;
+
+      if (stream) {
+        // Delete the stream row (cascades to linked CalendarScheduledEvent)
+        await c.env.DB.prepare('DELETE FROM LiveStream WHERE id = ?').bind(stream.id).run();
+        if (stream.calendarEventId) {
+          await c.env.DB
+            .prepare('DELETE FROM CalendarScheduledEvent WHERE id = ?')
+            .bind(stream.calendarEventId)
+            .run();
+        }
+      }
+
     } else if (event === 'recording.completed') {
       // Use numeric meeting ID (preferred) from webhook payload
       const meetingId = data.object.id;
