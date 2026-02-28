@@ -432,18 +432,6 @@ export function CalendarPage({ role }: CalendarPageProps) {
     } catch { /* skip */ }
   }, []);
 
-  const handleDeleteStream = useCallback(async (streamEventId: string) => {
-    const streamId = streamEventId.replace('stream-', '');
-    try {
-      const res = await apiClient(`/live/${streamId}`, { method: 'DELETE' });
-      const result = await res.json();
-      // Remove from calendar even on 404 – stream was already deleted elsewhere
-      if (result.success || res.status === 404) {
-        setEvents(prev => prev.filter(e => e.id !== streamEventId));
-      }
-    } catch { setEvents(prev => prev.filter(e => e.id !== streamEventId)); }
-  }, []);
-
   const handleDragStart = useCallback((e: React.DragEvent, eventId: string) => {
     setDraggedEventId(eventId);
     e.dataTransfer.effectAllowed = 'move';
@@ -689,7 +677,6 @@ export function CalendarPage({ role }: CalendarPageProps) {
         const dateLabel = d && !isNaN(d.getTime())
           ? `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`
           : null;
-        const isScheduledStream = popupEvent.id.startsWith('stream-') && popupEvent.status !== 'ended';
         const accentColor = EVENT_COLORS[popupEvent.type]?.bg ?? 'bg-gray-500';
 
         return (
@@ -800,8 +787,8 @@ export function CalendarPage({ role }: CalendarPageProps) {
                   Ver
                 </button>
 
-                {/* Edit — manual CalendarScheduledEvent events OR scheduled (not-yet-started) streams */}
-                {canCreateEvents && !isDemo && (popupEvent.manual && !popupEvent.id.startsWith('stream-') || isScheduledStream) && (
+                {/* Edit — manual CalendarScheduledEvent events only (not streams) */}
+                {canCreateEvents && !isDemo && popupEvent.manual && !popupEvent.id.startsWith('stream-') && (
                   <button
                     onClick={() => { setPopupEvent(null); handleEditEvent(popupEvent); }}
                     className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-gray-50 text-gray-700 hover:bg-gray-100 text-sm font-medium transition-colors"
@@ -814,15 +801,11 @@ export function CalendarPage({ role }: CalendarPageProps) {
                   </button>
                 )}
 
-                {/* Delete — manual calendar events OR any stream */}
-                {canCreateEvents && !isDemo && (popupEvent.manual || popupEvent.id.startsWith('stream-')) && (
+                {/* Delete — manual calendar events only (not streams; streams managed from StreamsPage) */}
+                {canCreateEvents && !isDemo && popupEvent.manual && !popupEvent.id.startsWith('stream-') && (
                   <button
                     onClick={async () => {
-                      if (popupEvent.id.startsWith('stream-')) {
-                        await handleDeleteStream(popupEvent.id);
-                      } else {
-                        await handleDeleteEvent(popupEvent.id);
-                      }
+                      await handleDeleteEvent(popupEvent.id);
                       setPopupEvent(null);
                     }}
                     className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 text-sm font-medium transition-colors ml-auto"
@@ -1447,15 +1430,13 @@ export function CalendarPage({ role }: CalendarPageProps) {
                   <span className="text-xs text-gray-400">
                     {new Date(event.date).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                   </span>
-                {canCreateEvents && !isDemo && (event.manual || (event.id.startsWith('stream-') && event.status === 'scheduled')) && (
+                {canCreateEvents && !isDemo && event.manual && !event.id.startsWith('stream-') && (
                     <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                      {event.manual && (
-                        <button onClick={() => handleEditEvent(event)}
-                          className="p-1 hover:bg-gray-200 rounded transition-colors" title="Editar">
-                          <svg className="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                        </button>
-                      )}
-                      <button onClick={() => event.id.startsWith('stream-') ? handleDeleteStream(event.id) : handleDeleteEvent(event.id)}
+                      <button onClick={() => handleEditEvent(event)}
+                        className="p-1 hover:bg-gray-200 rounded transition-colors" title="Editar">
+                        <svg className="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                      </button>
+                      <button onClick={() => handleDeleteEvent(event.id)}
                         className="p-1 hover:bg-red-100 rounded transition-colors" title="Eliminar">
                         <svg className="w-3 h-3 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                       </button>

@@ -691,22 +691,15 @@ live.delete('/:id', async (c) => {
           recordingGuids = [stream.recordingId];
         }
 
-        // Check each recording and delete if not used
+        // Delete each recording from Bunny (stream is being intentionally removed)
         for (const guid of recordingGuids) {
-          const existingUpload = await c.env.DB.prepare(`
-            SELECT id FROM Upload WHERE bunnyGuid = ?
-          `).bind(guid).first();
-
-          // Only delete from Bunny if NOT used in any upload/lesson
-          if (!existingUpload) {
-            await fetch(
-              `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/videos/${guid}`,
-              {
-                method: 'DELETE',
-                headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY },
-              }
-            );
-          }
+          await fetch(
+            `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/videos/${guid}`,
+            {
+              method: 'DELETE',
+              headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY },
+            }
+          );
         }
       } catch (bunnyError) {
         console.error('[Delete Stream] Failed to delete from Bunny:', bunnyError);
