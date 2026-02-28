@@ -692,7 +692,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
         const dateLabel = d && !isNaN(d.getTime())
           ? `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`
           : null;
-        const isScheduledStream = popupEvent.id.startsWith('stream-') && popupEvent.status === 'scheduled';
+        const isScheduledStream = popupEvent.id.startsWith('stream-') && popupEvent.status !== 'ended';
         const accentColor = EVENT_COLORS[popupEvent.type]?.bg ?? 'bg-gray-500';
 
         return (
@@ -767,7 +767,15 @@ export function CalendarPage({ role }: CalendarPageProps) {
                       <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                       </svg>
-                      <a href={popupEvent.zoomLink} target="_blank" rel="noopener noreferrer" className="text-brand-600 hover:underline truncate font-medium">
+                      <a
+                        href={popupEvent.zoomLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-brand-600 hover:underline truncate font-medium"
+                        onClick={(e) => {
+                          if (!window.confirm('\u00bfQuieres unirte a la sesión de Zoom?')) e.preventDefault();
+                        }}
+                      >
                         Unirse al Zoom
                       </a>
                     </div>
@@ -809,8 +817,8 @@ export function CalendarPage({ role }: CalendarPageProps) {
                   </button>
                 )}
 
-                {/* Delete — manual calendar events OR scheduled (not-yet-started) streams */}
-                {canCreateEvents && !isDemo && (popupEvent.manual || isScheduledStream) && (
+                {/* Delete — manual calendar events OR any stream */}
+                {canCreateEvents && !isDemo && (popupEvent.manual || popupEvent.id.startsWith('stream-')) && (
                   <button
                     onClick={async () => {
                       if (isScheduledStream) {
@@ -1229,6 +1237,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
                       className={`rounded px-1.5 py-0.5 overflow-hidden cursor-pointer hover:shadow-md transition-shadow transition-opacity ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text} ${isEventPast ? 'opacity-50' : ''}`}
                       onClick={(e) => {
                         e.stopPropagation();
+                        if ((e.target as HTMLElement).closest('a')) return;
                         handleEventClick(event);
                       }}
                       title={`${event.startTime} — ${event.title}${event.className ? ` (${event.className})` : ''}`}
@@ -1237,9 +1246,9 @@ export function CalendarPage({ role }: CalendarPageProps) {
                         <div className="text-[10px] font-medium truncate flex-1 flex items-center gap-0.5">
                           <span className="truncate">{event.title}</span>
                           {event.zoomLink && (
-                            <a href={event.zoomLink} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="flex-shrink-0 opacity-90">
+                            <span className="flex-shrink-0 opacity-70">
                               <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-                            </a>
+                            </span>
                           )}
                         </div>
                         {event.startTime && <div className="text-[9px] opacity-80 flex-shrink-0">{event.startTime}</div>}
@@ -1353,6 +1362,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
                     className={`rounded px-2 py-1 overflow-hidden cursor-pointer hover:shadow-md transition-shadow ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text}`}
                     onClick={(e) => {
                       e.stopPropagation();
+                      if ((e.target as HTMLElement).closest('a')) return;
                       handleEventClick(event);
                     }}
                     title={`${event.startTime} — ${event.title}${event.className ? ` (${event.className})` : ''}`}
@@ -1361,9 +1371,9 @@ export function CalendarPage({ role }: CalendarPageProps) {
                       <div className="text-xs font-medium truncate flex-1 flex items-center gap-0.5">
                         <span className="truncate">{event.title}</span>
                         {event.zoomLink && (
-                          <a href={event.zoomLink} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="flex-shrink-0 opacity-90">
+                          <span className="flex-shrink-0 opacity-70">
                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-                          </a>
+                          </span>
                         )}
                       </div>
                       {event.startTime && <div className="text-[10px] opacity-80 flex-shrink-0">{event.startTime}</div>}
