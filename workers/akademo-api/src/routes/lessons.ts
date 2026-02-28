@@ -611,9 +611,9 @@ lessons.delete('/:id', async (c) => {
       return c.json(errorResponse('Not authorized'), 403);
     }
 
-    // Get all videos for this lesson to delete from Bunny
+    // Get all videos for this lesson to delete from Bunny + clean up DB
     const videos = await c.env.DB
-      .prepare('SELECT v.id, u.bunnyGuid FROM Video v JOIN Upload u ON v.uploadId = u.id WHERE v.lessonId = ?')
+      .prepare('SELECT v.id as videoId, u.id as uploadId, u.bunnyGuid FROM Video v JOIN Upload u ON v.uploadId = u.id WHERE v.lessonId = ?')
       .bind(lessonId)
       .all();
 
@@ -623,6 +623,8 @@ lessons.delete('/:id', async (c) => {
 
     for (const video of (videos.results || [])) {
       const bunnyGuid = (video as any).bunnyGuid;
+      const videoId = (video as any).videoId;
+      const uploadId = (video as any).uploadId;
       if (bunnyGuid) {
         try {
           // Skip Bunny deletion if this video is linked to a stream recording
@@ -631,22 +633,23 @@ lessons.delete('/:id', async (c) => {
             .prepare('SELECT 1 FROM LiveStream WHERE recordingId = ? LIMIT 1')
             .bind(bunnyGuid)
             .first();
-          if (isStreamRecording) {
-            continue;
-          }
-          const deleteUrl = `https://video.bunnycdn.com/library/${libraryId}/videos/${bunnyGuid}`;
-          const response = await fetch(deleteUrl, {
-            method: 'DELETE',
-            headers: { 'AccessKey': apiKey },
-          });
-          if (!response.ok) {
-            console.error(`[Delete Lesson] Failed to delete video ${bunnyGuid} from Bunny:`, await response.text());
-          } else {
+          if (!isStreamRecording) {
+            const deleteUrl = `https://video.bunnycdn.com/library/${libraryId}/videos/${bunnyGuid}`;
+            const response = await fetch(deleteUrl, {
+              method: 'DELETE',
+              headers: { 'AccessKey': apiKey },
+            });
+            if (!response.ok) {
+              console.error(`[Delete Lesson] Failed to delete video ${bunnyGuid} from Bunny:`, await response.text());
+            }
           }
         } catch (err) {
           console.error(`[Delete Lesson] Error deleting video ${bunnyGuid} from Bunny:`, err);
         }
       }
+      // Always explicitly delete Video + Upload rows (can't rely on CASCADE)
+      await c.env.DB.prepare('DELETE FROM Video WHERE id = ?').bind(videoId).run();
+      await c.env.DB.prepare('DELETE FROM Upload WHERE id = ?').bind(uploadId).run();
     }
 
     // Delete lesson (cascade will handle videos/documents/play states in DB)
