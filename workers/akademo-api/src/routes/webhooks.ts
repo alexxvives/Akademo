@@ -319,10 +319,22 @@ webhooks.post('/zoom', async (c) => {
       const meetingId = data.object.id;
       const participant = data.payload?.object?.participant || data.object?.participant;
       const participantUserId = participant?.user_id || participant?.id || 'unknown';
+      const participantEmail = (participant?.email || '').toLowerCase().trim();
+      // Zoom passes participant_id (numeric string) which is needed for removal
+      const participantId = participant?.participant_id || participant?.id || participantUserId;
+      // isHost / isCoHost — never remove the host
+      const isHost = !!participant?.is_host;
+      const isCoHost = !!participant?.is_cohost;
       
-      // Get current stream
+      // Get current stream with class and zoom account info
       const stream = await c.env.DB
-        .prepare('SELECT * FROM LiveStream WHERE zoomMeetingId = ?')
+        .prepare(`
+          SELECT ls.*, c.zoomAccountId, c.teacherId, a.ownerId, a.restrictStreamAccess
+          FROM LiveStream ls
+          JOIN Class c ON ls.classId = c.id
+          JOIN Academy a ON c.academyId = a.id
+          WHERE ls.zoomMeetingId = ?
+        `)
         .bind(meetingId.toString())
         .first() as any;
 
@@ -338,6 +350,81 @@ webhooks.post('/zoom', async (c) => {
         } catch { activeParticipants = []; }
 
         if (isJoin) {
+          // ── Access control: only enforce when restrictStreamAccess is enabled ──
+          if (stream.restrictStreamAccess === 1 && !isHost && !isCoHost) {
+            // Block participants with no email entirely
+            if (!participantEmail) {
+              console.warn(`[Zoom Webhook] Participant with no email joined meeting ${meetingId} — removing (restrictStreamAccess enabled)`);
+              try {
+                if (stream.zoomAccountId) {
+                  const zoomAccount = await c.env.DB
+                    .prepare('SELECT accessToken FROM ZoomAccount WHERE id = ?')
+                    .bind(stream.zoomAccountId)
+                    .first() as any;
+                  if (zoomAccount?.accessToken) {
+                    await fetch(
+                      `https://api.zoom.us/v2/meetings/${meetingId}/participants/${participantId}`,
+                      { method: 'DELETE', headers: { 'Authorization': `Bearer ${zoomAccount.accessToken}` } }
+                    );
+                  }
+                }
+              } catch (removeErr: any) {
+                console.error('[Zoom Webhook] Failed to remove no-email participant:', removeErr.message);
+              }
+              return c.json(successResponse({ received: true }));
+            }
+
+            // Check if this participant is the teacher or academy owner
+            const teacherOrOwner = await c.env.DB
+              .prepare(`
+                SELECT u.id FROM User u
+                WHERE LOWER(u.email) = ?
+                  AND (
+                    u.id = ?
+                    OR u.id = ?
+                  )
+                LIMIT 1
+              `)
+              .bind(participantEmail, stream.teacherId || '', stream.ownerId || '')
+              .first() as any;
+
+            if (!teacherOrOwner) {
+              // Check if enrolled and approved in this class
+              const enrollment = await c.env.DB
+                .prepare(`
+                  SELECT e.id FROM ClassEnrollment e
+                  JOIN User u ON e.userId = u.id
+                  WHERE LOWER(u.email) = ?
+                    AND e.classId = ?
+                    AND e.status = 'APPROVED'
+                  LIMIT 1
+                `)
+                .bind(participantEmail, stream.classId)
+                .first() as any;
+
+              if (!enrollment) {
+                console.warn(`[Zoom Webhook] Unauthorized participant ${participantEmail} joined meeting ${meetingId} — removing`);
+                try {
+                  if (stream.zoomAccountId) {
+                    const zoomAccount = await c.env.DB
+                      .prepare('SELECT accessToken FROM ZoomAccount WHERE id = ?')
+                      .bind(stream.zoomAccountId)
+                      .first() as any;
+                    if (zoomAccount?.accessToken) {
+                      await fetch(
+                        `https://api.zoom.us/v2/meetings/${meetingId}/participants/${participantId}`,
+                        { method: 'DELETE', headers: { 'Authorization': `Bearer ${zoomAccount.accessToken}` } }
+                      );
+                    }
+                  }
+                } catch (removeErr: any) {
+                  console.error('[Zoom Webhook] Failed to remove unauthorized participant:', removeErr.message);
+                }
+                return c.json(successResponse({ received: true }));
+              }
+            }
+          }
+
           // Add participant to active set (avoid duplicates)
           if (!activeParticipants.includes(participantUserId)) {
             activeParticipants.push(participantUserId);

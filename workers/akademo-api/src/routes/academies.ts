@@ -637,6 +637,10 @@ academies.patch('/:id', async (c) => {
       updates.push('hiddenMenuItems = ?');
       values.push(typeof body.hiddenMenuItems === 'string' ? body.hiddenMenuItems : JSON.stringify(body.hiddenMenuItems));
     }
+    if (body.restrictStreamAccess !== undefined) {
+      updates.push('restrictStreamAccess = ?');
+      values.push(body.restrictStreamAccess);
+    }
 
     if (updates.length === 0) {
       return c.json(errorResponse('No fields to update'), 400);

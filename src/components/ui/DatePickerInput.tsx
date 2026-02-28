@@ -81,6 +81,10 @@ export function DatePickerInput({ value, onChange, required, className }: DatePi
   const isSelected = (day: number) =>
     day === selDay && viewMonth === selMonth && viewYear === selYear;
 
+  const todayRef = new Date();
+  const isToday = (day: number) =>
+    day === todayRef.getDate() && viewMonth === todayRef.getMonth() && viewYear === todayRef.getFullYear();
+
   return (
     <div ref={ref} className={`relative ${className ?? ''}`}>
       {/* Trigger */}
@@ -160,7 +164,9 @@ export function DatePickerInput({ value, onChange, required, className }: DatePi
                 className={`w-full aspect-square rounded-full text-sm transition-colors flex items-center justify-center
                   ${isSelected(day)
                     ? 'bg-blue-600 text-white font-semibold'
-                    : 'hover:bg-gray-100 text-gray-700'
+                    : isToday(day)
+                      ? 'border-2 border-blue-500 text-blue-600 font-bold bg-white'
+                      : 'hover:bg-gray-100 text-gray-700'
                   }`}
               >
                 {day}

@@ -115,7 +115,7 @@ export function ClassFormModal({
         <h2 className="text-xl font-bold text-gray-900 mb-4">{title}</h2>
 
         <form onSubmit={onSubmit} className="space-y-4">
-          {/* Row 1: Name, Teacher, University */}
+          {/* Row 1: Name, Teacher, Start Date — Row 2: University, Carrera, Max Students */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Nombre de la asignatura *</label>
@@ -139,6 +139,17 @@ export function ClassFormModal({
             </div>
 
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Fecha de inicio <span className="text-red-500">*</span>
+              </label>
+              <DatePickerInput
+                value={formData.startDate}
+                onChange={(v) => setFormData((f) => ({ ...f, startDate: v }))}
+                required
+              />
+            </div>
+
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Universidad (opcional)</label>
               <input
                 type="text"
@@ -158,17 +169,6 @@ export function ClassFormModal({
                 onChange={(e) => setFormData((f) => ({ ...f, carrera: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder=""
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Fecha de inicio <span className="text-red-500">*</span>
-              </label>
-              <DatePickerInput
-                value={formData.startDate}
-                onChange={(v) => setFormData((f) => ({ ...f, startDate: v }))}
-                required
               />
             </div>
 
@@ -263,7 +263,7 @@ export function ClassFormModal({
                   <span className={`text-sm font-semibold ${formData.allowOneTime ? 'text-green-900' : 'text-gray-700'}`}>Pago Único</span>
                 </div>
                 {formData.allowOneTime && (
-                  <p className="text-sm font-medium text-green-700">
+                  <p className="text-sm font-medium text-green-700 mt-2">
                     Total: ${formData.price ? parseFloat(formData.price).toFixed(2) : '0.00'}
                   </p>
                 )}

@@ -1131,11 +1131,15 @@ export function CalendarPage({ role }: CalendarPageProps) {
             {calendarDays.map((day, i) => {
               const key = formatDateKey(day);
               const events = allDayByDate.get(key) || [];
+              const dayMidnight = new Date(day.getFullYear(), day.getMonth(), day.getDate());
+              const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+              const isAllDayPast = dayMidnight < todayMidnight;
               return (
                 <div key={i} className="border-r border-gray-100 last:border-r-0 px-0.5 py-1 space-y-0.5 min-h-[28px]">
                   {events.map(event => (
                     <div
                       key={event.id}
+                      style={{ opacity: isAllDayPast ? 0.4 : 1 }}
                       className={`text-[10px] px-1.5 py-0.5 rounded truncate ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text} cursor-pointer`}
                       onClick={() => canCreateEvents && event.manual ? handleEditEvent(event) : undefined}
                       title={`${event.title}${event.className ? ` — ${event.className}` : ''}`}
@@ -1168,6 +1172,9 @@ export function CalendarPage({ role }: CalendarPageProps) {
               const key = formatDateKey(day);
               const isToday = isSameDay(day, today);
               const layout = computeOverlapLayout(timedByDate.get(key) || []);
+              const dayMidnight = new Date(day.getFullYear(), day.getMonth(), day.getDate());
+              const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+              const isDayPast = dayMidnight < todayMidnight;
               return (
                 <div
                   key={dayIdx}
@@ -1198,7 +1205,14 @@ export function CalendarPage({ role }: CalendarPageProps) {
                   })()}
 
                   {/* Events */}
-                  {layout.map(({ event, col, totalCols, topOffset, height }) => (
+                  {layout.map(({ event, col, totalCols, topOffset, height }) => {
+                    const isEventPast = isDayPast || (isToday && event.startTime
+                      ? (() => {
+                          const [h, m] = event.startTime.split(':').map(Number);
+                          return (h * 60 + m) < (today.getHours() * 60 + today.getMinutes());
+                        })()
+                      : false);
+                    return (
                     <div
                       key={event.id}
                       style={{
@@ -1212,7 +1226,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
                         borderLeftStyle: 'solid',
                         borderLeftColor: EVENT_BORDER_COLORS[event.type],
                       }}
-                      className={`rounded px-1.5 py-0.5 overflow-hidden cursor-pointer hover:shadow-md transition-shadow ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text}`}
+                      className={`rounded px-1.5 py-0.5 overflow-hidden cursor-pointer hover:shadow-md transition-shadow transition-opacity ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text} ${isEventPast ? 'opacity-50' : ''}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleEventClick(event);
@@ -1220,7 +1234,14 @@ export function CalendarPage({ role }: CalendarPageProps) {
                       title={`${event.startTime} — ${event.title}${event.className ? ` (${event.className})` : ''}`}
                     >
                       <div className="flex items-start justify-between gap-0.5">
-                        <div className="text-[10px] font-medium truncate flex-1">{event.title}</div>
+                        <div className="text-[10px] font-medium truncate flex-1 flex items-center gap-0.5">
+                          <span className="truncate">{event.title}</span>
+                          {event.zoomLink && (
+                            <a href={event.zoomLink} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="flex-shrink-0 opacity-90">
+                              <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                            </a>
+                          )}
+                        </div>
                         {event.startTime && <div className="text-[9px] opacity-80 flex-shrink-0">{event.startTime}</div>}
                       </div>
                       {event.className && (
@@ -1229,11 +1250,9 @@ export function CalendarPage({ role }: CalendarPageProps) {
                       {event.location && (
                         <div className="text-[9px] opacity-70 truncate">📍 {event.location}</div>
                       )}
-                      {event.zoomLink && (
-                        <a href={event.zoomLink} target="_blank" rel="noopener noreferrer" className="text-[9px] opacity-70 truncate block" onClick={e => e.stopPropagation()}>🎥 Zoom</a>
-                      )}
                     </div>
-                  ))}
+                  );
+                  })}
                 </div>
               );
             })}
@@ -1339,7 +1358,14 @@ export function CalendarPage({ role }: CalendarPageProps) {
                     title={`${event.startTime} — ${event.title}${event.className ? ` (${event.className})` : ''}`}
                   >
                     <div className="flex items-start justify-between gap-1">
-                      <div className="text-xs font-medium truncate flex-1">{event.title}</div>
+                      <div className="text-xs font-medium truncate flex-1 flex items-center gap-0.5">
+                        <span className="truncate">{event.title}</span>
+                        {event.zoomLink && (
+                          <a href={event.zoomLink} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="flex-shrink-0 opacity-90">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                          </a>
+                        )}
+                      </div>
                       {event.startTime && <div className="text-[10px] opacity-80 flex-shrink-0">{event.startTime}</div>}
                     </div>
                     {event.className && (
@@ -1347,9 +1373,6 @@ export function CalendarPage({ role }: CalendarPageProps) {
                     )}
                     {event.location && (
                       <div className="text-[10px] opacity-70 truncate">📍 {event.location}</div>
-                    )}
-                    {event.zoomLink && (
-                      <a href={event.zoomLink} target="_blank" rel="noopener noreferrer" className="text-[10px] opacity-70 truncate block" onClick={e => e.stopPropagation()}>🎥 Zoom</a>
                     )}
                   </div>
                 ))}

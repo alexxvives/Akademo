@@ -141,7 +141,7 @@ export function CustomDatePicker({ value, onChange, className }: CustomDatePicke
                     isSelected
                       ? 'bg-blue-600 text-white font-semibold'
                       : isToday
-                        ? 'bg-blue-50 text-blue-700 font-medium'
+                        ? 'border-2 border-blue-500 text-blue-600 font-bold bg-white'
                         : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
