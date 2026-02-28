@@ -128,7 +128,9 @@ export function StudentsProgressTable({
       .filter(student => {
         const matchesSearch = student.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                              student.email.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesClass = selectedClass === 'all' || student.classId === selectedClass;
+        const matchesClass = selectedClass === 'all'
+          || student.classId === selectedClass
+          || (student.classBreakdown?.some(b => b.classId === selectedClass) ?? false);
         
         return matchesSearch && matchesClass;
       })
