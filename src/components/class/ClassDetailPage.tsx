@@ -947,7 +947,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             streamId: lessonFormData.selectedStreamRecordings[0], // Use first selected recording
-            classId: classId, // Pass current classId so orphaned recordings use the right class
+            classId: classData?.id, // Use actual UUID, not slug from URL
             title: lessonFormData.title || undefined,
             description: lessonFormData.description || undefined,
             topicId: lessonFormData.topicId || undefined,
