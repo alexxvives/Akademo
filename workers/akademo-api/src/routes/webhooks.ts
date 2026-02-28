@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { successResponse, errorResponse } from '../lib/utils';
+import { refreshZoomToken } from './zoom-accounts';
 
 const webhooks = new Hono<{ Bindings: Bindings }>();
 
@@ -318,10 +319,13 @@ webhooks.post('/zoom', async (c) => {
     } else if (event === 'meeting.participant_joined' || event === 'meeting.participant_left' || event === 'participant.joined' || event === 'participant.left') {
       const meetingId = data.object.id;
       const participant = data.payload?.object?.participant || data.object?.participant;
-      const participantUserId = participant?.user_id || participant?.id || 'unknown';
+      // participant.id = per-session unique ID (present for ALL participants, registered or not)
+      // participant.user_id = Zoom account ID (only for registered Zoom users, blank otherwise)
+      // Using participant.id as fallback ensures each participant gets a unique key
+      const participantUserId = participant?.user_id || participant?.id || `anon-${Date.now()}`;
       const participantEmail = (participant?.email || '').toLowerCase().trim();
-      // Zoom passes participant_id (numeric string) which is needed for removal
-      const participantId = participant?.participant_id || participant?.id || participantUserId;
+      // participant.id is the per-session participant_id used by Zoom removal API
+      const participantId = participant?.id || participantUserId;
       // isHost / isCoHost — never remove the host
       const isHost = !!participant?.is_host;
       const isCoHost = !!participant?.is_cohost;
@@ -357,15 +361,13 @@ webhooks.post('/zoom', async (c) => {
               console.warn(`[Zoom Webhook] Participant with no email joined meeting ${meetingId} — removing (restrictStreamAccess enabled)`);
               try {
                 if (stream.zoomAccountId) {
-                  const zoomAccount = await c.env.DB
-                    .prepare('SELECT accessToken FROM ZoomAccount WHERE id = ?')
-                    .bind(stream.zoomAccountId)
-                    .first() as any;
-                  if (zoomAccount?.accessToken) {
-                    await fetch(
+                  const freshToken = await refreshZoomToken(c, stream.zoomAccountId);
+                  if (freshToken) {
+                    const removeRes = await fetch(
                       `https://api.zoom.us/v2/meetings/${meetingId}/participants/${participantId}`,
-                      { method: 'DELETE', headers: { 'Authorization': `Bearer ${zoomAccount.accessToken}` } }
+                      { method: 'DELETE', headers: { 'Authorization': `Bearer ${freshToken}` } }
                     );
+                    console.log(`[Zoom Webhook] Remove no-email participant ${participantId}: ${removeRes.status}`);
                   }
                 }
               } catch (removeErr: any) {
@@ -403,18 +405,22 @@ webhooks.post('/zoom', async (c) => {
                 .first() as any;
 
               if (!enrollment) {
-                console.warn(`[Zoom Webhook] Unauthorized participant ${participantEmail} joined meeting ${meetingId} — removing`);
+                console.warn(`[Zoom Webhook] Unauthorized participant ${participantEmail} (id=${participantId}) joined meeting ${meetingId} — removing`);
                 try {
                   if (stream.zoomAccountId) {
-                    const zoomAccount = await c.env.DB
-                      .prepare('SELECT accessToken FROM ZoomAccount WHERE id = ?')
-                      .bind(stream.zoomAccountId)
-                      .first() as any;
-                    if (zoomAccount?.accessToken) {
-                      await fetch(
+                    const freshToken = await refreshZoomToken(c, stream.zoomAccountId);
+                    if (freshToken) {
+                      const removeRes = await fetch(
                         `https://api.zoom.us/v2/meetings/${meetingId}/participants/${participantId}`,
-                        { method: 'DELETE', headers: { 'Authorization': `Bearer ${zoomAccount.accessToken}` } }
+                        { method: 'DELETE', headers: { 'Authorization': `Bearer ${freshToken}` } }
                       );
+                      console.log(`[Zoom Webhook] Remove unauthorized ${participantEmail}: ${removeRes.status}`);
+                      if (!removeRes.ok) {
+                        const body = await removeRes.text();
+                        console.error(`[Zoom Webhook] Removal failed body: ${body}`);
+                      }
+                    } else {
+                      console.error('[Zoom Webhook] Could not get fresh token for removal');
                     }
                   }
                 } catch (removeErr: any) {
