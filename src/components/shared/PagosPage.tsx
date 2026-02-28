@@ -748,7 +748,7 @@ export default function PagosPage({ role }: PagosPageProps) {
               <span className="text-sm font-semibold text-green-800">Historial de pagos</span>
               <span className="text-xs bg-green-200 text-green-700 px-2 py-0.5 rounded-full font-medium">{filteredPaymentHistory.length}</span>
             </div>
-            <div className="max-h-[700px] overflow-y-auto overflow-x-auto">
+            <div className="max-h-[630px] overflow-y-auto overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
                   <tr>

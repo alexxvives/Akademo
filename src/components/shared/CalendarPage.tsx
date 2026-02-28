@@ -367,7 +367,9 @@ export function CalendarPage({ role }: CalendarPageProps) {
                   classId: stream.classId || '',
                   extra: stream.endedAt
                     ? `Duración: ${Math.round((new Date(stream.endedAt).getTime() - new Date(stream.startedAt).getTime()) / 60000)}min`
-                    : stream.status === 'scheduled' ? 'Programado' : 'En vivo',
+                    : stream.status === 'scheduled'
+                      ? (new Date(date) < new Date() ? 'Finalizado' : 'Programado')
+                      : 'En vivo',
                   startTime: extractTime(date),
                   status: stream.status,
                   zoomLink: stream.zoomLink || undefined,
@@ -787,8 +789,11 @@ export function CalendarPage({ role }: CalendarPageProps) {
                   Ver
                 </button>
 
-                {/* Edit — manual CalendarScheduledEvent events only (not streams) */}
-                {canCreateEvents && !isDemo && popupEvent.manual && !popupEvent.id.startsWith('stream-') && (
+                {/* Edit — manual CalendarScheduledEvent events OR non-ended streams */}
+                {canCreateEvents && !isDemo && (
+                  (popupEvent.manual && !popupEvent.id.startsWith('stream-')) ||
+                  (popupEvent.id.startsWith('stream-') && popupEvent.status !== 'ended')
+                ) && (
                   <button
                     onClick={() => { setPopupEvent(null); handleEditEvent(popupEvent); }}
                     className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-gray-50 text-gray-700 hover:bg-gray-100 text-sm font-medium transition-colors"

@@ -300,7 +300,12 @@ export function StreamsPage({ role }: StreamsPageProps) {
 
   const handleDeleteStream = async (streamId: string, streamTitle: string) => {
     if (isDemo) return;
-    if (!confirm(`¿Estás seguro que deseas eliminar el stream "${streamTitle}"? Esta acción no se puede deshacer.`)) return;
+    const streamData = streams.find(s => s.id === streamId);
+    const hasRecording = !!streamData?.recordingId;
+    const confirmMsg = hasRecording
+      ? `¿Estás seguro que deseas eliminar el stream "${streamTitle}"?\n\nEste stream tiene una grabación. Si lo eliminas, la grabación también será eliminada de la base de datos y dejará de estar accesible.`
+      : `¿Estás seguro que deseas eliminar el stream "${streamTitle}"? Esta acción no se puede deshacer.`;
+    if (!confirm(confirmMsg)) return;
 
     setDeletingStreamId(streamId);
     try {
