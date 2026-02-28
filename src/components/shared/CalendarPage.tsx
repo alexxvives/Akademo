@@ -8,7 +8,7 @@ import { CalendarAddEventModal } from './CalendarAddEventModal';
 import { usePeriod } from '@/contexts/PeriodContext';
 
 // ─── Types ───
-type EventType = 'lesson' | 'stream' | 'assignment' | 'physicalClass' | 'scheduledStream';
+type EventType = 'lesson' | 'stream' | 'assignment';
 
 interface CalendarEvent {
   id: string;
@@ -48,19 +48,15 @@ const WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 const VIEW_LABELS: Record<ViewMode, string> = { month: 'Mes', week: 'Semana', day: 'Día' };
 
 const EVENT_COLORS: Record<EventType, { bg: string; text: string; dot: string }> = {
-  lesson:          { bg: 'bg-blue-600',   text: 'text-white',   dot: 'bg-blue-700' },
-  assignment:      { bg: 'bg-green-600',  text: 'text-white',   dot: 'bg-green-700' },
-  stream:          { bg: 'bg-red-600',    text: 'text-white',   dot: 'bg-red-700' },
-  scheduledStream: { bg: 'bg-red-600',    text: 'text-white',   dot: 'bg-red-700' },
-  physicalClass:   { bg: 'bg-red-600',    text: 'text-white',   dot: 'bg-red-700' },
+  lesson:     { bg: 'bg-blue-600',  text: 'text-white', dot: 'bg-blue-700' },
+  assignment: { bg: 'bg-green-600', text: 'text-white', dot: 'bg-green-700' },
+  stream:     { bg: 'bg-red-600',   text: 'text-white', dot: 'bg-red-700' },
 };
 
 const EVENT_LABELS: Record<EventType, string> = {
-  lesson:          'Clase',
-  assignment:      'Ejercicio',
-  stream:          'Stream',
-  scheduledStream: 'Stream programado',
-  physicalClass:   'Clase presencial',
+  lesson:     'Clase',
+  assignment: 'Ejercicio',
+  stream:     'Stream',
 };
 
 // ─── Demo data generator (relative to today) ───
@@ -77,15 +73,15 @@ function generateDemoEvents(today: Date): CalendarEvent[] {
     { id: 'demo-s1', title: 'Repaso examen parcial',           date: offsetDate(today, -5),  type: 'stream',          className: 'Física General',   classId: 'demo-c4', extra: 'Duración: 67min', startTime: '16:00' },
     { id: 'demo-a1', title: 'Entrega Práctica 1',              date: offsetDate(today, -3),  type: 'assignment',      className: 'Química Orgánica', classId: 'demo-c3', startTime: '23:59' },
     { id: 'demo-l3', title: 'Termodinámica — Entropía',        date: offsetDate(today, -2),  type: 'lesson',          className: 'Física General',   classId: 'demo-c4', startTime: '11:00' },
-    { id: 'demo-pc1', title: 'Clase presencial — Laboratorio', date: offsetDate(today, -1),  type: 'physicalClass',   className: 'Química Orgánica', classId: 'demo-c3', manual: true, startTime: '14:00' },
-    { id: 'demo-l4', title: 'Vectores y espacios vectoriales', date: offsetDate(today, 0),   type: 'lesson',          className: 'Matemáticas I',    classId: 'demo-c2', startTime: '09:00' },
-    { id: 'demo-a2', title: 'Ejercicio semana 3',              date: offsetDate(today, 2),   type: 'assignment',      className: 'Física General',   classId: 'demo-c4', startTime: '23:59' },
-    { id: 'demo-ss1', title: 'Stream: Dudas parcial',          date: offsetDate(today, 3),   type: 'scheduledStream', className: 'Matemáticas I',    classId: 'demo-c2', manual: true, startTime: '18:00' },
-    { id: 'demo-l5', title: 'Reacciones electroquímicas',      date: offsetDate(today, 5),   type: 'lesson',          className: 'Química Orgánica', classId: 'demo-c3', startTime: '10:00' },
-    { id: 'demo-pc2', title: 'Tutoría presencial',             date: offsetDate(today, 7),   type: 'physicalClass',   className: 'Física General',   classId: 'demo-c4', manual: true, startTime: '15:30' },
-    { id: 'demo-a3', title: 'Entrega Práctica 2',              date: offsetDate(today, 10),  type: 'assignment',      className: 'Química Orgánica', classId: 'demo-c3', startTime: '23:59' },
-    { id: 'demo-l6', title: 'Integrales — Cambio de variable', date: offsetDate(today, 12),  type: 'lesson',          className: 'Matemáticas I',    classId: 'demo-c2', startTime: '09:00' },
-    { id: 'demo-ss2', title: 'Stream especial — Examen final', date: offsetDate(today, 14),  type: 'scheduledStream', className: 'Física General',   classId: 'demo-c4', manual: true, startTime: '17:00' },
+    { id: 'demo-pc1', title: 'Stream — Laboratorio',            date: offsetDate(today, -1),  type: 'stream', className: 'Química Orgánica', classId: 'demo-c3', manual: true, startTime: '14:00' },
+    { id: 'demo-l4', title: 'Vectores y espacios vectoriales',  date: offsetDate(today, 0),   type: 'lesson', className: 'Matemáticas I',    classId: 'demo-c2', startTime: '09:00' },
+    { id: 'demo-a2', title: 'Ejercicio semana 3',               date: offsetDate(today, 2),   type: 'assignment', className: 'Física General',   classId: 'demo-c4', startTime: '23:59' },
+    { id: 'demo-ss1', title: 'Stream: Dudas parcial',           date: offsetDate(today, 3),   type: 'stream', className: 'Matemáticas I',    classId: 'demo-c2', manual: true, startTime: '18:00' },
+    { id: 'demo-l5', title: 'Reacciones electroquímicas',       date: offsetDate(today, 5),   type: 'lesson', className: 'Química Orgánica', classId: 'demo-c3', startTime: '10:00' },
+    { id: 'demo-pc2', title: 'Stream — Tutoría',                date: offsetDate(today, 7),   type: 'stream', className: 'Física General',   classId: 'demo-c4', manual: true, startTime: '15:30' },
+    { id: 'demo-a3', title: 'Entrega Práctica 2',               date: offsetDate(today, 10),  type: 'assignment', className: 'Química Orgánica', classId: 'demo-c3', startTime: '23:59' },
+    { id: 'demo-l6', title: 'Integrales — Cambio de variable',  date: offsetDate(today, 12),  type: 'lesson', className: 'Matemáticas I',    classId: 'demo-c2', startTime: '09:00' },
+    { id: 'demo-ss2', title: 'Stream especial — Examen final',  date: offsetDate(today, 14),  type: 'stream', className: 'Física General',   classId: 'demo-c4', manual: true, startTime: '17:00' },
   ];
 }
 
@@ -125,11 +121,9 @@ function extractTime(isoDate: string): string | undefined {
 const WEEK_HOURS = Array.from({ length: 24 }, (_, i) => i); // 0 – 23
 
 const EVENT_BORDER_COLORS: Record<EventType, string> = {
-  lesson:          '#2563eb',
-  assignment:      '#15803d',
-  stream:          '#dc2626',
-  scheduledStream: '#dc2626',
-  physicalClass:   '#dc2626',
+  lesson:     '#2563eb',
+  assignment: '#15803d',
+  stream:     '#dc2626',
 };
 
 // ─── Overlap layout algorithm (Google Calendar style) ───
@@ -368,7 +362,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
                   id: `stream-${stream.id}`,
                   title: stream.title || 'Stream en vivo',
                   date,
-                  type: stream.status === 'scheduled' ? 'scheduledStream' : 'stream',
+                  type: 'stream' as EventType,
                   className: stream.className || '',
                   classId: stream.classId || '',
                   extra: stream.endedAt
@@ -392,9 +386,11 @@ export function CalendarPage({ role }: CalendarPageProps) {
           const result = await calendarRes.json();
           if (result.success && Array.isArray(result.data)) {
             for (const ev of result.data) {
+              // Normalize legacy types
+              const evType: EventType = (ev.type === 'physicalClass' || ev.type === 'scheduledStream') ? 'stream' : (ev.type as EventType) || 'stream';
               allEvents.push({
                 id: `manual-${ev.id}`, title: ev.title, date: ev.eventDate,
-                type: ev.type as EventType, className: ev.className || '', classId: ev.classId || '',
+                type: evType, className: ev.className || '', classId: ev.classId || '',
                 extra: ev.notes || undefined, manual: true,
                 startTime: ev.startTime || undefined,
                 location: ev.location || undefined,
@@ -415,10 +411,11 @@ export function CalendarPage({ role }: CalendarPageProps) {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  const handleEventAdded = useCallback((ev: { id: string; title: string; type: 'physicalClass' | 'scheduledStream'; eventDate: string; notes?: string | null; classId?: string | null; startTime?: string | null; location?: string | null; zoomLink?: string | null }) => {
+  const handleEventAdded = useCallback((ev: { id: string; title: string; type: string; eventDate: string; notes?: string | null; classId?: string | null; startTime?: string | null; location?: string | null; zoomLink?: string | null }) => {
     const cls = classes.find(c => c.id === ev.classId);
+    const evType: EventType = (ev.type === 'physicalClass' || ev.type === 'scheduledStream') ? 'stream' : (ev.type as EventType) || 'stream';
     setEvents(prev => [...prev, {
-      id: `manual-${ev.id}`, title: ev.title, date: ev.eventDate, type: ev.type,
+      id: `manual-${ev.id}`, title: ev.title, date: ev.eventDate, type: evType,
       className: cls?.name || '', classId: ev.classId || '', extra: ev.notes || undefined, manual: true,
       startTime: ev.startTime || undefined,
       location: ev.location || undefined,
@@ -500,9 +497,9 @@ export function CalendarPage({ role }: CalendarPageProps) {
 
   const handleEditEvent = useCallback((event: CalendarEvent) => {
     if (!canCreateEvents || isDemo) return;
-    // Allow manual calendar events OR scheduled (not-started) streams
-    const isScheduledStreamEvent = event.id.startsWith('stream-') && event.status === 'scheduled';
-    if (!event.manual && !isScheduledStreamEvent) return;
+    // Allow manual calendar events OR non-ended streams
+    const isEditableStream = event.id.startsWith('stream-') && event.status !== 'ended';
+    if (!event.manual && !isEditableStream) return;
     setEditingEvent(event);
     setAddEventDate(new Date((event.date.includes('T') ? event.date : event.date + 'T12:00:00')));
   }, [canCreateEvents, isDemo]);
@@ -511,7 +508,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
   const navigateToEvent = useCallback((event: CalendarEvent) => {
     setPopupEvent(null);
     if (event.manual) {
-      // For manual events (physicalClass / scheduledStream), zoom into day view to show context
+      // For manual stream events, zoom into day view to show context
       const eventDate = new Date(event.date + (event.date.includes('T') ? '' : 'T12:00:00'));
       setCurrentDate(eventDate);
       setViewMode('day');
@@ -523,7 +520,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
       router.push(`/dashboard/${rolePrefix}/subject/${event.classId}?highlight=${rawId}`);
     } else if (event.type === 'assignment') {
       router.push(`/dashboard/${rolePrefix}/assignments?highlight=${rawId}`);
-    } else if (event.type === 'stream' || event.type === 'scheduledStream') {
+    } else if (event.type === 'stream') {
       router.push(`/dashboard/${rolePrefix}/streams?highlight=${rawId}`);
     }
   }, [rolePrefix, router]);
@@ -821,7 +818,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
                 {canCreateEvents && !isDemo && (popupEvent.manual || popupEvent.id.startsWith('stream-')) && (
                   <button
                     onClick={async () => {
-                      if (isScheduledStream) {
+                      if (popupEvent.id.startsWith('stream-')) {
                         await handleDeleteStream(popupEvent.id);
                       } else {
                         await handleDeleteEvent(popupEvent.id);
@@ -1149,7 +1146,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
                       key={event.id}
                       style={{ opacity: isAllDayPast ? 0.4 : 1 }}
                       className={`text-[10px] px-1.5 py-0.5 rounded truncate ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text} cursor-pointer`}
-                      onClick={() => canCreateEvents && event.manual ? handleEditEvent(event) : undefined}
+                      onClick={() => handleEventClick(event)}
                       title={`${event.title}${event.className ? ` — ${event.className}` : ''}`}
                     >
                       {event.title}
@@ -1294,7 +1291,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
                 <div
                   key={event.id}
                   className={`text-xs px-2 py-1 rounded ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text} cursor-pointer truncate`}
-                  onClick={() => canCreateEvents && event.manual ? handleEditEvent(event) : undefined}
+                  onClick={() => handleEventClick(event)}
                 >
                   {event.title}{event.className ? ` — ${event.className}` : ''}
                 </div>
