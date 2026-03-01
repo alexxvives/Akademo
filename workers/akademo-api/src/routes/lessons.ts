@@ -1066,8 +1066,41 @@ lessons.post('/ratings/mark-read', async (c) => {
     if (!ratingIds || !Array.isArray(ratingIds) || ratingIds.length === 0) {
       return c.json(errorResponse('ratingIds array is required'), 400);
     }
+    if (ratingIds.length > 100) {
+      return c.json(errorResponse('Cannot mark more than 100 ratings at once'), 400);
+    }
 
+    // Verify all requested ratings belong to lessons this user owns.
+    // Teachers own lessons via Class.teacherId; academy owners via Class.academyId + Academy.ownerId.
     const placeholders = ratingIds.map(() => '?').join(',');
+    let ownershipQuery: string;
+    if (session.role === 'TEACHER') {
+      ownershipQuery = `
+        SELECT COUNT(DISTINCT lr.id) as cnt
+        FROM LessonRating lr
+        JOIN Lesson l ON lr.lessonId = l.id
+        JOIN Class c ON l.classId = c.id
+        WHERE lr.id IN (${placeholders}) AND c.teacherId = ?
+      `;
+    } else {
+      // ACADEMY
+      ownershipQuery = `
+        SELECT COUNT(DISTINCT lr.id) as cnt
+        FROM LessonRating lr
+        JOIN Lesson l ON lr.lessonId = l.id
+        JOIN Class c ON l.classId = c.id
+        JOIN Academy a ON c.academyId = a.id
+        WHERE lr.id IN (${placeholders}) AND a.ownerId = ?
+      `;
+    }
+    const ownership = await c.env.DB
+      .prepare(ownershipQuery)
+      .bind(...ratingIds, session.id)
+      .first<{ cnt: number }>();
+    if (!ownership || Number(ownership.cnt) !== ratingIds.length) {
+      return c.json(errorResponse('One or more ratings do not belong to your lessons'), 403);
+    }
+
     await c.env.DB
       .prepare(`UPDATE LessonRating SET isRead = 1 WHERE id IN (${placeholders})`)
       .bind(...ratingIds)

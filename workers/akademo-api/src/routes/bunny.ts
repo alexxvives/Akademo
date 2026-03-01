@@ -225,6 +225,26 @@ bunny.get('/video/:guid/stream', async (c) => {
     const session = await requireAuth(c);
     const guid = c.req.param('guid');
 
+    // Students must be enrolled in the class that owns this video.
+    // Teachers, academy owners and admins skip this check.
+    if (session.role === 'STUDENT') {
+      const upload = await c.env.DB
+        .prepare(`
+          SELECT ce.id
+          FROM Upload u
+          JOIN Video v ON v.uploadId = u.id
+          JOIN Lesson l ON v.lessonId = l.id
+          JOIN ClassEnrollment ce ON ce.classId = l.classId
+          WHERE u.bunnyGuid = ? AND ce.userId = ? AND ce.status = 'APPROVED'
+          LIMIT 1
+        `)
+        .bind(guid, session.id)
+        .first();
+      if (!upload) {
+        return c.json(errorResponse('Not enrolled in this class'), 403);
+      }
+    }
+
     // Generate HMAC-SHA256 signed token for Bunny CDN streaming
     const tokenKey = c.env.BUNNY_STREAM_TOKEN_KEY;
     const cdnHostname = c.env.BUNNY_STREAM_CDN_HOSTNAME;
