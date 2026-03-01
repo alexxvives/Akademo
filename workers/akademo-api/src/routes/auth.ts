@@ -18,48 +18,27 @@ auth.get('/me', async (c) => {
     return c.json(errorResponse('Not authenticated'), 401);
   }
 
-  // Check if user has monoacademy access
+  // Check if user has monoacademy access (single owner who is also the teacher)
   let monoacademy = false;
-  let linkedUserId = null;
   
   if (session.role === 'ACADEMY') {
-    // Check if academy has monoacademy flag
     const academy = await c.env.DB
       .prepare('SELECT monoacademy FROM Academy WHERE ownerId = ?')
       .bind(session.id)
       .first();
-    
-    if (academy?.monoacademy === 1) {
-      monoacademy = true;
-      // Find linked teacher user (same email, different role)
-      const teacherUser = await c.env.DB
-        .prepare('SELECT id FROM User WHERE email = ? AND role = ?')
-        .bind(session.email, 'TEACHER')
-        .first();
-      linkedUserId = teacherUser?.id || null;
-    }
+    monoacademy = academy?.monoacademy === 1;
   } else if (session.role === 'TEACHER') {
-    // Check if teacher has monoacademy flag
     const teacher = await c.env.DB
-      .prepare('SELECT monoacademy, academyId FROM Teacher WHERE userId = ?')
+      .prepare('SELECT monoacademy FROM Teacher WHERE userId = ?')
       .bind(session.id)
       .first();
-    
-    if (teacher?.monoacademy === 1) {
-      monoacademy = true;
-      // Find linked academy owner (same email, different role)
-      const academyUser = await c.env.DB
-        .prepare('SELECT id FROM User WHERE email = ? AND role = ?')
-        .bind(session.email, 'ACADEMY')
-        .first();
-      linkedUserId = academyUser?.id || null;
-    }
+    monoacademy = teacher?.monoacademy === 1;
   }
 
   return c.json(successResponse({
     ...session,
     monoacademy,
-    linkedUserId,
+    linkedUserId: null, // Monoacademy uses role-switching on the same user, no separate account
   }));
 });
 
@@ -170,23 +149,13 @@ auth.post('/register', registerRateLimit, validateBody(registerSchema), async (c
         )
         .run();
 
-      // If monoacademy, create a teacher account for the owner
+      // If monoacademy, create a Teacher record for the owner (same User, dual role)
+      // No second User account is needed — switch-role handles toggling User.role
       if (monoacademy) {
-        // Use same email for teacher account (same person, different role)
-        const teacherUserId = crypto.randomUUID();
-        const teacherEmail = email; // Same email, not +teacher variant
-        
-        // Create teacher User account (same password, role TEACHER)
-        await c.env.DB
-          .prepare('INSERT INTO User (id, email, password, firstName, lastName, role, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)')
-          .bind(teacherUserId, teacherEmail.toLowerCase(), hashedPassword, userFirstName, userLastName, 'TEACHER', now)
-          .run();
-        
-        // Create Teacher record linking to academy
         const teacherId = crypto.randomUUID();
         await c.env.DB
           .prepare('INSERT INTO Teacher (id, userId, academyId, monoacademy, createdAt) VALUES (?, ?, ?, ?, ?)')
-          .bind(teacherId, teacherUserId, newAcademyId, monoacademyFlag, now)
+          .bind(teacherId, userId, newAcademyId, monoacademyFlag, now)
           .run();
       }
 

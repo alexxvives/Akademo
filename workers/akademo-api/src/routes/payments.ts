@@ -557,130 +557,6 @@ payments.get('/pending-count', async (c) => {
   }
 });
 
-// PATCH /payments/:enrollmentId/approve-cash - Academy approves cash payment
-payments.patch('/:enrollmentId/approve-cash', async (c) => {
-  try {
-    const session = await requireAuth(c);
-    const enrollmentId = c.req.param('enrollmentId');
-    const { approved } = await c.req.json(); // true = approve, false = reject
-
-    if (typeof approved !== 'boolean') {
-      return c.json(errorResponse('approved field is required (true/false)'), 400);
-    }
-
-    // Get enrollment with academy info
-    const enrollment: any = await c.env.DB
-      .prepare(`
-        SELECT 
-          e.id,
-          e.status as enrollmentStatus,
-          e.classId,
-          c.academyId,
-          c.monthlyPrice,
-          c.oneTimePrice,
-          a.ownerId
-        FROM ClassEnrollment e
-        JOIN Class c ON e.classId = c.id
-        JOIN Academy a ON c.academyId = a.id
-        WHERE e.id = ?
-      `)
-      .bind(enrollmentId)
-      .first();
-
-    if (!enrollment) {
-      return c.json(errorResponse('Enrollment not found'), 404);
-    }
-
-    // Verify user owns the academy
-    if (session.role !== 'ACADEMY' || enrollment.ownerId !== session.id) {
-      return c.json(errorResponse('Only academy owners can approve payments'), 403);
-    }
-
-    if (enrollment.enrollmentStatus !== 'PENDING') {
-      return c.json(errorResponse('Enrollment is not in pending state'), 400);
-    }
-
-    // Track who approved/denied the payment
-    const approverName = `Academia: ${session.firstName} ${session.lastName}`;
-
-    // Update ClassEnrollment status
-    const newStatus = approved ? 'APPROVED' : 'REJECTED';
-    await c.env.DB
-      .prepare(`
-        UPDATE ClassEnrollment 
-        SET status = ?,
-            approvedAt = CASE WHEN ? = 'APPROVED' THEN datetime('now') ELSE NULL END
-        WHERE id = ?
-      `)
-      .bind(newStatus, newStatus, enrollmentId)
-      .run();
-
-    // If approved, create Payment record
-    if (approved) {
-      const enrollmentData: any = await c.env.DB
-        .prepare(`
-          SELECT 
-            e.userId,
-            e.classId,
-            u.firstName,
-            u.lastName,
-            u.email,
-            c.academyId,
-            c.monthlyPrice,
-            c.oneTimePrice,
-            a.name as academyName
-          FROM ClassEnrollment e
-          JOIN User u ON e.userId = u.id
-          JOIN Class c ON e.classId = c.id
-          JOIN Academy a ON c.academyId = a.id
-          WHERE e.id = ?
-        `)
-        .bind(enrollmentId)
-        .first();
-
-      if (enrollmentData) {
-        const paymentId = crypto.randomUUID();
-        // Use monthlyPrice for monthly students, oneTimePrice for one-time; fall back to 0
-        const approvedAmount = enrollmentData.monthlyPrice || enrollmentData.oneTimePrice || 0;
-        const studentName = `${enrollmentData.firstName} ${enrollmentData.lastName}`.trim();
-        await c.env.DB
-          .prepare(`
-            INSERT INTO Payment (
-              id, type, payerId, payerType, payerName, payerEmail,
-              receiverId, receiverName, amount, currency, status, paymentMethod,
-              classId, metadata, createdAt, completedAt
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-          `)
-          .bind(
-            paymentId,
-            'STUDENT_TO_ACADEMY',
-            enrollmentData.userId,
-            'STUDENT',
-            studentName,
-            enrollmentData.email,
-            enrollmentData.academyId,
-            enrollmentData.academyName || '',
-            approvedAmount,
-            'EUR',
-            'PAID',
-            'cash',
-            enrollmentData.classId,
-            JSON.stringify({ originalEnrollmentId: enrollmentId, approvedBy: session.id, approvedAt: new Date().toISOString(), approverName: approverName })
-          )
-          .run();
-      }
-    }
-
-    return c.json(successResponse({
-      message: approved ? 'Cash payment approved' : 'Cash payment rejected',
-      status: newStatus,
-    }));
-  } catch (error: any) {
-    console.error('[Approve Cash Payment] Error:', error);
-    return c.json(errorResponse('Internal server error'), 500);
-  }
-});
-
 // POST /payments/stripe-session - Create Stripe Checkout Session (Stripe Connect)
 payments.post('/stripe-session', async (c) => {
   try {
@@ -1502,7 +1378,7 @@ payments.patch('/:id', async (c) => {
       values.push(status);
       
       // Update completedAt based on status
-      if (status === 'PAID') {
+      if (status === 'PAID' || status === 'COMPLETED') {
         updates.push('completedAt = datetime(\'now\')');
       } else {
         updates.push('completedAt = NULL');
