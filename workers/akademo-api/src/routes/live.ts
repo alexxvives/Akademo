@@ -32,28 +32,23 @@ live.get('/', async (c) => {
       if (academy?.restrictStreamAccess === 1) {
         const enrollment = await c.env.DB
           .prepare(`
-            SELECT e.id FROM ClassEnrollment e
-            JOIN Class c ON e.classId = c.id
+            SELECT e.id, e.paymentFrequency, e.nextPaymentDue FROM ClassEnrollment e
             WHERE e.classId = ? AND e.userId = ? AND e.status = 'APPROVED'
-              AND (
-                c.price = 0 OR c.price IS NULL
-                OR EXISTS (
-                  SELECT 1 FROM Payment p
-                  WHERE p.payerId = e.userId AND p.classId = e.classId
-                    AND p.status IN ('PAID', 'COMPLETED')
-                    AND (
-                      e.paymentFrequency = 'ONE_TIME'
-                      OR (e.paymentFrequency = 'MONTHLY' AND (e.nextPaymentDue IS NULL OR e.nextPaymentDue >= datetime('now')))
-                    )
-                )
-              )
             LIMIT 1
           `)
           .bind(classId, session.id)
-          .first();
+          .first() as any;
 
         if (!enrollment) {
-          return c.json(errorResponse('Acceso restringido: debes estar matriculado y al corriente de pago en esta asignatura'), 403);
+          return c.json(errorResponse('Acceso restringido: debes estar matriculado en esta asignatura'), 403);
+        }
+
+        const isOverdue = enrollment.paymentFrequency === 'MONTHLY'
+          && enrollment.nextPaymentDue
+          && enrollment.nextPaymentDue < new Date().toISOString();
+
+        if (isOverdue) {
+          return c.json(errorResponse('Acceso restringido: tienes un pago pendiente en esta asignatura'), 403);
         }
       }
     }

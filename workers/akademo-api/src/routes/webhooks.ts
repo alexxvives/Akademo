@@ -375,7 +375,10 @@ webhooks.post('/zoom', async (c) => {
       const participant = data.object?.participant || data.payload?.object?.participant;
       const participantUUID = participant?.participant_uuid || participant?.id;
       const participantEmail = (participant?.email || '').toLowerCase().trim();
+      const participantUserId = participant?.user_id || '';
       const isHost = !!participant?.is_host;
+
+      console.log(`[Zoom Webhook] Waiting room participant: uuid=${participantUUID} email="${participantEmail}" user_id="${participantUserId}" is_host=${isHost}`);
 
       if (!meetingId || !participantUUID || isHost) {
         // Hosts bypass waiting room automatically — nothing to do
@@ -430,33 +433,33 @@ webhooks.post('/zoom', async (c) => {
         if (teacherOrOwner) {
           shouldAdmit = true;
         } else {
-          // Check enrollment AND payment (free classes need only APPROVED; paid classes need a valid payment too)
+          // Check enrollment AND payment:
+          // • Enrolled (APPROVED) with no payment record → allow (manual enrollment by academy)
+          // • Enrolled with ONE_TIME payment PAID/COMPLETED → allow
+          // • Enrolled with MONTHLY payment where nextPaymentDue >= now → allow
+          // • Enrolled with MONTHLY payment where nextPaymentDue < now → block (overdue)
           const enrollment = await c.env.DB
             .prepare(`
-              SELECT e.id FROM ClassEnrollment e
-              JOIN Class c ON e.classId = c.id
+              SELECT e.id, e.paymentFrequency, e.nextPaymentDue FROM ClassEnrollment e
               JOIN User u ON e.userId = u.id
               WHERE LOWER(u.email) = ? AND e.classId = ? AND e.status = 'APPROVED'
-                AND (
-                  c.price = 0 OR c.price IS NULL
-                  OR EXISTS (
-                    SELECT 1 FROM Payment p
-                    WHERE p.payerId = e.userId AND p.classId = e.classId
-                      AND p.status IN ('PAID', 'COMPLETED')
-                      AND (
-                        e.paymentFrequency = 'ONE_TIME'
-                        OR (e.paymentFrequency = 'MONTHLY' AND (e.nextPaymentDue IS NULL OR e.nextPaymentDue >= datetime('now')))
-                      )
-                  )
-                )
               LIMIT 1
             `)
             .bind(participantEmail, stream.classId)
-            .first();
-          shouldAdmit = !!enrollment;
+            .first() as any;
+
+          if (enrollment) {
+            const isOverdue = enrollment.paymentFrequency === 'MONTHLY'
+              && enrollment.nextPaymentDue
+              && enrollment.nextPaymentDue < new Date().toISOString();
+            shouldAdmit = !isOverdue;
+          }
         }
+      } else {
+        // Zoom hides emails of external Zoom accounts (e.g. Google sign-in)
+        // We cannot identify them by email — block for security
+        console.warn(`[Zoom Webhook] Waiting room: blocking participant with hidden email (external Zoom account) uuid=${participantUUID}`);
       }
-      // No email = external Zoom user whose email is hidden — deny access
 
       if (shouldAdmit) {
         console.log(`[Zoom Webhook] Waiting room: admitting ${participantEmail} uuid=${participantUUID}`);
