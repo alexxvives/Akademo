@@ -36,13 +36,16 @@ import { successResponse, errorResponse } from './lib/utils';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
-// Global error handler - log details server-side, return generic message to client
+// Global error handler - map auth errors to proper status codes
 app.onError((err, c) => {
   console.error('[API Error]', err);
-  return c.json({
-    success: false,
-    error: 'Internal server error',
-  }, 500);
+  if (err.message === 'Unauthorized') {
+    return c.json({ success: false, error: 'Unauthorized' }, 401);
+  }
+  if (err.message === 'Forbidden') {
+    return c.json({ success: false, error: 'Forbidden' }, 403);
+  }
+  return c.json({ success: false, error: 'Internal server error' }, 500);
 });
 
 // Middleware

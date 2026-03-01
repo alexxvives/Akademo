@@ -139,7 +139,7 @@ requests.get('/teacher', async (c) => {
       createdAt: row.createdAt,
     }));
 
-    return c.json(memberships);
+    return c.json(successResponse(memberships));
   } catch (error: any) {
     console.error('[Teacher Requests] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);

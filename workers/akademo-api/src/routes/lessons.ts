@@ -520,7 +520,7 @@ lessons.patch('/:id', validateBody(updateLessonSchema), async (c) => {
     return c.json(successResponse(updated));
   } catch (error: any) {
     console.error('[Update Lesson] Error:', error?.message || error, 'Stack:', error?.stack);
-    return c.json(errorResponse(`Internal server error: ${error?.message || 'unknown'}`), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 

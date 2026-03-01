@@ -147,6 +147,7 @@ storage.post('/upload', async (c) => {
 // GET /storage/upload/:id - Get upload metadata
 storage.get('/upload/:id', async (c) => {
   try {
+    const session = await requireAuth(c);
     const uploadId = c.req.param('id');
     
     if (!uploadId) {

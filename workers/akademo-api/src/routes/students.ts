@@ -166,6 +166,24 @@ students.patch('/:id/warn', async (c) => {
     }
 
     const studentId = c.req.param('id');
+
+    // Verify the student belongs to this academy (unless ADMIN)
+    if (session.role === 'ACADEMY') {
+      const belongs: any = await c.env.DB
+        .prepare(`
+          SELECT ce.id FROM ClassEnrollment ce
+          JOIN Class c ON ce.classId = c.id
+          JOIN Academy a ON c.academyId = a.id
+          WHERE ce.userId = ? AND a.ownerId = ?
+          LIMIT 1
+        `)
+        .bind(studentId, session.id)
+        .first();
+      if (!belongs) {
+        return c.json(errorResponse('Student does not belong to your academy'), 403);
+      }
+    }
+
     await c.env.DB
       .prepare('UPDATE User SET suspicionWarning = 1 WHERE id = ?')
       .bind(studentId)

@@ -74,7 +74,7 @@ analytics.get('/', async (c) => {
       // Students see their stats - use batch
       const [enrollmentResult, completedResult] = await c.env.DB.batch([
         c.env.DB.prepare('SELECT COUNT(*) as count FROM ClassEnrollment WHERE userId = ? AND status = ?').bind(session.id, 'APPROVED'),
-        c.env.DB.prepare('SELECT COUNT(*) as count FROM VideoPlayState WHERE studentId = ? AND completed = 1').bind(session.id),
+        c.env.DB.prepare('SELECT COUNT(*) as count FROM VideoPlayState WHERE studentId = ? AND completedAt IS NOT NULL').bind(session.id),
       ]);
 
       stats = {
@@ -85,9 +85,8 @@ analytics.get('/', async (c) => {
 
     return c.json(successResponse(stats));
   } catch (error: any) {
-    const message = error instanceof Error ? error.message : 'Internal server error';
     console.error('[Analytics] Error:', error);
-    return c.json(errorResponse(message), 500);
+    return c.json(errorResponse('Internal server error'), 500);
   }
 });
 

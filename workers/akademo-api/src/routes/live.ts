@@ -343,12 +343,12 @@ live.get('/:id', async (c) => {
     const session = await requireAuth(c);
     const streamId = c.req.param('id');
 
-    const stream = await c.env.DB
+    const stream: any = await c.env.DB
       .prepare(`
         SELECT ls.id, ls.classId, ls.teacherId, ls.status, ls.title, ls.startedAt, ls.endedAt, 
                ls.recordingId, ls.createdAt, ls.zoomLink, ls.zoomMeetingId, ls.zoomStartUrl, ls.zoomPassword,
                ls.participantCount, ls.currentCount, ls.participantsFetchedAt, 
-               u.firstName, u.lastName, c.name as className
+               u.firstName, u.lastName, c.name as className, c.academyId
         FROM LiveStream ls
         JOIN User u ON ls.teacherId = u.id
         JOIN Class c ON ls.classId = c.id
@@ -359,6 +359,30 @@ live.get('/:id', async (c) => {
 
     if (!stream) {
       return c.json(errorResponse('Stream not found'), 404);
+    }
+
+    // Access control: verify the user belongs to this class
+    if (session.role === 'STUDENT') {
+      const enrolled: any = await c.env.DB
+        .prepare('SELECT id FROM ClassEnrollment WHERE userId = ? AND classId = ? AND status = ?')
+        .bind(session.id, stream.classId, 'APPROVED')
+        .first();
+      if (!enrolled) return c.json(errorResponse('Not authorized'), 403);
+    } else if (session.role === 'TEACHER') {
+      if (stream.teacherId !== session.id) return c.json(errorResponse('Not authorized'), 403);
+    } else if (session.role === 'ACADEMY') {
+      const owns: any = await c.env.DB
+        .prepare('SELECT id FROM Academy WHERE id = ? AND ownerId = ?')
+        .bind(stream.academyId, session.id)
+        .first();
+      if (!owns) return c.json(errorResponse('Not authorized'), 403);
+    }
+    // ADMIN passes through
+
+    // Strip sensitive fields for students
+    if (session.role === 'STUDENT') {
+      delete stream.zoomStartUrl;
+      delete stream.zoomPassword;
     }
 
     return c.json(successResponse(stream));
