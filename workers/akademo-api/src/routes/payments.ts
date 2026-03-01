@@ -3,38 +3,9 @@ import { Bindings } from '../types';
 import { requireAuth, requireRole } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { validateBody, initiatePaymentSchema } from '../lib/validation';
-import { autoCreatePendingPayments } from '../lib/payment-utils';
+import { autoCreatePendingPayments, addMonths, countElapsedCycles } from '../lib/payment-utils';
 
 const payments = new Hono<{ Bindings: Bindings }>();
-
-// Helper: add N calendar months to a date (clamps day to month end)
-function addMonths(date: Date, months: number): Date {
-  const result = new Date(date);
-  const targetMonth = result.getMonth() + months;
-  result.setMonth(targetMonth);
-  // If the day overflowed (e.g. Jan 31 + 1 month → Mar 3), clamp to last day of target month
-  if (result.getMonth() !== ((targetMonth % 12) + 12) % 12) {
-    result.setDate(0); // sets to last day of previous month
-  }
-  return result;
-}
-
-// Count how many full calendar months have elapsed from `start` up to (and including) `today`.
-// Cycle 1 = classStart → classStart + 1 month, Cycle 2 = +1 month → +2 months, etc.
-// Returns 0 if class hasn't started yet.
-function countElapsedCycles(classStart: Date, today: Date): number {
-  if (today < classStart) return 0;
-  // Calculate month difference
-  let months = (today.getFullYear() - classStart.getFullYear()) * 12
-             + (today.getMonth() - classStart.getMonth());
-  // If today's day-of-month is before classStart's day, we haven't completed that cycle
-  if (today.getDate() < classStart.getDate()) {
-    months = Math.max(0, months - 1);
-  }
-  // +1 because the current (possibly partial) cycle still counts as owed
-  return months + 1;
-}
-
 // Helper function to calculate billing cycles based on class start date
 // Returns: amount to charge (including catch-up cycles) + billing cycle info + missed cycles count
 function calculateBillingCycle(classStartDate: string, _enrollmentDate: string, isMonthly: boolean, monthlyPrice: number) {
@@ -261,10 +232,6 @@ payments.post('/initiate', validateBody(initiatePaymentSchema), async (c) => {
       missedCycles: billingCycle.missedCycles,
       catchUpAmount: billingCycle.catchUpAmount,
     }));
-
-    // For Stripe (card payment), continue to Stripe checkout
-    // Note: Actual Stripe Connect integration requires STRIPE_SECRET_KEY
-    return c.json(errorResponse('Stripe integration not yet configured. Please use cash or bizum payment.'), 501);
   } catch (error: any) {
     console.error('[Payment Initiate] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
@@ -308,6 +275,7 @@ payments.get('/pending-cash', async (c) => {
           JOIN User u ON ce.userId = u.id
           WHERE a.ownerId = ?
           AND ce.status = 'APPROVED'
+          AND ce.stripeSubscriptionId IS NULL  -- Stripe handles billing for these; skip manual pending creation
         `)
         .bind(session.id)
         .all();
@@ -668,10 +636,12 @@ payments.patch('/:enrollmentId/approve-cash', async (c) => {
             u.email,
             c.academyId,
             c.monthlyPrice,
-            c.oneTimePrice
+            c.oneTimePrice,
+            a.name as academyName
           FROM ClassEnrollment e
           JOIN User u ON e.userId = u.id
           JOIN Class c ON e.classId = c.id
+          JOIN Academy a ON c.academyId = a.id
           WHERE e.id = ?
         `)
         .bind(enrollmentId)
@@ -679,20 +649,28 @@ payments.patch('/:enrollmentId/approve-cash', async (c) => {
 
       if (enrollmentData) {
         const paymentId = crypto.randomUUID();
+        // Use monthlyPrice for monthly students, oneTimePrice for one-time; fall back to 0
+        const approvedAmount = enrollmentData.monthlyPrice || enrollmentData.oneTimePrice || 0;
+        const studentName = `${enrollmentData.firstName} ${enrollmentData.lastName}`.trim();
         await c.env.DB
           .prepare(`
             INSERT INTO Payment (
-              id, type, payerId, receiverId, amount, currency, status, paymentMethod,
+              id, type, payerId, payerType, payerName, payerEmail,
+              receiverId, receiverName, amount, currency, status, paymentMethod,
               classId, metadata, createdAt, completedAt
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
           `)
           .bind(
             paymentId,
             'STUDENT_TO_ACADEMY',
             enrollmentData.userId,
+            'STUDENT',
+            studentName,
+            enrollmentData.email,
             enrollmentData.academyId,
-            enrollmentData.price,
-            enrollmentData.currency || 'EUR',
+            enrollmentData.academyName || '',
+            approvedAmount,
+            'EUR',
             'PAID',
             'cash',
             enrollmentData.classId,
@@ -893,10 +871,12 @@ payments.patch('/:id/approve-payment', async (c) => {
           p.payerId,
           p.nextPaymentDue,
           c.academyId,
-          a.ownerId
+          a.ownerId,
+          ce.paymentFrequency
         FROM Payment p
         JOIN Class c ON p.classId = c.id
         JOIN Academy a ON c.academyId = a.id
+        LEFT JOIN ClassEnrollment ce ON ce.userId = p.payerId AND ce.classId = p.classId
         WHERE p.id = ?
       `)
       .bind(paymentId)
@@ -927,17 +907,31 @@ payments.patch('/:id/approve-payment', async (c) => {
       .bind(newStatus, paymentId)
       .run();
 
-    // If approved, sync nextPaymentDue (and paymentFrequency) back to ClassEnrollment
-    if (approved && payment.payerId && payment.nextPaymentDue) {
-      await c.env.DB
-        .prepare(`
-          UPDATE ClassEnrollment
-          SET nextPaymentDue = ?,
-              paymentFrequency = 'MONTHLY'
-          WHERE userId = ? AND classId = ?
-        `)
-        .bind(payment.nextPaymentDue, payment.payerId, payment.classId)
-        .run();
+    // Sync ClassEnrollment paymentFrequency and nextPaymentDue after manual approval
+    if (approved && payment.payerId) {
+      // Use the enrollment's actual frequency; default to MONTHLY only as last resort
+      const freq: string = payment.paymentFrequency || 'MONTHLY';
+      if (freq !== 'ONE_TIME' && payment.nextPaymentDue) {
+        await c.env.DB
+          .prepare(`
+            UPDATE ClassEnrollment
+            SET nextPaymentDue = ?,
+                paymentFrequency = ?
+            WHERE userId = ? AND classId = ?
+          `)
+          .bind(payment.nextPaymentDue, freq, payment.payerId, payment.classId)
+          .run();
+      } else {
+        // ONE_TIME payments: mark frequency correctly, no recurring due date
+        await c.env.DB
+          .prepare(`
+            UPDATE ClassEnrollment
+            SET paymentFrequency = ?
+            WHERE userId = ? AND classId = ?
+          `)
+          .bind(freq, payment.payerId, payment.classId)
+          .run();
+      }
     }
 
     // Send confirmation email to student when payment is approved
@@ -957,9 +951,6 @@ payments.patch('/:id/approve-payment', async (c) => {
         const resendApiKey = c.env.RESEND_API_KEY;
         if (resendApiKey && studentInfo?.email) {
           const studentName = `${studentInfo.firstName || ''} ${studentInfo.lastName || ''}`.trim() || 'Estudiante';
-          const amountFormatted = studentInfo.amount
-            ? `${studentInfo.amount}${studentInfo.currency === 'EUR' ? '€' : (studentInfo.currency || '')}`.toLowerCase().replace('eur', '€')
-            : '';
           const amountDisplay = studentInfo.amount
             ? `${studentInfo.amount} ${studentInfo.currency === 'EUR' ? '€' : studentInfo.currency}`
             : '';
@@ -1445,6 +1436,12 @@ payments.delete('/:id', async (c) => {
       return c.json(errorResponse('Not authorized to delete this payment'), 403);
     }
 
+    // Guard: only PENDING and REJECTED payments can be deleted.
+    // PAID/COMPLETED records are part of the financial audit trail and must not be removed.
+    if (payment.status === 'PAID' || payment.status === 'COMPLETED') {
+      return c.json(errorResponse('Cannot delete a completed payment. Reverse it instead.'), 400);
+    }
+
     // Delete the payment record
     await c.env.DB
       .prepare('DELETE FROM Payment WHERE id = ?')
@@ -1465,13 +1462,13 @@ payments.patch('/:id', async (c) => {
     const paymentId = c.req.param('id');
     const { amount, paymentMethod, status } = await c.req.json();
 
-    // Get payment details with enrollment and academy info
+    // Get payment details with academy info (join via Class, not ClassEnrollment,
+    // so this works even when enrollment is withdrawn or deleted)
     const payment: any = await c.env.DB
       .prepare(`
-        SELECT p.*, e.classId, c.academyId, a.ownerId
+        SELECT p.*, c.academyId, a.ownerId
         FROM Payment p
-        JOIN ClassEnrollment e ON p.classId = e.classId AND p.payerId = e.userId
-        JOIN Class c ON e.classId = c.id
+        JOIN Class c ON p.classId = c.id
         JOIN Academy a ON c.academyId = a.id
         WHERE p.id = ?
       `)

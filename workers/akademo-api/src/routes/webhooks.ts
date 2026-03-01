@@ -2,21 +2,11 @@ import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { successResponse, errorResponse } from '../lib/utils';
 import { refreshZoomToken } from './zoom-accounts';
+import { addMonths } from '../lib/payment-utils';
 
 const webhooks = new Hono<{ Bindings: Bindings }>();
 
-// Helper: add N calendar months to a date (clamps day to month end)
-function addMonths(date: Date, months: number): Date {
-  const result = new Date(date);
-  const targetMonth = result.getMonth() + months;
-  result.setMonth(targetMonth);
-  if (result.getMonth() !== ((targetMonth % 12) + 12) % 12) {
-    result.setDate(0);
-  }
-  return result;
-}
-
-// Helper function to calculate billing cycles based on class start date
+// Helper function to calculate billing cycles based on class start date (webhook variant — dates only)
 function calculateBillingCycle(classStartDate: string, _enrollmentDate: string, isMonthly: boolean) {
   const classStart = new Date(classStartDate);
   const today = new Date();
