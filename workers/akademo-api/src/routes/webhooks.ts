@@ -465,8 +465,26 @@ webhooks.post('/zoom', async (c) => {
           }
         }
       } else {
-        // Leave unauthorized participant in the waiting room (they cannot enter)
-        console.warn(`[Zoom Webhook] Waiting room: blocking ${participantEmail || '(no email)'} uuid=${participantUUID} — not enrolled`);
+        // Actively remove unauthorized participant from the waiting room so the teacher can't manually admit them
+        console.warn(`[Zoom Webhook] Waiting room: removing ${participantEmail || '(no email)'} uuid=${participantUUID} — not enrolled`);
+        if (stream.zoomAccountId) {
+          const freshToken = await refreshZoomToken(c, stream.zoomAccountId);
+          if (freshToken) {
+            const res = await fetch(
+              `https://api.zoom.us/v2/meetings/${meetingId}/participants/${participantUUID}/status`,
+              {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${freshToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'remove' })
+              }
+            );
+            console.log(`[Zoom Webhook] Waiting room remove status: ${res.status}`);
+            if (!res.ok) {
+              const body = await res.text();
+              console.error(`[Zoom Webhook] Waiting room remove failed: ${body}`);
+            }
+          }
+        }
       }
     } else if (event === 'meeting.participant_joined' || event === 'meeting.participant_left' || event === 'participant.joined' || event === 'participant.left') {
       const meetingId = data.object.id;
