@@ -368,9 +368,9 @@ webhooks.post('/zoom', async (c) => {
       }
     } else if (event === 'meeting.participant_joined_waiting_room') {
       // ── Waiting Room gate: runs BEFORE the participant enters the meeting ──
-      // This is the only reliable Zoom API for access control.
-      // PUT /meetings/{id}/participants/{uuid}/status with action:admit lets them in.
-      // Participants not admitted stay in the waiting room indefinitely.
+      // Correct Zoom API endpoints:
+      //   Admit:  PUT  /meetings/{id}/participants/waiting_room/status  body: {action:"admit", participants:[{id:uuid}]}
+      //   Remove: DELETE /meetings/{id}/participants/waiting_room       body: {id: uuid}
       const meetingId = data.object?.id || data.payload?.object?.id;
       const participant = data.object?.participant || data.payload?.object?.participant;
       const participantUUID = participant?.participant_uuid || participant?.id;
@@ -405,11 +405,11 @@ webhooks.post('/zoom', async (c) => {
           const freshToken = await refreshZoomToken(c, stream.zoomAccountId);
           if (freshToken) {
             await fetch(
-              `https://api.zoom.us/v2/meetings/${meetingId}/participants/${participantUUID}/status`,
+              `https://api.zoom.us/v2/meetings/${meetingId}/participants/waiting_room/status`,
               {
                 method: 'PUT',
                 headers: { 'Authorization': `Bearer ${freshToken}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'admit' })
+                body: JSON.stringify({ action: 'admit', participants: [{ id: participantUUID }] })
               }
             );
           }
@@ -451,11 +451,11 @@ webhooks.post('/zoom', async (c) => {
           const freshToken = await refreshZoomToken(c, stream.zoomAccountId);
           if (freshToken) {
             const res = await fetch(
-              `https://api.zoom.us/v2/meetings/${meetingId}/participants/${participantUUID}/status`,
+              `https://api.zoom.us/v2/meetings/${meetingId}/participants/waiting_room/status`,
               {
                 method: 'PUT',
                 headers: { 'Authorization': `Bearer ${freshToken}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'admit' })
+                body: JSON.stringify({ action: 'admit', participants: [{ id: participantUUID }] })
               }
             );
             if (!res.ok) {
@@ -471,11 +471,11 @@ webhooks.post('/zoom', async (c) => {
           const freshToken = await refreshZoomToken(c, stream.zoomAccountId);
           if (freshToken) {
             const res = await fetch(
-              `https://api.zoom.us/v2/meetings/${meetingId}/participants/${participantUUID}/status`,
+              `https://api.zoom.us/v2/meetings/${meetingId}/participants/waiting_room`,
               {
-                method: 'PUT',
+                method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${freshToken}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'remove' })
+                body: JSON.stringify({ id: participantUUID })
               }
             );
             console.log(`[Zoom Webhook] Waiting room remove status: ${res.status}`);
