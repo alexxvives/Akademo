@@ -3,6 +3,7 @@ import { Bindings } from '../types';
 import { requireAuth } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { validateBody, createClassSchema, updateClassSchema } from '../lib/validation';
+import { autoCreatePendingPayments } from '../lib/payment-utils';
 
 const classes = new Hono<{ Bindings: Bindings }>();
 
@@ -37,7 +38,16 @@ classes.get('/', async (c) => {
     let params: any[] = [];
 
     if (session.role === 'STUDENT') {
-      // Get enrolled classes with counts and payment status (latest payment only)
+      // Ensure PENDING payments are up-to-date before reading payment status,
+      // so the subjects page always blocks access when a new billing cycle is owed
+      try {
+        await autoCreatePendingPayments(c.env.DB, session.id);
+      } catch (autoErr) {
+        console.error('[Classes GET] Auto-create payments error:', autoErr);
+        // Non-fatal: continue
+      }
+
+      // Get enrolled classes with counts and payment status (prioritise PENDING over latest PAID)
       query = `
         SELECT 
           c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 

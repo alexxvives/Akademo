@@ -3,6 +3,7 @@ import { Bindings } from '../types';
 import { requireAuth, requireRole } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { validateBody, initiatePaymentSchema } from '../lib/validation';
+import { autoCreatePendingPayments } from '../lib/payment-utils';
 
 const payments = new Hono<{ Bindings: Bindings }>();
 
@@ -785,14 +786,15 @@ payments.post('/stripe-session', async (c) => {
       priceData.recurring = { interval: 'month' };
     }
 
-    const checkoutSession = await stripe.checkout.sessions.create({
+    // Build session params; add Connect transfer_data when the academy has a Stripe account
+    const sessionParams: any = {
       payment_method_types: paymentMethods,
       line_items: [{
         price_data: priceData,
         quantity: 1,
       }],
       mode: isRecurring ? 'subscription' : 'payment',
-      customer_email: session.email, // Pre-fill email field
+      customer_email: session.email,
       success_url: `${c.env.FRONTEND_URL || 'https://akademo-edu.com'}/dashboard/student/subjects?payment=success&classId=${classId}`,
       cancel_url: `${c.env.FRONTEND_URL || 'https://akademo-edu.com'}/dashboard/student/subjects?payment=cancel`,
       metadata: {
@@ -802,24 +804,29 @@ payments.post('/stripe-session', async (c) => {
         academyId: classData.academyId,
         paymentFrequency: paymentFrequency,
       },
-    });
+    };
 
-    // Enrollment already exists, no need to update it - payment will be created by webhook
+    // Stripe Connect: route funds to academy account and take a 5% platform fee
+    if (classData.stripeAccountId) {
+      if (isRecurring) {
+        // Subscription mode: transfer_data goes on the subscription object
+        sessionParams.subscription_data = {
+          transfer_data: { destination: classData.stripeAccountId },
+          application_fee_percent: 5,
+        };
+      } else {
+        // One-time payment: transfer_data goes on payment_intent_data
+        sessionParams.payment_intent_data = {
+          application_fee_amount: Math.round(price * 100 * 0.05),
+          transfer_data: { destination: classData.stripeAccountId },
+        };
+      }
+    }
 
+    const checkoutSession = await stripe.checkout.sessions.create(sessionParams);
+
+    // Enrollment already exists, no need to update it — payment will be created by webhook
     return c.json(successResponse({ url: checkoutSession.url }));
-    //     classId,
-    //     userId: session.id,
-    //     enrollmentId: enrollment.id,
-    //   },
-    //   payment_intent_data: {
-    //     application_fee_amount: Math.round(classData.price * 100 * 0.05), // 5% platform fee
-    //     transfer_data: {
-    //       destination: classData.stripeAccountId, // Academy's Stripe Connect account
-    //     },
-    //   },
-    // });
-
-    return c.json(errorResponse('Stripe Connect not yet configured. Please use cash payment.'), 501);
   } catch (error: any) {
     console.error('[Stripe Session] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
@@ -832,100 +839,9 @@ payments.get('/my-payments', async (c) => {
     const session = await requireAuth(c);
 
     // AUTO-CREATE pending payments for the student's own approved enrollments
-    // (mirrors the academy-side logic in pending-cash so students always see upcoming payments)
+    // (shared helper also called from GET /classes so subjects page always reflects billing state)
     try {
-      const enrollments = await c.env.DB
-        .prepare(`
-          SELECT 
-            ce.id as enrollmentId,
-            ce.userId as studentId,
-            ce.classId,
-            ce.enrolledAt,
-            ce.paymentFrequency,
-            c.monthlyPrice,
-            c.oneTimePrice,
-            c.startDate as classStartDate,
-            u.firstName,
-            u.lastName,
-            u.email,
-            a.id as academyId,
-            a.name as academyName,
-            COALESCE(
-              (SELECT SUM(p2.amount) FROM Payment p2 
-               WHERE p2.payerId = ce.userId AND p2.classId = ce.classId 
-               AND p2.status IN ('PAID', 'COMPLETED') AND p2.type = 'STUDENT_TO_ACADEMY'), 0
-            ) as totalPaid
-          FROM ClassEnrollment ce
-          JOIN Class c ON ce.classId = c.id
-          JOIN Academy a ON c.academyId = a.id
-          JOIN User u ON ce.userId = u.id
-          WHERE ce.userId = ? AND ce.status = 'APPROVED'
-        `)
-        .bind(session.id)
-        .all();
-
-      for (const enrollment of (enrollments.results || []) as any[]) {
-        const totalPaid = enrollment.totalPaid || 0;
-        const isMonthly = enrollment.paymentFrequency === 'MONTHLY';
-        const monthlyPrice = enrollment.monthlyPrice;
-        const oneTimePrice = enrollment.oneTimePrice;
-
-        let amountOwed = 0;
-        let description = '';
-        let monthsOwed = 0;
-        let nextPaymentDue: string | null = null;
-        let billingCycleEnd: string | null = null;
-
-        if (isMonthly && monthlyPrice > 0) {
-          const classStart = new Date(enrollment.classStartDate || enrollment.enrolledAt);
-          const today = new Date();
-          if (today >= classStart) {
-            const elapsedCycles = countElapsedCycles(classStart, today);
-            const maxCycles = (oneTimePrice && monthlyPrice > 0) ? Math.ceil(oneTimePrice / monthlyPrice) : 9999;
-            const cappedCycles = Math.min(elapsedCycles, maxCycles);
-            const totalExpected = cappedCycles * monthlyPrice;
-            amountOwed = Math.max(0, totalExpected - totalPaid);
-            monthsOwed = Math.max(0, cappedCycles - Math.floor(totalPaid / monthlyPrice));
-            const cycleEnd = addMonths(classStart, elapsedCycles);
-            nextPaymentDue = cycleEnd.toISOString();
-            billingCycleEnd = cycleEnd.toISOString();
-            if (monthsOwed > 1) description = `Pago pendiente (${monthsOwed} meses × ${monthlyPrice}€)`;
-            else if (monthsOwed === 1) description = 'Pago pendiente mensual';
-            if (amountOwed === 0 && cappedCycles < maxCycles) {
-              const nextDueDate = addMonths(classStart, elapsedCycles);
-              amountOwed = monthlyPrice;
-              monthsOwed = 1;
-              description = 'Pago próximo mensual';
-              nextPaymentDue = nextDueDate.toISOString();
-              billingCycleEnd = nextDueDate.toISOString();
-            }
-          }
-        } else if (!isMonthly && oneTimePrice > 0) {
-          if (totalPaid < oneTimePrice) {
-            amountOwed = oneTimePrice - totalPaid;
-            description = 'Pago único pendiente';
-          }
-        }
-
-        if (amountOwed > 0) {
-          const existingPayment = await c.env.DB
-            .prepare(`SELECT id, amount FROM Payment WHERE payerId = ? AND classId = ? AND status = 'PENDING' AND type = 'STUDENT_TO_ACADEMY' LIMIT 1`)
-            .bind(enrollment.studentId, enrollment.classId)
-            .first() as { id: string; amount: number } | null;
-          if (!existingPayment) {
-            const paymentId = `payment-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-            await c.env.DB
-              .prepare(`INSERT INTO Payment (id, type, payerId, payerType, payerName, payerEmail, receiverId, receiverName, amount, currency, status, paymentMethod, classId, description, metadata, nextPaymentDue, billingCycleEnd, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`)
-              .bind(paymentId, 'STUDENT_TO_ACADEMY', enrollment.studentId, 'STUDENT', `${enrollment.firstName} ${enrollment.lastName}`, enrollment.email, enrollment.academyId, enrollment.academyName, amountOwed, 'EUR', 'PENDING', 'cash', enrollment.classId, description, JSON.stringify({ enrollmentId: enrollment.enrollmentId, monthsOwed, autoCreated: true }), nextPaymentDue, billingCycleEnd)
-              .run();
-          } else if (Math.abs(existingPayment.amount - amountOwed) > 0.01) {
-            await c.env.DB
-              .prepare(`UPDATE Payment SET amount = ?, description = ?, metadata = ?, nextPaymentDue = ?, billingCycleEnd = ? WHERE id = ?`)
-              .bind(amountOwed, description, JSON.stringify({ enrollmentId: enrollment.enrollmentId, monthsOwed, autoUpdated: true }), nextPaymentDue, billingCycleEnd, existingPayment.id)
-              .run();
-          }
-        }
-      }
+      await autoCreatePendingPayments(c.env.DB, session.id);
     } catch (autoErr) {
       console.error('[my-payments auto-create]', autoErr);
       // Non-fatal; continue and return what's in the DB
@@ -1022,6 +938,66 @@ payments.patch('/:id/approve-payment', async (c) => {
         `)
         .bind(payment.nextPaymentDue, payment.payerId, payment.classId)
         .run();
+    }
+
+    // Send confirmation email to student when payment is approved
+    if (approved) {
+      try {
+        const studentInfo: any = await c.env.DB
+          .prepare(`
+            SELECT u.email, u.firstName, u.lastName, c.name as className, p.amount, p.currency
+            FROM Payment p
+            JOIN User u ON p.payerId = u.id
+            JOIN Class c ON p.classId = c.id
+            WHERE p.id = ?
+          `)
+          .bind(paymentId)
+          .first();
+
+        const resendApiKey = c.env.RESEND_API_KEY;
+        if (resendApiKey && studentInfo?.email) {
+          const studentName = `${studentInfo.firstName || ''} ${studentInfo.lastName || ''}`.trim() || 'Estudiante';
+          const amountFormatted = studentInfo.amount
+            ? `${studentInfo.amount}${studentInfo.currency === 'EUR' ? '€' : (studentInfo.currency || '')}`.toLowerCase().replace('eur', '€')
+            : '';
+          const amountDisplay = studentInfo.amount
+            ? `${studentInfo.amount} ${studentInfo.currency === 'EUR' ? '€' : studentInfo.currency}`
+            : '';
+
+          await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${resendApiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              from: 'AKADEMO <noreply@akademo-edu.com>',
+              to: [studentInfo.email],
+              subject: `✅ Pago aprobado — ${studentInfo.className}`,
+              html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+                  <div style="text-align: center; margin-bottom: 30px;">
+                    <img src="https://akademo-edu.com/logo/akademo-icon.png" alt="AKADEMO" style="height: 40px;" />
+                  </div>
+                  <h2 style="color: #111; margin-bottom: 8px;">¡Pago aprobado! 🎉</h2>
+                  <p style="color: #555; margin-bottom: 24px;">Hola <strong>${studentName}</strong>, tu pago ha sido aprobado por la academia.</p>
+                  <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+                    <p style="margin: 0 0 8px 0;"><strong>Asignatura:</strong> ${studentInfo.className}</p>
+                    ${amountDisplay ? `<p style="margin: 0;"><strong>Importe:</strong> ${amountDisplay}</p>` : ''}
+                  </div>
+                  <p style="color: #555;">Ya puedes acceder a todo el contenido de la clase. ¡Buena suerte con tus estudios!</p>
+                  <div style="margin-top: 32px; text-align: center;">
+                    <a href="https://akademo-edu.com/dashboard/student/subjects" style="background: #111; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">Ir a mis asignaturas</a>
+                  </div>
+                  <p style="color: #aaa; font-size: 12px; margin-top: 32px; text-align: center;">AKADEMO · akademo-edu.com</p>
+                </div>
+              `,
+            }),
+          });
+        }
+      } catch (emailErr) {
+        console.error('[Approve Payment] Email send failed (non-fatal):', emailErr);
+      }
     }
 
     return c.json(successResponse({ message: approved ? 'Payment approved' : 'Payment rejected' }));
