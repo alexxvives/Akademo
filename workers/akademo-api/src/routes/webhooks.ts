@@ -430,12 +430,25 @@ webhooks.post('/zoom', async (c) => {
         if (teacherOrOwner) {
           shouldAdmit = true;
         } else {
-          // Check enrollment
+          // Check enrollment AND payment (free classes need only APPROVED; paid classes need a valid payment too)
           const enrollment = await c.env.DB
             .prepare(`
               SELECT e.id FROM ClassEnrollment e
+              JOIN Class c ON e.classId = c.id
               JOIN User u ON e.userId = u.id
               WHERE LOWER(u.email) = ? AND e.classId = ? AND e.status = 'APPROVED'
+                AND (
+                  c.price = 0 OR c.price IS NULL
+                  OR EXISTS (
+                    SELECT 1 FROM Payment p
+                    WHERE p.payerId = e.userId AND p.classId = e.classId
+                      AND p.status IN ('PAID', 'COMPLETED')
+                      AND (
+                        e.paymentFrequency = 'ONE_TIME'
+                        OR (e.paymentFrequency = 'MONTHLY' AND (e.nextPaymentDue IS NULL OR e.nextPaymentDue >= datetime('now')))
+                      )
+                  )
+                )
               LIMIT 1
             `)
             .bind(participantEmail, stream.classId)
@@ -467,7 +480,7 @@ webhooks.post('/zoom', async (c) => {
       } else {
         // Zoom REST API cannot remove from waiting room — leave them stuck there.
         // They see "Please wait" forever and cannot enter. Teacher should not manually admit.
-        console.warn(`[Zoom Webhook] Waiting room: blocking ${participantEmail || '(no email)'} uuid=${participantUUID} — not enrolled. Left in waiting room.`);
+        console.warn(`[Zoom Webhook] Waiting room: blocking ${participantEmail || '(no email)'} uuid=${participantUUID} — not enrolled or payment overdue. Left in waiting room.`);
       }
     } else if (event === 'meeting.participant_joined' || event === 'meeting.participant_left' || event === 'participant.joined' || event === 'participant.left') {
       const meetingId = data.object.id;

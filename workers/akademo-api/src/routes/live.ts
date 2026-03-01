@@ -31,12 +31,29 @@ live.get('/', async (c) => {
 
       if (academy?.restrictStreamAccess === 1) {
         const enrollment = await c.env.DB
-          .prepare(`SELECT id FROM ClassEnrollment WHERE classId = ? AND userId = ? AND status = 'APPROVED'`)
+          .prepare(`
+            SELECT e.id FROM ClassEnrollment e
+            JOIN Class c ON e.classId = c.id
+            WHERE e.classId = ? AND e.userId = ? AND e.status = 'APPROVED'
+              AND (
+                c.price = 0 OR c.price IS NULL
+                OR EXISTS (
+                  SELECT 1 FROM Payment p
+                  WHERE p.payerId = e.userId AND p.classId = e.classId
+                    AND p.status IN ('PAID', 'COMPLETED')
+                    AND (
+                      e.paymentFrequency = 'ONE_TIME'
+                      OR (e.paymentFrequency = 'MONTHLY' AND (e.nextPaymentDue IS NULL OR e.nextPaymentDue >= datetime('now')))
+                    )
+                )
+              )
+            LIMIT 1
+          `)
           .bind(classId, session.id)
           .first();
 
         if (!enrollment) {
-          return c.json(errorResponse('Acceso restringido: debes estar matriculado en esta asignatura'), 403);
+          return c.json(errorResponse('Acceso restringido: debes estar matriculado y al corriente de pago en esta asignatura'), 403);
         }
       }
     }
