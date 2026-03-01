@@ -34,7 +34,6 @@ interface MobileSidebarProps {
   onClose: () => void;
   onCopyJoinLink: () => void;
   onCopyAcademyLink: () => void;
-  onSwitchRole: () => void;
   onLogout: () => void;
   user: {
     id: string;
@@ -53,7 +52,6 @@ export function MobileSidebar({
   onClose,
   onCopyJoinLink,
   onCopyAcademyLink,
-  onSwitchRole,
   onLogout,
   user,
   academyPaymentStatus,

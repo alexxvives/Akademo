@@ -422,23 +422,6 @@ export default function DashboardLayout({
     }
   }, [checkAuth, checkSession, role, loadNotifications, loadActiveStreams, loadAcademy, loadUnreadValoraciones, loadUngradedAssignments, loadNewGrades]);
 
-  const handleSwitchRole = async () => {
-    try {
-      const response = await apiClient('/auth/switch-role', { method: 'POST' });
-      const result = await response.json();
-      
-      if (result.success && result.data?.user) {
-        const newRole = result.data.user.role.toLowerCase();
-        window.location.href = `/dashboard/${newRole}`;
-      } else {
-        alert(result.error || 'Failed to switch role');
-      }
-    } catch (error) {
-      console.error('Failed to switch role:', error);
-      alert('An error occurred while switching roles');
-    }
-  };
-
   const copyJoinLink = () => {
     if (!user) return;
     const link = `${window.location.origin}/join/${user.id}`;
@@ -665,7 +648,6 @@ export default function DashboardLayout({
         linkCopied={linkCopied}
         onCopyJoinLink={copyJoinLink}
         onCopyAcademyLink={copyAcademyJoinLink}
-        onSwitchRole={handleSwitchRole}
         onLogout={handleLogout}
         user={user}
         academyPaymentStatus={academyPaymentStatus}
@@ -679,7 +661,6 @@ export default function DashboardLayout({
         onClose={() => setMobileMenuOpen(false)}
         onCopyJoinLink={copyJoinLink}
         onCopyAcademyLink={copyAcademyJoinLink}
-        onSwitchRole={handleSwitchRole}
         onLogout={handleLogout}
         user={user}
         academyPaymentStatus={academyPaymentStatus}

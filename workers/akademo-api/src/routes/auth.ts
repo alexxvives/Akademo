@@ -18,28 +18,7 @@ auth.get('/me', async (c) => {
     return c.json(errorResponse('Not authenticated'), 401);
   }
 
-  // Check if user has monoacademy access (single owner who is also the teacher)
-  let monoacademy = false;
-  
-  if (session.role === 'ACADEMY') {
-    const academy = await c.env.DB
-      .prepare('SELECT monoacademy FROM Academy WHERE ownerId = ?')
-      .bind(session.id)
-      .first();
-    monoacademy = academy?.monoacademy === 1;
-  } else if (session.role === 'TEACHER') {
-    const teacher = await c.env.DB
-      .prepare('SELECT monoacademy FROM Teacher WHERE userId = ?')
-      .bind(session.id)
-      .first();
-    monoacademy = teacher?.monoacademy === 1;
-  }
-
-  return c.json(successResponse({
-    ...session,
-    monoacademy,
-    linkedUserId: null, // Monoacademy uses role-switching on the same user, no separate account
-  }));
+  return c.json(successResponse(session));
 });
 
 // POST /auth/session/check - Check if session is valid
@@ -83,7 +62,6 @@ auth.post('/register', registerRateLimit, validateBody(registerSchema), async (c
       firstName, 
       lastName,
       academyName,    // For ACADEMY role (instead of firstName/lastName)
-      monoacademy = false, // For ACADEMY role - owner is also the only teacher
       role = 'STUDENT',
       academyId,      // For STUDENT and TEACHER
       classId,        // For STUDENT
@@ -134,30 +112,18 @@ auth.post('/register', registerRateLimit, validateBody(registerSchema), async (c
     if (role === 'ACADEMY') {
       // Academy owner - create academy
       const newAcademyId = crypto.randomUUID();
-      const monoacademyFlag = monoacademy ? 1 : 0;
       const now = new Date().toISOString();
       await c.env.DB
-        .prepare('INSERT INTO Academy (id, name, description, ownerId, monoacademy, paymentStatus, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)')
+        .prepare('INSERT INTO Academy (id, name, description, ownerId, paymentStatus, createdAt) VALUES (?, ?, ?, ?, ?, ?)')
         .bind(
           newAcademyId,
           academyName,
           `Welcome to ${academyName}`,
           userId,
-          monoacademyFlag,
           'NOT PAID', // Demo mode by default
           now
         )
         .run();
-
-      // If monoacademy, create a Teacher record for the owner (same User, dual role)
-      // No second User account is needed — switch-role handles toggling User.role
-      if (monoacademy) {
-        const teacherId = crypto.randomUUID();
-        await c.env.DB
-          .prepare('INSERT INTO Teacher (id, userId, academyId, monoacademy, createdAt) VALUES (?, ?, ?, ?, ?)')
-          .bind(teacherId, userId, newAcademyId, monoacademyFlag, now)
-          .run();
-      }
 
     } else if (role === 'STUDENT') {
       // Student - auto-approve enrollment on registration (no manual approval needed)
@@ -697,109 +663,6 @@ auth.get('/join/academy/:academyId', async (c) => {
   } catch (error: any) {
     console.error('[Academy Join API] Error:', error);
     return c.json(errorResponse('Error al cargar los datos de la academia'), 500);
-  }
-});
-
-// POST /auth/switch-role - Switch between ACADEMY and TEACHER roles (monoacademy only)
-auth.post('/switch-role', async (c) => {
-  try {
-    const session = await getSession(c);
-    if (!session) {
-      return c.json(errorResponse('Not authenticated'), 401);
-    }
-
-    // Only ACADEMY and TEACHER roles can switch
-    if (session.role !== 'ACADEMY' && session.role !== 'TEACHER') {
-      return c.json(errorResponse('Role switching not available for your account'), 403);
-    }
-
-    let newRole: string;
-
-    if (session.role === 'ACADEMY') {
-      // Check if academy has monoacademy flag
-      const academy = await c.env.DB
-        .prepare('SELECT id, monoacademy FROM Academy WHERE ownerId = ?')
-        .bind(session.id)
-        .first();
-      
-      if (!academy || academy.monoacademy !== 1) {
-        return c.json(errorResponse('Role switching not enabled for your academy'), 403);
-      }
-
-      // Ensure Teacher record exists for this user
-      let teacher = await c.env.DB
-        .prepare('SELECT id FROM Teacher WHERE userId = ?')
-        .bind(session.id)
-        .first();
-      
-      if (!teacher) {
-        // Create Teacher record for this user
-        const teacherId = crypto.randomUUID();
-        const now = new Date().toISOString();
-        
-        await c.env.DB
-          .prepare('INSERT INTO Teacher (id, userId, academyId, monoacademy, createdAt) VALUES (?, ?, ?, ?, ?)')
-          .bind(teacherId, session.id, academy.id, 1, now)
-          .run();
-      }
-
-      newRole = 'TEACHER';
-    } else if (session.role === 'TEACHER') {
-      // Check if teacher has monoacademy flag
-      const teacher = await c.env.DB
-        .prepare('SELECT monoacademy, academyId FROM Teacher WHERE userId = ?')
-        .bind(session.id)
-        .first();
-      
-      if (!teacher || teacher.monoacademy !== 1) {
-        return c.json(errorResponse('Role switching not enabled for your account'), 403);
-      }
-
-      // Verify this user owns the academy
-      const academy = await c.env.DB
-        .prepare('SELECT id FROM Academy WHERE id = ? AND ownerId = ?')
-        .bind(teacher.academyId, session.id)
-        .first();
-      
-      if (!academy) {
-        return c.json(errorResponse('You do not own this academy'), 403);
-      }
-
-      newRole = 'ACADEMY';
-    } else {
-      return c.json(errorResponse('Invalid role'), 400);
-    }
-
-    // Update user's role
-    await c.env.DB
-      .prepare('UPDATE User SET role = ? WHERE id = ?')
-      .bind(newRole, session.id)
-      .run();
-
-    // Create new signed session (same user, new role)
-    const sessionId = await createSignedSession(session.id, c.env);
-    setCookie(c, 'academy_session', sessionId, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'Lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-      path: '/',
-      domain: '.akademo-edu.com',
-    });
-
-    // Get the updated user info
-    const updatedUser = await c.env.DB
-      .prepare('SELECT id, email, firstName, lastName, role FROM User WHERE id = ?')
-      .bind(session.id)
-      .first();
-
-    return c.json(successResponse({
-      token: sessionId,
-      user: updatedUser,
-    }));
-  } catch (error: any) {
-    console.error('[Switch Role] Error:', error);
-    return c.json(errorResponse('Failed to switch role'), 500);
   }
 });
 

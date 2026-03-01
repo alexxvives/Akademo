@@ -49,7 +49,6 @@ interface SidebarProps {
   linkCopied: boolean;
   onCopyJoinLink: () => void;
   onCopyAcademyLink: () => void;
-  onSwitchRole: () => void;
   onLogout: () => void;
   user: {
     id: string;
@@ -67,7 +66,6 @@ export function Sidebar({
   linkCopied,
   onCopyJoinLink,
   onCopyAcademyLink,
-  onSwitchRole,
   onLogout,
   user,
   academyPaymentStatus,
