@@ -65,6 +65,9 @@ webhooks.post('/zoom', async (c) => {
     const rawBody = await c.req.text();
     const payload = JSON.parse(rawBody);
 
+    // Log every incoming POST immediately (before any validation) for debugging
+    console.log(`[Zoom Webhook] Incoming event: "${payload.event}"`);
+
     // Handle Zoom URL validation (required for webhook setup)
     if (payload.event === 'endpoint.url_validation') {
       const plainToken = payload.payload.plainToken;
@@ -133,6 +136,9 @@ webhooks.post('/zoom', async (c) => {
     }
 
     const { event, payload: data } = payload;
+
+    // Log every incoming event for debugging
+    console.log(`[Zoom Webhook] Event received: "${event}"`);
 
     // Handle different Zoom events
     if (event === 'meeting.started') {
@@ -360,7 +366,7 @@ webhooks.post('/zoom', async (c) => {
           .prepare('SELECT id, zoomMeetingId, title FROM LiveStream ORDER BY createdAt DESC LIMIT 5')
           .all();
       }
-    } else if (event === 'meeting.participant_waiting') {
+    } else if (event === 'meeting.participant_waiting' || event === 'participant.waiting') {
       // ── Waiting Room gate: runs BEFORE the participant enters the meeting ──
       // This is the only reliable Zoom API for access control.
       // PUT /meetings/{id}/participants/{uuid}/status with action:admit lets them in.
