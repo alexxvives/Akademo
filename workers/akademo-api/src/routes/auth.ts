@@ -175,6 +175,7 @@ auth.post('/register', registerRateLimit, validateBody(registerSchema), async (c
       role,
     }), 201);
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Register] Error:', error);
     return c.json(errorResponse('Registration failed'), 500);
   }
@@ -336,6 +337,7 @@ auth.post('/login', loginRateLimit, validateBody(loginSchema), async (c) => {
       suspicionWarning: hasSuspicionWarning,
     }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Login] Error:', error);
     console.error('[Login] Error stack:', error.stack);
     return c.json(errorResponse('Login failed'), 500);
@@ -400,6 +402,7 @@ auth.post('/check-email', checkEmailRateLimit, async (c) => {
       exists: !!existingUser,
     }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Check Email] Error:', error);
     return c.json(errorResponse('Failed to check email'), 500);
   }
@@ -478,6 +481,7 @@ auth.post('/send-verification', emailVerificationRateLimit, async (c) => {
       // Note: In production, remove this - code should only be sent via email
     }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Send Verification] Error:', error);
     return c.json(errorResponse('Failed to send verification'), 500);
   }
@@ -535,6 +539,7 @@ auth.post('/verify-email', emailVerificationRateLimit, async (c) => {
       verified: true,
     }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Verify Email] Error:', error);
     return c.json(errorResponse('Verification failed'), 500);
   }
@@ -610,6 +615,7 @@ auth.get('/join/:teacherId', async (c) => {
       classes: classesResult.results || []
     }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Join API] Error:', error);
     return c.json(errorResponse('Error al cargar los datos del profesor'), 500);
   }
@@ -661,6 +667,7 @@ auth.get('/join/academy/:academyId', async (c) => {
       classes: classesResult.results || []
     }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Academy Join API] Error:', error);
     return c.json(errorResponse('Error al cargar los datos de la academia'), 500);
   }
@@ -718,6 +725,7 @@ auth.post('/forgot-password', forgotPasswordRateLimit, async (c) => {
 
     return c.json(successResponse({ message: 'If that email exists, a reset code has been sent' }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Forgot Password] Error:', error);
     return c.json(errorResponse('Failed to process request'), 500);
   }
@@ -760,6 +768,7 @@ auth.post('/reset-password', async (c) => {
 
     return c.json(successResponse({ message: 'Contraseña actualizada correctamente' }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Reset Password] Error:', error);
     return c.json(errorResponse('Failed to reset password'), 500);
   }

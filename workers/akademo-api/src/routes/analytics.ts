@@ -85,6 +85,7 @@ analytics.get('/', async (c) => {
 
     return c.json(successResponse(stats));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Analytics] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }

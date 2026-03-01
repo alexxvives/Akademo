@@ -348,6 +348,7 @@ webhooks.post('/zoom', async (c) => {
             .run();
 
         } catch (error: any) {
+          if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
           console.error('[Zoom Webhook] Error processing recording:', error.message);
         }
       } else {
@@ -414,6 +415,7 @@ webhooks.post('/zoom', async (c) => {
 
     return c.json(successResponse({ received: true }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Zoom Webhook] Error:', error);
     // Return 200 even on error to avoid Zoom retries
     return c.json(successResponse({ received: true }));
@@ -493,6 +495,7 @@ webhooks.post('/bunny', async (c) => {
     
     return c.json(successResponse({ received: true }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Bunny Webhook] Error:', error);
     return c.json(successResponse({ received: true }));
   }
@@ -823,6 +826,7 @@ webhooks.post('/stripe', async (c) => {
 
     return c.json(successResponse({ received: true }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Stripe Webhook] Error:', error);
     return c.json(successResponse({ received: true }));
   }

@@ -40,6 +40,7 @@ zoomAccounts.get('/', async (c) => {
 
     return c.json({ success: true, data: accountsWithClasses });
   } catch (error) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('Error fetching Zoom accounts:', error);
     return c.json(errorResponse('Failed to fetch Zoom accounts'), 500);
   }
@@ -80,6 +81,7 @@ zoomAccounts.delete('/:id', async (c) => {
 
     return c.json({ success: true });
   } catch (error) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('Error deleting Zoom account:', error);
     return c.json(errorResponse('Failed to delete Zoom account'), 500);
   }
@@ -174,6 +176,7 @@ zoomAccounts.post('/oauth/callback', async (c) => {
       return c.json({ success: true, data: { id: newAccountId } });
     }
   } catch (error) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('OAuth callback error:', error);
     return c.json(errorResponse('OAuth callback failed'), 500);
   }
@@ -223,6 +226,7 @@ async function refreshZoomToken(c: Context<{ Bindings: Bindings }>, accountId: s
 
     return tokens.access_token;
   } catch (error) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('Error refreshing token:', error);
     return null;
   }
@@ -263,6 +267,7 @@ zoomAccounts.get('/refresh-name/:id', async (c) => {
 
     return c.json(successResponse({ accountName }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('Refresh name error:', error);
     return c.json(errorResponse('Failed to refresh account name'), 500);
   }

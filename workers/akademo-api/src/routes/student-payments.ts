@@ -226,6 +226,7 @@ studentPayments.get('/:studentId/class/:classId', async (c) => {
 
     return c.json(successResponse(responseData));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Student Payments] Error fetching payment history:', error);
     return c.json(errorResponse('Failed to fetch payment history'), 500);
   }

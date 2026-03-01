@@ -61,6 +61,7 @@ bunny.post('/video/create', async (c) => {
           collectionId = newCollection.guid;
         }
       } catch (error: any) {
+        if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
         console.error('[Bunny Collection] Failed to get/create collection:', error);
         // Continue without collection if it fails
       }
@@ -84,6 +85,7 @@ bunny.post('/video/create', async (c) => {
       uploadUrl: `https://video.bunnycdn.com/library/${libraryId}/videos/${video.guid}`,
     }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Bunny Create] Error:', error);
     return c.json(errorResponse('Failed to create video'), 500);
   }
@@ -154,6 +156,7 @@ bunny.put('/video/upload', async (c) => {
 
     return c.json(successResponse({ videoGuid }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Bunny Upload] Error:', error);
     return c.json(errorResponse('Failed to upload'), 500);
   }
@@ -174,6 +177,7 @@ bunny.get('/video/:guid', async (c) => {
 
     return c.json(successResponse(video));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Bunny Get Video] Error:', error);
     return c.json(errorResponse('Failed to get video'), 500);
   }
@@ -214,6 +218,7 @@ bunny.get('/video/:guid/status', async (c) => {
       height: video.height,
     }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Bunny Status] Error:', error);
     return c.json(errorResponse('Failed to get status'), 500);
   }
@@ -272,6 +277,7 @@ bunny.get('/video/:guid/stream', async (c) => {
       expires,
     }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Bunny Stream URL] Error:', error);
     return c.json(errorResponse('Failed to generate stream URL'), 500);
   }
@@ -303,6 +309,7 @@ bunny.get('/video/:videoGuid', async (c) => {
       availableResolutions: video.availableResolutions,
     }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Bunny Get Video] Error:', error);
     // Return 404 if video doesn't exist
     if (error.message?.includes('404') || error.message?.includes('not found')) {

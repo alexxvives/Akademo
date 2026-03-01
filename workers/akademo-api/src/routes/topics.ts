@@ -61,6 +61,7 @@ topics.get('/', async (c) => {
 
     return c.json(successResponse(topicsResult.results || []));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[List Topics] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -123,6 +124,7 @@ topics.post('/', async (c) => {
 
     return c.json(successResponse(newTopic));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Create Topic] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -176,6 +178,7 @@ topics.put('/:id', async (c) => {
 
     return c.json(successResponse(updated));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Update Topic] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -225,6 +228,7 @@ topics.delete('/:id', async (c) => {
 
     return c.json(successResponse({ message: 'Topic deleted' }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Delete Topic] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -294,6 +298,7 @@ topics.put('/:id/reorder', async (c) => {
 
     return c.json(successResponse({ message: 'Topic reordered' }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Reorder Topic] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }

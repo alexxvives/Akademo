@@ -38,6 +38,7 @@ academicYears.get('/', async (c) => {
 
     return c.json(successResponse(years.results || []));
   } catch (error) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Academic Years GET] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -84,6 +85,7 @@ academicYears.post('/', async (c) => {
 
     return c.json(successResponse(years.results || []));
   } catch (error) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Academic Years POST] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -131,6 +133,7 @@ academicYears.put('/:id', async (c) => {
 
     return c.json(successResponse(years.results || []));
   } catch (error) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Academic Years PUT] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -178,6 +181,7 @@ academicYears.patch('/:id', async (c) => {
 
     return c.json(successResponse(years.results || []));
   } catch (error) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Academic Years PATCH] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }

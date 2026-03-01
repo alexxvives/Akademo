@@ -107,6 +107,7 @@ zoom.post('/signature', async (c: any) => {
       sdkKey,
     }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Zoom Signature] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }

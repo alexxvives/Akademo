@@ -152,6 +152,7 @@ students.get('/progress', async (c) => {
 
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Students Progress] Error:', error);
     return c.json(errorResponse('Failed to fetch student progress'), 500);
   }
@@ -191,6 +192,7 @@ students.patch('/:id/warn', async (c) => {
 
     return c.json(successResponse({ warned: true }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Students Warn] Error:', error);
     return c.json(errorResponse('Failed to send warning'), 500);
   }

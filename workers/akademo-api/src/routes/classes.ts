@@ -176,6 +176,7 @@ classes.get('/', async (c) => {
 
     return c.json(successResponse(classes));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Classes GET] Error:', error);
     console.error('[Classes GET] Error message:', error.message);
     console.error('[Classes GET] Error stack:', error.stack);
@@ -196,10 +197,20 @@ function generateSlug(name: string): string {
 }
 
 // POST /classes - Create a new class
-classes.post('/', validateBody(createClassSchema), async (c) => {
+classes.post('/', async (c) => {
   try {
     const session = await requireAuth(c);
+
+    // Validate body AFTER auth to avoid leaking field names to unauthenticated users
     const body = await c.req.json();
+    const validation = createClassSchema.safeParse(body);
+    if (!validation.success) {
+      const errors = validation.error.errors.map((e: any) => ({
+        field: e.path.join('.'),
+        message: e.message,
+      }));
+      return c.json({ success: false, error: 'Validation failed', details: errors }, 400);
+    }
     const { name, description, academyId, teacherId, whatsappGroupLink, university, carrera } = body;
 
     // Check if user has permission to create class in this academy
@@ -280,6 +291,7 @@ classes.post('/', validateBody(createClassSchema), async (c) => {
 
     return c.json(successResponse(created));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Classes POST] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -408,6 +420,7 @@ classes.get('/:id', async (c) => {
 
     return c.json(successResponse(classRecord));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Classes/:id] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -517,6 +530,7 @@ classes.patch('/:id', validateBody(updateClassSchema), async (c) => {
 
     return c.json(successResponse(updated));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Classes/:id PATCH] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -675,6 +689,7 @@ classes.delete('/:id', async (c) => {
 
     return c.json(successResponse({ deleted: true, className: classRecord.name }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Classes/:id DELETE] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }

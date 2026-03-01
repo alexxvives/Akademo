@@ -87,6 +87,7 @@ documents.get('/', async (c) => {
 
     return c.json(errorResponse('classId or lessonId required'), 400);
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Get Documents] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }

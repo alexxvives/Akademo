@@ -225,6 +225,7 @@ ratings.get('/teacher', async (c) => {
     return c.json(successResponse(classes));
 
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Get Teacher Ratings] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -334,6 +335,7 @@ ratings.get('/', async (c) => {
     }));
 
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Ratings] Error:', error);
     console.error('[Ratings] Stack:', error.stack);
     return c.json(errorResponse('Internal server error'), 500);
@@ -402,6 +404,7 @@ ratings.post('/', validateBody(createRatingSchema), async (c) => {
     }));
 
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Submit Rating] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }

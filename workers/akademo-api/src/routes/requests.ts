@@ -97,6 +97,7 @@ requests.post('/student', async (c) => {
       requiresPayment: classPrice > 0
     }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Student Request] Error:', error);
     // Return proper status code for auth errors
     if (error.message === 'Unauthorized') {
@@ -141,6 +142,7 @@ requests.get('/teacher', async (c) => {
 
     return c.json(successResponse(memberships));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Teacher Requests] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }

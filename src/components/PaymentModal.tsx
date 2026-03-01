@@ -91,6 +91,11 @@ export default function PaymentModal({
               methods = ['stripe', 'cash', 'bizum'];
             }
             
+            // Hide Stripe option if academy hasn't connected a Stripe account
+            if (!result.data.stripeAccountId) {
+              methods = methods.filter((m: string) => m !== 'stripe');
+            }
+            
             setAllowedPaymentMethods(methods);
           } else {
           }

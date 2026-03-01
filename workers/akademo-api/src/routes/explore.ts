@@ -14,7 +14,7 @@ explore.get('/academies', async (c) => {
     const result = await c.env.DB
       .prepare(`
         SELECT 
-          a.*,
+          a.id, a.name, a.description, a.logoUrl, a.address, a.createdAt,
           COUNT(DISTINCT c.id) as classCount,
           u.firstName as ownerFirstName,
           u.lastName as ownerLastName
@@ -30,6 +30,7 @@ explore.get('/academies', async (c) => {
 
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Explore Academies] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -62,6 +63,7 @@ explore.get('/academies/:id/classes', async (c) => {
 
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Explore Academy Classes] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -75,7 +77,7 @@ explore.get('/academies/:id/teachers', async (c) => {
     const result = await c.env.DB
       .prepare(`
         SELECT 
-          u.id, u.firstName, u.lastName, u.email,
+          u.id, u.firstName, u.lastName,
           COUNT(DISTINCT c.id) as classCount
         FROM Teacher t
         JOIN User u ON t.userId = u.id
@@ -89,6 +91,7 @@ explore.get('/academies/:id/teachers', async (c) => {
 
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Explore Academy Teachers] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -190,6 +193,7 @@ explore.get('/enrolled-academies/classes', async (c) => {
 
     return c.json(successResponse(classes));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Enrolled Academies Classes] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -234,6 +238,7 @@ explore.get('/my-live-streams', async (c) => {
 
     return c.json(successResponse(streams));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[My Live Streams] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }

@@ -62,6 +62,7 @@ storage.post('/upload', async (c) => {
     try {
       session = await requireAuth(c);
     } catch (error) {
+      if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
       console.error('[Upload] Auth error:', error);
       return c.json(errorResponse('Error de autenticación. Intenta cerrar sesión y volver a iniciar.'), 401);
     }
@@ -139,6 +140,7 @@ storage.post('/upload', async (c) => {
       message: 'File uploaded successfully',
     }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Simple Upload] Error:', error);
     return c.json(errorResponse('Failed to upload file'), 500);
   }
@@ -166,6 +168,7 @@ storage.get('/upload/:id', async (c) => {
 
     return c.json(successResponse(upload));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Get Upload] Error:', error);
     return c.json(errorResponse('Failed to fetch upload'), 500);
   }
@@ -212,6 +215,7 @@ storage.post('/multipart/init', async (c) => {
       key: multipartUpload.key,
     }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Multipart Init] Error:', error);
     return c.json(errorResponse('Failed to init upload'), 500);
   }
@@ -266,6 +270,7 @@ storage.put('/multipart/upload-part', async (c) => {
       etag: uploadedPart.etag,
     }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Upload Part] Critical Error:', error);
     return c.json(errorResponse('Failed to upload part'), 500);
   }
@@ -294,6 +299,7 @@ storage.post('/multipart/complete', async (c) => {
       message: 'Upload complete',
     }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Complete Upload] Error:', error);
     return c.json(errorResponse('Failed to complete upload'), 500);
   }
@@ -319,6 +325,7 @@ storage.post('/multipart/abort', async (c) => {
 
     return c.json(successResponse({ message: 'Upload aborted' }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Abort Upload] Error:', error);
     return c.json(errorResponse('Failed to abort upload'), 500);
   }
@@ -422,6 +429,7 @@ storage.get('/serve/*', async (c) => {
       },
     });
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Serve File] Error:', error);
     return c.json(errorResponse('Failed to serve file'), 500);
   }
@@ -450,6 +458,7 @@ storage.get('/signed-url', async (c) => {
 
     return c.json(successResponse({ token, expires }));
   } catch (error: unknown) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Signed URL] Error:', error);
     return c.json(errorResponse('Failed to generate signed URL'), 500);
   }

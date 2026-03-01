@@ -74,6 +74,7 @@ live.get('/', async (c) => {
 
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Get Live Streams] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -209,6 +210,7 @@ live.post('/', async (c) => {
 
     return c.json(successResponse(stream), 201);
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Create Live Stream] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -298,6 +300,7 @@ live.get('/history', async (c) => {
 
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Live History] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -332,6 +335,7 @@ live.get('/active', async (c) => {
 
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Active Streams] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -387,6 +391,7 @@ live.get('/:id', async (c) => {
 
     return c.json(successResponse(stream));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Get Stream] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -489,10 +494,12 @@ live.get('/:id/check-recording', async (c) => {
 
       return c.json(successResponse({ recordingId: null, bunnyStatus: null }));
     } catch (error: any) {
+      if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
       console.error('[Check Recording] Bunny check error:', error);
       return c.json(successResponse({ recordingId: null, bunnyStatus: null }));
     }
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Check Recording] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -655,6 +662,7 @@ live.patch('/:id', async (c) => {
 
     return c.json(successResponse(updated));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Update Stream] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -787,6 +795,7 @@ live.delete('/:id', async (c) => {
 
     return c.json(successResponse({ message: 'Stream deleted' }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Delete Stream] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -1010,6 +1019,7 @@ live.post('/create-lesson', async (c) => {
     }), 201);
 
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Create Lesson from Stream] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -1131,6 +1141,7 @@ live.delete('/:id', async (c) => {
 
     return c.json(successResponse({ message: 'Stream deleted successfully' }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Delete Stream] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -1175,6 +1186,7 @@ live.post('/:id/notify', async (c) => {
 
     return c.json(successResponse({ notified, message: `${notified} estudiantes notificados` }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Notify Students] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -1337,6 +1349,7 @@ live.post('/:id/check-recording', async (c) => {
     }));
 
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Check Recording] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -1389,6 +1402,7 @@ live.get('/:id/participants', async (c) => {
       participantsFetchedAt: stream.participantsFetchedAt,
     }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Get Participants] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }

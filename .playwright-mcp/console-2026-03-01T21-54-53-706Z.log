@@ -1,0 +1,10 @@
+[   27560ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://api.akademo-edu.com/classes:0
+[   27678ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://api.akademo-edu.com/academies:0
+[   27760ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://api.akademo-edu.com/students:0
+[   27829ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://api.akademo-edu.com/lessons:0
+[   27902ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://api.akademo-edu.com/notifications:0
+[   27979ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://api.akademo-edu.com/payments/my-payments:0
+[   28052ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://api.akademo-edu.com/analytics/dashboard:0
+[   28116ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://api.akademo-edu.com/live:0
+[   28202ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://api.akademo-edu.com/documents?classId=test:0
+[   28292ms] [ERROR] Failed to load resource: net::ERR_NAME_NOT_RESOLVED @ https://api.akademo-edu.com/storage/upload/test:0

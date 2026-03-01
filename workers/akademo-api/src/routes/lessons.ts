@@ -156,6 +156,7 @@ lessons.get('/', async (c) => {
 
     return c.json(successResponse(filteredLessons));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[List Lessons] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -377,6 +378,7 @@ lessons.get('/:id', async (c) => {
       documents: documentsWithUpload,
     }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Get Lesson] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -519,6 +521,7 @@ lessons.patch('/:id', validateBody(updateLessonSchema), async (c) => {
 
     return c.json(successResponse(updated));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Update Lesson] Error:', error?.message || error, 'Stack:', error?.stack);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -578,6 +581,7 @@ lessons.put('/:id/move', async (c) => {
 
     return c.json(successResponse(updated));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Move Lesson] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -660,6 +664,7 @@ lessons.delete('/:id', async (c) => {
 
     return c.json(successResponse({ message: 'Lesson deleted' }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Delete Lesson] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -703,6 +708,7 @@ lessons.delete('/document/:id', async (c) => {
 
     return c.json(successResponse({ message: 'Document deleted' }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Delete Document] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -746,6 +752,7 @@ lessons.delete('/video/:id', async (c) => {
 
     return c.json(successResponse({ message: 'Video deleted' }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Delete Video] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -925,6 +932,7 @@ lessons.post('/create-with-uploaded', validateBody(createLessonSchema), async (c
       documentCount: createdDocuments.length,
     }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Create Lesson With Uploaded] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -983,6 +991,7 @@ lessons.post('/:id/rating', validateBody(createRatingSchema.pick({ rating: true,
 
     return c.json(successResponse({ message: 'Rating saved' }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Rate Lesson] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -1048,6 +1057,7 @@ lessons.get('/ratings/unread-count', async (c) => {
 
     return c.json(successResponse({ count: totalCount, byClass, ratings: unreadRatings.results }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Get Unread Ratings Count] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -1108,6 +1118,7 @@ lessons.post('/ratings/mark-read', async (c) => {
 
     return c.json(successResponse({ message: 'Ratings marked as read', count: ratingIds.length }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Mark Ratings Read] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -1226,6 +1237,7 @@ lessons.post('/:id/add-files', async (c) => {
       addedDocuments
     }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Add Files] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -1288,6 +1300,7 @@ lessons.get('/:id/ratings', async (c) => {
 
     return c.json(successResponse(ratings.results || []));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Lesson Ratings] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -1392,6 +1405,7 @@ lessons.get('/:id/student-times', async (c) => {
 
     return c.json(successResponse(filteredData));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Student Times] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -1504,6 +1518,7 @@ lessons.post('/:id/add-stream', async (c) => {
     }));
 
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Add Stream] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }

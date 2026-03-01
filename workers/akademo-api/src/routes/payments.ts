@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { requireAuth, requireRole } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
-import { validateBody, initiatePaymentSchema } from '../lib/validation';
+import { initiatePaymentSchema } from '../lib/validation';
 import { autoCreatePendingPayments, addMonths, countElapsedCycles } from '../lib/payment-utils';
 
 const payments = new Hono<{ Bindings: Bindings }>();
@@ -57,10 +57,21 @@ function calculateBillingCycle(classStartDate: string, _enrollmentDate: string, 
 }
 
 // POST /payments/initiate - Student initiates a payment for a class
-payments.post('/initiate', validateBody(initiatePaymentSchema), async (c) => {
+payments.post('/initiate', async (c) => {
   try {
     const session = await requireAuth(c);
-    const { classId, paymentMethod, paymentFrequency } = await c.req.json();
+
+    // Validate body AFTER auth to avoid leaking field names to unauthenticated users
+    const rawBody = await c.req.json();
+    const validation = initiatePaymentSchema.safeParse(rawBody);
+    if (!validation.success) {
+      const errors = validation.error.errors.map((e: any) => ({
+        field: e.path.join('.'),
+        message: e.message,
+      }));
+      return c.json({ success: false, error: 'Validation failed', details: errors }, 400);
+    }
+    const { classId, paymentMethod, paymentFrequency } = rawBody;
 
     // Get class details including price and startDate
     const classData: any = await c.env.DB
@@ -233,6 +244,7 @@ payments.post('/initiate', validateBody(initiatePaymentSchema), async (c) => {
       catchUpAmount: billingCycle.catchUpAmount,
     }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Payment Initiate] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -509,6 +521,7 @@ payments.get('/pending-cash', async (c) => {
 
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Pending Cash Payments] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -552,6 +565,7 @@ payments.get('/pending-count', async (c) => {
 
     return c.json(successResponse(count));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Payments] Error fetching pending count:', error);
     return c.json(errorResponse('Failed to fetch pending payments count'), 500);
   }
@@ -686,6 +700,7 @@ payments.post('/stripe-session', async (c) => {
     // Enrollment already exists, no need to update it — payment will be created by webhook
     return c.json(successResponse({ url: checkoutSession.url }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Stripe Session] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -729,6 +744,7 @@ payments.get('/my-payments', async (c) => {
 
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[My Payments] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -873,6 +889,7 @@ payments.patch('/:id/approve-payment', async (c) => {
 
     return c.json(successResponse({ message: approved ? 'Payment approved' : 'Payment rejected' }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Approve Payment] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -990,6 +1007,7 @@ payments.get('/history', async (c) => {
 
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Payment History] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -1051,6 +1069,7 @@ payments.put('/history/:id/reverse', async (c) => {
     }));
 
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Reverse Payment] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -1118,6 +1137,7 @@ payments.post('/stripe-connect', async (c) => {
     }));
 
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Stripe Connect] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -1162,6 +1182,7 @@ payments.get('/stripe-status', async (c) => {
     }));
 
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Stripe Status] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -1265,6 +1286,7 @@ payments.post('/register-manual', async (c) => {
 
     return c.json(successResponse({ id: paymentId, message: 'Pago registrado exitosamente' }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Payments] Error registering manual payment:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -1314,6 +1336,7 @@ payments.delete('/:id', async (c) => {
 
     return c.json(successResponse({ message: 'Payment deleted successfully' }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Payments] Error deleting payment:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -1403,6 +1426,7 @@ payments.patch('/:id', async (c) => {
 
     return c.json(successResponse(updated));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Payments] Error updating payment:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -1462,6 +1486,7 @@ payments.post('/academy-activation-session', async (c) => {
 
     return c.json(successResponse({ url: checkoutSession.url }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Academy Activation] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }

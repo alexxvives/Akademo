@@ -85,6 +85,7 @@ assignments.get('/all', async (c) => {
 
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Assignments GET /all] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -211,13 +212,14 @@ assignments.get('/', async (c) => {
 
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Assignments GET] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
 });
 
 // POST /assignments - Create new assignment (teachers and academy owners)
-assignments.post('/', validateBody(createAssignmentSchema), async (c) => {
+assignments.post('/', async (c) => {
   try {
     const session = await requireAuth(c);
 
@@ -225,7 +227,16 @@ assignments.post('/', validateBody(createAssignmentSchema), async (c) => {
       return c.json(errorResponse('Only teachers and academy owners can create assignments'), 403);
     }
 
+    // Validate body AFTER auth to avoid leaking field names to unauthenticated users
     const body = await c.req.json();
+    const validation = createAssignmentSchema.safeParse(body);
+    if (!validation.success) {
+      const errors = validation.error.errors.map((e: any) => ({
+        field: e.path.join('.'),
+        message: e.message,
+      }));
+      return c.json({ success: false, error: 'Validation failed', details: errors }, 400);
+    }
     const { classId, title, description, dueDate, maxScore, uploadId, uploadIds } = body;
 
     // Collect all upload IDs (support both single uploadId and array uploadIds)
@@ -288,6 +299,7 @@ assignments.post('/', validateBody(createAssignmentSchema), async (c) => {
 
     return c.json(successResponse(assignment), 201);
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Assignments POST] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -332,6 +344,7 @@ assignments.get('/ungraded-count', async (c) => {
     
     return c.json(successResponse(count));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Assignments ungraded-count] Error:', error);
     return c.json(errorResponse('Failed to fetch ungraded count'), 500);
   }
@@ -360,6 +373,7 @@ assignments.get('/new-grades-count', async (c) => {
     
     return c.json(successResponse(count));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Assignments new-grades-count] Error:', error);
     return c.json(errorResponse('Failed to fetch new grades count'), 500);
   }
@@ -438,6 +452,7 @@ assignments.get('/:id', async (c) => {
 
     return c.json(errorResponse('Unauthorized'), 403);
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Assignments/:id GET] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -508,6 +523,7 @@ assignments.post('/:id/submit', async (c) => {
 
     return c.json(successResponse(submission), 201);
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Assignments/:id/submit POST] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -530,6 +546,7 @@ assignments.delete('/:id/submit', async (c) => {
 
     return c.json(successResponse({ message: 'Submission deleted' }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Assignments/:id/submit DELETE] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -599,6 +616,7 @@ assignments.patch('/submissions/:submissionId/grade', validateBody(gradeSubmissi
 
     return c.json(successResponse(updatedSubmission));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Assignments/submissions/:id/grade PATCH] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -677,6 +695,7 @@ assignments.get('/:id/submissions/download', async (c) => {
       submissions
     }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Assignments/:id/submissions/download GET] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -769,6 +788,7 @@ assignments.patch('/:id', async (c) => {
 
     return c.json(successResponse({ message: 'Assignment updated successfully' }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Assignments/:id PATCH] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -813,6 +833,7 @@ assignments.delete('/:id', async (c) => {
 
     return c.json(successResponse({ message: 'Assignment deleted successfully' }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Assignments/:id DELETE] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -856,6 +877,7 @@ assignments.delete('/:id/submissions/:studentId', async (c) => {
 
     return c.json(successResponse({ message: 'Submission deleted successfully' }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Assignments/:id/submissions/:studentId DELETE] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }

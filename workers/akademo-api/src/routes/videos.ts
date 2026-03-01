@@ -128,6 +128,7 @@ videos.post('/progress', validateBody(videoProgressSchema), async (c) => {
       }));
     }
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Video Progress] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -154,6 +155,7 @@ videos.post('/progress/reset', async (c) => {
 
     return c.json(successResponse({ message: 'Progress reset' }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Reset Progress] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -249,6 +251,7 @@ videos.post('/progress/admin-update', async (c) => {
 
     return c.json(successResponse({ message: 'Time updated successfully' }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Admin Update Time] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -349,6 +352,7 @@ videos.post('/completion', async (c) => {
 
     return c.json(successResponse({ flagged: isSuspicious, suspicionTriggered }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Video Completion] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -412,6 +416,7 @@ videos.get('/:id', async (c) => {
 
     return c.json(successResponse(video));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Get Video] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }

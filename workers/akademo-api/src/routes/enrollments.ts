@@ -103,6 +103,7 @@ enrollments.get('/', async (c) => {
 
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Enrollments] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -132,6 +133,7 @@ enrollments.post('/sign-document', validateBody(signDocumentSchema), async (c) =
 
     return c.json(successResponse({ message: 'Document signed successfully' }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Sign Document] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -272,6 +274,7 @@ enrollments.get('/pending', async (c) => {
 
     return c.json(successResponse(enrollments));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Pending Enrollments] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -318,6 +321,7 @@ enrollments.get('/rejected', async (c) => {
     const result = await c.env.DB.prepare(query).bind(...params).first();
     return c.json(successResponse({ count: result?.count || 0 }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Rejected Enrollments] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -380,6 +384,7 @@ enrollments.put('/pending', validateBody(approveEnrollmentSchema), async (c) => 
     return c.json(successResponse({ message: `Enrollment ${action.toLowerCase()}d successfully` }));
 
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Update Enrollment] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -470,6 +475,7 @@ enrollments.get('/history', async (c) => {
 
     return c.json(successResponse(enrollments));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Enrollment History] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -534,6 +540,7 @@ enrollments.put('/history/:id/reverse', async (c) => {
     }));
 
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Reverse Enrollment] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -598,6 +605,7 @@ enrollments.post('/leave', async (c) => {
     }));
 
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Leave Class] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -665,6 +673,7 @@ enrollments.delete('/:id', async (c) => {
     }));
 
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Ban Student] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -782,6 +791,7 @@ enrollments.get('/payment-status', async (c) => {
 
     return c.json(successResponse({ alDia, atrasados, total: enrollments_data.length, uniqueAlDia, uniqueAtrasados, uniqueTotal: Object.keys(studentStatus).length }));
   } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Payment Status] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
