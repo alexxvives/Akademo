@@ -532,7 +532,7 @@ academies.get('/:id', async (c) => {
     const session = await requireAuth(c);
     const academyId = c.req.param('id');
 
-    const academy = await c.env.DB
+    const academy: any = await c.env.DB
       .prepare('SELECT * FROM Academy WHERE id = ?')
       .bind(academyId)
       .first();
@@ -553,11 +553,37 @@ academies.get('/:id', async (c) => {
       .bind(academyId)
       .first();
 
-    return c.json(successResponse({
-      ...academy,
+    // Only expose stripeAccountId and internal fields to the academy owner
+    const isOwner = academy.ownerId === session.id;
+    const safeAcademy: Record<string, unknown> = {
+      id: academy.id,
+      name: academy.name,
+      description: academy.description,
+      logoUrl: academy.logoUrl,
+      address: academy.address,
+      phone: academy.phone,
+      email: academy.email,
+      createdAt: academy.createdAt,
+      feedbackEnabled: academy.feedbackEnabled,
+      requireGrading: academy.requireGrading,
+      allowMultipleTeachers: academy.allowMultipleTeachers,
+      restrictStreamAccess: academy.restrictStreamAccess,
+      defaultWatermarkIntervalMins: academy.defaultWatermarkIntervalMins,
+      defaultMaxWatchTimeMultiplier: academy.defaultMaxWatchTimeMultiplier,
+      allowedPaymentMethods: academy.allowedPaymentMethods,
+      hiddenMenuItems: academy.hiddenMenuItems,
       classCount: classCount?.count || 0,
       teacherCount: teacherCount?.count || 0,
-    }));
+    };
+
+    // Owner/admin gets additional fields
+    if (isOwner || session.role === 'ADMIN') {
+      safeAcademy.ownerId = academy.ownerId;
+      safeAcademy.paymentStatus = academy.paymentStatus;
+      safeAcademy.stripeAccountId = academy.stripeAccountId;
+    }
+
+    return c.json(successResponse(safeAcademy));
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Get Academy] Error:', error);

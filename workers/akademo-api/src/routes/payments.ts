@@ -1051,16 +1051,16 @@ payments.put('/history/:id/reverse', async (c) => {
 
     // Toggle status: PAID/COMPLETED → PENDING, anything else → COMPLETED
     const newStatus = (payment.status === 'COMPLETED' || payment.status === 'PAID') ? 'PENDING' : 'COMPLETED';
-    const completedAt = newStatus === 'COMPLETED' ? 'datetime(\'now\')' : 'NULL';
+    const completedAtValue = newStatus === 'COMPLETED' ? new Date().toISOString() : null;
 
     await c.env.DB
       .prepare(`
         UPDATE Payment 
         SET status = ?,
-            completedAt = ${completedAt}
+            completedAt = ?
         WHERE id = ?
       `)
-      .bind(newStatus, enrollmentId)
+      .bind(newStatus, completedAtValue, enrollmentId)
       .run();
 
     return c.json(successResponse({ 
@@ -1241,7 +1241,7 @@ payments.post('/register-manual', async (c) => {
     // Create payment record
     const paymentId = crypto.randomUUID();
     const approvedBy = `${session.firstName} ${session.lastName} (${classData.academyName})`;
-    const completedAt = (status === 'PAID' || status === 'COMPLETED') ? "datetime('now')" : 'NULL';
+    const completedAtValue = (status === 'PAID' || status === 'COMPLETED') ? new Date().toISOString() : null;
 
     try {
       const result = await c.env.DB
@@ -1249,7 +1249,7 @@ payments.post('/register-manual', async (c) => {
           INSERT INTO Payment (
             id, type, payerId, receiverId, amount, currency, status, paymentMethod,
             classId, metadata, createdAt, completedAt, payerName, payerEmail, receiverName
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ${completedAt}, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ?, ?, ?, ?)
         `)
         .bind(
           paymentId,
@@ -1266,6 +1266,7 @@ payments.post('/register-manual', async (c) => {
             approvedBy: approvedBy,
             enrollmentId: enrollment.id 
           }),
+          completedAtValue,
           `${student.firstName} ${student.lastName}`,
           student.email,
           classData.academyName,

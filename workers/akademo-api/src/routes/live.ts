@@ -126,6 +126,16 @@ live.post('/', async (c) => {
       }
     }
 
+    // Check for existing active stream on this class
+    const activeStream = await c.env.DB
+      .prepare("SELECT id FROM LiveStream WHERE classId = ? AND status IN ('active', 'LIVE', 'scheduled')")
+      .bind(classId)
+      .first();
+
+    if (activeStream) {
+      return c.json(errorResponse('Esta clase ya tiene una transmisión en vivo activa. Finalízala antes de crear otra.'), 409);
+    }
+
     // Get Zoom credentials - use class's Zoom account if assigned, otherwise platform credentials
     let zoomConfig;
     if (classInfo.zoomAccountId) {

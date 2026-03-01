@@ -41,6 +41,18 @@ export async function apiClient(
       ...fetchOptions.headers,
     },
   });
+
+  // Global 401 handler: redirect to login on expired/invalid session
+  // Skip for auth endpoints to avoid redirect loops
+  if (response.status === 401 && typeof window !== 'undefined') {
+    const isAuthEndpoint = path.startsWith('/auth/');
+    if (!isAuthEndpoint) {
+      localStorage.removeItem('auth_token');
+      window.location.href = '/login?expired=1';
+      // Return the response so callers don't throw before redirect completes
+      return response;
+    }
+  }
   
   return response;
 }

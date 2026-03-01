@@ -179,16 +179,24 @@ export function DashboardPage({ role }: DashboardPageProps) {
     }
   };
 
+  // Safe fetch helper: returns { success: false } on network/parse errors so individual failures don't kill the dashboard
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const safeFetch = async (path: string): Promise<any> => {
+    try {
+      const res = await apiClient(path);
+      return await res.json();
+    } catch {
+      console.warn(`[Dashboard] Failed to fetch ${path}`);
+      return { success: false };
+    }
+  };
+
   // ─── Academy data loading ───
   const loadAcademyData = async () => {
-    const [academiesRes, classesRes, pendingRes, ratingsRes, rejectedRes, streamsRes, progressRes, paymentsRes, paymentStatusRes] = await Promise.all([
-      apiClient('/academies'), apiClient('/academies/classes'), apiClient('/enrollments/pending'),
-      apiClient('/ratings'), apiClient('/enrollments/rejected'), apiClient('/live/history'),
-      apiClient('/students/progress'), apiClient('/payments/history'), apiClient('/enrollments/payment-status'),
-    ]);
     const [academiesResult, classesResult, pendingResult, ratingsResult, rejectedResult, streamsResult, progressResult, paymentsResult, paymentStatusResult] = await Promise.all([
-      academiesRes.json(), classesRes.json(), pendingRes.json(), ratingsRes.json(),
-      rejectedRes.json(), streamsRes.json(), progressRes.json(), paymentsRes.json(), paymentStatusRes.json(),
+      safeFetch('/academies'), safeFetch('/academies/classes'), safeFetch('/enrollments/pending'),
+      safeFetch('/ratings'), safeFetch('/enrollments/rejected'), safeFetch('/live/history'),
+      safeFetch('/students/progress'), safeFetch('/payments/history'), safeFetch('/enrollments/payment-status'),
     ]);
 
     if (academiesResult.success && Array.isArray(academiesResult.data) && academiesResult.data.length > 0) {
@@ -271,14 +279,10 @@ export function DashboardPage({ role }: DashboardPageProps) {
 
   // ─── Admin data loading ───
   const loadAdminData = async () => {
-    const [academiesRes, classesRes, pendingRes, ratingsRes, rejectedRes, streamsRes, progressRes, paymentStatusRes, adminPaymentsRes] = await Promise.all([
-      apiClient('/admin/academies'), apiClient('/admin/classes'), apiClient('/enrollments/pending'),
-      apiClient('/ratings'), apiClient('/enrollments/rejected'), apiClient('/live/history'), apiClient('/students/progress'),
-      apiClient('/enrollments/payment-status'), apiClient('/admin/payments'),
-    ]);
     const [academiesResult, classesResult, pendingResult, ratingsResult, rejectedResult, streamsResult, progressResult, paymentStatusResult, adminPaymentsResult] = await Promise.all([
-      academiesRes.json(), classesRes.json(), pendingRes.json(), ratingsRes.json(), rejectedRes.json(), streamsRes.json(), progressRes.json(),
-      paymentStatusRes.json(), adminPaymentsRes.json(),
+      safeFetch('/admin/academies'), safeFetch('/admin/classes'), safeFetch('/enrollments/pending'),
+      safeFetch('/ratings'), safeFetch('/enrollments/rejected'), safeFetch('/live/history'), safeFetch('/students/progress'),
+      safeFetch('/enrollments/payment-status'), safeFetch('/admin/payments'),
     ]);
     // Filter out demo (NOT PAID) academies from all admin views
     const paidAcademies = academiesResult.success && Array.isArray(academiesResult.data)
