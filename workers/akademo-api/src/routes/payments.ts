@@ -1043,36 +1043,6 @@ payments.put('/history/:id/reverse', async (c) => {
   }
 });
 
-// POST /payments/academy-activation - Create Stripe Checkout Session for academy activation
-payments.post('/academy-activation', async (c) => {
-  try {
-    const session = await requireAuth(c);
-    await requireRole(c, ['ACADEMY']);
-
-    // Get academy info
-    const academy: any = await c.env.DB
-      .prepare('SELECT id, name, ownerId FROM Academy WHERE ownerId = ?')
-      .bind(session.id)
-      .first();
-
-    if (!academy) {
-      return c.json(errorResponse('Academy not found'), 404);
-    }
-
-    // For now, use the existing Payment Link but return it in JSON
-    // TODO: Replace with actual Stripe API integration when STRIPE_SECRET_KEY is configured
-    const paymentLinkUrl = 'https://buy.stripe.com/test_aFa14m20ndS212ReGr77O01';
-    
-    return c.json(successResponse({ 
-      checkoutUrl: paymentLinkUrl,
-      message: 'Redirect to Stripe checkout. Note: Webhook metadata must be configured in Stripe Dashboard.'
-    }));
-  } catch (error: any) {
-    console.error('[Academy Activation Payment] Error:', error);
-    return c.json(errorResponse('Internal server error'), 500);
-  }
-});
-
 // POST /payments/stripe-connect - Create Stripe Connect account onboarding link
 payments.post('/stripe-connect', async (c) => {
   try {
@@ -1238,37 +1208,46 @@ payments.post('/register-manual', async (c) => {
     const paymentId = crypto.randomUUID();
     const approvedBy = `${session.firstName} ${session.lastName} (${classData.academyName})`;
     const completedAt = (status === 'PAID' || status === 'COMPLETED') ? "datetime('now')" : 'NULL';
-    
-    const result = await c.env.DB
-      .prepare(`
-        INSERT INTO Payment (
-          id, type, payerId, receiverId, amount, currency, status, paymentMethod,
-          classId, metadata, createdAt, completedAt, payerName, payerEmail, receiverName
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ${completedAt}, ?, ?, ?)
-      `)
-      .bind(
-        paymentId,
-        'STUDENT_TO_ACADEMY',
-        studentId,
-        classData.academyId,
-        amount,
-        'EUR',
-        status,
-        paymentMethod,
-        classId,
-        JSON.stringify({ 
-          registeredBy: session.id, 
-          approvedBy: approvedBy,
-          enrollmentId: enrollment.id 
-        }),
-        `${student.firstName} ${student.lastName}`,
-        student.email,
-        classData.academyName,
-      )
-      .run();
 
-    if (!result.success) {
-      throw new Error('Failed to insert payment record');
+    try {
+      const result = await c.env.DB
+        .prepare(`
+          INSERT INTO Payment (
+            id, type, payerId, receiverId, amount, currency, status, paymentMethod,
+            classId, metadata, createdAt, completedAt, payerName, payerEmail, receiverName
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ${completedAt}, ?, ?, ?)
+        `)
+        .bind(
+          paymentId,
+          'STUDENT_TO_ACADEMY',
+          studentId,
+          classData.academyId,
+          amount,
+          'EUR',
+          status,
+          paymentMethod,
+          classId,
+          JSON.stringify({ 
+            registeredBy: session.id, 
+            approvedBy: approvedBy,
+            enrollmentId: enrollment.id 
+          }),
+          `${student.firstName} ${student.lastName}`,
+          student.email,
+          classData.academyName,
+        )
+        .run();
+
+      if (!result.success) {
+        throw new Error('Failed to insert payment record');
+      }
+    } catch (insertErr: any) {
+      // The unique partial index on (payerId, classId) WHERE status='PENDING' fires when the
+      // academy tries to manually register a PENDING payment that already exists.
+      if (insertErr?.message?.includes('UNIQUE') || insertErr?.cause?.message?.includes('UNIQUE')) {
+        return c.json(errorResponse('Ya existe un pago pendiente para este alumno en esta clase. Apruébalo o elimínalo antes de registrar uno nuevo.'), 409);
+      }
+      throw insertErr;
     }
 
     return c.json(successResponse({ id: paymentId, message: 'Pago registrado exitosamente' }));

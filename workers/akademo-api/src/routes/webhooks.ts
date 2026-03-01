@@ -699,6 +699,16 @@ webhooks.post('/stripe', async (c) => {
       // Recurring payment succeeded - add to payment history
       const { subscription, customer_email, amount_paid, lines } = data;
 
+      // Skip the very first invoice of a new subscription.
+      // Stripe fires checkout.session.completed first (which already creates the COMPLETED
+      // Payment record). If we don't skip here, invoice.payment_succeeded creates a second
+      // COMPLETED record for the same payment because its stripePaymentId (invoice.id = in_xxx)
+      // doesn't match the one saved by checkout.session.completed (cs_xxx).
+      if (data.billing_reason === 'subscription_create') {
+        console.log('[Stripe Webhook] invoice.payment_succeeded skipped — first invoice handled by checkout.session.completed');
+        return c.json(successResponse({ received: true }));
+      }
+
       // Find enrollment by subscription ID
       const enrollment = await c.env.DB
         .prepare(`
@@ -826,6 +836,17 @@ webhooks.post('/stripe', async (c) => {
           .first() as any;
 
         if (enrollment) {
+          // Idempotency: skip if we already recorded this payment intent
+          const existingPI: any = await c.env.DB
+            .prepare('SELECT id FROM Payment WHERE stripePaymentId = ?')
+            .bind(paymentIntentId)
+            .first();
+
+          if (existingPI) {
+            console.log('[Stripe Webhook] payment_intent.succeeded — already recorded, skipping:', paymentIntentId);
+            return c.json(successResponse({ received: true }));
+          }
+
           // Add to payment history
           await c.env.DB
             .prepare(`
