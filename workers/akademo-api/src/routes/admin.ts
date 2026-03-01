@@ -37,6 +37,7 @@ admin.get('/academies', async (c) => {
       LEFT JOIN ClassEnrollment e ON c.id = e.classId AND e.status = 'APPROVED'
       GROUP BY a.id
       ORDER BY a.createdAt DESC
+      LIMIT 200
     `;
 
     const result = await c.env.DB.prepare(query).all();
@@ -84,6 +85,7 @@ admin.get('/payments', async (c) => {
       LEFT JOIN Academy a ON p.receiverId = a.id
       LEFT JOIN Class c ON p.classId = c.id
       ORDER BY p.createdAt DESC
+      LIMIT 500
     `;
     
     const result = await c.env.DB.prepare(query).all();
@@ -139,6 +141,7 @@ admin.get('/classes', async (c) => {
       WHERE a.paymentStatus = 'PAID'
       GROUP BY c.id, c.name, c.slug, c.description, c.academyId, a.name, c.teacherId, u.firstName, u.lastName, u.email, c.zoomAccountId, z.accountName, c.createdAt, c.carrera, c.university, c.monthlyPrice, c.oneTimePrice, c.startDate, c.whatsappGroupLink, c.maxStudents
       ORDER BY c.createdAt DESC
+      LIMIT 500
     `;
 
     const result = await c.env.DB.prepare(query).all();
@@ -428,45 +431,29 @@ admin.delete('/users/:id', async (c) => {
       await c.env.DB.prepare('DELETE FROM LiveStream WHERE teacherId = ?').bind(userId).run();
       
     } else if (user.role === 'ACADEMY') {
-      // CASCADE DELETE: Delete entire academy
+      // CASCADE DELETE: Delete entire academy using subquery DELETEs (no N+1)
       const academies = await c.env.DB.prepare('SELECT id FROM Academy WHERE ownerId = ?').bind(userId).all();
       
       for (const academy of (academies.results || [])) {
         const academyId = (academy as any).id;
         
-        // Get all classes in this academy
-        const classes = await c.env.DB.prepare('SELECT id FROM Class WHERE academyId = ?').bind(academyId).all();
-        
-        for (const cls of (classes.results || [])) {
-          const classId = (cls as any).id;
-          
-          // Get all lessons in this class
-          const lessons = await c.env.DB.prepare('SELECT id FROM Lesson WHERE classId = ?').bind(classId).all();
-          
-          for (const lesson of (lessons.results || [])) {
-            const lessonId = (lesson as any).id;
-            
-            // Delete videos and documents
-            await c.env.DB.prepare('DELETE FROM Video WHERE lessonId = ?').bind(lessonId).run();
-            await c.env.DB.prepare('DELETE FROM Document WHERE lessonId = ?').bind(lessonId).run();
-            await c.env.DB.prepare('DELETE FROM LessonRating WHERE lessonId = ?').bind(lessonId).run();
-          }
-          
-          // Delete lessons
-          await c.env.DB.prepare('DELETE FROM Lesson WHERE classId = ?').bind(classId).run();
-          
-          // Delete enrollments
-          await c.env.DB.prepare('DELETE FROM ClassEnrollment WHERE classId = ?').bind(classId).run();
-        }
-        
-        // Delete classes
-        await c.env.DB.prepare('DELETE FROM Class WHERE academyId = ?').bind(academyId).run();
-        
-        // Delete teachers
-        await c.env.DB.prepare('DELETE FROM Teacher WHERE academyId = ?').bind(academyId).run();
-        
-        // Delete academy
-        await c.env.DB.prepare('DELETE FROM Academy WHERE id = ?').bind(academyId).run();
+        // Batch delete using subqueries — no nested loops needed
+        await c.env.DB.batch([
+          // Delete leaf entities first (Videos, Documents, Ratings for all lessons in all classes)
+          c.env.DB.prepare('DELETE FROM Video WHERE lessonId IN (SELECT id FROM Lesson WHERE classId IN (SELECT id FROM Class WHERE academyId = ?))').bind(academyId),
+          c.env.DB.prepare('DELETE FROM Document WHERE lessonId IN (SELECT id FROM Lesson WHERE classId IN (SELECT id FROM Class WHERE academyId = ?))').bind(academyId),
+          c.env.DB.prepare('DELETE FROM LessonRating WHERE lessonId IN (SELECT id FROM Lesson WHERE classId IN (SELECT id FROM Class WHERE academyId = ?))').bind(academyId),
+          c.env.DB.prepare('DELETE FROM VideoPlayState WHERE videoId IN (SELECT v.id FROM Video v JOIN Lesson l ON v.lessonId = l.id JOIN Class c ON l.classId = c.id WHERE c.academyId = ?)').bind(academyId),
+          // Delete mid-level entities
+          c.env.DB.prepare('DELETE FROM Lesson WHERE classId IN (SELECT id FROM Class WHERE academyId = ?)').bind(academyId),
+          c.env.DB.prepare('DELETE FROM ClassEnrollment WHERE classId IN (SELECT id FROM Class WHERE academyId = ?)').bind(academyId),
+          c.env.DB.prepare('DELETE FROM LiveStream WHERE classId IN (SELECT id FROM Class WHERE academyId = ?)').bind(academyId),
+          c.env.DB.prepare('DELETE FROM Payment WHERE classId IN (SELECT id FROM Class WHERE academyId = ?)').bind(academyId),
+          // Delete classes, teachers, and the academy
+          c.env.DB.prepare('DELETE FROM Class WHERE academyId = ?').bind(academyId),
+          c.env.DB.prepare('DELETE FROM Teacher WHERE academyId = ?').bind(academyId),
+          c.env.DB.prepare('DELETE FROM Academy WHERE id = ?').bind(academyId),
+        ]);
       }
       
     }

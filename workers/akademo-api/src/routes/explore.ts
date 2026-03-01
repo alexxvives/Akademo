@@ -8,6 +8,9 @@ const explore = new Hono<{ Bindings: Bindings }>();
 // GET /explore/academies - Browse all academies
 explore.get('/academies', async (c) => {
   try {
+    const limit = Math.min(parseInt(c.req.query('limit') || '50'), 100);
+    const offset = parseInt(c.req.query('offset') || '0');
+    
     const result = await c.env.DB
       .prepare(`
         SELECT 
@@ -20,7 +23,9 @@ explore.get('/academies', async (c) => {
         LEFT JOIN User u ON a.ownerId = u.id
         GROUP BY a.id
         ORDER BY a.createdAt DESC
+        LIMIT ? OFFSET ?
       `)
+      .bind(limit, offset)
       .all();
 
     return c.json(successResponse(result.results || []));

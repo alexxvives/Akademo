@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { setCookie } from 'hono/cookie';
 import bcrypt from 'bcryptjs';
 import { Bindings } from '../types';
-import { getSession, createSignedSession } from '../lib/auth';
+import { getSession, createSignedSession, hashPassword } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { loginSchema, registerSchema, validateBody } from '../lib/validation';
 import { loginRateLimit, registerRateLimit, checkEmailRateLimit, emailVerificationRateLimit, forgotPasswordRateLimit } from '../lib/rate-limit';
@@ -137,7 +137,7 @@ auth.post('/register', registerRateLimit, validateBody(registerSchema), async (c
     }
 
     // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await hashPassword(password);
 
     // Generate user ID
     const userId = crypto.randomUUID();
@@ -549,10 +549,9 @@ auth.post('/send-verification', emailVerificationRateLimit, async (c) => {
 });
 
 // POST /auth/verify-email
-auth.post('/verify-email', async (c) => {
+auth.post('/verify-email', emailVerificationRateLimit, async (c) => {
   try {
     const { email, code } = await c.req.json();
-
 
     if (!email || !code) {
       return c.json(errorResponse('Email and code are required'), 400);
@@ -562,11 +561,11 @@ auth.post('/verify-email', async (c) => {
       return c.json(errorResponse('Code must be 6 digits'), 400);
     }
 
-    // Check if code exists
+    // Check if code exists (with attempt tracking)
     const stored = await c.env.DB
-      .prepare('SELECT code, expiresAt FROM VerificationCode WHERE email = ?')
+      .prepare('SELECT code, expiresAt, attempts FROM VerificationCode WHERE email = ?')
       .bind(email.toLowerCase())
-      .first() as { code: string; expiresAt: string } | null;
+      .first() as { code: string; expiresAt: string; attempts: number | null } | null;
 
     if (!stored) {
       return c.json(errorResponse('No verification code found. Please request a new one.'), 400);
@@ -578,8 +577,18 @@ auth.post('/verify-email', async (c) => {
       return c.json(errorResponse('Verification code expired. Please request a new one.'), 400);
     }
 
+    // Check if too many failed attempts (max 5)
+    const attempts = stored.attempts || 0;
+    if (attempts >= 5) {
+      await c.env.DB.prepare('DELETE FROM VerificationCode WHERE email = ?').bind(email.toLowerCase()).run();
+      return c.json(errorResponse('Too many failed attempts. Please request a new verification code.'), 429);
+    }
+
     // Check if code matches
     if (stored.code !== code) {
+      // Increment attempt counter
+      await c.env.DB.prepare('UPDATE VerificationCode SET attempts = ? WHERE email = ?')
+        .bind(attempts + 1, email.toLowerCase()).run();
       return c.json(errorResponse('Invalid verification code'), 400);
     }
 
@@ -660,7 +669,6 @@ auth.get('/join/:teacherId', async (c) => {
         id: teacherUser.id,
         firstName: teacherUser.firstName,
         lastName: teacherUser.lastName,
-        email: teacherUser.email,
         academyLogoUrl: academyRecord?.logoUrl || null,
         academyName: academyRecord?.academyName || null,
       },
@@ -912,7 +920,7 @@ auth.post('/reset-password', async (c) => {
 
     await c.env.DB.prepare('DELETE FROM VerificationCode WHERE email = ?').bind(email.toLowerCase()).run();
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const hashedPassword = await hashPassword(newPassword);
     await c.env.DB
       .prepare('UPDATE User SET password = ? WHERE email = ?')
       .bind(hashedPassword, email.toLowerCase())

@@ -194,8 +194,8 @@ academies.post('/teachers', async (c) => {
     const firstName = nameParts[0];
     const lastName = nameParts.slice(1).join(' ') || nameParts[0]; // Use firstName as lastName if only one name provided
 
-    if (password.length < 6) {
-      return c.json(errorResponse('Password must be at least 6 characters'), 400);
+    if (password.length < 8) {
+      return c.json(errorResponse('La contraseña debe tener al menos 8 caracteres'), 400);
     }
 
     // Get academy ID
@@ -218,12 +218,9 @@ academies.post('/teachers', async (c) => {
       return c.json(errorResponse('Email already registered'), 400);
     }
 
-    // Hash password using Crypto API
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const passwordHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    // Hash password using bcrypt (must match login flow)
+    const { hashPassword } = await import('../lib/auth');
+    const passwordHash = await hashPassword(password);
 
     // Create user
     const userId = crypto.randomUUID();

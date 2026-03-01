@@ -5,6 +5,17 @@ import { successResponse, errorResponse } from '../lib/utils';
 
 const leads = new Hono<{ Bindings: Bindings }>();
 
+/** HTML-encode a string to prevent XSS in email templates */
+function escapeHtml(str: string | null | undefined): string {
+  if (!str) return '—';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // POST /leads - Public endpoint to submit a new lead from pricing page
 leads.post('/', async (c) => {
   try {
@@ -44,14 +55,14 @@ leads.post('/', async (c) => {
       const htmlBody = `
         <h2>Nueva solicitud de precios</h2>
         <table style="border-collapse:collapse;width:100%">
-          <tr><td style="padding:6px 12px;font-weight:bold">Nombre</td><td style="padding:6px 12px">${name.trim()}</td></tr>
-          <tr style="background:#f9f9f9"><td style="padding:6px 12px;font-weight:bold">Email</td><td style="padding:6px 12px">${email.trim().toLowerCase()}</td></tr>
-          <tr><td style="padding:6px 12px;font-weight:bold">Teléfono</td><td style="padding:6px 12px">${phone?.trim() || '—'}</td></tr>
-          <tr style="background:#f9f9f9"><td style="padding:6px 12px;font-weight:bold">Academia</td><td style="padding:6px 12px">${academyName?.trim() || '—'}</td></tr>
-          <tr><td style="padding:6px 12px;font-weight:bold">Inscripciones/mes</td><td style="padding:6px 12px">${monthlyEnrollments || '—'}</td></tr>
-          <tr style="background:#f9f9f9"><td style="padding:6px 12px;font-weight:bold">Profesores</td><td style="padding:6px 12px">${teacherCount || '—'}</td></tr>
-          <tr><td style="padding:6px 12px;font-weight:bold">Asignaturas</td><td style="padding:6px 12px">${subjectCount || '—'}</td></tr>
-          <tr style="background:#f9f9f9"><td style="padding:6px 12px;font-weight:bold">Mensaje</td><td style="padding:6px 12px">${message?.trim() || '—'}</td></tr>
+          <tr><td style="padding:6px 12px;font-weight:bold">Nombre</td><td style="padding:6px 12px">${escapeHtml(name.trim())}</td></tr>
+          <tr style="background:#f9f9f9"><td style="padding:6px 12px;font-weight:bold">Email</td><td style="padding:6px 12px">${escapeHtml(email.trim().toLowerCase())}</td></tr>
+          <tr><td style="padding:6px 12px;font-weight:bold">Teléfono</td><td style="padding:6px 12px">${escapeHtml(phone?.trim())}</td></tr>
+          <tr style="background:#f9f9f9"><td style="padding:6px 12px;font-weight:bold">Academia</td><td style="padding:6px 12px">${escapeHtml(academyName?.trim())}</td></tr>
+          <tr><td style="padding:6px 12px;font-weight:bold">Inscripciones/mes</td><td style="padding:6px 12px">${escapeHtml(monthlyEnrollments?.toString())}</td></tr>
+          <tr style="background:#f9f9f9"><td style="padding:6px 12px;font-weight:bold">Profesores</td><td style="padding:6px 12px">${escapeHtml(teacherCount?.toString())}</td></tr>
+          <tr><td style="padding:6px 12px;font-weight:bold">Asignaturas</td><td style="padding:6px 12px">${escapeHtml(subjectCount?.toString())}</td></tr>
+          <tr style="background:#f9f9f9"><td style="padding:6px 12px;font-weight:bold">Mensaje</td><td style="padding:6px 12px">${escapeHtml(message?.trim())}</td></tr>
         </table>
       `;
       try {

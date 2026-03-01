@@ -180,14 +180,13 @@ live.post('/', async (c) => {
       
       const teacherName = `${classInfo.firstName} ${classInfo.lastName}`;
       
-      for (const enrollment of (enrolledStudents.results || [])) {
-        const notificationId = crypto.randomUUID();
-        await c.env.DB.prepare(`
+      const notifStmts = (enrolledStudents.results || []).map((enrollment: any) => {
+        return c.env.DB.prepare(`
           INSERT INTO Notification (id, userId, type, title, message, data, isRead, createdAt)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
-          notificationId,
-          (enrollment as any).userId,
+          crypto.randomUUID(),
+          enrollment.userId,
           'LIVE_CLASS',
           '🔴 Clase en Vivo',
           `${teacherName} ha iniciado una transmisión en ${classInfo.name}`,
@@ -200,8 +199,9 @@ live.post('/', async (c) => {
           }),
           0,
           now
-        ).run();
-      }
+        );
+      });
+      if (notifStmts.length > 0) await c.env.DB.batch(notifStmts);
       
     } catch (notifError: any) {
       console.error('[Create Live Stream] Failed to create notifications:', notifError);
@@ -291,6 +291,7 @@ live.get('/history', async (c) => {
         LEFT JOIN Academy a ON c.academyId = a.id
         LEFT JOIN User u ON ls.teacherId = u.id
         ORDER BY ls.createdAt DESC
+        LIMIT 100
       `;
     }
 
@@ -1147,19 +1148,17 @@ live.post('/:id/notify', async (c) => {
       return c.json(successResponse({ notified: 0, message: 'No hay estudiantes inscritos' }));
     }
 
-    // Create notifications for each student
+    // Create notifications for each student using batch insert
     const now = new Date().toISOString();
-    let notified = 0;
 
-    for (const enrollment of enrollments.results) {
-      const notificationId = crypto.randomUUID();
-      await c.env.DB
+    const notifStmts = enrollments.results.map((enrollment: any) => {
+      return c.env.DB
         .prepare(`
           INSERT INTO Notification (id, userId, title, message, type, metadata, isRead, createdAt)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `)
         .bind(
-          notificationId,
+          crypto.randomUUID(),
           enrollment.userId,
           '🔴 Clase en Vivo',
           `${stream.title} - ¡La clase está en vivo ahora!`,
@@ -1167,11 +1166,10 @@ live.post('/:id/notify', async (c) => {
           JSON.stringify({ streamId: stream.id, classId: stream.classId, zoomLink: stream.zoomLink }),
           0,
           now
-        )
-        .run();
-      
-      notified++;
-    }
+        );
+    });
+    await c.env.DB.batch(notifStmts);
+    const notified = notifStmts.length;
 
     return c.json(successResponse({ notified, message: `${notified} estudiantes notificados` }));
   } catch (error: any) {

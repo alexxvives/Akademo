@@ -340,7 +340,7 @@ classes.get('/:id', async (c) => {
           // Calculate if student is behind on payments (monthly only)
           if (enrollment.paymentFrequency === 'MONTHLY' && (classRecord as any).monthlyPrice > 0) {
             const isAccessLocked = enrollment.nextPaymentDue
-              ? new Date(enrollment.nextPaymentDue) < new Date()
+              ? new Date(enrollment.nextPaymentDue as string) < new Date()
               : false;
             (classRecord as any).accessLocked = isAccessLocked;
           } else {

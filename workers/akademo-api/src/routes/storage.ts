@@ -6,8 +6,8 @@ import { successResponse, errorResponse } from '../lib/utils';
 // ============ Upload Security ============
 
 const ALLOWED_MIME_TYPES = new Set([
-  // Images
-  'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml',
+  // Images (SVG excluded — stored XSS vector)
+  'image/jpeg', 'image/png', 'image/webp', 'image/gif',
   // Documents
   'application/pdf',
   'application/msword',
@@ -324,10 +324,9 @@ storage.post('/multipart/abort', async (c) => {
 });
 
 // GET /storage/serve/:key - Serve file from R2
+// Requires either: (1) valid session cookie, or (2) signed token query param for public assets (logos, avatars)
 storage.get('/serve/*', async (c) => {
   try {
-    // No auth required for serving files - they're accessed via direct links
-    
     // Extract path from URL directly instead of using param()
     const url = new URL(c.req.url);
     const basePath = '/storage/serve/';
@@ -350,6 +349,50 @@ storage.get('/serve/*', async (c) => {
     if (!key || key === 'undefined' || key === 'null') {
       console.error('[Serve File] Invalid key:', key);
       return c.json(errorResponse('Invalid file path'), 400);
+    }
+
+    // Public folders that can be served with a signed token (logos, avatars)
+    const publicFolders = ['logo/', 'avatar/', 'academy-logo/'];
+    const isPublicAsset = publicFolders.some(folder => key.startsWith(folder));
+
+    if (isPublicAsset) {
+      // Public assets: verify a signed token (HMAC of key + expiry)
+      const token = url.searchParams.get('token');
+      const expires = url.searchParams.get('expires');
+      
+      // Also allow serving without token if there's a valid session
+      if (!token || !expires) {
+        const session = await getSession(c);
+        if (!session) {
+          return c.json(errorResponse('Authentication required'), 401);
+        }
+      } else {
+        // Verify signed token
+        const now = Math.floor(Date.now() / 1000);
+        if (parseInt(expires, 10) < now) {
+          return c.json(errorResponse('Link expired'), 403);
+        }
+        // Token verification uses SESSION_SECRET to HMAC(key + expires)
+        const secret = (c.env as unknown as Record<string, unknown>).SESSION_SECRET as string;
+        if (secret) {
+          const encoder = new TextEncoder();
+          const hmacKey = await crypto.subtle.importKey(
+            'raw', encoder.encode(secret),
+            { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+          );
+          const sig = await crypto.subtle.sign('HMAC', hmacKey, encoder.encode(`${key}:${expires}`));
+          const expected = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+          if (token !== expected) {
+            return c.json(errorResponse('Invalid token'), 403);
+          }
+        }
+      }
+    } else {
+      // Private assets: require authenticated session
+      const session = await getSession(c);
+      if (!session) {
+        return c.json(errorResponse('Authentication required'), 401);
+      }
     }
 
     const object = await c.env.STORAGE.get(key);
@@ -380,6 +423,34 @@ storage.get('/serve/*', async (c) => {
   } catch (error: any) {
     console.error('[Serve File] Error:', error);
     return c.json(errorResponse('Failed to serve file'), 500);
+  }
+});
+
+// GET /storage/signed-url - Generate a signed URL for a public asset
+storage.get('/signed-url', async (c) => {
+  try {
+    await requireAuth(c);
+    const key = c.req.query('key');
+    if (!key) {
+      return c.json(errorResponse('key query parameter required'), 400);
+    }
+    const expires = Math.floor(Date.now() / 1000) + 86400; // 24 hours
+    const secret = (c.env as unknown as Record<string, unknown>).SESSION_SECRET as string;
+    if (!secret) {
+      return c.json(errorResponse('Server configuration error'), 500);
+    }
+    const encoder = new TextEncoder();
+    const hmacKey = await crypto.subtle.importKey(
+      'raw', encoder.encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+    );
+    const sig = await crypto.subtle.sign('HMAC', hmacKey, encoder.encode(`${key}:${expires}`));
+    const token = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+    return c.json(successResponse({ token, expires }));
+  } catch (error: unknown) {
+    console.error('[Signed URL] Error:', error);
+    return c.json(errorResponse('Failed to generate signed URL'), 500);
   }
 });
 

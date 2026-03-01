@@ -64,10 +64,10 @@ All viewing progress saved server-side. Students resume from last position with 
 
 ## 📚 Documentation
 
-- **[INSTALL.md](./INSTALL.md)** - Step-by-step installation (start here!)
-- **[GETTING_STARTED.md](./GETTING_STARTED.md)** - Complete feature guide and tutorials
-- **[SETUP.md](./SETUP.md)** - Technical documentation and deployment
-- **[PROJECT_SUMMARY.md](./PROJECT_SUMMARY.md)** - Full project overview
+- **[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)** - Complete D1 schema (~25 tables)
+- **[PROJECT_DOCUMENTATION.md](./PROJECT_DOCUMENTATION.md)** - Full architecture & API documentation
+- **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** - Production deployment guide
+- **[docs/zoom-integration.md](./docs/zoom-integration.md)** - Zoom integration details
 
 ## 🏗️ Architecture
 
@@ -201,11 +201,10 @@ npm run deploy
 
 ### Database Migrations
 ```bash
-# Apply migrations to production D1
-npx wrangler d1 migrations apply akademo-db --remote
-
-# Test locally
-npx wrangler d1 migrations apply akademo-db --local
+# ⚠️ NEVER run: npx wrangler d1 migrations apply akademo-db --remote
+# That applies ALL 98+ migrations and breaks the database!
+# ALWAYS apply specific migration files:
+npx wrangler d1 execute akademo-db --remote --file=migrations/0079_restore_all_indexes.sql
 ```
 
 ### Secrets Configuration
@@ -327,7 +326,7 @@ npx wrangler d1 execute akademo-db --remote --command "SELECT email, role FROM U
 ## 🐛 Troubleshooting
 
 ### Changes Not Appearing After Deploy
-**Solution:** Always use clean build command (see [DEPLOYMENT_CACHE_FIX.md](./DEPLOYMENT_CACHE_FIX.md))
+**Solution:** Always use clean build: `npx @opennextjs/cloudflare build` then deploy.
 
 ### API Worker Errors
 ```bash
@@ -373,11 +372,12 @@ npx wrangler whoami
 
 ## 📚 Documentation Index
 
-- **[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)** - Complete D1 schema (14 tables)
-- **[DEPLOYMENT_CACHE_FIX.md](./DEPLOYMENT_CACHE_FIX.md)** - Deployment best practices
+- **[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)** - Complete D1 schema (~25 tables)
+- **[PROJECT_DOCUMENTATION.md](./PROJECT_DOCUMENTATION.md)** - Architecture documentation
+- **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** - Production deployment
 - **[workers/akademo-api/README.md](./workers/akademo-api/README.md)** - API documentation
-- **[ZOOM_PARTICIPANT_TRACKING.md](./ZOOM_PARTICIPANT_TRACKING.md)** - Zoom attendance tracking
-- **[ZOOM_SCOPE_FIX.md](./ZOOM_SCOPE_FIX.md)** - Zoom OAuth configuration
+- **[docs/zoom-integration.md](./docs/zoom-integration.md)** - Zoom attendance tracking
+- **[docs/troubleshooting.md](./docs/troubleshooting.md)** - Common issues & fixes
 
 ## 📄 License
 

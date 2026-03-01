@@ -225,13 +225,25 @@ bunny.get('/video/:guid/stream', async (c) => {
     const session = await requireAuth(c);
     const guid = c.req.param('guid');
 
-    // Generate signed token for streaming
+    // Generate HMAC-SHA256 signed token for Bunny CDN streaming
     const tokenKey = c.env.BUNNY_STREAM_TOKEN_KEY;
     const cdnHostname = c.env.BUNNY_STREAM_CDN_HOSTNAME;
     const expires = Math.floor(Date.now() / 1000) + 3600; // 1 hour
 
-    // Create token (simplified - real implementation needs proper signing)
-    const token = btoa(`${guid}-${expires}-${tokenKey}`);
+    // Sign with HMAC-SHA256: sign(tokenKey, guid + expirationTime)
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(tokenKey),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    const data = encoder.encode(`${guid}${expires}`);
+    const sigBuffer = await crypto.subtle.sign('HMAC', key, data);
+    const token = Array.from(new Uint8Array(sigBuffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
 
     const streamUrl = `https://${cdnHostname}/${guid}/playlist.m3u8?token=${token}&expires=${expires}`;
 

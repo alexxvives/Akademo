@@ -1314,36 +1314,45 @@ lessons.get('/:id/student-times', async (c) => {
       return c.json(successResponse([]));
     }
 
-    // Build student times data
-    const studentTimesData = await Promise.all(
-      students.results.map(async (student: any) => {
-        const videoTimes = await Promise.all(
-          videos.results.map(async (video: any) => {
-            const playState = await c.env.DB
-              .prepare('SELECT * FROM VideoPlayState WHERE videoId = ? AND studentId = ?')
-              .bind(video.id, student.id)
-              .first() as any;
-
-            const maxWatchTimeSeconds = (video.durationSeconds || 0) * (lesson.maxWatchTimeMultiplier || 2.0);
-
-            return {
-              videoId: video.id,
-              videoTitle: video.title,
-              totalWatchTimeSeconds: playState?.totalWatchTimeSeconds || 0,
-              maxWatchTimeSeconds,
-              status: playState?.status || 'ACTIVE',
-            };
-          })
-        );
-
-        // Include all enrolled students, even if they haven't watched yet
+    // Build student times data using a single batch query instead of S×V individual queries
+    const videoIds = videos.results.map((v: any) => v.id);
+    const studentIds = students.results.map((s: any) => s.id);
+    
+    // Fetch all play states in one query
+    const placeholdersV = videoIds.map(() => '?').join(',');
+    const placeholdersS = studentIds.map(() => '?').join(',');
+    const allPlayStates = await c.env.DB
+      .prepare(`SELECT * FROM VideoPlayState WHERE videoId IN (${placeholdersV}) AND studentId IN (${placeholdersS})`)
+      .bind(...videoIds, ...studentIds)
+      .all();
+    
+    // Index play states by videoId+studentId for O(1) lookup
+    const playStateMap = new Map<string, any>();
+    for (const ps of (allPlayStates.results || [])) {
+      const key = `${(ps as any).videoId}:${(ps as any).studentId}`;
+      playStateMap.set(key, ps);
+    }
+    
+    const studentTimesData = students.results.map((student: any) => {
+      const videoTimes = videos.results.map((video: any) => {
+        const playState = playStateMap.get(`${video.id}:${student.id}`);
+        const maxWatchTimeSeconds = (video.durationSeconds || 0) * (lesson.maxWatchTimeMultiplier || 2.0);
+        
         return {
-          studentId: student.id,
-          studentName: `${student.firstName} ${student.lastName}`,
-          videos: videoTimes, // Always include all videos, even with 0 watch time
+          videoId: video.id,
+          videoTitle: video.title,
+          totalWatchTimeSeconds: playState?.totalWatchTimeSeconds || 0,
+          maxWatchTimeSeconds,
+          status: playState?.status || 'ACTIVE',
         };
-      })
-    );
+      });
+      
+      return {
+        studentId: student.id,
+        studentName: `${student.firstName} ${student.lastName}`,
+        videos: videoTimes,
+      };
+    });
 
     // Include all students (don't filter by watch time)
     const filteredData = studentTimesData;

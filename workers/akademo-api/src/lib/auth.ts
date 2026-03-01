@@ -34,13 +34,14 @@ export async function verifyPassword(password: string, hashedPassword: string): 
 }
 
 /**
- * Derive an HMAC-SHA256 signing key from a secret string.
- * Uses the first available secret (SESSION_SECRET env var, or falls back to a derived key from DB binding).
+ * Derive an HMAC-SHA256 signing key from SESSION_SECRET.
+ * Throws if SESSION_SECRET is not configured — fail closed.
  */
 async function getSigningKey(env: Bindings): Promise<CryptoKey> {
-  // Use SESSION_SECRET env var if available, otherwise deterministic fallback
-  const secret = (env as unknown as Record<string, unknown>).SESSION_SECRET as string
-    || 'akademo-session-key-' + (env.DB ? 'prod' : 'dev');
+  const secret = (env as unknown as Record<string, unknown>).SESSION_SECRET as string;
+  if (!secret) {
+    throw new Error('[Auth] CRITICAL: SESSION_SECRET is not configured. Cannot sign/verify sessions.');
+  }
   const encoder = new TextEncoder();
   return crypto.subtle.importKey(
     'raw',
@@ -72,14 +73,7 @@ async function signToken(payload: string, env: Bindings): Promise<string> {
 async function verifyToken(token: string, env: Bindings): Promise<string | null> {
   const parts = token.split('.');
   if (parts.length !== 2) {
-    // Legacy unsigned token (base64-only) — accept during migration but log warning
-    try {
-      const decoded = atob(token);
-      if (decoded && decoded.length > 0) {
-        console.warn('[Auth] Legacy unsigned session token detected — will be replaced on next login');
-        return decoded;
-      }
-    } catch { /* invalid */ }
+    // Reject any token that is not properly signed (payload.signature format)
     return null;
   }
   try {

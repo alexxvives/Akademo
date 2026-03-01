@@ -13,8 +13,8 @@ AKADEMO is a comprehensive Learning Management System (LMS) deployed on Cloudfla
 - **Production URLs:**
   - Frontend: https://akademo-edu.com
   - API: https://akademo-api.alexxvives.workers.dev
-- **Database:** 14 tables in Cloudflare D1
-- **API Endpoints:** 64+ endpoints across 17 route groups
+- **Database:** ~25 tables in Cloudflare D1
+- **API Endpoints:** 100+ endpoints across 29 route groups
 - **Storage:** Cloudflare R2 + Bunny Stream CDN
 - **Live Streaming:** Zoom API integration
 
@@ -369,14 +369,11 @@ npm run deploy
 
 ### Database Migrations
 
-**Apply to Production:**
-```bash
-npx wrangler d1 migrations apply akademo-db --remote
-```
+**⚠️ NEVER run `npx wrangler d1 migrations apply` — it applies ALL 98+ migrations and breaks the database!**
 
-**Test Locally:**
+**Apply specific migration files:**
 ```bash
-npx wrangler d1 migrations apply akademo-db --local
+npx wrangler d1 execute akademo-db --remote --file=migrations/0079_restore_all_indexes.sql
 ```
 
 ### Secrets (Configured)
@@ -481,10 +478,10 @@ npx wrangler d1 execute akademo-db --remote --command "SELECT 1"
 **Documentation Files:**
 - [README.md](../README.md) - Main project overview
 - [DATABASE_SCHEMA.md](../DATABASE_SCHEMA.md) - Complete database schema
-- [DEPLOYMENT_CACHE_FIX.md](../DEPLOYMENT_CACHE_FIX.md) - Deployment guide
+- [DEPLOYMENT_GUIDE.md](../DEPLOYMENT_GUIDE.md) - Deployment guide
 - [workers/akademo-api/README.md](../workers/akademo-api/README.md) - API docs
-- [ZOOM_PARTICIPANT_TRACKING.md](../ZOOM_PARTICIPANT_TRACKING.md) - Zoom features
-- [ZOOM_SCOPE_FIX.md](../ZOOM_SCOPE_FIX.md) - Zoom OAuth setup
+- [docs/zoom-integration.md](../docs/zoom-integration.md) - Zoom features & OAuth
+- [docs/troubleshooting.md](../docs/troubleshooting.md) - Common issues
 
 **Cloudflare Resources:**
 - Dashboard: https://dash.cloudflare.com
@@ -494,4 +491,4 @@ npx wrangler d1 execute akademo-db --remote --command "SELECT 1"
 ---
 
 **Project Status:** ✅ Production - Fully Deployed  
-**Last Major Update:** January 9, 2026 - Deep codebase cleanup
+**Last Major Update:** January 2026 - Platform security & performance remediation

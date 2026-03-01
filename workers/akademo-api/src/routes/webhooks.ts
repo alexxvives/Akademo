@@ -61,7 +61,9 @@ function calculateBillingCycle(classStartDate: string, _enrollmentDate: string, 
 // POST /webhooks/zoom - Zoom webhook handler
 webhooks.post('/zoom', async (c) => {
   try {
-    const payload = await c.req.json();
+    // Read raw body for signature verification
+    const rawBody = await c.req.text();
+    const payload = JSON.parse(rawBody);
 
     // Handle Zoom URL validation (required for webhook setup)
     if (payload.event === 'endpoint.url_validation') {
@@ -86,6 +88,48 @@ webhooks.post('/zoom', async (c) => {
         plainToken: plainToken,
         encryptedToken: hashForValidate
       });
+    }
+
+    // ── Verify Zoom webhook signature on ALL events ──
+    const zoomSignature = c.req.header('x-zm-signature');
+    const zoomTimestamp = c.req.header('x-zm-request-timestamp');
+    const webhookSecret = c.env.ZOOM_WEBHOOK_SECRET;
+
+    if (!webhookSecret) {
+      console.error('[Zoom Webhook] ZOOM_WEBHOOK_SECRET not configured — rejecting event');
+      return c.json(errorResponse('Webhook secret not configured'), 500);
+    }
+
+    if (!zoomSignature || !zoomTimestamp) {
+      console.error('[Zoom Webhook] Missing signature or timestamp headers');
+      return c.json(errorResponse('Missing signature'), 401);
+    }
+
+    // Reject if timestamp is older than 5 minutes (replay protection)
+    const timestampAge = Math.floor(Date.now() / 1000) - parseInt(zoomTimestamp, 10);
+    if (isNaN(timestampAge) || timestampAge > 300) {
+      console.error('[Zoom Webhook] Timestamp too old:', timestampAge, 'seconds');
+      return c.json(errorResponse('Webhook timestamp too old'), 401);
+    }
+
+    // Compute expected signature: HMAC-SHA256("v0:{timestamp}:{rawBody}")
+    const encoder = new TextEncoder();
+    const message = `v0:${zoomTimestamp}:${rawBody}`;
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(webhookSecret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    const sigBuffer = await crypto.subtle.sign('HMAC', key, encoder.encode(message));
+    const computedSig = 'v0=' + Array.from(new Uint8Array(sigBuffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+
+    if (computedSig !== zoomSignature) {
+      console.error('[Zoom Webhook] Signature verification failed');
+      return c.json(errorResponse('Invalid signature'), 401);
     }
 
     const { event, payload: data } = payload;
@@ -469,6 +513,18 @@ webhooks.post('/zoom', async (c) => {
 // POST /webhooks/bunny - Bunny Stream webhook handler for video uploads
 webhooks.post('/bunny', async (c) => {
   try {
+    // Verify shared secret (set via BUNNY_WEBHOOK_SECRET env var)
+    const expectedSecret = (c.env as unknown as Record<string, unknown>).BUNNY_WEBHOOK_SECRET as string;
+    if (!expectedSecret) {
+      console.error('[Bunny Webhook] BUNNY_WEBHOOK_SECRET not configured — rejecting');
+      return c.json(errorResponse('Webhook secret not configured'), 500);
+    }
+    const providedSecret = new URL(c.req.url).searchParams.get('secret');
+    if (providedSecret !== expectedSecret) {
+      console.error('[Bunny Webhook] Invalid or missing secret parameter');
+      return c.json(errorResponse('Unauthorized'), 401);
+    }
+
     const payload = await c.req.json();
     
     // Bunny sends VideoId (GUID), Status, and other metadata
@@ -584,7 +640,8 @@ webhooks.post('/stripe', async (c) => {
         return c.json(errorResponse('Invalid signature'), 400);
       }
     } else {
-      console.warn('[Stripe Webhook] STRIPE_WEBHOOK_SECRET not set — skipping signature verification');
+      console.error('[Stripe Webhook] STRIPE_WEBHOOK_SECRET not configured — rejecting webhook');
+      return c.json(errorResponse('Webhook secret not configured'), 500);
     }
 
     const payload = JSON.parse(rawBody);

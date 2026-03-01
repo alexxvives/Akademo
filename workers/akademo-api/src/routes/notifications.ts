@@ -40,28 +40,24 @@ notifications.post('/', async (c) => {
       }));
     }
 
-    // Create notifications for all students
+    // Create notifications for all students using batch insert
     const now = new Date().toISOString();
-    const notifications_created: string[] = [];
-
-    for (const student of students) {
-      const notificationId = crypto.randomUUID();
-      await c.env.DB
+    const notificationStmts = students.map((student: any) => {
+      return c.env.DB
         .prepare(`
           INSERT INTO Notification (id, userId, type, title, message, isRead, createdAt)
           VALUES (?, ?, ?, ?, ?, 0, ?)
         `)
         .bind(
-          notificationId,
+          crypto.randomUUID(),
           student.userId,
           'LIVE_STREAM',
           'Clase en vivo',
           message,
           now
-        )
-        .run();
-      notifications_created.push(notificationId);
-    }
+        );
+    });
+    await c.env.DB.batch(notificationStmts);
 
     return c.json(successResponse({ 
       message: `Notificación enviada a ${students.length} estudiantes`,

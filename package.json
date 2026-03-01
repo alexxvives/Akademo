@@ -17,9 +17,7 @@
     "deploy": "npx @opennextjs/cloudflare deploy",
     "deploy:api": "cd workers/akademo-api && npx wrangler deploy",
     "deploy:all": "npm run deploy && npm run deploy:api",
-    "cf-typegen": "wrangler types --env-interface CloudflareEnv",
-    "db:migrate": "wrangler d1 migrations apply akademo-db --remote",
-    "db:migrate:local": "wrangler d1 migrations apply akademo-db --local"
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv"
   },
   "dependencies": {
     "@akademo/types": "^1.0.0",
