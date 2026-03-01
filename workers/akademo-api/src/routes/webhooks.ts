@@ -409,11 +409,26 @@ webhooks.post('/zoom', async (c) => {
                   await new Promise(resolve => setTimeout(resolve, 1500));
                   const freshToken = await refreshZoomToken(c, stream.zoomAccountId);
                   if (freshToken) {
+                    // Fetch live participant list to get the correct id for the DELETE endpoint
+                    const listRes = await fetch(
+                      `https://api.zoom.us/v2/meetings/${meetingId}/participants?page_size=300`,
+                      { headers: { 'Authorization': `Bearer ${freshToken}` } }
+                    );
+                    const listData = listRes.ok ? await listRes.json() as any : null;
+                    const liveParticipants: any[] = listData?.participants || [];
+                    // Match by user_id (numeric), participant.id, or no-email (newest non-host)
+                    const matched = liveParticipants.find((p: any) =>
+                      (!isHost && !p.is_host && (!p.email || p.email === '')) ||
+                      p.user_id === (participant?.user_id || '') ||
+                      p.id === participantId
+                    );
+                    const deleteId = matched?.id || participantId;
+                    console.log(`[Zoom Webhook] participants list: ${JSON.stringify(liveParticipants.map((p:any)=>({id:p.id,user_id:p.user_id,email:p.email,is_host:p.is_host})))}`);
                     const removeRes = await fetch(
-                      `https://api.zoom.us/v2/meetings/${meetingId}/participants/${participantId}`,
+                      `https://api.zoom.us/v2/meetings/${meetingId}/participants/${deleteId}`,
                       { method: 'DELETE', headers: { 'Authorization': `Bearer ${freshToken}` } }
                     );
-                    console.log(`[Zoom Webhook] Remove no-email participant ${participantId}: ${removeRes.status}`);
+                    console.log(`[Zoom Webhook] Remove no-email participant deleteId=${deleteId}: ${removeRes.status}`);
                     if (!removeRes.ok) {
                       const body = await removeRes.text();
                       console.error(`[Zoom Webhook] No-email removal failed: ${body}`);
@@ -462,11 +477,25 @@ webhooks.post('/zoom', async (c) => {
                     await new Promise(resolve => setTimeout(resolve, 1500));
                     const freshToken = await refreshZoomToken(c, stream.zoomAccountId);
                     if (freshToken) {
+                      // Fetch live participant list to get the correct id for the DELETE endpoint
+                      const listRes = await fetch(
+                        `https://api.zoom.us/v2/meetings/${meetingId}/participants?page_size=300`,
+                        { headers: { 'Authorization': `Bearer ${freshToken}` } }
+                      );
+                      const listData = listRes.ok ? await listRes.json() as any : null;
+                      const liveParticipants: any[] = listData?.participants || [];
+                      console.log(`[Zoom Webhook] participants list: ${JSON.stringify(liveParticipants.map((p:any)=>({id:p.id,user_id:p.user_id,email:p.email,is_host:p.is_host})))}`);
+                      // Match by email (preferred) or user_id
+                      const matched = liveParticipants.find((p: any) =>
+                        (p.email && p.email.toLowerCase() === participantEmail) ||
+                        p.user_id === (participant?.user_id || '')
+                      );
+                      const deleteId = matched?.id || participantId;
                       const removeRes = await fetch(
-                        `https://api.zoom.us/v2/meetings/${meetingId}/participants/${participantId}`,
+                        `https://api.zoom.us/v2/meetings/${meetingId}/participants/${deleteId}`,
                         { method: 'DELETE', headers: { 'Authorization': `Bearer ${freshToken}` } }
                       );
-                      console.log(`[Zoom Webhook] Remove unauthorized ${participantEmail}: ${removeRes.status}`);
+                      console.log(`[Zoom Webhook] Remove unauthorized ${participantEmail} deleteId=${deleteId}: ${removeRes.status}`);
                       if (!removeRes.ok) {
                         const body = await removeRes.text();
                         console.error(`[Zoom Webhook] Removal failed body: ${body}`);

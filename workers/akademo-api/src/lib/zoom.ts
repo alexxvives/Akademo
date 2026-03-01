@@ -90,7 +90,7 @@ export async function createZoomMeeting(options: CreateMeetingOptions): Promise<
     },
     body: JSON.stringify({
       topic: options.topic,
-      type: 2, // Scheduled meeting
+      type: options.startTime ? 2 : 1, // 1 = Instant (on-demand), 2 = Scheduled (future calendar event)
       ...(options.startTime ? { start_time: options.startTime } : {}),
       duration: options.duration || 60,
       settings: {
