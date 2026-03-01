@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { requireAuth } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
-import { createZoomMeeting, addMeetingRegistrant, getZoomRecording, getZoomRecordingDownloadUrl } from '../lib/zoom';
+import { createZoomMeeting, getZoomRecording, getZoomRecordingDownloadUrl } from '../lib/zoom';
 
 const live = new Hono<{ Bindings: Bindings }>();
 
@@ -370,104 +370,6 @@ live.get('/active', async (c) => {
     return c.json(successResponse(result.results || []));
   } catch (error: any) {
     console.error('[Active Streams] Error:', error);
-    return c.json(errorResponse('Internal server error'), 500);
-  }
-});
-
-// GET /live/join?classId=xxx - Get personal Zoom registrant join URL for a student
-// Lazy-registers the student as a Zoom meeting registrant and returns their unique join URL.
-// Registration is cached on ClassEnrollment so each student only calls Zoom once per session.
-live.get('/join', async (c) => {
-  try {
-    const session = await requireAuth(c);
-
-    if (session.role !== 'STUDENT') {
-      return c.json(errorResponse('Solo los estudiantes utilizan este endpoint'), 403);
-    }
-
-    const { classId } = c.req.query();
-    if (!classId) {
-      return c.json(errorResponse('classId required'), 400);
-    }
-
-    // Check enrollment + payment (same rules as GET /)
-    const enrollment = await c.env.DB
-      .prepare(`
-        SELECT e.id, e.paymentFrequency, e.nextPaymentDue, e.zoomJoinUrl, e.zoomMeetingId
-        FROM ClassEnrollment e
-        WHERE e.classId = ? AND e.userId = ? AND e.status = 'APPROVED'
-        LIMIT 1
-      `)
-      .bind(classId, session.id)
-      .first() as any;
-
-    if (!enrollment) {
-      return c.json(errorResponse('No estás matriculado en esta asignatura'), 403);
-    }
-
-    const isOverdue = enrollment.paymentFrequency === 'MONTHLY'
-      && enrollment.nextPaymentDue
-      && enrollment.nextPaymentDue < new Date().toISOString();
-
-    if (isOverdue) {
-      return c.json(errorResponse('Tienes un pago pendiente en esta asignatura'), 403);
-    }
-
-    // Get the current active stream for this class
-    const stream = await c.env.DB
-      .prepare(`
-        SELECT ls.id, ls.zoomMeetingId, c.zoomAccountId
-        FROM LiveStream ls
-        JOIN Class c ON ls.classId = c.id
-        WHERE ls.classId = ? AND ls.status = 'active'
-        ORDER BY ls.createdAt DESC
-        LIMIT 1
-      `)
-      .bind(classId)
-      .first() as any;
-
-    if (!stream || !stream.zoomMeetingId) {
-      return c.json(errorResponse('No hay ninguna clase en vivo en este momento'), 404);
-    }
-
-    // Return cached URL if it was generated for this exact meeting
-    if (enrollment.zoomJoinUrl && enrollment.zoomMeetingId === stream.zoomMeetingId) {
-      return c.json(successResponse({ joinUrl: enrollment.zoomJoinUrl }));
-    }
-
-    // Need fresh credentials to call the Zoom API
-    if (!stream.zoomAccountId) {
-      return c.json(errorResponse('Esta clase no tiene una cuenta de Zoom asignada'), 400);
-    }
-
-    const { refreshZoomToken } = await import('./zoom-accounts');
-    const accessToken = await refreshZoomToken(c, stream.zoomAccountId);
-    if (!accessToken) {
-      return c.json(errorResponse('No se pudo obtener acceso a la cuenta de Zoom'), 500);
-    }
-
-    // Register the student as a Zoom registrant → personal join URL with tk= token
-    const registrant = await addMeetingRegistrant(
-      stream.zoomMeetingId,
-      session.email,
-      session.firstName,
-      session.lastName,
-      { accessToken },
-    );
-
-    // Cache in ClassEnrollment so we don't call Zoom again for reconnects this session
-    await c.env.DB
-      .prepare(`
-        UPDATE ClassEnrollment
-        SET zoomRegistrantId = ?, zoomJoinUrl = ?, zoomMeetingId = ?
-        WHERE id = ?
-      `)
-      .bind(registrant.registrant_id, registrant.join_url, stream.zoomMeetingId, enrollment.id)
-      .run();
-
-    return c.json(successResponse({ joinUrl: registrant.join_url }));
-  } catch (error: any) {
-    console.error('[Live Join] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
 });

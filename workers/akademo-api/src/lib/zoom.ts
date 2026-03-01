@@ -90,12 +90,11 @@ export async function createZoomMeeting(options: CreateMeetingOptions): Promise<
     },
     body: JSON.stringify({
       topic: options.topic,
-      type: 2, // Always scheduled (type 1 = instant does not support registration)
-      start_time: options.startTime || new Date().toISOString(), // Start now if no future time
+      type: options.startTime ? 2 : 1, // 1 = Instant, 2 = Scheduled
+      ...(options.startTime ? { start_time: options.startTime } : {}),
       duration: options.duration || 60,
-      registration_type: 1, // Each registrant joins with a unique URL (required for access control)
       settings: {
-        waiting_room: false, // Registration (registration_type:1) is the gate — only tk= URL holders can join
+        waiting_room: true, // Teacher manually admits participants from Zoom app
         join_before_host: false,
         mute_upon_entry: true,
         auto_recording: 'cloud',
