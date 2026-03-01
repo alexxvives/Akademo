@@ -360,6 +360,108 @@ webhooks.post('/zoom', async (c) => {
           .prepare('SELECT id, zoomMeetingId, title FROM LiveStream ORDER BY createdAt DESC LIMIT 5')
           .all();
       }
+    } else if (event === 'meeting.participant_waiting') {
+      // ── Waiting Room gate: runs BEFORE the participant enters the meeting ──
+      // This is the only reliable Zoom API for access control.
+      // PUT /meetings/{id}/participants/{uuid}/status with action:admit lets them in.
+      // Participants not admitted stay in the waiting room indefinitely.
+      const meetingId = data.object?.id || data.payload?.object?.id;
+      const participant = data.object?.participant || data.payload?.object?.participant;
+      const participantUUID = participant?.participant_uuid || participant?.id;
+      const participantEmail = (participant?.email || '').toLowerCase().trim();
+      const isHost = !!participant?.is_host;
+
+      if (!meetingId || !participantUUID || isHost) {
+        // Hosts bypass waiting room automatically — nothing to do
+        return c.json(successResponse({ received: true }));
+      }
+
+      const stream = await c.env.DB
+        .prepare(`
+          SELECT ls.classId, c.zoomAccountId, c.teacherId, a.ownerId, a.restrictStreamAccess
+          FROM LiveStream ls
+          JOIN Class c ON ls.classId = c.id
+          JOIN Academy a ON c.academyId = a.id
+          WHERE ls.zoomMeetingId = ?
+        `)
+        .bind(meetingId.toString())
+        .first() as any;
+
+      if (!stream) {
+        // Unknown meeting — let them through (not our meeting)
+        return c.json(successResponse({ received: true }));
+      }
+
+      // If access restriction is off, auto-admit everyone
+      if (stream.restrictStreamAccess !== 1) {
+        // No restriction — auto-admit all waiting participants
+        if (stream.zoomAccountId) {
+          const freshToken = await refreshZoomToken(c, stream.zoomAccountId);
+          if (freshToken) {
+            await fetch(
+              `https://api.zoom.us/v2/meetings/${meetingId}/participants/${participantUUID}/status`,
+              {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${freshToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'admit' })
+              }
+            );
+          }
+        }
+        return c.json(successResponse({ received: true }));
+      }
+
+      // restrictStreamAccess = 1: check authorization before admitting
+      let shouldAdmit = false;
+
+      if (participantEmail) {
+        // Check if teacher or academy owner
+        const teacherOrOwner = await c.env.DB
+          .prepare(`SELECT id FROM User WHERE LOWER(email) = ? AND (id = ? OR id = ?) LIMIT 1`)
+          .bind(participantEmail, stream.teacherId || '', stream.ownerId || '')
+          .first();
+
+        if (teacherOrOwner) {
+          shouldAdmit = true;
+        } else {
+          // Check enrollment
+          const enrollment = await c.env.DB
+            .prepare(`
+              SELECT e.id FROM ClassEnrollment e
+              JOIN User u ON e.userId = u.id
+              WHERE LOWER(u.email) = ? AND e.classId = ? AND e.status = 'APPROVED'
+              LIMIT 1
+            `)
+            .bind(participantEmail, stream.classId)
+            .first();
+          shouldAdmit = !!enrollment;
+        }
+      }
+      // No email = external Zoom user whose email is hidden — deny access
+
+      if (shouldAdmit) {
+        console.log(`[Zoom Webhook] Waiting room: admitting ${participantEmail} uuid=${participantUUID}`);
+        if (stream.zoomAccountId) {
+          const freshToken = await refreshZoomToken(c, stream.zoomAccountId);
+          if (freshToken) {
+            const res = await fetch(
+              `https://api.zoom.us/v2/meetings/${meetingId}/participants/${participantUUID}/status`,
+              {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${freshToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'admit' })
+              }
+            );
+            if (!res.ok) {
+              const body = await res.text();
+              console.error(`[Zoom Webhook] Admit failed for ${participantEmail}: ${res.status} ${body}`);
+            }
+          }
+        }
+      } else {
+        // Leave unauthorized participant in the waiting room (they cannot enter)
+        console.warn(`[Zoom Webhook] Waiting room: blocking ${participantEmail || '(no email)'} uuid=${participantUUID} — not enrolled`);
+      }
     } else if (event === 'meeting.participant_joined' || event === 'meeting.participant_left' || event === 'participant.joined' || event === 'participant.left') {
       const meetingId = data.object.id;
       const participant = data.payload?.object?.participant || data.object?.participant;
@@ -400,100 +502,8 @@ webhooks.post('/zoom', async (c) => {
         } catch { activeParticipants = []; }
 
         if (isJoin) {
-          // ── Access control: only enforce when restrictStreamAccess is enabled ──
-          if (stream.restrictStreamAccess === 1 && !isHost && !isCoHost) {
-            // Block participants with no email (external Zoom users — Zoom hides their email for privacy)
-            if (!participantEmail) {
-              console.warn(`[Zoom Webhook] External Zoom user (email hidden by Zoom privacy) joined meeting ${meetingId} — removing. uuid=${participantUUID}`);
-              try {
-                if (stream.zoomAccountId) {
-                  // Wait 1.5s — Zoom needs time to register the participant before the status API accepts the request
-                  await new Promise(resolve => setTimeout(resolve, 1500));
-                  const freshToken = await refreshZoomToken(c, stream.zoomAccountId);
-                  if (freshToken) {
-                    // Correct Zoom API to remove a live participant: PUT /status with action:remove
-                    const removeRes = await fetch(
-                      `https://api.zoom.us/v2/meetings/${meetingId}/participants/${participantUUID}/status`,
-                      {
-                        method: 'PUT',
-                        headers: { 'Authorization': `Bearer ${freshToken}`, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'remove' })
-                      }
-                    );
-                    console.log(`[Zoom Webhook] Remove external user uuid=${participantUUID}: ${removeRes.status}`);
-                    if (!removeRes.ok) {
-                      const body = await removeRes.text();
-                      console.error(`[Zoom Webhook] External user removal failed: ${body}`);
-                    }
-                  }
-                }
-              } catch (removeErr: any) {
-                console.error('[Zoom Webhook] Failed to remove external user:', removeErr.message);
-              }
-              return c.json(successResponse({ received: true }));
-            }
-
-            // Check if this participant is the teacher or academy owner
-            const teacherOrOwner = await c.env.DB
-              .prepare(`
-                SELECT u.id FROM User u
-                WHERE LOWER(u.email) = ?
-                  AND (
-                    u.id = ?
-                    OR u.id = ?
-                  )
-                LIMIT 1
-              `)
-              .bind(participantEmail, stream.teacherId || '', stream.ownerId || '')
-              .first() as any;
-
-            if (!teacherOrOwner) {
-              // Check if enrolled and approved in this class
-              const enrollment = await c.env.DB
-                .prepare(`
-                  SELECT e.id FROM ClassEnrollment e
-                  JOIN User u ON e.userId = u.id
-                  WHERE LOWER(u.email) = ?
-                    AND e.classId = ?
-                    AND e.status = 'APPROVED'
-                  LIMIT 1
-                `)
-                .bind(participantEmail, stream.classId)
-                .first() as any;
-
-              if (!enrollment) {
-                console.warn(`[Zoom Webhook] Unauthorized participant ${participantEmail} (uuid=${participantUUID}) joined meeting ${meetingId} — removing`);
-                try {
-                  if (stream.zoomAccountId) {
-                    // Wait 1.5s — Zoom needs time to register the participant before the status API accepts the request
-                    await new Promise(resolve => setTimeout(resolve, 1500));
-                    const freshToken = await refreshZoomToken(c, stream.zoomAccountId);
-                    if (freshToken) {
-                      // Correct Zoom API to remove a live participant: PUT /status with action:remove
-                      const removeRes = await fetch(
-                        `https://api.zoom.us/v2/meetings/${meetingId}/participants/${participantUUID}/status`,
-                        {
-                          method: 'PUT',
-                          headers: { 'Authorization': `Bearer ${freshToken}`, 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ action: 'remove' })
-                        }
-                      );
-                      console.log(`[Zoom Webhook] Remove unauthorized ${participantEmail} uuid=${participantUUID}: ${removeRes.status}`);
-                      if (!removeRes.ok) {
-                        const body = await removeRes.text();
-                        console.error(`[Zoom Webhook] Unauthorized removal failed: ${body}`);
-                      }
-                    } else {
-                      console.error('[Zoom Webhook] Could not get fresh token for removal');
-                    }
-                  }
-                } catch (removeErr: any) {
-                  console.error('[Zoom Webhook] Failed to remove unauthorized participant:', removeErr.message);
-                }
-                return c.json(successResponse({ received: true }));
-              }
-            }
-          }
+          // Access control is handled in meeting.participant_waiting (waiting room gate)
+          // By the time we get here the participant was already admitted by us
 
           // Add participant to active set (avoid duplicates)
           if (!activeParticipants.includes(participantUserId)) {

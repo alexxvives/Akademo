@@ -152,7 +152,6 @@ live.post('/', async (c) => {
       zoomMeeting = await createZoomMeeting({
         topic: `${title} - ${classInfo.name}`,
         duration: 120, // 2 hours default
-        waitingRoom: false,
         config: zoomConfig,
       });
     } catch (zoomError: unknown) {

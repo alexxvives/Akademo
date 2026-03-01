@@ -94,8 +94,8 @@ export async function createZoomMeeting(options: CreateMeetingOptions): Promise<
       ...(options.startTime ? { start_time: options.startTime } : {}),
       duration: options.duration || 60,
       settings: {
-        waiting_room: options.waitingRoom ?? false,
-        join_before_host: false, // Students must wait for teacher to start the meeting
+        waiting_room: true, // Always on — enrolled users auto-admitted via webhook, others blocked
+        join_before_host: false,
         mute_upon_entry: true,
         auto_recording: 'cloud', // Auto-record to cloud
         embed_password_in_join_link: true, // CRITICAL: Allows SDK to extract password automatically

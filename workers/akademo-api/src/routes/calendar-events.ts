@@ -81,7 +81,6 @@ calendarEvents.post('/create-zoom', async (c) => {
     const meeting = await createZoomMeeting({
       topic: `${body.title.trim()} - ${classInfo.name}`,
       duration: 120,
-      waitingRoom: false,
       startTime: body.eventDate
         ? `${body.eventDate}T${body.startTime || '09:00'}:00Z`
         : undefined,
