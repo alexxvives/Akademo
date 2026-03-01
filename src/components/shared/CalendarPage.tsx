@@ -1018,7 +1018,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
                 onDragOver={!isPast ? (e) => handleDragOver(e, key) : undefined}
                 onDragLeave={() => setDragOverDate(null)}
                 onDrop={!isPast ? (e) => handleDrop(e, day) : undefined}
-                className={`group min-h-[80px] sm:min-h-[100px] p-1.5 rounded-lg border text-left transition-all ${
+                className={`group min-h-[100px] sm:min-h-[130px] md:min-h-[150px] p-1.5 rounded-lg border text-left transition-all ${
                   isDragOver
                     ? 'border-brand-400 bg-brand-50 ring-1 ring-brand-400'
                     : isToday
@@ -1147,7 +1147,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
         )}
 
         {/* Time grid */}
-        <div className="overflow-y-auto" style={{ maxHeight: '504px' }}>
+        <div className="overflow-y-auto" style={{ maxHeight: 'calc(100dvh - 380px)', minHeight: '400px' }}>
           <div className="grid" style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}>
             {/* Time label column */}
             <div>
@@ -1288,7 +1288,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
           )}
 
           {/* Time grid */}
-          <div ref={dayViewScrollRef} className="overflow-y-auto" style={{ maxHeight: '504px' }}>
+          <div ref={dayViewScrollRef} className="overflow-y-auto" style={{ maxHeight: 'calc(100dvh - 380px)', minHeight: '400px' }}>
             <div className="flex">
               {/* Time labels */}
               <div className="flex-shrink-0 w-16">

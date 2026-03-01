@@ -16,6 +16,31 @@ live.get('/', async (c) => {
       return c.json(errorResponse('classId required'), 400);
     }
 
+    // ── Stream access restriction enforcement ──
+    // Only check for STUDENT role (teachers, academy owners, admins always have access)
+    if (session.role === 'STUDENT') {
+      const academy = await c.env.DB
+        .prepare(`
+          SELECT a.restrictStreamAccess
+          FROM Class c
+          JOIN Academy a ON c.academyId = a.id
+          WHERE c.id = ?
+        `)
+        .bind(classId)
+        .first() as { restrictStreamAccess: number } | null;
+
+      if (academy?.restrictStreamAccess === 1) {
+        const enrollment = await c.env.DB
+          .prepare(`SELECT id FROM ClassEnrollment WHERE classId = ? AND userId = ? AND status = 'APPROVED'`)
+          .bind(classId, session.id)
+          .first();
+
+        if (!enrollment) {
+          return c.json(errorResponse('Acceso restringido: debes estar matriculado en esta asignatura'), 403);
+        }
+      }
+    }
+
     const result = await c.env.DB
       .prepare(`
         SELECT ls.id, ls.classId, ls.teacherId, ls.status, ls.title, ls.startedAt, ls.endedAt, 
