@@ -190,6 +190,14 @@ export const videoProgressSchema = z.object({
   watchTimeElapsed: z.coerce.number().min(0),
 });
 
+export const videoCompletionSchema = z.object({
+  videoId: z.string().min(1, 'Video ID is required'),
+  watchedFull: z.boolean(),
+  noPause: z.boolean(),
+  noTabSwitch: z.boolean(),
+  realtimeWatch: z.boolean(),
+});
+
 // ============ Validation Helper ============
 
 import type { Context, Next } from 'hono';

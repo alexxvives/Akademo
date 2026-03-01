@@ -58,6 +58,15 @@ export default function ProtectedVideoPlayer({
   const hlsRef = useRef<Hls | null>(null);
   const currentTimeRef = useRef(0);
   const watermarkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isPlayingRef = useRef(false);
+
+  // Screen-recording detection: track signals per-video-play-session
+  const completionFlagsRef = useRef({
+    hadPauseWhilePlaying: false,
+    hadTabSwitchWhilePlaying: false,
+    lastPlayStartWallTime: 0,
+    accumulatedWallSeconds: 0,
+  });
 
   const [playState, setPlayState] = useState<VideoPlayState>(initialPlayState);
   const [currentTime, setCurrentTime] = useState(0);
@@ -104,8 +113,27 @@ export default function ProtectedVideoPlayer({
   useEffect(() => {
     setPlayState(initialPlayState);
     setIsLocked(initialPlayState?.status === 'BLOCKED');
+    // Reset screen-recording detection flags for fresh video
+    completionFlagsRef.current = {
+      hadPauseWhilePlaying: false,
+      hadTabSwitchWhilePlaying: false,
+      lastPlayStartWallTime: 0,
+      accumulatedWallSeconds: 0,
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoId]); // Only re-run when video changes, not when playState object reference changes
+
+  // Track tab/window visibility changes to detect screen recording (signal: no tab switch)
+  useEffect(() => {
+    if (isUnlimitedUser) return;
+    const handleVisibilityChange = () => {
+      if (document.hidden && isPlayingRef.current) {
+        completionFlagsRef.current.hadTabSwitchWhilePlaying = true;
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [isUnlimitedUser]);
 
   // Fetch signed URL for Bunny videos
   useEffect(() => {
@@ -270,11 +298,54 @@ export default function ProtectedVideoPlayer({
           setIsPlaying(false);
           return;
         }
+        isPlayingRef.current = true;
         setIsPlaying(true);
+        // Record wall-clock start time for realtime detection
+        completionFlagsRef.current.lastPlayStartWallTime = Date.now();
       });
 
-      plyr.on('pause', () => setIsPlaying(false));
-      plyr.on('ended', () => setIsPlaying(false));
+      plyr.on('pause', () => {
+        if (isPlayingRef.current) {
+          // Accumulate wall-clock time and flag user-initiated pause
+          const elapsed = (Date.now() - completionFlagsRef.current.lastPlayStartWallTime) / 1000;
+          completionFlagsRef.current.accumulatedWallSeconds += elapsed;
+          completionFlagsRef.current.hadPauseWhilePlaying = true;
+        }
+        isPlayingRef.current = false;
+        setIsPlaying(false);
+      });
+
+      plyr.on('ended', () => {
+        // Accumulate final segment of playtime
+        if (isPlayingRef.current) {
+          const elapsed = (Date.now() - completionFlagsRef.current.lastPlayStartWallTime) / 1000;
+          completionFlagsRef.current.accumulatedWallSeconds += elapsed;
+        }
+        isPlayingRef.current = false;
+        setIsPlaying(false);
+
+        // Only report for students
+        if (!isUnlimitedUser) {
+          const duration = plyr.duration || videoDuration || durationSeconds;
+          // realtimeWatch: wall-clock time spent playing ≥ 90% of video duration
+          const realtimeWatch = duration > 10 &&
+            completionFlagsRef.current.accumulatedWallSeconds / duration >= 0.9;
+
+          const flags = {
+            videoId,
+            watchedFull: true,
+            noPause: !completionFlagsRef.current.hadPauseWhilePlaying,
+            noTabSwitch: !completionFlagsRef.current.hadTabSwitchWhilePlaying,
+            realtimeWatch,
+          };
+
+          apiClient('/videos/completion', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(flags),
+          }).catch(err => console.error('[Completion] Error reporting completion:', err));
+        }
+      });
       
       plyr.on('timeupdate', () => {
         const newTime = plyr.currentTime;

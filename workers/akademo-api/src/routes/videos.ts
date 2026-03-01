@@ -254,6 +254,106 @@ videos.post('/progress/admin-update', async (c) => {
   }
 });
 
+// POST /videos/completion - Report video completion signals for screen-recording detection
+// Called by frontend when a video ends naturally.
+// Tracks 4 signals: watchedFull, noPause, noTabSwitch, realtimeWatch.
+// If all 4 fire, completion is marked "suspicious". Every 3 suspicious completions → +1 suspicionCount.
+videos.post('/completion', async (c) => {
+  try {
+    const session = await requireAuth(c);
+
+    if (session.role !== 'STUDENT') {
+      return c.json(successResponse({ flagged: false })); // silent for non-students
+    }
+
+    const body = await c.req.json();
+    const { videoId, watchedFull, noPause, noTabSwitch, realtimeWatch } = body;
+
+    if (!videoId) {
+      return c.json(errorResponse('videoId required'), 400);
+    }
+
+    // Verify enrollment
+    const video = await c.env.DB
+      .prepare(`
+        SELECT v.durationSeconds, l.classId
+        FROM Video v
+        JOIN Lesson l ON v.lessonId = l.id
+        WHERE v.id = ?
+      `)
+      .bind(videoId)
+      .first() as any;
+
+    if (!video) {
+      return c.json(errorResponse('Video not found'), 404);
+    }
+
+    const enrollment = await c.env.DB
+      .prepare('SELECT id FROM ClassEnrollment WHERE userId = ? AND classId = ? AND status = ?')
+      .bind(session.id, (video as any).classId, 'APPROVED')
+      .first();
+
+    if (!enrollment) {
+      return c.json(errorResponse('Not enrolled'), 403);
+    }
+
+    // Evaluate: are ALL 4 signals true?
+    const isSuspicious = watchedFull === true && noPause === true && noTabSwitch === true && realtimeWatch === true;
+    const now = new Date().toISOString();
+
+    // Read existing play state to know previous suspicion status
+    const existing = await c.env.DB
+      .prepare('SELECT id, suspiciousCompletion FROM VideoPlayState WHERE videoId = ? AND studentId = ?')
+      .bind(videoId, session.id)
+      .first() as any;
+
+    const wasSuspiciousBefore = existing?.suspiciousCompletion === 1;
+
+    if (existing) {
+      await c.env.DB
+        .prepare('UPDATE VideoPlayState SET suspiciousCompletion = ?, completedAt = ? WHERE id = ?')
+        .bind(isSuspicious ? 1 : 0, now, existing.id)
+        .run();
+    } else {
+      // No play state yet (e.g. unlimited user who just watches) — create minimal record
+      await c.env.DB
+        .prepare(`
+          INSERT INTO VideoPlayState (id, videoId, studentId, totalWatchTimeSeconds, lastPositionSeconds, sessionStartTime, lastWatchedAt, createdAt, updatedAt, status, suspiciousCompletion, completedAt)
+          VALUES (?, ?, ?, 0, 0, ?, ?, ?, ?, 'ACTIVE', ?, ?)
+        `)
+        .bind(crypto.randomUUID(), videoId, session.id, now, now, now, now, isSuspicious ? 1 : 0, now)
+        .run();
+    }
+
+    // Only evaluate the threshold if this is a NEW suspicious completion
+    // (avoids re-triggering if student re-watches the same video)
+    let suspicionTriggered = false;
+    if (isSuspicious && !wasSuspiciousBefore) {
+      const countRow = await c.env.DB
+        .prepare('SELECT COUNT(*) as cnt FROM VideoPlayState WHERE studentId = ? AND suspiciousCompletion = 1')
+        .bind(session.id)
+        .first() as any;
+
+      const totalSuspicious: number = countRow?.cnt || 0;
+
+      // Every 3 suspicious completions triggers +1 suspicionCount
+      if (totalSuspicious > 0 && totalSuspicious % 3 === 0) {
+        await c.env.DB
+          .prepare('UPDATE User SET suspicionCount = suspicionCount + 1 WHERE id = ?')
+          .bind(session.id)
+          .run();
+        suspicionTriggered = true;
+        console.log(`[SuspicionCounter] Student ${session.id} hit ${totalSuspicious} suspicious completions → suspicionCount +1`);
+      }
+    }
+
+    return c.json(successResponse({ flagged: isSuspicious, suspicionTriggered }));
+  } catch (error: any) {
+    console.error('[Video Completion] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
+
 // GET /videos/:id - Get video details
 videos.get('/:id', async (c) => {
   try {
