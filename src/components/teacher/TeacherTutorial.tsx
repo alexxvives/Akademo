@@ -13,13 +13,13 @@ const STEPS: Step[] = [
   {
     selector: 'a[href="/dashboard/teacher/subjects"]',
     title: 'Tus Asignaturas',
-    description: 'Aquí gestionas todas tus asignaturas. Crea grupos de alumnos, añade lecciones, sube vídeos y organiza el temario.',
+    description: 'Aquí gestionas todas tus asignaturas. Añade lecciones, sube vídeos y organiza el temario de cada clase.',
     icon: '📚',
   },
   {
     selector: 'a[href="/dashboard/teacher/streams"]',
     title: 'Clases en Directo',
-    description: 'Crea clases en directo con Zoom. Los alumnos inscritos recibirán una notificación automáticamente cuando empieces.',
+    description: 'Consulta el historial de tus clases en directo grabadas. Las nuevas clases se crean desde cada asignatura.',
     icon: '🎥',
   },
   {
@@ -43,7 +43,7 @@ const STEPS: Step[] = [
   {
     selector: 'button[title*="invitaci"], button[title*="Copiar"]',
     title: 'Enlace de Invitación',
-    description: 'Comparte este enlace con tus alumnos para que puedan unirse directamente a tu academia.',
+    description: 'Comparte este enlace con tus alumnos para que puedan unirse directamente a tus asignaturas.',
     icon: '🔗',
   },
 ];
@@ -63,27 +63,28 @@ function getTooltipStyle(
   viewportW: number,
   viewportH: number
 ): React.CSSProperties {
-  const TOOLTIP_W = 300;
+  const TOOLTIP_W = 340;
+  const TOOLTIP_H = 290; // estimated max height
   const TOOLTIP_GAP = 20;
+
+  const clampTop = (t: number) => Math.max(12, Math.min(t, viewportH - TOOLTIP_H - 12));
+  const clampLeft = (l: number) => Math.max(12, Math.min(l, viewportW - TOOLTIP_W - 12));
 
   // Try to place tooltip to the right of the spotlight
   const rightX = rect.left + rect.width + TOOLTIP_GAP;
   if (rightX + TOOLTIP_W < viewportW) {
-    const top = Math.max(12, Math.min(rect.top, viewportH - 240));
-    return { position: 'fixed', left: rightX, top, width: TOOLTIP_W };
+    return { position: 'fixed', left: rightX, top: clampTop(rect.top), width: TOOLTIP_W };
   }
 
   // Fall back to below
   const belowY = rect.top + rect.height + TOOLTIP_GAP;
-  if (belowY + 200 < viewportH) {
-    const left = Math.max(12, Math.min(rect.left, viewportW - TOOLTIP_W - 12));
-    return { position: 'fixed', top: belowY, left, width: TOOLTIP_W };
+  if (belowY + TOOLTIP_H < viewportH) {
+    return { position: 'fixed', top: belowY, left: clampLeft(rect.left), width: TOOLTIP_W };
   }
 
   // Above
-  const aboveY = rect.top - TOOLTIP_GAP - 200;
-  const left = Math.max(12, Math.min(rect.left, viewportW - TOOLTIP_W - 12));
-  return { position: 'fixed', top: Math.max(12, aboveY), left, width: TOOLTIP_W };
+  const aboveY = rect.top - TOOLTIP_GAP - TOOLTIP_H;
+  return { position: 'fixed', top: clampTop(aboveY), left: clampLeft(rect.left), width: TOOLTIP_W };
 }
 
 export function TeacherTutorial() {
