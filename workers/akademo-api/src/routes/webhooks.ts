@@ -629,8 +629,8 @@ webhooks.post('/stripe', async (c) => {
                   INSERT INTO Payment (
                   id, type, payerId, receiverId, amount, currency, status,
                   stripePaymentId, stripeCheckoutSessionId, paymentMethod, classId,
-                  metadata, completedAt, nextPaymentDue, billingCycleStart, billingCycleEnd, createdAt
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ?, ?, ?, datetime('now'))
+                  metadata, completedAt, nextPaymentDue, billingCycleEnd, createdAt
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ?, ?, datetime('now'))
               `)
               .bind(
                 crypto.randomUUID(),
@@ -652,7 +652,6 @@ webhooks.post('/stripe', async (c) => {
                   payerEmail: enrollment.email
                 }),
                 billingCycle.nextPaymentDue,
-                billingCycle.billingCycleStart,
                 billingCycle.billingCycleEnd
               )
               .run();
@@ -816,8 +815,8 @@ webhooks.post('/stripe', async (c) => {
                 id, type, payerId, payerType, payerName, payerEmail,
                 receiverId, amount, currency, status, stripePaymentId,
                 paymentMethod, classId, description, metadata,
-                createdAt, completedAt, updatedAt
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'), datetime('now'))
+                createdAt, completedAt
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
             `)
             .bind(
               crypto.randomUUID(),

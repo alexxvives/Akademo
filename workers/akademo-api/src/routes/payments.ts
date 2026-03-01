@@ -144,7 +144,6 @@ payments.post('/initiate', validateBody(initiatePaymentSchema), async (c) => {
               amount = ?,
               metadata = ?,
               nextPaymentDue = ?,
-              billingCycleStart = ?,
               billingCycleEnd = ?,
               createdAt = datetime('now')
           WHERE id = ?
@@ -163,7 +162,6 @@ payments.post('/initiate', validateBody(initiatePaymentSchema), async (c) => {
             note: billingCycle.missedCycles > 0 ? `Incluye ${billingCycle.missedCycles} ciclo(s) pendiente(s). Próximos pagos serán de ${price}€/mes.` : null
           }),
           billingCycle.nextPaymentDue,
-          billingCycle.billingCycleStart,
           billingCycle.billingCycleEnd,
           existingPayment.id
         )
@@ -206,8 +204,8 @@ payments.post('/initiate', validateBody(initiatePaymentSchema), async (c) => {
       .prepare(`
         INSERT INTO Payment (
           id, type, payerId, payerType, receiverId, amount, currency, status,
-          paymentMethod, classId, metadata, nextPaymentDue, billingCycleStart, billingCycleEnd, createdAt
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+          paymentMethod, classId, metadata, nextPaymentDue, billingCycleEnd, createdAt
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
       `)
       .bind(
         paymentId,
@@ -231,7 +229,6 @@ payments.post('/initiate', validateBody(initiatePaymentSchema), async (c) => {
           note: billingCycle.missedCycles > 0 ? `Incluye ${billingCycle.missedCycles} ciclo(s) pendiente(s). Próximos pagos serán de ${price}€/mes.` : null
         }),
         billingCycle.nextPaymentDue,
-        billingCycle.billingCycleStart,
         billingCycle.billingCycleEnd
       )
       .run();
