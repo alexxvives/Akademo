@@ -769,8 +769,8 @@ auth.post('/switch-role', async (c) => {
         const now = new Date().toISOString();
         
         await c.env.DB
-          .prepare('INSERT INTO Teacher (id, userId, academyId, status, monoacademy, createdAt) VALUES (?, ?, ?, ?, ?, ?)')
-          .bind(teacherId, session.id, academy.id, 'APPROVED', 1, now)
+          .prepare('INSERT INTO Teacher (id, userId, academyId, monoacademy, createdAt) VALUES (?, ?, ?, ?, ?)')
+          .bind(teacherId, session.id, academy.id, 1, now)
           .run();
       }
 

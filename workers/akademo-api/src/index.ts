@@ -129,6 +129,42 @@ app.get('/teacher/academy', async (c) => {
   }
 });
 
+// PATCH /teacher/tutorial-seen - Mark onboarding tutorial as seen (persisted in DB)
+app.patch('/teacher/tutorial-seen', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    if (session.role !== 'TEACHER') {
+      return c.json(errorResponse('Only teachers can use this endpoint'), 403);
+    }
+    await c.env.DB
+      .prepare('UPDATE Teacher SET tutorialSeenAt = ? WHERE userId = ?')
+      .bind(new Date().toISOString(), session.id)
+      .run();
+    return c.json(successResponse({ ok: true }));
+  } catch (error: unknown) {
+    console.error('[Teacher Tutorial] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
+
+// GET /teacher/tutorial-status - Check if tutorial has been seen
+app.get('/teacher/tutorial-status', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    if (session.role !== 'TEACHER') {
+      return c.json(errorResponse('Only teachers can use this endpoint'), 403);
+    }
+    const row = await c.env.DB
+      .prepare('SELECT tutorialSeenAt FROM Teacher WHERE userId = ?')
+      .bind(session.id)
+      .first<{ tutorialSeenAt: string | null }>();
+    return c.json(successResponse({ seen: !!row?.tutorialSeenAt }));
+  } catch (error: unknown) {
+    console.error('[Teacher Tutorial] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
+
 // Cron trigger handler for monthly payment generation
 // Uses calculation-based approach: compares expected payments vs actual payments made
 async function handleScheduled(env: Bindings) {

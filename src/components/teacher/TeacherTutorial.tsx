@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { apiClient } from '@/lib/api-client';
 
 interface Step {
   selector: string;
@@ -96,15 +97,35 @@ export function TeacherTutorial() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    // localStorage fast-path: if already dismissed on this device, skip the API call
     if (localStorage.getItem(STORAGE_KEY)) return;
     // Only show on desktop (lg breakpoint: >= 1024px) where sidebar is visible
     if (window.innerWidth < 1024) return;
-    const t = setTimeout(() => {
-      setViewportW(window.innerWidth);
-      setViewportH(window.innerHeight);
-      setVisible(true);
-    }, 900);
-    return () => clearTimeout(t);
+
+    // Check DB — single source of truth across devices
+    apiClient('/teacher/tutorial-status')
+      .then((res) => res.json() as Promise<{ success: boolean; data: { seen: boolean } }>)
+      .then((res) => {
+        if (res?.data?.seen) {
+          // Seen on another device — cache locally and skip
+          localStorage.setItem(STORAGE_KEY, '1');
+          return;
+        }
+        // Not seen yet — show after a short delay
+        setTimeout(() => {
+          setViewportW(window.innerWidth);
+          setViewportH(window.innerHeight);
+          setVisible(true);
+        }, 900);
+      })
+      .catch(() => {
+        // API unavailable — fall back to showing the tutorial
+        setTimeout(() => {
+          setViewportW(window.innerWidth);
+          setViewportH(window.innerHeight);
+          setVisible(true);
+        }, 900);
+      });
   }, []);
 
   // Recompute bounding rect when step changes or window resizes
@@ -133,6 +154,10 @@ export function TeacherTutorial() {
   const dismiss = useCallback(() => {
     localStorage.setItem(STORAGE_KEY, '1');
     setVisible(false);
+    // Persist in DB so it won't show again on other devices/browsers
+    apiClient('/teacher/tutorial-seen', { method: 'PATCH' as const }).catch(() => {
+      // Fire-and-forget — localStorage already prevents re-showing on this device
+    });
   }, []);
 
   const next = useCallback(() => {
