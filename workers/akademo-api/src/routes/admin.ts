@@ -461,9 +461,6 @@ admin.delete('/users/:id', async (c) => {
     // Delete device sessions
     await c.env.DB.prepare('DELETE FROM DeviceSession WHERE userId = ?').bind(userId).run();
     
-    // Delete notifications
-    await c.env.DB.prepare('DELETE FROM Notification WHERE userId = ?').bind(userId).run();
-    
     // Finally, delete the user
     await c.env.DB.prepare('DELETE FROM User WHERE id = ?').bind(userId).run();
     

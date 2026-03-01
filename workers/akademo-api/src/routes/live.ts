@@ -207,43 +207,6 @@ live.post('/', async (c) => {
       .bind(streamId)
       .first();
 
-    // Create notifications for all enrolled students
-    try {
-      const enrolledStudents = await c.env.DB
-        .prepare('SELECT userId FROM ClassEnrollment WHERE classId = ? AND status = "APPROVED"')
-        .bind(classId)
-        .all();
-      
-      const teacherName = `${classInfo.firstName} ${classInfo.lastName}`;
-      
-      const notifStmts = (enrolledStudents.results || []).map((enrollment: any) => {
-        return c.env.DB.prepare(`
-          INSERT INTO Notification (id, userId, type, title, message, data, isRead, createdAt)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        `).bind(
-          crypto.randomUUID(),
-          enrollment.userId,
-          'LIVE_CLASS',
-          '🔴 Clase en Vivo',
-          `${teacherName} ha iniciado una transmisión en ${classInfo.name}`,
-          JSON.stringify({
-            liveStreamId: streamId,
-            classId,
-            zoomLink: zoomMeeting.join_url,
-            className: classInfo.name,
-            teacherName,
-          }),
-          0,
-          now
-        );
-      });
-      if (notifStmts.length > 0) await c.env.DB.batch(notifStmts);
-      
-    } catch (notifError: any) {
-      console.error('[Create Live Stream] Failed to create notifications:', notifError);
-      // Don't fail the request if notifications fail
-    }
-
     return c.json(successResponse(stream), 201);
   } catch (error: any) {
     console.error('[Create Live Stream] Error:', error);
@@ -1184,28 +1147,7 @@ live.post('/:id/notify', async (c) => {
       return c.json(successResponse({ notified: 0, message: 'No hay estudiantes inscritos' }));
     }
 
-    // Create notifications for each student using batch insert
-    const now = new Date().toISOString();
-
-    const notifStmts = enrollments.results.map((enrollment: any) => {
-      return c.env.DB
-        .prepare(`
-          INSERT INTO Notification (id, userId, title, message, type, metadata, isRead, createdAt)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        `)
-        .bind(
-          crypto.randomUUID(),
-          enrollment.userId,
-          '🔴 Clase en Vivo',
-          `${stream.title} - ¡La clase está en vivo ahora!`,
-          'STREAM_STARTED',
-          JSON.stringify({ streamId: stream.id, classId: stream.classId, zoomLink: stream.zoomLink }),
-          0,
-          now
-        );
-    });
-    await c.env.DB.batch(notifStmts);
-    const notified = notifStmts.length;
+    const notified = enrollments.results.length;
 
     return c.json(successResponse({ notified, message: `${notified} estudiantes notificados` }));
   } catch (error: any) {

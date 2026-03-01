@@ -164,15 +164,6 @@ export const createRatingSchema = z.object({
   comment: z.string().max(1000).optional(),
 });
 
-// ============ Notification Schemas ============
-
-export const createNotificationSchema = z.object({
-  classId: z.string().uuid().optional(),
-  liveStreamId: z.string().uuid().optional(),
-  message: z.string().min(1).max(500),
-  type: z.enum(['LIVE_STREAM', 'ANNOUNCEMENT', 'REMINDER']).default('ANNOUNCEMENT'),
-});
-
 // ============ Live Stream Schemas ============
 
 export const createLiveStreamSchema = z.object({
