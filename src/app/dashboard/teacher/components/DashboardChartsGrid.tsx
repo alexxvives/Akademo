@@ -130,9 +130,9 @@ export function DashboardChartsGrid({
       </div>
 
       {/* Student Summary */}
-      <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full">
+      <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
         <h3 className="text-lg font-semibold text-gray-900 mb-6">Estudiantes</h3>
-        <div className="grid grid-cols-2 gap-4 h-[calc(100%-3rem)]">
+        <div className="grid grid-cols-2 gap-4">
           {/* Estudiantes Container */}
           <div className="flex flex-col justify-between p-4 bg-gray-50 rounded-lg">
             <div className="text-center">

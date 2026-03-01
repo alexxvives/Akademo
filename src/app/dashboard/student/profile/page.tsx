@@ -79,7 +79,7 @@ export default function StudentProfile() {
       {/* Profile Info Card */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="px-4 sm:px-8 py-4 sm:py-6 bg-gray-50 border-b border-gray-200">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">Información General</h2>
               <p className="text-sm text-gray-600 mt-1">Tus datos personales</p>

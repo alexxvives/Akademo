@@ -2,6 +2,7 @@
 
 import DashboardLayout from '@/components/DashboardLayout';
 import { ErrorBoundary } from '@/components/ui';
+import { TeacherTutorial } from '@/components/teacher/TeacherTutorial';
 
 export default function TeacherDashboardLayout({
   children,
@@ -10,7 +11,10 @@ export default function TeacherDashboardLayout({
 }) {
   return (
     <ErrorBoundary>
-      <DashboardLayout role="TEACHER">{children}</DashboardLayout>
+      <DashboardLayout role="TEACHER">
+        {children}
+        <TeacherTutorial />
+      </DashboardLayout>
     </ErrorBoundary>
   );
 }

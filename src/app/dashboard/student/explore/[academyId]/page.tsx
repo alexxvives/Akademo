@@ -124,14 +124,14 @@ export default function AcademyClassesPage() {
 
   return (
     <div className="max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">{academy.name}</h1>
           <p className="text-gray-600 text-sm mt-1">{academy.description || 'Selecciona una clase para solicitar inscripción'}</p>
         </div>
         <Link
           href="/dashboard/student/explore"
-          className="px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
+          className="self-start sm:self-center px-4 py-2 text-gray-600 hover:text-gray-900 font-medium"
         >
           ← Volver a Academias
         </Link>
