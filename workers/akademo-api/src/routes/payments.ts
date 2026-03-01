@@ -316,17 +316,8 @@ payments.get('/pending-cash', async (c) => {
             } else if (monthsOwed === 1) {
               description = `Pago pendiente mensual`;
             }
-
-            // After current cycle is fully paid, immediately show the NEXT cycle as pending
-            // so both academy and student always see the upcoming payment with its due date
-            if (amountOwed === 0 && cappedCycles < maxCycles) {
-              const nextDueDate = addMonths(classStart, elapsedCycles);
-              amountOwed = monthlyPrice;
-              monthsOwed = 1;
-              description = 'Pago próximo mensual';
-              nextPaymentDue = nextDueDate.toISOString();
-              billingCycleEnd = nextDueDate.toISOString();
-            }
+            // Note: we do NOT pre-create PENDING rows for upcoming future cycles.
+            // Only create rows when the student actually owes money for elapsed cycles.
           }
         } else if (!isMonthly && oneTimePrice > 0) {
           // ONE_TIME: check if they've paid the full oneTimePrice
@@ -1151,8 +1142,8 @@ payments.put('/history/:id/reverse', async (c) => {
       return c.json(errorResponse('Only academy owners can reverse payments'), 403);
     }
 
-    // Toggle status: COMPLETED <-> PENDING
-    const newStatus = payment.status === 'COMPLETED' ? 'PENDING' : 'COMPLETED';
+    // Toggle status: PAID/COMPLETED → PENDING, anything else → COMPLETED
+    const newStatus = (payment.status === 'COMPLETED' || payment.status === 'PAID') ? 'PENDING' : 'COMPLETED';
     const completedAt = newStatus === 'COMPLETED' ? 'datetime(\'now\')' : 'NULL';
 
     await c.env.DB
@@ -1331,6 +1322,11 @@ payments.post('/register-manual', async (c) => {
       return c.json(errorResponse('All fields are required'), 400);
     }
 
+    const validStatuses = ['PAID', 'COMPLETED', 'PENDING'] as const;
+    if (!validStatuses.includes(status)) {
+      return c.json(errorResponse(`Invalid status: must be one of ${validStatuses.join(', ')}`), 400);
+    }
+
     // Verify class belongs to academy
     const classData: any = await c.env.DB
       .prepare(`
@@ -1365,7 +1361,7 @@ payments.post('/register-manual', async (c) => {
     // Create payment record
     const paymentId = crypto.randomUUID();
     const approvedBy = `${session.firstName} ${session.lastName} (${classData.academyName})`;
-    const completedAt = status === 'PAID' ? "datetime('now')" : 'NULL';
+    const completedAt = (status === 'PAID' || status === 'COMPLETED') ? "datetime('now')" : 'NULL';
     
     const result = await c.env.DB
       .prepare(`
@@ -1548,12 +1544,17 @@ payments.post('/academy-activation-session', async (c) => {
 
     // Get academy ID
     const academy: any = await c.env.DB
-      .prepare('SELECT id, name FROM Academy WHERE ownerId = ?')
+      .prepare('SELECT id, name, paymentStatus FROM Academy WHERE ownerId = ?')
       .bind(session.id)
       .first();
 
     if (!academy) {
       return c.json(errorResponse('Academy not found'), 404);
+    }
+
+    // Guard: don't create a new checkout session if the academy is already activated
+    if ((academy as any).paymentStatus === 'PAID') {
+      return c.json(errorResponse('Esta academia ya est\u00e1 activada. Si crees que esto es un error, contacta con soporte.'), 400);
     }
 
     const stripe = require('stripe')(c.env.STRIPE_SECRET_KEY) as any;

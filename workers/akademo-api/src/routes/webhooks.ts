@@ -656,6 +656,13 @@ webhooks.post('/stripe', async (c) => {
               .bind('APPROVED', isMonthly ? 'MONTHLY' : 'ONE_TIME', subscriptionId, enrollmentId)
               .run();
 
+            // Clean up any manually-created or auto-created PENDING rows now that Stripe has confirmed
+            // payment. Without this, the student's subject page would still show paymentStatus = 'PENDING'.
+            await c.env.DB
+              .prepare("DELETE FROM Payment WHERE payerId = ? AND classId = ? AND status = 'PENDING'")
+              .bind(enrollment.userId, enrollment.classId)
+              .run();
+
           }
         } else {
           // No metadata - assume academy activation, look up by customer email
@@ -705,35 +712,41 @@ webhooks.post('/stripe', async (c) => {
         .first() as any;
 
       if (enrollment) {
-        // Add to payment history
-        await c.env.DB
-          .prepare(`
-            INSERT INTO Payment (
-              id, type, payerId, receiverId, amount, currency, status, stripePaymentId,
-              paymentMethod, classId, metadata, completedAt, createdAt
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-          `)
-          .bind(
-            crypto.randomUUID(),
-            'STUDENT_TO_ACADEMY',
-            enrollment.userId,
-            enrollment.academyId,
-            amount_paid ? amount_paid / 100 : 0,
-            'EUR',
-            'COMPLETED',
-            data.id,
-            'stripe',
-            enrollment.classId,
-            JSON.stringify({ 
-              subscriptionId: subscription, 
-              source: 'stripe_recurring',
-              payerName: `${enrollment.firstName} ${enrollment.lastName}`,
-              payerEmail: enrollment.email,
-              className: enrollment.className
-            })
-          )
-          .run();
+        // Idempotency: skip if we already recorded this invoice payment
+        const existingInvoicePayment: any = await c.env.DB
+          .prepare('SELECT id FROM Payment WHERE stripePaymentId = ?')
+          .bind(data.id)
+          .first();
 
+        if (!existingInvoicePayment) {
+          await c.env.DB
+            .prepare(`
+              INSERT INTO Payment (
+                id, type, payerId, receiverId, amount, currency, status, stripePaymentId,
+                paymentMethod, classId, metadata, completedAt, createdAt
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+            `)
+            .bind(
+              crypto.randomUUID(),
+              'STUDENT_TO_ACADEMY',
+              enrollment.userId,
+              enrollment.academyId,
+              amount_paid ? amount_paid / 100 : 0,
+              'EUR',
+              'COMPLETED',
+              data.id,
+              'stripe',
+              enrollment.classId,
+              JSON.stringify({ 
+                subscriptionId: subscription, 
+                source: 'stripe_recurring',
+                payerName: `${enrollment.firstName} ${enrollment.lastName}`,
+                payerEmail: enrollment.email,
+                className: enrollment.className
+              })
+            )
+            .run();
+        }
       }
     } else if (event === 'invoice.payment_failed') {
       // Recurring payment failed - create pending payment

@@ -86,14 +86,10 @@ export async function autoCreatePendingPayments(db: D1Database, userId: string):
         billingCycleEnd = cycleEnd.toISOString();
         if (monthsOwed > 1) description = `Pago pendiente (${monthsOwed} meses × ${monthlyPrice}€)`;
         else if (monthsOwed === 1) description = 'Pago pendiente mensual';
-        if (amountOwed === 0 && cappedCycles < maxCycles) {
-          const nextDueDate = addMonths(classStart, elapsedCycles);
-          amountOwed = monthlyPrice;
-          monthsOwed = 1;
-          description = 'Pago próximo mensual';
-          nextPaymentDue = nextDueDate.toISOString();
-          billingCycleEnd = nextDueDate.toISOString();
-        }
+        // Note: we deliberately do NOT pre-create PENDING rows for future cycles here.
+        // Doing so caused students to appear blocked immediately after their payment was approved.
+        // The pending-cash UI loop handles showing upcoming payments for the academy view without
+        // creating DB rows.
       }
     } else if (!isMonthly && oneTimePrice > 0) {
       if (totalPaid < oneTimePrice) {
