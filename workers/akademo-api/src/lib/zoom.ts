@@ -90,16 +90,17 @@ export async function createZoomMeeting(options: CreateMeetingOptions): Promise<
     },
     body: JSON.stringify({
       topic: options.topic,
-      type: options.startTime ? 2 : 1, // 1 = Instant (on-demand), 2 = Scheduled (future calendar event)
-      ...(options.startTime ? { start_time: options.startTime } : {}),
+      type: 2, // Always scheduled (type 1 = instant does not support registration)
+      start_time: options.startTime || new Date().toISOString(), // Start now if no future time
       duration: options.duration || 60,
+      registration_type: 1, // Each registrant joins with a unique URL (required for access control)
       settings: {
-        waiting_room: true, // Always on — enrolled users auto-admitted via webhook, others blocked
+        waiting_room: true, // Always on — registered students auto-admitted via webhook
         join_before_host: false,
         mute_upon_entry: true,
         auto_recording: 'cloud',
-        embed_password_in_join_link: true, // Allows SDK to extract password automatically
-        watermark: true, // Watermark overlay shows participant email on video
+        embed_password_in_join_link: true,
+        watermark: true,
       },
     }),
   });
@@ -114,6 +115,36 @@ export async function createZoomMeeting(options: CreateMeetingOptions): Promise<
   const meeting = await meetingResponse.json() as ZoomMeeting;
   
   return meeting;
+}
+
+// Add a registrant to a meeting — returns registrant_id and personal join_url
+export interface ZoomRegistrantResult {
+  registrant_id: string;
+  join_url: string;
+}
+
+export async function addMeetingRegistrant(
+  meetingId: string | number,
+  email: string,
+  firstName: string,
+  lastName: string,
+  config: ZoomConfig,
+): Promise<ZoomRegistrantResult> {
+  const token = await getAccessToken(config);
+  const res = await fetch(`https://api.zoom.us/v2/meetings/${meetingId}/registrants`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email, first_name: firstName, last_name: lastName }),
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    console.error('[Zoom] addMeetingRegistrant error:', err);
+    throw new Error(`Failed to add Zoom registrant: ${err}`);
+  }
+  return res.json() as Promise<ZoomRegistrantResult>;
 }
 
 // Get meeting details
