@@ -368,8 +368,8 @@ webhooks.post('/zoom', async (c) => {
       // Using participant.id as fallback ensures each participant gets a unique key
       const participantUserId = participant?.user_id || participant?.id || `anon-${Date.now()}`;
       const participantEmail = (participant?.email || '').toLowerCase().trim();
-      // participant.id is the per-session participant_id used by Zoom removal API
-      const participantId = participant?.id || participantUserId;
+      // participant_user_id = UUID preferred by Zoom's DELETE API; fall back to numeric id
+      const participantId = participant?.participant_user_id || participant?.id || participantUserId;
       // isHost / isCoHost — never remove the host
       const isHost = !!participant?.is_host;
       const isCoHost = !!participant?.is_cohost;
@@ -405,6 +405,8 @@ webhooks.post('/zoom', async (c) => {
               console.warn(`[Zoom Webhook] Participant with no email joined meeting ${meetingId} — removing (restrictStreamAccess enabled)`);
               try {
                 if (stream.zoomAccountId) {
+                  // Wait 1.5s — Zoom's API needs time to register the participant before removal is possible
+                  await new Promise(resolve => setTimeout(resolve, 1500));
                   const freshToken = await refreshZoomToken(c, stream.zoomAccountId);
                   if (freshToken) {
                     const removeRes = await fetch(
@@ -412,6 +414,10 @@ webhooks.post('/zoom', async (c) => {
                       { method: 'DELETE', headers: { 'Authorization': `Bearer ${freshToken}` } }
                     );
                     console.log(`[Zoom Webhook] Remove no-email participant ${participantId}: ${removeRes.status}`);
+                    if (!removeRes.ok) {
+                      const body = await removeRes.text();
+                      console.error(`[Zoom Webhook] No-email removal failed: ${body}`);
+                    }
                   }
                 }
               } catch (removeErr: any) {
@@ -452,6 +458,8 @@ webhooks.post('/zoom', async (c) => {
                 console.warn(`[Zoom Webhook] Unauthorized participant ${participantEmail} (id=${participantId}) joined meeting ${meetingId} — removing`);
                 try {
                   if (stream.zoomAccountId) {
+                    // Wait 1.5s — Zoom's API needs time to register the participant before removal is possible
+                    await new Promise(resolve => setTimeout(resolve, 1500));
                     const freshToken = await refreshZoomToken(c, stream.zoomAccountId);
                     if (freshToken) {
                       const removeRes = await fetch(
