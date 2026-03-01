@@ -29,7 +29,6 @@ export const registerSchema = z.object({
   firstName: z.string().min(1).max(100).optional(),
   lastName: z.string().min(1).max(100).optional(),
   academyName: z.string().min(1).max(200).optional(),
-  monoacademy: z.boolean().optional().default(false),
   role: z.enum(['STUDENT', 'TEACHER', 'ACADEMY']).default('STUDENT'),
   academyId: z.string().min(1).optional(),
   classId: z.string().min(1).optional(),

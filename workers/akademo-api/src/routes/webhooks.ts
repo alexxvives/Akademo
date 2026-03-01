@@ -764,34 +764,49 @@ webhooks.post('/stripe', async (c) => {
         .first() as any;
 
       if (enrollment) {
-        // Create pending payment
-        await c.env.DB
-          .prepare(`
-            INSERT INTO Payment (
-              id, type, payerId, receiverId, amount, currency, status, paymentMethod,
-              classId, metadata, createdAt
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
-          `)
-          .bind(
-            crypto.randomUUID(),
-            'STUDENT_TO_ACADEMY',
-            enrollment.userId,
-            enrollment.academyId,
-            amount_due ? amount_due / 100 : enrollment.monthlyPrice,
-            'EUR',
-            'PENDING',
-            'stripe',
-            enrollment.classId,
-            JSON.stringify({ 
-              subscriptionId: subscription, 
-              reason: 'payment_failed',
-              payerName: `${enrollment.firstName} ${enrollment.lastName}`,
-              payerEmail: enrollment.email,
-              className: enrollment.className
-            })
-          )
-          .run();
+        const failedAmount = amount_due ? amount_due / 100 : enrollment.monthlyPrice;
 
+        // Dedup: only create one PENDING row per enrollment. If a PENDING row already
+        // exists (e.g. from a previous retry or autoCreatePendingPayments), update its amount.
+        const existingPending: any = await c.env.DB
+          .prepare("SELECT id FROM Payment WHERE payerId = ? AND classId = ? AND status = 'PENDING' LIMIT 1")
+          .bind(enrollment.userId, enrollment.classId)
+          .first();
+
+        if (!existingPending) {
+          await c.env.DB
+            .prepare(`
+              INSERT INTO Payment (
+                id, type, payerId, receiverId, amount, currency, status, paymentMethod,
+                classId, metadata, createdAt
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            `)
+            .bind(
+              crypto.randomUUID(),
+              'STUDENT_TO_ACADEMY',
+              enrollment.userId,
+              enrollment.academyId,
+              failedAmount,
+              'EUR',
+              'PENDING',
+              'stripe',
+              enrollment.classId,
+              JSON.stringify({ 
+                subscriptionId: subscription, 
+                reason: 'payment_failed',
+                payerName: `${enrollment.firstName} ${enrollment.lastName}`,
+                payerEmail: enrollment.email,
+                className: enrollment.className
+              })
+            )
+            .run();
+        } else {
+          // Update amount in case the overdue amount changed
+          await c.env.DB
+            .prepare("UPDATE Payment SET amount = ? WHERE id = ?")
+            .bind(failedAmount, existingPending.id)
+            .run();
+        }
       }
     // END DISABLED SUBSCRIPTION HANDLERS */
     } else if (event === 'payment_intent.succeeded') {

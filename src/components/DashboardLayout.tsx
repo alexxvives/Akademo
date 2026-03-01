@@ -19,7 +19,6 @@ interface User {
   firstName: string;
   lastName: string;
   role: string;
-  monoacademy?: boolean;
   linkedUserId?: string | null;
 }
 
@@ -607,11 +606,6 @@ export default function DashboardLayout({
           { label: 'Pagos', href: '/dashboard/academy/payments', iconType: 'handCoins' as const, badge: pendingPaymentsCount > 0 ? pendingPaymentsCount : undefined, badgeColor: 'bg-[#b0e788]', group: 'Gestión' },
           { label: 'Calendario', href: '/dashboard/academy/calendar', iconType: 'calendar' as const, group: 'Gestión' },
         ];
-        
-        // Filter out Profesores menu for monoacademies
-        if (user?.monoacademy) {
-          return academyMenuItems.filter(item => item.label !== 'Profesores');
-        }
         
         return academyMenuItems;
       default:

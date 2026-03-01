@@ -1334,6 +1334,14 @@ payments.patch('/:id', async (c) => {
     const paymentId = c.req.param('id');
     const { amount, paymentMethod, status } = await c.req.json();
 
+    // Validate status if provided
+    if (status !== undefined) {
+      const validStatuses = ['PENDING', 'PAID', 'COMPLETED', 'REJECTED'];
+      if (!validStatuses.includes(status)) {
+        return c.json(errorResponse(`Invalid status: must be one of ${validStatuses.join(', ')}`), 400);
+      }
+    }
+
     // Get payment details with academy info (join via Class, not ClassEnrollment,
     // so this works even when enrollment is withdrawn or deleted)
     const payment: any = await c.env.DB

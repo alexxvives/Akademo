@@ -25,7 +25,6 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, onClose, defaultRole 
     classId: '',
     classIds: [] as string[],
     academyName: '',
-    monoacademy: false,
   });
   
   const [loading, setLoading] = useState(false);
@@ -84,7 +83,6 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, onClose, defaultRole 
         classId: formData.classId || undefined,
         classIds: formData.classIds.length > 0 ? formData.classIds : undefined,
         academyName: formData.academyName || undefined,
-        monoacademy: formData.monoacademy || undefined,
       };
 
       const response = await apiClient('/auth/register', {
@@ -175,9 +173,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, onClose, defaultRole 
         {formData.role === 'ACADEMY' ? (
           <AcademyFields 
             academyName={formData.academyName}
-            monoacademy={formData.monoacademy}
             onAcademyNameChange={(name) => setFormData({ ...formData, academyName: name })}
-            onMonoacademyChange={(mono) => setFormData({ ...formData, monoacademy: mono })}
           />
         ) : (
           <StudentTeacherFields
