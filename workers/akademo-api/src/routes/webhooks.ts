@@ -819,65 +819,6 @@ webhooks.post('/stripe', async (c) => {
         }
       }
     // END DISABLED SUBSCRIPTION HANDLERS */
-    } else if (event === 'payment_intent.succeeded') {
-      // One-time payment succeeded (for non-recurring enrollments)
-      const { id: paymentIntentId, amount, metadata } = data;
-
-      if (metadata?.enrollmentId) {
-        const enrollment = await c.env.DB
-          .prepare(`
-            SELECT e.*, c.name as className, c.academyId, u.firstName, u.lastName, u.email
-            FROM ClassEnrollment e
-            JOIN Class c ON e.classId = c.id
-            JOIN User u ON e.userId = u.id
-            WHERE e.id = ?
-          `)
-          .bind(metadata.enrollmentId)
-          .first() as any;
-
-        if (enrollment) {
-          // Idempotency: skip if we already recorded this payment intent
-          const existingPI: any = await c.env.DB
-            .prepare('SELECT id FROM Payment WHERE stripePaymentId = ?')
-            .bind(paymentIntentId)
-            .first();
-
-          if (existingPI) {
-            console.log('[Stripe Webhook] payment_intent.succeeded — already recorded, skipping:', paymentIntentId);
-            return c.json(successResponse({ received: true }));
-          }
-
-          // Add to payment history
-          await c.env.DB
-            .prepare(`
-              INSERT INTO Payment (
-                id, type, payerId, payerType, payerName, payerEmail,
-                receiverId, amount, currency, status, stripePaymentId,
-                paymentMethod, classId, description, metadata,
-                createdAt, completedAt
-              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-            `)
-            .bind(
-              crypto.randomUUID(),
-              'STUDENT_TO_ACADEMY',
-              enrollment.userId,
-              'STUDENT',
-              `${enrollment.firstName} ${enrollment.lastName}`,
-              enrollment.email,
-              enrollment.academyId,
-              amount ? amount / 100 : 0,
-              'EUR',
-              'COMPLETED',
-              paymentIntentId,
-              'stripe',
-              enrollment.classId,
-              `Pago único - ${enrollment.className}`,
-              JSON.stringify({ paymentIntentId, source: 'stripe_payment_intent' })
-            )
-            .run();
-
-        }
-      }
     }
 
     return c.json(successResponse({ received: true }));
