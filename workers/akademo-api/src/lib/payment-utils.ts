@@ -54,6 +54,7 @@ export async function autoCreatePendingPayments(db: D1Database, userId: string):
       JOIN Academy a ON c.academyId = a.id
       JOIN User u ON ce.userId = u.id
       WHERE ce.userId = ? AND ce.status = 'APPROVED'
+            AND ce.stripeSubscriptionId IS NULL  -- Stripe handles billing for these; skip manual pending creation
     `)
     .bind(userId)
     .all();
