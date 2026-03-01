@@ -95,7 +95,7 @@ export async function createZoomMeeting(options: CreateMeetingOptions): Promise<
       duration: options.duration || 60,
       registration_type: 1, // Each registrant joins with a unique URL (required for access control)
       settings: {
-        waiting_room: true, // Always on — registered students auto-admitted via webhook
+        waiting_room: false, // Registration (registration_type:1) is the gate — only tk= URL holders can join
         join_before_host: false,
         mute_upon_entry: true,
         auto_recording: 'cloud',
