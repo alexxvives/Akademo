@@ -57,7 +57,7 @@ live.get('/', async (c) => {
       .prepare(`
         SELECT ls.id, ls.classId, ls.teacherId, ls.status, ls.title, ls.startedAt, ls.endedAt, 
                ls.recordingId, ls.createdAt, ls.zoomLink, ls.zoomMeetingId, ls.zoomStartUrl, 
-               ls.participantCount, ls.participantsFetchedAt, ls.participantsData, 
+               ls.participantCount, ls.currentCount, ls.participantsFetchedAt,
                u.firstName, u.lastName
         FROM LiveStream ls
         JOIN User u ON ls.teacherId = u.id
@@ -384,7 +384,7 @@ live.get('/:id', async (c) => {
       .prepare(`
         SELECT ls.id, ls.classId, ls.teacherId, ls.status, ls.title, ls.startedAt, ls.endedAt, 
                ls.recordingId, ls.createdAt, ls.zoomLink, ls.zoomMeetingId, ls.zoomStartUrl, ls.zoomPassword,
-               ls.participantCount, ls.participantsFetchedAt, ls.participantsData, 
+               ls.participantCount, ls.currentCount, ls.participantsFetchedAt, 
                u.firstName, u.lastName, c.name as className
         FROM LiveStream ls
         JOIN User u ON ls.teacherId = u.id
@@ -824,7 +824,7 @@ live.post('/create-lesson', async (c) => {
     const stream = await c.env.DB.prepare(`
       SELECT ls.id, ls.classId, ls.teacherId, ls.status, ls.title, ls.startedAt, ls.endedAt, 
              ls.recordingId, ls.createdAt, ls.zoomLink, ls.zoomMeetingId, ls.zoomStartUrl, 
-             ls.participantCount, ls.participantsFetchedAt, ls.participantsData, 
+             ls.participantCount, ls.currentCount, ls.participantsFetchedAt,
              c.academyId, c.teacherId as classTeacherId, a.ownerId as academyOwnerId,
              CASE WHEN c.id IS NULL THEN 1 ELSE 0 END as classDeleted
       FROM LiveStream ls
@@ -1389,8 +1389,8 @@ live.get('/:id/participants', async (c) => {
     // Get stream with participant data
     const stream = await c.env.DB
       .prepare(`
-        SELECT ls.id, ls.classId, ls.teacherId, ls.status, ls.title, ls.participantCount, 
-               ls.participantsFetchedAt, ls.participantsData, ls.zoomMeetingId
+        SELECT ls.id, ls.classId, ls.teacherId, ls.status, ls.title, ls.participantCount,
+               ls.currentCount, ls.participantsFetchedAt, ls.zoomMeetingId
         FROM LiveStream ls
         WHERE ls.id = ?
       `)
@@ -1419,8 +1419,8 @@ live.get('/:id/participants', async (c) => {
     return c.json(successResponse({
       streamId: stream.id,
       participantCount: stream.participantCount || 0,
+      currentCount: stream.currentCount || 0,
       participantsFetchedAt: stream.participantsFetchedAt,
-      participantsData: stream.participantsData ? JSON.parse(stream.participantsData) : null,
     }));
   } catch (error: any) {
     console.error('[Get Participants] Error:', error);

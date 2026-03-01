@@ -193,7 +193,7 @@ webhooks.post('/zoom', async (c) => {
         try {
           // Get Zoom account for this stream's class
           const streamWithClass = await c.env.DB
-            .prepare('SELECT ls.id, ls.classId, ls.teacherId, ls.status, ls.title, ls.startedAt, ls.endedAt, ls.recordingId, ls.createdAt, ls.zoomLink, ls.zoomMeetingId, ls.zoomStartUrl, ls.participantCount, ls.participantsFetchedAt, ls.participantsData, c.zoomAccountId FROM LiveStream ls JOIN Class c ON ls.classId = c.id WHERE ls.id = ?')
+            .prepare('SELECT ls.id, ls.classId, ls.teacherId, ls.status, ls.title, ls.startedAt, ls.endedAt, ls.recordingId, ls.createdAt, ls.zoomLink, ls.zoomMeetingId, ls.zoomStartUrl, ls.participantCount, ls.currentCount, ls.participantsFetchedAt, c.zoomAccountId FROM LiveStream ls JOIN Class c ON ls.classId = c.id WHERE ls.id = ?')
             .bind(stream.id)
             .first() as any;
 
@@ -400,43 +400,25 @@ webhooks.post('/zoom', async (c) => {
 
       if (stream) {
         const isJoin = event.includes('joined');
-        const storedMax = stream.participantCount || 0;
-
-        // Track current active participants using participantsData JSON
-        let activeParticipants: string[] = [];
-        try {
-          activeParticipants = JSON.parse(stream.participantsData || '[]');
-          if (!Array.isArray(activeParticipants)) activeParticipants = [];
-        } catch { activeParticipants = []; }
+        // currentCount = live running count of people in the meeting right now
+        // participantCount = peak concurrent ever (never decreases)
+        const currentCount: number = stream.currentCount || 0;
+        const storedMax: number = stream.participantCount || 0;
 
         if (isJoin) {
-          // Access control is handled in meeting.participant_waiting (waiting room gate)
-          // By the time we get here the participant was already admitted by us
-
-          // Add participant to active set (avoid duplicates)
-          if (!activeParticipants.includes(participantUserId)) {
-            activeParticipants.push(participantUserId);
-          }
-          // participantCount = max concurrent participants ever seen
-          const newMax = Math.max(storedMax, activeParticipants.length);
+          const newCurrent = currentCount + 1;
+          const newMax = Math.max(storedMax, newCurrent);
           await c.env.DB
-            .prepare('UPDATE LiveStream SET participantCount = ?, participantsData = ?, participantsFetchedAt = ? WHERE id = ?')
-            .bind(newMax, JSON.stringify(activeParticipants), new Date().toISOString(), stream.id)
+            .prepare('UPDATE LiveStream SET currentCount = ?, participantCount = ?, participantsFetchedAt = ? WHERE id = ?')
+            .bind(newCurrent, newMax, new Date().toISOString(), stream.id)
             .run();
         } else {
-          // On leave, remove from active set but never decrease participantCount
-          activeParticipants = activeParticipants.filter(id => id !== participantUserId);
+          const newCurrent = Math.max(0, currentCount - 1);
           await c.env.DB
-            .prepare('UPDATE LiveStream SET participantsData = ?, participantsFetchedAt = ? WHERE id = ?')
-            .bind(JSON.stringify(activeParticipants), new Date().toISOString(), stream.id)
+            .prepare('UPDATE LiveStream SET currentCount = ?, participantsFetchedAt = ? WHERE id = ?')
+            .bind(newCurrent, new Date().toISOString(), stream.id)
             .run();
         }
-
-      } else {
-        // Debug: Show all active streams
-        const activeStreams = await c.env.DB
-          .prepare('SELECT id, zoomMeetingId, title, status FROM LiveStream WHERE status IN ("scheduled", "active") ORDER BY createdAt DESC LIMIT 5')
-          .all();
       }
     }
 
