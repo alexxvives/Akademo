@@ -97,10 +97,9 @@ export async function createZoomMeeting(options: CreateMeetingOptions): Promise<
         waiting_room: true, // Always on — enrolled users auto-admitted via webhook, others blocked
         join_before_host: false,
         mute_upon_entry: true,
-        auto_recording: 'cloud', // Auto-record to cloud
-        embed_password_in_join_link: true, // CRITICAL: Allows SDK to extract password automatically
-        meeting_authentication: true, // Enforce authenticated users only (account-level setting required)
-        watermark: true, // Enable watermark overlay (shows participant email on video/shared content)
+        auto_recording: 'cloud',
+        embed_password_in_join_link: true, // Allows SDK to extract password automatically
+        watermark: true, // Watermark overlay shows participant email on video
       },
     }),
   });
