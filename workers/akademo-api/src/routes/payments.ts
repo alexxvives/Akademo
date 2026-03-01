@@ -91,18 +91,14 @@ payments.post('/initiate', validateBody(initiatePaymentSchema), async (c) => {
     // Use totalAmount from billing cycle (includes catch-up cycles if late joiner)
     const finalAmount = billingCycle.totalAmount;
 
-    // Check if enrollment exists and is not rejected
+    // Check if enrollment exists
     const enrollment: any = await c.env.DB
-      .prepare('SELECT id, status FROM ClassEnrollment WHERE userId = ? AND classId = ?')
+      .prepare('SELECT id FROM ClassEnrollment WHERE userId = ? AND classId = ?')
       .bind(session.id, classId)
       .first();
 
     if (!enrollment) {
       return c.json(errorResponse('You must be enrolled in this class first'), 400);
-    }
-
-    if (enrollment.status === 'REJECTED') {
-      return c.json(errorResponse('Your enrollment has been rejected. Contact the academy.'), 403);
     }
 
     // Check if payment already exists
@@ -623,18 +619,14 @@ payments.post('/stripe-session', async (c) => {
     // Stripe doesn't support Bizum directly — redirect to card payment
     const paymentMethods = ['card', 'link'];
 
-    // Get enrollment ID for webhook — reject if student's enrollment was rejected
+    // Get enrollment ID for webhook
     const enrollment: any = await c.env.DB
-      .prepare('SELECT id, status FROM ClassEnrollment WHERE userId = ? AND classId = ?')
+      .prepare('SELECT id FROM ClassEnrollment WHERE userId = ? AND classId = ?')
       .bind(session.id, classId)
       .first();
 
     if (!enrollment) {
       return c.json(errorResponse('Enrollment not found'), 404);
-    }
-
-    if (enrollment.status === 'REJECTED') {
-      return c.json(errorResponse('Your enrollment has been rejected. Contact the academy.'), 403);
     }
 
     const isRecurring = paymentFrequency === 'monthly';
@@ -1209,18 +1201,14 @@ payments.post('/register-manual', async (c) => {
       return c.json(errorResponse('Class not found or not authorized'), 404);
     }
 
-    // Check if enrollment exists and is not rejected
+    // Check if enrollment exists
     const enrollment: any = await c.env.DB
-      .prepare('SELECT id, status FROM ClassEnrollment WHERE userId = ? AND classId = ?')
+      .prepare('SELECT id FROM ClassEnrollment WHERE userId = ? AND classId = ?')
       .bind(studentId, classId)
       .first();
 
     if (!enrollment) {
       return c.json(errorResponse('Student is not enrolled in this class'), 400);
-    }
-
-    if (enrollment.status === 'REJECTED') {
-      return c.json(errorResponse('Student enrollment has been rejected. Restore their enrollment before registering a payment.'), 400);
     }
 
     // Get student info
