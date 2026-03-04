@@ -3,6 +3,7 @@ import { Bindings } from '../types';
 import { requireAuth } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { nanoid } from 'nanoid';
+import { writeAuditLog } from '../lib/audit';
 
 const admin = new Hono<{ Bindings: Bindings }>();
 
@@ -242,8 +243,17 @@ admin.patch('/academy/:id', async (c) => {
     
     const query = `UPDATE Academy SET ${updates.join(', ')} WHERE id = ?`;
     await c.env.DB.prepare(query).bind(...params).run();
-    
-    
+
+    void writeAuditLog(c.env.DB, {
+      actorId: session.id,
+      actorRole: session.role,
+      action: 'ADMIN_UPDATE_ACADEMY',
+      targetType: 'Academy',
+      targetId: academyId,
+      meta: { fields: Object.keys(body) },
+      ip: c.req.header('CF-Connecting-IP') ?? undefined,
+    });
+
     return c.json(successResponse({ id: academyId, updated: true }));
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
@@ -398,7 +408,16 @@ admin.patch('/classes/:id/assign-zoom', async (c) => {
       'UPDATE Class SET zoomAccountId = ? WHERE id = ?'
     ).bind(zoomAccountId || null, classId).run();
 
-    
+    void writeAuditLog(c.env.DB, {
+      actorId: session.id,
+      actorRole: session.role,
+      action: 'ADMIN_ASSIGN_ZOOM',
+      targetType: 'Class',
+      targetId: classId,
+      meta: { zoomAccountId: zoomAccountId ?? null },
+      ip: c.req.header('CF-Connecting-IP') ?? undefined,
+    });
+
     return c.json(successResponse({ message: 'Zoom account assigned successfully' }));
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
@@ -472,8 +491,17 @@ admin.delete('/users/:id', async (c) => {
     
     // Finally, delete the user
     await c.env.DB.prepare('DELETE FROM User WHERE id = ?').bind(userId).run();
-    
-    
+
+    void writeAuditLog(c.env.DB, {
+      actorId: session.id,
+      actorRole: session.role,
+      action: 'ADMIN_DELETE_USER',
+      targetType: 'User',
+      targetId: userId,
+      meta: { email: user.email, role: user.role },
+      ip: c.req.header('CF-Connecting-IP') ?? undefined,
+    });
+
     return c.json(successResponse({ message: `User ${user.email} deleted successfully` }));
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
@@ -557,6 +585,17 @@ admin.post('/academy/:id/billing', async (c) => {
   const record = await c.env.DB
     .prepare('SELECT * FROM AcademyBilling WHERE id = ?')
     .bind(id).first();
+
+  void writeAuditLog(c.env.DB, {
+    actorId: session.id,
+    actorRole: session.role,
+    action: 'ADMIN_UPSERT_BILLING',
+    targetType: 'AcademyBilling',
+    targetId: id,
+    meta: { academyId, month, year, existing: !!existing?.id },
+    ip: c.req.header('CF-Connecting-IP') ?? undefined,
+  });
+
   return c.json(successResponse(record));
 });
 
@@ -564,9 +603,55 @@ admin.post('/academy/:id/billing', async (c) => {
 admin.delete('/academy/:id/billing/:billingId', async (c) => {
   const session = await requireAuth(c);
   if (session.role !== 'ADMIN') return c.json(errorResponse('Forbidden'), 403);
+  const academyId = c.req.param('id');
   const billingId = c.req.param('billingId');
   await c.env.DB.prepare('DELETE FROM AcademyBilling WHERE id = ?').bind(billingId).run();
+
+  void writeAuditLog(c.env.DB, {
+    actorId: session.id,
+    actorRole: session.role,
+    action: 'ADMIN_DELETE_BILLING',
+    targetType: 'AcademyBilling',
+    targetId: billingId,
+    meta: { academyId },
+    ip: c.req.header('CF-Connecting-IP') ?? undefined,
+  });
+
   return c.json(successResponse({ deleted: true }));
+});
+
+// GET /admin/audit-logs - Query audit log (admin only)
+admin.get('/audit-logs', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    if (session.role !== 'ADMIN') return c.json(errorResponse('Forbidden'), 403);
+
+    const action = c.req.query('action');          // filter by action
+    const actorId = c.req.query('actorId');        // filter by actor
+    const targetId = c.req.query('targetId');      // filter by affected entity
+    const limit = Math.min(parseInt(c.req.query('limit') ?? '100', 10), 500);
+
+    const conditions: string[] = [];
+    const params: (string | number)[] = [];
+
+    if (action)   { conditions.push('action = ?');   params.push(action); }
+    if (actorId)  { conditions.push('actorId = ?');  params.push(actorId); }
+    if (targetId) { conditions.push('targetId = ?'); params.push(targetId); }
+
+    const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+    params.push(limit);
+
+    const rows = await c.env.DB
+      .prepare(`SELECT * FROM AuditLog ${where} ORDER BY createdAt DESC LIMIT ?`)
+      .bind(...params)
+      .all();
+
+    return c.json(successResponse(rows.results ?? []));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Admin Audit Logs] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
 });
 
 export default admin;

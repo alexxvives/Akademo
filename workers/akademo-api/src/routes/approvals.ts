@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { requireAuth } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
+import { writeAuditLog } from '../lib/audit';
 
 const approvals = new Hono<{ Bindings: Bindings }>();
 
@@ -82,6 +83,16 @@ approvals.post('/academy', async (c) => {
       .prepare('UPDATE ClassEnrollment SET status = ? WHERE id = ?')
       .bind(status, enrollmentId)
       .run();
+
+    void writeAuditLog(c.env.DB, {
+      actorId: session.id,
+      actorRole: session.role,
+      action: 'ACADEMY_ENROLLMENT_DECISION',
+      targetType: 'ClassEnrollment',
+      targetId: enrollmentId,
+      meta: { action, status, studentId: enrollment.userId },
+      ip: c.req.header('CF-Connecting-IP') ?? undefined,
+    });
 
     return c.json(successResponse({ message: `Enrollment ${status.toLowerCase()}` }));
   } catch (error: any) {
@@ -165,6 +176,16 @@ approvals.post('/teacher', async (c) => {
       .prepare('UPDATE ClassEnrollment SET status = ? WHERE id = ?')
       .bind(status, enrollmentId)
       .run();
+
+    void writeAuditLog(c.env.DB, {
+      actorId: session.id,
+      actorRole: session.role,
+      action: 'TEACHER_ENROLLMENT_DECISION',
+      targetType: 'ClassEnrollment',
+      targetId: enrollmentId,
+      meta: { action, status, studentId: enrollment.userId },
+      ip: c.req.header('CF-Connecting-IP') ?? undefined,
+    });
 
     return c.json(successResponse({ message: `Enrollment ${status.toLowerCase()}` }));
   } catch (error: any) {
