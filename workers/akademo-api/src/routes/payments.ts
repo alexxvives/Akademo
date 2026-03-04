@@ -649,12 +649,19 @@ payments.post('/stripe-session', async (c) => {
 
     // Get enrollment ID for webhook
     const enrollment: any = await c.env.DB
-      .prepare('SELECT id FROM ClassEnrollment WHERE userId = ? AND classId = ?')
+      .prepare('SELECT id, stripeSubscriptionId FROM ClassEnrollment WHERE userId = ? AND classId = ?')
       .bind(session.id, classId)
       .first();
 
     if (!enrollment) {
       return c.json(errorResponse('Enrollment not found'), 404);
+    }
+
+    // Guard: prevent double-subscription from multi-tab checkout.
+    // If the student already has an active Stripe subscription for this class,
+    // reject the request to avoid creating a duplicate subscription.
+    if (enrollment.stripeSubscriptionId) {
+      return c.json(errorResponse('Ya tienes una suscripción activa para esta clase. Si necesitas cambiar tu plan, cancela la suscripción actual primero.'), 409);
     }
 
     const isRecurring = paymentFrequency === 'monthly';

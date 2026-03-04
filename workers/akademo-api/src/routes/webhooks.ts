@@ -180,6 +180,12 @@ webhooks.post('/zoom', async (c) => {
         .first() as any;
 
       if (stream) {
+        // Idempotency: if recording was already processed (e.g. Zoom retry), skip re-upload
+        if (stream.recordingId) {
+          console.log(`[Zoom Webhook] recording.completed skipped — stream ${stream.id} already has recordingId: ${stream.recordingId}`);
+          return c.json(successResponse({ received: true, skipped: 'already_processed' }));
+        }
+
         try {
           // Get Zoom account for this stream's class
           const streamWithClass = await c.env.DB
@@ -403,23 +409,30 @@ webhooks.post('/zoom', async (c) => {
 
       if (stream) {
         const isJoin = event.includes('joined');
+        // Use atomic SQL increments to avoid race conditions from concurrent participant events.
         // currentCount = live running count of people in the meeting right now
         // participantCount = peak concurrent ever (never decreases)
-        const currentCount: number = stream.currentCount || 0;
-        const storedMax: number = stream.participantCount || 0;
 
         if (isJoin) {
-          const newCurrent = currentCount + 1;
-          const newMax = Math.max(storedMax, newCurrent);
           await c.env.DB
-            .prepare('UPDATE LiveStream SET currentCount = ?, participantCount = ?, participantsFetchedAt = ? WHERE id = ?')
-            .bind(newCurrent, newMax, new Date().toISOString(), stream.id)
+            .prepare(`
+              UPDATE LiveStream 
+              SET currentCount = currentCount + 1,
+                  participantCount = MAX(participantCount, currentCount + 1),
+                  participantsFetchedAt = ?
+              WHERE id = ?
+            `)
+            .bind(new Date().toISOString(), stream.id)
             .run();
         } else {
-          const newCurrent = Math.max(0, currentCount - 1);
           await c.env.DB
-            .prepare('UPDATE LiveStream SET currentCount = ?, participantsFetchedAt = ? WHERE id = ?')
-            .bind(newCurrent, new Date().toISOString(), stream.id)
+            .prepare(`
+              UPDATE LiveStream 
+              SET currentCount = MAX(0, currentCount - 1),
+                  participantsFetchedAt = ?
+              WHERE id = ?
+            `)
+            .bind(new Date().toISOString(), stream.id)
             .run();
         }
       }

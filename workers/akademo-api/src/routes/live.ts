@@ -6,6 +6,23 @@ import { createZoomMeeting, getZoomRecording, getZoomRecordingDownloadUrl } from
 
 const live = new Hono<{ Bindings: Bindings }>();
 
+/**
+ * Check if a student has overdue payments for a class.
+ * Queries the Payment table directly (same logic as videos.ts, bunny.ts, lessons.ts).
+ */
+async function isPaymentOverdue(db: D1Database, userId: string, classId: string): Promise<boolean> {
+  const overdue = await db
+    .prepare(`
+      SELECT p.id FROM Payment p
+      WHERE p.payerId = ? AND p.classId = ? AND p.status = 'PENDING'
+        AND p.nextPaymentDue IS NOT NULL AND p.nextPaymentDue < datetime('now')
+      LIMIT 1
+    `)
+    .bind(userId, classId)
+    .first();
+  return !!overdue;
+}
+
 // GET /live - Get live streams for a class
 live.get('/', async (c) => {
   try {
@@ -21,7 +38,7 @@ live.get('/', async (c) => {
     if (session.role === 'STUDENT') {
       const enrollment = await c.env.DB
         .prepare(`
-          SELECT e.id, e.paymentFrequency, e.nextPaymentDue FROM ClassEnrollment e
+          SELECT e.id FROM ClassEnrollment e
           WHERE e.classId = ? AND e.userId = ? AND e.status = 'APPROVED'
           LIMIT 1
         `)
@@ -32,11 +49,8 @@ live.get('/', async (c) => {
         return c.json(errorResponse('Acceso restringido: debes estar matriculado en esta asignatura'), 403);
       }
 
-      const isOverdue = enrollment.paymentFrequency === 'MONTHLY'
-        && enrollment.nextPaymentDue
-        && enrollment.nextPaymentDue < new Date().toISOString();
-
-      if (isOverdue) {
+      // Check Payment table directly — ClassEnrollment.nextPaymentDue is unreliable for Stripe users
+      if (await isPaymentOverdue(c.env.DB, session.id, classId)) {
         return c.json(errorResponse('Acceso restringido: tienes un pago pendiente en esta asignatura'), 403);
       }
     }
@@ -60,7 +74,17 @@ live.get('/', async (c) => {
       .bind(classId)
       .all();
 
-    return c.json(successResponse(result.results || []));
+    // Strip zoomStartUrl (host-only URL) from student responses to prevent
+    // students from gaining host privileges in the Zoom meeting.
+    const streams = (result.results || []).map((s: any) => {
+      if (session.role === 'STUDENT') {
+        const { zoomStartUrl, ...safe } = s;
+        return safe;
+      }
+      return s;
+    });
+
+    return c.json(successResponse(streams));
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Get Live Streams] Error:', error);

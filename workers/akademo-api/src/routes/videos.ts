@@ -67,6 +67,11 @@ videos.post('/progress', validateBody(videoProgressSchema), async (c) => {
       return c.json(errorResponse('Not enrolled in this class'), 403);
     }
 
+    // Block overdue students from accumulating watch time
+    if (await isPaymentOverdue(c.env.DB, session.id, video.classId as string)) {
+      return c.json(errorResponse('Acceso bloqueado por pago pendiente.'), 403);
+    }
+
     // Check if play state exists
     const existing = await c.env.DB
       .prepare('SELECT * FROM VideoPlayState WHERE videoId = ? AND studentId = ?')
@@ -91,43 +96,43 @@ videos.post('/progress', validateBody(videoProgressSchema), async (c) => {
     }
 
     if (existing) {
-      // Calculate new total watch time
-      const newTotalWatchTime = (existing.totalWatchTimeSeconds || 0) + clampedWatchTime;
-      
-      // Check if exceeding max watch time
-      const status = newTotalWatchTime >= maxWatchTime ? 'BLOCKED' : (existing.status || 'ACTIVE');
-
-      // Update existing
+      // Atomic update: use SQL addition to avoid read-modify-write race condition
+      // when multiple tabs send heartbeats concurrently for the same video.
       await c.env.DB
         .prepare(`
           UPDATE VideoPlayState 
-          SET totalWatchTimeSeconds = ?,
+          SET totalWatchTimeSeconds = totalWatchTimeSeconds + ?,
               lastPositionSeconds = ?,
               lastWatchedAt = ?,
               updatedAt = ?,
-              status = ?
+              status = CASE WHEN (totalWatchTimeSeconds + ?) >= ? THEN 'BLOCKED' ELSE status END
           WHERE id = ?
         `)
         .bind(
-          newTotalWatchTime,
+          clampedWatchTime,
           currentPositionSeconds || 0,
           now,
           now,
-          status,
+          clampedWatchTime,
+          maxWatchTime,
           existing.id
         )
         .run();
 
-      const updatedPlayState = {
-        totalWatchTimeSeconds: newTotalWatchTime,
-        lastPositionSeconds: currentPositionSeconds || 0,
-        sessionStartTime: existing.sessionStartTime,
-        status
-      };
+      // Re-read to get the updated values for the response
+      const updated = await c.env.DB
+        .prepare('SELECT totalWatchTimeSeconds, lastPositionSeconds, sessionStartTime, status FROM VideoPlayState WHERE id = ?')
+        .bind(existing.id)
+        .first() as any;
 
       return c.json(successResponse({
         message: 'Progress saved',
-        playState: updatedPlayState
+        playState: {
+          totalWatchTimeSeconds: updated?.totalWatchTimeSeconds ?? 0,
+          lastPositionSeconds: updated?.lastPositionSeconds ?? 0,
+          sessionStartTime: updated?.sessionStartTime ?? existing.sessionStartTime,
+          status: updated?.status ?? 'ACTIVE'
+        }
       }));
     } else {
       // Create new play state
