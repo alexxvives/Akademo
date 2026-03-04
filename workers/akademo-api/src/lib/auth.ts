@@ -69,6 +69,7 @@ async function signToken(payload: string, env: Bindings): Promise<string> {
 
 /**
  * Verify a signed token and return the payload, or null if invalid.
+ * Enforces token expiry (SESSION_MAX_AGE from issued-at time).
  */
 async function verifyToken(token: string, env: Bindings): Promise<string | null> {
   const parts = token.split('.');
@@ -87,14 +88,33 @@ async function verifyToken(token: string, env: Bindings): Promise<string | null>
     const key = await getSigningKey(env);
     const encoder = new TextEncoder();
     const valid = await crypto.subtle.verify('HMAC', key, sigArray, encoder.encode(payload));
-    return valid ? payload : null;
+    if (!valid) return null;
+
+    // Check expiry — tokens with iat must not exceed SESSION_MAX_AGE
+    try {
+      const parsed = JSON.parse(payload);
+      if (parsed.iat) {
+        const age = Math.floor(Date.now() / 1000) - parsed.iat;
+        if (age > SESSION_MAX_AGE) {
+          return null; // Token expired
+        }
+      }
+      // Legacy tokens without iat are accepted during migration period
+      // TODO: After 2026-03-11, reject tokens without iat
+    } catch {
+      // Simple string payload (legacy) — no expiry check possible
+    }
+
+    return payload;
   } catch {
     return null;
   }
 }
 
 export async function createSession(c: Context<{ Bindings: Bindings }>, userId: string): Promise<string> {
-  const sessionId = await signToken(userId, c.env);
+  // Include issued-at time for server-side expiry enforcement
+  const payload = JSON.stringify({ userId, iat: Math.floor(Date.now() / 1000) });
+  const sessionId = await signToken(payload, c.env);
   setCookie(c, SESSION_COOKIE_NAME, sessionId, {
     httpOnly: true,
     secure: true,
@@ -166,16 +186,17 @@ export async function getSession(c: Context<{ Bindings: Bindings }>): Promise<Se
       return null;
     }
     
-    // CONCURRENT LOGIN PREVENTION FOR STUDENTS
-    // Check if THIS SPECIFIC device session is active (only for STUDENT role)
-    if (user.role === 'STUDENT' && deviceSessionId) {
+    // SESSION REVOCATION CHECK
+    // If token includes a deviceSessionId, verify it hasn't been revoked in D1.
+    // Applies to ALL roles (extended from STUDENT-only for full session control).
+    if (deviceSessionId) {
       const activeSession = await c.env.DB
         .prepare('SELECT id FROM DeviceSession WHERE id = ? AND userId = ? AND isActive = 1 LIMIT 1')
         .bind(deviceSessionId, user.id)
         .first();
       
       if (!activeSession) {
-        // This specific session has been deactivated - user logged in elsewhere
+        // This specific session has been revoked/deactivated
         return null;
       }
     }

@@ -33,6 +33,7 @@ import { Bindings } from './types';
 
 import { requireAuth } from './lib/auth';
 import { successResponse, errorResponse } from './lib/utils';
+import { csrfProtection } from './lib/csrf';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -61,9 +62,12 @@ app.use('*', cors({
   origin: ['https://akademo-edu.com', 'https://www.akademo-edu.com', 'https://akademo.alexxvives.workers.dev', 'http://localhost:3000'],
   credentials: true,
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization', 'Cookie', 'Cache-Control', 'Pragma'],
+  allowHeaders: ['Content-Type', 'Authorization', 'Cookie', 'Cache-Control', 'Pragma', 'X-Requested-With'],
   exposeHeaders: [],
 }));
+
+// CSRF protection: validate Origin + custom header on state-changing requests
+app.use('*', csrfProtection());
 
 // Health check (minimal info in production to prevent reconnaissance)
 app.get('/', (c) => c.json({ status: 'ok' }));

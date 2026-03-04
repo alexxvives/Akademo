@@ -5,7 +5,7 @@ import { Bindings } from '../types';
 import { getSession, createSignedSession, hashPassword } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { loginSchema, registerSchema, validateBody } from '../lib/validation';
-import { loginRateLimit, registerRateLimit, checkEmailRateLimit, emailVerificationRateLimit, forgotPasswordRateLimit } from '../lib/rate-limit';
+import { loginRateLimit, registerRateLimit, checkEmailRateLimit, emailVerificationRateLimit, forgotPasswordRateLimit, resetPasswordRateLimit } from '../lib/rate-limit';
 
 const auth = new Hono<{ Bindings: Bindings }>();
 
@@ -138,10 +138,9 @@ auth.post('/register', registerRateLimit, validateBody(registerSchema), async (c
       }
     }
 
-    // Create device session for students to prevent account sharing
-    let deviceSessionId = null;
-    if (role === 'STUDENT') {
-      deviceSessionId = crypto.randomUUID();
+    // Create device session record for session revocation support (all roles)
+    const deviceSessionId = crypto.randomUUID();
+    {
       const now = new Date().toISOString();
       const userAgent = c.req.header('User-Agent') || 'Unknown';
       const deviceFingerprint = btoa(`${userId}-${Date.now()}`);
@@ -152,10 +151,8 @@ auth.post('/register', registerRateLimit, validateBody(registerSchema), async (c
         .run();
     }
 
-    // Create signed session token - include deviceSessionId for students
-    const sessionData = deviceSessionId 
-      ? JSON.stringify({ userId, deviceSessionId }) 
-      : userId;
+    // Create signed session token with deviceSessionId + issued-at for expiry
+    const sessionData = JSON.stringify({ userId, deviceSessionId, iat: Math.floor(Date.now() / 1000) });
     const sessionId = await createSignedSession(sessionData, c.env);
     setCookie(c, 'academy_session', sessionId, {
       httpOnly: true,
@@ -285,24 +282,21 @@ auth.post('/login', loginRateLimit, validateBody(loginSchema), async (c) => {
       .run();
     // --- End Impossible Travel ---
 
-    // Create device session record (only for students) and include in token
-    let deviceSessionId = null;
-    if (user.role === 'STUDENT') {
-      deviceSessionId = crypto.randomUUID();
-      const now = new Date().toISOString();
+    // Create device session record for session revocation support (all roles)
+    const deviceSessionId = crypto.randomUUID();
+    {
+      const dsNow = new Date().toISOString();
       const userAgent = c.req.header('User-Agent') || 'Unknown';
       const deviceFingerprint = btoa(`${user.id}-${Date.now()}`);
       
       await c.env.DB
         .prepare('INSERT INTO DeviceSession (id, userId, deviceFingerprint, userAgent, isActive, lastActiveAt, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)')
-        .bind(deviceSessionId, user.id, deviceFingerprint, userAgent, 1, now, now)
+        .bind(deviceSessionId, user.id, deviceFingerprint, userAgent, 1, dsNow, dsNow)
         .run();
     }
     
-    // Create signed session token - include deviceSessionId for students to track specific session
-    const sessionData = deviceSessionId 
-      ? JSON.stringify({ userId: user.id, deviceSessionId }) 
-      : user.id as string;
+    // Create signed session token with deviceSessionId + issued-at for expiry
+    const sessionData = JSON.stringify({ userId: user.id, deviceSessionId, iat: Math.floor(Date.now() / 1000) });
     const sessionId = await createSignedSession(sessionData, c.env);
     
     setCookie(c, 'academy_session', sessionId, {
@@ -740,7 +734,7 @@ auth.post('/forgot-password', forgotPasswordRateLimit, async (c) => {
 });
 
 // POST /auth/reset-password
-auth.post('/reset-password', async (c) => {
+auth.post('/reset-password', resetPasswordRateLimit, async (c) => {
   try {
     const { email, code, newPassword } = await c.req.json();
     if (!email || !code || !newPassword) {

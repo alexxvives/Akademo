@@ -1,10 +1,9 @@
 /**
- * Simple in-memory rate limiter for Cloudflare Workers.
- * Uses a sliding window approach with a Map<string, number[]>.
+ * Distributed rate limiter for Cloudflare Workers backed by D1.
  * 
- * NOTE: This is per-isolate, so doesn't persist across cold starts
- * or different edge locations — but it's effective against sustained attacks
- * and costs nothing (no KV/D1 dependency).
+ * Uses a fixed-window approach with D1's RateLimit table.
+ * Consistent across all edge locations and survives cold starts.
+ * Includes in-memory fast-path to reduce D1 reads for hot keys.
  */
 
 import { Context, Next } from 'hono';
@@ -12,27 +11,32 @@ import { Bindings } from '../types';
 import { errorResponse } from './utils';
 
 interface RateLimitConfig {
-  windowMs: number;    // Time window in milliseconds
-  maxRequests: number; // Max requests per window
-  keyFn?: (c: Context<{ Bindings: Bindings }>) => string; // Custom key function
+  /** Human-readable prefix for the rate limit key (e.g. "login", "register") */
+  prefix: string;
+  /** Time window in seconds */
+  windowSec: number;
+  /** Max requests per window */
+  maxRequests: number;
+  /** Custom key function (defaults to client IP) */
+  keyFn?: (c: Context<{ Bindings: Bindings }>) => string;
 }
 
-const store = new Map<string, number[]>();
+/**
+ * In-memory cache to avoid hitting D1 on every request for the same key.
+ * Maps compositeKey -> { count, windowStart, lastChecked }
+ * This is a best-effort optimization — D1 is the source of truth.
+ */
+const memCache = new Map<string, { count: number; windowStart: number; ts: number }>();
 
-// Cleanup old entries every 60 seconds
-let lastCleanup = Date.now();
-function cleanupStore(windowMs: number) {
+// Periodically clean stale in-memory entries (every 60s)
+let lastMemCleanup = Date.now();
+function cleanupMemCache() {
   const now = Date.now();
-  if (now - lastCleanup < 60_000) return;
-  lastCleanup = now;
-  const cutoff = now - windowMs;
-  for (const [key, timestamps] of store) {
-    const valid = timestamps.filter(t => t > cutoff);
-    if (valid.length === 0) {
-      store.delete(key);
-    } else {
-      store.set(key, valid);
-    }
+  if (now - lastMemCleanup < 60_000) return;
+  lastMemCleanup = now;
+  const cutoff = now - 3_600_000; // Keep entries up to 1 hour
+  for (const [key, entry] of memCache) {
+    if (entry.ts < cutoff) memCache.delete(key);
   }
 }
 
@@ -46,27 +50,66 @@ function getClientIp(c: Context<{ Bindings: Bindings }>): string {
 }
 
 /**
- * Create a rate-limiting middleware for Hono
+ * Create a D1-backed rate-limiting middleware for Hono.
+ * Falls back to in-memory-only if D1 query fails (fail-open for availability).
  */
 export function rateLimit(config: RateLimitConfig) {
   return async (c: Context<{ Bindings: Bindings }>, next: Next) => {
-    const key = config.keyFn ? config.keyFn(c) : getClientIp(c);
-    const now = Date.now();
-    const cutoff = now - config.windowMs;
+    const rawKey = config.keyFn ? config.keyFn(c) : getClientIp(c);
+    const compositeKey = `${config.prefix}:${rawKey}`;
+    const nowSec = Math.floor(Date.now() / 1000);
+    const windowStart = nowSec - (nowSec % config.windowSec); // Align to window boundary
 
-    cleanupStore(config.windowMs);
+    cleanupMemCache();
 
-    const timestamps = store.get(key) || [];
-    const validTimestamps = timestamps.filter(t => t > cutoff);
-
-    if (validTimestamps.length >= config.maxRequests) {
-      const retryAfter = Math.ceil((validTimestamps[0] + config.windowMs - now) / 1000);
+    // Fast path: check in-memory cache first
+    const cached = memCache.get(compositeKey);
+    if (cached && cached.windowStart === windowStart && cached.count >= config.maxRequests) {
+      const retryAfter = windowStart + config.windowSec - nowSec;
       c.header('Retry-After', String(retryAfter));
       return c.json(errorResponse('Too many requests. Please try again later.'), 429);
     }
 
-    validTimestamps.push(now);
-    store.set(key, validTimestamps);
+    try {
+      // Upsert: increment counter for this key+window, or create with count=1
+      const result = await c.env.DB.prepare(`
+        INSERT INTO RateLimit (key, windowStart, count) VALUES (?, ?, 1)
+        ON CONFLICT(key, windowStart) DO UPDATE SET count = count + 1
+        RETURNING count
+      `).bind(compositeKey, windowStart).first<{ count: number }>();
+
+      const count = result?.count ?? 1;
+
+      // Update in-memory cache
+      memCache.set(compositeKey, { count, windowStart, ts: Date.now() });
+
+      if (count > config.maxRequests) {
+        const retryAfter = windowStart + config.windowSec - nowSec;
+        c.header('Retry-After', String(retryAfter));
+        return c.json(errorResponse('Too many requests. Please try again later.'), 429);
+      }
+
+      // Opportunistic cleanup: purge expired windows (at most once per invocation, async)
+      // Non-blocking — fire and forget
+      c.executionCtx.waitUntil(
+        c.env.DB.prepare('DELETE FROM RateLimit WHERE windowStart < ?')
+          .bind(windowStart - config.windowSec)
+          .run()
+          .catch(() => { /* ignore cleanup failures */ })
+      );
+    } catch {
+      // D1 failure: fall back to in-memory only (fail-open for availability)
+      if (cached && cached.windowStart === windowStart) {
+        cached.count++;
+        if (cached.count > config.maxRequests) {
+          const retryAfter = windowStart + config.windowSec - nowSec;
+          c.header('Retry-After', String(retryAfter));
+          return c.json(errorResponse('Too many requests. Please try again later.'), 429);
+        }
+      } else {
+        memCache.set(compositeKey, { count: 1, windowStart, ts: Date.now() });
+      }
+    }
 
     await next();
   };
@@ -74,26 +117,37 @@ export function rateLimit(config: RateLimitConfig) {
 
 // Pre-configured rate limiters
 export const loginRateLimit = rateLimit({
-  windowMs: 60_000,      // 1 minute
-  maxRequests: 20,        // 20 login attempts per minute per IP (generous for shared WiFi/NAT)
+  prefix: 'login',
+  windowSec: 60,          // 1 minute
+  maxRequests: 20,         // 20 login attempts per minute per IP
 });
 
 export const registerRateLimit = rateLimit({
-  windowMs: 3_600_000,   // 1 hour
-  maxRequests: 20,        // 20 registrations per hour per IP
+  prefix: 'register',
+  windowSec: 3600,         // 1 hour
+  maxRequests: 20,         // 20 registrations per hour per IP
 });
 
 export const emailVerificationRateLimit = rateLimit({
-  windowMs: 3_600_000,   // 1 hour
-  maxRequests: 5,         // 5 verification emails per hour per IP
+  prefix: 'email-verify',
+  windowSec: 3600,         // 1 hour
+  maxRequests: 5,          // 5 verification emails per hour per IP
 });
 
 export const checkEmailRateLimit = rateLimit({
-  windowMs: 60_000,      // 1 minute
-  maxRequests: 10,        // 10 email checks per minute per IP
+  prefix: 'check-email',
+  windowSec: 60,           // 1 minute
+  maxRequests: 10,         // 10 email checks per minute per IP
 });
 
 export const forgotPasswordRateLimit = rateLimit({
-  windowMs: 3_600_000,   // 1 hour
-  maxRequests: 5,         // 5 password reset attempts per hour per IP
+  prefix: 'forgot-pwd',
+  windowSec: 3600,         // 1 hour
+  maxRequests: 5,          // 5 password reset requests per hour per IP
+});
+
+export const resetPasswordRateLimit = rateLimit({
+  prefix: 'reset-pwd',
+  windowSec: 3600,         // 1 hour
+  maxRequests: 5,          // 5 password reset attempts per hour per IP
 });

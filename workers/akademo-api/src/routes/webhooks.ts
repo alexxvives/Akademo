@@ -425,15 +425,28 @@ webhooks.post('/zoom', async (c) => {
 // POST /webhooks/bunny - Bunny Stream webhook handler for video uploads
 webhooks.post('/bunny', async (c) => {
   try {
-    // Verify shared secret (set via BUNNY_WEBHOOK_SECRET env var)
+    // Verify shared secret via timing-safe comparison to prevent timing attacks.
+    // Accepts secret from either query param (?secret=) or X-Bunny-Webhook-Secret header.
     const expectedSecret = (c.env as unknown as Record<string, unknown>).BUNNY_WEBHOOK_SECRET as string;
     if (!expectedSecret) {
       console.error('[Bunny Webhook] BUNNY_WEBHOOK_SECRET not configured — rejecting');
       return c.json(errorResponse('Webhook secret not configured'), 500);
     }
-    const providedSecret = new URL(c.req.url).searchParams.get('secret');
-    if (providedSecret !== expectedSecret) {
-      console.error('[Bunny Webhook] Invalid or missing secret parameter');
+    const providedSecret = c.req.header('X-Bunny-Webhook-Secret')
+      || new URL(c.req.url).searchParams.get('secret')
+      || '';
+    // Timing-safe comparison using Web Crypto
+    const encoder = new TextEncoder();
+    const expectedBuf = encoder.encode(expectedSecret);
+    const providedBuf = encoder.encode(providedSecret.padEnd(expectedSecret.length));
+    const expectedKey = await crypto.subtle.importKey('raw', expectedBuf, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+    const expectedSig = await crypto.subtle.sign('HMAC', expectedKey, expectedBuf);
+    const providedKey = await crypto.subtle.importKey('raw', providedBuf, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+    const providedSig = await crypto.subtle.sign('HMAC', providedKey, providedBuf);
+    const isMatch = providedSecret.length === expectedSecret.length
+      && new Uint8Array(expectedSig).every((b, i) => b === new Uint8Array(providedSig)[i]);
+    if (!isMatch) {
+      console.error('[Bunny Webhook] Invalid or missing secret');
       return c.json(errorResponse('Unauthorized'), 401);
     }
 
