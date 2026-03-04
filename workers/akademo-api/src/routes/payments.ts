@@ -4,6 +4,7 @@ import { requireAuth, requireRole } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { initiatePaymentSchema } from '../lib/validation';
 import { autoCreatePendingPayments, addMonths, countElapsedCycles } from '../lib/payment-utils';
+import { rateLimit } from '../lib/rate-limit';
 
 const payments = new Hono<{ Bindings: Bindings }>();
 // Helper function to calculate billing cycles based on class start date
@@ -56,8 +57,16 @@ function calculateBillingCycle(classStartDate: string, _enrollmentDate: string, 
   };
 }
 
+// Rate limiter for payment initiation: 5 per minute per IP
+const paymentInitiateRateLimit = rateLimit({
+  prefix: 'pay-init',
+  windowSec: 60,
+  maxRequests: 5,
+  keyFn: (c) => c.req.header('CF-Connecting-IP') || 'unknown',
+});
+
 // POST /payments/initiate - Student initiates a payment for a class
-payments.post('/initiate', async (c) => {
+payments.post('/initiate', paymentInitiateRateLimit, async (c) => {
   try {
     const session = await requireAuth(c);
 
@@ -104,12 +113,26 @@ payments.post('/initiate', async (c) => {
 
     // Check if enrollment exists
     const enrollment: any = await c.env.DB
-      .prepare('SELECT id FROM ClassEnrollment WHERE userId = ? AND classId = ?')
+      .prepare('SELECT id, paymentFrequency FROM ClassEnrollment WHERE userId = ? AND classId = ?')
       .bind(session.id, classId)
       .first();
 
     if (!enrollment) {
       return c.json(errorResponse('You must be enrolled in this class first'), 400);
+    }
+
+    // Lock payment frequency after first completed payment.
+    // If a student has already made a completed payment, they cannot switch frequency.
+    const completedPayment: any = await c.env.DB
+      .prepare(`SELECT id, metadata FROM Payment WHERE payerId = ? AND classId = ? AND status IN ('PAID', 'COMPLETED') LIMIT 1`)
+      .bind(session.id, classId)
+      .first();
+
+    if (completedPayment && enrollment.paymentFrequency) {
+      const lockedFrequency = enrollment.paymentFrequency === 'MONTHLY' ? 'monthly' : 'one-time';
+      if (paymentFrequency !== lockedFrequency) {
+        return c.json(errorResponse(`La frecuencia de pago ya está fijada como "${lockedFrequency}". No se puede cambiar después del primer pago.`), 400);
+      }
     }
 
     // Check if payment already exists
@@ -119,9 +142,9 @@ payments.post('/initiate', async (c) => {
       .first();
 
     if (existingPayment) {
-      // Update existing pending payment with new payment method
-      await c.env.DB
-        .prepare(`
+      // Atomic batch: update payment + sync enrollment frequency
+      await c.env.DB.batch([
+        c.env.DB.prepare(`
           UPDATE Payment 
           SET paymentMethod = ?,
               amount = ?,
@@ -130,8 +153,7 @@ payments.post('/initiate', async (c) => {
               billingCycleEnd = ?,
               createdAt = datetime('now')
           WHERE id = ?
-        `)
-        .bind(
+        `).bind(
           paymentMethod,
           finalAmount, // Use total amount including catch-up
           JSON.stringify({
@@ -147,14 +169,10 @@ payments.post('/initiate', async (c) => {
           billingCycle.nextPaymentDue,
           billingCycle.billingCycleEnd,
           existingPayment.id
-        )
-        .run();
-      
-      // Update enrollment paymentFrequency
-      await c.env.DB
-        .prepare('UPDATE ClassEnrollment SET paymentFrequency = ? WHERE userId = ? AND classId = ?')
-        .bind(isMonthly ? 'MONTHLY' : 'ONE_TIME', session.id, classId)
-        .run();
+        ),
+        c.env.DB.prepare('UPDATE ClassEnrollment SET paymentFrequency = ? WHERE userId = ? AND classId = ?')
+          .bind(isMonthly ? 'MONTHLY' : 'ONE_TIME', session.id, classId)
+      ]);
 
       // Format next payment due date for display
       const formattedNextDue = billingCycle.nextPaymentDue 
@@ -182,21 +200,21 @@ payments.post('/initiate', async (c) => {
 
     // Create Payment record with billing cycle info
     const paymentId = `payment-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
-    await c.env.DB
-      .prepare(`
+
+    // Atomic batch: insert payment + sync enrollment frequency
+    await c.env.DB.batch([
+      c.env.DB.prepare(`
         INSERT INTO Payment (
           id, type, payerId, payerType, receiverId, amount, currency, status,
           paymentMethod, classId, metadata, nextPaymentDue, billingCycleEnd, createdAt
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
-      `)
-      .bind(
+      `).bind(
         paymentId,
         'STUDENT_TO_ACADEMY',
         session.id,
         'STUDENT',
         classData.academyId,
-        finalAmount, // Total including catch-up
+        finalAmount,
         'EUR',
         'PENDING',
         paymentMethod,
@@ -213,14 +231,10 @@ payments.post('/initiate', async (c) => {
         }),
         billingCycle.nextPaymentDue,
         billingCycle.billingCycleEnd
-      )
-      .run();
-
-    // Update enrollment paymentFrequency
-    await c.env.DB
-      .prepare('UPDATE ClassEnrollment SET paymentFrequency = ? WHERE userId = ? AND classId = ?')
-      .bind(isMonthly ? 'MONTHLY' : 'ONE_TIME', session.id, classId)
-      .run();
+      ),
+      c.env.DB.prepare('UPDATE ClassEnrollment SET paymentFrequency = ? WHERE userId = ? AND classId = ?')
+        .bind(isMonthly ? 'MONTHLY' : 'ONE_TIME', session.id, classId)
+    ]);
 
     // Format next payment due date for display
     const formattedNextDue = billingCycle.nextPaymentDue 
@@ -793,42 +807,43 @@ payments.patch('/:id/approve-payment', async (c) => {
 
     // Update Payment status
     const newStatus = approved ? 'PAID' : 'REJECTED';
-    await c.env.DB
-      .prepare(`
+
+    // Atomic batch: update payment + sync enrollment in one transaction
+    const approvalBatch: any[] = [
+      c.env.DB.prepare(`
         UPDATE Payment 
         SET status = ?,
             completedAt = datetime('now')
         WHERE id = ?
-      `)
-      .bind(newStatus, paymentId)
-      .run();
+      `).bind(newStatus, paymentId)
+    ];
 
     // Sync ClassEnrollment paymentFrequency and nextPaymentDue after manual approval
     if (approved && payment.payerId) {
       // Use the enrollment's actual frequency; default to MONTHLY only as last resort
       const freq: string = payment.paymentFrequency || 'MONTHLY';
       if (freq !== 'ONE_TIME' && payment.nextPaymentDue) {
-        await c.env.DB
-          .prepare(`
+        approvalBatch.push(
+          c.env.DB.prepare(`
             UPDATE ClassEnrollment
             SET nextPaymentDue = ?,
                 paymentFrequency = ?
             WHERE userId = ? AND classId = ?
-          `)
-          .bind(payment.nextPaymentDue, freq, payment.payerId, payment.classId)
-          .run();
+          `).bind(payment.nextPaymentDue, freq, payment.payerId, payment.classId)
+        );
       } else {
         // ONE_TIME payments: mark frequency correctly, no recurring due date
-        await c.env.DB
-          .prepare(`
+        approvalBatch.push(
+          c.env.DB.prepare(`
             UPDATE ClassEnrollment
             SET paymentFrequency = ?
             WHERE userId = ? AND classId = ?
-          `)
-          .bind(freq, payment.payerId, payment.classId)
-          .run();
+          `).bind(freq, payment.payerId, payment.classId)
+        );
       }
     }
+
+    await c.env.DB.batch(approvalBatch);
 
     // Send confirmation email to student when payment is approved
     if (approved) {

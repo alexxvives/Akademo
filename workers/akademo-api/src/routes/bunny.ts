@@ -5,6 +5,23 @@ import { successResponse, errorResponse } from '../lib/utils';
 
 const bunny = new Hono<{ Bindings: Bindings }>();
 
+/**
+ * Check if a student has overdue payments for a class.
+ * Returns true if the student should be BLOCKED from accessing content.
+ */
+async function isPaymentOverdue(db: D1Database, userId: string, classId: string): Promise<boolean> {
+  const overdue = await db
+    .prepare(`
+      SELECT p.id FROM Payment p
+      WHERE p.payerId = ? AND p.classId = ? AND p.status = 'PENDING'
+        AND p.nextPaymentDue IS NOT NULL AND p.nextPaymentDue < datetime('now')
+      LIMIT 1
+    `)
+    .bind(userId, classId)
+    .first();
+  return !!overdue;
+}
+
 // Helper to call Bunny API
 async function bunnyApi(endpoint: string, options: RequestInit, apiKey: string) {
   const response = await fetch(`https://video.bunnycdn.com${endpoint}`, {
@@ -115,6 +132,13 @@ bunny.put('/video/upload', async (c) => {
     const apiKey = c.env.BUNNY_STREAM_API_KEY;
     const libraryId = c.env.BUNNY_STREAM_LIBRARY_ID;
 
+    // Guard: check Content-Length before reading body into memory.
+    // Cloudflare Workers have a ~128MB memory limit; reject oversized uploads early.
+    const MAX_PROXY_UPLOAD_BYTES = 100 * 1024 * 1024; // 100 MB
+    const contentLength = parseInt(c.req.header('Content-Length') || '0', 10);
+    if (contentLength > MAX_PROXY_UPLOAD_BYTES) {
+      return c.json(errorResponse(`El archivo es demasiado grande para subir por proxy (máx ${Math.round(MAX_PROXY_UPLOAD_BYTES / 1024 / 1024)} MB). Usa la subida directa a Bunny.`), 413);
+    }
 
     // Read body as ArrayBuffer to avoid stream consumption issues
     let bodyBuffer: ArrayBuffer;
@@ -235,7 +259,7 @@ bunny.get('/video/:guid/stream', async (c) => {
     if (session.role === 'STUDENT') {
       const upload = await c.env.DB
         .prepare(`
-          SELECT ce.id
+          SELECT ce.id, l.classId
           FROM Upload u
           JOIN Video v ON v.uploadId = u.id
           JOIN Lesson l ON v.lessonId = l.id
@@ -244,9 +268,14 @@ bunny.get('/video/:guid/stream', async (c) => {
           LIMIT 1
         `)
         .bind(guid, session.id)
-        .first();
+        .first() as { id: string; classId: string } | null;
       if (!upload) {
         return c.json(errorResponse('Not enrolled in this class'), 403);
+      }
+
+      // Block overdue students from streaming
+      if (await isPaymentOverdue(c.env.DB, session.id, upload.classId)) {
+        return c.json(errorResponse('Acceso bloqueado por pago pendiente.'), 403);
       }
     }
 

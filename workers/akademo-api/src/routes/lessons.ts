@@ -6,6 +6,24 @@ import { validateBody, createLessonSchema, updateLessonSchema, createRatingSchem
 
 const lessons = new Hono<{ Bindings: Bindings }>();
 
+/**
+ * Check if a student has overdue payments for a class.
+ * Returns true if the student should be BLOCKED from accessing content.
+ * A student is blocked if there is a PENDING payment whose nextPaymentDue is in the past.
+ */
+async function isPaymentOverdue(db: D1Database, userId: string, classId: string): Promise<boolean> {
+  const overdue = await db
+    .prepare(`
+      SELECT p.id FROM Payment p
+      WHERE p.payerId = ? AND p.classId = ? AND p.status = 'PENDING'
+        AND p.nextPaymentDue IS NOT NULL AND p.nextPaymentDue < datetime('now')
+      LIMIT 1
+    `)
+    .bind(userId, classId)
+    .first();
+  return !!overdue;
+}
+
 // GET /lessons - List lessons for a class
 lessons.get('/', async (c) => {
   try {
@@ -45,6 +63,11 @@ lessons.get('/', async (c) => {
         WHERE userId = ? AND classId = ? AND status = 'APPROVED'
       `).bind(session.id, classId).first();
       hasAccess = !!enrollment;
+
+      // Block students with overdue payments (server-side enforcement of accessLocked)
+      if (hasAccess && await isPaymentOverdue(c.env.DB, session.id, classId)) {
+        return c.json(errorResponse('Acceso bloqueado por pago pendiente. Por favor, regulariza tu situación de pago.'), 403);
+      }
     }
 
     if (!hasAccess) {
@@ -256,6 +279,10 @@ lessons.get('/:id', async (c) => {
 
       if (!enrollment) {
         return c.json(errorResponse('Not enrolled in this class'), 403);
+      }
+      // Block students with overdue payments
+      if (await isPaymentOverdue(c.env.DB, session.id, lesson.classId as string)) {
+        return c.json(errorResponse('Acceso bloqueado por pago pendiente. Por favor, regulariza tu situación de pago.'), 403);
       }
       // Block access if lesson is scheduled for the future
       if (lesson.releaseDate && new Date(lesson.releaseDate as string) > new Date()) {

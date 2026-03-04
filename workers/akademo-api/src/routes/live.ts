@@ -19,37 +19,25 @@ live.get('/', async (c) => {
     // ── Stream access restriction enforcement ──
     // Only check for STUDENT role (teachers, academy owners, admins always have access)
     if (session.role === 'STUDENT') {
-      const academy = await c.env.DB
+      const enrollment = await c.env.DB
         .prepare(`
-          SELECT a.restrictStreamAccess
-          FROM Class c
-          JOIN Academy a ON c.academyId = a.id
-          WHERE c.id = ?
+          SELECT e.id, e.paymentFrequency, e.nextPaymentDue FROM ClassEnrollment e
+          WHERE e.classId = ? AND e.userId = ? AND e.status = 'APPROVED'
+          LIMIT 1
         `)
-        .bind(classId)
-        .first() as { restrictStreamAccess: number } | null;
+        .bind(classId, session.id)
+        .first() as any;
 
-      if (academy?.restrictStreamAccess === 1) {
-        const enrollment = await c.env.DB
-          .prepare(`
-            SELECT e.id, e.paymentFrequency, e.nextPaymentDue FROM ClassEnrollment e
-            WHERE e.classId = ? AND e.userId = ? AND e.status = 'APPROVED'
-            LIMIT 1
-          `)
-          .bind(classId, session.id)
-          .first() as any;
+      if (!enrollment) {
+        return c.json(errorResponse('Acceso restringido: debes estar matriculado en esta asignatura'), 403);
+      }
 
-        if (!enrollment) {
-          return c.json(errorResponse('Acceso restringido: debes estar matriculado en esta asignatura'), 403);
-        }
+      const isOverdue = enrollment.paymentFrequency === 'MONTHLY'
+        && enrollment.nextPaymentDue
+        && enrollment.nextPaymentDue < new Date().toISOString();
 
-        const isOverdue = enrollment.paymentFrequency === 'MONTHLY'
-          && enrollment.nextPaymentDue
-          && enrollment.nextPaymentDue < new Date().toISOString();
-
-        if (isOverdue) {
-          return c.json(errorResponse('Acceso restringido: tienes un pago pendiente en esta asignatura'), 403);
-        }
+      if (isOverdue) {
+        return c.json(errorResponse('Acceso restringido: tienes un pago pendiente en esta asignatura'), 403);
       }
     }
 

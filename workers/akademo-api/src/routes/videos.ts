@@ -3,8 +3,34 @@ import { Bindings } from '../types';
 import { requireAuth } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { validateBody, videoProgressSchema } from '../lib/validation';
+import { rateLimit } from '../lib/rate-limit';
+
+// Rate limiter for progress resets: 3 resets per hour per student
+const progressResetRateLimit = rateLimit({
+  prefix: 'progress-reset',
+  windowSec: 3600,       // 1 hour
+  maxRequests: 3,        // Max 3 resets per hour
+  // Uses default keyFn (CF-Connecting-IP) — runs before auth
+});
 
 const videos = new Hono<{ Bindings: Bindings }>();
+
+/**
+ * Check if a student has overdue payments for a class.
+ * Returns true if the student should be BLOCKED from accessing content.
+ */
+async function isPaymentOverdue(db: D1Database, userId: string, classId: string): Promise<boolean> {
+  const overdue = await db
+    .prepare(`
+      SELECT p.id FROM Payment p
+      WHERE p.payerId = ? AND p.classId = ? AND p.status = 'PENDING'
+        AND p.nextPaymentDue IS NOT NULL AND p.nextPaymentDue < datetime('now')
+      LIMIT 1
+    `)
+    .bind(userId, classId)
+    .first();
+  return !!overdue;
+}
 
 // POST /videos/progress - Update video watch progress
 videos.post('/progress', validateBody(videoProgressSchema), async (c) => {
@@ -50,9 +76,23 @@ videos.post('/progress', validateBody(videoProgressSchema), async (c) => {
     const maxWatchTime = (((video as any).durationSeconds as number) || 0) * (((video as any).maxWatchTimeMultiplier as number) || 2);
     const now = new Date().toISOString();
 
+    // Server-side clamp: cap watchTimeElapsed to a reasonable interval.
+    // Typical heartbeat = 30s. Allow max 35s per report (30s + 5s jitter).
+    // This prevents both zero-reporting (watching forever) and inflation attacks.
+    const MAX_HEARTBEAT_SECONDS = 35;
+    let clampedWatchTime = Math.min(Math.max(watchTimeElapsed, 0), MAX_HEARTBEAT_SECONDS);
+
+    // Additional validation: if we have a previous record, clamp against real elapsed time
+    if (existing && existing.lastWatchedAt) {
+      const lastUpdate = new Date(existing.lastWatchedAt).getTime();
+      const realElapsed = Math.max(0, (Date.now() - lastUpdate) / 1000);
+      // Allow up to realElapsed + 5s buffer (clock skew)
+      clampedWatchTime = Math.min(clampedWatchTime, realElapsed + 5);
+    }
+
     if (existing) {
       // Calculate new total watch time
-      const newTotalWatchTime = (existing.totalWatchTimeSeconds || 0) + watchTimeElapsed;
+      const newTotalWatchTime = (existing.totalWatchTimeSeconds || 0) + clampedWatchTime;
       
       // Check if exceeding max watch time
       const status = newTotalWatchTime >= maxWatchTime ? 'BLOCKED' : (existing.status || 'ACTIVE');
@@ -92,7 +132,7 @@ videos.post('/progress', validateBody(videoProgressSchema), async (c) => {
     } else {
       // Create new play state
       const playStateId = crypto.randomUUID();
-      const status = watchTimeElapsed >= maxWatchTime ? 'BLOCKED' : 'ACTIVE';
+      const status = clampedWatchTime >= maxWatchTime ? 'BLOCKED' : 'ACTIVE';
 
       await c.env.DB
         .prepare(`
@@ -105,7 +145,7 @@ videos.post('/progress', validateBody(videoProgressSchema), async (c) => {
           playStateId,
           videoId,
           session.id,
-          watchTimeElapsed,
+          clampedWatchTime,
           currentPositionSeconds || 0,
           now,
           now,
@@ -116,7 +156,7 @@ videos.post('/progress', validateBody(videoProgressSchema), async (c) => {
         .run();
 
       const newPlayState = {
-        totalWatchTimeSeconds: watchTimeElapsed,
+        totalWatchTimeSeconds: clampedWatchTime,
         lastPositionSeconds: currentPositionSeconds || 0,
         sessionStartTime: now,
         status
@@ -134,8 +174,8 @@ videos.post('/progress', validateBody(videoProgressSchema), async (c) => {
   }
 });
 
-// POST /videos/progress/reset - Reset video progress
-videos.post('/progress/reset', async (c) => {
+// POST /videos/progress/reset - Reset video progress (rate-limited: 3/hour)
+videos.post('/progress/reset', progressResetRateLimit, async (c) => {
   try {
     const session = await requireAuth(c);
     const { videoId } = await c.req.json();
@@ -395,6 +435,11 @@ videos.get('/:id', async (c) => {
 
       if (!enrollment) {
         return c.json(errorResponse('Not enrolled'), 403);
+      }
+
+      // Block overdue students
+      if (await isPaymentOverdue(c.env.DB, session.id, video.classId as string)) {
+        return c.json(errorResponse('Acceso bloqueado por pago pendiente.'), 403);
       }
 
       // Get play state

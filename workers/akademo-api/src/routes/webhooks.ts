@@ -203,7 +203,19 @@ webhooks.post('/zoom', async (c) => {
             return c.json(successResponse({ received: true, error: 'Zoom account not found' }));
           }
 
-          const accessToken = zoomAccount.accessToken;
+          // Refresh the Zoom access token before use (tokens expire after 1 hour).
+          // Without this, recording downloads fail silently if the token has expired.
+          let accessToken = zoomAccount.accessToken;
+          try {
+            const freshToken = await refreshZoomToken(c, streamWithClass.zoomAccountId);
+            if (freshToken) {
+              accessToken = freshToken;
+            } else {
+              console.warn('[Zoom Webhook] Token refresh returned null, using stored token as fallback');
+            }
+          } catch (refreshErr: any) {
+            console.warn('[Zoom Webhook] Token refresh failed, using stored token:', refreshErr.message);
+          }
 
           // Fetch recording details from Zoom API
           // Use numeric meeting ID (preferred for recordings endpoint)
@@ -628,56 +640,52 @@ webhooks.post('/stripe', async (c) => {
               .bind(sessionId)
               .first();
             
+            // Atomic batch: insert payment + approve enrollment + cleanup PENDING
+            const subscriptionId = subscription || null;
+            const checkoutBatch: any[] = [];
+
             if (!existingPayment) {
-              // Create payment record
-              await c.env.DB
-                .prepare(`
+              checkoutBatch.push(
+                c.env.DB.prepare(`
                   INSERT INTO Payment (
                   id, type, payerId, receiverId, amount, currency, status,
                   stripePaymentId, stripeCheckoutSessionId, paymentMethod, classId,
                   metadata, completedAt, nextPaymentDue, billingCycleEnd, createdAt
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ?, ?, datetime('now'))
-              `)
-              .bind(
-                crypto.randomUUID(),
-                'STUDENT_TO_ACADEMY',
-                enrollment.userId,
-                enrollment.academyId,
-                amount_total ? amount_total / 100 : 0, // Stripe uses cents
-                'EUR',
-                'COMPLETED',
-                sessionId,
-                sessionId,
-                'stripe',
-                enrollment.classId,
-                JSON.stringify({ 
-                  subscriptionId: subscription, 
-                  source: 'stripe_checkout', 
-                  paymentFrequency,
-                  payerName: `${enrollment.firstName} ${enrollment.lastName}`,
-                  payerEmail: enrollment.email
-                }),
-                billingCycle.nextPaymentDue,
-                billingCycle.billingCycleEnd
-              )
-              .run();
-
-            } else {
+                `).bind(
+                  crypto.randomUUID(),
+                  'STUDENT_TO_ACADEMY',
+                  enrollment.userId,
+                  enrollment.academyId,
+                  amount_total ? amount_total / 100 : 0, // Stripe uses cents
+                  'EUR',
+                  'COMPLETED',
+                  sessionId,
+                  sessionId,
+                  'stripe',
+                  enrollment.classId,
+                  JSON.stringify({ 
+                    subscriptionId: subscription, 
+                    source: 'stripe_checkout', 
+                    paymentFrequency,
+                    payerName: `${enrollment.firstName} ${enrollment.lastName}`,
+                    payerEmail: enrollment.email
+                  }),
+                  billingCycle.nextPaymentDue,
+                  billingCycle.billingCycleEnd
+                )
+              );
             }
 
-            // IMPORTANT: Update ClassEnrollment status, paymentFrequency, and save stripeSubscriptionId
-            const subscriptionId = subscription || null;
-            await c.env.DB
-              .prepare('UPDATE ClassEnrollment SET status = ?, paymentFrequency = ?, stripeSubscriptionId = ? WHERE id = ?')
-              .bind('APPROVED', isMonthly ? 'MONTHLY' : 'ONE_TIME', subscriptionId, enrollmentId)
-              .run();
+            checkoutBatch.push(
+              c.env.DB.prepare('UPDATE ClassEnrollment SET status = ?, paymentFrequency = ?, stripeSubscriptionId = ? WHERE id = ?')
+                .bind('APPROVED', isMonthly ? 'MONTHLY' : 'ONE_TIME', subscriptionId, enrollmentId),
+              // Clean up any manually-created or auto-created PENDING rows
+              c.env.DB.prepare("DELETE FROM Payment WHERE payerId = ? AND classId = ? AND status = 'PENDING'")
+                .bind(enrollment.userId, enrollment.classId)
+            );
 
-            // Clean up any manually-created or auto-created PENDING rows now that Stripe has confirmed
-            // payment. Without this, the student's subject page would still show paymentStatus = 'PENDING'.
-            await c.env.DB
-              .prepare("DELETE FROM Payment WHERE payerId = ? AND classId = ? AND status = 'PENDING'")
-              .bind(enrollment.userId, enrollment.classId)
-              .run();
+            await c.env.DB.batch(checkoutBatch);
 
           }
         } else {
@@ -833,6 +841,72 @@ webhooks.post('/stripe', async (c) => {
             .bind(failedAmount, existingPending.id)
             .run();
         }
+      }
+    } else if (event === 'customer.subscription.deleted') {
+      // Subscription cancelled or expired — revoke access and create a PENDING payment
+      const subscriptionId = data.id; // sub_xxx
+
+      const enrollment = await c.env.DB
+        .prepare(`
+          SELECT e.id, e.userId, e.classId, c.name as className, c.monthlyPrice, c.academyId,
+                 u.firstName, u.lastName, u.email
+          FROM ClassEnrollment e
+          JOIN Class c ON e.classId = c.id
+          JOIN User u ON e.userId = u.id
+          WHERE e.stripeSubscriptionId = ?
+        `)
+        .bind(subscriptionId)
+        .first() as any;
+
+      if (enrollment) {
+        // Idempotency: skip if we already cleared this subscription
+        if (enrollment.stripeSubscriptionId) {
+          // Check for existing PENDING before batching writes
+          const existingPending: any = await c.env.DB
+            .prepare("SELECT id FROM Payment WHERE payerId = ? AND classId = ? AND status = 'PENDING' LIMIT 1")
+            .bind(enrollment.userId, enrollment.classId)
+            .first();
+
+          // Atomic batch: clear subscription + create PENDING payment
+          const subDeletedBatch: any[] = [
+            c.env.DB.prepare('UPDATE ClassEnrollment SET stripeSubscriptionId = NULL WHERE id = ?')
+              .bind(enrollment.id)
+          ];
+
+          if (!existingPending) {
+            subDeletedBatch.push(
+              c.env.DB.prepare(`
+                INSERT INTO Payment (
+                  id, type, payerId, receiverId, amount, currency, status, paymentMethod,
+                  classId, metadata, nextPaymentDue, createdAt
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+              `).bind(
+                crypto.randomUUID(),
+                'STUDENT_TO_ACADEMY',
+                enrollment.userId,
+                enrollment.academyId,
+                enrollment.monthlyPrice || 0,
+                'EUR',
+                'PENDING',
+                'stripe',
+                enrollment.classId,
+                JSON.stringify({
+                  subscriptionId,
+                  reason: 'subscription_deleted',
+                  payerName: `${enrollment.firstName} ${enrollment.lastName}`,
+                  payerEmail: enrollment.email,
+                  className: enrollment.className
+                })
+              )
+            );
+          }
+
+          await c.env.DB.batch(subDeletedBatch);
+
+          console.log(`[Stripe Webhook] subscription.deleted: cleared sub ${subscriptionId} for enrollment ${enrollment.id}, created PENDING payment`);
+        }
+      } else {
+        console.log(`[Stripe Webhook] subscription.deleted: no enrollment found for sub ${subscriptionId}`);
       }
     // END DISABLED SUBSCRIPTION HANDLERS */
     }

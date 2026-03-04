@@ -30,6 +30,41 @@ const MAX_FILE_SIZES: Record<string, number> = {
 };
 const DEFAULT_MAX_SIZE = 50 * 1024 * 1024; // 50 MB
 
+/**
+ * Magic byte signatures for common file types.
+ * Used to verify that the file content matches its declared Content-Type.
+ * Prevents Content-Type spoofing (e.g., uploading HTML as image/jpeg).
+ */
+const MAGIC_BYTES: { mimeType: string; bytes: number[] }[] = [
+  { mimeType: 'image/jpeg', bytes: [0xFF, 0xD8, 0xFF] },
+  { mimeType: 'image/png', bytes: [0x89, 0x50, 0x4E, 0x47] },
+  { mimeType: 'image/gif', bytes: [0x47, 0x49, 0x46, 0x38] },
+  { mimeType: 'image/webp', bytes: [0x52, 0x49, 0x46, 0x46] }, // RIFF header
+  { mimeType: 'application/pdf', bytes: [0x25, 0x50, 0x44, 0x46] }, // %PDF
+  { mimeType: 'video/mp4', bytes: [] }, // MP4 uses ftyp box at offset 4 — checked separately
+  { mimeType: 'video/webm', bytes: [0x1A, 0x45, 0xDF, 0xA3] },
+];
+
+/** Verify file content matches declared MIME type using magic bytes */
+function verifyMagicBytes(data: ArrayBuffer, declaredMime: string): boolean {
+  const header = new Uint8Array(data.slice(0, 12));
+
+  // Special case: MP4 uses 'ftyp' box at offset 4
+  if (declaredMime === 'video/mp4') {
+    return header.length >= 8
+      && header[4] === 0x66 && header[5] === 0x74 && header[6] === 0x79 && header[7] === 0x70;
+  }
+
+  const match = MAGIC_BYTES.find(m => m.mimeType === declaredMime);
+  if (!match || match.bytes.length === 0) {
+    // No magic bytes defined for this type — allow (e.g., office docs, audio)
+    return true;
+  }
+
+  if (header.length < match.bytes.length) return false;
+  return match.bytes.every((b, i) => header[i] === b);
+}
+
 /** Sanitize a file name: remove path traversal, null bytes, control chars */
 function sanitizeFileName(name: string): string {
   return name
@@ -111,6 +146,11 @@ storage.post('/upload', async (c) => {
 
     // Read file as ArrayBuffer
     const fileData = await file.arrayBuffer();
+
+    // Verify file content matches declared MIME type (magic byte check)
+    if (!verifyMagicBytes(fileData, file.type)) {
+      return c.json(errorResponse(`El contenido del archivo no coincide con el tipo declarado (${file.type}). Archivo rechazado.`), 400);
+    }
 
     // Upload to R2
     await c.env.STORAGE.put(path, fileData, {

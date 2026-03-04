@@ -283,10 +283,52 @@ async function handleScheduled(env: Bindings) {
   }
 }
 
+// ============ Orphan Cleanup ============
+// Deletes R2 objects that have no matching Upload row in D1.
+// Runs daily — only removes objects older than 24 hours to avoid
+// racing with in-progress uploads.
+async function handleOrphanCleanup(env: Bindings) {
+  console.log('[Cleanup] Orphan R2 object scan started');
+  const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+  const cutoff = new Date(Date.now() - ONE_DAY_MS);
+  let deleted = 0;
+  let scanned = 0;
+  let cursor: string | undefined;
+
+  try {
+    do {
+      const listed = await env.STORAGE.list({ limit: 500, cursor });
+      for (const obj of listed.objects) {
+        scanned++;
+        // Skip objects newer than 24h — they may still be in-progress
+        if (obj.uploaded && new Date(obj.uploaded) > cutoff) continue;
+
+        // Check if a matching Upload record exists
+        const row = await env.DB
+          .prepare('SELECT id FROM Upload WHERE storagePath = ? LIMIT 1')
+          .bind(obj.key)
+          .first();
+
+        if (!row) {
+          await env.STORAGE.delete(obj.key);
+          deleted++;
+          console.log(`[Cleanup] Deleted orphan: ${obj.key}`);
+        }
+      }
+      cursor = listed.truncated ? listed.cursor : undefined;
+    } while (cursor);
+
+    console.log(`[Cleanup] Done — scanned ${scanned}, deleted ${deleted} orphan(s)`);
+  } catch (error) {
+    console.error('[Cleanup] Error during orphan scan:', error);
+  }
+}
+
 // Export handler that supports both HTTP requests and scheduled events
 export default {
   fetch: app.fetch,
   scheduled: async (event: any, env: Bindings, ctx: any) => {
     await handleScheduled(env);
+    ctx.waitUntil(handleOrphanCleanup(env));
   },
 };
