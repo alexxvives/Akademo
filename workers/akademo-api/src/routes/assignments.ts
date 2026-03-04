@@ -4,6 +4,7 @@ import { requireAuth } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { nanoid } from 'nanoid';
 import { validateBody, createAssignmentSchema, gradeSubmissionSchema } from '../lib/validation';
+import { isPaymentOverdue } from '../lib/payment-utils';
 
 const assignments = new Hono<{ Bindings: Bindings }>();
 
@@ -114,7 +115,8 @@ assignments.get('/', async (c) => {
           s.gradedAt,
           s.version,
           GROUP_CONCAT(aa.uploadId) as attachmentIds,
-          COUNT(DISTINCT aa.id) as attachmentCount
+          COUNT(DISTINCT aa.id) as attachmentCount,
+          e.classId as enrolledClassId
         FROM Assignment a
         JOIN Class c ON a.classId = c.id
         JOIN ClassEnrollment e ON c.id = e.classId
@@ -127,7 +129,20 @@ assignments.get('/', async (c) => {
         ORDER BY a.dueDate DESC, a.createdAt DESC
       `;
       const result = await c.env.DB.prepare(query).bind(session.id, session.id, session.id).all();
-      return c.json(successResponse(result.results || []));
+
+      // Filter out assignments from classes with overdue payments
+      const filtered: any[] = [];
+      const overdueCache = new Map<string, boolean>();
+      for (const row of (result.results || []) as any[]) {
+        const cId = row.enrolledClassId || row.classId;
+        if (!overdueCache.has(cId)) {
+          overdueCache.set(cId, await isPaymentOverdue(c.env.DB, session.id, cId));
+        }
+        if (!overdueCache.get(cId)) {
+          filtered.push(row);
+        }
+      }
+      return c.json(successResponse(filtered));
     }
 
     if (!classId) {
@@ -179,6 +194,19 @@ assignments.get('/', async (c) => {
       `;
       bindings = [classId, session.id];
     } else if (session.role === 'STUDENT') {
+      // Verify enrollment before listing assignments for a specific class
+      const enrollment = await c.env.DB.prepare(
+        "SELECT id FROM ClassEnrollment WHERE userId = ? AND classId = ? AND status = 'APPROVED'"
+      ).bind(session.id, classId).first();
+      if (!enrollment) {
+        return c.json(errorResponse('No estás matriculado en esta clase'), 403);
+      }
+
+      // Block students with overdue payments
+      if (await isPaymentOverdue(c.env.DB, session.id, classId)) {
+        return c.json(errorResponse('Acceso bloqueado por pago pendiente.'), 403);
+      }
+
       // Students see assignments with their submission status for specific class
       query = `
         SELECT 
@@ -437,8 +465,18 @@ assignments.get('/:id', async (c) => {
       return c.json(successResponse({ ...assignment, submissions: submissions.results || [] }));
     }
 
-    // For students, include only their own submission (latest version)
+    // For students, verify enrollment + payment wall before showing assignment details
     if (session.role === 'STUDENT') {
+      const enrollment = await c.env.DB.prepare(
+        "SELECT id FROM ClassEnrollment WHERE userId = ? AND classId = ? AND status = 'APPROVED'"
+      ).bind(session.id, assignment.classId).first();
+      if (!enrollment) {
+        return c.json(errorResponse('No estás matriculado en esta clase'), 403);
+      }
+      if (await isPaymentOverdue(c.env.DB, session.id, assignment.classId as string)) {
+        return c.json(errorResponse('Acceso bloqueado por pago pendiente.'), 403);
+      }
+
       const submission = await c.env.DB.prepare(`
         SELECT s.*, up.fileName as submissionFileName, up.storagePath as submissionStoragePath
         FROM AssignmentSubmission s
@@ -495,6 +533,11 @@ assignments.post('/:id/submit', async (c) => {
 
     if (!enrollment) {
       return c.json(errorResponse('You are not enrolled in this class'), 403);
+    }
+
+    // Block overdue students from submitting assignments
+    if (await isPaymentOverdue(c.env.DB, session.id, assignment.classId as string)) {
+      return c.json(errorResponse('Acceso bloqueado por pago pendiente.'), 403);
     }
 
     // Check if submission already exists
