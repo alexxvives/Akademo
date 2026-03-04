@@ -170,16 +170,18 @@ lessons.get('/:id', async (c) => {
 
     // Handle demo lessons
     if (lessonId.startsWith('demo-')) {
+      // Demo video GUID stored in env var — falls back to a harmless public demo video
+      const demoVideoGuid = (c.env as unknown as Record<string, unknown>).BUNNY_DEMO_VIDEO_GUID as string || '912efe98-e6af-4c29-ada3-2617f0ff6674';
       // Return demo lesson data
       const demoLessons = [
-        { id: 'demo-l1', title: 'Introducción al Curso', classId: 'demo-c1', className: 'Programación Web', videoGuid: '912efe98-e6af-4c29-ada3-2617f0ff6674', duration: 3600 },
-        { id: 'demo-l2', title: 'Variables y Tipos de Datos', classId: 'demo-c1', className: 'Programación Web', videoGuid: '912efe98-e6af-4c29-ada3-2617f0ff6674', duration: 3600 },
-        { id: 'demo-l3', title: 'Funciones y Scope', classId: 'demo-c1', className: 'Programación Web', videoGuid: '912efe98-e6af-4c29-ada3-2617f0ff6674', duration: 3600 },
-        { id: 'demo-l4', title: 'Arrays y Objetos', classId: 'demo-c1', className: 'Programación Web', videoGuid: '912efe98-e6af-4c29-ada3-2617f0ff6674', duration: 3600 },
-        { id: 'demo-l5', title: 'Límites y Continuidad', classId: 'demo-c2', className: 'Matemáticas Avanzadas', videoGuid: '912efe98-e6af-4c29-ada3-2617f0ff6674', duration: 3600 },
-        { id: 'demo-l6', title: 'Derivadas', classId: 'demo-c2', className: 'Matemáticas Avanzadas', videoGuid: '912efe98-e6af-4c29-ada3-2617f0ff6674', duration: 3600 },
-        { id: 'demo-l7', title: 'Integrales Definidas', classId: 'demo-c2', className: 'Matemáticas Avanzadas', videoGuid: '912efe98-e6af-4c29-ada3-2617f0ff6674', duration: 3600 },
-        { id: 'demo-l8', title: 'Principios de Diseño', classId: 'demo-c3', className: 'Diseño Gráfico', videoGuid: '912efe98-e6af-4c29-ada3-2617f0ff6674', duration: 3600 },
+        { id: 'demo-l1', title: 'Introducción al Curso', classId: 'demo-c1', className: 'Programación Web', videoGuid: demoVideoGuid, duration: 3600 },
+        { id: 'demo-l2', title: 'Variables y Tipos de Datos', classId: 'demo-c1', className: 'Programación Web', videoGuid: demoVideoGuid, duration: 3600 },
+        { id: 'demo-l3', title: 'Funciones y Scope', classId: 'demo-c1', className: 'Programación Web', videoGuid: demoVideoGuid, duration: 3600 },
+        { id: 'demo-l4', title: 'Arrays y Objetos', classId: 'demo-c1', className: 'Programación Web', videoGuid: demoVideoGuid, duration: 3600 },
+        { id: 'demo-l5', title: 'Límites y Continuidad', classId: 'demo-c2', className: 'Matemáticas Avanzadas', videoGuid: demoVideoGuid, duration: 3600 },
+        { id: 'demo-l6', title: 'Derivadas', classId: 'demo-c2', className: 'Matemáticas Avanzadas', videoGuid: demoVideoGuid, duration: 3600 },
+        { id: 'demo-l7', title: 'Integrales Definidas', classId: 'demo-c2', className: 'Matemáticas Avanzadas', videoGuid: demoVideoGuid, duration: 3600 },
+        { id: 'demo-l8', title: 'Principios de Diseño', classId: 'demo-c3', className: 'Diseño Gráfico', videoGuid: demoVideoGuid, duration: 3600 },
       ];
       
       const demoLesson = demoLessons.find(l => l.id === lessonId);

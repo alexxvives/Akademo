@@ -16,6 +16,27 @@ const CSP = [
   "frame-ancestors 'self'",
 ].join('; ');
 
+/** Apply all security headers to a response */
+function applySecurityHeaders(res: NextResponse): NextResponse {
+  res.headers.set('Content-Security-Policy', CSP);
+  res.headers.set('X-Content-Type-Options', 'nosniff');
+  res.headers.set('X-Frame-Options', 'SAMEORIGIN');
+  res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self), payment=()');
+  return res;
+}
+
+/**
+ * Structural validation of the session cookie format (V-17).
+ * Verifies the cookie looks like a properly signed token (base64url.base64url)
+ * without requiring the SESSION_SECRET (which is in the API worker).
+ * Full HMAC verification happens at the API layer.
+ */
+const SIGNED_TOKEN_RE = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
+function hasValidCookieFormat(value: string): boolean {
+  return SIGNED_TOKEN_RE.test(value);
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -23,21 +44,17 @@ export function middleware(request: NextRequest) {
   const publicPaths = ['/', '/login', '/register', '/api/auth', '/join', '/api/join'];
 
   if (publicPaths.some(path => pathname.startsWith(path))) {
-    const res = NextResponse.next();
-    res.headers.set('Content-Security-Policy', CSP);
-    return res;
+    return applySecurityHeaders(NextResponse.next());
   }
 
-  // Check for session cookie
+  // Check for session cookie — must exist AND have the correct signed-token format
   const sessionCookie = request.cookies.get('academy_session');
 
-  if (!sessionCookie) {
+  if (!sessionCookie || !hasValidCookieFormat(sessionCookie.value)) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  const res = NextResponse.next();
-  res.headers.set('Content-Security-Policy', CSP);
-  return res;
+  return applySecurityHeaders(NextResponse.next());
 }
 
 export const config = {

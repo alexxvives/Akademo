@@ -151,3 +151,21 @@ export const resetPasswordRateLimit = rateLimit({
   windowSec: 3600,         // 1 hour
   maxRequests: 5,          // 5 password reset attempts per hour per IP
 });
+
+export const exploreRateLimit = rateLimit({
+  prefix: 'explore',
+  windowSec: 60,           // 1 minute
+  maxRequests: 30,         // 30 browse requests per minute per IP (anti-scraping)
+});
+
+export const joinRateLimit = rateLimit({
+  prefix: 'join',
+  windowSec: 60,           // 1 minute
+  maxRequests: 20,         // 20 join page loads per minute per IP (anti-enumeration)
+});
+
+export const academyRegisterRateLimit = rateLimit({
+  prefix: 'academy-reg',
+  windowSec: 86400,        // 24 hours
+  maxRequests: 3,          // Max 3 new academies per day per IP
+});

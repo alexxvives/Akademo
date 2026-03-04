@@ -5,7 +5,7 @@ import { Bindings } from '../types';
 import { getSession, createSignedSession, hashPassword } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { loginSchema, registerSchema, validateBody } from '../lib/validation';
-import { loginRateLimit, registerRateLimit, checkEmailRateLimit, emailVerificationRateLimit, forgotPasswordRateLimit, resetPasswordRateLimit } from '../lib/rate-limit';
+import { loginRateLimit, registerRateLimit, checkEmailRateLimit, emailVerificationRateLimit, forgotPasswordRateLimit, resetPasswordRateLimit, joinRateLimit, academyRegisterRateLimit } from '../lib/rate-limit';
 
 const auth = new Hono<{ Bindings: Bindings }>();
 
@@ -81,6 +81,25 @@ auth.post('/register', registerRateLimit, validateBody(registerSchema), async (c
     // TEACHER self-registration is disabled — teachers are invited directly by academies
     if (role === 'TEACHER') {
       return c.json(errorResponse('Teachers must be invited directly by an academy'), 400);
+    }
+
+    // V-08: Rate limit ACADEMY self-registration — max 3 per day per IP
+    if (role === 'ACADEMY') {
+      const ip = c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For')?.split(',')[0]?.trim() || 'unknown';
+      const key = `academy-reg:${ip}`;
+      const windowStart = Math.floor(Date.now() / 1000 / 86400) * 86400; // Start of today (UTC, aligned to day)
+      try {
+        const rl = await c.env.DB.prepare(
+          `INSERT INTO RateLimit (key, windowStart, count) VALUES (?, ?, 1)
+           ON CONFLICT(key, windowStart) DO UPDATE SET count = count + 1
+           RETURNING count`
+        ).bind(key, windowStart).first<{ count: number }>();
+        if ((rl?.count ?? 1) > 3) {
+          return c.json(errorResponse('Too many academy registrations from this IP. Please try again tomorrow.'), 429);
+        }
+      } catch {
+        // D1 failure — allow registration (fail-open)
+      }
     }
 
     // Check if user exists
@@ -549,7 +568,7 @@ auth.post('/verify-email', emailVerificationRateLimit, async (c) => {
 
 // GET /auth/join/:teacherId - Get teacher info and classes for student enrollment
 // This is a public endpoint (no auth required) for the student join flow
-auth.get('/join/:teacherId', async (c) => {
+auth.get('/join/:teacherId', joinRateLimit, async (c) => {
   try {
     const teacherId = c.req.param('teacherId');
 
@@ -625,7 +644,7 @@ auth.get('/join/:teacherId', async (c) => {
 
 // GET /auth/join/academy/:academyId - Get academy info and classes for student enrollment
 // This is a public endpoint (no auth required) for the academy join flow
-auth.get('/join/academy/:academyId', async (c) => {
+auth.get('/join/academy/:academyId', joinRateLimit, async (c) => {
   try {
     const academyId = c.req.param('academyId');
 

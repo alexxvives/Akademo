@@ -29,6 +29,7 @@ export interface Bindings {
   BUNNY_STREAM_TOKEN_KEY: string;
   BUNNY_API_KEY: string;
   BUNNY_LIBRARY_ID: string;
+  BUNNY_DEMO_VIDEO_GUID?: string;
   
   // Zoom
   ZOOM_ACCOUNT_ID: string;

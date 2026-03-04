@@ -2,11 +2,12 @@ import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { requireAuth } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
+import { exploreRateLimit } from '../lib/rate-limit';
 
 const explore = new Hono<{ Bindings: Bindings }>();
 
 // GET /explore/academies - Browse all academies
-explore.get('/academies', async (c) => {
+explore.get('/academies', exploreRateLimit, async (c) => {
   try {
     const limit = Math.max(1, Math.min(parseInt(c.req.query('limit') || '50') || 50, 100));
     const offset = Math.max(0, parseInt(c.req.query('offset') || '0') || 0);
@@ -37,7 +38,7 @@ explore.get('/academies', async (c) => {
 });
 
 // GET /explore/academies/:id/classes - Get classes for academy
-explore.get('/academies/:id/classes', async (c) => {
+explore.get('/academies/:id/classes', exploreRateLimit, async (c) => {
   try {
     const academyId = c.req.param('id');
 
@@ -70,7 +71,7 @@ explore.get('/academies/:id/classes', async (c) => {
 });
 
 // GET /explore/academies/:id/teachers - Get teachers for academy
-explore.get('/academies/:id/teachers', async (c) => {
+explore.get('/academies/:id/teachers', exploreRateLimit, async (c) => {
   try {
     const academyId = c.req.param('id');
 
