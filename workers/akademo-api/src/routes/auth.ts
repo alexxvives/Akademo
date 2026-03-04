@@ -166,8 +166,12 @@ auth.post('/register', registerRateLimit, validateBody(registerSchema), async (c
       domain: '.akademo-edu.com',
     });
 
+    // SECURITY NOTE: Token is returned in the JSON body because the httpOnly cookie
+    // (domain=.akademo-edu.com, SameSite=Lax) is NOT sent cross-origin to the API worker
+    // at akademo-api.alexxvives.workers.dev. The frontend stores this in localStorage and
+    // sends it as a Bearer token. To eliminate this, move the API to api.akademo-edu.com.
     return c.json(successResponse({
-      token: sessionId, // Return signed token for cross-domain auth
+      token: sessionId,
       id: userId,
       email: email.toLowerCase(),
       firstName: userFirstName,
@@ -326,8 +330,12 @@ auth.post('/login', loginRateLimit, validateBody(loginSchema), async (c) => {
         .run();
     }
 
+    // SECURITY NOTE: Token is returned in the JSON body because the httpOnly cookie
+    // (domain=.akademo-edu.com, SameSite=Lax) is NOT sent cross-origin to the API worker
+    // at akademo-api.alexxvives.workers.dev. The frontend stores this in localStorage and
+    // sends it as a Bearer token. To eliminate this, move the API to api.akademo-edu.com.
     return c.json(successResponse({
-      token: sessionId, // Return signed token for cross-domain auth
+      token: sessionId,
       id: user.id,
       email: user.email,
       firstName: user.firstName,

@@ -36,15 +36,14 @@ NEXT_PUBLIC_ZOOM_CLIENT_ID = "W2jPo9CJR0uZbFnEWtBF7Q"
 # Google Maps API key (public, for address autocomplete)
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY = "AIzaSyDUn8h1Aw7RwCYRxHiPl3hfOLfcKqrqsmM"
 
-# Bunny Stream for video hosting
+# Bunny Stream non-secret config
 BUNNY_STREAM_LIBRARY_ID = "571240"
-BUNNY_STREAM_API_KEY = "93fa73e5-fd14-4d81-b3431ad52c89-f75a-452a"
 BUNNY_STREAM_CDN_HOSTNAME = "vz-bb8d111e-8eb.b-cdn.net"
-BUNNY_STREAM_TOKEN_KEY = "5ca828dd-a4ec-45c8-a945-61a6a1bd96f4"
 
-# Zoom credentials (for webhook API calls)
-# These are set via `wrangler secret put` for security:
-# ZOOM_ACCOUNT_ID
-# ZOOM_CLIENT_ID  
-# ZOOM_CLIENT_SECRET
-# ZOOM_WEBHOOK_SECRET
+# ⚠️ SECURITY: All secrets are managed via `wrangler secret put`
+# BUNNY_STREAM_API_KEY - Configured
+# BUNNY_STREAM_TOKEN_KEY - Configured
+# ZOOM_ACCOUNT_ID - Configured
+# ZOOM_CLIENT_ID - Configured
+# ZOOM_CLIENT_SECRET - Configured
+# ZOOM_WEBHOOK_SECRET - Configured

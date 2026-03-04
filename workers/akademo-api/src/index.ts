@@ -62,18 +62,11 @@ app.use('*', cors({
   credentials: true,
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization', 'Cookie', 'Cache-Control', 'Pragma'],
-  exposeHeaders: ['Set-Cookie'],
+  exposeHeaders: [],
 }));
 
-// Health check
-app.get('/', (c) => c.json({ 
-  status: 'ok', 
-  service: 'akademo-api',
-  version: '3.4',
-  routes: 21,
-  phase: 'Assignments System',
-  timestamp: new Date().toISOString() 
-}));
+// Health check (minimal info in production to prevent reconnaissance)
+app.get('/', (c) => c.json({ status: 'ok' }));
 
 // Routes - Phase 1: Core Routes
 app.route('/auth', authRoutes);
@@ -237,6 +230,18 @@ async function handleScheduled(env: Bindings) {
           const monthOffset = expectedMonths - overdueMonths + i;
           const dueDate = new Date(startDate);
           dueDate.setMonth(dueDate.getMonth() + monthOffset);
+
+          // Idempotency check: skip if a payment already exists for this user+class+month
+          const billingMonth = `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, '0')}`;
+          const existingPayment = await env.DB.prepare(`
+            SELECT id FROM Payment 
+            WHERE payerId = ? AND classId = ? 
+              AND metadata LIKE ?
+          `).bind(enrollment.userId, enrollment.classId, `%"monthOffset":${monthOffset}%`).first();
+
+          if (existingPayment) {
+            continue; // Skip — already generated for this billing period
+          }
 
           await env.DB.prepare(`
             INSERT INTO Payment (

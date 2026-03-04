@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
+  "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://maps.googleapis.com",
   "worker-src blob: 'self'",
   "style-src 'self' 'unsafe-inline' https:",
   "img-src 'self' data: blob: https:",
@@ -11,6 +11,9 @@ const CSP = [
   "font-src 'self' https: data:",
   "frame-src 'self' https:",
   "media-src 'self' blob: https:",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'self'",
 ].join('; ');
 
 export function middleware(request: NextRequest) {

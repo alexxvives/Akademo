@@ -100,6 +100,15 @@ storage.post('/upload', async (c) => {
     const folder = type || 'uploads';
     const path = customPath ? sanitizePath(customPath) : `${folder}/${id}-${safeName}`;
 
+    // SECURITY: Validate upload path based on user role
+    // Students can only upload to assignment/ and avatar/ paths
+    if (session.role === 'STUDENT') {
+      const allowedStudentPrefixes = ['assignment/', 'avatar/'];
+      if (!allowedStudentPrefixes.some(prefix => path.startsWith(prefix))) {
+        return c.json(errorResponse('Students can only upload assignments and avatars'), 403);
+      }
+    }
+
     // Read file as ArrayBuffer
     const fileData = await file.arrayBuffer();
 
@@ -396,10 +405,74 @@ storage.get('/serve/*', async (c) => {
         }
       }
     } else {
-      // Private assets: require authenticated session
+      // Private assets: require authenticated session + ownership verification
       const session = await getSession(c);
       if (!session) {
         return c.json(errorResponse('Authentication required'), 401);
+      }
+
+      // ADMIN can access everything
+      if (session.role !== 'ADMIN') {
+        // For assignment/ and document/ paths, verify the user has a relationship to the file
+        const isAssignment = key.startsWith('assignment/');
+        const isDocument = key.startsWith('document/');
+
+        if (isAssignment || isDocument) {
+          // Check if user uploaded this file
+          const upload = await c.env.DB.prepare(
+            'SELECT id, uploadedById, storagePath FROM Upload WHERE storagePath = ?'
+          ).bind(key).first() as { id: string; uploadedById: string; storagePath: string } | null;
+
+          if (upload) {
+            const isUploader = upload.uploadedById === session.id;
+            if (!isUploader) {
+              // Not the uploader — check if user belongs to the same academy/class
+              // Find the class this file belongs to via lesson/video/document relationships
+              let hasAccess = false;
+
+              if (session.role === 'STUDENT') {
+                // Student must be enrolled in a class that uses this file
+                const enrollment = await c.env.DB.prepare(`
+                  SELECT e.id FROM ClassEnrollment e
+                  JOIN Lesson l ON l.classId = e.classId
+                  LEFT JOIN Video v ON v.lessonId = l.id AND v.uploadId = ?
+                  LEFT JOIN Document d ON d.lessonId = l.id AND d.uploadId = ?
+                  WHERE e.userId = ? AND e.status = 'APPROVED' AND (v.id IS NOT NULL OR d.id IS NOT NULL)
+                  LIMIT 1
+                `).bind(upload.id, upload.id, session.id).first();
+                hasAccess = !!enrollment;
+              } else if (session.role === 'TEACHER') {
+                // Teacher must be assigned to the class
+                const classAccess = await c.env.DB.prepare(`
+                  SELECT c.id FROM Class c
+                  JOIN Lesson l ON l.classId = c.id
+                  LEFT JOIN Video v ON v.lessonId = l.id AND v.uploadId = ?
+                  LEFT JOIN Document d ON d.lessonId = l.id AND d.uploadId = ?
+                  WHERE c.teacherId = ? AND (v.id IS NOT NULL OR d.id IS NOT NULL)
+                  LIMIT 1
+                `).bind(upload.id, upload.id, session.id).first();
+                hasAccess = !!classAccess;
+              } else if (session.role === 'ACADEMY') {
+                // Academy owner must own the academy that the class belongs to
+                const academyAccess = await c.env.DB.prepare(`
+                  SELECT c.id FROM Class c
+                  JOIN Academy a ON c.academyId = a.id
+                  JOIN Lesson l ON l.classId = c.id
+                  LEFT JOIN Video v ON v.lessonId = l.id AND v.uploadId = ?
+                  LEFT JOIN Document d ON d.lessonId = l.id AND d.uploadId = ?
+                  WHERE a.ownerId = ? AND (v.id IS NOT NULL OR d.id IS NOT NULL)
+                  LIMIT 1
+                `).bind(upload.id, upload.id, session.id).first();
+                hasAccess = !!academyAccess;
+              }
+
+              if (!hasAccess) {
+                return c.json(errorResponse('Forbidden'), 403);
+              }
+            }
+          }
+          // If no Upload record found, allow access with valid session (backward compat)
+        }
       }
     }
 

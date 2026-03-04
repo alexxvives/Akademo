@@ -94,7 +94,25 @@ export const createLessonSchema = z.object({
   orderIndex: z.coerce.number().int().min(0).optional(),
   maxWatchTimeMultiplier: z.coerce.number().min(1).max(10).optional(),
   watermarkIntervalMins: z.coerce.number().min(1).max(60).optional(),
-}).passthrough(); // Allow extra fields like videos, documents
+  // Explicitly allow known extra fields instead of .passthrough()
+  videos: z.array(z.object({
+    fileName: z.string(),
+    fileSize: z.number().optional(),
+    mimeType: z.string().optional(),
+    bunnyGuid: z.string(),
+    bunnyStatus: z.number().optional(),
+    title: z.string().optional(),
+    durationSeconds: z.number().optional(),
+  })).optional(),
+  documents: z.array(z.object({
+    fileName: z.string(),
+    fileSize: z.number().optional(),
+    mimeType: z.string().optional(),
+    storagePath: z.string(),
+    title: z.string().optional(),
+    uploadId: z.string().optional(),
+  })).optional(),
+});
 
 export const updateLessonSchema = createLessonSchema.partial().omit({ classId: true }).extend({
   resetTimers: z.boolean().optional(),
