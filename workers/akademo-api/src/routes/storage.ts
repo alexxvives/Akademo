@@ -368,42 +368,13 @@ storage.get('/serve/*', async (c) => {
       return c.json(errorResponse('Invalid file path'), 400);
     }
 
-    // Public folders that can be served with a signed token (logos, avatars)
-    const publicFolders = ['logo/', 'avatar/', 'academy-logo/'];
+    // Public folders — logos and avatars are public-facing assets (shown on unauthenticated
+    // join pages, landing pages, etc.). No token or session required.
+    const publicFolders = ['logo/', 'avatar/', 'academy-logo/', 'academy-logos/'];
     const isPublicAsset = publicFolders.some(folder => key.startsWith(folder));
 
     if (isPublicAsset) {
-      // Public assets: verify a signed token (HMAC of key + expiry)
-      const token = url.searchParams.get('token');
-      const expires = url.searchParams.get('expires');
-      
-      // Also allow serving without token if there's a valid session
-      if (!token || !expires) {
-        const session = await getSession(c);
-        if (!session) {
-          return c.json(errorResponse('Authentication required'), 401);
-        }
-      } else {
-        // Verify signed token
-        const now = Math.floor(Date.now() / 1000);
-        if (parseInt(expires, 10) < now) {
-          return c.json(errorResponse('Link expired'), 403);
-        }
-        // Token verification uses SESSION_SECRET to HMAC(key + expires)
-        const secret = (c.env as unknown as Record<string, unknown>).SESSION_SECRET as string;
-        if (secret) {
-          const encoder = new TextEncoder();
-          const hmacKey = await crypto.subtle.importKey(
-            'raw', encoder.encode(secret),
-            { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
-          );
-          const sig = await crypto.subtle.sign('HMAC', hmacKey, encoder.encode(`${key}:${expires}`));
-          const expected = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
-          if (token !== expected) {
-            return c.json(errorResponse('Invalid token'), 403);
-          }
-        }
-      }
+      // No auth needed — fall through to serve the file below
     } else {
       // Private assets: require authenticated session + ownership verification
       const session = await getSession(c);
