@@ -24,6 +24,7 @@ STORAGE_TYPE = "r2"
 BUNNY_STREAM_LIBRARY_ID = "571240"
 BUNNY_STREAM_CDN_HOSTNAME = "vz-bb8d111e-8eb.b-cdn.net"
 FRONTEND_URL = "https://akademo-edu.com"
+BUNNY_DEMO_VIDEO_GUID = "912efe98-e6af-4c29-ada3-2617f0ff6674"
 
 # Cron Triggers - Monthly payment generation
 [triggers]

@@ -170,8 +170,8 @@ lessons.get('/:id', async (c) => {
 
     // Handle demo lessons
     if (lessonId.startsWith('demo-')) {
-      // Demo video GUID stored in env var — falls back to a harmless public demo video
-      const demoVideoGuid = (c.env as unknown as Record<string, unknown>).BUNNY_DEMO_VIDEO_GUID as string || '912efe98-e6af-4c29-ada3-2617f0ff6674';
+      // Demo video GUID — public identifier, set in wrangler.toml [vars]
+      const demoVideoGuid = c.env.BUNNY_DEMO_VIDEO_GUID || '912efe98-e6af-4c29-ada3-2617f0ff6674';
       // Return demo lesson data
       const demoLessons = [
         { id: 'demo-l1', title: 'Introducción al Curso', classId: 'demo-c1', className: 'Programación Web', videoGuid: demoVideoGuid, duration: 3600 },
