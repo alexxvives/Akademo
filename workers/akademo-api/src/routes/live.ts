@@ -3,25 +3,9 @@ import { Bindings } from '../types';
 import { requireAuth } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { createZoomMeeting, getZoomRecording, getZoomRecordingDownloadUrl } from '../lib/zoom';
+import { isPaymentOverdue } from '../lib/payment-utils';
 
 const live = new Hono<{ Bindings: Bindings }>();
-
-/**
- * Check if a student has overdue payments for a class.
- * Queries the Payment table directly (same logic as videos.ts, bunny.ts, lessons.ts).
- */
-async function isPaymentOverdue(db: D1Database, userId: string, classId: string): Promise<boolean> {
-  const overdue = await db
-    .prepare(`
-      SELECT p.id FROM Payment p
-      WHERE p.payerId = ? AND p.classId = ? AND p.status = 'PENDING'
-        AND p.nextPaymentDue IS NOT NULL AND p.nextPaymentDue < datetime('now')
-      LIMIT 1
-    `)
-    .bind(userId, classId)
-    .first();
-  return !!overdue;
-}
 
 // GET /live - Get live streams for a class
 live.get('/', async (c) => {

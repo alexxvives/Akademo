@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { requireAuth, getSession } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
+import { isPaymentOverdue } from '../lib/payment-utils';
 
 // ============ Upload Security ============
 
@@ -444,14 +445,19 @@ storage.get('/serve/*', async (c) => {
               if (session.role === 'STUDENT') {
                 // Student must be enrolled in a class that uses this file
                 const enrollment = await c.env.DB.prepare(`
-                  SELECT e.id FROM ClassEnrollment e
+                  SELECT e.id, e.classId FROM ClassEnrollment e
                   JOIN Lesson l ON l.classId = e.classId
                   LEFT JOIN Video v ON v.lessonId = l.id AND v.uploadId = ?
                   LEFT JOIN Document d ON d.lessonId = l.id AND d.uploadId = ?
                   WHERE e.userId = ? AND e.status = 'APPROVED' AND (v.id IS NOT NULL OR d.id IS NOT NULL)
                   LIMIT 1
-                `).bind(upload.id, upload.id, session.id).first();
+                `).bind(upload.id, upload.id, session.id).first() as { id: string; classId: string } | null;
                 hasAccess = !!enrollment;
+
+                // Block overdue students from downloading documents/assignments
+                if (hasAccess && enrollment && await isPaymentOverdue(c.env.DB, session.id, enrollment.classId)) {
+                  return c.json(errorResponse('Acceso bloqueado por pago pendiente.'), 403);
+                }
               } else if (session.role === 'TEACHER') {
                 // Teacher must be assigned to the class
                 const classAccess = await c.env.DB.prepare(`
@@ -482,7 +488,10 @@ storage.get('/serve/*', async (c) => {
               }
             }
           }
-          // If no Upload record found, allow access with valid session (backward compat)
+          // No Upload record found — deny access (no backward-compat fallback)
+          if (!upload) {
+            return c.json(errorResponse('Forbidden'), 403);
+          }
         }
       }
     }

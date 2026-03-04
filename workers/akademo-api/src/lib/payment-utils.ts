@@ -1,5 +1,23 @@
 // Shared billing helpers used by both routes/payments.ts and routes/classes.ts
 
+/**
+ * Check if a student has overdue payments for a class.
+ * Returns true if the student should be BLOCKED from accessing content.
+ * A student is blocked if there is a PENDING payment whose nextPaymentDue is in the past.
+ */
+export async function isPaymentOverdue(db: D1Database, userId: string, classId: string): Promise<boolean> {
+  const overdue = await db
+    .prepare(`
+      SELECT p.id FROM Payment p
+      WHERE p.payerId = ? AND p.classId = ? AND p.status = 'PENDING'
+        AND p.nextPaymentDue IS NOT NULL AND p.nextPaymentDue < datetime('now')
+      LIMIT 1
+    `)
+    .bind(userId, classId)
+    .first();
+  return !!overdue;
+}
+
 // Helper: add N calendar months to a date (clamps day to month end)
 export function addMonths(date: Date, months: number): Date {
   const result = new Date(date);

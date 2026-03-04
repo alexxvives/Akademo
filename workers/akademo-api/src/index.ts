@@ -251,8 +251,8 @@ async function handleScheduled(env: Bindings) {
             INSERT INTO Payment (
               id, type, payerId, payerType, payerName, payerEmail,
               receiverId, amount, currency, status, paymentMethod,
-              classId, description, metadata, createdAt, updatedAt
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+              classId, description, metadata, nextPaymentDue, createdAt, updatedAt
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
           `).bind(
             crypto.randomUUID(),
             'STUDENT_TO_ACADEMY',
@@ -268,6 +268,7 @@ async function handleScheduled(env: Bindings) {
             enrollment.classId,
             `Pago mensual - ${enrollment.className} (${dueDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })})`,
             JSON.stringify({ generatedBySystem: true, monthOffset, dueDate: dueDate.toISOString() }),
+            dueDate.toISOString(),
           ).run();
 
           created++;

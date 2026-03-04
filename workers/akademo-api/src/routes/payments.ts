@@ -1052,6 +1052,8 @@ payments.put('/history/:id/reverse', async (c) => {
           p.id,
           p.status,
           p.classId,
+          p.stripePaymentId,
+          p.paymentMethod,
           c.academyId,
           a.ownerId
         FROM Payment p
@@ -1069,6 +1071,12 @@ payments.put('/history/:id/reverse', async (c) => {
     // Verify user owns the academy
     if (session.role !== 'ACADEMY' || payment.ownerId !== session.id) {
       return c.json(errorResponse('Only academy owners can reverse payments'), 403);
+    }
+
+    // Guard: Stripe-backed payments must be refunded via Stripe Dashboard, not reversed here.
+    // Reversing would create a phantom PENDING while money was already collected via Stripe.
+    if (payment.stripePaymentId || payment.paymentMethod === 'stripe') {
+      return c.json(errorResponse('Los pagos realizados por Stripe no se pueden revertir aquí. Usa el panel de Stripe para gestionar reembolsos.'), 400);
     }
 
     // Toggle status: PAID/COMPLETED → PENDING, anything else → COMPLETED
@@ -1220,8 +1228,12 @@ payments.post('/register-manual', async (c) => {
 
     const { studentId, classId, amount, paymentMethod, status = 'PAID' } = await c.req.json();
 
-    if (!studentId || !classId || !amount || !paymentMethod) {
+    if (!studentId || !classId || amount === undefined || amount === null || !paymentMethod) {
       return c.json(errorResponse('All fields are required'), 400);
+    }
+
+    if (typeof amount !== 'number' || amount <= 0) {
+      return c.json(errorResponse('El importe debe ser un número mayor que 0'), 400);
     }
 
     const validStatuses = ['PAID', 'COMPLETED', 'PENDING'] as const;
@@ -1372,12 +1384,10 @@ payments.patch('/:id', async (c) => {
     const paymentId = c.req.param('id');
     const { amount, paymentMethod, status } = await c.req.json();
 
-    // Validate status if provided
+    // Block status changes via PATCH — status must be changed through
+    // dedicated approve/reject/reverse endpoints which handle enrollment sync.
     if (status !== undefined) {
-      const validStatuses = ['PENDING', 'PAID', 'COMPLETED', 'REJECTED'];
-      if (!validStatuses.includes(status)) {
-        return c.json(errorResponse(`Invalid status: must be one of ${validStatuses.join(', ')}`), 400);
-      }
+      return c.json(errorResponse('No se puede cambiar el estado por esta vía. Usa los botones de aprobar, rechazar o revertir.'), 400);
     }
 
     // Get payment details with academy info (join via Class, not ClassEnrollment,
@@ -1417,18 +1427,6 @@ payments.patch('/:id', async (c) => {
     if (paymentMethod !== undefined) {
       updates.push('paymentMethod = ?');
       values.push(paymentMethod);
-    }
-
-    if (status !== undefined) {
-      updates.push('status = ?');
-      values.push(status);
-      
-      // Update completedAt based on status
-      if (status === 'PAID' || status === 'COMPLETED') {
-        updates.push('completedAt = datetime(\'now\')');
-      } else {
-        updates.push('completedAt = NULL');
-      }
     }
 
     if (updates.length === 0) {

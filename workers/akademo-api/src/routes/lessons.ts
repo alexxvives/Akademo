@@ -3,26 +3,9 @@ import { Bindings } from '../types';
 import { requireAuth } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { validateBody, createLessonSchema, updateLessonSchema, createRatingSchema } from '../lib/validation';
+import { isPaymentOverdue } from '../lib/payment-utils';
 
 const lessons = new Hono<{ Bindings: Bindings }>();
-
-/**
- * Check if a student has overdue payments for a class.
- * Returns true if the student should be BLOCKED from accessing content.
- * A student is blocked if there is a PENDING payment whose nextPaymentDue is in the past.
- */
-async function isPaymentOverdue(db: D1Database, userId: string, classId: string): Promise<boolean> {
-  const overdue = await db
-    .prepare(`
-      SELECT p.id FROM Payment p
-      WHERE p.payerId = ? AND p.classId = ? AND p.status = 'PENDING'
-        AND p.nextPaymentDue IS NOT NULL AND p.nextPaymentDue < datetime('now')
-      LIMIT 1
-    `)
-    .bind(userId, classId)
-    .first();
-  return !!overdue;
-}
 
 // GET /lessons - List lessons for a class
 lessons.get('/', async (c) => {

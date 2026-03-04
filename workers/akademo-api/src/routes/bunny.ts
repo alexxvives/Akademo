@@ -2,25 +2,9 @@ import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { requireAuth, getSession } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
+import { isPaymentOverdue } from '../lib/payment-utils';
 
 const bunny = new Hono<{ Bindings: Bindings }>();
-
-/**
- * Check if a student has overdue payments for a class.
- * Returns true if the student should be BLOCKED from accessing content.
- */
-async function isPaymentOverdue(db: D1Database, userId: string, classId: string): Promise<boolean> {
-  const overdue = await db
-    .prepare(`
-      SELECT p.id FROM Payment p
-      WHERE p.payerId = ? AND p.classId = ? AND p.status = 'PENDING'
-        AND p.nextPaymentDue IS NOT NULL AND p.nextPaymentDue < datetime('now')
-      LIMIT 1
-    `)
-    .bind(userId, classId)
-    .first();
-  return !!overdue;
-}
 
 // Helper to call Bunny API
 async function bunnyApi(endpoint: string, options: RequestInit, apiKey: string) {
