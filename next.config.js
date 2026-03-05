@@ -23,6 +23,11 @@ const nextConfig = {
               "media-src 'self' blob: https:",
             ].join('; '),
           },
+          {
+            // Allow camera/mic/screen-share inside cross-origin iframes (Daily.co)
+            key: 'Permissions-Policy',
+            value: 'camera=*, microphone=*, display-capture=*, fullscreen=*',
+          },
         ],
       },
     ];

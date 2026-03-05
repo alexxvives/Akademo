@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState, useCallback } from 'react';
 import { apiClient } from '@/lib/api-client';
@@ -16,6 +16,7 @@ export default function TeacherDailyTestPage() {
   const [starting, setStarting] = useState(false);
   const [ending, setEnding] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [userName, setUserName] = useState('');
 
   const loadActiveRoom = useCallback(async () => {
     try {
@@ -46,6 +47,9 @@ export default function TeacherDailyTestPage() {
 
   useEffect(() => {
     loadActiveRoom();
+    apiClient('/auth/me').then(r => r.json()).then(r => {
+      if (r.success && r.data) setUserName(`${r.data.firstName} ${r.data.lastName}`.trim());
+    }).catch(() => {});
   }, [loadActiveRoom]);
 
   const startStream = async () => {
@@ -95,7 +99,7 @@ export default function TeacherDailyTestPage() {
           </div>
           <h1 className="text-2xl font-semibold text-gray-900">Clase en Vivo (Test)</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Prueba de integración con Daily.co — pantalla compartida y pizarra disponibles
+            Prueba de integraciÃ³n con Daily.co â€” pantalla compartida y pizarra disponibles
           </p>
         </div>
         {activeRoom ? (
@@ -125,13 +129,36 @@ export default function TeacherDailyTestPage() {
       )}
 
       {activeRoom ? (
-        <div className="rounded-xl overflow-hidden border border-gray-200 bg-black" style={{ height: '70vh', minHeight: 480 }}>
+        <div className="relative rounded-xl overflow-hidden border border-gray-200 bg-black" style={{ height: '70vh', minHeight: 480 }}>
           <iframe
             src={activeRoom.embedUrl}
-            allow="camera; microphone; fullscreen; display-capture; speaker-selection"
+            allow="camera *; microphone *; fullscreen *; display-capture *; speaker-selection *"
+            allowFullScreen
             style={{ width: '100%', height: '100%', border: 'none' }}
             title="Daily.co Test Stream"
           />
+          {userName && (
+            <div
+              className="pointer-events-none absolute inset-0 flex items-center justify-center"
+              style={{ zIndex: 1 }}
+              aria-hidden
+            >
+              <span
+                style={{
+                  transform: 'rotate(-35deg)',
+                  fontSize: '1.1rem',
+                  fontWeight: 600,
+                  color: 'rgba(255,255,255,0.13)',
+                  whiteSpace: 'nowrap',
+                  userSelect: 'none',
+                  letterSpacing: '0.05em',
+                  textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+                }}
+              >
+                {userName}
+              </span>
+            </div>
+          )}
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-gray-200 p-16 text-center">
@@ -140,9 +167,9 @@ export default function TeacherDailyTestPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.069A1 1 0 0121 8.82v6.36a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
             </svg>
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Sin transmisión activa</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Sin transmisiÃ³n activa</h2>
           <p className="text-gray-500 mb-6">Pulsa &quot;Iniciar Stream&quot; para crear una sala Daily.co y comenzar la clase</p>
-          <p className="text-xs text-gray-400">Los estudiantes podrán unirse desde su pestaña &quot;Daily.co Test&quot;</p>
+          <p className="text-xs text-gray-400">Los estudiantes podrÃ¡n unirse desde su pestaÃ±a &quot;Daily.co Test&quot;</p>
         </div>
       )}
     </div>

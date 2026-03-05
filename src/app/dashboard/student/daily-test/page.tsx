@@ -22,6 +22,7 @@ export default function StudentDailyTestPage() {
   const [joinedRoom, setJoinedRoom] = useState<JoinedRoom | null>(null);
   const [joiningId, setJoiningId] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
+  const [userName, setUserName] = useState('');
 
   const loadRooms = useCallback(async () => {
     try {
@@ -47,6 +48,9 @@ export default function StudentDailyTestPage() {
   useEffect(() => {
     loadRooms();
     const interval = setInterval(loadRooms, 8000);
+    apiClient('/auth/me').then(r => r.json()).then(r => {
+      if (r.success && r.data) setUserName(`${r.data.firstName} ${r.data.lastName}`.trim());
+    }).catch(() => {});
     return () => clearInterval(interval);
   }, [loadRooms]);
 
@@ -106,13 +110,36 @@ export default function StudentDailyTestPage() {
             Salir
           </button>
         </div>
-        <div className="rounded-xl overflow-hidden border border-gray-200 bg-black" style={{ height: '72vh', minHeight: 480 }}>
+        <div className="relative rounded-xl overflow-hidden border border-gray-200 bg-black" style={{ height: '72vh', minHeight: 480 }}>
           <iframe
             src={joinedRoom.embedUrl}
-            allow="camera; microphone; fullscreen; display-capture; speaker-selection"
+            allow="camera *; microphone *; fullscreen *; display-capture *; speaker-selection *"
+            allowFullScreen
             style={{ width: '100%', height: '100%', border: 'none' }}
             title="Daily.co Live Class"
           />
+          {userName && (
+            <div
+              className="pointer-events-none absolute inset-0 flex items-center justify-center"
+              style={{ zIndex: 1 }}
+              aria-hidden
+            >
+              <span
+                style={{
+                  transform: 'rotate(-35deg)',
+                  fontSize: '1.1rem',
+                  fontWeight: 600,
+                  color: 'rgba(255,255,255,0.13)',
+                  whiteSpace: 'nowrap',
+                  userSelect: 'none',
+                  letterSpacing: '0.05em',
+                  textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+                }}
+              >
+                {userName}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     );
