@@ -932,7 +932,123 @@ webhooks.post('/stripe', async (c) => {
   }
 });
 
-// NOTE: Daily.co recording upload is handled inline in DELETE /daily-test/rooms/:id
-// using ctx.waitUntil — no webhook configuration needed.
+// POST /webhooks/daily - Daily.co recording.ready-to-download → upload to Bunny
+webhooks.post('/daily', async (c) => {
+  try {
+    const rawBody = await c.req.text();
+
+    // Verify HMAC-SHA256 signature (secret is base64-encoded, returned on webhook creation)
+    const webhookSecret = c.env.DAILY_WEBHOOK_SECRET;
+    if (webhookSecret) {
+      const sigHeader = c.req.header('x-webhook-signature') || '';
+      const tsHeader  = c.req.header('x-webhook-timestamp') || '';
+      // Daily signs:  timestamp + '.' + raw JSON body
+      const message = `${tsHeader}.${rawBody}`;
+      const keyBytes = Uint8Array.from(atob(webhookSecret), ch => ch.charCodeAt(0));
+      const key = await crypto.subtle.importKey(
+        'raw', keyBytes, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+      );
+      const sigBytes = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(message));
+      const computed = btoa(String.fromCharCode(...new Uint8Array(sigBytes)));
+      if (computed !== sigHeader) {
+        console.error('[Daily Webhook] Signature mismatch');
+        return c.json({ error: 'Invalid signature' }, 401);
+      }
+    }
+
+    const event = JSON.parse(rawBody) as any;
+    // Respond 200 immediately so Daily doesn't retry
+    // (we do the heavy work below but Cloudflare Workers respond once we return)
+
+    const eventType: string = event.type || '';
+    console.log(`[Daily Webhook] type: "${eventType}"`);
+
+    if (eventType === 'recording.ready-to-download') {
+      const recording_id: string = event.payload?.recording_id;
+      const room_name: string    = event.payload?.room_name;
+
+      if (!recording_id || !room_name) {
+        console.error('[Daily Webhook] Missing recording_id or room_name', event.payload);
+        return c.json({ received: true });
+      }
+
+      const room = await c.env.DB.prepare(
+        "SELECT id FROM DailyTestRoom WHERE roomName = ?"
+      ).bind(room_name).first<{ id: string }>();
+
+      if (!room) {
+        console.log(`[Daily Webhook] No room found for roomName: ${room_name}`);
+        return c.json({ received: true });
+      }
+
+      const apiKey = c.env.DAILY_API_KEY;
+      if (!apiKey) return c.json({ received: true });
+
+      // Use waitUntil so the upload runs after we return 200 to Daily
+      c.executionCtx.waitUntil((async () => {
+        try {
+          // Get a temporary download link
+          const linkRes = await fetch(
+            `https://api.daily.co/v1/recordings/${recording_id}/access-link`,
+            { headers: { 'Authorization': `Bearer ${apiKey}` } }
+          );
+          if (!linkRes.ok) {
+            console.error('[Daily Webhook] access-link failed:', await linkRes.text());
+            await c.env.DB.prepare(
+              "UPDATE DailyTestRoom SET recordingStatus = 'error' WHERE id = ?"
+            ).bind(room.id).run();
+            return;
+          }
+
+          const { download_link } = await linkRes.json() as { download_link: string };
+
+          // Pull recording into Bunny
+          const bunnyRes = await fetch(
+            `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/videos/fetch`,
+            {
+              method: 'POST',
+              headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                url: download_link,
+                title: `Daily.co — ${room_name} — ${new Date().toLocaleDateString()}`,
+              }),
+            }
+          );
+          if (!bunnyRes.ok) {
+            console.error('[Daily Webhook] Bunny fetch failed:', await bunnyRes.text());
+            await c.env.DB.prepare(
+              "UPDATE DailyTestRoom SET recordingStatus = 'error' WHERE id = ?"
+            ).bind(room.id).run();
+            return;
+          }
+
+          const bunnyData = await bunnyRes.json() as any;
+          const videoGuid: string = bunnyData.guid || bunnyData.videoGuid || bunnyData.id;
+          if (videoGuid) {
+            await c.env.DB.prepare(
+              "UPDATE DailyTestRoom SET recordingId = ?, recordingStatus = 'ready' WHERE id = ?"
+            ).bind(videoGuid, room.id).run();
+            console.log(`[Daily Webhook] Ready: Bunny GUID ${videoGuid}, room ${room.id}`);
+          } else {
+            console.error('[Daily Webhook] No GUID in Bunny response:', JSON.stringify(bunnyData));
+            await c.env.DB.prepare(
+              "UPDATE DailyTestRoom SET recordingStatus = 'error' WHERE id = ?"
+            ).bind(room.id).run();
+          }
+        } catch (err: any) {
+          console.error('[Daily Webhook] Upload error:', err.message);
+          await c.env.DB.prepare(
+            "UPDATE DailyTestRoom SET recordingStatus = 'error' WHERE id = ?"
+          ).bind(room.id).run();
+        }
+      })());
+    }
+
+    return c.json({ received: true });
+  } catch (error: any) {
+    console.error('[Daily Webhook] Error:', error);
+    return c.json({ received: true });
+  }
+});
 
 export default webhooks;
