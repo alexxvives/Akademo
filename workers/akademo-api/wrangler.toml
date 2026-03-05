@@ -41,6 +41,10 @@ crons = ["0 0 1 * *"]  # Run at midnight on 1st of each month
 # ZOOM_CLIENT_SECRET - Configured
 # ZOOM_WEBHOOK_SECRET - Configured
 
+# Daily.co (for live streaming prototype)
+# DAILY_API_KEY - Set via: wrangler secret put DAILY_API_KEY
+# DAILY_DOMAIN - Set via: wrangler secret put DAILY_DOMAIN (e.g. "yourapp" for yourapp.daily.co)
+
 # Email verification
 # RESEND_API_KEY - Configured
 

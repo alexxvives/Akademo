@@ -36,6 +36,10 @@ export interface Bindings {
   ZOOM_CLIENT_ID: string;
   ZOOM_CLIENT_SECRET: string;
   ZOOM_WEBHOOK_SECRET: string;
+
+  // Daily.co (test/prototype)
+  DAILY_API_KEY?: string;
+  DAILY_DOMAIN?: string;
   
   // Email
   RESEND_API_KEY: string;

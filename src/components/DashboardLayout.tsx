@@ -568,6 +568,7 @@ export default function DashboardLayout({
           ...(academy?.requireGrading !== 0 ? [{ label: 'Calificaciones', href: '/dashboard/teacher/grades', iconType: 'star' as const, group: 'Contenido' }] : []),
           { label: 'Estudiantes', href: '/dashboard/teacher/progress', iconType: 'users', group: 'Comunidad' },
           { label: 'Calendario', href: '/dashboard/teacher/calendar', iconType: 'calendar' as const, group: 'Gestión' },
+          { label: 'Daily.co Test', href: '/dashboard/teacher/daily-test', iconType: 'activity' as const, group: 'Test' },
         ];
       case 'STUDENT':
         return [
@@ -575,6 +576,7 @@ export default function DashboardLayout({
           { label: 'Ejercicios', href: '/dashboard/student/assignments', badge: academy?.requireGrading !== 0 && newGradesCount > 0 ? newGradesCount : undefined, badgeColor: 'bg-[#b0e788]', iconType: 'fileText' as const },
           { label: 'Mis Pagos', href: '/dashboard/student/pagos', iconType: 'handCoins' as const, badge: studentPendingPaymentsCount > 0 ? studentPendingPaymentsCount : undefined, badgeColor: 'bg-[#b0e788]' },
           { label: 'Calendario', href: '/dashboard/student/calendar', iconType: 'calendar' as const },
+          { label: 'Daily.co Test', href: '/dashboard/student/daily-test', iconType: 'activity' as const },
         ];
       case 'ACADEMY':
         const academyMenuItems: MenuItem[] = [
@@ -588,6 +590,7 @@ export default function DashboardLayout({
           { label: 'Estudiantes', href: '/dashboard/academy/students', iconType: 'users' as const, group: 'Comunidad' },
           { label: 'Pagos', href: '/dashboard/academy/payments', iconType: 'handCoins' as const, badge: pendingPaymentsCount > 0 ? pendingPaymentsCount : undefined, badgeColor: 'bg-[#b0e788]', group: 'Gestión' },
           { label: 'Calendario', href: '/dashboard/academy/calendar', iconType: 'calendar' as const, group: 'Gestión' },
+          { label: 'Daily.co Test', href: '/dashboard/academy/daily-test', iconType: 'activity' as const, group: 'Test' },
         ];
         
         return academyMenuItems;
