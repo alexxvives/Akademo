@@ -40,6 +40,7 @@ export interface Bindings {
   // Daily.co (test/prototype)
   DAILY_API_KEY?: string;
   DAILY_DOMAIN?: string;
+  DAILY_WEBHOOK_SECRET?: string;
   
   // Email
   RESEND_API_KEY: string;

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { apiClient } from '@/lib/api-client';
+import DailyWatermark from '@/components/DailyWatermark';
 
 interface Room {
   id: string;
@@ -23,6 +24,8 @@ export default function StudentDailyTestPage() {
   const [joiningId, setJoiningId] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
   const [userName, setUserName] = useState('');
+  const [userEmail, setUserEmail] = useState('');
+  const [userId, setUserId] = useState('');
 
   const loadRooms = useCallback(async () => {
     try {
@@ -49,7 +52,11 @@ export default function StudentDailyTestPage() {
     loadRooms();
     const interval = setInterval(loadRooms, 8000);
     apiClient('/auth/me').then(r => r.json()).then(r => {
-      if (r.success && r.data) setUserName(`${r.data.firstName} ${r.data.lastName}`.trim());
+      if (r.success && r.data) {
+        setUserName(`${r.data.firstName} ${r.data.lastName}`.trim());
+        setUserEmail(r.data.email || '');
+        setUserId(r.data.id || '');
+      }
     }).catch(() => {});
     return () => clearInterval(interval);
   }, [loadRooms]);
@@ -118,28 +125,7 @@ export default function StudentDailyTestPage() {
             style={{ width: '100%', height: '100%', border: 'none' }}
             title="Daily.co Live Class"
           />
-          {userName && (
-            <div
-              className="pointer-events-none absolute inset-0 flex items-center justify-center"
-              style={{ zIndex: 1 }}
-              aria-hidden
-            >
-              <span
-                style={{
-                  transform: 'rotate(-35deg)',
-                  fontSize: '1.1rem',
-                  fontWeight: 600,
-                  color: 'rgba(255,255,255,0.13)',
-                  whiteSpace: 'nowrap',
-                  userSelect: 'none',
-                  letterSpacing: '0.05em',
-                  textShadow: '0 1px 2px rgba(0,0,0,0.3)',
-                }}
-              >
-                {userName}
-              </span>
-            </div>
-          )}
+          {userName && <DailyWatermark name={userName} email={userEmail} userId={userId} />}
         </div>
       </div>
     );

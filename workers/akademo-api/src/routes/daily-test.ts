@@ -19,6 +19,8 @@ interface DailyTestRoomRow {
   roomName: string;
   roomUrl: string;
   createdAt: string;
+  recordingId?: string;
+  recordingStatus?: string;
 }
 
 // POST /daily-test/rooms - Create a Daily.co room and return host embed URL
@@ -48,6 +50,7 @@ dailyTest.post('/rooms', async (c) => {
       properties: {
         enable_screenshare: true,
         enable_chat: true,
+        enable_recording: 'cloud',
         start_video_off: false,
         start_audio_off: false,
         // Room expires after 4 hours
@@ -186,6 +189,31 @@ dailyTest.delete('/rooms/:id', async (c) => {
   ).bind(id).run();
 
   return c.json(successResponse({ ended: true }));
+});
+
+// GET /daily-test/rooms/:id/recording - Get recording info for a room
+dailyTest.get('/rooms/:id/recording', async (c) => {
+  await requireAuth(c);
+
+  const id = c.req.param('id');
+  const room = await c.env.DB.prepare(
+    'SELECT id, recordingId, recordingStatus FROM DailyTestRoom WHERE id = ?'
+  ).bind(id).first<{ id: string; recordingId?: string; recordingStatus?: string }>();
+
+  if (!room) return c.json(errorResponse('Room not found'), 404);
+
+  if (!room.recordingId) {
+    return c.json(successResponse({ available: false, recordingStatus: room.recordingStatus || 'none' }));
+  }
+
+  const cdnHostname = c.env.BUNNY_STREAM_CDN_HOSTNAME;
+  return c.json(successResponse({
+    available: true,
+    recordingId: room.recordingId,
+    playUrl: `https://${cdnHostname}/${room.recordingId}/play_720p.mp4`,
+    embedUrl: `https://iframe.mediadelivery.net/embed/${c.env.BUNNY_STREAM_LIBRARY_ID}/${room.recordingId}`,
+    recordingStatus: room.recordingStatus,
+  }));
 });
 
 export default dailyTest;
