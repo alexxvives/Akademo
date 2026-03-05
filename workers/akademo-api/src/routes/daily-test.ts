@@ -161,7 +161,7 @@ dailyTest.post('/token', async (c) => {
   return c.json(successResponse({ token: tokenData.token, isOwner }));
 });
 
-// DELETE /daily-test/rooms/:id - End/delete a test room
+// DELETE /daily-test/rooms/:id - End/delete a test room and trigger recording upload
 dailyTest.delete('/rooms/:id', async (c) => {
   const session = await requireAuth(c);
   if (!['TEACHER', 'ACADEMY', 'ADMIN'].includes(session.role)) {
@@ -177,7 +177,7 @@ dailyTest.delete('/rooms/:id', async (c) => {
 
   const apiKey = c.env.DAILY_API_KEY;
   if (apiKey) {
-    // Best-effort: delete room from Daily.co
+    // Best-effort: delete room from Daily.co (this also stops any active recording)
     await fetch(`https://api.daily.co/v1/rooms/${room.roomName}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${apiKey}` },
@@ -185,8 +185,101 @@ dailyTest.delete('/rooms/:id', async (c) => {
   }
 
   await c.env.DB.prepare(
-    "UPDATE DailyTestRoom SET status = 'ended' WHERE id = ?"
+    "UPDATE DailyTestRoom SET status = 'ended', recordingStatus = 'processing' WHERE id = ?"
   ).bind(id).run();
+
+  // Kick off recording upload in the background (waitUntil keeps the worker alive)
+  const env = c.env;
+  const ctx = c.executionCtx;
+  ctx.waitUntil((async () => {
+    if (!apiKey) return;
+    try {
+      // Daily.co needs a moment to finalize the recording after the room is deleted.
+      // Poll up to 10 times with 6-second gaps (total ~1 minute).
+      let recordingId: string | null = null;
+      for (let attempt = 0; attempt < 10; attempt++) {
+        await new Promise(r => setTimeout(r, 6000));
+
+        const listRes = await fetch(
+          `https://api.daily.co/v1/recordings?room_name=${room.roomName}`,
+          { headers: { 'Authorization': `Bearer ${apiKey}` } }
+        );
+        if (!listRes.ok) continue;
+
+        const listData = await listRes.json() as { data: Array<{ id: string; status: string }> };
+        const finished = (listData.data || []).find(r => r.status === 'finished');
+        if (finished) {
+          recordingId = finished.id;
+          break;
+        }
+      }
+
+      if (!recordingId) {
+        console.log(`[Daily Recording] No finished recording found for room ${room.roomName}`);
+        await env.DB.prepare(
+          "UPDATE DailyTestRoom SET recordingStatus = 'none' WHERE id = ?"
+        ).bind(id).run();
+        return;
+      }
+
+      // Get a temporary download link
+      const linkRes = await fetch(
+        `https://api.daily.co/v1/recordings/${recordingId}/access-link`,
+        { headers: { 'Authorization': `Bearer ${apiKey}` } }
+      );
+      if (!linkRes.ok) {
+        console.error('[Daily Recording] Failed to get access link:', await linkRes.text());
+        await env.DB.prepare(
+          "UPDATE DailyTestRoom SET recordingStatus = 'error' WHERE id = ?"
+        ).bind(id).run();
+        return;
+      }
+
+      const linkData = await linkRes.json() as { download_link: string };
+
+      // Fetch the recording into Bunny
+      const videoTitle = `Daily.co Recording — ${room.roomName} — ${new Date().toLocaleDateString()}`;
+      const bunnyRes = await fetch(
+        `https://video.bunnycdn.com/library/${env.BUNNY_STREAM_LIBRARY_ID}/videos/fetch`,
+        {
+          method: 'POST',
+          headers: {
+            'AccessKey': env.BUNNY_STREAM_API_KEY,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ url: linkData.download_link, title: videoTitle }),
+        }
+      );
+
+      if (!bunnyRes.ok) {
+        console.error('[Daily Recording] Bunny fetch failed:', await bunnyRes.text());
+        await env.DB.prepare(
+          "UPDATE DailyTestRoom SET recordingStatus = 'error' WHERE id = ?"
+        ).bind(id).run();
+        return;
+      }
+
+      const bunnyData = await bunnyRes.json() as any;
+      const videoGuid: string = bunnyData.guid || bunnyData.videoGuid || bunnyData.id;
+
+      if (videoGuid) {
+        await env.DB.prepare(
+          "UPDATE DailyTestRoom SET recordingId = ?, recordingStatus = 'ready' WHERE id = ?"
+        ).bind(videoGuid, id).run();
+        console.log(`[Daily Recording] Uploaded to Bunny: ${videoGuid} for room ${id}`);
+      } else {
+        console.error('[Daily Recording] No GUID in Bunny response:', JSON.stringify(bunnyData));
+        await env.DB.prepare(
+          "UPDATE DailyTestRoom SET recordingStatus = 'error' WHERE id = ?"
+        ).bind(id).run();
+      }
+    } catch (err: any) {
+      console.error('[Daily Recording] Upload error:', err.message);
+      await env.DB.prepare(
+        "UPDATE DailyTestRoom SET recordingStatus = 'error' WHERE id = ?"
+      ).bind(id).run();
+    }
+  })());
 
   return c.json(successResponse({ ended: true }));
 });
