@@ -76,7 +76,7 @@ live.get('/', async (c) => {
   }
 });
 
-// POST /live - Create live stream with Zoom meeting
+// POST /live - Create live stream with Daily.co embedded room
 live.post('/', async (c) => {
   try {
     const session = await requireAuth(c);
@@ -94,7 +94,7 @@ live.post('/', async (c) => {
     // Get class info with academy and teacher details
     const classInfo = await c.env.DB
       .prepare(`
-        SELECT c.name, c.teacherId, c.academyId, c.zoomAccountId,
+        SELECT c.name, c.teacherId, c.academyId,
                u.firstName, u.lastName,
                a.ownerId as academyOwnerId
         FROM Class c 
@@ -111,12 +111,10 @@ live.post('/', async (c) => {
 
     // Verify permissions
     if (session.role === 'TEACHER') {
-      // Teacher must own the class
       if (classInfo.teacherId !== session.id) {
         return c.json(errorResponse('Not authorized to create stream for this class'), 403);
       }
     } else if (session.role === 'ACADEMY') {
-      // Academy owner must own the academy
       if (classInfo.academyOwnerId !== session.id) {
         return c.json(errorResponse('Not authorized to create stream for this class'), 403);
       }
@@ -132,81 +130,82 @@ live.post('/', async (c) => {
       return c.json(errorResponse('Esta clase ya tiene una transmisión en vivo activa. Finalízala antes de crear otra.'), 409);
     }
 
-    // Get Zoom credentials - use class's Zoom account if assigned, otherwise platform credentials
-    let zoomConfig;
-    if (classInfo.zoomAccountId) {
-      const zoomAccount = await c.env.DB
-        .prepare('SELECT accessToken, refreshToken, expiresAt FROM ZoomAccount WHERE id = ?')
-        .bind(classInfo.zoomAccountId)
-        .first() as any;
-      
-      if (!zoomAccount) {
-        return c.json(errorResponse('Assigned Zoom account not found'), 404);
-      }
-
-      // Check if token needs refresh
-      const expiresAt = new Date(zoomAccount.expiresAt);
-      if (expiresAt <= new Date(Date.now() + 5 * 60 * 1000)) {
-        // Token expires in < 5 minutes, refresh it
-        const { refreshZoomToken } = await import('./zoom-accounts');
-        const newToken = await refreshZoomToken(c, classInfo.zoomAccountId);
-        if (!newToken) {
-          return c.json(errorResponse('Failed to refresh Zoom token'), 500);
-        }
-        zoomConfig = { accessToken: newToken };
-      } else {
-        zoomConfig = { accessToken: zoomAccount.accessToken };
-      }
-    } else {
-      // No Zoom account assigned
-      const msg = session.role === 'ACADEMY'
-        ? 'Esta clase no tiene una cuenta de Zoom asignada. Por favor asigna una cuenta de Zoom a esta clase.'
-        : 'Esta clase no tiene una cuenta de Zoom asignada. Por favor contacta a la academia para que asigne una cuenta de Zoom a esta clase.';
-      return c.json(errorResponse(msg), 400);
-    }
-
-    // Create Zoom meeting
-    let zoomMeeting;
-    try {
-      zoomMeeting = await createZoomMeeting({
-        topic: `${title} - ${classInfo.name}`,
-        duration: 120, // 2 hours default
-        config: zoomConfig,
-      });
-    } catch (zoomError: unknown) {
-      console.error('[Create Live Stream] Zoom error:', zoomError);
-      // Check if error is due to no Zoom account
-      const zoomMsg = zoomError instanceof Error ? zoomError.message : '';
-      if (zoomMsg.includes('Failed to get Zoom access token') || zoomMsg.includes('unsupported_grant_type')) {
-        return c.json(errorResponse('Esta clase no tiene una cuenta de Zoom asignada. Por favor asigna una cuenta en la configuración de la clase.'), 400);
-      }
-      return c.json(errorResponse('Error al crear reunión Zoom'), 500);
-    }
-
-    // Extract password from Zoom response
-    const zoomPassword = zoomMeeting.password || '';
-
-    // Create livestream record with Zoom details
     const streamId = crypto.randomUUID();
     const now = new Date().toISOString();
 
+    // ── Zoom path: use Zoom if the class has a linked Zoom account ──
+    const classZoomInfo = await c.env.DB
+      .prepare('SELECT zoomAccountId FROM Class WHERE id = ?')
+      .bind(classId)
+      .first<{ zoomAccountId: string | null }>();
+
+    if (classZoomInfo?.zoomAccountId) {
+      const zoomAccount = await c.env.DB
+        .prepare('SELECT accessToken, refreshToken, expiresAt FROM ZoomAccount WHERE id = ?')
+        .bind(classZoomInfo.zoomAccountId)
+        .first() as { accessToken: string; refreshToken: string; expiresAt: string } | null;
+
+      if (zoomAccount) {
+        let token = zoomAccount.accessToken;
+        if (new Date(zoomAccount.expiresAt) <= new Date(Date.now() + 5 * 60 * 1000)) {
+          const { refreshZoomToken } = await import('./zoom-accounts');
+          token = (await refreshZoomToken(c, classZoomInfo.zoomAccountId)) ?? token;
+        }
+
+        const meeting = await createZoomMeeting({ topic: title, config: { accessToken: token } });
+
+        await c.env.DB
+          .prepare(`
+            INSERT INTO LiveStream (id, classId, teacherId, title, status, zoomLink, zoomMeetingId, zoomStartUrl, createdAt) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `)
+          .bind(streamId, classId, classInfo.teacherId, title, 'active',
+                meeting.join_url, String(meeting.id), meeting.start_url, now)
+          .run();
+
+        const stream = await c.env.DB.prepare('SELECT * FROM LiveStream WHERE id = ?').bind(streamId).first();
+        return c.json(successResponse(stream), 201);
+      }
+    }
+
+    // ── Daily.co path: fallback when no Zoom account is configured ──
+    const apiKey = c.env.DAILY_API_KEY;
+    if (!apiKey) {
+      return c.json(errorResponse('No hay cuenta Zoom ni Daily.co configurados para esta asignatura'), 500);
+    }
+
+    // Create Daily.co room with cloud recording enabled
+    const roomName = `akademo-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+    const roomRes = await fetch('https://api.daily.co/v1/rooms', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: roomName,
+        properties: {
+          enable_screenshare: true,
+          enable_chat: true,
+          enable_recording: 'cloud',
+          start_video_off: false,
+          start_audio_off: false,
+          exp: Math.floor(Date.now() / 1000) + 6 * 60 * 60,
+        },
+      }),
+    });
+
+    if (!roomRes.ok) {
+      const err = await roomRes.text();
+      console.error('[Create Live Stream] Daily.co room creation failed:', err);
+      return c.json(errorResponse('Error al crear sala de videoconferencia'), 500);
+    }
+
+    const room = await roomRes.json() as { name: string; url: string };
+
     await c.env.DB
       .prepare(`
-        INSERT INTO LiveStream (id, classId, teacherId, title, status, zoomLink, zoomMeetingId, zoomStartUrl, zoomPassword, createdAt) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO LiveStream (id, classId, teacherId, title, status, dailyRoomName, dailyRoomUrl, createdAt) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `)
-      .bind(
-        streamId, 
-        classId, 
-        classInfo.teacherId,  // Use the class's actual teacherId, not session.id
-        title, 
-        'active',  // Start as active immediately (no manual scheduling)
-        zoomMeeting.join_url,
-        String(zoomMeeting.id),
-        zoomMeeting.start_url,
-        zoomPassword,
-        now
-      )
+      .bind(streamId, classId, classInfo.teacherId, title, 'active', room.name, room.url, now)
       .run();
 
     const stream = await c.env.DB
@@ -357,11 +356,14 @@ live.get('/:id', async (c) => {
       .prepare(`
         SELECT ls.id, ls.classId, ls.teacherId, ls.status, ls.title, ls.startedAt, ls.endedAt, 
                ls.recordingId, ls.createdAt, ls.zoomLink, ls.zoomMeetingId, ls.zoomStartUrl, ls.zoomPassword,
-               ls.participantCount, ls.currentCount, ls.participantsFetchedAt, 
-               u.firstName, u.lastName, c.name as className, c.academyId
+               ls.participantCount, ls.currentCount, ls.participantsFetchedAt,
+               ls.dailyRoomName, ls.dailyRoomUrl,
+               u.firstName, u.lastName, c.name as className, c.slug as classSlug, c.academyId,
+               a.name as academyName, a.logoUrl as academyLogoUrl
         FROM LiveStream ls
         JOIN User u ON ls.teacherId = u.id
         JOIN Class c ON ls.classId = c.id
+        JOIN Academy a ON c.academyId = a.id
         WHERE ls.id = ?
       `)
       .bind(streamId)
@@ -393,12 +395,119 @@ live.get('/:id', async (c) => {
     if (session.role === 'STUDENT') {
       delete stream.zoomStartUrl;
       delete stream.zoomPassword;
+      delete stream.dailyRoomName; // Room name is host-internal; URL is enough to join
     }
 
     return c.json(successResponse(stream));
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Get Stream] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
+
+// POST /live/:id/start-recording - Trigger Daily.co cloud recording to start
+live.post('/:id/start-recording', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    const streamId = c.req.param('id');
+
+    if (!['ADMIN', 'TEACHER', 'ACADEMY'].includes(session.role)) {
+      return c.json(errorResponse('Not authorized'), 403);
+    }
+
+    const stream: any = await c.env.DB
+      .prepare('SELECT ls.*, a.ownerId as academyOwnerId FROM LiveStream ls JOIN Class c ON ls.classId = c.id JOIN Academy a ON c.academyId = a.id WHERE ls.id = ?')
+      .bind(streamId)
+      .first();
+
+    if (!stream) return c.json(errorResponse('Stream not found'), 404);
+    if (!stream.dailyRoomName) return c.json(successResponse({ started: false, reason: 'Not a Daily.co stream' }));
+
+    if (session.role === 'TEACHER' && stream.teacherId !== session.id) return c.json(errorResponse('Not authorized'), 403);
+    if (session.role === 'ACADEMY' && stream.academyOwnerId !== session.id) return c.json(errorResponse('Not authorized'), 403);
+
+    const apiKey = c.env.DAILY_API_KEY;
+    if (!apiKey) return c.json(errorResponse('Daily.co not configured'), 500);
+
+    const recRes = await fetch('https://api.daily.co/v1/recordings/start', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ room_name: stream.dailyRoomName, layout: { preset: 'default' } }),
+    });
+
+    if (!recRes.ok) {
+      const err = await recRes.text();
+      console.warn('[Start Recording] Daily.co response:', err);
+      // Non-fatal — host may not have joined yet; Daily webhook will still fire when session ends
+      return c.json(successResponse({ started: false, reason: err }));
+    }
+
+    return c.json(successResponse({ started: true }));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Start Recording] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
+
+// GET /live/:id/join-token - Generate a Daily.co meeting token for the authenticated user
+live.get('/:id/join-token', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    const streamId = c.req.param('id');
+
+    const stream: any = await c.env.DB
+      .prepare('SELECT ls.id, ls.classId, ls.teacherId, ls.status, ls.dailyRoomName, ls.dailyRoomUrl, c.academyId, a.ownerId as academyOwnerId FROM LiveStream ls JOIN Class c ON ls.classId = c.id JOIN Academy a ON c.academyId = a.id WHERE ls.id = ?')
+      .bind(streamId)
+      .first();
+
+    if (!stream) return c.json(errorResponse('Stream not found'), 404);
+    if (!stream.dailyRoomName) return c.json(errorResponse('Esta sesión no usa videoconferencia integrada'), 400);
+
+    // Access control
+    if (session.role === 'STUDENT') {
+      const enrolled: any = await c.env.DB
+        .prepare("SELECT id FROM ClassEnrollment WHERE userId = ? AND classId = ? AND status = 'APPROVED'")
+        .bind(session.id, stream.classId)
+        .first();
+      if (!enrolled) return c.json(errorResponse('No estás matriculado en esta asignatura'), 403);
+    } else if (session.role === 'TEACHER') {
+      if (stream.teacherId !== session.id) return c.json(errorResponse('Not authorized'), 403);
+    } else if (session.role === 'ACADEMY') {
+      if (stream.academyOwnerId !== session.id) return c.json(errorResponse('Not authorized'), 403);
+    }
+
+    const apiKey = c.env.DAILY_API_KEY;
+    if (!apiKey) return c.json(errorResponse('Daily.co no configurado'), 500);
+
+    const isHost = ['TEACHER', 'ACADEMY', 'ADMIN'].includes(session.role);
+    const userName = `${session.firstName} ${session.lastName}`.trim() || session.email;
+
+    const tokenRes = await fetch('https://api.daily.co/v1/meeting-tokens', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        properties: {
+          room_name: stream.dailyRoomName,
+          is_owner: isHost,
+          user_name: userName,
+          exp: Math.floor(Date.now() / 1000) + 6 * 60 * 60,
+        },
+      }),
+    });
+
+    if (!tokenRes.ok) {
+      const err = await tokenRes.text();
+      console.error('[Join Token] Daily.co token error:', err);
+      return c.json(errorResponse('Error al generar token de acceso'), 500);
+    }
+
+    const tokenData = await tokenRes.json() as { token: string };
+    return c.json(successResponse({ token: tokenData.token, roomUrl: stream.dailyRoomUrl, isHost, userName }));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Join Token] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
 });

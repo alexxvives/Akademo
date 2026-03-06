@@ -115,6 +115,8 @@ interface LiveClass {
   startUrl?: string;
   createdAt?: string;
   participantCount?: number;
+  dailyRoomUrl?: string;
+  dailyRoomName?: string;
 }
 
 interface StreamRecording {
@@ -735,9 +737,13 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
       if (result.success) {
         setLiveClasses(prev => [result.data, ...prev]);
         setShowStreamNameModal(false);
+        // Navigate straight into the embedded live room
+        if (result.data?.dailyRoomUrl) {
+          router.push(`${basePath}/live/${result.data.id}`);
+        }
       } else {
         console.error('Live class creation error:', result);
-        alert(`Error: ${result.error || 'No se pudo crear la reunión de Zoom'}`);
+        alert(`Error: ${result.error || 'No se pudo crear la sesión en vivo'}`);
       }
     } catch (e: unknown) {
       const error = e instanceof Error ? e : null;
@@ -1737,17 +1743,27 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <a
-                      href={liveClasses[0].zoomStartUrl || liveClasses[0].zoomLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-4 py-2 bg-gray-900 text-white hover:bg-gray-800 rounded-lg font-semibold text-sm transition-colors"
-                    >
-                      Entrar como Host
-                    </a>
+                    {liveClasses[0].dailyRoomUrl ? (
+                      <button
+                        onClick={() => router.push(`${basePath}/live/${liveClasses[0].id}`)}
+                        className="px-4 py-2 bg-gray-900 text-white hover:bg-gray-800 rounded-lg font-semibold text-sm transition-colors"
+                      >
+                        Entrar como Host
+                      </button>
+                    ) : (
+                      <a
+                        href={liveClasses[0].zoomStartUrl || liveClasses[0].zoomLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 bg-gray-900 text-white hover:bg-gray-800 rounded-lg font-semibold text-sm transition-colors"
+                      >
+                        Entrar como Host
+                      </a>
+                    )}
                     <button
                       onClick={() => {
-                        navigator.clipboard.writeText(liveClasses[0].zoomLink || '');
+                        const link = liveClasses[0].dailyRoomUrl || liveClasses[0].zoomLink || '';
+                        navigator.clipboard.writeText(link);
                         setCopiedLink(true);
                         setTimeout(() => setCopiedLink(false), 2000);
                       }}

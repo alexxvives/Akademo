@@ -654,4 +654,70 @@ admin.get('/audit-logs', async (c) => {
   }
 });
 
+// GET /admin/daily-webhook-setup - Programmatically create or update the Daily.co webhook subscription
+// Auth: valid ADMIN session cookie OR Authorization: Bearer <DAILY_API_KEY> (for terminal/curl use)
+admin.get('/daily-webhook-setup', async (c) => {
+  try {
+    const apiKey = c.env.DAILY_API_KEY;
+    const bearerToken = (c.req.header('Authorization') || '').replace(/^Bearer /, '');
+    if (!bearerToken || !apiKey || bearerToken !== apiKey) {
+      // Fall back to session auth
+      const session = await requireAuth(c);
+      if (session.role !== 'ADMIN') {
+        return c.json(errorResponse('Forbidden'), 403);
+      }
+    }
+
+    if (!apiKey) {
+      return c.json(errorResponse('DAILY_API_KEY secret is not configured on this worker'), 500);
+    }
+
+    const webhookUrl = 'https://akademo-api.alexxvives.workers.dev/webhooks/daily';
+    const eventTypes = ['meeting.ended', 'recording.started', 'recording.ready-to-download', 'participant.joined', 'participant.left'];
+    const headers = { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' };
+
+    // 1. List existing webhooks
+    const listRes = await fetch('https://api.daily.co/v1/webhooks', { headers });
+    if (!listRes.ok) {
+      const err = await listRes.text();
+      return c.json(errorResponse(`Daily API error listing webhooks: ${err}`), 502);
+    }
+    const listJson = await listRes.json() as any;
+    // Daily returns a bare array (not { data: [] }) — handle both shapes defensively
+    const webhooksList: Array<{ uuid: string; url: string; eventTypes: string[] }> =
+      Array.isArray(listJson) ? listJson : (listJson.data || []);
+    // Daily only allows 1 webhook per domain — always update the existing one if any, create only if none
+    const existing = webhooksList[0];
+
+    const body: Record<string, unknown> = { url: webhookUrl, eventTypes };
+    // Pass our existing DAILY_WEBHOOK_SECRET as the hmac so verification continues to work
+    if (c.env.DAILY_WEBHOOK_SECRET) {
+      body.hmac = c.env.DAILY_WEBHOOK_SECRET;
+    }
+
+    let result: unknown;
+    if (existing) {
+      // Update the existing webhook (sets new URL + event types)
+      const updateRes = await fetch(`https://api.daily.co/v1/webhooks/${existing.uuid}`, {
+        method: 'POST', headers, body: JSON.stringify(body),
+      });
+      result = await updateRes.json();
+      console.log(`[Admin] Daily webhook updated: uuid=${existing.uuid}`);
+    } else {
+      // No webhook exists yet — create one
+      const createRes = await fetch('https://api.daily.co/v1/webhooks', {
+        method: 'POST', headers, body: JSON.stringify(body),
+      });
+      result = await createRes.json();
+      console.log('[Admin] Daily webhook created');
+    }
+
+    return c.json(successResponse({ action: existing ? 'updated' : 'created', webhook: result }));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Admin] Daily webhook setup error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
+
 export default admin;

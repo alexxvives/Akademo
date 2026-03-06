@@ -57,36 +57,6 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
   const [zoomLink, setZoomLink] = useState(editEvent?.zoomLink ?? '');
   const [showZoomLink, setShowZoomLink] = useState(!!editEvent?.zoomLink);
   const [zoomMeetingId, setZoomMeetingId] = useState(editEvent?.zoomMeetingId ?? '');
-  const [creatingZoom, setCreatingZoom] = useState(false);
-  const [zoomError, setZoomError] = useState('');
-
-  const handleCreateZoomMeeting = async () => {
-    if (!classId) { setZoomError('Selecciona una asignatura primero.'); return; }
-    if (!title.trim()) { setZoomError('Escribe un título primero.'); return; }
-    setCreatingZoom(true);
-    setZoomError('');
-    try {
-      const res = await apiClient('/calendar-events/create-zoom', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ classId, title: title.trim(), eventDate, startTime }),
-      });
-      const result = await res.json();
-      if (result.success) {
-        setZoomLink(result.data.joinUrl);
-        setZoomMeetingId(result.data.meetingId || '');
-        setShowZoomLink(true);
-      } else {
-        setZoomError(result.error || 'Error al crear reunión Zoom.');
-        setShowZoomLink(true);
-      }
-    } catch {
-      setZoomError('Error de conexión con Zoom.');
-      setShowZoomLink(true);
-    } finally {
-      setCreatingZoom(false);
-    }
-  };
 
   const isEditMode = !!editEvent;
 
@@ -250,40 +220,23 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
             />
           </div>
 
-          {/* Zoom link */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-sm font-semibold text-gray-700">Zoom link</label>
-              {!showZoomLink && (
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleCreateZoomMeeting}
-                    disabled={creatingZoom}
-                    className="text-xs font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1 disabled:opacity-50"
-                  >
-                    {creatingZoom ? (
-                      <><div className="w-3 h-3 border border-blue-400 border-t-blue-700 rounded-full animate-spin" /> Creando Zoom...</>
-                    ) : (
-                      <><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.069A1 1 0 0121 8.867V15.133a1 1 0 01-1.447.902L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg> Añadir zoom link</>
-                    )}
-                  </button>
-                </div>
-              )}
-            </div>
-            {zoomError && <p className="text-xs text-red-500 mb-1.5">{zoomError}</p>}
-            {showZoomLink && (
+          {/* Link (optional — for physical or external meetings) */}
+          {showZoomLink && (
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-sm font-semibold text-gray-700">Link de la reunión</label>
+              </div>
               <div className="flex gap-2">
                 <input
                   type="url"
                   value={zoomLink}
                   onChange={(e) => setZoomLink(e.target.value)}
-                  placeholder="https://zoom.us/j/..."
+                  placeholder="https://..."
                   className="flex-1 px-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 />
                 <button
                   type="button"
-                  onClick={() => { setShowZoomLink(false); setZoomLink(''); setZoomMeetingId(''); setZoomError(''); }}
+                  onClick={() => { setShowZoomLink(false); setZoomLink(''); setZoomMeetingId(''); }}
                   className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -291,8 +244,8 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
                   </svg>
                 </button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {error && <p className="text-xs text-red-500 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
         </div>
