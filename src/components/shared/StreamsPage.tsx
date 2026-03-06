@@ -27,6 +27,7 @@ interface Stream {
   zoomMeetingId: string | null;
   zoomStartUrl?: string;
   zoomLink?: string;
+  dailyRoomName?: string | null;
   recordingId: string | null;
   participantCount?: number | null;
   participantsFetchedAt?: string | null;
@@ -239,8 +240,8 @@ export function StreamsPage({ role }: StreamsPageProps) {
       result = result.filter((s) => periodIds.has(s.classId));
     }
     return result.sort((a, b) => {
-      const dateA = a.startedAt ? new Date(a.startedAt).getTime() : 0;
-      const dateB = b.startedAt ? new Date(b.startedAt).getTime() : 0;
+      const dateA = new Date(a.startedAt || a.createdAt || 0).getTime();
+      const dateB = new Date(b.startedAt || b.createdAt || 0).getTime();
       return dateB - dateA;
     });
   }, [streams, selectedClass, selectedAcademy, role, isAdmin, classes, activePeriodId, isClassInPeriod]);
@@ -435,7 +436,7 @@ export function StreamsPage({ role }: StreamsPageProps) {
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
           <div className="overflow-x-auto max-h-[700px] overflow-y-auto">
             <table className="w-full">
-              <thead className="bg-gray-50/50 border-b border-gray-200 sticky top-0 z-10">
+              <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
                 <tr>
                   <th className="text-left py-3 px-2 sm:px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Título
@@ -550,7 +551,7 @@ export function StreamsPage({ role }: StreamsPageProps) {
                       </td>
                       <td className="py-3 px-2 sm:px-4">{getStatusBadge(stream.status)}</td>
                       <td className="py-3 px-2 sm:px-4">
-                        {stream.status === 'scheduled' || !stream.zoomLink ? (
+                        {stream.status === 'scheduled' || (!stream.zoomLink && !stream.dailyRoomName) ? (
                           <span className="text-sm text-gray-400">—</span>
                         ) : stream.participantCount != null ? (
                           <span className="text-sm text-gray-600 font-medium">{stream.participantCount}</span>
@@ -579,7 +580,7 @@ export function StreamsPage({ role }: StreamsPageProps) {
                         )}
                       </td>
                       <td className="py-3 px-2 sm:px-4">
-                        {!stream.zoomLink ? (
+                        {!stream.zoomLink && !stream.dailyRoomName ? (
                           <span className="text-sm text-gray-400">Sin grabación</span>
                         ) : stream.recordingId ? (
                           <span className="inline-flex items-center gap-1 text-green-600 text-sm">
