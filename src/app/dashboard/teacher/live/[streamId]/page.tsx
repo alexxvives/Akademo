@@ -84,21 +84,7 @@ export default function TeacherLivePage() {
     };
   }, [embedUrl, startRecording]);
 
-  // Mark stream ended when host closes the tab without clicking Finalizar
-  useEffect(() => {
-    if (!stream || ended) return;
-    const handlePageHide = () => {
-      fetch(`${API_BASE_URL}/live/${streamId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        keepalive: true,
-        body: JSON.stringify({ status: 'ended' }),
-      }).catch(() => {});
-    };
-    window.addEventListener('pagehide', handlePageHide);
-    return () => window.removeEventListener('pagehide', handlePageHide);
-  }, [stream, streamId, ended]);
+
 
   const handleEndSession = async () => {
     if (!confirm('¿Finalizar la sesión? La grabación se procesará automáticamente.')) return;

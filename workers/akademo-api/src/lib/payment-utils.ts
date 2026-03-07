@@ -127,7 +127,7 @@ export async function autoCreatePendingPayments(db: D1Database, userId: string):
           .prepare(`INSERT INTO Payment (id, type, payerId, payerType, payerName, payerEmail, receiverId, receiverName, amount, currency, status, paymentMethod, classId, description, metadata, nextPaymentDue, billingCycleEnd, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`)
           .bind(paymentId, 'STUDENT_TO_ACADEMY', enrollment.studentId, 'STUDENT', `${enrollment.firstName} ${enrollment.lastName}`, enrollment.email, enrollment.academyId, enrollment.academyName, amountOwed, 'EUR', 'PENDING', 'cash', enrollment.classId, description, JSON.stringify({ enrollmentId: enrollment.enrollmentId, monthsOwed, autoCreated: true }), nextPaymentDue, billingCycleEnd)
           .run();
-      } else if (Math.abs(existingPayment.amount - amountOwed) > 0.01) {
+      } else {
         await db
           .prepare(`UPDATE Payment SET amount = ?, description = ?, metadata = ?, nextPaymentDue = ?, billingCycleEnd = ? WHERE id = ?`)
           .bind(amountOwed, description, JSON.stringify({ enrollmentId: enrollment.enrollmentId, monthsOwed, autoUpdated: true }), nextPaymentDue, billingCycleEnd, existingPayment.id)

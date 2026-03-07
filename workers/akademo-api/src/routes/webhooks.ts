@@ -969,13 +969,47 @@ webhooks.post('/daily', async (c) => {
     const eventType: string = event.type || '';
     console.log(`[Daily Webhook] type: "${eventType}"`);
 
-    // participant.joined / participant.left → track current live headcount
+    // participant.joined / participant.left → track current live headcount (same logic as Zoom)
     if (eventType === 'participant.joined') {
       const roomName: string = event.payload?.room_name || event.payload?.room || '';
       if (roomName) {
+        // Use peak-count logic matching Zoom: participantCount = MAX(participantCount, currentCount+1)
         await c.env.DB.prepare(
-          "UPDATE LiveStream SET currentCount = MAX(0, COALESCE(currentCount, 0) + 1), participantCount = COALESCE(participantCount, 0) + 1 WHERE dailyRoomName = ? AND status = 'active'"
-        ).bind(roomName).run();
+          `UPDATE LiveStream
+           SET currentCount = COALESCE(currentCount, 0) + 1,
+               participantCount = MAX(COALESCE(participantCount, 0), COALESCE(currentCount, 0) + 1),
+               participantsFetchedAt = ?
+           WHERE dailyRoomName = ? AND status = 'active'`
+        ).bind(new Date().toISOString(), roomName).run();
+
+        // Auto-start cloud recording server-side as soon as the first participant joins.
+        // This is more reliable than the iframe postMessage approach on the frontend.
+        // Daily.co returns an error if recording is already running — we safely ignore it.
+        const dailyKey = c.env.DAILY_API_KEY;
+        if (dailyKey) {
+          c.executionCtx.waitUntil((async () => {
+            try {
+              const recRes = await fetch('https://api.daily.co/v1/recordings/start', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${dailyKey}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ room_name: roomName }),
+              });
+              if (!recRes.ok) {
+                const errText = await recRes.text();
+                // Ignore "already recording" — any other error is worth logging
+                if (!errText.toLowerCase().includes('already')) {
+                  console.warn(`[Daily Webhook] Recording start for room ${roomName}:`, errText);
+                } else {
+                  console.log(`[Daily Webhook] Recording already running for room: ${roomName}`);
+                }
+              } else {
+                console.log(`[Daily Webhook] Recording started for room: ${roomName}`);
+              }
+            } catch (e: any) {
+              console.error('[Daily Webhook] Recording start error:', e.message);
+            }
+          })());
+        }
       }
     }
 
@@ -983,8 +1017,11 @@ webhooks.post('/daily', async (c) => {
       const roomName: string = event.payload?.room_name || event.payload?.room || '';
       if (roomName) {
         await c.env.DB.prepare(
-          "UPDATE LiveStream SET currentCount = MAX(0, COALESCE(currentCount, 0) - 1) WHERE dailyRoomName = ? AND status = 'active'"
-        ).bind(roomName).run();
+          `UPDATE LiveStream
+           SET currentCount = MAX(0, COALESCE(currentCount, 0) - 1),
+               participantsFetchedAt = ?
+           WHERE dailyRoomName = ? AND status = 'active'`
+        ).bind(new Date().toISOString(), roomName).run();
       }
     }
 

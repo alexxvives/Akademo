@@ -387,8 +387,7 @@ payments.get('/pending-cash', async (c) => {
                 billingCycleEnd
               )
               .run();
-          } else if (Math.abs(existingPayment.amount - amountOwed) > 0.01) {
-            // Amount changed (more months passed or partial payment made) - update
+          } else {
             await c.env.DB
               .prepare(`UPDATE Payment SET amount = ?, description = ?, metadata = ?, nextPaymentDue = ?, billingCycleEnd = ? WHERE id = ?`)
               .bind(

@@ -202,10 +202,10 @@ live.post('/', async (c) => {
 
     await c.env.DB
       .prepare(`
-        INSERT INTO LiveStream (id, classId, teacherId, title, status, dailyRoomName, dailyRoomUrl, createdAt) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO LiveStream (id, classId, teacherId, title, status, dailyRoomName, dailyRoomUrl, startedAt, createdAt) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `)
-      .bind(streamId, classId, classInfo.teacherId, title, 'active', room.name, room.url, now)
+      .bind(streamId, classId, classInfo.teacherId, title, 'active', room.name, room.url, now, now)
       .run();
 
     const stream = await c.env.DB
@@ -433,7 +433,7 @@ live.post('/:id/start-recording', async (c) => {
     const recRes = await fetch('https://api.daily.co/v1/recordings/start', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ room_name: stream.dailyRoomName, layout: { preset: 'default' } }),
+      body: JSON.stringify({ room_name: stream.dailyRoomName }),
     });
 
     if (!recRes.ok) {

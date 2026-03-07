@@ -501,7 +501,7 @@ export default function PagosPage({ role }: PagosPageProps) {
   };
   
   const periodClassIds = activePeriodId !== 'all' && !isAdmin
-    ? new Set(classes.filter(c => isClassInPeriod(c.startDate)).map(c => c.id))
+    ? new Set(classes.filter(c => !c.startDate || isClassInPeriod(c.startDate)).map(c => c.id))
     : null;
 
   const filteredPendingPayments = pendingPayments.filter(p => {
@@ -586,7 +586,7 @@ export default function PagosPage({ role }: PagosPageProps) {
           </div>
           {/* Class Filter */}
           <ClassSearchDropdown
-            classes={activePeriodId === 'all' || isAdmin ? classes : classes.filter(c => isClassInPeriod(c.startDate))}
+            classes={activePeriodId === 'all' || isAdmin ? classes : classes.filter(c => !c.startDate || isClassInPeriod(c.startDate))}
             value={selectedClass}
             onChange={setSelectedClass}
             allLabel="Todas las asignaturas"
