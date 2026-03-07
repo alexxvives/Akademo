@@ -493,6 +493,7 @@ live.get('/:id/join-token', async (c) => {
           is_owner: isHost,
           user_name: userName,
           exp: Math.floor(Date.now() / 1000) + 6 * 60 * 60,
+          ...(isHost ? { start_cloud_recording: true } : {}),
         },
       }),
     });

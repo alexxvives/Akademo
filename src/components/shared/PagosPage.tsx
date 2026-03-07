@@ -119,8 +119,8 @@ export default function PagosPage({ role }: PagosPageProps) {
   const [showStudentDropdown, setShowStudentDropdown] = useState(false);
   const [studentEnrollments, setStudentEnrollments] = useState<{[key: string]: {classId: string; className: string}[]}>({});
   const [pendingPaymentsCollapsed, setPendingPaymentsCollapsed] = useState(() => {
-    if (typeof window === 'undefined') return true;
-    return sessionStorage.getItem('pagos_pending_collapsed') !== 'false';
+    if (typeof window === 'undefined') return false;
+    return sessionStorage.getItem('pagos_pending_collapsed') === 'true';
   });
 
   // Admin-only state
