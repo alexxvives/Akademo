@@ -39,23 +39,25 @@ live.get('/', async (c) => {
       }
     }
 
+    const isHost = ['TEACHER', 'ACADEMY', 'ADMIN'].includes(session.role);
+
     const result = await c.env.DB
       .prepare(`
         SELECT ls.id, ls.classId, ls.teacherId, ls.status, ls.title, ls.startedAt, ls.endedAt, 
                ls.recordingId, ls.createdAt, ls.zoomLink, ls.zoomMeetingId, ls.zoomStartUrl, 
-               ls.participantCount, ls.currentCount, ls.participantsFetchedAt,
+               ls.dailyRoomUrl, ls.participantCount, ls.currentCount, ls.participantsFetchedAt,
                u.firstName, u.lastName
         FROM LiveStream ls
         JOIN User u ON ls.teacherId = u.id
         WHERE ls.classId = ? 
-          AND (ls.status IN ('scheduled', 'active'))
           AND (
-            ls.status = 'active' 
+            ls.status = 'active'
             OR (ls.status = 'scheduled' AND ls.createdAt > datetime('now', '-24 hours'))
+            OR (? = 1 AND ls.status = 'ended' AND ls.dailyRoomUrl IS NOT NULL AND ls.endedAt > datetime('now', '-12 hours'))
           )
         ORDER BY ls.createdAt DESC
       `)
-      .bind(classId)
+      .bind(classId, isHost ? 1 : 0)
       .all();
 
     // Strip zoomStartUrl (host-only URL) from student responses to prevent
@@ -473,9 +475,19 @@ live.get('/:id/join-token', async (c) => {
         .first();
       if (!enrolled) return c.json(errorResponse('No estás matriculado en esta asignatura'), 403);
     } else if (session.role === 'TEACHER') {
+      // Re-activate if host is rejoining an ended Daily.co stream
+      if (stream.status === 'ended') {
+        await c.env.DB.prepare("UPDATE LiveStream SET status = 'active', endedAt = NULL WHERE id = ?")
+          .bind(stream.id).run();
+      }
       if (stream.teacherId !== session.id) return c.json(errorResponse('Not authorized'), 403);
     } else if (session.role === 'ACADEMY') {
       if (stream.academyOwnerId !== session.id) return c.json(errorResponse('Not authorized'), 403);
+      // Re-activate if academy owner is rejoining an ended Daily.co stream
+      if (stream.status === 'ended') {
+        await c.env.DB.prepare("UPDATE LiveStream SET status = 'active', endedAt = NULL WHERE id = ?")
+          .bind(stream.id).run();
+      }
     }
 
     const apiKey = c.env.DAILY_API_KEY;
