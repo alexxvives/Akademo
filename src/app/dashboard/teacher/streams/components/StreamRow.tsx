@@ -189,15 +189,18 @@ export function StreamRow({ stream, onDelete, onUpdateStream, deletingStreamId }
         </span>
       </td>
       <td className="py-4 px-4">
-        {stream.recordingId ? (
+        {stream.recordingId && stream.bunnyStatus === 4 ? (
           <span className="inline-flex items-center gap-1 text-green-600 text-sm">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
             Disponible
           </span>
-        ) : (stream.status === 'ended' || stream.status === 'active') ? (
-          <span className="text-gray-400 text-sm">Procesando...</span>
+        ) : stream.recordingId || stream.status === 'ended' || stream.status === 'active' ? (
+          <span className="inline-flex items-center gap-1 text-gray-400 text-sm">
+            <div className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+            Procesando...
+          </span>
         ) : (
           <span className="text-gray-400 text-sm">—</span>
         )}
@@ -214,7 +217,7 @@ export function StreamRow({ stream, onDelete, onUpdateStream, deletingStreamId }
             </svg>
             Ver lección
           </Link>
-        ) : stream.recordingId ? (
+        ) : stream.recordingId && stream.bunnyStatus === 4 ? (
           <Link
             href={`/dashboard/teacher/subject/${stream.classSlug || stream.classId}?action=create-lesson&recordingId=${stream.recordingId}&streamTitle=${encodeURIComponent(stream.title)}`}
             className="inline-flex items-center gap-1 px-3 py-1.5 text-blue-600 hover:text-blue-700 border-2 border-blue-200 hover:border-blue-300 rounded-lg text-xs font-semibold transition-all"

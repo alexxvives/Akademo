@@ -304,8 +304,27 @@ live.get('/history', async (c) => {
     }
 
     const result = await c.env.DB.prepare(query).bind(...params).all();
+    const streams = result.results || [];
 
-    return c.json(successResponse(result.results || []));
+    // Fetch Bunny status for streams that have a recordingId
+    const streamsWithStatus = await Promise.all(
+      streams.map(async (stream: any) => {
+        if (!stream.recordingId) return stream;
+        try {
+          const bunnyRes = await fetch(
+            `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/videos/${stream.recordingId}`,
+            { headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY } }
+          );
+          if (bunnyRes.ok) {
+            const bunnyData = await bunnyRes.json() as any;
+            return { ...stream, bunnyStatus: bunnyData.status ?? null };
+          }
+        } catch {}
+        return stream;
+      })
+    );
+
+    return c.json(successResponse(streamsWithStatus));
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Live History] Error:', error);

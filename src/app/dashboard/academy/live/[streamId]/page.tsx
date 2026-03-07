@@ -162,16 +162,7 @@ export default function AcademyLivePage() {
     <div className="fixed inset-0 bg-gray-950 flex flex-col">
       {/* Top bar */}
       <div className="flex-shrink-0 relative flex items-center px-4 py-3 bg-gray-900 border-b border-white/10">
-        {/* Left: back */}
-        <button
-          onClick={() => router.push(backUrl)}
-          className="flex-shrink-0 text-gray-400 hover:text-white transition-colors p-1 rounded z-10"
-          title="Volver (la sesión continúa)"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
+
         {/* Center: academy branding */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="flex items-center gap-2 pointer-events-auto">
@@ -193,21 +184,7 @@ export default function AcademyLivePage() {
             <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
             EN VIVO
           </span>
-          <button
-            onClick={handleEndSession}
-            disabled={ending}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-60 text-white text-sm font-semibold rounded-lg transition-colors"
-          >
-            {ending ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
-              </svg>
-            )}
-            Finalizar sesión
-          </button>
+
         </div>
       </div>
 

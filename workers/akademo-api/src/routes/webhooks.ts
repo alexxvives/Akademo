@@ -1139,7 +1139,6 @@ webhooks.post('/daily', async (c) => {
               body: JSON.stringify({
                 url: download_link,
                 title: streamTitle,
-                ...(bunnyCollectionId ? { collectionId: bunnyCollectionId } : {}),
               }),
             }
           );
@@ -1161,6 +1160,21 @@ webhooks.post('/daily', async (c) => {
           const bunnyData = await bunnyRes.json() as any;
           const videoGuid: string = bunnyData.guid || bunnyData.videoGuid || bunnyData.id;
           if (videoGuid) {
+            // Assign academy collection via POST (videos/fetch doesn't support collectionId)
+            if (bunnyCollectionId) {
+              try {
+                await fetch(
+                  `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/videos/${videoGuid}`,
+                  {
+                    method: 'POST',
+                    headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ collectionId: bunnyCollectionId }),
+                  }
+                );
+              } catch (patchErr: any) {
+                console.error('[Daily Webhook] Failed to set Bunny collection on video:', patchErr.message);
+              }
+            }
             if (testRoom) {
               await c.env.DB.prepare(
                 "UPDATE DailyTestRoom SET recordingId = ?, recordingStatus = 'ready' WHERE id = ?"
