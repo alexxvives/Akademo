@@ -90,6 +90,7 @@ export function ClassFormModal({
 
   const teacherOptions = useMemo(() => {
     const filtered = teachers.filter((teacher) => {
+      if (!editingClass) return true;
       if (!allowMultipleTeachers && editingClass) {
         return teacher.userId === editingClass.teacherId || !classes.some((cls) => cls.teacherId === teacher.userId);
       }

@@ -72,7 +72,7 @@ export async function openDocument(storagePath: string): Promise<void> {
   if (!json.success) throw new Error('Failed to get signed URL');
   const { token, expires } = json.data;
   const encodedKey = storagePath.split('/').map(encodeURIComponent).join('/');
-  window.open(`${API_BASE_URL}/storage/serve/${encodedKey}?token=${token}&expires=${expires}`, '_blank');
+  window.open(`/api/storage/serve/${encodedKey}?token=${token}&expires=${expires}`, '_blank');
 }
 
 /**

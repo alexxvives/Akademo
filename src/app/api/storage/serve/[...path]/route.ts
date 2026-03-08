@@ -16,9 +16,11 @@ export async function GET(
     }
 
     // Forward the request to the API worker's storage serve endpoint
+    // Forward query params (token, expires for signed URL verification)
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://akademo-api.alexxvives.workers.dev';
-    const storageUrl = `${apiUrl}/storage/serve/${path}`;
-    
+    const { searchParams } = new URL(request.url);
+    const qs = searchParams.toString();
+    const storageUrl = `${apiUrl}/storage/serve/${path}${qs ? `?${qs}` : ''}`;
     
     const response = await fetch(storageUrl);
     

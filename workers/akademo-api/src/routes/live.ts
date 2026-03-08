@@ -380,6 +380,7 @@ live.get('/:id', async (c) => {
                ls.participantCount, ls.currentCount, ls.participantsFetchedAt,
                ls.dailyRoomName, ls.dailyRoomUrl,
                u.firstName, u.lastName, c.name as className, c.slug as classSlug, c.academyId,
+               c.whatsappGroupLink,
                a.name as academyName, a.logoUrl as academyLogoUrl
         FROM LiveStream ls
         JOIN User u ON ls.teacherId = u.id
