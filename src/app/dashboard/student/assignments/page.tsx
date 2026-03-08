@@ -311,23 +311,7 @@ export default function StudentAssignments() {
                         )}
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="flex-1">
-                            <div className="text-sm font-medium text-gray-900">{assignment.title}</div>
-                          </div>
-                          {isCompleted && !isPastDue(assignment.dueDate) && !assignment.gradedAt && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openUploadModal(assignment);
-                              }}
-                              className="px-3 py-1.5 text-xs font-medium text-brand-600 hover:text-brand-700 border border-brand-300 rounded-lg hover:bg-brand-50 transition-colors whitespace-nowrap"
-                              title="Reenviar ejercicio"
-                            >
-                              Reenviar
-                            </button>
-                          )}
-                        </div>
+                        <div className="text-sm font-medium text-gray-900">{assignment.title}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {assignment.className || '—'}
@@ -345,8 +329,8 @@ export default function StudentAssignments() {
                               onClick={() => downloadAssignmentFile(assignment)}
                               className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-700 transition-colors group"
                             >
-                              <div className="w-8 h-10 flex items-center justify-center bg-red-50 rounded border border-red-200 group-hover:bg-red-100 transition-colors">
-                                <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                              <div className="w-8 h-10 flex items-center justify-center bg-gray-100 rounded border border-gray-200 group-hover:bg-gray-200 transition-colors">
+                                <svg className="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
                                   <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                                 </svg>
                               </div>
@@ -368,8 +352,8 @@ export default function StudentAssignments() {
                                 className="flex items-center gap-2 hover:text-gray-700 transition-colors"
                                 onClick={(e) => e.stopPropagation()}
                               >
-                                <div className="w-8 h-10 flex items-center justify-center bg-green-50 rounded border border-green-200 group-hover:bg-green-100 transition-colors">
-                                  <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                <div className="w-8 h-10 flex items-center justify-center bg-gray-100 rounded border border-gray-200 group-hover:bg-gray-200 transition-colors">
+                                  <svg className="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                                   </svg>
                                 </div>
@@ -417,7 +401,17 @@ export default function StudentAssignments() {
                               {assignment.score ?? 0}/{assignment.maxScore ?? 100}
                             </div>
                           ) : (
-                            <span className="text-xs text-gray-500">En corrección</span>
+                            <div className="flex flex-col items-end gap-1">
+                              <span className="text-xs text-gray-500">En corrección</span>
+                              {!isPastDue(assignment.dueDate) && (
+                                <button
+                                  onClick={() => openUploadModal(assignment)}
+                                  className="px-2.5 py-1 text-xs font-medium text-brand-600 hover:text-brand-700 border border-brand-300 rounded-lg hover:bg-brand-50 transition-colors whitespace-nowrap"
+                                >
+                                  Reenviar
+                                </button>
+                              )}
+                            </div>
                           )
                         ) : (
                           <button

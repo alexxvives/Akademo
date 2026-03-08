@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
+import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 
 interface StudentPayment {
   enrollmentId: string;
@@ -115,16 +116,14 @@ export default function StudentPagosPage() {
           <p className="text-sm text-gray-500 mt-1">Historial de pagos a tus academias</p>
         </div>
         {uniqueClasses.length > 1 && (
-          <select
+          <ClassSearchDropdown
+            classes={uniqueClasses.map(([id, name]) => ({ id, name }))}
             value={classFilter}
-            onChange={(e) => setClassFilter(e.target.value)}
-            className="h-9 px-3 text-sm border border-gray-200 rounded-lg bg-white text-gray-700 focus:ring-2 focus:ring-brand-500 focus:outline-none"
-          >
-            <option value="all">Todas las asignaturas</option>
-            {uniqueClasses.map(([id, name]) => (
-              <option key={id} value={id}>{name}</option>
-            ))}
-          </select>
+            onChange={setClassFilter}
+            allLabel="Todas las asignaturas"
+            allValue="all"
+            className="w-full sm:w-72"
+          />
         )}
       </div>
 

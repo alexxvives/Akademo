@@ -254,10 +254,10 @@ export function useTeacherDashboard() {
         });
       }
 
-      if (Array.isArray(membershipsResult)) {
-        setMemberships(membershipsResult);
-        if (membershipsResult.length > 0) {
-          setAcademyName(membershipsResult[0].academyName);
+      if (membershipsResult.success && Array.isArray(membershipsResult.data)) {
+        setMemberships(membershipsResult.data);
+        if (membershipsResult.data.length > 0) {
+          setAcademyName(membershipsResult.data[0].academyName);
         }
       }
       

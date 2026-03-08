@@ -654,8 +654,8 @@ export function GradesPage({ role }: GradesPageProps) {
                               className="flex items-center gap-2 text-sm text-gray-900 hover:bg-gray-50 rounded px-2 py-1 -mx-2 transition-colors group"
                             >
                               <div className="relative">
-                                <div className="w-8 h-10 flex items-center justify-center bg-red-50 rounded border border-red-200">
-                                  <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                <div className="w-8 h-10 flex items-center justify-center bg-gray-100 rounded border border-gray-200">
+                                  <svg className="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
                                     <path
                                       fillRule="evenodd"
                                       d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
@@ -690,8 +690,8 @@ export function GradesPage({ role }: GradesPageProps) {
                             className="flex items-center gap-2 text-sm text-gray-900 hover:bg-gray-50 rounded px-2 py-1 -mx-2 transition-colors group"
                           >
                             <div className="relative">
-                              <div className="w-8 h-10 flex items-center justify-center bg-green-50 rounded border border-green-200">
-                                <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                              <div className="w-8 h-10 flex items-center justify-center bg-gray-100 rounded border border-gray-200">
+                                <svg className="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
                                   <path
                                     fillRule="evenodd"
                                     d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
