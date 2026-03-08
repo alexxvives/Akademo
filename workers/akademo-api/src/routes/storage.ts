@@ -417,10 +417,54 @@ storage.get('/serve/*', async (c) => {
     if (isPublicAsset) {
       // No auth needed — fall through to serve the file below
     } else {
-      // Private assets: require authenticated session + ownership verification
+      // Check for pre-signed URL token (used when browser navigates directly — no JS auth headers)
+      const tokenParam = c.req.query('token');
+      const expiresParam = c.req.query('expires');
+      let signedUrlValid = false;
+      if (tokenParam && expiresParam) {
+        const expires = parseInt(expiresParam, 10);
+        if (!isNaN(expires) && Math.floor(Date.now() / 1000) <= expires) {
+          const secret = (c.env as unknown as Record<string, unknown>).SESSION_SECRET as string;
+          if (secret) {
+            const encoder = new TextEncoder();
+            const hmacKey = await crypto.subtle.importKey(
+              'raw', encoder.encode(secret),
+              { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']
+            );
+            try {
+              const tokenBytes = new Uint8Array(
+                tokenParam.match(/.{1,2}/g)!.map(b => parseInt(b, 16))
+              );
+              signedUrlValid = await crypto.subtle.verify(
+                'HMAC', hmacKey, tokenBytes, encoder.encode(`${key}:${expires}`)
+              );
+            } catch {
+              signedUrlValid = false;
+            }
+          }
+        }
+      }
+
+      // Private assets: require authenticated session OR valid signed URL
       const session = await getSession(c);
-      if (!session) {
+      if (!session && !signedUrlValid) {
         return c.json(errorResponse('Authentication required'), 401);
+      }
+
+      // If signed URL is valid but no session, skip the ownership checks and go directly to R2
+      if (signedUrlValid && !session) {
+        const object = await c.env.STORAGE.get(key);
+        if (!object) {
+          console.error('[Serve File] File not found in R2 via signed URL. Key:', key);
+          return c.json(errorResponse('File not found'), 404);
+        }
+        return new Response(object.body, {
+          headers: {
+            'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
+            'Content-Length': object.size.toString(),
+            'Cache-Control': 'private, max-age=300',
+          },
+        });
       }
 
       // ADMIN can access everything
@@ -596,7 +640,7 @@ storage.get('/signed-url', async (c) => {
     if (!key) {
       return c.json(errorResponse('key query parameter required'), 400);
     }
-    const expires = Math.floor(Date.now() / 1000) + 86400; // 24 hours
+    const expires = Math.floor(Date.now() / 1000) + 300; // 5 minutes
     const secret = (c.env as unknown as Record<string, unknown>).SESSION_SECRET as string;
     if (!secret) {
       return c.json(errorResponse('Server configuration error'), 500);

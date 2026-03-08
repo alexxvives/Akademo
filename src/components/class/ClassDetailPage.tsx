@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, openDocument } from '@/lib/api-client';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ModalPortal } from '@/components/ui/ModalPortal';
 import Link from 'next/link';
@@ -1612,14 +1612,14 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
                       .filter(doc => doc.upload?.storagePath)
                       .map((doc) => {
                       const isDemo = doc.upload!.storagePath.startsWith('/demo/');
-                      const docHref = isDemo ? doc.upload!.storagePath : `/api/documents/${doc.upload!.storagePath.split('/').map(encodeURIComponent).join('/')}`;
                       return (
                       <a
                         key={doc.id}
-                        href={docHref}
-                        target="_blank"
+                        href={isDemo ? doc.upload!.storagePath : '#'}
+                        target={isDemo ? '_blank' : undefined}
                         rel="noopener noreferrer"
                         className="flex items-center gap-3 p-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors group"
+                        onClick={isDemo ? undefined : async (e) => { e.preventDefault(); try { await openDocument(doc.upload!.storagePath); } catch { alert('Error al abrir'); } }}
                       >
                         <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
                           <svg className="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">

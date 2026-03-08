@@ -59,6 +59,23 @@ export async function apiClient(
 }
 
 /**
+ * Open a private document in a new browser tab using a pre-signed URL.
+ * 
+ * Direct navigation to /api/documents/... fails because auth is via localStorage
+ * (not cookies), and the server-side proxy cannot forward credentials cross-worker.
+ * This gets a short-lived signed URL from the API (using JS auth) and opens it directly.
+ */
+export async function openDocument(storagePath: string): Promise<void> {
+  const res = await apiClient(`/storage/signed-url?key=${encodeURIComponent(storagePath)}`);
+  if (!res.ok) throw new Error('Failed to get signed URL');
+  const json = await res.json() as { success: boolean; data: { token: string; expires: number } };
+  if (!json.success) throw new Error('Failed to get signed URL');
+  const { token, expires } = json.data;
+  const encodedKey = storagePath.split('/').map(encodeURIComponent).join('/');
+  window.open(`${API_BASE_URL}/storage/serve/${encodedKey}?token=${token}&expires=${expires}`, '_blank');
+}
+
+/**
  * Make a GET request
  */
 export async function apiGet(path: string, options?: ApiClientOptions): Promise<Response> {

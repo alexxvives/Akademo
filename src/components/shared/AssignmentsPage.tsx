@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { apiClient, apiPost } from '@/lib/api-client';
+import { apiClient, apiPost, openDocument } from '@/lib/api-client';
 import { generateDemoAssignments, generateDemoSubmissions, generateDemoClasses, countNewDemoSubmissions } from '@/lib/demo-data';
 import { AssignmentModals } from './AssignmentModals';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
@@ -382,8 +382,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
         const uploadRes = await apiClient(`/storage/upload/${uploadId}`);
         const uploadResult = await uploadRes.json();
         if (uploadResult.success && uploadResult.data) {
-          const url = `/api/documents/${uploadResult.data.storagePath.split('/').map(encodeURIComponent).join('/')}`;
-          window.open(url, '_blank');
+          try { await openDocument(uploadResult.data.storagePath); } catch { alert('Error al abrir el archivo'); }
         }
         await new Promise(resolve => setTimeout(resolve, 300));
       }
@@ -404,8 +403,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
       const uploadRes = await apiClient(`/storage/upload/${solutionUploadId}`);
       const uploadResult = await uploadRes.json();
       if (uploadResult.success && uploadResult.data) {
-        const url = `/api/documents/${uploadResult.data.storagePath}`;
-        window.open(url, '_blank');
+        try { await openDocument(uploadResult.data.storagePath); } catch { alert('Error al abrir el archivo'); }
       } else {
         alert('Error: No se pudo encontrar el archivo del solucionario');
       }

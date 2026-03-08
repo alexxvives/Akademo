@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState, useMemo } from 'react';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, openDocument } from '@/lib/api-client';
 import { Bar } from 'react-chartjs-2';
 import { generateDemoAssignments, generateDemoSubmissions, generateDemoClasses } from '@/lib/demo-data';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
@@ -439,11 +439,11 @@ export function GradesPage({ role }: GradesPageProps) {
     },
   };
 
-  const handleDownload = (storagePath: string) => {
+  const handleDownload = async (storagePath: string) => {
     if (storagePath.startsWith('/demo/') || storagePath.startsWith('demo/')) {
       window.open(storagePath.startsWith('/') ? storagePath : `/${storagePath}`, '_blank');
     } else {
-      window.open(`/api/documents/${storagePath.split('/').map(encodeURIComponent).join('/')}`, '_blank');
+      try { await openDocument(storagePath); } catch { alert('Error al abrir el archivo'); }
     }
   };
 

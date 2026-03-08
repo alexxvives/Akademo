@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { apiClient, apiPost } from '@/lib/api-client';
+import { apiClient, apiPost, openDocument } from '@/lib/api-client';
 import { SkeletonAssignments } from '@/components/ui/SkeletonLoader';
 import { generateDemoClasses, generateDemoStudentAssignments } from '@/lib/demo-data';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
@@ -236,8 +236,7 @@ export default function StudentAssignments() {
         const res = await apiClient(`/storage/upload/${uploadIds[0]}`);
         const result = await res.json();
         if (result.success && result.data) {
-          const p = result.data.storagePath.split('/').map(encodeURIComponent).join('/');
-          window.open(`/api/documents/${p}`, '_blank');
+          try { await openDocument(result.data.storagePath); } catch { console.error('Failed to open file'); }
         }
       } catch (error) {
         console.error('Failed to open file:', error);
@@ -379,7 +378,7 @@ export default function StudentAssignments() {
                                       {dropdownFiles.map((file) => (
                                         <button
                                           key={file.uploadId}
-                                          onClick={() => { const p = file.storagePath.split('/').map(encodeURIComponent).join('/'); window.open(`/api/documents/${p}`, '_blank'); setOpenDropdown(null); }}
+                                          onClick={async () => { setOpenDropdown(null); try { await openDocument(file.storagePath); } catch { alert('Error al abrir'); } }}
                                           className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 transition-colors"
                                         >
                                           <svg className="w-4 h-4 text-gray-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -403,11 +402,10 @@ export default function StudentAssignments() {
                           <div className="flex items-center gap-2 text-sm text-gray-900 group">
                             <div className="relative">
                               <a
-                                href={`/api/documents/${assignment.submissionStoragePath?.split('/').map(encodeURIComponent).join('/')}`}
-                                target="_blank"
+                                href="#"
                                 rel="noopener noreferrer"
                                 className="flex items-center gap-2 hover:text-gray-700 transition-colors"
-                                onClick={(e) => e.stopPropagation()}
+                                onClick={async (e) => { e.preventDefault(); e.stopPropagation(); if (assignment.submissionStoragePath) try { await openDocument(assignment.submissionStoragePath); } catch { alert('Error al abrir'); } }}
                               >
                                 <div className="w-8 h-10 flex items-center justify-center bg-gray-100 rounded border border-gray-200 group-hover:bg-gray-200 transition-colors">
                                   <svg className="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
