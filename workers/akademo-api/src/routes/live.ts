@@ -161,7 +161,7 @@ live.post('/', async (c) => {
             INSERT INTO LiveStream (id, classId, teacherId, title, status, zoomLink, zoomMeetingId, zoomStartUrl, createdAt) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
           `)
-          .bind(streamId, classId, classInfo.teacherId, title, 'active',
+          .bind(streamId, classId, classInfo.teacherId, title, 'scheduled',
                 meeting.join_url, String(meeting.id), meeting.start_url, now)
           .run();
 
@@ -207,7 +207,7 @@ live.post('/', async (c) => {
         INSERT INTO LiveStream (id, classId, teacherId, title, status, dailyRoomName, dailyRoomUrl, startedAt, createdAt) 
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `)
-      .bind(streamId, classId, classInfo.teacherId, title, 'active', room.name, room.url, now, now)
+      .bind(streamId, classId, classInfo.teacherId, title, 'scheduled', room.name, room.url, now, now)
       .run();
 
     const stream = await c.env.DB
@@ -495,16 +495,16 @@ live.get('/:id/join-token', async (c) => {
         .first();
       if (!enrolled) return c.json(errorResponse('No estás matriculado en esta asignatura'), 403);
     } else if (session.role === 'TEACHER') {
-      // Re-activate if host is rejoining an ended Daily.co stream
-      if (stream.status === 'ended') {
+      // Activate stream when host joins (from scheduled) or rejoin after ended
+      if (stream.status === 'scheduled' || stream.status === 'ended') {
         await c.env.DB.prepare("UPDATE LiveStream SET status = 'active', endedAt = NULL WHERE id = ?")
           .bind(stream.id).run();
       }
       if (stream.teacherId !== session.id) return c.json(errorResponse('Not authorized'), 403);
     } else if (session.role === 'ACADEMY') {
       if (stream.academyOwnerId !== session.id) return c.json(errorResponse('Not authorized'), 403);
-      // Re-activate if academy owner is rejoining an ended Daily.co stream
-      if (stream.status === 'ended') {
+      // Activate stream when host joins (from scheduled) or rejoin after ended
+      if (stream.status === 'scheduled' || stream.status === 'ended') {
         await c.env.DB.prepare("UPDATE LiveStream SET status = 'active', endedAt = NULL WHERE id = ?")
           .bind(stream.id).run();
       }

@@ -251,7 +251,7 @@ export function ClassFormModal({
                   formData.allowOneTime ? 'border-green-500 bg-green-50 shadow-md' : 'border-gray-200 bg-white hover:border-gray-300'
                 }`}
               >
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-2">
                   <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
                     formData.allowOneTime ? 'border-green-500 bg-green-500' : 'border-gray-300'
                   }`}>
