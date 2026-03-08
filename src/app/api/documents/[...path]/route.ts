@@ -12,12 +12,23 @@ export async function GET(
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://akademo-api.alexxvives.workers.dev';
     const documentUrl = `${apiUrl}/storage/serve/${encodedPath}`;
 
+    // Cloudflare Workers strip the Cookie header from cross-origin sub-requests.
+    // The API worker supports Authorization: Bearer <token> as a fallback,
+    // so extract the session cookie and forward it that way instead.
+    const cookieHeader = request.headers.get('cookie') || '';
+    const sessionToken = cookieHeader
+      .split(';')
+      .map((c) => c.trim())
+      .find((c) => c.startsWith('academy_session='))
+      ?.slice('academy_session='.length) || '';
+
+    const forwardHeaders: HeadersInit = {};
+    if (sessionToken) {
+      forwardHeaders['Authorization'] = `Bearer ${sessionToken}`;
+    }
+
     // Forward the request to the API worker
-    const response = await fetch(documentUrl, {
-      headers: {
-        'Cookie': request.headers.get('cookie') || '',
-      },
-    });
+    const response = await fetch(documentUrl, { headers: forwardHeaders });
 
     if (!response.ok) {
       return NextResponse.json(

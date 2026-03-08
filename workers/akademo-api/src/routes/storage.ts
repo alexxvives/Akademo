@@ -427,7 +427,7 @@ storage.get('/serve/*', async (c) => {
       if (session.role !== 'ADMIN') {
         // For assignment/ and document/ paths, verify the user has a relationship to the file
         const isAssignment = key.startsWith('assignment/');
-        const isDocument = key.startsWith('document/');
+        const isDocument = key.startsWith('document/') || key.startsWith('documents/');
 
         if (isAssignment || isDocument) {
           // Check if user uploaded this file
