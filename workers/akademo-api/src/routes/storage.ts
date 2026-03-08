@@ -566,7 +566,7 @@ storage.get('/serve/*', async (c) => {
           headers: {
             'Content-Type': rawObject.httpMetadata?.contentType || 'application/octet-stream',
             'Content-Length': rawObject.size.toString(),
-            'Cache-Control': 'public, max-age=31536000',
+            'Cache-Control': isPublicAsset ? 'public, max-age=31536000, immutable' : 'private, max-age=3600',
           },
         });
       }
@@ -578,7 +578,7 @@ storage.get('/serve/*', async (c) => {
       headers: {
         'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
         'Content-Length': object.size.toString(),
-        'Cache-Control': 'public, max-age=31536000',
+        'Cache-Control': isPublicAsset ? 'public, max-age=31536000, immutable' : 'private, max-age=3600',
       },
     });
   } catch (error: any) {

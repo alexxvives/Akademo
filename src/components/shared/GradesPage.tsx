@@ -443,7 +443,7 @@ export function GradesPage({ role }: GradesPageProps) {
     if (storagePath.startsWith('/demo/') || storagePath.startsWith('demo/')) {
       window.open(storagePath.startsWith('/') ? storagePath : `/${storagePath}`, '_blank');
     } else {
-      window.open(`/api/documents/${storagePath}`, '_blank');
+      window.open(`/api/documents/${storagePath.split('/').map(encodeURIComponent).join('/')}`, '_blank');
     }
   };
 

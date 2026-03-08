@@ -382,7 +382,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
         const uploadRes = await apiClient(`/storage/upload/${uploadId}`);
         const uploadResult = await uploadRes.json();
         if (uploadResult.success && uploadResult.data) {
-          const url = `/api/documents/${uploadResult.data.storagePath}`;
+          const url = `/api/documents/${uploadResult.data.storagePath.split('/').map(encodeURIComponent).join('/')}`;
           window.open(url, '_blank');
         }
         await new Promise(resolve => setTimeout(resolve, 300));

@@ -236,7 +236,8 @@ export default function StudentAssignments() {
         const res = await apiClient(`/storage/upload/${uploadIds[0]}`);
         const result = await res.json();
         if (result.success && result.data) {
-          window.open(`/api/documents/${result.data.storagePath}`, '_blank');
+          const p = result.data.storagePath.split('/').map(encodeURIComponent).join('/');
+          window.open(`/api/documents/${p}`, '_blank');
         }
       } catch (error) {
         console.error('Failed to open file:', error);
@@ -378,7 +379,7 @@ export default function StudentAssignments() {
                                       {dropdownFiles.map((file) => (
                                         <button
                                           key={file.uploadId}
-                                          onClick={() => { window.open(`/api/documents/${file.storagePath}`, '_blank'); setOpenDropdown(null); }}
+                                          onClick={() => { const p = file.storagePath.split('/').map(encodeURIComponent).join('/'); window.open(`/api/documents/${p}`, '_blank'); setOpenDropdown(null); }}
                                           className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 transition-colors"
                                         >
                                           <svg className="w-4 h-4 text-gray-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -402,7 +403,7 @@ export default function StudentAssignments() {
                           <div className="flex items-center gap-2 text-sm text-gray-900 group">
                             <div className="relative">
                               <a
-                                href={`/api/documents/${assignment.submissionStoragePath}`}
+                                href={`/api/documents/${assignment.submissionStoragePath?.split('/').map(encodeURIComponent).join('/')}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex items-center gap-2 hover:text-gray-700 transition-colors"

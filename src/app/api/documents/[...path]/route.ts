@@ -7,9 +7,10 @@ export async function GET(
   { params }: { params: { path: string[] } }
 ) {
   try {
-    const path = params.path.join('/');
+    // Re-encode each path component to handle special characters (spaces, parentheses, etc.)
+    const encodedPath = params.path.map(encodeURIComponent).join('/');
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://akademo-api.alexxvives.workers.dev';
-    const documentUrl = `${apiUrl}/storage/serve/${path}`;
+    const documentUrl = `${apiUrl}/storage/serve/${encodedPath}`;
 
     // Forward the request to the API worker
     const response = await fetch(documentUrl, {
@@ -25,12 +26,10 @@ export async function GET(
       );
     }
 
-    // Get the file content
-    const blob = await response.blob();
     const contentType = response.headers.get('content-type') || 'application/pdf';
-    
-    // Return the file without Content-Disposition header to allow browser to handle viewing
-    return new NextResponse(blob, {
+
+    // Stream the response body instead of buffering to avoid memory issues with large files
+    return new NextResponse(response.body, {
       headers: {
         'Content-Type': contentType,
         'Cache-Control': 'private, max-age=3600',
