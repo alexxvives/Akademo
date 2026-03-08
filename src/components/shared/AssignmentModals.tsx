@@ -39,7 +39,7 @@ export interface AssignmentModalsProps {
   editTitle: string; setEditTitle: (v: string) => void;
   editDescription: string; setEditDescription: (v: string) => void;
   editDueDate: string; setEditDueDate: (v: string) => void;
-  editUploadFile: File | null; setEditUploadFile: (v: File | null) => void;
+  editUploadFiles: File[]; setEditUploadFiles: (v: File[]) => void;
   updating: boolean;
   handleUpdateAssignment: (e: React.FormEvent) => void;
   // Edit uses newTitle/newDescription via the parent, but the edit modal uses editTitle/editDescription
@@ -67,7 +67,7 @@ export function AssignmentModals(props: AssignmentModalsProps) {
     newTitle, setNewTitle, newDescription, setNewDescription, newDueDate, setNewDueDate,
     uploadFiles, setUploadFiles, uploadProgress, creating, handleCreateAssignment, resetForm,
     showEditModal, setShowEditModal, editTitle, setEditTitle, editDescription, setEditDescription,
-    editDueDate, setEditDueDate, editUploadFile, setEditUploadFile, updating, handleUpdateAssignment,
+    editDueDate, setEditDueDate, editUploadFiles, setEditUploadFiles, updating, handleUpdateAssignment,
     showSubmissionsModal, setShowSubmissionsModal, submissions, handleBulkDownload,
     downloadSingleSubmission, openGradeModal,
     showGradeModal, setShowGradeModal, selectedSubmission, gradeScore, setGradeScore,
@@ -95,28 +95,28 @@ export function AssignmentModals(props: AssignmentModalsProps) {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Título *</label>
-                <input type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} required
+                <label htmlFor="create-title" className="block text-sm font-medium text-gray-700 mb-1">Título *</label>
+                <input id="create-title" name="title" type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} required
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
-                <textarea value={newDescription} onChange={(e) => setNewDescription(e.target.value)} rows={4}
+                <label htmlFor="create-description" className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                <textarea id="create-description" name="description" value={newDescription} onChange={(e) => setNewDescription(e.target.value)} rows={4}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
               </div>
               {requireGrading && (
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Fecha y hora límite</label>
-                  <input type="datetime-local" value={newDueDate} onChange={(e) => setNewDueDate(e.target.value)}
+                  <label htmlFor="create-due-date" className="block text-sm font-medium text-gray-700 mb-1">Fecha y hora límite</label>
+                  <input id="create-due-date" name="dueDate" type="datetime-local" value={newDueDate} onChange={(e) => setNewDueDate(e.target.value)}
                     min={(() => { const now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); return now.toISOString().slice(0, 16); })()}
                     className="w-full h-[38px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 text-gray-700" />
                 </div>
               </div>
               )}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Archivos adjuntos</label>
-                <input type="file" multiple
+                <label htmlFor="create-files" className="block text-sm font-medium text-gray-700 mb-1">Archivos adjuntos</label>
+                <input id="create-files" name="files" type="file" multiple
                   onChange={(e) => setUploadFiles(Array.from(e.target.files || []))}
                   className="w-full h-[38px] px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 file:mr-4 file:py-0.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200" />
                 {uploadFiles.length > 0 && (
@@ -160,8 +160,8 @@ export function AssignmentModals(props: AssignmentModalsProps) {
             </div>
             <form onSubmit={handleUpdateAssignment} className="p-6 space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
-                <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} required
+                <label htmlFor="edit-title" className="block text-sm font-medium text-gray-700 mb-1">Título</label>
+                <input id="edit-title" type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} required
                   className="w-full h-[38px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
               </div>
               <div>
@@ -177,15 +177,24 @@ export function AssignmentModals(props: AssignmentModalsProps) {
               </div>
               )}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Actualizar archivo (opcional)</label>
+                <label htmlFor="edit-files" className="block text-sm font-medium text-gray-700 mb-1">Actualizar archivos adjuntos (opcional, hasta 5)</label>
                 {selectedAssignment.attachmentName && (
-                  <div className="mb-2 text-sm text-gray-600">Archivo actual: {selectedAssignment.attachmentName}</div>
+                  <div className="mb-2 text-sm text-gray-600">Archivos actuales: {selectedAssignment.attachmentName}</div>
                 )}
-                <input type="file"
-                  onChange={(e) => setEditUploadFile(e.target.files?.[0] || null)}
+                <input id="edit-files" type="file" multiple
+                  onChange={(e) => setEditUploadFiles(Array.from(e.target.files || []).slice(0, 5))}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200" />
-                {editUploadFile && (
-                  <div className="mt-2 text-sm text-green-600">Nuevo archivo seleccionado: {editUploadFile.name}</div>
+                {editUploadFiles.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    {editUploadFiles.map((f, i) => (
+                      <div key={i} className="flex items-center gap-2 text-sm text-gray-600">
+                        <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                        </svg>
+                        <span>{f.name}</span>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
               <div className="flex gap-4 justify-end pt-4">

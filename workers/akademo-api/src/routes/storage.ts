@@ -139,7 +139,7 @@ storage.post('/upload', async (c) => {
     // SECURITY: Validate upload path based on user role
     // Students can only upload to assignment/ and avatar/ paths
     if (session.role === 'STUDENT') {
-      const allowedStudentPrefixes = ['assignment/', 'avatar/'];
+      const allowedStudentPrefixes = ['assignment/', 'avatar/', 'assignment_submission/'];
       if (!allowedStudentPrefixes.some(prefix => path.startsWith(prefix))) {
         return c.json(errorResponse('Students can only upload assignments and avatars'), 403);
       }

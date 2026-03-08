@@ -61,7 +61,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editDueDate, setEditDueDate] = useState('');
-  const [editUploadFile, setEditUploadFile] = useState<File | null>(null);
+  const [editUploadFiles, setEditUploadFiles] = useState<File[]>([]);
   const [updating, setUpdating] = useState(false);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
@@ -451,7 +451,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
       }
       const res = await apiPost('/assignments', {
         classId: selectedClassForCreate, title: newTitle, description: newDescription,
-        dueDate: newDueDate || null, maxScore: 100, uploadIds,
+        dueDate: newDueDate || undefined, maxScore: 100, uploadIds,
       });
       const result = await res.json();
       if (result.success) { setShowCreateModal(false); resetForm(); loadAcademyAssignments(); }
@@ -467,22 +467,22 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
     if (!selectedAssignment) return;
     setUpdating(true);
     try {
-      let uploadId = undefined;
-      if (editUploadFile) {
+      const uploadIds: string[] = [];
+      for (const file of editUploadFiles) {
         const formData = new FormData();
-        formData.append('file', editUploadFile);
+        formData.append('file', file);
         formData.append('type', 'assignment');
         const uploadRes = await apiClient('/storage/upload', { method: 'POST', body: formData });
         const uploadResult = await uploadRes.json();
-        if (uploadResult.success) { uploadId = uploadResult.data.uploadId; }
+        if (uploadResult.success) { uploadIds.push(uploadResult.data.uploadId); }
         else { alert('Error al subir archivo'); setUpdating(false); return; }
       }
       const res = await apiClient(`/assignments/${selectedAssignment.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: editTitle, description: editDescription, dueDate: editDueDate || null,
-          ...(uploadId !== undefined && { uploadId }),
+          title: editTitle, description: editDescription, dueDate: editDueDate || undefined,
+          ...(uploadIds.length > 0 && { uploadIds }),
         }),
       });
       const result = await res.json();
@@ -564,7 +564,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
     setEditTitle(assignment.title);
     setEditDescription(assignment.description || '');
     setEditDueDate(assignment.dueDate ? assignment.dueDate.split('T')[0] : '');
-    setEditUploadFile(null);
+    setEditUploadFiles([]);
     setShowEditModal(true);
   };
 
@@ -755,7 +755,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
           editTitle={editTitle} setEditTitle={setEditTitle}
           editDescription={editDescription} setEditDescription={setEditDescription}
           editDueDate={editDueDate} setEditDueDate={setEditDueDate}
-          editUploadFile={editUploadFile} setEditUploadFile={setEditUploadFile}
+          editUploadFiles={editUploadFiles} setEditUploadFiles={setEditUploadFiles}
           updating={updating} handleUpdateAssignment={handleUpdateAssignment}
           showSubmissionsModal={showSubmissionsModal} setShowSubmissionsModal={setShowSubmissionsModal}
           submissions={submissions} handleBulkDownload={handleBulkDownload}
@@ -810,8 +810,8 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
                       <button onClick={(e) => { e.stopPropagation(); openAssignmentFiles(assignment); }}
                         className="flex items-center gap-2 text-sm text-brand-600 hover:text-brand-700 transition-colors group/file">
                         <div className="relative">
-                          <div className="w-8 h-10 flex items-center justify-center bg-red-50 rounded border border-red-200 group-hover/file:bg-red-100 transition-colors">
-                            <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                          <div className="w-8 h-10 flex items-center justify-center bg-gray-100 rounded border border-gray-200 group-hover/file:bg-gray-200 transition-colors">
+                            <svg className="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                             </svg>
                           </div>
@@ -864,11 +864,11 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
                     <div className="flex items-center justify-center gap-2">
                       <button
                         onClick={() => openSolutionFile(assignment.solutionUploadId!)}
-                        className="flex items-center gap-2 text-sm text-green-600 hover:text-green-700 transition-colors group/sol"
+                      className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors group/sol"
                         title="Ver solucionario">
                         <div className="relative">
-                          <div className="w-8 h-10 flex items-center justify-center bg-green-50 rounded border border-green-200 group-hover/sol:bg-green-100 transition-colors">
-                            <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                          <div className="w-8 h-10 flex items-center justify-center bg-gray-100 rounded border border-gray-200 group-hover/sol:bg-gray-200 transition-colors">
+                            <svg className="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                             </svg>
                           </div>

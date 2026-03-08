@@ -30,6 +30,7 @@ function isPending(status: string) {
 export default function StudentPagosPage() {
   const [payments, setPayments] = useState<StudentPayment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [classFilter, setClassFilter] = useState<string>('all');
   const [pendingCollapsed, setPendingCollapsed] = useState(() => {
     if (typeof window === 'undefined') return true;
     return sessionStorage.getItem('student_pagos_pending_collapsed') !== 'false';
@@ -46,6 +47,8 @@ export default function StudentPagosPage() {
     })();
   }, []);
 
+  const uniqueClasses = Array.from(new Map(payments.map(p => [p.classId, p.className])).entries());
+
   const currency = payments[0]?.currency ?? 'EUR';
   const symbol   = currency === 'EUR' ? '€' : currency === 'USD' ? '$' : currency;
   const fmt      = (n: number) => `${symbol}${n.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -60,8 +63,8 @@ export default function StudentPagosPage() {
     return daysUntil <= 7 ? 'text-red-600 font-semibold' : 'text-gray-500';
   }
 
-  const pending = payments.filter(p => isPending(p.paymentStatus));
-  const history = payments.filter(p => !isPending(p.paymentStatus));
+  const pending = payments.filter(p => isPending(p.paymentStatus) && (classFilter === 'all' || p.classId === classFilter));
+  const history = payments.filter(p => !isPending(p.paymentStatus) && (classFilter === 'all' || p.classId === classFilter));
 
   const TableRow = ({ p }: { p: StudentPayment }) => (
     <tr className="hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0">
@@ -106,9 +109,23 @@ export default function StudentPagosPage() {
   return (
     <div className="space-y-6 pb-8">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Mis Pagos</h1>
-        <p className="text-sm text-gray-500 mt-1">Historial de pagos a tus academias</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">Mis Pagos</h1>
+          <p className="text-sm text-gray-500 mt-1">Historial de pagos a tus academias</p>
+        </div>
+        {uniqueClasses.length > 1 && (
+          <select
+            value={classFilter}
+            onChange={(e) => setClassFilter(e.target.value)}
+            className="h-9 px-3 text-sm border border-gray-200 rounded-lg bg-white text-gray-700 focus:ring-2 focus:ring-brand-500 focus:outline-none"
+          >
+            <option value="all">Todas las asignaturas</option>
+            {uniqueClasses.map(([id, name]) => (
+              <option key={id} value={id}>{name}</option>
+            ))}
+          </select>
+        )}
       </div>
 
 

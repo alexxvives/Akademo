@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://maps.googleapis.com https://static.cloudflareinsights.com",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://maps.googleapis.com https://static.cloudflareinsights.com",
   "worker-src blob: 'self'",
   "style-src 'self' 'unsafe-inline' https:",
   "img-src 'self' data: blob: https:",

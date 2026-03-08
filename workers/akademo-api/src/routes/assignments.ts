@@ -829,6 +829,14 @@ assignments.patch('/:id', async (c) => {
       WHERE id = ?
     `).bind(...bindings).run();
 
+    // If uploadIds provided, replace all AttachmentAttachment records
+    if (uploadIds !== undefined && Array.isArray(uploadIds)) {
+      await c.env.DB.prepare(`DELETE FROM AssignmentAttachment WHERE assignmentId = ?`).bind(assignmentId).run();
+      for (const uid of uploadIds) {
+        await c.env.DB.prepare(`INSERT INTO AssignmentAttachment (id, assignmentId, uploadId) VALUES (?, ?, ?)`).bind(nanoid(), assignmentId, uid).run();
+      }
+    }
+
     return c.json(successResponse({ message: 'Assignment updated successfully' }));
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;

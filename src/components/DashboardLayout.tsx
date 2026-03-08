@@ -366,10 +366,6 @@ export default function DashboardLayout({
       // Then check every 3 seconds for near-realtime logout/alert detection
       const interval = setInterval(checkSession, 3000);
       
-      // Load notifications and poll for new ones
-      loadNotifications();
-      const notificationInterval = setInterval(loadNotifications, 15000);
-      
       // Load active streams and poll for updates
       loadActiveStreams();
       const streamInterval = setInterval(loadActiveStreams, 10000);
@@ -387,7 +383,6 @@ export default function DashboardLayout({
       
       return () => {
         clearInterval(interval);
-        clearInterval(notificationInterval);
         clearInterval(streamInterval);
         clearInterval(gradesInterval);
         clearInterval(paymentsInterval);
