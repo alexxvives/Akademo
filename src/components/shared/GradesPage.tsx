@@ -96,7 +96,7 @@ export function GradesPage({ role }: GradesPageProps) {
   const [loading, setLoading] = useState(true);
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [classes, setClasses] = useState<ClassSummary[]>([]);
-  const [paymentStatus, setPaymentStatus] = useState<string>('NOT PAID');
+  const [paymentStatus, setPaymentStatus] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [academyName, setAcademyName] = useState<string>('');
 

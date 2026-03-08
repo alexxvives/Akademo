@@ -110,7 +110,7 @@ export function AssignmentModals(props: AssignmentModalsProps) {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Fecha y hora límite</label>
                   <input type="datetime-local" value={newDueDate} onChange={(e) => setNewDueDate(e.target.value)}
                     min={(() => { const now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); return now.toISOString().slice(0, 16); })()}
-                    className={`w-full h-[38px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 ${!newDueDate ? 'text-transparent' : ''}`} />
+                    className="w-full h-[38px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 text-gray-700" />
                 </div>
               </div>
               )}

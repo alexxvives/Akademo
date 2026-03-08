@@ -37,6 +37,7 @@ export async function apiClient(
     headers: {
       // Don't set Content-Type for FormData (it sets its own with boundary)
       ...(fetchOptions.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
+      'X-Requested-With': 'XMLHttpRequest',
       ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       ...fetchOptions.headers,
     },

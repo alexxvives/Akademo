@@ -989,11 +989,12 @@ export function CalendarPage({ role }: CalendarPageProps) {
   function renderMonthView() {
     const today = new Date();
     const currentMonth = currentDate.getMonth();
+    const numRows = Math.ceil(calendarDays.length / 7);
 
     return (
-      <div>
+      <div style={{ height: 'calc(100dvh - 330px)', minHeight: '450px', display: 'flex', flexDirection: 'column' }}>
         {/* Weekday headers */}
-        <div className="grid grid-cols-7 gap-1 mb-2">
+        <div className="grid grid-cols-7 gap-1 mb-2 flex-shrink-0">
           {WEEKDAYS.map(day => (
             <div key={day} className="text-center text-xs font-medium text-gray-500 py-2">
               {day}
@@ -1001,8 +1002,8 @@ export function CalendarPage({ role }: CalendarPageProps) {
           ))}
         </div>
 
-        {/* Days grid */}
-        <div className="grid grid-cols-7 gap-1">
+        {/* Days grid — equal-height rows filling available space */}
+        <div className="flex-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridTemplateRows: `repeat(${numRows}, 1fr)`, gap: '4px', minHeight: 0 }}>
           {calendarDays.map((day) => {
             const key = formatDateKey(day);
             const dayEvents = eventsByDate.get(key) || [];
@@ -1018,7 +1019,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
                 onDragOver={!isPast ? (e) => handleDragOver(e, key) : undefined}
                 onDragLeave={() => setDragOverDate(null)}
                 onDrop={!isPast ? (e) => handleDrop(e, day) : undefined}
-                className={`group min-h-[100px] sm:min-h-[130px] md:min-h-[150px] p-1.5 rounded-lg border text-left transition-all ${
+                className={`group p-1.5 rounded-lg border text-left transition-all overflow-hidden ${
                   isDragOver
                     ? 'border-brand-400 bg-brand-50 ring-1 ring-brand-400'
                     : isToday
