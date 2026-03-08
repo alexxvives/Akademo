@@ -213,7 +213,6 @@ assignments.get('/', async (c) => {
           a.id, a.classId, a.title, a.description, 
           a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt,
           c.name as className,
-          u.fileName as attachmentName,
           s.id as submissionId,
           s.uploadId as submissionUploadId,
           up.storagePath as submissionStoragePath,
@@ -221,14 +220,16 @@ assignments.get('/', async (c) => {
           s.feedback,
           s.submittedAt,
           s.gradedAt,
-          s.version
+          s.version,
+          GROUP_CONCAT(DISTINCT aa.uploadId) as attachmentIds
         FROM Assignment a
         JOIN Class c ON a.classId = c.id
-        LEFT JOIN Upload u ON a.uploadId = u.id
+        LEFT JOIN AssignmentAttachment aa ON a.id = aa.assignmentId
         LEFT JOIN AssignmentSubmission s ON a.id = s.assignmentId AND s.studentId = ?
           AND s.version = (SELECT MAX(version) FROM AssignmentSubmission WHERE assignmentId = a.id AND studentId = ?)
         LEFT JOIN Upload up ON s.uploadId = up.id
         WHERE a.classId = ?
+        GROUP BY a.id
         ORDER BY a.dueDate DESC, a.createdAt DESC
       `;
       bindings = [session.id, session.id, classId];

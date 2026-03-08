@@ -46,7 +46,7 @@ export default function JoinPage() {
     if (params.get('login') === 'true') setShowLogin(true);
   }, []);
 
-  // Skip class selection — redirect to dashboard when logged in
+  // Skip class selection — redirect to student dashboard when logged in (non-student roles redirect in _checkAuth)
   useEffect(() => {
     if (isLoggedIn) router.push('/dashboard/student');
   }, [isLoggedIn, router]);
@@ -88,8 +88,14 @@ export default function JoinPage() {
       const response = await apiClient('/auth/me');
       const result = await response.json();
       if (result.success && result.data) {
-        setIsLoggedIn(true);
-        setCurrentUser(result.data);
+        const role = result.data.role as string;
+        if (role === 'STUDENT') {
+          setIsLoggedIn(true);
+        } else {
+          // Non-student roles go directly to their dashboard
+          const roleMap: Record<string, string> = { TEACHER: '/dashboard/teacher', ACADEMY: '/dashboard/academy', ADMIN: '/dashboard/admin' };
+          router.push(roleMap[role] || '/dashboard/student');
+        }
       }
     } catch (e) {
       // Not logged in
@@ -285,7 +291,10 @@ export default function JoinPage() {
           if (result.data?.suspicionWarning) {
             sessionStorage.setItem('akademo_suspicion_warning', '1');
           }
-          router.push('/dashboard/student');
+          // Redirect to role-appropriate dashboard
+          const role = result.data.role as string;
+          const roleMap: Record<string, string> = { STUDENT: '/dashboard/student', TEACHER: '/dashboard/teacher', ACADEMY: '/dashboard/academy', ADMIN: '/dashboard/admin' };
+          router.push(roleMap[role] || '/dashboard/student');
           return;
         } else {
           setAuthError(result.error || 'Credenciales incorrectas');

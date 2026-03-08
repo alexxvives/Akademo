@@ -444,6 +444,7 @@ storage.get('/serve/*', async (c) => {
 
               if (session.role === 'STUDENT') {
                 // Student must be enrolled in a class that uses this file
+                // Check 1: lesson video/document access
                 const enrollment = await c.env.DB.prepare(`
                   SELECT e.id, e.classId FROM ClassEnrollment e
                   JOIN Lesson l ON l.classId = e.classId
@@ -454,12 +455,37 @@ storage.get('/serve/*', async (c) => {
                 `).bind(upload.id, upload.id, session.id).first() as { id: string; classId: string } | null;
                 hasAccess = !!enrollment;
 
+                // Check 2: assignment attachment access (teacher's files on assignments)
+                if (!hasAccess) {
+                  const assignmentEnrollment = await c.env.DB.prepare(`
+                    SELECT e.id, e.classId FROM ClassEnrollment e
+                    JOIN Assignment a ON a.classId = e.classId
+                    JOIN AssignmentAttachment aa ON aa.assignmentId = a.id AND aa.uploadId = ?
+                    WHERE e.userId = ? AND e.status = 'APPROVED'
+                    LIMIT 1
+                  `).bind(upload.id, session.id).first() as { id: string; classId: string } | null;
+                  hasAccess = !!assignmentEnrollment;
+                  if (!hasAccess) {
+                    // Check legacy Assignment.uploadId
+                    const legacyEnrollment = await c.env.DB.prepare(`
+                      SELECT e.id, e.classId FROM ClassEnrollment e
+                      JOIN Assignment a ON a.classId = e.classId AND a.uploadId = ?
+                      WHERE e.userId = ? AND e.status = 'APPROVED'
+                      LIMIT 1
+                    `).bind(upload.id, session.id).first() as { id: string; classId: string } | null;
+                    hasAccess = !!legacyEnrollment;
+                  }
+                }
+
                 // Block overdue students from downloading documents/assignments
-                if (hasAccess && enrollment && await isPaymentOverdue(c.env.DB, session.id, enrollment.classId)) {
-                  return c.json(errorResponse('Acceso bloqueado por pago pendiente.'), 403);
+                if (hasAccess) {
+                  const classIdToCheck = enrollment?.classId || (upload.storagePath.startsWith('assignment/') ? upload.storagePath : null);
+                  if (classIdToCheck && enrollment && await isPaymentOverdue(c.env.DB, session.id, enrollment.classId)) {
+                    return c.json(errorResponse('Acceso bloqueado por pago pendiente.'), 403);
+                  }
                 }
               } else if (session.role === 'TEACHER') {
-                // Teacher must be assigned to the class
+                // Teacher must be assigned to the class (via lesson/video/doc or assignment)
                 const classAccess = await c.env.DB.prepare(`
                   SELECT c.id FROM Class c
                   JOIN Lesson l ON l.classId = c.id
@@ -469,6 +495,28 @@ storage.get('/serve/*', async (c) => {
                   LIMIT 1
                 `).bind(upload.id, upload.id, session.id).first();
                 hasAccess = !!classAccess;
+                if (!hasAccess) {
+                  // Check assignment attachment access
+                  const assignmentAccess = await c.env.DB.prepare(`
+                    SELECT c.id FROM Class c
+                    JOIN Assignment a ON a.classId = c.id
+                    JOIN AssignmentAttachment aa ON aa.assignmentId = a.id AND aa.uploadId = ?
+                    WHERE c.teacherId = ?
+                    LIMIT 1
+                  `).bind(upload.id, session.id).first();
+                  hasAccess = !!assignmentAccess;
+                }
+                if (!hasAccess) {
+                  // Check student submission access (teacher of the class)
+                  const submissionAccess = await c.env.DB.prepare(`
+                    SELECT c.id FROM Class c
+                    JOIN Assignment a ON a.classId = c.id
+                    JOIN AssignmentSubmission s ON s.assignmentId = a.id AND s.uploadId = ?
+                    WHERE c.teacherId = ?
+                    LIMIT 1
+                  `).bind(upload.id, session.id).first();
+                  hasAccess = !!submissionAccess;
+                }
               } else if (session.role === 'ACADEMY') {
                 // Academy owner must own the academy that the class belongs to
                 const academyAccess = await c.env.DB.prepare(`
@@ -481,6 +529,18 @@ storage.get('/serve/*', async (c) => {
                   LIMIT 1
                 `).bind(upload.id, upload.id, session.id).first();
                 hasAccess = !!academyAccess;
+                if (!hasAccess) {
+                  // Check assignment attachment access
+                  const assignmentAccess = await c.env.DB.prepare(`
+                    SELECT c.id FROM Class c
+                    JOIN Academy ac ON c.academyId = ac.id
+                    JOIN Assignment a ON a.classId = c.id
+                    JOIN AssignmentAttachment aa ON aa.assignmentId = a.id AND aa.uploadId = ?
+                    WHERE ac.ownerId = ?
+                    LIMIT 1
+                  `).bind(upload.id, session.id).first();
+                  hasAccess = !!assignmentAccess;
+                }
               }
 
               if (!hasAccess) {

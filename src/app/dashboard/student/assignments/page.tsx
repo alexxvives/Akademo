@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { apiClient, apiPost } from '@/lib/api-client';
 import { SkeletonAssignments } from '@/components/ui/SkeletonLoader';
 import { generateDemoClasses, generateDemoStudentAssignments } from '@/lib/demo-data';
@@ -34,6 +34,22 @@ export default function StudentAssignments() {
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<string>('PAID');
+  // Multi-file dropdown state for Ejercicios column
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null); // assignmentId
+  const [dropdownFiles, setDropdownFiles] = useState<{uploadId: string; name: string; storagePath: string}[]>([]);
+  const [loadingDropdown, setLoadingDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setOpenDropdown(null);
+      }
+    };
+    if (openDropdown) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [openDropdown]);
 
   // Helper to check if assignment is past due
   const isPastDue = (dueDate?: string) => {
@@ -196,41 +212,57 @@ export default function StudentAssignments() {
     setSelectedAssignment(assignment);
     setShowUploadModal(true);
   };
-  const downloadAssignmentFile = async (assignment: Assignment) => {
-    // Parse attachmentIds (GROUP_CONCAT returns comma-separated string)
+  const handleEjerciciosClick = async (assignment: Assignment, e: React.MouseEvent) => {
+    e.stopPropagation();
     let uploadIds: string[] = [];
     if (assignment.attachmentIds && assignment.attachmentIds.trim()) {
-      // GROUP_CONCAT format: "id1,id2,id3" (not JSON)
-      uploadIds = assignment.attachmentIds.split(',').filter(id => id.trim());
+      uploadIds = assignment.attachmentIds.split(',').filter((id: string) => id.trim());
     }
     if (uploadIds.length === 0 && assignment.uploadId) {
-      uploadIds = [assignment.uploadId]; // Legacy single file
+      uploadIds = [assignment.uploadId];
     }
+    if (uploadIds.length === 0) return;
 
-    if (uploadIds.length === 0) {
-      alert('No hay archivos disponibles');
+    // Toggle dropdown if same assignment clicked again
+    if (openDropdown === assignment.id) {
+      setOpenDropdown(null);
+      setDropdownFiles([]);
       return;
     }
 
-    try {
-      // Fetch Upload records to get storagePath (like lesson documents)
-      for (const uploadId of uploadIds) {
-        const uploadRes = await apiClient(`/storage/upload/${uploadId}`);
-        const uploadResult = await uploadRes.json();
-        if (uploadResult.success && uploadResult.data) {
-          const storagePath = uploadResult.data.storagePath;
-          // Use /api/documents route like lesson documents do
-          const url = `/api/documents/${storagePath}`;
-          window.open(url, '_blank');
-        } else {
-          console.error('Failed to fetch upload:', uploadId);
+    // 1 file — open directly
+    if (uploadIds.length === 1) {
+      try {
+        const res = await apiClient(`/storage/upload/${uploadIds[0]}`);
+        const result = await res.json();
+        if (result.success && result.data) {
+          window.open(`/api/documents/${result.data.storagePath}`, '_blank');
         }
-        // Small delay between opens to avoid popup blocking
-        await new Promise(resolve => setTimeout(resolve, 300));
+      } catch (error) {
+        console.error('Failed to open file:', error);
       }
+      return;
+    }
+
+    // Multiple files — show dropdown with fetched names
+    setLoadingDropdown(true);
+    setOpenDropdown(assignment.id);
+    setDropdownFiles([]);
+    try {
+      const files: {uploadId: string; name: string; storagePath: string}[] = [];
+      for (const uploadId of uploadIds) {
+        const res = await apiClient(`/storage/upload/${uploadId}`);
+        const result = await res.json();
+        if (result.success && result.data) {
+          files.push({ uploadId, name: result.data.fileName, storagePath: result.data.storagePath });
+        }
+      }
+      setDropdownFiles(files);
     } catch (error) {
-      console.error('Failed to open files:', error);
-      alert('Error al abrir archivos');
+      console.error('Failed to load file list:', error);
+      setOpenDropdown(null);
+    } finally {
+      setLoadingDropdown(false);
     }
   };
   const handleDeleteSubmission = async (assignmentId: string) => {
@@ -320,22 +352,46 @@ export default function StudentAssignments() {
                         {(() => {
                           let fileCount = 0;
                           if (assignment.attachmentIds && assignment.attachmentIds.trim()) {
-                            fileCount = assignment.attachmentIds.split(',').filter(id => id.trim()).length;
+                            fileCount = assignment.attachmentIds.split(',').filter((id: string) => id.trim()).length;
                           } else if (assignment.uploadId) {
                             fileCount = 1;
                           }
                           return fileCount > 0 ? (
-                            <button
-                              onClick={() => downloadAssignmentFile(assignment)}
-                              className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-700 transition-colors group"
-                            >
-                              <div className="w-8 h-10 flex items-center justify-center bg-gray-100 rounded border border-gray-200 group-hover:bg-gray-200 transition-colors">
-                                <svg className="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                                </svg>
-                              </div>
-                              <span className="text-xs">{fileCount} archivo{fileCount > 1 ? 's' : ''}</span>
-                            </button>
+                            <div className="relative" ref={openDropdown === assignment.id ? dropdownRef : null}>
+                              <button
+                                onClick={(e) => handleEjerciciosClick(assignment, e)}
+                                className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-700 transition-colors group"
+                              >
+                                <div className="w-8 h-10 flex items-center justify-center bg-gray-100 rounded border border-gray-200 group-hover:bg-gray-200 transition-colors">
+                                  <svg className="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                                  </svg>
+                                </div>
+                                <span className="text-xs">{fileCount} archivo{fileCount > 1 ? 's' : ''}</span>
+                              </button>
+                              {openDropdown === assignment.id && (
+                                <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 z-50 min-w-[200px]">
+                                  {loadingDropdown ? (
+                                    <div className="p-3 text-xs text-gray-500">Cargando...</div>
+                                  ) : (
+                                    <div className="py-1">
+                                      {dropdownFiles.map((file) => (
+                                        <button
+                                          key={file.uploadId}
+                                          onClick={() => { window.open(`/api/documents/${file.storagePath}`, '_blank'); setOpenDropdown(null); }}
+                                          className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 transition-colors"
+                                        >
+                                          <svg className="w-4 h-4 text-gray-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                                          </svg>
+                                          <span className="truncate max-w-[180px]">{file.name}</span>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           ) : (
                             <span className="text-xs text-gray-400">Sin archivo</span>
                           );
@@ -401,15 +457,16 @@ export default function StudentAssignments() {
                               {assignment.score ?? 0}/{assignment.maxScore ?? 100}
                             </div>
                           ) : (
-                            <div className="flex flex-col items-end gap-1">
-                              <span className="text-xs text-gray-500">En corrección</span>
-                              {!isPastDue(assignment.dueDate) && (
+                            <div className="flex justify-end">
+                              {!isPastDue(assignment.dueDate) ? (
                                 <button
                                   onClick={() => openUploadModal(assignment)}
                                   className="px-2.5 py-1 text-xs font-medium text-brand-600 hover:text-brand-700 border border-brand-300 rounded-lg hover:bg-brand-50 transition-colors whitespace-nowrap"
                                 >
                                   Reenviar
                                 </button>
+                              ) : (
+                                <span className="text-xs text-gray-500">En corrección</span>
                               )}
                             </div>
                           )

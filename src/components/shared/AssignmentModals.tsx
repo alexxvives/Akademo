@@ -251,8 +251,8 @@ export function AssignmentModals(props: AssignmentModalsProps) {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <button onClick={() => downloadSingleSubmission(sub)}
-                          className="inline-flex items-center justify-center w-8 h-10 bg-red-50 hover:bg-red-100 rounded border border-red-200 transition-colors">
-                          <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                          className="inline-flex items-center justify-center w-8 h-10 bg-gray-100 hover:bg-gray-200 rounded border border-gray-200 transition-colors">
+                          <svg className="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                           </svg>
                         </button>

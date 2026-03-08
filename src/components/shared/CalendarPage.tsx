@@ -1272,6 +1272,20 @@ export function CalendarPage({ role }: CalendarPageProps) {
     return (
       <div>
         <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
+          {/* Day header — matches week view style */}
+          <div className="grid border-b border-gray-200" style={{ gridTemplateColumns: '64px 1fr' }}>
+            <div className="border-r border-gray-100" />
+            <div className={`text-center py-2 ${isToday ? 'bg-blue-50' : ''}`}>
+              <div className="text-xs text-gray-500 font-medium">{WEEKDAYS[(day.getDay() + 6) % 7]}</div>
+              <div className={`text-lg font-bold ${isToday ? 'text-blue-600' : 'text-gray-900'}`}>
+                {isToday ? (
+                  <span className="inline-flex w-8 h-8 items-center justify-center rounded-full bg-blue-600 text-white text-sm">
+                    {day.getDate()}
+                  </span>
+                ) : day.getDate()}
+              </div>
+            </div>
+          </div>
           {/* All-day events */}
           {allDayEvents.length > 0 && (
             <div className="border-b border-gray-200 px-2 py-1.5 space-y-1">
