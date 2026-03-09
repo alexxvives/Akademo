@@ -111,6 +111,7 @@ interface LiveClass {
   status: string;
   zoomLink?: string;
   zoomStartUrl?: string;
+  zoomMeetingId?: string | null;
   joinUrl?: string;
   startUrl?: string;
   createdAt?: string;
@@ -737,10 +738,6 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
       if (result.success) {
         setLiveClasses(prev => [result.data, ...prev]);
         setShowStreamNameModal(false);
-        // Navigate straight into the embedded live room
-        if (result.data?.dailyRoomUrl) {
-          router.push(`${basePath}/live/${result.data.id}`);
-        }
       } else {
         console.error('Live class creation error:', result);
         alert(`Error: ${result.error || 'No se pudo crear la sesión en vivo'}`);
@@ -1743,7 +1740,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    {liveClasses[0].dailyRoomUrl ? (
+                    {!liveClasses[0].zoomMeetingId ? (
                       <button
                         onClick={() => router.push(`${basePath}/live/${liveClasses[0].id}`)}
                         className="px-4 py-2 bg-gray-900 text-white hover:bg-gray-800 rounded-lg font-semibold text-sm transition-colors"
@@ -1826,7 +1823,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
                           </svg>
                           <span className="text-sm font-medium">Notificar</span>
                         </button>
-                        <div className="absolute bottom-full right-0 mb-2 hidden group-hover/tip:block z-20 pointer-events-none">
+                        <div className="absolute top-full right-0 mt-2 hidden group-hover/tip:block z-20 pointer-events-none">
                           <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-lg">
                             Conecta un grupo de WhatsApp en los ajustes de la asignatura
                           </div>

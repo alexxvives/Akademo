@@ -358,9 +358,9 @@ export function StreamsPage({ role }: StreamsPageProps) {
         );
       case 'scheduled':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-            <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
-            Programado
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-sky-100 text-sky-700">
+            <span className="w-2 h-2 bg-sky-400 rounded-full"></span>
+            Preparado
           </span>
         );
       case 'ended':

@@ -100,8 +100,8 @@ live.post('/', async (c) => {
                u.firstName, u.lastName,
                a.ownerId as academyOwnerId
         FROM Class c 
-        JOIN User u ON c.teacherId = u.id 
-        JOIN Academy a ON c.academyId = a.id
+        LEFT JOIN User u ON c.teacherId = u.id 
+        LEFT JOIN Academy a ON c.academyId = a.id
         WHERE c.id = ?
       `)
       .bind(classId)
@@ -113,7 +113,7 @@ live.post('/', async (c) => {
 
     // Verify permissions
     if (session.role === 'TEACHER') {
-      if (classInfo.teacherId !== session.id) {
+      if (!classInfo.teacherId || classInfo.teacherId !== session.id) {
         return c.json(errorResponse('Not authorized to create stream for this class'), 403);
       }
     } else if (session.role === 'ACADEMY') {
@@ -171,43 +171,17 @@ live.post('/', async (c) => {
     }
 
     // ── Daily.co path: fallback when no Zoom account is configured ──
-    const apiKey = c.env.DAILY_API_KEY;
-    if (!apiKey) {
+    // Room is created lazily when the host joins (GET /live/:id/join-token)
+    if (!c.env.DAILY_API_KEY) {
       return c.json(errorResponse('No hay cuenta Zoom ni Daily.co configurados para esta asignatura'), 500);
     }
 
-    // Create Daily.co room with cloud recording enabled
-    const roomName = `akademo-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
-    const roomRes = await fetch('https://api.daily.co/v1/rooms', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: roomName,
-        properties: {
-          enable_screenshare: true,
-          enable_chat: true,
-          enable_recording: 'cloud',
-          start_video_off: false,
-          start_audio_off: false,
-          exp: Math.floor(Date.now() / 1000) + 6 * 60 * 60,
-        },
-      }),
-    });
-
-    if (!roomRes.ok) {
-      const err = await roomRes.text();
-      console.error('[Create Live Stream] Daily.co room creation failed:', err);
-      return c.json(errorResponse('Error al crear sala de videoconferencia'), 500);
-    }
-
-    const room = await roomRes.json() as { name: string; url: string };
-
     await c.env.DB
       .prepare(`
-        INSERT INTO LiveStream (id, classId, teacherId, title, status, dailyRoomName, dailyRoomUrl, startedAt, createdAt) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO LiveStream (id, classId, teacherId, title, status, createdAt) 
+        VALUES (?, ?, ?, ?, ?, ?)
       `)
-      .bind(streamId, classId, classInfo.teacherId, title, 'scheduled', room.name, room.url, now, now)
+      .bind(streamId, classId, classInfo.teacherId, title, 'scheduled', now)
       .run();
 
     const stream = await c.env.DB
@@ -485,7 +459,8 @@ live.get('/:id/join-token', async (c) => {
       .first();
 
     if (!stream) return c.json(errorResponse('Stream not found'), 404);
-    if (!stream.dailyRoomName) return c.json(errorResponse('Esta sesión no usa videoconferencia integrada'), 400);
+    // If this is a Zoom stream (no Daily.co), reject
+    if (!stream.dailyRoomName && stream.zoomMeetingId) return c.json(errorResponse('Esta sesión no usa videoconferencia integrada'), 400);
 
     // Access control
     if (session.role === 'STUDENT') {
@@ -495,23 +470,52 @@ live.get('/:id/join-token', async (c) => {
         .first();
       if (!enrolled) return c.json(errorResponse('No estás matriculado en esta asignatura'), 403);
     } else if (session.role === 'TEACHER') {
-      // Activate stream when host joins (from scheduled) or rejoin after ended
-      if (stream.status === 'scheduled' || stream.status === 'ended') {
-        await c.env.DB.prepare("UPDATE LiveStream SET status = 'active', endedAt = NULL WHERE id = ?")
-          .bind(stream.id).run();
-      }
       if (stream.teacherId !== session.id) return c.json(errorResponse('Not authorized'), 403);
     } else if (session.role === 'ACADEMY') {
       if (stream.academyOwnerId !== session.id) return c.json(errorResponse('Not authorized'), 403);
-      // Activate stream when host joins (from scheduled) or rejoin after ended
-      if (stream.status === 'scheduled' || stream.status === 'ended') {
-        await c.env.DB.prepare("UPDATE LiveStream SET status = 'active', endedAt = NULL WHERE id = ?")
-          .bind(stream.id).run();
-      }
     }
 
     const apiKey = c.env.DAILY_API_KEY;
     if (!apiKey) return c.json(errorResponse('Daily.co no configurado'), 500);
+
+    // If room not yet created (host is joining for first time), create it now
+    if (!stream.dailyRoomName) {
+      if (session.role === 'STUDENT') {
+        return c.json(errorResponse('La sesión no ha comenzado todavía. Espera a que el host inicie la clase.'), 503);
+      }
+      const roomName = `akademo-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+      const roomRes = await fetch('https://api.daily.co/v1/rooms', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: roomName,
+          properties: {
+            enable_screenshare: true,
+            enable_chat: true,
+            enable_recording: 'cloud',
+            start_video_off: false,
+            start_audio_off: false,
+            exp: Math.floor(Date.now() / 1000) + 6 * 60 * 60,
+          },
+        }),
+      });
+      if (!roomRes.ok) {
+        const err = await roomRes.text();
+        console.error('[Join Token] Daily.co room creation failed:', err);
+        return c.json(errorResponse('Error al crear sala de videoconferencia'), 500);
+      }
+      const room = await roomRes.json() as { name: string; url: string };
+      await c.env.DB
+        .prepare("UPDATE LiveStream SET dailyRoomName = ?, dailyRoomUrl = ?, status = 'active', startedAt = ? WHERE id = ?")
+        .bind(room.name, room.url, new Date().toISOString(), stream.id)
+        .run();
+      stream.dailyRoomName = room.name;
+      stream.dailyRoomUrl = room.url;
+    } else if (stream.status === 'scheduled' || stream.status === 'ended') {
+      // Room exists but stream is not active yet — activate it
+      await c.env.DB.prepare("UPDATE LiveStream SET status = 'active', endedAt = NULL WHERE id = ?")
+        .bind(stream.id).run();
+    }
 
     const isHost = ['TEACHER', 'ACADEMY', 'ADMIN'].includes(session.role);
     const userName = `${session.firstName} ${session.lastName}`.trim() || session.email;
