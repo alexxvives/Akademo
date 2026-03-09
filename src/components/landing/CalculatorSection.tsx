@@ -75,8 +75,7 @@ export function CalculatorSection({ lang }: CalculatorSectionProps) {
             {/* Total students slider */}
             <div>
               <div className="flex justify-between items-center mb-3">
-                <span className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                  <UsersIcon className="w-4 h-4 text-emerald-400" />
+                <span className="text-sm font-medium text-gray-300">
                   {isEs ? 'Estudiantes Inscritos' : 'Enrolled Students'}
                 </span>
                 <span className="text-lg font-bold text-emerald-400">{calcStudents}</span>
@@ -88,8 +87,7 @@ export function CalculatorSection({ lang }: CalculatorSectionProps) {
             {/* Monthly fee slider */}
             <div>
               <div className="flex justify-between items-center mb-3">
-                <span className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                  <DollarIcon className="w-4 h-4 text-gray-400" />
+                <span className="text-sm font-medium text-gray-300">
                   {isEs ? 'Cuota Mensual por Estudiante' : 'Monthly Fee per Student'}
                 </span>
                 <span className="text-lg font-bold text-emerald-400">€{calcMonthlyFee}</span>
@@ -101,8 +99,7 @@ export function CalculatorSection({ lang }: CalculatorSectionProps) {
             {/* Ghost percentage slider */}
             <div>
               <div className="flex justify-between items-center mb-3">
-                <span className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                  <EyeIcon className="w-4 h-4 text-red-400" />
+                <span className="text-sm font-medium text-gray-300">
                   {isEs ? '% Estudiantes Fantasma (estimado)' : '% Ghost Students (estimated)'}
                 </span>
                 <span className="text-lg font-bold text-red-400">{calcGhostPct}%</span>

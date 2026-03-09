@@ -43,10 +43,14 @@ export default function AcademyLivePage() {
         if (!streamData.success) { setError(streamData.error || 'Stream no encontrado'); return; }
         if (!tokenData.success) { setError(tokenData.error || 'Error al cargar la sala'); return; }
 
-        setStream(streamData.data);
-        setEmbedUrl(`${tokenData.data.roomUrl}?t=${tokenData.data.token}`);
+        const sData = streamData.data;
+        setStream(sData);
+        const redirectUrl = encodeURIComponent(
+          `${window.location.origin}/dashboard/academy/subject/${sData.classSlug || sData.classId}`
+        );
+        setEmbedUrl(`${tokenData.data.roomUrl}?t=${tokenData.data.token}&redirect_on_meeting_exit=${redirectUrl}`);
       } catch {
-        setError('Error de conexiÃ³n');
+        setError('Error de conexión');
       }
     };
     init();
