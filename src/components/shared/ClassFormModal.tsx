@@ -16,6 +16,7 @@ interface ZoomAccount {
   id: string;
   accountName: string;
   accountId: string;
+  provider?: string;
 }
 
 interface ClassItem {
@@ -106,8 +107,8 @@ export function ClassFormModal({
   }, [teachers, allowMultipleTeachers, editingClass, classes]);
 
   const zoomOptions = useMemo(() => [
-    { value: '', label: 'Sin cuenta de Zoom' },
-    ...zoomAccounts.map((a) => ({ value: a.id, label: a.accountName })),
+    { value: '', label: 'Sin cuenta de Streaming' },
+    ...zoomAccounts.map((a) => ({ value: a.id, label: `${a.accountName} (${a.provider === 'gotomeeting' ? 'GoToMeeting' : 'Zoom'})` })),
   ], [zoomAccounts]);
 
   return (
@@ -322,20 +323,20 @@ export function ClassFormModal({
             </div>
           </div>
 
-          {/* Zoom + WhatsApp side by side */}
+          {/* Streaming + WhatsApp side by side */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Zoom */}
+            {/* Streaming */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Cuenta de Zoom (opcional)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Cuenta de Streaming (opcional)</label>
               <StyledSelect
                 value={formData.zoomAccountId}
                 onChange={(v) => setFormData((f) => ({ ...f, zoomAccountId: v }))}
                 options={zoomOptions}
-                placeholder="Sin cuenta de Zoom"
+                placeholder="Sin cuenta de Streaming"
               />
               {zoomAccounts.length === 0 && (
                 <p className="text-xs text-gray-500 mt-1">
-                  No hay cuentas de Zoom conectadas.{' '}
+                  No hay cuentas de Streaming conectadas.{' '}
                   <a href="/dashboard/academy/profile" className="text-blue-600 hover:underline">
                     Conectar cuenta
                   </a>

@@ -143,27 +143,77 @@ live.post('/', async (c) => {
 
     if (classZoomInfo?.zoomAccountId) {
       const zoomAccount = await c.env.DB
-        .prepare('SELECT accessToken, refreshToken, expiresAt FROM ZoomAccount WHERE id = ?')
+        .prepare('SELECT accessToken, refreshToken, expiresAt, provider FROM ZoomAccount WHERE id = ?')
         .bind(classZoomInfo.zoomAccountId)
-        .first() as { accessToken: string; refreshToken: string; expiresAt: string } | null;
+        .first() as { accessToken: string; refreshToken: string; expiresAt: string; provider: string } | null;
 
       if (zoomAccount) {
         let token = zoomAccount.accessToken;
+        const isGTM = zoomAccount.provider === 'gotomeeting';
+
         if (new Date(zoomAccount.expiresAt) <= new Date(Date.now() + 5 * 60 * 1000)) {
-          const { refreshZoomToken } = await import('./zoom-accounts');
-          token = (await refreshZoomToken(c, classZoomInfo.zoomAccountId)) ?? token;
+          if (isGTM) {
+            const { refreshGTMToken } = await import('./zoom-accounts');
+            token = (await refreshGTMToken(c, classZoomInfo.zoomAccountId)) ?? token;
+          } else {
+            const { refreshZoomToken } = await import('./zoom-accounts');
+            token = (await refreshZoomToken(c, classZoomInfo.zoomAccountId)) ?? token;
+          }
         }
 
-        const meeting = await createZoomMeeting({ topic: title, config: { accessToken: token } });
+        if (isGTM) {
+          // GoToMeeting meeting creation
+          const startTime = new Date(Date.now() + 60 * 1000).toISOString().replace('.000Z', 'Z');
+          const gtmResponse = await fetch('https://api.getgo.com/G2M/rest/meetings', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              subject: title,
+              starttime: startTime,
+              endtime: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString().replace('.000Z', 'Z'),
+              passwordrequired: false,
+              conferencecallinfo: 'Hybrid',
+              timezonekey: '',
+              meetingtype: 'immediate'
+            })
+          });
 
-        await c.env.DB
-          .prepare(`
-            INSERT INTO LiveStream (id, classId, teacherId, title, status, zoomLink, zoomMeetingId, zoomStartUrl, createdAt) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `)
-          .bind(streamId, classId, classInfo.teacherId ?? session.id, title, 'scheduled',
-                meeting.join_url, String(meeting.id), meeting.start_url, now)
-          .run();
+          if (!gtmResponse.ok) {
+            const errText = await gtmResponse.text();
+            console.error('GTM meeting creation failed:', errText);
+            return c.json(errorResponse('Failed to create GoToMeeting meeting'), 500);
+          }
+
+          const gtmMeeting = await gtmResponse.json() as any;
+          // GTM returns an array with one item
+          const meetingData = Array.isArray(gtmMeeting) ? gtmMeeting[0] : gtmMeeting;
+          const joinUrl = meetingData.joinURL || meetingData.joinUrl || '';
+          const meetingId = String(meetingData.meetingid || meetingData.meetingId || '');
+
+          await c.env.DB
+            .prepare(`
+              INSERT INTO LiveStream (id, classId, teacherId, title, status, zoomLink, zoomMeetingId, zoomStartUrl, createdAt) 
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `)
+            .bind(streamId, classId, classInfo.teacherId ?? session.id, title, 'scheduled',
+                  joinUrl, meetingId, null, now)
+            .run();
+        } else {
+          // Zoom meeting creation
+          const meeting = await createZoomMeeting({ topic: title, config: { accessToken: token } });
+
+          await c.env.DB
+            .prepare(`
+              INSERT INTO LiveStream (id, classId, teacherId, title, status, zoomLink, zoomMeetingId, zoomStartUrl, createdAt) 
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `)
+            .bind(streamId, classId, classInfo.teacherId ?? session.id, title, 'scheduled',
+                  meeting.join_url, String(meeting.id), meeting.start_url, now)
+            .run();
+        }
 
         const stream = await c.env.DB.prepare('SELECT * FROM LiveStream WHERE id = ?').bind(streamId).first();
         return c.json(successResponse(stream), 201);

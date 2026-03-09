@@ -16,6 +16,7 @@ interface ZoomAccount {
   id: string;
   accountName: string;
   accountId: string;
+  provider?: string;
   createdAt: string;
   classes?: Array<{
     id: string;
@@ -229,6 +230,23 @@ export default function ProfilePage() {
     const redirectUri = encodeURIComponent(`${window.location.origin}/api/zoom/oauth/callback`);
     const state = academy?.id || '';
     window.open(`https://zoom.us/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&state=${state}`, '_blank');
+  };
+
+  const handleConnectGTM = async () => {
+    try {
+      const response = await apiClient('/zoom-accounts/gtm-connect-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ academyId: academy?.id || '' })
+      });
+      const result = await response.json();
+      if (result.success && result.data?.url) {
+        window.open(result.data.url, '_blank');
+      }
+    } catch (error) {
+      console.error('Error connecting GoToMeeting:', error);
+      alert('Error al conectar GoToMeeting');
+    }
   };
 
   const handleDisconnectZoom = async (accountId: string) => {
@@ -1196,15 +1214,25 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Zoom Accounts */}
+      {/* Streaming Accounts */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden mb-12">
         <div className="px-4 sm:px-8 py-4 sm:py-6 bg-gray-900 text-white">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h2 className="text-lg sm:text-xl font-semibold">Cuentas de Zoom</h2>
-              <p className="text-gray-300 mt-1">Gestiona tus cuentas de Zoom para clases en vivo</p>
+              <h2 className="text-lg sm:text-xl font-semibold">Cuentas de Streaming</h2>
+              <p className="text-gray-300 mt-1">Gestiona tus cuentas de Zoom o GoToMeeting para clases en vivo</p>
             </div>
-            <ZoomConnectButton onClick={handleConnectZoom} />
+            <div className="flex flex-col sm:flex-row gap-2">
+              <ZoomConnectButton onClick={handleConnectZoom} />
+              <button
+                type="button"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-green-600 text-white rounded hover:bg-green-700 transition"
+                onClick={handleConnectGTM}
+              >
+                <Image src="/images/GTM_logo.png" alt="GoToMeeting" width={20} height={20} unoptimized className="w-5 h-5 object-contain" />
+                Conectar GoToMeeting
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1217,7 +1245,7 @@ export default function ProfilePage() {
                 </svg>
               </div>
               <p className="text-gray-900 font-medium">No hay cuentas conectadas</p>
-              <p className="text-sm text-gray-500 mt-1">Conecta una cuenta PRO de Zoom para crear clases en vivo</p>
+              <p className="text-sm text-gray-500 mt-1">Conecta una cuenta de Zoom o GoToMeeting para crear clases en vivo</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1237,8 +1265,8 @@ export default function ProfilePage() {
                   <div className="flex items-start gap-4">
                     <div className="w-20 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm flex-shrink-0 overflow-hidden p-2">
                       <Image
-                        src="/images/zoom_logo.png"
-                        alt="Zoom"
+                        src={account.provider === 'gotomeeting' ? '/images/GTM_logo.png' : '/images/zoom_logo.png'}
+                        alt={account.provider === 'gotomeeting' ? 'GoToMeeting' : 'Zoom'}
                         width={80}
                         height={48}
                         unoptimized
@@ -1286,11 +1314,11 @@ export default function ProfilePage() {
             </div>
           )}
           
-          {/* Zoom Assignment Instructions */}
+          {/* Streaming Assignment Instructions */}
           {zoomAccounts.length > 0 && (
             <div className="border-2 border-gray-900 rounded-lg p-4 mt-6">
               <p className="text-sm text-gray-900">
-                Para asignar una cuenta de Zoom a una clase, ve a la{' '}
+                Para asignar una cuenta de Streaming a una clase, ve a la{' '}
                 <a href="/dashboard/academy/subjects" className="font-bold hover:text-gray-700">
                   página de clases
                 </a>
