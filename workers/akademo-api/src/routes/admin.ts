@@ -23,6 +23,7 @@ admin.get('/academies', async (c) => {
         a.name,
         a.description,
         a.paymentStatus,
+        a.dailyEnabled,
         a.createdAt,
         a.ownerId,
         u.firstName || ' ' || u.lastName as ownerName,
@@ -36,6 +37,7 @@ admin.get('/academies', async (c) => {
       LEFT JOIN Class c ON a.id = c.academyId
       LEFT JOIN Teacher t ON a.id = t.academyId
       LEFT JOIN ClassEnrollment e ON c.id = e.classId AND e.status = 'APPROVED'
+      WHERE a.id != 'demo-academy-id'
       GROUP BY a.id
       ORDER BY a.createdAt DESC
       LIMIT 200
@@ -213,7 +215,7 @@ admin.patch('/academy/:id', async (c) => {
     const academyId = c.req.param('id');
     const body = await c.req.json();
     
-    const { paymentStatus, status, name, description } = body;
+    const { paymentStatus, status, name, description, dailyEnabled } = body;
     
     const updates = [];
     const params = [];
@@ -233,6 +235,10 @@ admin.patch('/academy/:id', async (c) => {
     if (description !== undefined) {
       updates.push('description = ?');
       params.push(description);
+    }
+    if (dailyEnabled !== undefined) {
+      updates.push('dailyEnabled = ?');
+      params.push(dailyEnabled ? 1 : 0);
     }
     
     if (updates.length === 0) {

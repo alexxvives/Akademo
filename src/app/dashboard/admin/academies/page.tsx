@@ -13,6 +13,7 @@ interface Academy {
   ownerEmail: string;
   status: string;
   paymentStatus?: string;
+  dailyEnabled?: number;
   teacherCount: number;
   studentCount: number;
   enrollmentCount: number;
@@ -121,6 +122,7 @@ export default function AdminAcademies() {
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [togglingDailyId, setTogglingDailyId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [billingByAcademy, setBillingByAcademy] = useState<Record<string, BillingRecord[]>>({});
   const filteredAcademies = academies;
@@ -165,6 +167,23 @@ export default function AdminAcademies() {
         setAcademies(prev => prev.map(a => a.id === academy.id ? { ...a, paymentStatus: newStatus } : a));
       }
     } catch { /* skip */ } finally { setTogglingId(null); }
+  };
+
+  const handleToggleDaily = async (academy: Academy) => {
+    if (togglingDailyId === academy.id) return;
+    setTogglingDailyId(academy.id);
+    const newValue = academy.dailyEnabled ? 0 : 1;
+    try {
+      const res = await apiClient(`/admin/academy/${academy.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dailyEnabled: newValue }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setAcademies(prev => prev.map(a => a.id === academy.id ? { ...a, dailyEnabled: newValue } : a));
+      }
+    } catch { /* skip */ } finally { setTogglingDailyId(null); }
   };
 
   const handleDelete = async (ownerId: string, academyName: string) => {
@@ -265,18 +284,38 @@ export default function AdminAcademies() {
                         <span className="text-sm text-gray-500">{new Date(academy.createdAt).toLocaleDateString('es')}</span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <button
-                          onClick={() => handleDelete(academy.ownerId, academy.name)}
-                          disabled={deletingId === academy.ownerId}
-                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                          title="Eliminar academia"
-                        >
-                          {deletingId === academy.ownerId ? (
-                            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-                          ) : (
-                            <DeleteIcon size={16} />
-                          )}
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleToggleDaily(academy)}
+                            disabled={togglingDailyId === academy.id}
+                            title={academy.dailyEnabled ? 'Deshabilitar Daily.co' : 'Habilitar Daily.co'}
+                            className={`p-1.5 rounded-lg transition-colors disabled:opacity-50 ${
+                              academy.dailyEnabled
+                                ? 'text-blue-600 bg-blue-50 hover:bg-blue-100'
+                                : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'
+                            }`}
+                          >
+                            {togglingDailyId === academy.id ? (
+                              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                            ) : (
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.069A1 1 0 0121 8.868v6.264a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                              </svg>
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleDelete(academy.ownerId, academy.name)}
+                            disabled={deletingId === academy.ownerId}
+                            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                            title="Eliminar academia"
+                          >
+                            {deletingId === academy.ownerId ? (
+                              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                            ) : (
+                              <DeleteIcon size={16} />
+                            )}
+                          </button>
+                        </div>
                       </td>
                     </tr>
 

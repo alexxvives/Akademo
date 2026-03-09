@@ -454,7 +454,7 @@ live.get('/:id/join-token', async (c) => {
     const streamId = c.req.param('id');
 
     const stream: any = await c.env.DB
-      .prepare('SELECT ls.id, ls.classId, ls.teacherId, ls.status, ls.dailyRoomName, ls.dailyRoomUrl, c.academyId, a.ownerId as academyOwnerId FROM LiveStream ls JOIN Class c ON ls.classId = c.id JOIN Academy a ON c.academyId = a.id WHERE ls.id = ?')
+      .prepare('SELECT ls.id, ls.classId, ls.teacherId, ls.status, ls.dailyRoomName, ls.dailyRoomUrl, c.academyId, a.ownerId as academyOwnerId, a.dailyEnabled FROM LiveStream ls JOIN Class c ON ls.classId = c.id JOIN Academy a ON c.academyId = a.id WHERE ls.id = ?')
       .bind(streamId)
       .first();
 
@@ -477,6 +477,9 @@ live.get('/:id/join-token', async (c) => {
 
     const apiKey = c.env.DAILY_API_KEY;
     if (!apiKey) return c.json(errorResponse('Daily.co no configurado'), 500);
+
+    // Check per-academy Daily.co enablement
+    if (!stream.dailyEnabled) return c.json(errorResponse('La videoconferencia integrada no está habilitada para esta academia'), 403);
 
     // If room not yet created (host is joining for first time), create it now
     if (!stream.dailyRoomName) {
