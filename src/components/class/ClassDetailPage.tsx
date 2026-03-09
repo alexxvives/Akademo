@@ -261,6 +261,12 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
   }, [classId]);
 
   // Poll for active live streams — 2s when active (fast close), 10s when scheduled only
+  // Re-run loadLiveClasses once classData is available (initial call may have used a slug URL)
+  useEffect(() => {
+    if (classData?.id) loadLiveClasses();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [classData?.id]);
+
   useEffect(() => {
     if (!classData?.id) return;
     let timeoutId: ReturnType<typeof setTimeout>;
@@ -670,7 +676,8 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
 
   const loadLiveClasses = async () => {
     try {
-      const res = await apiClient(`/live?classId=${classId}`);
+      const id = classData?.id || classId;
+      const res = await apiClient(`/live?classId=${id}`);
       const result = await res.json();
       if (result.success) {
         // Show active and scheduled streams

@@ -161,7 +161,7 @@ live.post('/', async (c) => {
             INSERT INTO LiveStream (id, classId, teacherId, title, status, zoomLink, zoomMeetingId, zoomStartUrl, createdAt) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
           `)
-          .bind(streamId, classId, classInfo.teacherId, title, 'scheduled',
+          .bind(streamId, classId, classInfo.teacherId ?? session.id, title, 'scheduled',
                 meeting.join_url, String(meeting.id), meeting.start_url, now)
           .run();
 
@@ -181,7 +181,7 @@ live.post('/', async (c) => {
         INSERT INTO LiveStream (id, classId, teacherId, title, status, createdAt) 
         VALUES (?, ?, ?, ?, ?, ?)
       `)
-      .bind(streamId, classId, classInfo.teacherId, title, 'scheduled', now)
+      .bind(streamId, classId, classInfo.teacherId ?? session.id, title, 'scheduled', now)
       .run();
 
     const stream = await c.env.DB
