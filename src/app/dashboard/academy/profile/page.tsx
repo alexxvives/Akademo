@@ -10,6 +10,7 @@ import { PasswordInput } from '@/components/ui';
 import { ModalPortal } from '@/components/ui/ModalPortal';
 import { CustomDatePicker } from '@/components/ui/CustomDatePicker';
 import { StripeConnectButton } from '@/components/profile';
+import { CctvIcon, CctvIconHandle } from '@/components/icons/CctvIcon';
 import { usePeriod } from '@/contexts/PeriodContext';
 
 interface ZoomAccount {
@@ -90,6 +91,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [streamingDropdownOpen, setStreamingDropdownOpen] = useState(false);
   const streamingDropdownRef = useRef<HTMLDivElement>(null);
+  const streamingIconRef = useRef<CctvIconHandle>(null);
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
   const [showAcademicYearModal, setShowAcademicYearModal] = useState(false);
   const [newYearData, setNewYearData] = useState({ name: '', startDate: '', endDate: '' });
@@ -1240,10 +1242,10 @@ export default function ProfilePage() {
                 type="button"
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                 onClick={() => setStreamingDropdownOpen((o) => !o)}
+                onMouseEnter={() => streamingIconRef.current?.startAnimation()}
+                onMouseLeave={() => streamingIconRef.current?.stopAnimation()}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
+                <CctvIcon ref={streamingIconRef} size={16} />
                 Conectar cuenta
                 <svg className="w-4 h-4 ml-1 transition-transform" style={{ transform: streamingDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
