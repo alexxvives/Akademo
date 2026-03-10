@@ -162,10 +162,10 @@ live.post('/', async (c) => {
         }
 
         if (isGTM) {
-          // GoToMeeting meeting creation
+          // GoToMeeting meeting creation (v1 API - documented at developer.goto.com/GoToMeetingV1)
           const startTime = new Date(Date.now()).toISOString().slice(0, 19) + 'Z';
           const endTime = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString().slice(0, 19) + 'Z';
-          const gtmResponse = await fetch('https://api.getgo.com/G2M/rest/v2/meetings', {
+          const gtmResponse = await fetch('https://api.getgo.com/G2M/rest/meetings', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -178,6 +178,7 @@ live.post('/', async (c) => {
               endtime: endTime,
               passwordrequired: false,
               conferencecallinfo: 'VoIP',
+              timezonekey: '',
               meetingtype: 'immediate'
             })
           });
