@@ -163,7 +163,7 @@ live.post('/', async (c) => {
 
         if (isGTM) {
           // GoToMeeting meeting creation
-          const startTime = new Date(Date.now() + 60 * 1000).toISOString().slice(0, 19) + 'Z';
+          const startTime = new Date(Date.now()).toISOString().slice(0, 19) + 'Z';
           const endTime = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString().slice(0, 19) + 'Z';
           const gtmResponse = await fetch('https://api.getgo.com/G2M/rest/v2/meetings', {
             method: 'POST',
@@ -177,8 +177,8 @@ live.post('/', async (c) => {
               starttime: startTime,
               endtime: endTime,
               passwordrequired: false,
-              conferencecallinfo: 'Hybrid',
-              meetingtype: 'scheduled'
+              conferencecallinfo: 'VoIP',
+              meetingtype: 'immediate'
             })
           });
 
