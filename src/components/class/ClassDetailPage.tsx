@@ -626,12 +626,19 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
             }
             setFeedbackEnabled(academyResult.data.feedbackEnabled !== 0);
           }
-          // Update lesson form data with academy defaults
-          setLessonFormData(prev => ({
-            ...prev,
-            maxWatchTimeMultiplier: defaults.maxWatchTimeMultiplier,
-            watermarkIntervalMins: defaults.watermarkIntervalMins
-          }));
+          // Update lesson form data with academy defaults only if form is not yet open
+          // (avoids overwriting user-changed values in the form due to race condition)
+          setLessonFormData(prev => {
+            // If neither value has been changed from the hardcoded initial default,
+            // it's safe to apply academy defaults. Otherwise keep user-set values.
+            const multiplierUnchanged = prev.maxWatchTimeMultiplier === 2.0;
+            const watermarkUnchanged = prev.watermarkIntervalMins === 5;
+            return {
+              ...prev,
+              maxWatchTimeMultiplier: multiplierUnchanged ? defaults.maxWatchTimeMultiplier : prev.maxWatchTimeMultiplier,
+              watermarkIntervalMins: watermarkUnchanged ? defaults.watermarkIntervalMins : prev.watermarkIntervalMins
+            };
+          });
         }
       } catch (e) {
         console.error('Failed to load academy defaults:', e);
@@ -961,6 +968,8 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
             title: lessonFormData.title || undefined,
             description: lessonFormData.description || undefined,
             topicId: lessonFormData.topicId || undefined,
+            maxWatchTimeMultiplier: lessonFormData.maxWatchTimeMultiplier,
+            watermarkIntervalMins: lessonFormData.watermarkIntervalMins,
             releaseDate: lessonFormData.publishImmediately ? undefined : `${lessonFormData.releaseDate}T${lessonFormData.releaseTime}:00`,
           }),
         });
@@ -985,8 +994,8 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
             releaseDate: new Date().toISOString().split('T')[0],
             releaseTime: '00:00',
             publishImmediately: true,
-            maxWatchTimeMultiplier: 2.0,
-            watermarkIntervalMins: 5,
+            maxWatchTimeMultiplier: academyDefaults.maxWatchTimeMultiplier,
+            watermarkIntervalMins: academyDefaults.watermarkIntervalMins,
             topicId: '',
             videos: [],
             documents: [],
@@ -1871,76 +1880,75 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
                   </div>
                   
                   <form onSubmit={editingLessonId ? handleUpdateLesson : handleLessonCreate} className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">
-                    {/* Title and Publish options (left) | Topic and Date/Time (right) - MATCHING TEACHER LAYOUT */}
+                    {/* Row 1: Title | Topic — same structure in both create and edit modes */}
                     <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">Título</label>
-                          <input 
-                            type="text" 
-                            value={lessonFormData.title} 
-                            onChange={e => setLessonFormData({ ...lessonFormData, title: e.target.value })} 
-                            className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors" 
-                            placeholder="Titulo de la clase"
-                          />
-                        </div>
-                        {/* Publish options - Only for CREATE mode */}
-                        {!editingLessonId && (
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Publicación</label>
-                            <div className="flex gap-2">
-                              <button
-                                type="button"
-                                onClick={() => setLessonFormData({ ...lessonFormData, publishImmediately: true })}
-                                className={`flex-1 h-[42px] px-3 py-2.5 rounded-xl border text-sm font-medium transition-all ${
-                                  lessonFormData.publishImmediately 
-                                    ? 'border-brand-500 bg-brand-50 text-brand-700' 
-                                    : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
-                                }`}
-                              >
-                                <div className="flex items-center justify-center gap-1.5">
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                  </svg>
-                                  Ahora
-                                </div>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setLessonFormData({ ...lessonFormData, publishImmediately: false })}
-                                className={`flex-1 h-[42px] px-3 py-2.5 rounded-xl border text-sm font-medium transition-all ${
-                                  !lessonFormData.publishImmediately 
-                                    ? 'border-brand-500 bg-brand-50 text-brand-700' 
-                                    : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
-                                }`}
-                              >
-                                <div className="flex items-center justify-center gap-1.5">
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                  </svg>
-                                  Programar
-                                </div>
-                              </button>
-                            </div>
-                          </div>
-                        )}
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Título</label>
+                        <input 
+                          type="text" 
+                          value={lessonFormData.title} 
+                          onChange={e => setLessonFormData({ ...lessonFormData, title: e.target.value })} 
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors" 
+                          placeholder="Titulo de la clase"
+                        />
                       </div>
-                      <div className="space-y-4">
+                      <div>
                         {/* Topic Selector - show in BOTH create and edit modes */}
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Tema</label>
+                        <StyledSelect
+                          value={lessonFormData.topicId}
+                          onChange={(v) => setLessonFormData({ ...lessonFormData, topicId: v })}
+                          options={[
+                            { value: '', label: 'Sin tema' },
+                            ...topics.map(topic => ({ value: topic.id, label: topic.name })),
+                          ]}
+                          placeholder="Sin tema"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Row 2: Publish options + Date/Time — CREATE mode only */}
+                    {!editingLessonId && (
+                      <div className="grid md:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">Tema</label>
-                          <StyledSelect
-                            value={lessonFormData.topicId}
-                            onChange={(v) => setLessonFormData({ ...lessonFormData, topicId: v })}
-                            options={[
-                              { value: '', label: 'Sin tema' },
-                              ...topics.map(topic => ({ value: topic.id, label: topic.name })),
-                            ]}
-                            placeholder="Sin tema"
-                          />
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">Publicación</label>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setLessonFormData({ ...lessonFormData, publishImmediately: true })}
+                              className={`flex-1 h-[42px] px-3 py-2.5 rounded-xl border text-sm font-medium transition-all ${
+                                lessonFormData.publishImmediately 
+                                  ? 'border-brand-500 bg-brand-50 text-brand-700' 
+                                  : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                              }`}
+                            >
+                              <div className="flex items-center justify-center gap-1.5">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                </svg>
+                                Ahora
+                              </div>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setLessonFormData({ ...lessonFormData, publishImmediately: false })}
+                              className={`flex-1 h-[42px] px-3 py-2.5 rounded-xl border text-sm font-medium transition-all ${
+                                !lessonFormData.publishImmediately 
+                                  ? 'border-brand-500 bg-brand-50 text-brand-700' 
+                                  : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                              }`}
+                            >
+                              <div className="flex items-center justify-center gap-1.5">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                Programar
+                              </div>
+                            </button>
+                          </div>
                         </div>
-                        {/* Date/Time inputs - Show when Programar is selected - Only for CREATE mode */}
-                        {!editingLessonId && !lessonFormData.publishImmediately && (
+                        {/* Date/Time inputs - Show when Programar is selected */}
+                        {!lessonFormData.publishImmediately && (
                           <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">Fecha y Hora</label>
                             <div className="grid grid-cols-2 gap-2">
@@ -1964,7 +1972,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
                           </div>
                         )}
                       </div>
-                    </div>
+                    )}
                     
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">Descripción</label>

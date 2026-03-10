@@ -154,7 +154,11 @@ live.post('/', async (c) => {
         if (new Date(zoomAccount.expiresAt) <= new Date(Date.now() + 5 * 60 * 1000)) {
           if (isGTM) {
             const { refreshGTMToken } = await import('./zoom-accounts');
-            token = (await refreshGTMToken(c, classZoomInfo.zoomAccountId)) ?? token;
+            const refreshed = await refreshGTMToken(c, classZoomInfo.zoomAccountId);
+            if (!refreshed) {
+              return c.json(errorResponse('La sesión de GoToMeeting ha expirado. Por favor, desconecta y vuelve a conectar tu cuenta de GoToMeeting en Ajustes → Streaming.'), 401);
+            }
+            token = refreshed;
           } else {
             const { refreshZoomToken } = await import('./zoom-accounts');
             token = (await refreshZoomToken(c, classZoomInfo.zoomAccountId)) ?? token;
@@ -186,6 +190,11 @@ live.post('/', async (c) => {
           const errText = await gtmResponse.text();
           if (!gtmResponse.ok) {
             console.error('GTM meeting creation failed:', gtmResponse.status, errText);
+            // Check for token-related errors and give a clear reconnect message
+            const isTokenError = errText.includes('InvalidToken') || errText.includes('Invalid token') || gtmResponse.status === 401;
+            if (isTokenError) {
+              return c.json(errorResponse('Tu sesión de GoToMeeting ha expirado o no es válida. Por favor, desconecta y vuelve a conectar tu cuenta de GoToMeeting en Ajustes → Streaming.'), 401);
+            }
             return c.json(errorResponse(`Failed to create GoToMeeting meeting: ${errText}`), 500);
           }
 
