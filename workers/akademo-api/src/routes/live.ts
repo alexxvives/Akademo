@@ -167,11 +167,13 @@ live.post('/', async (c) => {
 
         if (isGTM) {
           // GoToMeeting meeting creation (v1 API - developer.goto.com/GoToMeetingV1)
-          // IMPORTANT: The v1 API requires the body to be an ARRAY of meeting objects, not a plain object
-          // Valid meetingtype values: "scheduled" | "recurring"  (NOT "immediate")
-          // timezonekey: empty string = use organizer's default timezone
-          const startTime = new Date(Date.now()).toISOString().slice(0, 19) + 'Z';
-          const endTime = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString().slice(0, 19) + 'Z';
+          // Docs: https://developer.goto.com/GoToMeetingV1/#operation/createMeeting
+          // - Body must be a plain JSON object {} (response comes back as array)
+          // - starttime/endtime MUST be a future date (not "now") in ISO8601 UTC format
+          // - timezonekey is DEPRECATED but must be present as empty string ''
+          // - meetingtype: "immediate" | "scheduled" | "recurring"
+          const startTime = new Date(Date.now() + 2 * 60 * 1000).toISOString(); // 2 min in future
+          const endTime = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(); // 2 hours later
           const gtmResponse = await fetch('https://api.getgo.com/G2M/rest/meetings', {
             method: 'POST',
             headers: {
@@ -179,7 +181,7 @@ live.post('/', async (c) => {
               'Content-Type': 'application/json',
               'Accept': 'application/json'
             },
-            body: JSON.stringify([{
+            body: JSON.stringify({
               subject: title,
               starttime: startTime,
               endtime: endTime,
@@ -187,7 +189,7 @@ live.post('/', async (c) => {
               conferencecallinfo: 'VoIP',
               timezonekey: '',
               meetingtype: 'scheduled'
-            }])
+            })
           });
 
           const errText = await gtmResponse.text();
