@@ -189,10 +189,10 @@ live.post('/', async (c) => {
           }
 
           const gtmMeeting = JSON.parse(errText) as any;
-          // GTM returns an array with one item
+          // v2 API returns a single object with meetingId/joinURL
           const meetingData = Array.isArray(gtmMeeting) ? gtmMeeting[0] : gtmMeeting;
-          const joinUrl = meetingData.joinURL || meetingData.joinUrl || '';
-          const meetingId = String(meetingData.meetingid || meetingData.meetingId || '');
+          const joinUrl = meetingData.joinURL || meetingData.joinUrl || meetingData.joinurl || '';
+          const meetingId = String(meetingData.meetingId || meetingData.meetingid || '');
 
           await c.env.DB
             .prepare(`
