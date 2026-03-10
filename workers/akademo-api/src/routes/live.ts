@@ -165,8 +165,7 @@ live.post('/', async (c) => {
           // GoToMeeting meeting creation
           const startTime = new Date(Date.now() + 60 * 1000).toISOString().slice(0, 19) + 'Z';
           const endTime = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString().slice(0, 19) + 'Z';
-          const organizerKey = zoomAccount.accountId;
-          const gtmResponse = await fetch(`https://api.getgo.com/G2M/rest/organizers/${organizerKey}/meetings`, {
+          const gtmResponse = await fetch('https://api.getgo.com/G2M/rest/v2/meetings', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -179,7 +178,6 @@ live.post('/', async (c) => {
               endtime: endTime,
               passwordrequired: false,
               conferencecallinfo: 'Hybrid',
-              timezonekey: 'UTC',
               meetingtype: 'scheduled'
             })
           });

@@ -59,7 +59,7 @@ export const createClassSchema = z.object({
   description: z.string().max(2000).optional(),
   monthlyPrice: z.coerce.number().min(0).optional(),
   oneTimePrice: z.coerce.number().min(0).optional(),
-  startDate: z.string().optional(),
+  startDate: z.string().min(1, 'Start date is required'),
   teacherId: z.string().optional(),
   academyId: z.string().min(1, 'Academy ID is required'),
   whatsappGroupLink: z.string().url().optional().or(z.literal('')).or(z.literal(null)).optional(),

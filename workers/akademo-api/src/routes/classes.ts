@@ -259,8 +259,8 @@ classes.post('/', async (c) => {
 
     await c.env.DB.prepare(`
       INSERT INTO Class (id, name, slug, description, academyId, teacherId, whatsappGroupLink, zoomAccountId, 
-                         monthlyPrice, oneTimePrice, createdAt, university, carrera)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                         monthlyPrice, oneTimePrice, startDate, createdAt, university, carrera)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       classId,
       name,
@@ -272,6 +272,7 @@ classes.post('/', async (c) => {
       body.zoomAccountId || null,
       body.monthlyPrice || null,
       body.oneTimePrice || null,
+      body.startDate,
       now,
       university || null,
       carrera || null
