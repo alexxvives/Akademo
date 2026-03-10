@@ -120,7 +120,7 @@ export function ClassFormModal({
           {/* Row 1: Name, Teacher, Start Date — Row 2: University, Carrera, Max Students */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nombre de la asignatura *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nombre de la asignatura</label>
               <input
                 type="text"
                 value={formData.name}
@@ -142,7 +142,7 @@ export function ClassFormModal({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Fecha de inicio <span className="text-red-500">*</span>
+                Fecha de inicio
               </label>
               <DatePickerInput
                 value={formData.startDate}
@@ -202,7 +202,7 @@ export function ClassFormModal({
           {/* Price */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Precio de la asignatura <span className="text-red-500">*</span>
+              Precio de la asignatura
             </label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm pointer-events-none">$</span>
@@ -231,7 +231,7 @@ export function ClassFormModal({
           {/* Payment Options */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium text-gray-700">Opciones de pago *</label>
+              <label className="block text-sm font-medium text-gray-700">Opciones de pago</label>
               <span
                 className={`text-xs px-2 py-1 rounded-full transition-all ${
                   paymentOptionsError

@@ -163,31 +163,33 @@ live.post('/', async (c) => {
 
         if (isGTM) {
           // GoToMeeting meeting creation
-          const startTime = new Date(Date.now() + 60 * 1000).toISOString().replace('.000Z', 'Z');
+          const startTime = new Date(Date.now() + 60 * 1000).toISOString().slice(0, 19) + 'Z';
+          const endTime = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString().slice(0, 19) + 'Z';
           const gtmResponse = await fetch('https://api.getgo.com/G2M/rest/meetings', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
             },
             body: JSON.stringify({
               subject: title,
               starttime: startTime,
-              endtime: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString().replace('.000Z', 'Z'),
+              endtime: endTime,
               passwordrequired: false,
               conferencecallinfo: 'Hybrid',
-              timezonekey: '',
-              meetingtype: 'immediate'
+              timezonekey: 'UTC',
+              meetingtype: 'scheduled'
             })
           });
 
+          const errText = await gtmResponse.text();
           if (!gtmResponse.ok) {
-            const errText = await gtmResponse.text();
-            console.error('GTM meeting creation failed:', errText);
-            return c.json(errorResponse('Failed to create GoToMeeting meeting'), 500);
+            console.error('GTM meeting creation failed:', gtmResponse.status, errText);
+            return c.json(errorResponse(`Failed to create GoToMeeting meeting: ${errText}`), 500);
           }
 
-          const gtmMeeting = await gtmResponse.json() as any;
+          const gtmMeeting = JSON.parse(errText) as any;
           // GTM returns an array with one item
           const meetingData = Array.isArray(gtmMeeting) ? gtmMeeting[0] : gtmMeeting;
           const joinUrl = meetingData.joinURL || meetingData.joinUrl || '';
