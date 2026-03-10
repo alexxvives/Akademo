@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { apiClient } from '@/lib/api-client';
 import { useAuth } from '@/hooks/useAuth';
@@ -9,7 +9,7 @@ import { SkeletonProfile } from '@/components/ui/SkeletonLoader';
 import { PasswordInput } from '@/components/ui';
 import { ModalPortal } from '@/components/ui/ModalPortal';
 import { CustomDatePicker } from '@/components/ui/CustomDatePicker';
-import { ZoomConnectButton, StripeConnectButton } from '@/components/profile';
+import { StripeConnectButton } from '@/components/profile';
 import { usePeriod } from '@/contexts/PeriodContext';
 
 interface ZoomAccount {
@@ -88,6 +88,8 @@ export default function ProfilePage() {
   const [zoomAccounts, setZoomAccounts] = useState<ZoomAccount[]>([]);
   const [stripeStatus, setStripeStatus] = useState<StripeStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const [streamingDropdownOpen, setStreamingDropdownOpen] = useState(false);
+  const streamingDropdownRef = useRef<HTMLDivElement>(null);
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
   const [showAcademicYearModal, setShowAcademicYearModal] = useState(false);
   const [newYearData, setNewYearData] = useState({ name: '', startDate: '', endDate: '' });
@@ -222,6 +224,17 @@ export default function ProfilePage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    if (!streamingDropdownOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (streamingDropdownRef.current && !streamingDropdownRef.current.contains(e.target as Node)) {
+        setStreamingDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [streamingDropdownOpen]);
 
   const handleConnectZoom = () => {
     // Redirect to Zoom OAuth in new tab
@@ -1222,16 +1235,41 @@ export default function ProfilePage() {
               <h2 className="text-lg sm:text-xl font-semibold">Cuentas de Streaming</h2>
               <p className="text-gray-300 mt-1">Gestiona tus cuentas de Zoom o GoToMeeting para clases en vivo</p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <ZoomConnectButton onClick={handleConnectZoom} />
+            <div ref={streamingDropdownRef} className="relative">
               <button
                 type="button"
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-green-600 text-white rounded hover:bg-green-700 transition"
-                onClick={handleConnectGTM}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                onClick={() => setStreamingDropdownOpen((o) => !o)}
               >
-                <Image src="/images/GTM_logo.png" alt="GoToMeeting" width={20} height={20} unoptimized className="w-5 h-5 object-contain" />
-                Conectar GoToMeeting
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Conectar cuenta
+                <svg className="w-4 h-4 ml-1 transition-transform" style={{ transform: streamingDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
               </button>
+              {streamingDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-200 z-20 overflow-hidden">
+                  <button
+                    type="button"
+                    className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition"
+                    onClick={() => { handleConnectZoom(); setStreamingDropdownOpen(false); }}
+                  >
+                    <Image src="/images/zoom_logo.png" alt="Zoom" width={20} height={20} unoptimized className="w-5 h-5 object-contain" />
+                    Zoom
+                  </button>
+                  <div className="border-t border-gray-100" />
+                  <button
+                    type="button"
+                    className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition"
+                    onClick={() => { handleConnectGTM(); setStreamingDropdownOpen(false); }}
+                  >
+                    <Image src="/images/GTM_logo.png" alt="GoToMeeting" width={20} height={20} unoptimized className="w-5 h-5 object-contain" />
+                    GoToMeeting
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
