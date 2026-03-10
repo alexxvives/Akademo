@@ -143,9 +143,9 @@ live.post('/', async (c) => {
 
     if (classZoomInfo?.zoomAccountId) {
       const zoomAccount = await c.env.DB
-        .prepare('SELECT accessToken, refreshToken, expiresAt, provider FROM ZoomAccount WHERE id = ?')
+        .prepare('SELECT accessToken, refreshToken, expiresAt, provider, accountId FROM ZoomAccount WHERE id = ?')
         .bind(classZoomInfo.zoomAccountId)
-        .first() as { accessToken: string; refreshToken: string; expiresAt: string; provider: string } | null;
+        .first() as { accessToken: string; refreshToken: string; expiresAt: string; provider: string; accountId: string } | null;
 
       if (zoomAccount) {
         let token = zoomAccount.accessToken;
@@ -165,7 +165,8 @@ live.post('/', async (c) => {
           // GoToMeeting meeting creation
           const startTime = new Date(Date.now() + 60 * 1000).toISOString().slice(0, 19) + 'Z';
           const endTime = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString().slice(0, 19) + 'Z';
-          const gtmResponse = await fetch('https://api.getgo.com/G2M/rest/meetings', {
+          const organizerKey = zoomAccount.accountId;
+          const gtmResponse = await fetch(`https://api.getgo.com/G2M/rest/organizers/${organizerKey}/meetings`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,

@@ -125,7 +125,7 @@ export function ClassFormModal({
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData((f) => ({ ...f, name: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full h-[42px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
@@ -157,7 +157,7 @@ export function ClassFormModal({
                 type="text"
                 value={formData.university}
                 onChange={(e) => setFormData((f) => ({ ...f, university: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full h-[42px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder=""
               />
             </div>
@@ -169,7 +169,7 @@ export function ClassFormModal({
                 type="text"
                 value={formData.carrera}
                 onChange={(e) => setFormData((f) => ({ ...f, carrera: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full h-[42px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder=""
               />
             </div>
@@ -183,7 +183,7 @@ export function ClassFormModal({
                 min="1"
                 value={formData.maxStudents}
                 onChange={(e) => setFormData((f) => ({ ...f, maxStudents: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full h-[42px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
           </div>
@@ -222,7 +222,7 @@ export function ClassFormModal({
                       : f.monthlyPrice,
                   }));
                 }}
-                className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full h-[42px] pl-7 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="0.00"
               />
             </div>
@@ -354,7 +354,7 @@ export function ClassFormModal({
                 value={formData.whatsappGroupLink}
                 onChange={(e) => setFormData((f) => ({ ...f, whatsappGroupLink: e.target.value }))}
                 placeholder="https://chat.whatsapp.com/..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full h-[42px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
           </div>

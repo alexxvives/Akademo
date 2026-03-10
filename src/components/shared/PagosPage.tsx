@@ -6,6 +6,7 @@ import { generateDemoPendingPayments, generateDemoPaymentHistory } from '@/lib/d
 import { SkeletonPayments } from '@/components/ui/SkeletonLoader';
 import { StudentPaymentDetailModal } from '@/components/shared';
 import { ModalPortal } from '@/components/ui/ModalPortal';
+import { StyledSelect } from '@/components/ui/StyledSelect';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 import { AcademySearchDropdown } from '@/components/ui/AcademySearchDropdown';
 import { usePeriod } from '@/contexts/PeriodContext';
@@ -905,7 +906,7 @@ export default function PagosPage({ role }: PagosPageProps) {
             </h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Estudiante *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Estudiante</label>
                 <div className="relative">
                   <input
                     type="text"
@@ -954,30 +955,20 @@ export default function PagosPage({ role }: PagosPageProps) {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Clase *</label>
-                <div className="relative">
-                  <select
-                    value={registerForm.classId}
-                    onChange={(e) => setRegisterForm({ ...registerForm, classId: e.target.value })}
-                    className="w-full appearance-none px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500"
-                    disabled={!registerForm.studentId}
-                  >
-                    <option value="">{registerForm.studentId ? 'Seleccionar clase...' : 'Primero selecciona un estudiante'}</option>
-                    {registerForm.studentId && studentEnrollments[registerForm.studentId]?.map(e => (
-                      <option key={e.classId} value={e.classId}>{e.className}</option>
-                    ))}
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Clase</label>
+                <StyledSelect
+                  value={registerForm.classId}
+                  onChange={(v) => setRegisterForm({ ...registerForm, classId: v })}
+                  options={[
+                    { value: '', label: registerForm.studentId ? 'Seleccionar clase...' : 'Primero selecciona un estudiante' },
+                    ...(registerForm.studentId ? (studentEnrollments[registerForm.studentId] || []).map(e => ({ value: e.classId, label: e.className })) : [])
+                  ]}
+                />
               </div>
               {/* Amount and Status side by side */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Monto *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Monto</label>
                   <input
                     type="number"
                     step="0.01"
@@ -988,7 +979,7 @@ export default function PagosPage({ role }: PagosPageProps) {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Estado *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
                   <button
                     type="button"
                     onClick={() => setRegisterForm({ ...registerForm, status: registerForm.status === 'PAID' ? 'PENDING' : 'PAID' })}
@@ -1021,22 +1012,15 @@ export default function PagosPage({ role }: PagosPageProps) {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Método de Pago *</label>
-                <div className="relative">
-                  <select
-                    value={registerForm.paymentMethod}
-                    onChange={(e) => setRegisterForm({ ...registerForm, paymentMethod: e.target.value as 'cash' | 'bizum' })}
-                    className="w-full appearance-none px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500"
-                  >
-                    <option value="cash">Efectivo</option>
-                    <option value="bizum">Bizum</option>
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Método de Pago</label>
+                <StyledSelect
+                  value={registerForm.paymentMethod}
+                  onChange={(v) => setRegisterForm({ ...registerForm, paymentMethod: v as 'cash' | 'bizum' })}
+                  options={[
+                    { value: 'cash', label: 'Efectivo' },
+                    { value: 'bizum', label: 'Bizum' }
+                  ]}
+                />
               </div>
             </div>
             <div className="flex gap-3 mt-6">

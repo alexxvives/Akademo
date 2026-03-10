@@ -328,7 +328,7 @@ zoomAccounts.post('/oauth/callback/gtm', async (c) => {
 
     // GTM token response includes principal (email) directly
     const accountName = tokens.principal || tokens.email || 'GoToMeeting Account';
-    const accountId = tokens.account_key || tokens.organizer_key || crypto.randomUUID();
+    const accountId = tokens.organizer_key || tokens.account_key || crypto.randomUUID();
     const expiresAt = new Date(Date.now() + (tokens.expires_in || 3600) * 1000).toISOString();
 
     // Check if account already exists (upsert pattern)
