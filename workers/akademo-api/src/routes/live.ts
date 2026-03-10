@@ -167,9 +167,9 @@ live.post('/', async (c) => {
 
         if (isGTM) {
           // GoToMeeting meeting creation (v1 API - developer.goto.com/GoToMeetingV1)
-          // Required fields: subject, starttime, endtime, passwordrequired, conferencecallinfo, timezonekey, meetingtype
+          // IMPORTANT: The v1 API requires the body to be an ARRAY of meeting objects, not a plain object
           // Valid meetingtype values: "scheduled" | "recurring"  (NOT "immediate")
-          // timezonekey must be a valid IANA timezone string; empty string causes 400
+          // timezonekey: empty string = use organizer's default timezone
           const startTime = new Date(Date.now()).toISOString().slice(0, 19) + 'Z';
           const endTime = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString().slice(0, 19) + 'Z';
           const gtmResponse = await fetch('https://api.getgo.com/G2M/rest/meetings', {
@@ -179,15 +179,15 @@ live.post('/', async (c) => {
               'Content-Type': 'application/json',
               'Accept': 'application/json'
             },
-            body: JSON.stringify({
+            body: JSON.stringify([{
               subject: title,
               starttime: startTime,
               endtime: endTime,
               passwordrequired: false,
               conferencecallinfo: 'VoIP',
-              timezonekey: 'UTC',
+              timezonekey: '',
               meetingtype: 'scheduled'
-            })
+            }])
           });
 
           const errText = await gtmResponse.text();
@@ -202,7 +202,7 @@ live.post('/', async (c) => {
           }
 
           const gtmMeeting = JSON.parse(errText) as any;
-          // v2 API returns a single object with meetingId/joinURL
+          // v1 API returns an array of meeting objects
           const meetingData = Array.isArray(gtmMeeting) ? gtmMeeting[0] : gtmMeeting;
           const joinUrl = meetingData.joinURL || meetingData.joinUrl || meetingData.joinurl || '';
           const meetingId = String(meetingData.meetingId || meetingData.meetingid || '');
