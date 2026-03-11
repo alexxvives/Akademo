@@ -957,8 +957,8 @@ webhooks.post('/daily', async (c) => {
       const sigBytes = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(message));
       const computed = btoa(String.fromCharCode(...new Uint8Array(sigBytes)));
       if (computed !== sigHeader) {
-        // Log mismatch but continue processing — secret may be misconfigured
-        console.error('[Daily Webhook] Signature mismatch — processing anyway. computed:', computed, 'received:', sigHeader);
+        console.error('[Daily Webhook] Signature mismatch. Rejecting request.');
+        return c.json({ error: 'Invalid signature' }, 401);
       }
     }
 

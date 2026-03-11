@@ -18,13 +18,20 @@ enrollments.get('/', async (c) => {
         return c.json(errorResponse('Not authorized'), 403);
       }
 
-      // Verify teacher owns this class (skip check for ADMIN)
+      // Verify ownership (skip check for ADMIN)
       if (session.role === 'TEACHER') {
         const classCheck = await c.env.DB
           .prepare('SELECT id FROM Class WHERE id = ? AND teacherId = ?')
           .bind(classId, session.id)
           .first();
-
+        if (!classCheck) {
+          return c.json(errorResponse('Class not found or not authorized'), 403);
+        }
+      } else if (session.role === 'ACADEMY') {
+        const classCheck = await c.env.DB
+          .prepare('SELECT c.id FROM Class c JOIN Academy a ON c.academyId = a.id WHERE c.id = ? AND a.ownerId = ?')
+          .bind(classId, session.id)
+          .first();
         if (!classCheck) {
           return c.json(errorResponse('Class not found or not authorized'), 403);
         }
@@ -625,7 +632,7 @@ enrollments.delete('/:id', async (c) => {
     // Get enrollment details
     const enrollment: any = await c.env.DB
       .prepare(`
-        SELECT e.id, e.classId, e.userId, c.academyId, a.ownerId
+        SELECT e.id, e.classId, e.userId, e.stripeSubscriptionId, c.academyId, a.ownerId
         FROM ClassEnrollment e
         JOIN Class c ON e.classId = c.id
         JOIN Academy a ON c.academyId = a.id

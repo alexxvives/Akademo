@@ -174,6 +174,9 @@ bunny.put('/video/upload', async (c) => {
 bunny.get('/video/:guid', async (c) => {
   try {
     const session = await requireAuth(c);
+    if (!['TEACHER', 'ACADEMY', 'ADMIN'].includes(session.role)) {
+      return c.json(errorResponse('Forbidden'), 403);
+    }
     const guid = c.req.param('guid');
 
     const apiKey = c.env.BUNNY_STREAM_API_KEY;
@@ -195,6 +198,9 @@ bunny.get('/video/:guid', async (c) => {
 bunny.get('/video/:guid/status', async (c) => {
   try {
     const session = await requireAuth(c);
+    if (!['TEACHER', 'ACADEMY', 'ADMIN'].includes(session.role)) {
+      return c.json(errorResponse('Forbidden'), 403);
+    }
     const guid = c.req.param('guid');
 
     const apiKey = c.env.BUNNY_STREAM_API_KEY;

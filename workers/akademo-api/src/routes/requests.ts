@@ -62,19 +62,18 @@ requests.post('/student', async (c) => {
       } else if (existing.status === 'BANNED') {
         return c.json(errorResponse('No puedes inscribirte en esta clase. Contacta con la academia.'), 403);
       } else if (existing.status === 'REJECTED' || existing.status === 'WITHDRAWN') {
-        // Re-enroll: set status back to APPROVED but keep payment fields intact
-        // The student will need to pay again if the class requires payment
+        // Re-enroll: set status back to PENDING so approval flow is respected
         const now = new Date().toISOString();
         
         await c.env.DB
           .prepare(`
             UPDATE ClassEnrollment 
-            SET status = ?, approvedAt = ?, nextPaymentDue = NULL, stripeSubscriptionId = NULL
+            SET status = ?, nextPaymentDue = NULL, stripeSubscriptionId = NULL
             WHERE userId = ? AND classId = ?
           `)
-          .bind('APPROVED', now, session.id, classId)
+          .bind('PENDING', now, session.id, classId)
           .run();
-        return c.json(successResponse({ message: 'Enrollment approved successfully' }));
+        return c.json(successResponse({ message: 'Re-enrollment request submitted. Waiting for approval.' }));
       }
     }
 

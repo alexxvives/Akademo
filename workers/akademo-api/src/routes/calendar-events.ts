@@ -45,10 +45,22 @@ calendarEvents.post('/create-zoom', async (c) => {
       return c.json(errorResponse('Escribe un título primero.'), 400);
     }
 
-    // Look up class Zoom account
+    // Look up class Zoom account and verify ownership
     const classInfo = await c.env.DB.prepare(
-      'SELECT zoomAccountId, name FROM Class WHERE id = ?'
-    ).bind(body.classId).first<{ zoomAccountId: string | null; name: string }>();
+      `SELECT c.zoomAccountId, c.name, c.academyId, c.teacherId
+       FROM Class c
+       WHERE c.id = ?`
+    ).bind(body.classId).first<{ zoomAccountId: string | null; name: string; academyId: string; teacherId: string | null }>();
+
+    if (classInfo && session.role === 'TEACHER' && classInfo.teacherId !== session.id) {
+      return c.json(errorResponse('Forbidden'), 403);
+    }
+    if (classInfo && session.role === 'ACADEMY') {
+      const ownsAcademy = await c.env.DB.prepare(
+        'SELECT id FROM Academy WHERE id = ? AND ownerId = ?'
+      ).bind(classInfo.academyId, session.id).first();
+      if (!ownsAcademy) return c.json(errorResponse('Forbidden'), 403);
+    }
 
     if (!classInfo) {
       return c.json(errorResponse('Clase no encontrada.'), 404);

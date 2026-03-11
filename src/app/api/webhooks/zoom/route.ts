@@ -65,7 +65,35 @@ export async function POST(request: NextRequest) {
 
     const { event, payload: data } = payload;
     
-    // Log full payload for debugging
+    // Verify Zoom webhook signature for all non-validation events
+    const rawBody = JSON.stringify(payload);
+    const signature = request.headers.get('x-zm-signature') || '';
+    const timestamp = request.headers.get('x-zm-request-timestamp') || '';
+    const secretToken = process.env.ZOOM_WEBHOOK_SECRET || env.ZOOM_WEBHOOK_SECRET || '';
+    
+    if (secretToken && timestamp) {
+      const message = `v0:${timestamp}:${rawBody}`;
+      const encoder = new TextEncoder();
+      const key = await crypto.subtle.importKey(
+        'raw',
+        encoder.encode(secretToken),
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign']
+      );
+      const sigBytes = await crypto.subtle.sign('HMAC', key, encoder.encode(message));
+      const expectedSig = 'v0=' + Array.from(new Uint8Array(sigBytes))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+      
+      if (signature !== expectedSig) {
+        console.error('[Next.js Zoom Webhook] Signature verification failed');
+        return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+      }
+    } else {
+      console.error('[Next.js Zoom Webhook] Missing secret or timestamp — rejecting');
+      return NextResponse.json({ error: 'Missing signature headers' }, { status: 401 });
+    }
 
     // Handle different Zoom events
     if (event === 'meeting.started') {

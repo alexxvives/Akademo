@@ -114,7 +114,7 @@ zoomAccounts.post('/oauth/callback', async (c) => {
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
       console.error('Zoom token exchange failed:', errorText);
-      return c.json(errorResponse(`Failed to exchange code for tokens: ${errorText}`), 500);
+      return c.json(errorResponse('Failed to connect Zoom account. Please try again.'), 500);
     }
 
     const tokens = await tokenResponse.json() as any;
@@ -235,6 +235,10 @@ async function refreshZoomToken(c: Context<{ Bindings: Bindings }>, accountId: s
 // GET /zoom-accounts/refresh-name/:id - Refresh account name from Zoom API
 zoomAccounts.get('/refresh-name/:id', async (c) => {
   try {
+    const session = await requireAuth(c);
+    if (!['ACADEMY', 'ADMIN'].includes(session.role)) {
+      return c.json(errorResponse('Forbidden'), 403);
+    }
     const accountId = c.req.param('id');
 
     // Get account from database

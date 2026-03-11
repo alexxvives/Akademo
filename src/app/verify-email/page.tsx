@@ -120,7 +120,7 @@ function VerifyEmailContent() {
 
         // Redirect to the return URL or student dashboard
         const returnUrl = searchParams.get('returnUrl');
-        if (returnUrl) {
+        if (returnUrl && decodeURIComponent(returnUrl).startsWith('/')) {
           router.push(decodeURIComponent(returnUrl));
         } else {
           // User is already logged in after registration, go to dashboard
