@@ -683,7 +683,8 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
 
   const loadLiveClasses = async () => {
     try {
-      const id = classData?.id || classId;
+      const id = classData?.id;
+      if (!id) return;
       const res = await apiClient(`/live?classId=${id}`);
       const result = await res.json();
       if (result.success) {
@@ -2393,7 +2394,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
                 lessons={lessons}
                 topics={topics}
                 classId={classData?.id || ''}
-                totalStudents={classData.enrollments.filter(e => e.status === 'APPROVED').length}
+                totalStudents={(classData.enrollments || []).filter(e => e.status === 'APPROVED').length}
                 expandTopicId={expandTopicId}
                 highlightLessonId={highlightLessonId}
                 paymentStatus={paymentStatus}

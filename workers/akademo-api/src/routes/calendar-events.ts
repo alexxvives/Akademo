@@ -59,12 +59,16 @@ calendarEvents.post('/create-zoom', async (c) => {
 
     // Get / refresh Zoom token
     const zoomAccount = await c.env.DB
-      .prepare('SELECT accessToken, refreshToken, expiresAt FROM ZoomAccount WHERE id = ?')
+      .prepare('SELECT accessToken, refreshToken, expiresAt, provider FROM ZoomAccount WHERE id = ?')
       .bind(classInfo.zoomAccountId)
-      .first() as { accessToken: string; refreshToken: string; expiresAt: string } | null;
+      .first() as { accessToken: string; refreshToken: string; expiresAt: string; provider: string | null } | null;
 
     if (!zoomAccount) {
       return c.json(errorResponse('Cuenta Zoom no encontrada.'), 404);
+    }
+
+    if (zoomAccount.provider === 'gotomeeting') {
+      return c.json(errorResponse('Esta clase usa GoToMeeting. La creación automática de reuniones solo está disponible para cuentas de Zoom.'), 400);
     }
 
     let accessToken = zoomAccount.accessToken;
@@ -364,21 +368,28 @@ calendarEvents.delete('/:id', async (c) => {
             .bind(linkedStream.classId)
             .first<{ zoomAccountId: string | null }>();
           let zoomToken: string | undefined;
+          let isGtm = false;
           if (classInfo?.zoomAccountId) {
             const zoomAccount = await c.env.DB
-              .prepare('SELECT accessToken, refreshToken, expiresAt FROM ZoomAccount WHERE id = ?')
+              .prepare('SELECT accessToken, refreshToken, expiresAt, provider FROM ZoomAccount WHERE id = ?')
               .bind(classInfo.zoomAccountId)
-              .first() as { accessToken: string; refreshToken: string; expiresAt: string } | null;
+              .first() as { accessToken: string; refreshToken: string; expiresAt: string; provider: string | null } | null;
             if (zoomAccount) {
-              let token = zoomAccount.accessToken;
-              if (new Date(zoomAccount.expiresAt) <= new Date(Date.now() + 5 * 60 * 1000)) {
-                const { refreshZoomToken } = await import('./zoom-accounts');
-                token = (await refreshZoomToken(c, classInfo.zoomAccountId)) ?? token;
+              if (zoomAccount.provider === 'gotomeeting') {
+                isGtm = true;
+              } else {
+                let token = zoomAccount.accessToken;
+                if (new Date(zoomAccount.expiresAt) <= new Date(Date.now() + 5 * 60 * 1000)) {
+                  const { refreshZoomToken } = await import('./zoom-accounts');
+                  token = (await refreshZoomToken(c, classInfo.zoomAccountId)) ?? token;
+                }
+                zoomToken = token;
               }
-              zoomToken = token;
             }
           }
-          await deleteZoomMeeting(linkedStream.zoomMeetingId, zoomToken ? { accessToken: zoomToken } : undefined);
+          if (!isGtm) {
+            await deleteZoomMeeting(linkedStream.zoomMeetingId, zoomToken ? { accessToken: zoomToken } : undefined);
+          }
         } catch (zoomErr) {
           console.error('[calendar DELETE] Zoom meeting delete failed:', zoomErr);
         }

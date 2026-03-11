@@ -59,6 +59,7 @@ export default function ProtectedVideoPlayer({
   const currentTimeRef = useRef(0);
   const watermarkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isPlayingRef = useRef(false);
+  const transcodingPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Screen-recording detection: track signals per-video-play-session
   const completionFlagsRef = useRef({
@@ -155,18 +156,19 @@ export default function ProtectedVideoPlayer({
             setTranscodingStatus('processing');
             setIsLoading(false);
             // Poll for status updates every 5 seconds
-            const pollInterval = setInterval(async () => {
+            transcodingPollRef.current = setInterval(async () => {
               const pollResponse = await apiClient(`/bunny/video/${bunnyGuid}/status`);
               if (pollResponse.ok) {
                 const pollData = await pollResponse.json();
                 if (pollData.success && pollData.data?.status === 4) {
                   setTranscodingStatus('finished');
-                  clearInterval(pollInterval);
+                  if (transcodingPollRef.current) clearInterval(transcodingPollRef.current);
+                  transcodingPollRef.current = null;
                   window.location.reload(); // Reload to load the video
                 }
               }
             }, 5000);
-            return () => clearInterval(pollInterval);
+            return;
           }
         }
 
@@ -193,6 +195,12 @@ export default function ProtectedVideoPlayer({
     }
 
     fetchSignedUrl();
+    return () => {
+      if (transcodingPollRef.current) {
+        clearInterval(transcodingPollRef.current);
+        transcodingPollRef.current = null;
+      }
+    };
   }, [bunnyGuid]);
 
   const triggerWatermark = useCallback(() => {

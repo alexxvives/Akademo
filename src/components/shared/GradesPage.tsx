@@ -181,9 +181,14 @@ export function GradesPage({ role }: GradesPageProps) {
 
       console.log('[GradesPage] Assignments fetched:', assignmentsRes.data.length); // DEBUG
       const allGrades: StudentGrade[] = [];
-      for (const assignment of assignmentsRes.data) {
-        const res = await apiClient(`/assignments/${assignment.id}`);
-        const detail = (await res.json()) as ApiResponse<AssignmentDetail>;
+      const detailResults = await Promise.all(
+        assignmentsRes.data.map(async (assignment) => {
+          const res = await apiClient(`/assignments/${assignment.id}`);
+          const detail = (await res.json()) as ApiResponse<AssignmentDetail>;
+          return { assignment, detail };
+        })
+      );
+      for (const { assignment, detail } of detailResults) {
         if (detail.success && detail.data.submissions) {
           detail.data.submissions.forEach((sub) => {
             if (sub.gradedAt) {

@@ -365,7 +365,7 @@ export function DonutChart({
               />
               <div>
                 <p className="text-sm font-medium text-gray-900">{item.label}</p>
-                <p className="text-xs text-gray-500">{item.value} ({((item.value / (data || []).reduce((s, i) => s + i.value, 0)) * 100).toFixed(1)}%)</p>
+                <p className="text-xs text-gray-500">{item.value} ({(() => { const total = (data || []).reduce((s, i) => s + i.value, 0); return total === 0 ? '0.0' : ((item.value / total) * 100).toFixed(1); })()}%)</p>
               </div>
             </div>
           ))}

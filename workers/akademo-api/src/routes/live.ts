@@ -786,21 +786,28 @@ live.patch('/:id', async (c) => {
           .bind(stream.classId)
           .first<{ zoomAccountId: string | null }>();
         let zoomToken2: string | undefined;
+        let isGtm2 = false;
         if (classInfo2?.zoomAccountId) {
           const zoomAccount2 = await c.env.DB
-            .prepare('SELECT accessToken, refreshToken, expiresAt FROM ZoomAccount WHERE id = ?')
+            .prepare('SELECT accessToken, refreshToken, expiresAt, provider FROM ZoomAccount WHERE id = ?')
             .bind(classInfo2.zoomAccountId)
-            .first() as { accessToken: string; refreshToken: string; expiresAt: string } | null;
+            .first() as { accessToken: string; refreshToken: string; expiresAt: string; provider: string | null } | null;
           if (zoomAccount2) {
-            let token2 = zoomAccount2.accessToken;
-            if (new Date(zoomAccount2.expiresAt) <= new Date(Date.now() + 5 * 60 * 1000)) {
-              const { refreshZoomToken } = await import('./zoom-accounts');
-              token2 = (await refreshZoomToken(c, classInfo2.zoomAccountId)) ?? token2;
+            if (zoomAccount2.provider === 'gotomeeting') {
+              isGtm2 = true;
+            } else {
+              let token2 = zoomAccount2.accessToken;
+              if (new Date(zoomAccount2.expiresAt) <= new Date(Date.now() + 5 * 60 * 1000)) {
+                const { refreshZoomToken } = await import('./zoom-accounts');
+                token2 = (await refreshZoomToken(c, classInfo2.zoomAccountId)) ?? token2;
+              }
+              zoomToken2 = token2;
             }
-            zoomToken2 = token2;
           }
         }
-        await deleteZoomMeeting(oldZoomMeetingId, zoomToken2 ? { accessToken: zoomToken2 } : undefined);
+        if (!isGtm2) {
+          await deleteZoomMeeting(oldZoomMeetingId, zoomToken2 ? { accessToken: zoomToken2 } : undefined);
+        }
       } catch (zoomDeleteErr) {
         console.error('[PATCH Stream] Failed to delete Zoom meeting on unlink:', zoomDeleteErr);
         // Non-fatal — continue
@@ -987,21 +994,28 @@ live.delete('/:id', async (c) => {
           .bind(stream.classId)
           .first<{ zoomAccountId: string | null }>();
         let zoomToken: string | undefined;
+        let isGtm = false;
         if (classInfo?.zoomAccountId) {
           const zoomAccount = await c.env.DB
-            .prepare('SELECT accessToken, refreshToken, expiresAt FROM ZoomAccount WHERE id = ?')
+            .prepare('SELECT accessToken, refreshToken, expiresAt, provider FROM ZoomAccount WHERE id = ?')
             .bind(classInfo.zoomAccountId)
-            .first() as { accessToken: string; refreshToken: string; expiresAt: string } | null;
+            .first() as { accessToken: string; refreshToken: string; expiresAt: string; provider: string | null } | null;
           if (zoomAccount) {
-            let token = zoomAccount.accessToken;
-            if (new Date(zoomAccount.expiresAt) <= new Date(Date.now() + 5 * 60 * 1000)) {
-              const { refreshZoomToken } = await import('./zoom-accounts');
-              token = (await refreshZoomToken(c, classInfo.zoomAccountId)) ?? token;
+            if (zoomAccount.provider === 'gotomeeting') {
+              isGtm = true;
+            } else {
+              let token = zoomAccount.accessToken;
+              if (new Date(zoomAccount.expiresAt) <= new Date(Date.now() + 5 * 60 * 1000)) {
+                const { refreshZoomToken } = await import('./zoom-accounts');
+                token = (await refreshZoomToken(c, classInfo.zoomAccountId)) ?? token;
+              }
+              zoomToken = token;
             }
-            zoomToken = token;
           }
         }
-        await deleteZoomMeeting(stream.zoomMeetingId, zoomToken ? { accessToken: zoomToken } : undefined);
+        if (!isGtm) {
+          await deleteZoomMeeting(stream.zoomMeetingId, zoomToken ? { accessToken: zoomToken } : undefined);
+        }
       } catch (zoomErr) {
         console.error('[Delete Stream] Failed to delete Zoom meeting:', zoomErr);
         // Continue with DB deletion even if Zoom API fails
@@ -1347,7 +1361,7 @@ live.post('/:id/check-recording', async (c) => {
         }
         zoomConfig = { accessToken: token };
       } else {
-        zoomConfig = { ZOOM_ACCOUNT_ID: c.env.ZOOM_ACCOUNT_ID || '', ZOOM_CLIENT_ID: c.env.ZOOM_CLIENT_ID || '', ZOOM_CLIENT_SECRET: c.env.ZOOM_CLIENT_SECRET || '' };
+        return c.json(errorResponse('La cuenta de Zoom asociada a esta clase fue eliminada. Reasigna una cuenta de Zoom en la configuración de la clase.'), 400);
       }
     } else {
       zoomConfig = { ZOOM_ACCOUNT_ID: c.env.ZOOM_ACCOUNT_ID || '', ZOOM_CLIENT_ID: c.env.ZOOM_CLIENT_ID || '', ZOOM_CLIENT_SECRET: c.env.ZOOM_CLIENT_SECRET || '' };
