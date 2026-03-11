@@ -136,15 +136,6 @@ export function StreamsPage({ role }: StreamsPageProps) {
         if (classesResult.success && Array.isArray(classesResult.data)) setClasses(classesResult.data);
         if (streamsResult.success && Array.isArray(streamsResult.data)) setStreams(streamsResult.data);
         setLoading(false);
-
-        const pollInterval = setInterval(async () => {
-          try {
-            const r = await apiClient('/live/history');
-            const res = await r.json();
-            if (res.success) setStreams(res.data || []);
-          } catch (e) { console.error(e); }
-        }, 10000);
-        window.addEventListener('beforeunload', () => clearInterval(pollInterval));
       } else if (role === 'ACADEMY') {
         const [academiesRes, classesRes] = await Promise.all([
           apiClient('/academies'),
@@ -184,8 +175,6 @@ export function StreamsPage({ role }: StreamsPageProps) {
           }
 
           await loadStreams();
-          const pollInterval = setInterval(() => loadStreams(), 10000);
-          window.addEventListener('beforeunload', () => clearInterval(pollInterval));
         }
 
         if (classesResult.success && Array.isArray(classesResult.data)) {
@@ -223,10 +212,8 @@ export function StreamsPage({ role }: StreamsPageProps) {
 
   useEffect(() => {
     loadData();
-    if (role === 'ADMIN') {
-      const pollInterval = setInterval(loadData, 10000);
-      return () => clearInterval(pollInterval);
-    }
+    const pollInterval = setInterval(loadData, 10000);
+    return () => clearInterval(pollInterval);
   }, [loadData, role]);
 
   const filteredStreams = useMemo(() => {

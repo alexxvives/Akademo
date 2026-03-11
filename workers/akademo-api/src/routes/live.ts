@@ -1048,7 +1048,7 @@ live.post('/create-lesson', async (c) => {
       return c.json(errorResponse('Not authorized'), 403);
     }
 
-    const { streamId, title, description, topicId, releaseDate, classId: targetClassId } = await c.req.json();
+    const { streamId, title, description, topicId, releaseDate, classId: targetClassId, maxWatchTimeMultiplier, watermarkIntervalMins } = await c.req.json();
 
     if (!streamId) {
       return c.json(errorResponse('streamId is required'), 400);
@@ -1184,8 +1184,8 @@ live.post('/create-lesson', async (c) => {
 
     // Create Lesson record first
     await c.env.DB.prepare(`
-      INSERT INTO Lesson (id, title, description, classId, topicId, releaseDate, createdAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO Lesson (id, title, description, classId, topicId, releaseDate, maxWatchTimeMultiplier, watermarkIntervalMins, createdAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       lessonId,
       lessonTitle,
@@ -1193,6 +1193,8 @@ live.post('/create-lesson', async (c) => {
       finalClassId,
       topicId || null,
       releaseDate || now,
+      maxWatchTimeMultiplier ?? 2.0,
+      watermarkIntervalMins ?? 5,
       now
     ).run();
 
@@ -1263,128 +1265,6 @@ live.post('/create-lesson', async (c) => {
   }
 });
 
-// DELETE /live/:id - Delete stream and its Bunny recording
-live.delete('/:id', async (c) => {
-  try {
-    const session = await requireAuth(c);
-    const streamId = c.req.param('id');
-
-
-    if (!['ADMIN', 'TEACHER', 'ACADEMY'].includes(session.role)) {
-      return c.json(errorResponse('Not authorized'), 403);
-    }
-
-    // Get stream details
-    const stream = await c.env.DB
-      .prepare('SELECT * FROM LiveStream WHERE id = ?')
-      .bind(streamId)
-      .first();
-
-    if (!stream) {
-      return c.json(errorResponse('Stream not found'), 404);
-    }
-
-
-    // Verify ownership
-    if (session.role === 'TEACHER' && stream.teacherId !== session.id) {
-      return c.json(errorResponse('Not authorized to delete this stream'), 403);
-    }
-
-    if (session.role === 'ACADEMY') {
-      // Check if academy owns the class
-      const classInfo = await c.env.DB
-        .prepare('SELECT academyId FROM Class WHERE id = ?')
-        .bind(stream.classId)
-        .first();
-      
-      const academy = await c.env.DB
-        .prepare('SELECT id FROM Academy WHERE ownerId = ?')
-        .bind(session.id)
-        .first();
-
-      if (!classInfo || !academy || classInfo.academyId !== academy.id) {
-        return c.json(errorResponse('Not authorized to delete this stream'), 403);
-      }
-    }
-
-    // Delete from Bunny if recording exists
-    if (stream.recordingId) {
-      try {
-        const BUNNY_LIBRARY_ID = c.env.BUNNY_STREAM_LIBRARY_ID;
-        const BUNNY_API_KEY = c.env.BUNNY_STREAM_API_KEY;
-
-        // Parse recording IDs (can be single GUID string or JSON array)
-        let recordingGuids: string[] = [];
-        try {
-          recordingGuids = JSON.parse((stream as any).recordingId);
-          if (!Array.isArray(recordingGuids)) {
-            recordingGuids = [(stream as any).recordingId];
-          }
-        } catch {
-          recordingGuids = [(stream as any).recordingId as string];
-        }
-
-        
-        for (const guid of recordingGuids) {
-          const bunnyResponse = await fetch(
-            `https://video.bunnycdn.com/library/${BUNNY_LIBRARY_ID}/videos/${guid}`,
-            {
-              method: 'DELETE',
-              headers: {
-                'AccessKey': BUNNY_API_KEY,
-              },
-            }
-          );
-
-          if (!bunnyResponse.ok) {
-            const bunnyError = await bunnyResponse.text();
-            console.error(`[Delete Stream] Bunny deletion failed for ${guid}:`, bunnyResponse.status, bunnyError);
-          } else {
-          }
-        }
-      } catch (bunnyError: any) {
-        console.error('[Delete Stream] Bunny error:', bunnyError.message);
-        // Continue with database deletion even if Bunny fails
-      }
-    }
-
-    // Delete from database
-    const deleteResult = await c.env.DB
-      .prepare('DELETE FROM LiveStream WHERE id = ?')
-      .bind(streamId)
-      .run();
-
-    // Cascade: delete the linked calendar event if any
-    if ((stream as any).calendarEventId) {
-      try {
-        await c.env.DB
-          .prepare('DELETE FROM CalendarScheduledEvent WHERE id = ?')
-          .bind((stream as any).calendarEventId)
-          .run();
-      } catch (calErr) {
-        console.error('[Delete Stream v2] CalendarScheduledEvent delete failed:', calErr);
-      }
-    }
-
-    // Verify deletion
-    const verification = await c.env.DB
-      .prepare('SELECT id FROM LiveStream WHERE id = ?')
-      .bind(streamId)
-      .first();
-
-    if (verification) {
-      console.error('[Delete Stream] Stream still exists after deletion!', verification);
-      return c.json(errorResponse('Failed to delete stream from database'), 500);
-    }
-
-    return c.json(successResponse({ message: 'Stream deleted successfully' }));
-  } catch (error: any) {
-    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
-    console.error('[Delete Stream] Error:', error);
-    return c.json(errorResponse('Internal server error'), 500);
-  }
-});
-
 // POST /live/:id/notify - Notify enrolled students about live stream
 live.post('/:id/notify', async (c) => {
   try {
@@ -1443,12 +1323,35 @@ live.post('/:id/check-recording', async (c) => {
 
     if (!stream) return c.json(errorResponse('Stream not found'), 404);
 
-    // Get Zoom config
-    const zoomConfig = {
-      ZOOM_ACCOUNT_ID: c.env.ZOOM_ACCOUNT_ID || '',
-      ZOOM_CLIENT_ID: c.env.ZOOM_CLIENT_ID || '',
-      ZOOM_CLIENT_SECRET: c.env.ZOOM_CLIENT_SECRET || '',
-    };
+    // Get per-class Zoom credentials (respects per-academy accounts and guards GTM streams)
+    let zoomConfig: { ZOOM_ACCOUNT_ID?: string; ZOOM_CLIENT_ID?: string; ZOOM_CLIENT_SECRET?: string; accessToken?: string };
+    const classZoomInfo = await c.env.DB
+      .prepare('SELECT zoomAccountId FROM Class WHERE id = ?')
+      .bind((stream as any).classId)
+      .first<{ zoomAccountId: string | null }>();
+
+    if (classZoomInfo?.zoomAccountId) {
+      const zoomAccount = await c.env.DB
+        .prepare('SELECT accessToken, refreshToken, expiresAt, provider FROM ZoomAccount WHERE id = ?')
+        .bind(classZoomInfo.zoomAccountId)
+        .first() as { accessToken: string; refreshToken: string; expiresAt: string; provider: string } | null;
+
+      if (zoomAccount) {
+        if (zoomAccount.provider === 'gotomeeting') {
+          return c.json(errorResponse('Este stream usa GoToMeeting. Usa el botón "Sincronizar" en la lista de streams para sincronizar la grabación.'), 400);
+        }
+        let token = zoomAccount.accessToken;
+        if (new Date(zoomAccount.expiresAt) <= new Date(Date.now() + 5 * 60 * 1000)) {
+          const { refreshZoomToken } = await import('./zoom-accounts');
+          token = (await refreshZoomToken(c, classZoomInfo.zoomAccountId)) ?? token;
+        }
+        zoomConfig = { accessToken: token };
+      } else {
+        zoomConfig = { ZOOM_ACCOUNT_ID: c.env.ZOOM_ACCOUNT_ID || '', ZOOM_CLIENT_ID: c.env.ZOOM_CLIENT_ID || '', ZOOM_CLIENT_SECRET: c.env.ZOOM_CLIENT_SECRET || '' };
+      }
+    } else {
+      zoomConfig = { ZOOM_ACCOUNT_ID: c.env.ZOOM_ACCOUNT_ID || '', ZOOM_CLIENT_ID: c.env.ZOOM_CLIENT_ID || '', ZOOM_CLIENT_SECRET: c.env.ZOOM_CLIENT_SECRET || '' };
+    }
 
     // Check recording in Zoom
     const recordingData = await getZoomRecording((stream as any).zoomMeetingId as string, zoomConfig);
