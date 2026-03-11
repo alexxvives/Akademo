@@ -91,7 +91,8 @@ classes.get('/', async (c) => {
           (SELECT COUNT(*) FROM Lesson WHERE classId = c.id) as lessonCount,
           (SELECT COUNT(*) FROM Video v JOIN Lesson l ON v.lessonId = l.id WHERE l.classId = c.id) as videoCount,
           (SELECT COUNT(*) FROM Document d JOIN Lesson l ON d.lessonId = l.id WHERE l.classId = c.id) as documentCount,
-          (SELECT ROUND(AVG(lr.rating), 1) FROM LessonRating lr JOIN Lesson l ON lr.lessonId = l.id WHERE l.classId = c.id) as avgRating
+          (SELECT ROUND(AVG(lr.rating), 1) FROM LessonRating lr JOIN Lesson l ON lr.lessonId = l.id WHERE l.classId = c.id) as avgRating,
+          (SELECT COUNT(*) FROM LiveStream WHERE classId = c.id AND status IN ('active','scheduled') AND createdAt > datetime('now', '-24 hours')) as activeStreamCount
         FROM Class c
         JOIN Academy a ON c.academyId = a.id
         LEFT JOIN ZoomAccount za ON c.zoomAccountId = za.id
@@ -114,7 +115,8 @@ classes.get('/', async (c) => {
           (SELECT COUNT(*) FROM Lesson WHERE classId = c.id) as lessonCount,
           (SELECT COUNT(*) FROM Video v JOIN Lesson l ON v.lessonId = l.id WHERE l.classId = c.id) as videoCount,
           (SELECT COUNT(*) FROM Document d JOIN Lesson l ON d.lessonId = l.id WHERE l.classId = c.id) as documentCount,
-          (SELECT ROUND(AVG(lr.rating), 1) FROM LessonRating lr JOIN Lesson l ON lr.lessonId = l.id WHERE l.classId = c.id) as avgRating
+          (SELECT ROUND(AVG(lr.rating), 1) FROM LessonRating lr JOIN Lesson l ON lr.lessonId = l.id WHERE l.classId = c.id) as avgRating,
+          (SELECT COUNT(*) FROM LiveStream WHERE classId = c.id AND status IN ('active','scheduled') AND createdAt > datetime('now', '-24 hours')) as activeStreamCount
         FROM Class c
         JOIN Academy a ON c.academyId = a.id
         LEFT JOIN User u ON c.teacherId = u.id
@@ -130,7 +132,8 @@ classes.get('/', async (c) => {
           c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
           a.feedbackEnabled, c.whatsappGroupLink, c.monthlyPrice, c.oneTimePrice, c.zoomAccountId, c.maxStudents, c.startDate,
           c.university, c.carrera,
-          a.name as academyName
+          a.name as academyName,
+          (SELECT COUNT(*) FROM LiveStream WHERE classId = c.id AND status IN ('active','scheduled') AND createdAt > datetime('now', '-24 hours')) as activeStreamCount
         FROM Class c
         JOIN Academy a ON c.academyId = a.id
         ORDER BY c.createdAt DESC
@@ -610,7 +613,7 @@ classes.delete('/:id', async (c) => {
             console.error(`[Delete Class] Error deleting Bunny video ${bunnyGuid}:`, err);
           }
         } else if (bunnyGuid && streamGuids.has(bunnyGuid)) {
-          console.log(`[Delete Class] Skipping stream recording video ${bunnyGuid} — preserved in Bunny`);
+          console.log(`[Delete Class] Skipping stream recording video ${bunnyGuid} — will be deleted via streamGuids`);
         }
       }
     }
@@ -682,8 +685,23 @@ classes.delete('/:id', async (c) => {
       await c.env.DB.prepare('DELETE FROM Payment WHERE classId = ?').bind(classId).run();
     } catch { /* Payment cleanup is best-effort */ }
 
-    // 13. Preserve live stream records (Bunny recordings remain accessible)
-    // Streams are intentionally NOT deleted so their Bunny video recordings stay orphan-free
+    // 13. Delete stream recordings from Bunny CDN, then remove LiveStream records
+    if (apiKey && libraryId) {
+      for (const guid of streamGuids) {
+        try {
+          const resp = await fetch(`https://video.bunnycdn.com/library/${libraryId}/videos/${guid}`, {
+            method: 'DELETE',
+            headers: { 'AccessKey': apiKey },
+          });
+          if (!resp.ok) {
+            console.error(`[Delete Class] Failed to delete Bunny stream recording ${guid}:`, await resp.text());
+          }
+        } catch (err) {
+          console.error(`[Delete Class] Error deleting Bunny stream recording ${guid}:`, err);
+        }
+      }
+    }
+    await c.env.DB.prepare('DELETE FROM LiveStream WHERE classId = ?').bind(classId).run();
 
     // 14. Finally delete the class itself
     await c.env.DB.prepare('DELETE FROM Class WHERE id = ?').bind(classId).run();

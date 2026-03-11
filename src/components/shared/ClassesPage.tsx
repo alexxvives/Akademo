@@ -58,6 +58,7 @@ interface Class {
   startDate?: string | null;
   university?: string | null;
   carrera?: string | null;
+  activeStreamCount?: number;
 }
 
 interface Academy {
@@ -422,7 +423,7 @@ export function ClassesPage({ role }: ClassesPageProps) {
 
   const handleDeleteClass = async (cls: Class) => {
     const confirmed = window.confirm(
-      `¿Estás seguro de que quieres eliminar "${cls.name}"?\n\n⚠️ IMPORTANTE: Los videos serán eliminados permanentemente de la plataforma y no podrán recuperarse.\n\nNota: Las grabaciones de streams quedarán almacenadas en la plataforma.\n\nTambién se eliminarán todas las lecciones, documentos, calificaciones y matrículas asociadas.\n\nEsta acción no se puede deshacer.`
+      `¿Estás seguro de que quieres eliminar "${cls.name}"?\n\n⚠️ IMPORTANTE: Los videos y grabaciones de streams serán eliminados permanentemente de la plataforma y no podrán recuperarse.\n\nTambién se eliminarán todas las lecciones, documentos, calificaciones y matrículas asociadas.\n\nEsta acción no se puede deshacer.`
     );
     if (!confirmed) return;
 
@@ -538,6 +539,12 @@ export function ClassesPage({ role }: ClassesPageProps) {
                       <h3 className="text-xl font-bold text-gray-900">
                         {cls.name}
                       </h3>
+                      {(cls.activeStreamCount ?? 0) > 0 && (
+                        <span className="relative flex h-3 w-3" title="Stream en vivo activo">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                        </span>
+                      )}
                       {(cls.university || cls.carrera) && (
                         <div className="flex flex-wrap items-center gap-1.5">
                           {cls.university && (

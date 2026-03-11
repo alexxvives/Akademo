@@ -209,13 +209,30 @@ live.post('/', async (c) => {
           const joinUrl = meetingData.joinURL || meetingData.joinUrl || meetingData.joinurl || '';
           const meetingId = String(meetingData.meetingId || meetingData.meetingid || '');
 
+          // Fetch host start URL to open the GTM desktop app directly (like Zoom's start_url)
+          // GET /meetings/{meetingId}/start → { hostURL: "gotomeeting://..." }
+          let gtmHostUrl: string | null = null;
+          try {
+            const startResp = await fetch(`https://api.getgo.com/G2M/rest/meetings/${meetingId}/start`, {
+              headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+            });
+            if (startResp.ok) {
+              const startData = await startResp.json() as any;
+              gtmHostUrl = startData.hostURL || startData.startURL || startData.startUrl || null;
+            } else {
+              console.warn(`[GTM] Could not fetch hostURL for meeting ${meetingId}:`, await startResp.text());
+            }
+          } catch (startErr) {
+            console.warn('[GTM] Failed to fetch hostURL:', startErr);
+          }
+
           await c.env.DB
             .prepare(`
               INSERT INTO LiveStream (id, classId, teacherId, title, status, zoomLink, zoomMeetingId, zoomStartUrl, createdAt) 
               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             `)
             .bind(streamId, classId, classInfo.teacherId ?? session.id, title, 'scheduled',
-                  joinUrl, meetingId, null, now)
+                  joinUrl, meetingId, gtmHostUrl, now)
             .run();
         } else {
           // Zoom meeting creation
@@ -1625,6 +1642,194 @@ live.get('/:id/participants', async (c) => {
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Get Participants] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
+
+// POST /live/:id/check-recording-gtm - Manually sync GTM cloud recording to Bunny
+live.post('/:id/check-recording-gtm', async (c) => {
+  try {
+    const session = await requireAuth(c);
+
+    if (!['ADMIN', 'TEACHER', 'ACADEMY'].includes(session.role)) {
+      return c.json(errorResponse('Not authorized'), 403);
+    }
+
+    const streamId = c.req.param('id');
+    const stream = await c.env.DB.prepare('SELECT * FROM LiveStream WHERE id = ?').bind(streamId).first() as any;
+    if (!stream) return c.json(errorResponse('Stream not found'), 404);
+    if (!stream.zoomMeetingId) return c.json(errorResponse('No GTM meeting ID on this stream'), 400);
+
+    // Verify permission and get the GTM access token
+    const classInfo = await c.env.DB
+      .prepare('SELECT c.teacherId, c.zoomAccountId, a.ownerId FROM Class c JOIN Academy a ON c.academyId = a.id WHERE c.id = ?')
+      .bind(stream.classId)
+      .first() as any;
+
+    if (!classInfo) return c.json(errorResponse('Class not found'), 404);
+    if (session.role === 'TEACHER' && classInfo.teacherId !== session.id) {
+      return c.json(errorResponse('Not authorized'), 403);
+    }
+    if (session.role === 'ACADEMY' && classInfo.ownerId !== session.id) {
+      return c.json(errorResponse('Not authorized'), 403);
+    }
+
+    if (!classInfo.zoomAccountId) return c.json(errorResponse('No GTM account linked to this class'), 400);
+
+    const zoomAccount = await c.env.DB
+      .prepare('SELECT accessToken, refreshToken, expiresAt, provider FROM ZoomAccount WHERE id = ?')
+      .bind(classInfo.zoomAccountId)
+      .first() as any;
+
+    if (!zoomAccount || zoomAccount.provider !== 'gotomeeting') {
+      return c.json(errorResponse('No GoToMeeting account found'), 400);
+    }
+
+    let token = zoomAccount.accessToken;
+    if (new Date(zoomAccount.expiresAt) <= new Date(Date.now() + 5 * 60 * 1000)) {
+      const { refreshGTMToken } = await import('./zoom-accounts');
+      const refreshed = await refreshGTMToken(c, classInfo.zoomAccountId);
+      if (!refreshed) return c.json(errorResponse('GTM session expired — please reconnect the account'), 401);
+      token = refreshed;
+    }
+
+    // GET /meetings/{meetingId}/recordings — returns GTM cloud recordings
+    const recResp = await fetch(`https://api.getgo.com/G2M/rest/meetings/${stream.zoomMeetingId}/recordings`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+    });
+
+    if (!recResp.ok) {
+      const errBody = await recResp.text();
+      console.error('[GTM Recording] Fetch failed:', recResp.status, errBody);
+      if (recResp.status === 404) return c.json(errorResponse('No recording found for this GTM meeting yet'), 404);
+      return c.json(errorResponse(`GTM recordings API error: ${errBody}`), 502);
+    }
+
+    const recData = await recResp.json() as any;
+    // GTM /recordings response: { recordingList: [{ recordingId, downloadUrl, contentType, ... }] }
+    const recordings = recData.recordingList || recData.recordings || (Array.isArray(recData) ? recData : []);
+    const mp4Recordings = recordings.filter((r: any) =>
+      (r.contentType || r.fileType || '').toLowerCase().includes('mp4') ||
+      (r.downloadUrl || '').toLowerCase().includes('.mp4')
+    );
+
+    if (mp4Recordings.length === 0) {
+      return c.json(errorResponse('No MP4 recording found in GTM yet. Cloud recording may still be processing.'), 404);
+    }
+
+    // Sort by start time if available
+    mp4Recordings.sort((a: any, b: any) =>
+      new Date(a.startDate || a.recordingStartTime || 0).getTime() -
+      new Date(b.startDate || b.recordingStartTime || 0).getTime()
+    );
+
+    // Get or create Bunny collection for this academy
+    let bunnyCollectionId: string | undefined;
+    try {
+      const academyRow = await c.env.DB
+        .prepare('SELECT a.name FROM Academy a JOIN Class c ON c.academyId = a.id WHERE c.id = ?')
+        .bind(stream.classId)
+        .first() as any;
+
+      if (academyRow?.name) {
+        const collectionsRes = await fetch(
+          `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/collections?itemsPerPage=100`,
+          { headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY } }
+        );
+        if (collectionsRes.ok) {
+          const collectionsData = await collectionsRes.json() as any;
+          const existing = (collectionsData.items || []).find((col: any) => col.name === academyRow.name);
+          if (existing) {
+            bunnyCollectionId = existing.guid;
+          } else {
+            const createRes = await fetch(
+              `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/collections`,
+              {
+                method: 'POST',
+                headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: academyRow.name }),
+              }
+            );
+            if (createRes.ok) {
+              const createData = await createRes.json() as any;
+              bunnyCollectionId = createData.guid;
+            }
+          }
+        }
+      }
+    } catch (collectionError: any) {
+      console.error('[GTM Recording] Failed to get/create Bunny collection:', collectionError.message);
+    }
+
+    // Upload each MP4 segment to Bunny Stream
+    const bunnyGuids: string[] = [];
+    for (let i = 0; i < mp4Recordings.length; i++) {
+      const rec = mp4Recordings[i];
+      const partSuffix = mp4Recordings.length > 1 ? ` - Parte ${i + 1}` : '';
+      const videoTitle = `${stream.title || 'GTM Recording'}${partSuffix}`;
+
+      // GTM recordings require auth token for download
+      const downloadUrl: string = rec.downloadUrl || rec.download_url || '';
+      if (!downloadUrl) {
+        console.error(`[GTM Recording] No downloadUrl on recording ${i + 1}`);
+        continue;
+      }
+
+      // Append GTM access token as query param (GTM requires auth for download)
+      const authedUrl = downloadUrl.includes('?')
+        ? `${downloadUrl}&access_token=${token}`
+        : `${downloadUrl}?access_token=${token}`;
+
+      const bunnyResponse = await fetch(`https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/videos/fetch`, {
+        method: 'POST',
+        headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: authedUrl, title: videoTitle }),
+      });
+
+      if (!bunnyResponse.ok) {
+        const errorText = await bunnyResponse.text();
+        console.error(`[GTM Recording] Bunny fetch failed for segment ${i + 1}:`, errorText);
+        continue;
+      }
+
+      const bunnyData = await bunnyResponse.json() as any;
+      const bunnyGuid = bunnyData.guid || bunnyData.id;
+      if (bunnyGuid) {
+        bunnyGuids.push(bunnyGuid);
+
+        if (bunnyCollectionId) {
+          try {
+            await fetch(`https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/videos/${bunnyGuid}`, {
+              method: 'POST',
+              headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ collectionId: bunnyCollectionId }),
+            });
+          } catch (patchErr: any) {
+            console.error('[GTM Recording] Failed to set Bunny collection:', patchErr.message);
+          }
+        }
+      }
+    }
+
+    if (bunnyGuids.length === 0) {
+      return c.json(errorResponse('Failed to upload any GTM recording segments to Bunny'), 502);
+    }
+
+    const recordingIds = bunnyGuids.length === 1 ? bunnyGuids[0] : JSON.stringify(bunnyGuids);
+
+    await c.env.DB
+      .prepare('UPDATE LiveStream SET recordingId = ?, status = ? WHERE id = ?')
+      .bind(recordingIds, 'ended', streamId)
+      .run();
+
+    return c.json(successResponse({
+      message: `GTM recording synced successfully (${bunnyGuids.length} segment${bunnyGuids.length > 1 ? 's' : ''})`,
+      recordingIds: bunnyGuids,
+      segmentCount: bunnyGuids.length,
+    }));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[GTM Check Recording] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
 });
