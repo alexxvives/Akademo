@@ -290,30 +290,30 @@ export function ClassFormModal({
                     )}
                   </div>
                   <span className={`text-sm font-semibold ${formData.allowMonthly ? 'text-blue-900' : 'text-gray-700'}`}>Pago Mensual</span>
-                  {formData.allowMonthly && (
-                    <div className="flex-1 flex items-center gap-2 justify-end" onClick={(e) => e.stopPropagation()}>
-                      <span className="text-xs text-blue-700 font-medium whitespace-nowrap">Nº cuotas</span>
-                      <input
-                        type="number"
-                        min="1"
-                        step="1"
-                        value={formData.numCobros}
-                        onChange={(e) => {
-                          const numCobros = e.target.value;
-                          setFormData((f) => ({
-                            ...f,
-                            numCobros,
-                            monthlyPrice: numCobros && f.price
-                              ? (parseFloat(f.price) / parseInt(numCobros)).toFixed(2)
-                              : '',
-                          }));
-                        }}
-                        className="w-20 px-2 py-1 border border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                        placeholder=""
-                      />
-                    </div>
-                  )}
                 </div>
+                {formData.allowMonthly && (
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                    <span className="text-xs text-blue-700 font-medium whitespace-nowrap">Nº cuotas</span>
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={formData.numCobros}
+                      onChange={(e) => {
+                        const numCobros = e.target.value;
+                        setFormData((f) => ({
+                          ...f,
+                          numCobros,
+                          monthlyPrice: numCobros && f.price
+                            ? (parseFloat(f.price) / parseInt(numCobros)).toFixed(2)
+                            : '',
+                        }));
+                      }}
+                      className="w-20 px-2 py-1 border border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                      placeholder=""
+                    />
+                  </div>
+                )}
                 {formData.allowMonthly && formData.numCobros && formData.price && parseInt(formData.numCobros) > 0 && (
                   <p className="text-xs text-blue-600 mt-1.5 font-medium">
                     ${(parseFloat(formData.price) / parseInt(formData.numCobros)).toFixed(2)}/mes × {formData.numCobros} mes{parseInt(formData.numCobros) !== 1 ? 'es' : ''}

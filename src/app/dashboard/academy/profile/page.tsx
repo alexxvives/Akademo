@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
+import confetti from 'canvas-confetti';
 import { apiClient } from '@/lib/api-client';
 import { useAuth } from '@/hooks/useAuth';
 import { refreshAcademyLogo } from '@/hooks/useAcademyLogo';
@@ -120,6 +121,20 @@ export default function ProfilePage() {
     hiddenMenuItems: [] as string[],
     restrictStreamAccess: false
   });
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const connected = params.get('zoom') === 'connected' || params.get('gtm') === 'connected';
+    if (!connected) return;
+    confetti({ particleCount: 180, spread: 100, origin: { y: 0.55 } });
+    setTimeout(() => confetti({ particleCount: 80, spread: 120, origin: { x: 0.1, y: 0.6 } }), 200);
+    setTimeout(() => confetti({ particleCount: 80, spread: 120, origin: { x: 0.9, y: 0.6 } }), 400);
+    // Clean URL so confetti doesn't re-fire on refresh
+    const cleanUrl = new URL(window.location.href);
+    cleanUrl.searchParams.delete('zoom');
+    cleanUrl.searchParams.delete('gtm');
+    window.history.replaceState({}, '', cleanUrl.toString());
+  }, []);
 
   const loadData = useCallback(async () => {
     try {

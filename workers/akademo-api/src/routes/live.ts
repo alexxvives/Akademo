@@ -156,6 +156,7 @@ live.post('/', async (c) => {
             const { refreshGTMToken } = await import('./zoom-accounts');
             const refreshed = await refreshGTMToken(c, classZoomInfo.zoomAccountId);
             if (!refreshed) {
+              // Refresh token has expired — user must reconnect the GTM account
               return c.json(errorResponse('La sesión de GoToMeeting ha expirado. Por favor, desconecta y vuelve a conectar tu cuenta de GoToMeeting en Ajustes → Streaming.'), 401);
             }
             token = refreshed;

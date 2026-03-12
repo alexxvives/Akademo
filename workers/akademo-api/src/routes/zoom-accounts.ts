@@ -288,7 +288,8 @@ zoomAccounts.post('/gtm-connect-url', async (c) => {
     if (!academyId) return c.json(errorResponse('Missing academyId'), 400);
 
     const redirectUri = encodeURIComponent(`${c.env.FRONTEND_URL}/api/gtm/oauth/callback`);
-    const url = `https://authentication.logmeininc.com/oauth/authorize?response_type=code&client_id=${c.env.GTM_CLIENT_ID}&redirect_uri=${redirectUri}&scope=collab%3A&state=${academyId}`;
+    // offline_access scope is required for refresh tokens with long lifespans
+    const url = `https://authentication.logmeininc.com/oauth/authorize?response_type=code&client_id=${c.env.GTM_CLIENT_ID}&redirect_uri=${redirectUri}&scope=collab%3A+offline_access&state=${academyId}`;
 
     return c.json({ success: true, data: { url } });
   } catch (error: any) {
