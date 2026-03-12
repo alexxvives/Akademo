@@ -264,12 +264,11 @@ export default function ProfilePage() {
   }, [streamingDropdownOpen]);
 
   const handleConnectZoom = () => {
-    // Redirect to Zoom OAuth in new tab
-    // Note: This is a public OAuth client ID, safe to hardcode
+    // Navigate in same tab so the callback redirects back here
     const clientId = 'W2jPo9CJR0uZbFnEWtBF7Q';
     const redirectUri = encodeURIComponent(`${window.location.origin}/api/zoom/oauth/callback`);
     const state = academy?.id || '';
-    window.open(`https://zoom.us/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&state=${state}`, '_blank');
+    window.location.href = `https://zoom.us/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&state=${state}`;
   };
 
   const handleConnectGTM = async () => {
@@ -281,7 +280,7 @@ export default function ProfilePage() {
       });
       const result = await response.json();
       if (result.success && result.data?.url) {
-        window.open(result.data.url, '_blank');
+        window.location.href = result.data.url;
       }
     } catch (error) {
       console.error('Error connecting GoToMeeting:', error);
