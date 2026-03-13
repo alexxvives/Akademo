@@ -242,7 +242,8 @@ live.post('/', async (c) => {
               conferencecallinfo: 'VoIP',
               timezonekey: '',
               meetingtype: 'scheduled',
-              autoRecord: true
+              autoRecord: true,
+              recordingType: 'cloudVideo',
             })
           });
 
@@ -1018,6 +1019,149 @@ live.patch('/:id', async (c) => {
         }
       } catch (recErr) {
         console.error('[GTM Recording] Non-fatal error starting recording:', recErr);
+      }
+    }
+
+    // ── GTM recording fetch + Bunny upload: fires when stream is ended ──
+    // Mirrors the Zoom `recording.completed` webhook handler. GTM has no webhook,
+    // so we poll GET /meetings/{id}/recordings until recordings are ready, then
+    // upload to Bunny inside the academy's collection.
+    if (status === 'ended' && stream.zoomMeetingId && !stream.dailyRoomName && !stream.recordingId) {
+      try {
+        const gtmEndClassInfo = await c.env.DB
+          .prepare('SELECT zoomAccountId FROM Class WHERE id = ?')
+          .bind(stream.classId)
+          .first<{ zoomAccountId: string | null }>();
+        if (gtmEndClassInfo?.zoomAccountId) {
+          const gtmEndAccount = await c.env.DB
+            .prepare('SELECT accessToken, refreshToken, expiresAt, provider FROM ZoomAccount WHERE id = ?')
+            .bind(gtmEndClassInfo.zoomAccountId)
+            .first() as { accessToken: string; refreshToken: string; expiresAt: string; provider: string } | null;
+          if (gtmEndAccount?.provider === 'gotomeeting') {
+            const { refreshGTMToken } = await import('./zoom-accounts');
+            const endMeetingId = stream.zoomMeetingId as string;
+            const endStreamId = streamId;
+            const endClassId = stream.classId as string;
+            const endAccountId = gtmEndClassInfo.zoomAccountId;
+            const endStreamTitle = (stream.title as string) || 'Grabación';
+            const endToken = gtmEndAccount.accessToken;
+            // Poll at 2 min, then 5 min, then 10 min after meeting ends
+            c.executionCtx.waitUntil((async () => {
+              for (const delay of [120_000, 180_000, 300_000]) {
+                await new Promise<void>(resolve => setTimeout(resolve, delay));
+                try {
+                  // Check for idempotency — another poll may have already set recordingId
+                  const existingStream = await c.env.DB
+                    .prepare('SELECT recordingId FROM LiveStream WHERE id = ?')
+                    .bind(endStreamId)
+                    .first<{ recordingId: string | null }>();
+                  if (existingStream?.recordingId) break;
+
+                  const pollToken = (await refreshGTMToken(c, endAccountId)) ?? endToken;
+                  const recListRes = await fetch(
+                    `https://api.getgo.com/G2M/rest/meetings/${endMeetingId}/recordings`,
+                    { headers: { 'Authorization': `Bearer ${pollToken}`, 'Accept': 'application/json' } }
+                  );
+                  if (!recListRes.ok) {
+                    console.warn('[GTM Recording] Recordings not ready yet:', recListRes.status);
+                    continue;
+                  }
+                  const recordings = (await recListRes.json()) as any[];
+                  if (!recordings || recordings.length === 0) {
+                    console.log('[GTM Recording] No recordings yet, will retry...');
+                    continue;
+                  }
+
+                  // Resolve academy Bunny collection (create if it doesn't exist yet)
+                  let bunnyCollectionId: string | undefined;
+                  try {
+                    const academyRow = await c.env.DB
+                      .prepare('SELECT a.name FROM Academy a JOIN Class c ON c.academyId = a.id WHERE c.id = ?')
+                      .bind(endClassId)
+                      .first() as any;
+                    if (academyRow?.name) {
+                      const colRes = await fetch(
+                        `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/collections?itemsPerPage=100`,
+                        { headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY } }
+                      );
+                      if (colRes.ok) {
+                        const colData = await colRes.json() as any;
+                        const existing = (colData.items || []).find((col: any) => col.name === academyRow.name);
+                        if (existing) {
+                          bunnyCollectionId = existing.guid;
+                        } else {
+                          const createRes = await fetch(
+                            `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/collections`,
+                            {
+                              method: 'POST',
+                              headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY, 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ name: academyRow.name }),
+                            }
+                          );
+                          if (createRes.ok) bunnyCollectionId = ((await createRes.json()) as any).guid;
+                        }
+                      }
+                    }
+                  } catch (colErr) {
+                    console.error('[GTM Recording] Collection lookup failed:', colErr);
+                  }
+
+                  // Upload each recording segment to Bunny
+                  const bunnyGuids: string[] = [];
+                  for (let i = 0; i < recordings.length; i++) {
+                    const rec = recordings[i];
+                    const contentURL = rec.contentURL || rec.downloadUrl || rec.url || rec.recordingUrl;
+                    if (!contentURL) continue;
+                    const partSuffix = recordings.length > 1 ? ` - Parte ${i + 1}` : '';
+                    const videoTitle = `${endStreamTitle}${partSuffix}`;
+                    const bunnyFetchRes = await fetch(
+                      `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/videos/fetch`,
+                      {
+                        method: 'POST',
+                        headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ url: contentURL, title: videoTitle }),
+                      }
+                    );
+                    if (!bunnyFetchRes.ok) {
+                      console.error('[GTM Recording] Bunny fetch failed:', bunnyFetchRes.status, await bunnyFetchRes.text());
+                      continue;
+                    }
+                    const bunnyData = (await bunnyFetchRes.json()) as any;
+                    const videoGuid = bunnyData.guid || bunnyData.videoGuid || bunnyData.id;
+                    if (!videoGuid) continue;
+                    bunnyGuids.push(videoGuid);
+                    if (bunnyCollectionId) {
+                      try {
+                        await fetch(
+                          `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/videos/${videoGuid}`,
+                          {
+                            method: 'POST',
+                            headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ collectionId: bunnyCollectionId }),
+                          }
+                        );
+                      } catch {}
+                    }
+                  }
+
+                  if (bunnyGuids.length > 0) {
+                    const recordingIds = bunnyGuids.length === 1 ? bunnyGuids[0] : JSON.stringify(bunnyGuids);
+                    await c.env.DB
+                      .prepare('UPDATE LiveStream SET recordingId = ? WHERE id = ?')
+                      .bind(recordingIds, endStreamId)
+                      .run();
+                    console.log('[GTM Recording] Uploaded', bunnyGuids.length, 'segment(s) to Bunny for stream', endStreamId);
+                    break; // success — stop polling
+                  }
+                } catch (pollErr) {
+                  console.error('[GTM Recording] Poll error:', pollErr);
+                }
+              }
+            })());
+          }
+        }
+      } catch (gtmEndErr) {
+        console.error('[GTM Recording Ended] Non-fatal error:', gtmEndErr);
       }
     }
 
