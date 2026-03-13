@@ -1765,14 +1765,19 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
                         Entrar como Host
                       </button>
                     ) : (
-                      <a
-                        href={liveClasses[0].zoomStartUrl || liveClasses[0].zoomLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
+                        onClick={() => {
+                          const isGTM = liveClasses[0].zoomLink?.includes('gotomeeting') || liveClasses[0].zoomStartUrl?.startsWith('gotomeeting://');
+                          if (isGTM && liveClasses[0].zoomMeetingId) {
+                            window.location.href = `gotomeeting://meet/${liveClasses[0].zoomMeetingId}`;
+                          } else {
+                            window.open(liveClasses[0].zoomStartUrl || liveClasses[0].zoomLink || '', '_blank', 'noopener,noreferrer');
+                          }
+                        }}
                         className="px-4 py-2 bg-gray-900 text-white hover:bg-gray-800 rounded-lg font-semibold text-sm transition-colors"
                       >
                         Entrar como Host
-                      </a>
+                      </button>
                     )}
                     <button
                       onClick={() => {

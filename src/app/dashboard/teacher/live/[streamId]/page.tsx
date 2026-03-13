@@ -27,6 +27,7 @@ export default function TeacherLivePage() {
   const [ending, setEnding] = useState(false);
   const [ended, setEnded] = useState(false);
   const [recordingReady, setRecordingReady] = useState(false);
+  const [showWhiteboard, setShowWhiteboard] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const recordingStartedRef = useRef(false);
 
@@ -183,7 +184,17 @@ export default function TeacherLivePage() {
             </span>
           </div>
         </div>
-        <div className="ml-auto flex items-center gap-3 z-10">
+        <div className="ml-auto flex items-center gap-2 z-10">
+          <button
+            onClick={() => setShowWhiteboard(prev => !prev)}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors ${showWhiteboard ? 'bg-violet-600 text-white' : 'bg-white/10 hover:bg-white/20 text-gray-300'}`}
+            title="Pizarra colaborativa"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            Pizarra
+          </button>
           <span className="hidden sm:flex items-center gap-1.5 text-red-400 text-xs font-semibold">
             <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
             EN VIVO
@@ -191,22 +202,48 @@ export default function TeacherLivePage() {
         </div>
       </div>
 
-      {/* Daily.co iframe */}
-      <div className="flex-1 relative">
-        {!embedUrl ? (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center text-gray-400 space-y-3">
-              <div className="w-10 h-10 border-2 border-gray-600 border-t-white rounded-full animate-spin mx-auto" />
-              <p className="text-sm">Preparando sala...</p>
+      {/* Main content: split when whiteboard is open */}
+      <div className="flex-1 flex min-h-0">
+        {/* Daily.co iframe */}
+        <div className="flex-1 relative">
+          {!embedUrl ? (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center text-gray-400 space-y-3">
+                <div className="w-10 h-10 border-2 border-gray-600 border-t-white rounded-full animate-spin mx-auto" />
+                <p className="text-sm">Preparando sala...</p>
+              </div>
             </div>
+          ) : (
+            <iframe
+              src={embedUrl}
+              allow="camera; microphone; fullscreen; display-capture; autoplay"
+              className="w-full h-full border-0"
+              title="Sesión en vivo"
+            />
+          )}
+        </div>
+        {/* Collaborative whiteboard panel */}
+        {showWhiteboard && (
+          <div className="w-[42%] flex-shrink-0 flex flex-col border-l border-white/10">
+            <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 bg-gray-800 border-b border-white/10">
+              <span className="text-white text-xs font-semibold">Pizarra colaborativa</span>
+              <a
+                href={`https://www.tldraw.com/r/akademo-${streamId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-400 hover:text-white text-xs transition-colors"
+                title="Abrir en nueva pestaña"
+              >
+                ↗ Nueva pestaña
+              </a>
+            </div>
+            <iframe
+              src={`https://www.tldraw.com/r/akademo-${streamId}`}
+              className="flex-1 border-0 bg-white"
+              title="Pizarra"
+              allow="clipboard-read; clipboard-write"
+            />
           </div>
-        ) : (
-          <iframe
-            src={embedUrl}
-            allow="camera; microphone; fullscreen; display-capture; autoplay"
-            className="w-full h-full border-0"
-            title="SesiÃ³n en vivo"
-          />
         )}
       </div>
     </div>

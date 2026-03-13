@@ -549,6 +549,12 @@ export function SkeletonClassDetail() {
         </div>
       </div>
 
+      {/* "Clases" section header + "Nuevo Tema" button */}
+      <div className="flex items-center justify-between">
+        <SkeletonBox className="h-6 w-16" />
+        <SkeletonBox className="h-9 w-28 rounded-lg" />
+      </div>
+
       {/* Topic group 1 */}
       <div className="space-y-3">
         <SkeletonBox className="h-10 w-full rounded-xl" />
