@@ -780,22 +780,6 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
     }
   };
 
-  const endGTMStream = async (streamId: string) => {
-    try {
-      const res = await apiClient(`/live/${streamId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'ended' }),
-      });
-      const result = await res.json();
-      if (result.success) {
-        setLiveClasses(prev => prev.filter(s => s.id !== streamId));
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
   const loadLessonDetail = async (lessonId: string): Promise<LessonDetail | null> => {
     // Handle demo lessons locally
     if (lessonId.startsWith('demo-') && paymentStatus === 'NOT PAID') {
@@ -1781,32 +1765,30 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
                         Entrar como Host
                       </button>
                     ) : (
-                      <>
-                        <button
-                          onClick={() => {
-                            const isGTM = liveClasses[0].zoomLink?.includes('gotomeeting') || liveClasses[0].zoomStartUrl?.startsWith('gotomeeting://');
-                            if (isGTM && liveClasses[0].zoomMeetingId) {
-                              // Prefer the stored hostURL (zoomStartUrl); fall back to a web join link
-                              const hostUrl = liveClasses[0].zoomStartUrl || `https://app.gotomeeting.com/join/${liveClasses[0].zoomMeetingId}`;
-                              window.open(hostUrl, '_blank', 'noopener,noreferrer');
-                            } else {
-                              window.open(liveClasses[0].zoomStartUrl || liveClasses[0].zoomLink || '', '_blank', 'noopener,noreferrer');
+                      <button
+                        onClick={async () => {
+                          const isGTM = liveClasses[0].zoomLink?.includes('gotomeeting') || liveClasses[0].zoomStartUrl?.startsWith('gotomeeting://');
+                          if (isGTM && liveClasses[0].zoomMeetingId) {
+                            const hostUrl = liveClasses[0].zoomStartUrl || `https://app.gotomeeting.com/join/${liveClasses[0].zoomMeetingId}`;
+                            // Mark stream active to trigger GTM cloud recording
+                            try {
+                              await apiClient(`/live/${liveClasses[0].id}`, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ status: 'active' }),
+                              });
+                            } catch {
+                              // non-fatal
                             }
-                          }}
-                          className="px-4 py-2 bg-gray-900 text-white hover:bg-gray-800 rounded-lg font-semibold text-sm transition-colors"
-                        >
-                          Entrar como Host
-                        </button>
-                        {(liveClasses[0].zoomLink?.includes('gotomeeting') || liveClasses[0].zoomStartUrl?.startsWith('gotomeeting://')) && (
-                          <button
-                            onClick={() => endGTMStream(liveClasses[0].id)}
-                            className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg font-semibold text-sm transition-colors"
-                            title="Finalizar stream de GoToMeeting"
-                          >
-                            Finalizar Stream
-                          </button>
-                        )}
-                      </>
+                            window.open(hostUrl, '_blank', 'noopener,noreferrer');
+                          } else {
+                            window.open(liveClasses[0].zoomStartUrl || liveClasses[0].zoomLink || '', '_blank', 'noopener,noreferrer');
+                          }
+                        }}
+                        className="px-4 py-2 bg-gray-900 text-white hover:bg-gray-800 rounded-lg font-semibold text-sm transition-colors"
+                      >
+                        Entrar como Host
+                      </button>
                     )}
                     <button
                       onClick={() => {
