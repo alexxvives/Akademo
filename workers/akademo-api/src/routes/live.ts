@@ -242,8 +242,6 @@ live.post('/', async (c) => {
               conferencecallinfo: 'VoIP',
               timezonekey: '',
               meetingtype: 'scheduled',
-              autoRecord: true,
-              recordingType: 'cloudVideo',
             })
           });
 
@@ -1058,17 +1056,33 @@ live.patch('/:id', async (c) => {
                   if (existingStream?.recordingId) break;
 
                   const pollToken = (await refreshGTMToken(c, endAccountId)) ?? endToken;
+                  // GTM v1 API does not have a /recordings endpoint.
+                  // Recordings are returned via GET /meetings/{id}/historicalMeetings
+                  // (docs: developer.goto.com/GoToMeetingV1/#operation/getHistoricalMeetingsByMeetingId)
+                  // Each session has a `recording` expand property with recording info.
+                  const now = new Date();
+                  const startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString(); // 24h window
+                  const endDate = now.toISOString();
                   const recListRes = await fetch(
-                    `https://api.getgo.com/G2M/rest/meetings/${endMeetingId}/recordings`,
+                    `https://api.getgo.com/G2M/rest/meetings/${endMeetingId}/historicalMeetings?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`,
                     { headers: { 'Authorization': `Bearer ${pollToken}`, 'Accept': 'application/json' } }
                   );
                   if (!recListRes.ok) {
-                    console.warn('[GTM Recording] Recordings not ready yet:', recListRes.status);
+                    console.warn('[GTM Recording] historicalMeetings not ready yet:', recListRes.status);
                     continue;
                   }
-                  const recordings = (await recListRes.json()) as any[];
-                  if (!recordings || recordings.length === 0) {
-                    console.log('[GTM Recording] No recordings yet, will retry...');
+                  const sessions = (await recListRes.json()) as any[];
+                  if (!sessions || sessions.length === 0) {
+                    console.log('[GTM Recording] No sessions yet, will retry...');
+                    continue;
+                  }
+                  // Extract recording URLs from session recording objects.
+                  // The MeetingRecording schema is not fully documented; try common field names.
+                  const recordings = sessions
+                    .map((s: any) => s.recording)
+                    .filter(Boolean);
+                  if (recordings.length === 0) {
+                    console.log('[GTM Recording] Sessions found but no recording data yet, will retry...');
                     continue;
                   }
 
@@ -1110,7 +1124,8 @@ live.patch('/:id', async (c) => {
                   const bunnyGuids: string[] = [];
                   for (let i = 0; i < recordings.length; i++) {
                     const rec = recordings[i];
-                    const contentURL = rec.contentURL || rec.downloadUrl || rec.url || rec.recordingUrl;
+                    // Try common field names for the download URL in the MeetingRecording object
+                    const contentURL = rec.recordingUrl || rec.downloadUrl || rec.contentURL || rec.url;
                     if (!contentURL) continue;
                     const partSuffix = recordings.length > 1 ? ` - Parte ${i + 1}` : '';
                     const videoTitle = `${endStreamTitle}${partSuffix}`;
