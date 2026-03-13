@@ -41,6 +41,22 @@ live.get('/', async (c) => {
 
     const isHost = ['TEACHER', 'ACADEMY', 'ADMIN'].includes(session.role);
 
+    // Auto-end GTM streams that have exceeded their 2-hour scheduled meeting window.
+    // When we create a GTM meeting we schedule it for 2 hours; after that, GTM treats it
+    // as ended. Sync our DB so the banner disappears for the host automatically.
+    await c.env.DB
+      .prepare(`
+        UPDATE LiveStream
+        SET status = 'ended', endedAt = datetime('now')
+        WHERE classId = ?
+          AND zoomMeetingId IS NOT NULL
+          AND dailyRoomName IS NULL
+          AND status IN ('active', 'scheduled')
+          AND createdAt <= datetime('now', '-2 hours')
+      `)
+      .bind(classId)
+      .run();
+
     const result = await c.env.DB
       .prepare(`
         SELECT ls.id, ls.classId, ls.teacherId, ls.status, ls.title, ls.startedAt, ls.endedAt, 
@@ -189,7 +205,8 @@ live.post('/', async (c) => {
               passwordrequired: false,
               conferencecallinfo: 'VoIP',
               timezonekey: '',
-              meetingtype: 'scheduled'
+              meetingtype: 'scheduled',
+              autoRecord: true
             })
           });
 
@@ -538,13 +555,11 @@ live.get('/:id/join-token', async (c) => {
     const streamId = c.req.param('id');
 
     const stream: any = await c.env.DB
-      .prepare('SELECT ls.id, ls.classId, ls.teacherId, ls.status, ls.dailyRoomName, ls.dailyRoomUrl, c.academyId, a.ownerId as academyOwnerId, a.dailyEnabled FROM LiveStream ls JOIN Class c ON ls.classId = c.id JOIN Academy a ON c.academyId = a.id WHERE ls.id = ?')
+      .prepare('SELECT ls.id, ls.classId, ls.teacherId, ls.status, ls.dailyRoomName, ls.dailyRoomUrl, ls.zoomLink, ls.zoomMeetingId, c.academyId, a.ownerId as academyOwnerId, a.dailyEnabled FROM LiveStream ls JOIN Class c ON ls.classId = c.id JOIN Academy a ON c.academyId = a.id WHERE ls.id = ?')
       .bind(streamId)
       .first();
 
     if (!stream) return c.json(errorResponse('Stream not found'), 404);
-    // If this is a Zoom stream (no Daily.co), reject
-    if (!stream.dailyRoomName && stream.zoomMeetingId) return c.json(errorResponse('Esta sesión no usa videoconferencia integrada'), 400);
 
     // Access control
     if (session.role === 'STUDENT') {
@@ -557,6 +572,12 @@ live.get('/:id/join-token', async (c) => {
       if (stream.teacherId !== session.id) return c.json(errorResponse('Not authorized'), 403);
     } else if (session.role === 'ACADEMY') {
       if (stream.academyOwnerId !== session.id) return c.json(errorResponse('Not authorized'), 403);
+    }
+
+    // If this is a GTM/Zoom stream (no Daily.co room), return the external join URL for the watermark overlay page
+    if (stream.zoomMeetingId && !stream.dailyRoomName) {
+      const isHost = ['TEACHER', 'ACADEMY', 'ADMIN'].includes(session.role);
+      return c.json(successResponse({ zoomLink: stream.zoomLink, isZoom: true, isHost }));
     }
 
     const apiKey = c.env.DAILY_API_KEY;
@@ -875,6 +896,43 @@ live.patch('/:id', async (c) => {
     params.push(streamId);
 
     await c.env.DB.prepare(query).bind(...params).run();
+
+    // ── GTM auto-recording: start recording when stream becomes active ──
+    if (status === 'active' && stream.zoomMeetingId && !stream.dailyRoomName) {
+      try {
+        const gtmClassInfo = await c.env.DB
+          .prepare('SELECT zoomAccountId FROM Class WHERE id = ?')
+          .bind(stream.classId)
+          .first<{ zoomAccountId: string | null }>();
+        if (gtmClassInfo?.zoomAccountId) {
+          const gtmAccount = await c.env.DB
+            .prepare('SELECT accessToken, refreshToken, expiresAt, provider FROM ZoomAccount WHERE id = ?')
+            .bind(gtmClassInfo.zoomAccountId)
+            .first() as { accessToken: string; refreshToken: string; expiresAt: string; provider: string } | null;
+          if (gtmAccount?.provider === 'gotomeeting') {
+            let gtmToken = gtmAccount.accessToken;
+            if (new Date(gtmAccount.expiresAt) <= new Date(Date.now() + 5 * 60 * 1000)) {
+              const { refreshGTMToken } = await import('./zoom-accounts');
+              gtmToken = (await refreshGTMToken(c, gtmClassInfo.zoomAccountId)) ?? gtmToken;
+            }
+            const recRes = await fetch(
+              `https://api.getgo.com/G2M/rest/meetings/${stream.zoomMeetingId}/recording`,
+              {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${gtmToken}`, 'Content-Type': 'application/json' },
+              }
+            );
+            if (!recRes.ok) {
+              console.warn('[GTM Recording] Could not start recording:', recRes.status, await recRes.text());
+            } else {
+              console.log('[GTM Recording] Recording started for meeting', stream.zoomMeetingId);
+            }
+          }
+        }
+      } catch (recErr) {
+        console.error('[GTM Recording] Non-fatal error starting recording:', recErr);
+      }
+    }
 
     // ── Sync linked CalendarScheduledEvent ──
     if (stream.calendarEventId) {

@@ -408,18 +408,29 @@ async function refreshGTMToken(c: Context<{ Bindings: Bindings }>, accountId: st
     });
 
     if (!tokenResponse.ok) {
-      console.error('Failed to refresh GTM token');
+      const errBody = await tokenResponse.text();
+      console.error('Failed to refresh GTM token:', tokenResponse.status, errBody);
       return null;
     }
 
     const tokens = await tokenResponse.json() as any;
     const newExpiresAt = new Date(Date.now() + (tokens.expires_in || 3600) * 1000).toISOString();
 
-    await c.env.DB.prepare(`
-      UPDATE ZoomAccount
-      SET accessToken = ?, refreshToken = ?, expiresAt = ?, updatedAt = datetime('now')
-      WHERE id = ?
-    `).bind(tokens.access_token, tokens.refresh_token, newExpiresAt, accountId).run();
+    // Only update refresh_token if GTM returned a new one — GTM may omit it on refresh,
+    // and overwriting with undefined/null would permanently break subsequent refreshes.
+    if (tokens.refresh_token) {
+      await c.env.DB.prepare(`
+        UPDATE ZoomAccount
+        SET accessToken = ?, refreshToken = ?, expiresAt = ?, updatedAt = datetime('now')
+        WHERE id = ?
+      `).bind(tokens.access_token, tokens.refresh_token, newExpiresAt, accountId).run();
+    } else {
+      await c.env.DB.prepare(`
+        UPDATE ZoomAccount
+        SET accessToken = ?, expiresAt = ?, updatedAt = datetime('now')
+        WHERE id = ?
+      `).bind(tokens.access_token, newExpiresAt, accountId).run();
+    }
 
     return tokens.access_token;
   } catch (error: any) {
