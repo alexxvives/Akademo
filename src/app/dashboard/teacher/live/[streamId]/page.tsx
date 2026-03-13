@@ -23,6 +23,9 @@ export default function TeacherLivePage() {
   const router = useRouter();
   const [stream, setStream] = useState<StreamInfo | null>(null);
   const [embedUrl, setEmbedUrl] = useState<string | null>(null);
+  const [isZoom, setIsZoom] = useState(false);
+  const [zoomJoinUrl, setZoomJoinUrl] = useState<string | null>(null);
+  const [zoomMeetingId, setZoomMeetingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [ending, setEnding] = useState(false);
   const [ended, setEnded] = useState(false);
@@ -47,10 +50,17 @@ export default function TeacherLivePage() {
 
         const sData = streamData.data;
         setStream(sData);
-        const redirectUrl = encodeURIComponent(
-          `${window.location.origin}/dashboard/teacher/subject/${sData.classSlug || sData.classId}`
-        );
-        setEmbedUrl(`${tokenData.data.roomUrl}?t=${tokenData.data.token}&redirect_on_meeting_exit=${redirectUrl}`);
+
+        if (tokenData.data.isZoom) {
+          setIsZoom(true);
+          setZoomJoinUrl(tokenData.data.zoomLink || null);
+          setZoomMeetingId(tokenData.data.zoomMeetingId || null);
+        } else {
+          const redirectUrl = encodeURIComponent(
+            `${window.location.origin}/dashboard/teacher/subject/${sData.classSlug || sData.classId}`
+          );
+          setEmbedUrl(`${tokenData.data.roomUrl}?t=${tokenData.data.token}&redirect_on_meeting_exit=${redirectUrl}`);
+        }
       } catch {
         setError('Error de conexión');
       }
@@ -204,9 +214,39 @@ export default function TeacherLivePage() {
 
       {/* Main content: split when whiteboard is open */}
       <div className="flex-1 flex min-h-0">
-        {/* Daily.co iframe */}
+        {/* Daily.co iframe or GTM overlay */}
         <div className="flex-1 relative">
-          {!embedUrl ? (
+          {isZoom && zoomJoinUrl ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 bg-gray-900">
+              <div className="text-center space-y-2">
+                <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.069A1 1 0 0121 8.867V15.133a1 1 0 01-1.447.902L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <h2 className="text-white text-lg font-semibold">{stream?.title || 'Clase en vivo'}</h2>
+                <p className="text-gray-400 text-sm">La reunión se abre en la app de GoTo Meeting</p>
+              </div>
+              <a
+                href={zoomJoinUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => {
+                  if (zoomMeetingId) {
+                    e.preventDefault();
+                    window.location.href = `gotomeeting://join/${zoomMeetingId}`;
+                    setTimeout(() => window.open(zoomJoinUrl!, '_blank', 'noopener,noreferrer'), 2500);
+                  }
+                }}
+                className="flex items-center gap-2 px-6 py-3 bg-[#b1e787] text-gray-900 rounded-xl hover:bg-[#9fd470] font-semibold transition-colors text-sm"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                Abrir GoTo Meeting
+              </a>
+            </div>
+          ) : !embedUrl ? (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center text-gray-400 space-y-3">
                 <div className="w-10 h-10 border-2 border-gray-600 border-t-white rounded-full animate-spin mx-auto" />

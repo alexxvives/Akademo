@@ -613,7 +613,7 @@ live.get('/:id/join-token', async (c) => {
     // If this is a GTM/Zoom stream (no Daily.co room), return the external join URL for the watermark overlay page
     if (stream.zoomMeetingId && !stream.dailyRoomName) {
       const isHost = ['TEACHER', 'ACADEMY', 'ADMIN'].includes(session.role);
-      return c.json(successResponse({ zoomLink: stream.zoomLink, isZoom: true, isHost }));
+      return c.json(successResponse({ zoomLink: stream.zoomLink, isZoom: true, isHost, zoomMeetingId: stream.zoomMeetingId }));
     }
 
     const apiKey = c.env.DAILY_API_KEY;
@@ -988,23 +988,27 @@ live.patch('/:id', async (c) => {
               const meetingIdCapture = stream.zoomMeetingId;
               const accountIdCapture = gtmClassInfo.zoomAccountId;
               c.executionCtx.waitUntil((async () => {
-                await new Promise<void>(resolve => setTimeout(resolve, 60_000));
-                try {
-                  const retryToken = (await refreshGTMToken(c, accountIdCapture)) ?? gtmToken;
-                  const retryRes = await fetch(
-                    `https://api.getgo.com/G2M/rest/meetings/${meetingIdCapture}/recording`,
-                    {
-                      method: 'POST',
-                      headers: { 'Authorization': `Bearer ${retryToken}`, 'Content-Type': 'application/json' },
+                // Retry at 30 s, 60 s, and 120 s — by then the host will have joined GTM
+                for (const delay of [30_000, 30_000, 60_000]) {
+                  await new Promise<void>(resolve => setTimeout(resolve, delay));
+                  try {
+                    const retryToken = (await refreshGTMToken(c, accountIdCapture)) ?? gtmToken;
+                    const retryRes = await fetch(
+                      `https://api.getgo.com/G2M/rest/meetings/${meetingIdCapture}/recording`,
+                      {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${retryToken}`, 'Content-Type': 'application/json' },
+                      }
+                    );
+                    if (retryRes.ok) {
+                      console.log('[GTM Recording] Recording started on retry for meeting', meetingIdCapture);
+                      break; // success — stop retrying
+                    } else {
+                      console.warn('[GTM Recording] Retry failed:', retryRes.status, await retryRes.text());
                     }
-                  );
-                  if (retryRes.ok) {
-                    console.log('[GTM Recording] Recording started on retry for meeting', meetingIdCapture);
-                  } else {
-                    console.warn('[GTM Recording] Retry also failed:', retryRes.status, await retryRes.text());
+                  } catch (retryErr) {
+                    console.error('[GTM Recording] Retry error:', retryErr);
                   }
-                } catch (retryErr) {
-                  console.error('[GTM Recording] Retry error:', retryErr);
                 }
               })());
             } else {
