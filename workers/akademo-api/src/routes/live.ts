@@ -246,11 +246,11 @@ live.post('/', async (c) => {
 
           await c.env.DB
             .prepare(`
-              INSERT INTO LiveStream (id, classId, teacherId, title, status, zoomLink, zoomMeetingId, zoomStartUrl, createdAt) 
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+              INSERT INTO LiveStream (id, classId, teacherId, title, status, zoomLink, zoomMeetingId, zoomStartUrl, startedAt, createdAt) 
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `)
-            .bind(streamId, classId, classInfo.teacherId ?? session.id, title, 'scheduled',
-                  joinUrl, meetingId, gtmHostUrl, now)
+            .bind(streamId, classId, classInfo.teacherId ?? session.id, title, 'active',
+                  joinUrl, meetingId, gtmHostUrl, now, now)
             .run();
         } else {
           // Zoom meeting creation
@@ -897,7 +897,8 @@ live.patch('/:id', async (c) => {
 
     await c.env.DB.prepare(query).bind(...params).run();
 
-    // ── GTM auto-recording: start recording when stream becomes active ──
+    // ── GTM auto-recording + fresh host URL: fires when stream becomes active ──
+    let freshHostUrl: string | null = null;
     if (status === 'active' && stream.zoomMeetingId && !stream.dailyRoomName) {
       try {
         const gtmClassInfo = await c.env.DB
@@ -910,11 +911,27 @@ live.patch('/:id', async (c) => {
             .bind(gtmClassInfo.zoomAccountId)
             .first() as { accessToken: string; refreshToken: string; expiresAt: string; provider: string } | null;
           if (gtmAccount?.provider === 'gotomeeting') {
+            const { refreshGTMToken } = await import('./zoom-accounts');
             let gtmToken = gtmAccount.accessToken;
             if (new Date(gtmAccount.expiresAt) <= new Date(Date.now() + 5 * 60 * 1000)) {
-              const { refreshGTMToken } = await import('./zoom-accounts');
               gtmToken = (await refreshGTMToken(c, gtmClassInfo.zoomAccountId)) ?? gtmToken;
             }
+            // Fetch a fresh host URL so the stored (possibly expired) token doesn't block the host
+            try {
+              const freshStartResp = await fetch(
+                `https://api.getgo.com/G2M/rest/meetings/${stream.zoomMeetingId}/start`,
+                { headers: { 'Authorization': `Bearer ${gtmToken}`, 'Accept': 'application/json' } }
+              );
+              if (freshStartResp.ok) {
+                const freshStartData = await freshStartResp.json() as any;
+                freshHostUrl = freshStartData.hostURL || freshStartData.startURL || freshStartData.startUrl || null;
+              } else {
+                console.warn('[GTM] Could not fetch fresh hostURL:', freshStartResp.status);
+              }
+            } catch (freshErr) {
+              console.warn('[GTM] Failed to fetch fresh hostURL:', freshErr);
+            }
+            // Try starting recording immediately (may fail if host hasn't opened GTM yet)
             const recRes = await fetch(
               `https://api.getgo.com/G2M/rest/meetings/${stream.zoomMeetingId}/recording`,
               {
@@ -923,7 +940,30 @@ live.patch('/:id', async (c) => {
               }
             );
             if (!recRes.ok) {
-              console.warn('[GTM Recording] Could not start recording:', recRes.status, await recRes.text());
+              console.warn('[GTM Recording] Could not start recording immediately:', recRes.status, await recRes.text());
+              // Retry after 60 s — by then the host will have joined GTM
+              const meetingIdCapture = stream.zoomMeetingId;
+              const accountIdCapture = gtmClassInfo.zoomAccountId;
+              c.executionCtx.waitUntil((async () => {
+                await new Promise<void>(resolve => setTimeout(resolve, 60_000));
+                try {
+                  const retryToken = (await refreshGTMToken(c, accountIdCapture)) ?? gtmToken;
+                  const retryRes = await fetch(
+                    `https://api.getgo.com/G2M/rest/meetings/${meetingIdCapture}/recording`,
+                    {
+                      method: 'POST',
+                      headers: { 'Authorization': `Bearer ${retryToken}`, 'Content-Type': 'application/json' },
+                    }
+                  );
+                  if (retryRes.ok) {
+                    console.log('[GTM Recording] Recording started on retry for meeting', meetingIdCapture);
+                  } else {
+                    console.warn('[GTM Recording] Retry also failed:', retryRes.status, await retryRes.text());
+                  }
+                } catch (retryErr) {
+                  console.error('[GTM Recording] Retry error:', retryErr);
+                }
+              })());
             } else {
               console.log('[GTM Recording] Recording started for meeting', stream.zoomMeetingId);
             }
@@ -965,7 +1005,7 @@ live.patch('/:id', async (c) => {
       .bind(streamId)
       .first();
 
-    return c.json(successResponse(updated));
+    return c.json(successResponse({ ...(updated as any), freshHostUrl }));
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Update Stream] Error:', error);

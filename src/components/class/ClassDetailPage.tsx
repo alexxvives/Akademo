@@ -1769,14 +1769,18 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
                         onClick={async () => {
                           const isGTM = liveClasses[0].zoomLink?.includes('gotomeeting') || liveClasses[0].zoomStartUrl?.startsWith('gotomeeting://');
                           if (isGTM && liveClasses[0].zoomMeetingId) {
-                            const hostUrl = liveClasses[0].zoomStartUrl || `https://app.gotomeeting.com/join/${liveClasses[0].zoomMeetingId}`;
-                            // Mark stream active to trigger GTM cloud recording
+                            let hostUrl = liveClasses[0].zoomStartUrl || `https://app.gotomeeting.com/join/${liveClasses[0].zoomMeetingId}`;
+                            // Mark stream active + fetch a fresh host URL (stored token may have expired)
                             try {
-                              await apiClient(`/live/${liveClasses[0].id}`, {
+                              const patchRes = await apiClient(`/live/${liveClasses[0].id}`, {
                                 method: 'PATCH',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ status: 'active' }),
                               });
+                              const patchData = await patchRes.json() as { success?: boolean; data?: { freshHostUrl?: string } };
+                              if (patchData?.data?.freshHostUrl) {
+                                hostUrl = patchData.data.freshHostUrl;
+                              }
                             } catch {
                               // non-fatal
                             }
