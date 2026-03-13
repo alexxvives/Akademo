@@ -175,7 +175,8 @@ payments.post('/initiate', paymentInitiateRateLimit, async (c) => {
             missedCycles: billingCycle.missedCycles,
             catchUpAmount: billingCycle.catchUpAmount,
             regularPrice: price,
-            note: billingCycle.missedCycles > 0 ? `Incluye ${billingCycle.missedCycles} ciclo(s) pendiente(s). Próximos pagos serán de ${price}€/mes.` : null
+            note: billingCycle.missedCycles > 0 ? `Incluye ${billingCycle.missedCycles} ciclo(s) pendiente(s). Próximos pagos serán de ${price}€/mes.` : null,
+            studentSubmitted: true
           }),
           billingCycle.nextPaymentDue,
           billingCycle.billingCycleEnd,
@@ -238,7 +239,8 @@ payments.post('/initiate', paymentInitiateRateLimit, async (c) => {
           missedCycles: billingCycle.missedCycles,
           catchUpAmount: billingCycle.catchUpAmount,
           regularPrice: price,
-          note: billingCycle.missedCycles > 0 ? `Incluye ${billingCycle.missedCycles} ciclo(s) pendiente(s). Próximos pagos serán de ${price}€/mes.` : null
+          note: billingCycle.missedCycles > 0 ? `Incluye ${billingCycle.missedCycles} ciclo(s) pendiente(s). Próximos pagos serán de ${price}€/mes.` : null,
+          studentSubmitted: true
         }),
         billingCycle.nextPaymentDue,
         billingCycle.billingCycleEnd
@@ -369,13 +371,13 @@ payments.get('/pending-cash', async (c) => {
           // Check if pending payment already exists
           const existingPayment = await c.env.DB
             .prepare(`
-              SELECT id, amount FROM Payment
+              SELECT id, amount, metadata FROM Payment
               WHERE payerId = ? AND classId = ?
               AND status = 'PENDING' AND type = 'STUDENT_TO_ACADEMY'
               LIMIT 1
             `)
             .bind(enrollment.studentId, enrollment.classId)
-            .first() as { id: string; amount: number } | null;
+            .first() as { id: string; amount: number; metadata: string | null } | null;
 
           if (!existingPayment) {
             const paymentId = `payment-${Date.now()}-${Math.random().toString(36).substring(7)}`;
@@ -399,11 +401,12 @@ payments.get('/pending-cash', async (c) => {
               )
               .run();
           } else {
+            const prevMeta = (() => { try { return JSON.parse(existingPayment.metadata || '{}'); } catch { return {}; } })();
             await c.env.DB
               .prepare(`UPDATE Payment SET amount = ?, description = ?, metadata = ?, nextPaymentDue = ?, billingCycleEnd = ? WHERE id = ?`)
               .bind(
                 amountOwed, description,
-                JSON.stringify({ enrollmentId: enrollment.enrollmentId, monthsOwed, autoUpdated: true }),
+                JSON.stringify({ ...prevMeta, enrollmentId: enrollment.enrollmentId, monthsOwed, autoUpdated: true }),
                 nextPaymentDue,
                 billingCycleEnd,
                 existingPayment.id
@@ -444,6 +447,7 @@ payments.get('/pending-cash', async (c) => {
         WHERE a.ownerId = ? 
         AND p.status = 'PENDING'
         AND p.type = 'STUDENT_TO_ACADEMY'
+        AND json_extract(p.metadata, '$.studentSubmitted') = 1
         ORDER BY p.createdAt DESC
       `;
       params = [session.id];
@@ -472,6 +476,7 @@ payments.get('/pending-cash', async (c) => {
         WHERE c.teacherId = ? 
         AND p.status = 'PENDING'
         AND p.type = 'STUDENT_TO_ACADEMY'
+        AND json_extract(p.metadata, '$.studentSubmitted') = 1
         ORDER BY p.createdAt DESC
       `;
       params = [session.id];
@@ -503,6 +508,7 @@ payments.get('/pending-cash', async (c) => {
           WHERE a.id = ?
           AND p.status = 'PENDING'
           AND p.type = 'STUDENT_TO_ACADEMY'
+          AND json_extract(p.metadata, '$.studentSubmitted') = 1
           ORDER BY p.createdAt DESC
         `;
         params = [academyId];
@@ -531,6 +537,7 @@ payments.get('/pending-cash', async (c) => {
           LEFT JOIN User teacher ON c.teacherId = teacher.id
           WHERE p.status = 'PENDING'
           AND p.type = 'STUDENT_TO_ACADEMY'
+          AND json_extract(p.metadata, '$.studentSubmitted') = 1
           ORDER BY p.createdAt DESC
         `;
       }
@@ -568,6 +575,7 @@ payments.get('/pending-count', async (c) => {
           WHERE a.ownerId = ? 
           AND p.status = 'PENDING'
           AND p.type = 'STUDENT_TO_ACADEMY'
+          AND json_extract(p.metadata, '$.studentSubmitted') = 1
         `)
         .bind(session.id)
         .first();
@@ -581,6 +589,7 @@ payments.get('/pending-count', async (c) => {
           WHERE c.teacherId = ?
           AND p.status = 'PENDING'
           AND p.type = 'STUDENT_TO_ACADEMY'
+          AND json_extract(p.metadata, '$.studentSubmitted') = 1
         `)
         .bind(session.id)
         .first();

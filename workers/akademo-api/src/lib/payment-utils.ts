@@ -118,9 +118,9 @@ export async function autoCreatePendingPayments(db: D1Database, userId: string):
 
     if (amountOwed > 0) {
       const existingPayment = await db
-        .prepare(`SELECT id, amount FROM Payment WHERE payerId = ? AND classId = ? AND status = 'PENDING' AND type = 'STUDENT_TO_ACADEMY' LIMIT 1`)
+        .prepare(`SELECT id, amount, metadata FROM Payment WHERE payerId = ? AND classId = ? AND status = 'PENDING' AND type = 'STUDENT_TO_ACADEMY' LIMIT 1`)
         .bind(enrollment.studentId, enrollment.classId)
-        .first() as { id: string; amount: number } | null;
+        .first() as { id: string; amount: number; metadata: string | null } | null;
       if (!existingPayment) {
         const paymentId = `payment-${Date.now()}-${Math.random().toString(36).substring(7)}`;
         await db
@@ -128,9 +128,10 @@ export async function autoCreatePendingPayments(db: D1Database, userId: string):
           .bind(paymentId, 'STUDENT_TO_ACADEMY', enrollment.studentId, 'STUDENT', `${enrollment.firstName} ${enrollment.lastName}`, enrollment.email, enrollment.academyId, enrollment.academyName, amountOwed, 'EUR', 'PENDING', 'cash', enrollment.classId, description, JSON.stringify({ enrollmentId: enrollment.enrollmentId, monthsOwed, autoCreated: true }), nextPaymentDue, billingCycleEnd)
           .run();
       } else {
+        const prevMeta = (() => { try { return JSON.parse(existingPayment.metadata || '{}'); } catch { return {}; } })();
         await db
           .prepare(`UPDATE Payment SET amount = ?, description = ?, metadata = ?, nextPaymentDue = ?, billingCycleEnd = ? WHERE id = ?`)
-          .bind(amountOwed, description, JSON.stringify({ enrollmentId: enrollment.enrollmentId, monthsOwed, autoUpdated: true }), nextPaymentDue, billingCycleEnd, existingPayment.id)
+          .bind(amountOwed, description, JSON.stringify({ ...prevMeta, enrollmentId: enrollment.enrollmentId, monthsOwed, autoUpdated: true }), nextPaymentDue, billingCycleEnd, existingPayment.id)
           .run();
       }
     }
