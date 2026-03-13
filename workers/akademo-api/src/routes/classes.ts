@@ -68,15 +68,17 @@ classes.get('/', async (c) => {
         JOIN Class c ON ce.classId = c.id
         JOIN Academy a ON c.academyId = a.id
         LEFT JOIN User u ON c.teacherId = u.id
-        LEFT JOIN Payment p ON p.id = (
-          SELECT id FROM Payment 
-          WHERE payerId = ce.userId AND classId = c.id AND type = 'STUDENT_TO_ACADEMY'
-          ORDER BY 
-            -- For one-time enrollments a PAID payment always wins over any PENDING
-            -- (prevents a late re-submission from blocking access after academy confirmed)
-            CASE WHEN ce.paymentFrequency = 'ONE_TIME' AND status IN ('PAID', 'COMPLETED') THEN 0 ELSE 1 END,
-            createdAt DESC 
-          LIMIT 1
+        LEFT JOIN Payment p ON p.id = COALESCE(
+          -- For ONE_TIME enrollments prefer the PAID/COMPLETED payment (outer-column reference in WHERE is valid in D1/SQLite)
+          (SELECT id FROM Payment
+           WHERE payerId = ce.userId AND classId = c.id AND type = 'STUDENT_TO_ACADEMY'
+             AND ce.paymentFrequency = 'ONE_TIME'
+             AND status IN ('PAID', 'COMPLETED')
+           ORDER BY createdAt DESC LIMIT 1),
+          -- Fallback: pick the most-recent payment of any status
+          (SELECT id FROM Payment
+           WHERE payerId = ce.userId AND classId = c.id AND type = 'STUDENT_TO_ACADEMY'
+           ORDER BY createdAt DESC LIMIT 1)
         )
         WHERE ce.userId = ? AND ce.status != 'WITHDRAWN'
         ORDER BY ce.enrolledAt DESC
