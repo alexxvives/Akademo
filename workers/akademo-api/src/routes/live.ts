@@ -57,6 +57,42 @@ live.get('/', async (c) => {
       .bind(classId)
       .run();
 
+    // Also auto-end GTM streams whose startToken JWT has already expired.
+    // The token embedded in zoomStartUrl has ~1hr TTL but the 2hr SQL rule above
+    // runs too late. Parse exp from the JWT and end early if it has passed.
+    if (isHost) {
+      const gtmCandidates = await c.env.DB
+        .prepare(`
+          SELECT id, zoomStartUrl FROM LiveStream
+          WHERE classId = ? AND zoomMeetingId IS NOT NULL AND dailyRoomName IS NULL
+            AND status IN ('active', 'scheduled')
+        `)
+        .bind(classId)
+        .all<{ id: string; zoomStartUrl: string | null }>();
+      for (const row of (gtmCandidates.results ?? [])) {
+        const url = row.zoomStartUrl;
+        if (!url) continue;
+        // startToken is a JWT — grab its payload (second segment)
+        const tokenMatch = url.match(/[?&]startToken=([^&]+)/);
+        if (!tokenMatch) continue;
+        const segments = tokenMatch[1].split('.');
+        if (segments.length < 2) continue;
+        try {
+          const payload = JSON.parse(
+            atob(segments[1].replace(/-/g, '+').replace(/_/g, '/'))
+          ) as { exp?: number };
+          if (payload.exp && payload.exp * 1000 < Date.now()) {
+            await c.env.DB
+              .prepare(`UPDATE LiveStream SET status = 'ended', endedAt = datetime('now') WHERE id = ?`)
+              .bind(row.id)
+              .run();
+          }
+        } catch {
+          // malformed JWT — skip
+        }
+      }
+    }
+
     const result = await c.env.DB
       .prepare(`
         SELECT ls.id, ls.classId, ls.teacherId, ls.status, ls.title, ls.startedAt, ls.endedAt, 
@@ -925,6 +961,13 @@ live.patch('/:id', async (c) => {
               if (freshStartResp.ok) {
                 const freshStartData = await freshStartResp.json() as any;
                 freshHostUrl = freshStartData.hostURL || freshStartData.startURL || freshStartData.startUrl || null;
+                // Persist the fresh URL so the JWT expiry auto-end clock resets
+                if (freshHostUrl) {
+                  await c.env.DB
+                    .prepare('UPDATE LiveStream SET zoomStartUrl = ? WHERE id = ?')
+                    .bind(freshHostUrl, streamId)
+                    .run();
+                }
               } else {
                 console.warn('[GTM] Could not fetch fresh hostURL:', freshStartResp.status);
               }
