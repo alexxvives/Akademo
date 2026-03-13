@@ -203,7 +203,7 @@ export default function DocumentSigningModal({
             </div>
             <div className="flex-1">
               <p className="text-sm font-semibold text-gray-900">
-                Me comprometo a no <strong>compartir</strong> ni permitir el <strong>acceso a terceros</strong> a ningún contenido de la plataforma (vídeos, audios, textos, PDFs, enlaces, imágenes u otro material didáctico). Tampoco <strong>compartiré</strong> mi cuenta con otras personas.
+                Me comprometo a no <strong>compartir</strong> ni permitir el <strong>acceso a terceros</strong> a ningún contenido de la plataforma (vídeos, audios, textos, PDFs, imágenes u otro material didáctico). Tampoco <strong>compartiré los enlaces de clases en vivo</strong> con personas no inscritas, ni compartiré mi cuenta con otras personas.
               </p>
             </div>
           </label>

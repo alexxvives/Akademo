@@ -70,8 +70,12 @@ classes.get('/', async (c) => {
         LEFT JOIN User u ON c.teacherId = u.id
         LEFT JOIN Payment p ON p.id = (
           SELECT id FROM Payment 
-          WHERE payerId = ce.userId AND classId = c.id 
-          ORDER BY createdAt DESC 
+          WHERE payerId = ce.userId AND classId = c.id AND type = 'STUDENT_TO_ACADEMY'
+          ORDER BY 
+            -- For one-time enrollments a PAID payment always wins over any PENDING
+            -- (prevents a late re-submission from blocking access after academy confirmed)
+            CASE WHEN ce.paymentFrequency = 'ONE_TIME' AND status IN ('PAID', 'COMPLETED') THEN 0 ELSE 1 END,
+            createdAt DESC 
           LIMIT 1
         )
         WHERE ce.userId = ? AND ce.status != 'WITHDRAWN'

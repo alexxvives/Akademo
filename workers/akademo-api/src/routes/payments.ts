@@ -135,6 +135,17 @@ payments.post('/initiate', paymentInitiateRateLimit, async (c) => {
       }
     }
 
+    // For one-time classes: block re-submission if the full amount is already paid
+    if (paymentFrequency === 'one-time' && classData.oneTimePrice > 0) {
+      const paidRow = await c.env.DB
+        .prepare(`SELECT COALESCE(SUM(amount), 0) as totalPaid FROM Payment WHERE payerId = ? AND classId = ? AND status IN ('PAID', 'COMPLETED') AND type = 'STUDENT_TO_ACADEMY'`)
+        .bind(session.id, classId)
+        .first<{ totalPaid: number }>();
+      if ((paidRow?.totalPaid ?? 0) >= classData.oneTimePrice) {
+        return c.json(errorResponse('El pago único de esta clase ya ha sido completado'), 400);
+      }
+    }
+
     // Check if payment already exists
     const existingPayment: any = await c.env.DB
       .prepare('SELECT id, status, paymentMethod FROM Payment WHERE payerId = ? AND classId = ? AND status = ?')
@@ -643,7 +654,7 @@ payments.post('/stripe-session', async (c) => {
       return c.json(errorResponse('No se pudo verificar la cuenta de pagos de la academia. Usa el método en efectivo o contacta con la academia.'), 400);
     }
 
-    // Stripe doesn't support Bizum directly — redirect to card payment
+    // Stripe doesn't support Transferencia directly — redirect to card payment
     const paymentMethods = ['card', 'link'];
 
     // Get enrollment ID for webhook
