@@ -49,7 +49,7 @@ export async function apiClient(
     const isAuthEndpoint = path.startsWith('/auth/');
     if (!isAuthEndpoint) {
       localStorage.removeItem('auth_token');
-      window.location.href = '/login?expired=1';
+      window.location.href = '/?modal=login&expired=1';
       // Return the response so callers don't throw before redirect completes
       return response;
     }

@@ -157,7 +157,7 @@ live.post('/', async (c) => {
             const refreshed = await refreshGTMToken(c, classZoomInfo.zoomAccountId);
             if (!refreshed) {
               // Refresh token has expired — user must reconnect the GTM account
-              return c.json(errorResponse('La sesión de GoToMeeting ha expirado. Por favor, desconecta y vuelve a conectar tu cuenta de GoToMeeting en Ajustes → Streaming.'), 401);
+              return c.json(errorResponse('La sesión de GoToMeeting ha expirado. Por favor, desconecta y vuelve a conectar tu cuenta de GoToMeeting en Ajustes → Streaming.'), 400);
             }
             token = refreshed;
           } else {
@@ -199,7 +199,7 @@ live.post('/', async (c) => {
             // Check for token-related errors and give a clear reconnect message
             const isTokenError = errText.includes('InvalidToken') || errText.includes('Invalid token') || gtmResponse.status === 401;
             if (isTokenError) {
-              return c.json(errorResponse('Tu sesión de GoToMeeting ha expirado o no es válida. Por favor, desconecta y vuelve a conectar tu cuenta de GoToMeeting en Ajustes → Streaming.'), 401);
+              return c.json(errorResponse('Tu sesión de GoToMeeting ha expirado o no es válida. Por favor, desconecta y vuelve a conectar tu cuenta de GoToMeeting en Ajustes → Streaming.'), 400);
             }
             return c.json(errorResponse(`Failed to create GoToMeeting meeting: ${errText}`), 500);
           }
@@ -951,7 +951,8 @@ live.delete('/:id', async (c) => {
         .bind(session.id)
         .first();
 
-      if (!classInfo || !academy || classInfo.academyId !== academy.id) {
+      // Allow deletion when classInfo is null — class was deleted but stream is orphaned
+      if (classInfo && (!academy || classInfo.academyId !== academy.id)) {
         return c.json(errorResponse('Not authorized'), 403);
       }
     }
@@ -1608,7 +1609,7 @@ live.post('/:id/check-recording-gtm', async (c) => {
     if (new Date(zoomAccount.expiresAt) <= new Date(Date.now() + 5 * 60 * 1000)) {
       const { refreshGTMToken } = await import('./zoom-accounts');
       const refreshed = await refreshGTMToken(c, classInfo.zoomAccountId);
-      if (!refreshed) return c.json(errorResponse('GTM session expired — please reconnect the account'), 401);
+      if (!refreshed) return c.json(errorResponse('GTM session expired — please reconnect the account'), 400);
       token = refreshed;
     }
 
