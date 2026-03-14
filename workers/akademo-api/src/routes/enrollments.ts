@@ -600,11 +600,24 @@ enrollments.post('/leave', async (c) => {
       }
     }
 
-    // Update enrollment status to WITHDRAWN and reset documentSigned
-    await c.env.DB
-      .prepare('UPDATE ClassEnrollment SET status = ?, documentSigned = 0 WHERE userId = ? AND classId = ?')
-      .bind('WITHDRAWN', session.id, classId)
-      .run();
+    // Remove unresolved obligations for the class and detach the enrollment from billing.
+    await c.env.DB.batch([
+      c.env.DB.prepare(`
+        UPDATE ClassEnrollment
+        SET status = ?,
+            documentSigned = 0,
+            nextPaymentDue = NULL,
+            stripeSubscriptionId = NULL,
+            paymentMethod = NULL
+        WHERE userId = ? AND classId = ?
+      `)
+      .bind('WITHDRAWN', session.id, classId),
+      c.env.DB.prepare(`
+        DELETE FROM Payment
+        WHERE payerId = ? AND classId = ? AND status IN ('PENDING', 'REJECTED')
+      `)
+      .bind(session.id, classId)
+    ]);
 
     return c.json(successResponse({ 
       message: 'Successfully left the class',
@@ -668,11 +681,24 @@ enrollments.delete('/:id', async (c) => {
       }
     }
 
-    // Update enrollment status to BANNED
-    await c.env.DB
-      .prepare('UPDATE ClassEnrollment SET status = ? WHERE id = ?')
-      .bind('BANNED', enrollmentId)
-      .run();
+    // Ban the student and cancel unresolved billing for that class.
+    await c.env.DB.batch([
+      c.env.DB.prepare(`
+        UPDATE ClassEnrollment
+        SET status = ?,
+            documentSigned = 0,
+            nextPaymentDue = NULL,
+            stripeSubscriptionId = NULL,
+            paymentMethod = NULL
+        WHERE id = ?
+      `)
+      .bind('BANNED', enrollmentId),
+      c.env.DB.prepare(`
+        DELETE FROM Payment
+        WHERE payerId = ? AND classId = ? AND status IN ('PENDING', 'REJECTED')
+      `)
+      .bind(enrollment.userId, enrollment.classId)
+    ]);
 
     return c.json(successResponse({ 
       message: 'Student banned successfully',

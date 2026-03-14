@@ -230,10 +230,10 @@ Request for class content
 |----|-----------|
 | INV-5.1 | Every Payment links to exactly ONE classId |
 | INV-5.2 | Payment.amount MUST be a positive number (> 0) |
-| INV-5.3 | Valid payment methods: cash, bizum, stripe. Academy configures which methods are available. |
+| INV-5.3 | Valid payment methods: cash, transferencia, stripe. Academy configures which methods are available. |
 | INV-5.4 | PayPal is NOT supported — no code should reference it |
 | INV-5.5 | COMPLETED and PAID should be unified to a single status (PAID) |
-| INV-5.6 | **Cash/Bizum** (manual): PENDING → PAID (academy confirms). PAID → PENDING (academy reverts mistake). Fully editable by academy/admin. |
+| INV-5.6 | **Cash/Transferencia** (manual): PENDING → PAID (academy confirms). PAID → PENDING (academy reverts mistake). Fully editable by academy/admin. |
 | INV-5.7 | **Stripe** (automated): Status controlled ONLY by Stripe webhooks. Academy CANNOT manually edit Stripe payment status. |
 | INV-5.8 | Only ONE PENDING payment per (payerId, classId) at a time (unique index) |
 | INV-5.9 | stripeCheckoutSessionId is UNIQUE when present (prevents duplicate processing) |
@@ -246,10 +246,10 @@ Request for class content
 - Payment with paymentMethod = 'paypal'
 - Two PENDING payments for same (payerId, classId)
 - Stripe payment without stripeCheckoutSessionId or stripePaymentId
-- Cash/bizum payment WITH stripeCheckoutSessionId
+- Cash/transferencia payment WITH stripeCheckoutSessionId
 - Academy editing Stripe payment status
 
-### State Machine: Payment (Cash/Bizum)
+### State Machine: Payment (Cash/Transferencia)
 ```
 PENDING → PAID    (academy confirms receipt)
 PAID → PENDING    (academy reverts mistake)
@@ -597,7 +597,7 @@ No reverse transitions.
 [APPROVED] stays [APPROVED] — access gated by payment+document
 ```
 
-### Payment (Cash/Bizum)
+### Payment (Cash/Transferencia)
 ```
 [PENDING] → [PAID]       (academy confirms)
 [PAID] → [PENDING]       (academy reverts mistake)
@@ -662,7 +662,7 @@ No reverse transitions.
 | Enrollment status | ClassEnrollment.status | — |
 | Document signing | ClassEnrollment.documentSigned | — |
 | Payment authority (Stripe) | Stripe webhook events | Manual edits |
-| Payment authority (Cash/Bizum) | Payment table (manual) | — |
+| Payment authority (Cash/Transferencia) | Payment table (manual) | — |
 | Is student paid up? | isPaymentOverdue() query on Payment table | Cached/derived flags |
 | Video watch state | VideoPlayState table | Client-reported totals |
 | Live stream status | Zoom webhooks → LiveStream table | Client-side state |

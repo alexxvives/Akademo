@@ -31,7 +31,7 @@ interface EnrolledClass {
   university?: string | null;
   carrera?: string | null;
   paymentStatus?: string; // PENDING, CASH_PENDING, PAID
-  paymentMethod?: string; // 'cash', 'bizum', 'stripe'
+  paymentMethod?: string; // 'cash', 'transferencia', 'stripe'
   price?: number;
   currency?: string;
   allowMonthly?: number;
@@ -352,13 +352,13 @@ export default function StudentClassesPage() {
                     
                     {/* Payment Status Icon - Show for any non-PAID/non-COMPLETED status */}
                     {classItem.paymentStatus !== 'PAID' && classItem.paymentStatus !== 'COMPLETED' && (
-                      (classItem.paymentStatus === 'PENDING' && (classItem.paymentMethod === 'cash' || classItem.paymentMethod === 'bizum')) ? (
+                      (classItem.paymentStatus === 'PENDING' && (classItem.paymentMethod === 'cash' || classItem.paymentMethod === 'transferencia')) ? (
                         <div className="relative group/payment">
                           <svg className="w-6 h-6 text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                           <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover/payment:opacity-100 transition-opacity z-10">
-                            {classItem.paymentMethod === 'cash' ? 'Esperando aprobación de la academia (efectivo)' : 'Esperando aprobación de la academia (bizum)'}
+                            {classItem.paymentMethod === 'cash' ? 'Esperando aprobación de la academia (efectivo)' : 'Esperando aprobación de la academia (transferencia)'}
                           </div>
                         </div>
                       ) : (

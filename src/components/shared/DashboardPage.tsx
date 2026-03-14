@@ -395,7 +395,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
     }
     return {
       totalPaid: filtered.reduce((sum, p) => sum + (p.paymentAmount ?? 0), 0),
-      bizumCount: filtered.filter(p => p.paymentMethod === 'bizum').length,
+      transferenciaCount: filtered.filter(p => p.paymentMethod === 'transferencia').length,
       cashCount: filtered.filter(p => p.paymentMethod === 'cash').length,
       stripeCount: filtered.filter(p => p.paymentMethod === 'stripe').length,
     };
@@ -584,7 +584,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
               <div className="text-xs text-gray-500">Total Cobrado</div>
             </div>
             <div className="flex-1 flex items-center justify-center gap-3 p-3 bg-gray-50 rounded-lg">
-              {[{ label: 'Bizum', value: paymentStats.bizumCount }, { label: 'Efectivo', value: paymentStats.cashCount }, { label: 'Stripe', value: paymentStats.stripeCount }].map(m => (
+              {[{ label: 'Transferencia', value: paymentStats.transferenciaCount }, { label: 'Efectivo', value: paymentStats.cashCount }, { label: 'Stripe', value: paymentStats.stripeCount }].map(m => (
                 <div key={m.label} className="text-center min-w-[60px]">
                   <div className="text-sm text-gray-500 mb-0.5">{m.label}</div>
                   <AnimatedNumber value={m.value} className="text-2xl font-bold text-gray-900" />

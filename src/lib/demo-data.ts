@@ -836,7 +836,7 @@ export function generateDemoPendingPayments(): DemoPayment[] {
         className: cls,
         paymentAmount: CLASS_PRICES[cls] || 49.99,
         currency: 'EUR',
-        paymentMethod: paymentIdx % 3 === 0 ? 'bizum' : 'cash',
+        paymentMethod: paymentIdx % 3 === 0 ? 'transferencia' : 'cash',
         paymentStatus: 'CASH_PENDING',
         enrolledAt: dueDate.toISOString(),
         createdAt: dueDate.toISOString(),

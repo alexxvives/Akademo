@@ -57,6 +57,22 @@ function calculateBillingCycle(classStartDate: string, _enrollmentDate: string, 
   };
 }
 
+function getStoredPaymentFrequency(payment: { metadata?: string | null }, fallback?: string | null): 'MONTHLY' | 'ONE_TIME' {
+  try {
+    const metadata = payment.metadata ? JSON.parse(payment.metadata) as { paymentFrequency?: string } : null;
+    if (metadata?.paymentFrequency === 'monthly') {
+      return 'MONTHLY';
+    }
+    if (metadata?.paymentFrequency === 'one-time') {
+      return 'ONE_TIME';
+    }
+  } catch {
+    // Ignore malformed metadata and fall back to enrollment data.
+  }
+
+  return fallback === 'MONTHLY' ? 'MONTHLY' : 'ONE_TIME';
+}
+
 // Rate limiter for payment initiation: 5 per minute per IP
 const paymentInitiateRateLimit = rateLimit({
   prefix: 'pay-init',
@@ -153,7 +169,7 @@ payments.post('/initiate', paymentInitiateRateLimit, async (c) => {
       .first();
 
     if (existingPayment) {
-      // Atomic batch: update payment + sync enrollment frequency
+      // Atomic batch: update payment + sync enrollment payment settings
       await c.env.DB.batch([
         c.env.DB.prepare(`
           UPDATE Payment 
@@ -182,8 +198,8 @@ payments.post('/initiate', paymentInitiateRateLimit, async (c) => {
           billingCycle.billingCycleEnd,
           existingPayment.id
         ),
-        c.env.DB.prepare('UPDATE ClassEnrollment SET paymentFrequency = ? WHERE userId = ? AND classId = ?')
-          .bind(isMonthly ? 'MONTHLY' : 'ONE_TIME', session.id, classId)
+        c.env.DB.prepare('UPDATE ClassEnrollment SET paymentFrequency = ?, paymentMethod = ? WHERE userId = ? AND classId = ?')
+          .bind(isMonthly ? 'MONTHLY' : 'ONE_TIME', paymentMethod, session.id, classId)
       ]);
 
       // Format next payment due date for display
@@ -213,7 +229,7 @@ payments.post('/initiate', paymentInitiateRateLimit, async (c) => {
     // Create Payment record with billing cycle info
     const paymentId = `payment-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-    // Atomic batch: insert payment + sync enrollment frequency
+    // Atomic batch: insert payment + sync enrollment payment settings
     await c.env.DB.batch([
       c.env.DB.prepare(`
         INSERT INTO Payment (
@@ -245,8 +261,8 @@ payments.post('/initiate', paymentInitiateRateLimit, async (c) => {
         billingCycle.nextPaymentDue,
         billingCycle.billingCycleEnd
       ),
-      c.env.DB.prepare('UPDATE ClassEnrollment SET paymentFrequency = ? WHERE userId = ? AND classId = ?')
-        .bind(isMonthly ? 'MONTHLY' : 'ONE_TIME', session.id, classId)
+      c.env.DB.prepare('UPDATE ClassEnrollment SET paymentFrequency = ?, paymentMethod = ? WHERE userId = ? AND classId = ?')
+        .bind(isMonthly ? 'MONTHLY' : 'ONE_TIME', paymentMethod, session.id, classId)
     ]);
 
     // Format next payment due date for display
@@ -277,145 +293,10 @@ payments.post('/initiate', paymentInitiateRateLimit, async (c) => {
   }
 });
 
-// GET /payments/pending-cash - Academy/Teacher views pending cash payments
+// GET /payments/pending-cash - Academy/Teacher views student-submitted manual payments awaiting review
 payments.get('/pending-cash', async (c) => {
   try {
     const session = await requireAuth(c);
-
-    // AUTO-CREATE PENDING PAYMENTS FOR STUDENTS WHO ARE BEHIND
-    // Only for ACADEMY role (not for TEACHER or ADMIN)
-    if (session.role === 'ACADEMY') {
-      // 1. Get all approved enrollments for this academy with payment info
-      const enrollments = await c.env.DB
-        .prepare(`
-          SELECT 
-            ce.id as enrollmentId,
-            ce.userId as studentId,
-            ce.classId,
-            ce.enrolledAt,
-            ce.paymentFrequency,
-            c.name as className,
-            c.monthlyPrice,
-            c.oneTimePrice,
-            c.startDate as classStartDate,
-            u.firstName,
-            u.lastName,
-            u.email,
-            a.id as academyId,
-            a.name as academyName,
-            COALESCE(
-              (SELECT SUM(p2.amount) FROM Payment p2 
-               WHERE p2.payerId = ce.userId AND p2.classId = ce.classId 
-               AND p2.status IN ('PAID', 'COMPLETED') AND p2.type = 'STUDENT_TO_ACADEMY'), 0
-            ) as totalPaid
-          FROM ClassEnrollment ce
-          JOIN Class c ON ce.classId = c.id
-          JOIN Academy a ON c.academyId = a.id
-          JOIN User u ON ce.userId = u.id
-          WHERE a.ownerId = ?
-          AND ce.status = 'APPROVED'
-          AND ce.stripeSubscriptionId IS NULL  -- Stripe handles billing for these; skip manual pending creation
-        `)
-        .bind(session.id)
-        .all();
-
-      // 2. For each enrollment, check if student owes money
-      for (const enrollment of (enrollments.results || []) as any[]) {
-        const totalPaid = enrollment.totalPaid || 0;
-        const isMonthly = enrollment.paymentFrequency === 'MONTHLY';
-        const monthlyPrice = enrollment.monthlyPrice;
-        const oneTimePrice = enrollment.oneTimePrice;
-
-        let amountOwed = 0;
-        let description = '';
-        let monthsOwed = 0;
-        let nextPaymentDue: string | null = null;
-        let billingCycleEnd: string | null = null;
-
-        if (isMonthly && monthlyPrice > 0) {
-          // MONTHLY: calculate elapsed cycles and subtract paid
-          const classStart = new Date(enrollment.classStartDate || enrollment.enrolledAt);
-          const today = new Date();
-          if (today >= classStart) {
-            const elapsedCycles = countElapsedCycles(classStart, today);
-            // Cap at total price (oneTimePrice holds the total for monthly plans)
-            const maxCycles = (oneTimePrice && monthlyPrice > 0) ? Math.ceil(oneTimePrice / monthlyPrice) : 9999;
-            const cappedCycles = Math.min(elapsedCycles, maxCycles);
-            const totalExpected = cappedCycles * monthlyPrice;
-            amountOwed = Math.max(0, totalExpected - totalPaid);
-            monthsOwed = Math.max(0, cappedCycles - Math.floor(totalPaid / monthlyPrice));
-
-            // nextPaymentDue = end of current billing cycle (when payment was/is due)
-            const cycleEnd = addMonths(classStart, elapsedCycles);
-            nextPaymentDue = cycleEnd.toISOString();
-            billingCycleEnd = cycleEnd.toISOString();
-
-            if (monthsOwed > 1) {
-              description = `Pago pendiente (${monthsOwed} meses × ${monthlyPrice}€)`;
-            } else if (monthsOwed === 1) {
-              description = `Pago pendiente mensual`;
-            }
-            // Note: we do NOT pre-create PENDING rows for upcoming future cycles.
-            // Only create rows when the student actually owes money for elapsed cycles.
-          }
-        } else if (!isMonthly && oneTimePrice > 0) {
-          // ONE_TIME: check if they've paid the full oneTimePrice
-          if (totalPaid < oneTimePrice) {
-            amountOwed = oneTimePrice - totalPaid;
-            monthsOwed = 0;
-            description = `Pago único pendiente`;
-          }
-        }
-
-        if (amountOwed > 0) {
-          // Check if pending payment already exists
-          const existingPayment = await c.env.DB
-            .prepare(`
-              SELECT id, amount, metadata FROM Payment
-              WHERE payerId = ? AND classId = ?
-              AND status = 'PENDING' AND type = 'STUDENT_TO_ACADEMY'
-              LIMIT 1
-            `)
-            .bind(enrollment.studentId, enrollment.classId)
-            .first() as { id: string; amount: number; metadata: string | null } | null;
-
-          if (!existingPayment) {
-            const paymentId = `payment-${Date.now()}-${Math.random().toString(36).substring(7)}`;
-            await c.env.DB
-              .prepare(`
-                INSERT INTO Payment (
-                  id, type, payerId, payerType, payerName, payerEmail,
-                  receiverId, receiverName, amount, currency, status,
-                  paymentMethod, classId, description, metadata, nextPaymentDue, billingCycleEnd, createdAt
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
-              `)
-              .bind(
-                paymentId, 'STUDENT_TO_ACADEMY', enrollment.studentId, 'STUDENT',
-                `${enrollment.firstName} ${enrollment.lastName}`, enrollment.email,
-                enrollment.academyId, enrollment.academyName,
-                amountOwed, 'EUR', 'PENDING', 'cash', enrollment.classId,
-                description,
-                JSON.stringify({ enrollmentId: enrollment.enrollmentId, monthsOwed, autoCreated: true }),
-                nextPaymentDue,
-                billingCycleEnd
-              )
-              .run();
-          } else {
-            const prevMeta = (() => { try { return JSON.parse(existingPayment.metadata || '{}'); } catch { return {}; } })();
-            await c.env.DB
-              .prepare(`UPDATE Payment SET amount = ?, description = ?, metadata = ?, nextPaymentDue = ?, billingCycleEnd = ? WHERE id = ?`)
-              .bind(
-                amountOwed, description,
-                JSON.stringify({ ...prevMeta, enrollmentId: enrollment.enrollmentId, monthsOwed, autoUpdated: true }),
-                nextPaymentDue,
-                billingCycleEnd,
-                existingPayment.id
-              )
-              .run();
-          }
-        }
-      }
-    }
 
     let query = '';
     let params: any[] = [];
@@ -805,6 +686,8 @@ payments.patch('/:id/approve-payment', async (c) => {
           p.status,
           p.classId,
           p.payerId,
+          p.paymentMethod,
+          p.metadata,
           p.nextPaymentDue,
           c.academyId,
           a.ownerId,
@@ -846,25 +729,26 @@ payments.patch('/:id/approve-payment', async (c) => {
 
     // Sync ClassEnrollment paymentFrequency and nextPaymentDue after manual approval
     if (approved && payment.payerId) {
-      // Use the enrollment's actual frequency; default to MONTHLY only as last resort
-      const freq: string = payment.paymentFrequency || 'MONTHLY';
+      const freq = getStoredPaymentFrequency(payment, payment.paymentFrequency);
       if (freq !== 'ONE_TIME' && payment.nextPaymentDue) {
         approvalBatch.push(
           c.env.DB.prepare(`
             UPDATE ClassEnrollment
             SET nextPaymentDue = ?,
-                paymentFrequency = ?
+                paymentFrequency = ?,
+                paymentMethod = ?
             WHERE userId = ? AND classId = ?
-          `).bind(payment.nextPaymentDue, freq, payment.payerId, payment.classId)
+          `).bind(payment.nextPaymentDue, freq, payment.paymentMethod, payment.payerId, payment.classId)
         );
       } else {
         // ONE_TIME payments: mark frequency correctly, no recurring due date
         approvalBatch.push(
           c.env.DB.prepare(`
             UPDATE ClassEnrollment
-            SET paymentFrequency = ?
+            SET paymentFrequency = ?,
+                paymentMethod = ?
             WHERE userId = ? AND classId = ?
-          `).bind(freq, payment.payerId, payment.classId)
+          `).bind(freq, payment.paymentMethod, payment.payerId, payment.classId)
         );
       }
     }
@@ -1071,8 +955,11 @@ payments.put('/history/:id/reverse', async (c) => {
           p.id,
           p.status,
           p.classId,
+          p.payerId,
           p.stripePaymentId,
           p.paymentMethod,
+          p.metadata,
+          p.nextPaymentDue,
           c.academyId,
           a.ownerId
         FROM Payment p
@@ -1102,15 +989,52 @@ payments.put('/history/:id/reverse', async (c) => {
     const newStatus = (payment.status === 'COMPLETED' || payment.status === 'PAID') ? 'PENDING' : 'COMPLETED';
     const completedAtValue = newStatus === 'COMPLETED' ? new Date().toISOString() : null;
 
-    await c.env.DB
-      .prepare(`
+    const reverseBatch: any[] = [
+      c.env.DB.prepare(`
         UPDATE Payment 
         SET status = ?,
             completedAt = ?
         WHERE id = ?
       `)
       .bind(newStatus, completedAtValue, enrollmentId)
-      .run();
+    ];
+
+    if (payment.payerId && payment.classId) {
+      const freq = getStoredPaymentFrequency(payment);
+      if (newStatus === 'COMPLETED') {
+        if (freq === 'MONTHLY' && payment.nextPaymentDue) {
+          reverseBatch.push(
+            c.env.DB.prepare(`
+              UPDATE ClassEnrollment
+              SET paymentFrequency = ?,
+                  paymentMethod = ?,
+                  nextPaymentDue = ?
+              WHERE userId = ? AND classId = ?
+            `).bind(freq, payment.paymentMethod, payment.nextPaymentDue, payment.payerId, payment.classId)
+          );
+        } else {
+          reverseBatch.push(
+            c.env.DB.prepare(`
+              UPDATE ClassEnrollment
+              SET paymentFrequency = ?,
+                  paymentMethod = ?
+              WHERE userId = ? AND classId = ?
+            `).bind(freq, payment.paymentMethod, payment.payerId, payment.classId)
+          );
+        }
+      } else {
+        reverseBatch.push(
+          c.env.DB.prepare(`
+            UPDATE ClassEnrollment
+            SET paymentFrequency = ?,
+                paymentMethod = ?
+            WHERE userId = ? AND classId = ?
+          `).bind(freq, payment.paymentMethod, payment.payerId, payment.classId)
+        );
+      }
+    }
+
+    await c.env.DB.batch(reverseBatch);
 
     return c.json(successResponse({ 
       message: `Payment status changed to ${newStatus}`,

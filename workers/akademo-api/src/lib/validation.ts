@@ -148,7 +148,7 @@ export const approveEnrollmentSchema = z.object({
 
 export const initiatePaymentSchema = z.object({
   classId: z.string().min(1, 'Class ID is required'),
-  paymentMethod: z.enum(['cash', 'stripe', 'bizum'], { message: 'Must be: cash, stripe, or bizum' }),
+  paymentMethod: z.enum(['cash', 'stripe', 'transferencia'], { message: 'Must be: cash, stripe, or transferencia' }),
   paymentFrequency: z.enum(['monthly', 'one-time'], { message: 'Must be: monthly or one-time' }),
 });
 

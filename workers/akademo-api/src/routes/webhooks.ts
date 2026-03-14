@@ -691,8 +691,23 @@ webhooks.post('/stripe', async (c) => {
             }
 
             checkoutBatch.push(
-              c.env.DB.prepare('UPDATE ClassEnrollment SET status = ?, paymentFrequency = ?, stripeSubscriptionId = ? WHERE id = ?')
-                .bind('APPROVED', isMonthly ? 'MONTHLY' : 'ONE_TIME', subscriptionId, enrollmentId),
+              c.env.DB.prepare(`
+                UPDATE ClassEnrollment
+                SET status = ?,
+                    paymentFrequency = ?,
+                    paymentMethod = ?,
+                    stripeSubscriptionId = ?,
+                    nextPaymentDue = ?
+                WHERE id = ?
+              `)
+                .bind(
+                  'APPROVED',
+                  isMonthly ? 'MONTHLY' : 'ONE_TIME',
+                  'stripe',
+                  subscriptionId,
+                  billingCycle.nextPaymentDue,
+                  enrollmentId
+                ),
               // Clean up any manually-created or auto-created PENDING rows
               c.env.DB.prepare("DELETE FROM Payment WHERE payerId = ? AND classId = ? AND status = 'PENDING'")
                 .bind(enrollment.userId, enrollment.classId)
@@ -749,7 +764,7 @@ webhooks.post('/stripe', async (c) => {
       // Find enrollment by subscription ID
       const enrollment = await c.env.DB
         .prepare(`
-          SELECT e.*, c.name as className, c.academyId, u.firstName, u.lastName, u.email
+          SELECT e.*, c.name as className, c.academyId, c.startDate, u.firstName, u.lastName, u.email
           FROM ClassEnrollment e
           JOIN Class c ON e.classId = c.id
           JOIN User u ON e.userId = u.id
@@ -794,6 +809,17 @@ webhooks.post('/stripe', async (c) => {
             )
             .run();
         }
+
+        const billingCycle = calculateBillingCycle(
+          enrollment.startDate || new Date().toISOString(),
+          new Date().toISOString(),
+          true
+        );
+
+        await c.env.DB
+          .prepare('UPDATE ClassEnrollment SET paymentMethod = ?, nextPaymentDue = ? WHERE id = ?')
+          .bind('stripe', billingCycle.nextPaymentDue, enrollment.id)
+          .run();
       }
     } else if (event === 'invoice.payment_failed') {
       // Recurring payment failed - create pending payment
@@ -861,7 +887,7 @@ webhooks.post('/stripe', async (c) => {
 
       const enrollment = await c.env.DB
         .prepare(`
-          SELECT e.id, e.userId, e.classId, c.name as className, c.monthlyPrice, c.academyId,
+             SELECT e.id, e.userId, e.classId, e.status, e.stripeSubscriptionId, c.name as className, c.monthlyPrice, c.academyId,
                  u.firstName, u.lastName, u.email
           FROM ClassEnrollment e
           JOIN Class c ON e.classId = c.id
@@ -886,7 +912,9 @@ webhooks.post('/stripe', async (c) => {
               .bind(enrollment.id)
           ];
 
-          if (!existingPending) {
+          const shouldCreatePending = !['WITHDRAWN', 'BANNED', 'REJECTED'].includes(enrollment.status);
+
+          if (!existingPending && shouldCreatePending) {
             subDeletedBatch.push(
               c.env.DB.prepare(`
                 INSERT INTO Payment (
@@ -916,12 +944,11 @@ webhooks.post('/stripe', async (c) => {
 
           await c.env.DB.batch(subDeletedBatch);
 
-          console.log(`[Stripe Webhook] subscription.deleted: cleared sub ${subscriptionId} for enrollment ${enrollment.id}, created PENDING payment`);
-        }
+          console.log(`[Stripe Webhook] subscription.deleted: cleared sub ${subscriptionId} for enrollment ${enrollment.id}${shouldCreatePending ? ', created PENDING payment' : ', skipped pending payment due to inactive enrollment status'}`);
+          }
       } else {
         console.log(`[Stripe Webhook] subscription.deleted: no enrollment found for sub ${subscriptionId}`);
       }
-    // END DISABLED SUBSCRIPTION HANDLERS */
     }
 
     return c.json(successResponse({ received: true }));

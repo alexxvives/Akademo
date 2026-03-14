@@ -90,7 +90,7 @@ export default function DashboardLayout({
   // Active streams state for students
   const [activeStreams, setActiveStreams] = useState<ActiveStream[]>([]);
   
-  // Pending payments count for academy (cash/bizum awaiting approval)
+  // Pending payments count for academy (cash/transferencia awaiting approval)
   const [pendingPaymentsCount, setPendingPaymentsCount] = useState(0);
   
   // Unread valoraciones count for teacher/academy

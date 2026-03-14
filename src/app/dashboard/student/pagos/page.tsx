@@ -19,7 +19,7 @@ interface StudentPayment {
 
 const METHOD_LABELS: Record<string, string> = {
   cash:   'Efectivo',
-  bizum:  'Bizum',
+  transferencia:  'Transferencia',
   stripe: 'Tarjeta',
   manual: 'Manual',
 };

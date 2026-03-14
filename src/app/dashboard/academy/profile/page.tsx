@@ -115,7 +115,7 @@ export default function ProfilePage() {
     feedbackEnabled: true,
     defaultWatermarkIntervalMins: 5,
     defaultMaxWatchTimeMultiplier: 2.0,
-    allowedPaymentMethods: ['stripe', 'cash', 'bizum'],
+    allowedPaymentMethods: ['stripe', 'cash', 'transferencia'],
     allowMultipleTeachers: false,
     requireGrading: true,
     hiddenMenuItems: [] as string[],
@@ -155,7 +155,7 @@ export default function ProfilePage() {
         setAcademy(academyData);
         
         // Parse allowed payment methods from JSON string
-        let allowedMethods = ['cash', 'bizum']; // default - stripe not included by default
+        let allowedMethods = ['cash', 'transferencia']; // default - stripe not included by default
         if (academyData.allowedPaymentMethods) {
           try {
             allowedMethods = JSON.parse(academyData.allowedPaymentMethods);
@@ -661,10 +661,10 @@ export default function ProfilePage() {
                               try {
                                 return JSON.parse(academy.allowedPaymentMethods);
                               } catch {
-                                return ['stripe', 'cash', 'bizum'];
+                                return ['stripe', 'cash', 'transferencia'];
                               }
                             })()
-                          : ['stripe', 'cash', 'bizum'],
+                          : ['stripe', 'cash', 'transferencia'],
                         allowMultipleTeachers: academy.allowMultipleTeachers === 1,
                         requireGrading: academy.requireGrading !== 0,
                         hiddenMenuItems: (() => { try { return JSON.parse(academy.hiddenMenuItems || '[]'); } catch { return []; } })(),
@@ -1207,35 +1207,35 @@ export default function ProfilePage() {
               </div>
             </button>
 
-            {/* Bizum */}
+            {/* Transferencia */}
             <button
               type="button"
               onClick={async () => {
                 const currentMethods = Array.isArray(formData.allowedPaymentMethods) ? formData.allowedPaymentMethods : [];
-                const hasBizum = currentMethods.includes('bizum');
+                const hasTransferencia = currentMethods.includes('transferencia');
                 
                 // Prevent deselecting if it's the last payment method
-                if (hasBizum && currentMethods.length === 1) {
+                if (hasTransferencia && currentMethods.length === 1) {
                   alert('Debes tener al menos un método de pago habilitado');
                   return;
                 }
                 
-                const updated = hasBizum
-                  ? currentMethods.filter(m => m !== 'bizum')
-                  : [...currentMethods, 'bizum'];
+                const updated = hasTransferencia
+                  ? currentMethods.filter(m => m !== 'transferencia')
+                  : [...currentMethods, 'transferencia'];
                 await handleSettingChange('allowedPaymentMethods', JSON.stringify(updated));
               }}
               className={`p-4 border-2 rounded-xl transition-all duration-200 text-left ${
-                (Array.isArray(formData.allowedPaymentMethods) && formData.allowedPaymentMethods.includes('bizum'))
+                (Array.isArray(formData.allowedPaymentMethods) && formData.allowedPaymentMethods.includes('transferencia'))
                   ? 'border-purple-500 bg-purple-50 shadow-md'
                   : 'border-gray-200 bg-white hover:border-gray-300'
               }`}
             >
               <div className="flex items-start gap-3">
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                  (Array.isArray(formData.allowedPaymentMethods) && formData.allowedPaymentMethods.includes('bizum')) ? 'border-purple-500 bg-purple-500' : 'border-gray-300'
+                  (Array.isArray(formData.allowedPaymentMethods) && formData.allowedPaymentMethods.includes('transferencia')) ? 'border-purple-500 bg-purple-500' : 'border-gray-300'
                 }`}>
-                  {(Array.isArray(formData.allowedPaymentMethods) && formData.allowedPaymentMethods.includes('bizum')) && (
+                  {(Array.isArray(formData.allowedPaymentMethods) && formData.allowedPaymentMethods.includes('transferencia')) && (
                     <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                     </svg>
@@ -1243,12 +1243,12 @@ export default function ProfilePage() {
                 </div>
                 <div className="flex-1">
                   <div className={`text-sm font-semibold mb-1 ${
-                    (Array.isArray(formData.allowedPaymentMethods) && formData.allowedPaymentMethods.includes('bizum')) ? 'text-purple-900' : 'text-gray-900'
+                    (Array.isArray(formData.allowedPaymentMethods) && formData.allowedPaymentMethods.includes('transferencia')) ? 'text-purple-900' : 'text-gray-900'
                   }`}>
-                    Bizum
+                    Transferencia
                   </div>
                   <p className={`text-xs ${
-                    (Array.isArray(formData.allowedPaymentMethods) && formData.allowedPaymentMethods.includes('bizum')) ? 'text-purple-700' : 'text-gray-500'
+                    (Array.isArray(formData.allowedPaymentMethods) && formData.allowedPaymentMethods.includes('transferencia')) ? 'text-purple-700' : 'text-gray-500'
                   }`}>
                     Transferencia instantánea
                   </p>
@@ -1423,7 +1423,7 @@ export default function ProfilePage() {
               </div>
               <p className="text-gray-900 font-medium mb-2">Cuenta no conectada</p>
               <p className="text-sm text-gray-500 max-w-md mx-auto">
-                Conecta tu cuenta de Stripe para recibir pagos de estudiantes directamente en tu cuenta bancaria. Los estudiantes podrán pagar con tarjeta, transferencia bancaria o Bizum.
+                Conecta tu cuenta de Stripe para recibir pagos de estudiantes directamente en tu cuenta bancaria. Los estudiantes podrán pagar con tarjeta, transferencia bancaria o Transferencia.
               </p>
             </div>
           ) : stripeStatus.charges_enabled ? (

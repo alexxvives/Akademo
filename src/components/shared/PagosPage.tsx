@@ -111,7 +111,7 @@ export default function PagosPage({ role }: PagosPageProps) {
     studentId: '',
     classId: '',
     amount: '',
-    paymentMethod: 'cash' as 'cash' | 'bizum',
+    paymentMethod: 'cash' as 'cash' | 'transferencia',
     status: 'PAID' as 'PAID' | 'PENDING',
   });
   const [students, setStudents] = useState<{id: string; firstName: string; lastName: string; email: string}[]>([]);
@@ -793,8 +793,8 @@ export default function PagosPage({ role }: PagosPageProps) {
                         <div className="text-sm text-gray-700 capitalize">
                           {history.paymentMethod.toLowerCase() === 'cash' || history.paymentMethod === 'CASH'
                             ? 'Efectivo'
-                            : history.paymentMethod.toLowerCase() === 'bizum' || history.paymentMethod === 'BIZUM'
-                            ? 'Bizum'
+                            : history.paymentMethod.toLowerCase() === 'transferencia' || history.paymentMethod === 'TRANSFERENCIA'
+                            ? 'Transferencia'
                             : history.paymentMethod.toLowerCase() === 'stripe' || history.paymentMethod === 'STRIPE'
                             ? 'Stripe'
                             : history.paymentMethod}
@@ -837,7 +837,7 @@ export default function PagosPage({ role }: PagosPageProps) {
                                     studentId: history.studentId || '',
                                     classId: history.classId || '',
                                     amount: history.paymentAmount.toString(),
-                                    paymentMethod: (history.paymentMethod.toLowerCase() === 'cash' || history.paymentMethod === 'CASH') ? 'cash' : 'bizum',
+                                    paymentMethod: (history.paymentMethod.toLowerCase() === 'cash' || history.paymentMethod === 'CASH') ? 'cash' : 'transferencia',
                                     status: 'PAID',
                                   });
                                   setEditingPaymentId(history.paymentId || null);
@@ -1015,10 +1015,10 @@ export default function PagosPage({ role }: PagosPageProps) {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Método de Pago</label>
                 <StyledSelect
                   value={registerForm.paymentMethod}
-                  onChange={(v) => setRegisterForm({ ...registerForm, paymentMethod: v as 'cash' | 'bizum' })}
+                  onChange={(v) => setRegisterForm({ ...registerForm, paymentMethod: v as 'cash' | 'transferencia' })}
                   options={[
                     { value: 'cash', label: 'Efectivo' },
-                    { value: 'bizum', label: 'Bizum' }
+                    { value: 'transferencia', label: 'Transferencia' }
                   ]}
                 />
               </div>
