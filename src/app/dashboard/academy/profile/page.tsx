@@ -659,16 +659,27 @@ export default function ProfilePage() {
   };
 
   const toggleAllowedPaymentMethod = async (method: 'stripe' | 'cash' | 'transferencia' | 'bizum') => {
+    if (method === 'transferencia' || method === 'bizum') {
+      if (expandedPaymentMethod === method) {
+        setExpandedPaymentMethod(null);
+        setFormData((current) => ({
+          ...current,
+          transferenciaIban: academy?.transferenciaIban || '',
+          bizumPhone: academy?.bizumPhone || '',
+        }));
+        return;
+      }
+
+      setExpandedPaymentMethod(method);
+      return;
+    }
+
     const currentMethods = Array.isArray(formData.allowedPaymentMethods) ? formData.allowedPaymentMethods : [];
     const hasMethod = currentMethods.includes(method);
 
     if (!hasMethod) {
       if (method === 'stripe' && !stripeStatus?.charges_enabled) {
         alert('Debes conectar una cuenta de Stripe antes de habilitar pagos con Stripe');
-        return;
-      }
-      if (method === 'transferencia' || method === 'bizum') {
-        setExpandedPaymentMethod(method);
         return;
       }
     }
@@ -684,9 +695,6 @@ export default function ProfilePage() {
 
     await handleSettingChange('allowedPaymentMethods', JSON.stringify(updated));
 
-    if (hasMethod && expandedPaymentMethod === method) {
-      setExpandedPaymentMethod(null);
-    }
   };
 
   const saveTransferenciaSetup = async () => {
@@ -1271,154 +1279,110 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={() => toggleAllowedPaymentMethod('transferencia')}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  void toggleAllowedPaymentMethod('transferencia');
-                }
-              }}
-              className={`p-4 border-2 rounded-xl transition-all duration-200 cursor-pointer ${
-              formData.allowedPaymentMethods.includes('transferencia')
-                ? 'border-gray-500 bg-gray-50 shadow-md'
-                : 'border-gray-200 bg-white'
-            }`}>
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="text-sm font-semibold mb-1 text-gray-900">Transferencia</div>
-                  <p className="text-xs text-gray-600">Transferencia a la academia</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {formData.allowedPaymentMethods.includes('transferencia') && (
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setExpandedPaymentMethod(isTransferenciaExpanded ? null : 'transferencia');
-                      }}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${isTransferenciaExpanded ? 'bg-gray-800 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'}`}
-                    >
-                      Editar
-                    </button>
-                  )}
+            <div className={`relative ${isTransferenciaExpanded ? 'pb-16' : ''}`}>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => toggleAllowedPaymentMethod('transferencia')}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    void toggleAllowedPaymentMethod('transferencia');
+                  }
+                }}
+                className={`p-4 border-2 rounded-xl transition-all duration-200 cursor-pointer ${
+                formData.allowedPaymentMethods.includes('transferencia')
+                  ? 'border-gray-500 bg-gray-50 shadow-md'
+                  : 'border-gray-200 bg-white'
+              }`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold mb-1 text-gray-900">Transferencia</div>
+                    <p className="text-xs text-gray-600">Transferencia a la academia</p>
+                  </div>
                   <div className={`mt-0.5 h-3 w-3 rounded-full ${formData.allowedPaymentMethods.includes('transferencia') ? 'bg-gray-500' : 'bg-gray-300'}`} />
                 </div>
               </div>
+
+              {isTransferenciaExpanded && (
+                <input
+                  type="text"
+                  value={formData.transferenciaIban}
+                  onClick={(event) => event.stopPropagation()}
+                  onChange={(e) => setFormData({ ...formData, transferenciaIban: formatSpanishIbanInput(e.target.value) })}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      void saveTransferenciaSetup();
+                    }
+                    if (event.key === 'Escape') {
+                      event.preventDefault();
+                      setExpandedPaymentMethod(null);
+                      setFormData((current) => ({ ...current, transferenciaIban: academy?.transferenciaIban || '' }));
+                    }
+                  }}
+                  placeholder="ES12 1234 1234 12 1234567890"
+                  className="absolute left-0 top-full z-10 mt-2 w-72 max-w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm shadow-lg focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                  maxLength={29}
+                  autoFocus
+                />
+              )}
             </div>
 
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={() => toggleAllowedPaymentMethod('bizum')}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  void toggleAllowedPaymentMethod('bizum');
-                }
-              }}
-              className={`p-4 border-2 rounded-xl transition-all duration-200 cursor-pointer ${
-              formData.allowedPaymentMethods.includes('bizum')
-                ? 'border-blue-500 bg-blue-50 shadow-md'
-                : 'border-gray-200 bg-white'
-            }`}>
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className={`text-sm font-semibold mb-1 ${formData.allowedPaymentMethods.includes('bizum') ? 'text-blue-900' : 'text-gray-900'}`}>
-                    Bizum
+            <div className={`relative ${isBizumExpanded ? 'pb-16' : ''}`}>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => toggleAllowedPaymentMethod('bizum')}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    void toggleAllowedPaymentMethod('bizum');
+                  }
+                }}
+                className={`p-4 border-2 rounded-xl transition-all duration-200 cursor-pointer ${
+                formData.allowedPaymentMethods.includes('bizum')
+                  ? 'border-blue-500 bg-blue-50 shadow-md'
+                  : 'border-gray-200 bg-white'
+              }`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className={`text-sm font-semibold mb-1 ${formData.allowedPaymentMethods.includes('bizum') ? 'text-blue-900' : 'text-gray-900'}`}>
+                      Bizum
+                    </div>
+                    <p className={`text-xs ${formData.allowedPaymentMethods.includes('bizum') ? 'text-blue-700' : 'text-gray-500'}`}>
+                      Bizum a la academia
+                    </p>
                   </div>
-                  <p className={`text-xs ${formData.allowedPaymentMethods.includes('bizum') ? 'text-blue-700' : 'text-gray-500'}`}>
-                    Bizum a la academia
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {formData.allowedPaymentMethods.includes('bizum') && (
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setExpandedPaymentMethod(isBizumExpanded ? null : 'bizum');
-                      }}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${isBizumExpanded ? 'bg-blue-600 text-white' : 'bg-white text-blue-700 border border-blue-200 hover:bg-blue-50'}`}
-                    >
-                      Editar
-                    </button>
-                  )}
                   <div className={`mt-0.5 h-3 w-3 rounded-full ${formData.allowedPaymentMethods.includes('bizum') ? 'bg-blue-500' : 'bg-gray-300'}`} />
                 </div>
               </div>
+
+              {isBizumExpanded && (
+                <input
+                  type="tel"
+                  value={formData.bizumPhone}
+                  onClick={(event) => event.stopPropagation()}
+                  onChange={(e) => setFormData({ ...formData, bizumPhone: formatSpanishBizumPhone(e.target.value) })}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      void saveBizumSetup();
+                    }
+                    if (event.key === 'Escape') {
+                      event.preventDefault();
+                      setExpandedPaymentMethod(null);
+                      setFormData((current) => ({ ...current, bizumPhone: academy?.bizumPhone || '' }));
+                    }
+                  }}
+                  placeholder="+34 600 123 456"
+                  className="absolute left-0 top-full z-10 mt-2 w-72 max-w-full rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm shadow-lg focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  maxLength={14}
+                  autoFocus
+                />
+              )}
             </div>
           </div>
-
-          {isTransferenciaExpanded && (
-            <div className="mt-4 flex justify-start">
-              <div className="w-full max-w-sm rounded-2xl border border-gray-200 bg-gray-50 p-4 shadow-lg sm:max-w-md">
-                <div className="flex flex-col gap-4">
-                  <label className="block text-xs font-medium text-gray-700 mb-2">Transferencia a la academia</label>
-                  <input
-                    type="text"
-                    value={formData.transferenciaIban}
-                    onChange={(e) => setFormData({ ...formData, transferenciaIban: formatSpanishIbanInput(e.target.value) })}
-                    placeholder="ES12 1234 1234 12 1234567890"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-500 focus:border-gray-500 bg-white"
-                    maxLength={29}
-                  />
-                  <div className="flex items-center justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setExpandedPaymentMethod(null)}
-                      className="px-3 py-2 rounded-lg text-xs font-semibold border border-gray-300 text-gray-700 hover:bg-gray-50"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      type="button"
-                      onClick={saveTransferenciaSetup}
-                      className="px-3 py-2 rounded-lg text-xs font-semibold bg-gray-800 text-white hover:bg-gray-900"
-                    >
-                      {formData.allowedPaymentMethods.includes('transferencia') ? 'Guardar datos' : 'Guardar y activar'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {isBizumExpanded && (
-            <div className="mt-4 flex justify-start">
-              <div className="w-full max-w-sm rounded-2xl border border-blue-200 bg-blue-50 p-4 shadow-lg sm:max-w-md">
-                <div className="flex flex-col gap-4">
-                  <label className="block text-xs font-medium text-blue-900 mb-2">Bizum a la academia</label>
-                  <input
-                    type="tel"
-                    value={formData.bizumPhone}
-                    onChange={(e) => setFormData({ ...formData, bizumPhone: formatSpanishBizumPhone(e.target.value) })}
-                    placeholder="+34 600 123 456"
-                    className="w-full px-3 py-2 border border-blue-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                    maxLength={14}
-                  />
-                  <div className="flex items-center justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setExpandedPaymentMethod(null)}
-                      className="px-3 py-2 rounded-lg text-xs font-semibold border border-gray-300 text-gray-700 hover:bg-gray-50"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      type="button"
-                      onClick={saveBizumSetup}
-                      className="px-3 py-2 rounded-lg text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700"
-                    >
-                      {formData.allowedPaymentMethods.includes('bizum') ? 'Guardar datos' : 'Guardar y activar'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
