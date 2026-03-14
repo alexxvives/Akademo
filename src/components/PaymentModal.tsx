@@ -69,7 +69,7 @@ export default function PaymentModal({
   const [processing, setProcessing] = useState(false);
   const [_confirmingCash, _setConfirmingCash] = useState(false);
   const [_confirmingTransferencia, _setConfirmingTransferencia] = useState(false);
-  const [allowedPaymentMethods, setAllowedPaymentMethods] = useState<string[]>(['stripe', 'cash', 'transferencia', 'bizum']);
+  const [allowedPaymentMethods, setAllowedPaymentMethods] = useState<string[]>(['cash']);
   const [academyPaymentInfo, setAcademyPaymentInfo] = useState<AcademyPaymentInfo | null>(null);
 
   // Lock body scroll when modal is open
@@ -103,14 +103,14 @@ export default function PaymentModal({
                 methods = JSON.parse(methods);
               } catch (e) {
                 console.error('[PaymentModal] Failed to parse allowedPaymentMethods:', e);
-                methods = ['stripe', 'cash', 'transferencia', 'bizum'];
+                methods = ['cash'];
               }
             }
             
             // Ensure it's an array
             if (!Array.isArray(methods)) {
               console.warn('[PaymentModal] allowedPaymentMethods is not an array, using default');
-              methods = ['stripe', 'cash', 'transferencia', 'bizum'];
+              methods = ['cash'];
             }
             
             // Hide Stripe option if academy hasn't connected a Stripe account

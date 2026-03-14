@@ -103,8 +103,8 @@ academies.post('/', async (c) => {
     const academyId = crypto.randomUUID();
     const now = new Date().toISOString();
     await c.env.DB
-      .prepare('INSERT INTO Academy (id, name, description, ownerId, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?)')
-      .bind(academyId, name, description || null, session.id, now, now)
+      .prepare('INSERT INTO Academy (id, name, description, ownerId, createdAt, updatedAt, allowedPaymentMethods) VALUES (?, ?, ?, ?, ?, ?, ?)')
+      .bind(academyId, name, description || null, session.id, now, now, '["cash"]')
       .run();
 
     const academy = await c.env.DB

@@ -85,7 +85,35 @@ const MULTIPLIER_OPTIONS = [
   { value: 10.0, label: '10x (ilimitado)' }
 ];
 
-const DEFAULT_ALLOWED_PAYMENT_METHODS = ['cash', 'transferencia', 'bizum'];
+const DEFAULT_ALLOWED_PAYMENT_METHODS = ['cash'];
+const SUPPORTED_PAYMENT_METHODS = ['stripe', 'cash', 'transferencia', 'bizum'] as const;
+
+function normalizeAllowedPaymentMethods(value?: string | string[] | null): string[] {
+  let methods: string[] = [...DEFAULT_ALLOWED_PAYMENT_METHODS];
+
+  if (Array.isArray(value)) {
+    methods = value;
+  } else if (typeof value === 'string' && value.trim()) {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) {
+        methods = parsed;
+      }
+    } catch (error) {
+      console.error('Failed to parse allowedPaymentMethods:', error);
+    }
+  }
+
+  const filtered = methods.filter((method): method is string =>
+    (SUPPORTED_PAYMENT_METHODS as readonly string[]).includes(method)
+  );
+
+  if (filtered.length === 0) {
+    return [...DEFAULT_ALLOWED_PAYMENT_METHODS];
+  }
+
+  return [...SUPPORTED_PAYMENT_METHODS].filter((method) => filtered.includes(method));
+}
 
 function formatSpanishIbanInput(value: string): string {
   const sanitized = value.toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -135,6 +163,7 @@ export default function ProfilePage() {
   const [savingEditYear, setSavingEditYear] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [expandedPaymentMethod, setExpandedPaymentMethod] = useState<'transferencia' | 'bizum' | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [showPasswordForm, setShowPasswordForm] = useState(false);
@@ -146,7 +175,7 @@ export default function ProfilePage() {
     feedbackEnabled: true,
     defaultWatermarkIntervalMins: 5,
     defaultMaxWatchTimeMultiplier: 2.0,
-    allowedPaymentMethods: ['stripe', 'cash', 'transferencia', 'bizum'],
+    allowedPaymentMethods: [...DEFAULT_ALLOWED_PAYMENT_METHODS],
     transferenciaIban: '',
     bizumPhone: '',
     allowMultipleTeachers: false,
@@ -187,26 +216,7 @@ export default function ProfilePage() {
         const academyData = academyResult.data[0];
         setAcademy(academyData);
         
-        // Parse allowed payment methods from JSON string
-        let allowedMethods = [...DEFAULT_ALLOWED_PAYMENT_METHODS];
-        if (academyData.allowedPaymentMethods) {
-          try {
-            allowedMethods = JSON.parse(academyData.allowedPaymentMethods);
-          } catch (e) {
-            console.error('Failed to parse allowedPaymentMethods:', e);
-          }
-        }
-        
-        // Auto-add stripe if connected
-        if (stripeResult.success && stripeResult.data?.charges_enabled && !allowedMethods.includes('stripe')) {
-          allowedMethods.push('stripe');
-          // Persist this to database
-          await apiClient(`/academies/${academyData.id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ allowedPaymentMethods: JSON.stringify(allowedMethods) })
-          });
-        }
+        const allowedMethods = normalizeAllowedPaymentMethods(academyData.allowedPaymentMethods);
         
         setFormData({
           name: academyData.name || '',
@@ -657,12 +667,8 @@ export default function ProfilePage() {
         alert('Debes conectar una cuenta de Stripe antes de habilitar pagos con Stripe');
         return;
       }
-      if (method === 'transferencia' && !isValidSpanishIban(formData.transferenciaIban)) {
-        alert('Introduce un IBAN español válido antes de habilitar Transferencia');
-        return;
-      }
-      if (method === 'bizum' && !isValidSpanishBizumPhone(formData.bizumPhone)) {
-        alert('Introduce un teléfono español válido antes de habilitar Bizum');
+      if (method === 'transferencia' || method === 'bizum') {
+        setExpandedPaymentMethod(method);
         return;
       }
     }
@@ -677,6 +683,52 @@ export default function ProfilePage() {
       : [...currentMethods, method];
 
     await handleSettingChange('allowedPaymentMethods', JSON.stringify(updated));
+
+    if (hasMethod && expandedPaymentMethod === method) {
+      setExpandedPaymentMethod(null);
+    }
+  };
+
+  const saveTransferenciaSetup = async () => {
+    const normalizedIban = formatSpanishIbanInput(formData.transferenciaIban);
+
+    if (!isValidSpanishIban(normalizedIban)) {
+      alert('Introduce un IBAN español válido antes de guardar Transferencia');
+      return;
+    }
+
+    setFormData((current) => ({ ...current, transferenciaIban: normalizedIban }));
+    await handleSettingChange('transferenciaIban', normalizedIban);
+
+    if (!formData.allowedPaymentMethods.includes('transferencia')) {
+      await handleSettingChange(
+        'allowedPaymentMethods',
+        JSON.stringify([...formData.allowedPaymentMethods, 'transferencia'])
+      );
+    }
+
+    setExpandedPaymentMethod(null);
+  };
+
+  const saveBizumSetup = async () => {
+    const normalizedPhone = formatSpanishBizumPhone(formData.bizumPhone);
+
+    if (!isValidSpanishBizumPhone(normalizedPhone)) {
+      alert('Introduce un teléfono español válido antes de guardar Bizum');
+      return;
+    }
+
+    setFormData((current) => ({ ...current, bizumPhone: normalizedPhone }));
+    await handleSettingChange('bizumPhone', normalizedPhone);
+
+    if (!formData.allowedPaymentMethods.includes('bizum')) {
+      await handleSettingChange(
+        'allowedPaymentMethods',
+        JSON.stringify([...formData.allowedPaymentMethods, 'bizum'])
+      );
+    }
+
+    setExpandedPaymentMethod(null);
   };
 
   if (loading) {
@@ -726,15 +778,7 @@ export default function ProfilePage() {
                         feedbackEnabled: academy.feedbackEnabled !== 0,
                         defaultWatermarkIntervalMins: academy.defaultWatermarkIntervalMins || 5,
                         defaultMaxWatchTimeMultiplier: academy.defaultMaxWatchTimeMultiplier || 2.0,
-                        allowedPaymentMethods: academy.allowedPaymentMethods 
-                          ? (() => {
-                              try {
-                                return JSON.parse(academy.allowedPaymentMethods);
-                              } catch {
-                                return ['stripe', 'cash', 'transferencia', 'bizum'];
-                              }
-                            })()
-                          : ['stripe', 'cash', 'transferencia', 'bizum'],
+                        allowedPaymentMethods: normalizeAllowedPaymentMethods(academy.allowedPaymentMethods),
                         transferenciaIban: academy.transferenciaIban || '',
                         bizumPhone: academy.bizumPhone || '',
                         allowMultipleTeachers: academy.allowMultipleTeachers === 1,
@@ -1170,22 +1214,8 @@ export default function ProfilePage() {
                 ? 'border-violet-500 bg-violet-50 shadow-md'
                 : 'border-gray-200 bg-white'
             } ${(!stripeStatus?.charges_enabled && !formData.allowedPaymentMethods.includes('stripe')) ? 'opacity-60' : ''}`}>
-              <div className="flex items-start gap-3">
-                <button
-                  type="button"
-                  onClick={() => toggleAllowedPaymentMethod('stripe')}
-                  disabled={!stripeStatus?.charges_enabled && !formData.allowedPaymentMethods.includes('stripe')}
-                  className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                    formData.allowedPaymentMethods.includes('stripe') ? 'border-violet-500 bg-violet-500' : 'border-gray-300'
-                  }`}
-                >
-                  {formData.allowedPaymentMethods.includes('stripe') && (
-                    <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </button>
-                <div className="flex-1">
+              <div className="flex items-start justify-between gap-3">
+                <div>
                   <div className={`text-sm font-semibold mb-1 ${formData.allowedPaymentMethods.includes('stripe') ? 'text-violet-900' : 'text-gray-900'}`}>
                     Stripe
                   </div>
@@ -1196,6 +1226,18 @@ export default function ProfilePage() {
                     <p className="text-xs text-amber-600 mt-2 font-medium">Conecta tu cuenta de Stripe para activarlo</p>
                   )}
                 </div>
+                <button
+                  type="button"
+                  onClick={() => toggleAllowedPaymentMethod('stripe')}
+                  disabled={!stripeStatus?.charges_enabled && !formData.allowedPaymentMethods.includes('stripe')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                    formData.allowedPaymentMethods.includes('stripe')
+                      ? 'bg-violet-600 text-white hover:bg-violet-700'
+                      : 'bg-white text-violet-700 border border-violet-200 hover:bg-violet-50'
+                  }`}
+                >
+                  {formData.allowedPaymentMethods.includes('stripe') ? 'Desactivar' : 'Activar'}
+                </button>
               </div>
             </div>
 
@@ -1204,21 +1246,8 @@ export default function ProfilePage() {
                 ? 'border-green-500 bg-green-50 shadow-md'
                 : 'border-gray-200 bg-white'
             }`}>
-              <div className="flex items-start gap-3">
-                <button
-                  type="button"
-                  onClick={() => toggleAllowedPaymentMethod('cash')}
-                  className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                    formData.allowedPaymentMethods.includes('cash') ? 'border-green-500 bg-green-500' : 'border-gray-300'
-                  }`}
-                >
-                  {formData.allowedPaymentMethods.includes('cash') && (
-                    <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </button>
-                <div className="flex-1">
+              <div className="flex items-start justify-between gap-3">
+                <div>
                   <div className={`text-sm font-semibold mb-1 ${formData.allowedPaymentMethods.includes('cash') ? 'text-green-900' : 'text-gray-900'}`}>
                     Efectivo
                   </div>
@@ -1226,6 +1255,17 @@ export default function ProfilePage() {
                     Pago en persona en la academia
                   </p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => toggleAllowedPaymentMethod('cash')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                    formData.allowedPaymentMethods.includes('cash')
+                      ? 'bg-green-600 text-white hover:bg-green-700'
+                      : 'bg-white text-green-700 border border-green-200 hover:bg-green-50'
+                  }`}
+                >
+                  {formData.allowedPaymentMethods.includes('cash') ? 'Desactivar' : 'Activar'}
+                </button>
               </div>
             </div>
 
@@ -1234,35 +1274,67 @@ export default function ProfilePage() {
                 ? 'border-gray-500 bg-gray-50 shadow-md'
                 : 'border-gray-200 bg-white'
             }`}>
-              <div className="flex items-start gap-3">
-                <button
-                  type="button"
-                  onClick={() => toggleAllowedPaymentMethod('transferencia')}
-                  className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                    formData.allowedPaymentMethods.includes('transferencia') ? 'border-gray-600 bg-gray-600' : 'border-gray-300'
-                  }`}
-                >
-                  {formData.allowedPaymentMethods.includes('transferencia') && (
-                    <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </button>
-                <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
                   <div className="text-sm font-semibold mb-1 text-gray-900">Transferencia</div>
-                  <p className="text-xs mb-3 text-gray-600">IBAN español que verá el alumno al pagar</p>
+                  <p className="text-xs text-gray-600">Transferencia a la academia</p>
+                  {formData.allowedPaymentMethods.includes('transferencia') && formData.transferenciaIban && (
+                    <p className="text-xs text-gray-500 mt-2 truncate">{formData.transferenciaIban}</p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedPaymentMethod(expandedPaymentMethod === 'transferencia' ? null : 'transferencia')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                      formData.allowedPaymentMethods.includes('transferencia')
+                        ? 'bg-gray-700 text-white hover:bg-gray-800'
+                        : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {formData.allowedPaymentMethods.includes('transferencia') ? 'Editar datos' : 'Configurar'}
+                  </button>
+                  {formData.allowedPaymentMethods.includes('transferencia') && (
+                    <button
+                      type="button"
+                      onClick={() => toggleAllowedPaymentMethod('transferencia')}
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 transition-colors"
+                    >
+                      Desactivar
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {expandedPaymentMethod === 'transferencia' && (
+                <div className="mt-4 pt-4 border-t border-gray-200 space-y-3">
+                  <label className="block text-xs font-medium text-gray-700">Transferencia a la academia</label>
                   <input
                     type="text"
                     value={formData.transferenciaIban}
                     onChange={(e) => setFormData({ ...formData, transferenciaIban: formatSpanishIbanInput(e.target.value) })}
-                    onBlur={() => handleSettingChange('transferenciaIban', formatSpanishIbanInput(formData.transferenciaIban))}
                     placeholder="ES12 1234 1234 12 1234567890"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-500 focus:border-gray-500 bg-white"
                     maxLength={29}
                   />
-                  <p className="text-[11px] text-gray-500 mt-2">Formato español fijo: ES + 22 dígitos</p>
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedPaymentMethod(null)}
+                      className="px-3 py-2 rounded-lg text-xs font-semibold border border-gray-300 text-gray-700 hover:bg-gray-50"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={saveTransferenciaSetup}
+                      className="px-3 py-2 rounded-lg text-xs font-semibold bg-gray-800 text-white hover:bg-gray-900"
+                    >
+                      {formData.allowedPaymentMethods.includes('transferencia') ? 'Guardar datos' : 'Guardar y activar'}
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             <div className={`p-4 border-2 rounded-xl transition-all duration-200 ${
@@ -1270,39 +1342,71 @@ export default function ProfilePage() {
                 ? 'border-blue-500 bg-blue-50 shadow-md'
                 : 'border-gray-200 bg-white'
             }`}>
-              <div className="flex items-start gap-3">
-                <button
-                  type="button"
-                  onClick={() => toggleAllowedPaymentMethod('bizum')}
-                  className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                    formData.allowedPaymentMethods.includes('bizum') ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
-                  }`}
-                >
-                  {formData.allowedPaymentMethods.includes('bizum') && (
-                    <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </button>
-                <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
                   <div className={`text-sm font-semibold mb-1 ${formData.allowedPaymentMethods.includes('bizum') ? 'text-blue-900' : 'text-gray-900'}`}>
                     Bizum
                   </div>
-                  <p className={`text-xs mb-3 ${formData.allowedPaymentMethods.includes('bizum') ? 'text-blue-700' : 'text-gray-500'}`}>
-                    Número móvil español visible para el alumno
+                  <p className={`text-xs ${formData.allowedPaymentMethods.includes('bizum') ? 'text-blue-700' : 'text-gray-500'}`}>
+                    Telefono asociado al bizum de la academia
                   </p>
+                  {formData.allowedPaymentMethods.includes('bizum') && formData.bizumPhone && (
+                    <p className="text-xs text-blue-600 mt-2 truncate">{formData.bizumPhone}</p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedPaymentMethod(expandedPaymentMethod === 'bizum' ? null : 'bizum')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                      formData.allowedPaymentMethods.includes('bizum')
+                        ? 'bg-blue-600 text-white hover:bg-blue-700'
+                        : 'bg-white text-blue-700 border border-blue-200 hover:bg-blue-50'
+                    }`}
+                  >
+                    {formData.allowedPaymentMethods.includes('bizum') ? 'Editar datos' : 'Configurar'}
+                  </button>
+                  {formData.allowedPaymentMethods.includes('bizum') && (
+                    <button
+                      type="button"
+                      onClick={() => toggleAllowedPaymentMethod('bizum')}
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white text-blue-700 border border-blue-200 hover:bg-blue-50 transition-colors"
+                    >
+                      Desactivar
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {expandedPaymentMethod === 'bizum' && (
+                <div className="mt-4 pt-4 border-t border-blue-200 space-y-3">
+                  <label className="block text-xs font-medium text-blue-900">Telefono asociado al bizum de la academia</label>
                   <input
                     type="tel"
                     value={formData.bizumPhone}
                     onChange={(e) => setFormData({ ...formData, bizumPhone: formatSpanishBizumPhone(e.target.value) })}
-                    onBlur={() => handleSettingChange('bizumPhone', formatSpanishBizumPhone(formData.bizumPhone))}
                     placeholder="+34 600 123 456"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                    className="w-full px-3 py-2 border border-blue-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                     maxLength={14}
                   />
-                  <p className="text-[11px] text-gray-500 mt-2">Se mostrará tal cual en la página de pago del alumno</p>
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedPaymentMethod(null)}
+                      className="px-3 py-2 rounded-lg text-xs font-semibold border border-gray-300 text-gray-700 hover:bg-gray-50"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={saveBizumSetup}
+                      className="px-3 py-2 rounded-lg text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700"
+                    >
+                      {formData.allowedPaymentMethods.includes('bizum') ? 'Guardar datos' : 'Guardar y activar'}
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

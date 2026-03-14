@@ -133,14 +133,15 @@ auth.post('/register', registerRateLimit, validateBody(registerSchema), async (c
       const newAcademyId = crypto.randomUUID();
       const now = new Date().toISOString();
       await c.env.DB
-        .prepare('INSERT INTO Academy (id, name, description, ownerId, paymentStatus, createdAt) VALUES (?, ?, ?, ?, ?, ?)')
+        .prepare('INSERT INTO Academy (id, name, description, ownerId, paymentStatus, createdAt, allowedPaymentMethods) VALUES (?, ?, ?, ?, ?, ?, ?)')
         .bind(
           newAcademyId,
           academyName,
           `Welcome to ${academyName}`,
           userId,
           'NOT PAID', // Demo mode by default
-          now
+          now,
+          '["cash"]'
         )
         .run();
 
