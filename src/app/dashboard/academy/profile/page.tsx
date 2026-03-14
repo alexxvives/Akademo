@@ -227,7 +227,7 @@ export default function ProfilePage() {
           defaultWatermarkIntervalMins: academyData.defaultWatermarkIntervalMins || 5,
           defaultMaxWatchTimeMultiplier: academyData.defaultMaxWatchTimeMultiplier || 2.0,
           allowedPaymentMethods: allowedMethods,
-          transferenciaIban: academyData.transferenciaIban || '',
+          transferenciaIban: academyData.transferenciaIban || 'ES',
           bizumPhone: academyData.bizumPhone || '',
           allowMultipleTeachers: academyData.allowMultipleTeachers === 1,
           requireGrading: academyData.requireGrading !== 0,
@@ -664,7 +664,7 @@ export default function ProfilePage() {
         setExpandedPaymentMethod(null);
         setFormData((current) => ({
           ...current,
-          transferenciaIban: academy?.transferenciaIban || '',
+          transferenciaIban: academy?.transferenciaIban || 'ES',
           bizumPhone: academy?.bizumPhone || '',
         }));
         return;
@@ -790,7 +790,7 @@ export default function ProfilePage() {
                         defaultWatermarkIntervalMins: academy.defaultWatermarkIntervalMins || 5,
                         defaultMaxWatchTimeMultiplier: academy.defaultMaxWatchTimeMultiplier || 2.0,
                         allowedPaymentMethods: normalizeAllowedPaymentMethods(academy.allowedPaymentMethods),
-                        transferenciaIban: academy.transferenciaIban || '',
+                        transferenciaIban: academy.transferenciaIban || 'ES',
                         bizumPhone: academy.bizumPhone || '',
                         allowMultipleTeachers: academy.allowMultipleTeachers === 1,
                         requireGrading: academy.requireGrading !== 0,
@@ -1219,7 +1219,7 @@ export default function ProfilePage() {
         </div>
 
         <div className="px-4 sm:px-8 py-4 sm:py-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 items-start">
             <div
               role="button"
               tabIndex={0}
@@ -1316,7 +1316,7 @@ export default function ProfilePage() {
                     if (event.key === 'Escape') {
                       event.preventDefault();
                       setExpandedPaymentMethod(null);
-                      setFormData((current) => ({ ...current, transferenciaIban: academy?.transferenciaIban || '' }));
+                      setFormData((current) => ({ ...current, transferenciaIban: academy?.transferenciaIban || 'ES' }));
                     }
                   }}
                   placeholder="ES12 1234 1234 12 1234567890"
@@ -1373,7 +1373,7 @@ export default function ProfilePage() {
                   }}
                   placeholder="+34 600 123 456"
                   className="mt-2 w-full rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                  maxLength={14}
+                  maxLength={15}
                   autoFocus
                 />
               )}
