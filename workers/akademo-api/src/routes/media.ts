@@ -125,12 +125,14 @@ media.get('/', async (c) => {
         db.prepare(`SELECT COUNT(*) as total FROM (${streamRecordingsQuery})`).bind(...recParams).first<{ total: number }>(),
       ]);
 
-      // Union with pagination
+      // Wrap UNION ALL in subquery so ORDER BY works in D1 (D1/SQLite doesn't allow
+      // ORDER BY on bare column names from a compound SELECT without an outer query)
       const videosQuery = `
-        ${lessonVideosQuery}
-        UNION ALL
-        ${streamRecordingsQuery}
-        ORDER BY createdAt DESC
+        SELECT * FROM (
+          ${lessonVideosQuery}
+          UNION ALL
+          ${streamRecordingsQuery}
+        ) ORDER BY createdAt DESC
         LIMIT ? OFFSET ?
       `;
       const videosResult = await db.prepare(videosQuery).bind(...lessonVideoParams, ...recParams, limit, offset).all();
