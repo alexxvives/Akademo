@@ -10,6 +10,7 @@ import { BotMessageSquareIcon } from '@/components/ui/BotMessageSquareIcon';
 import { HandCoinsIcon } from '@/components/ui/HandCoinsIcon';
 import { PenToolIcon } from '@/components/ui/PenToolIcon';
 import { CalendarDaysIcon } from '@/components/ui/CalendarDaysIcon';
+import { FolderOpenIcon } from '@/components/ui/FolderOpenIcon';
 import type { LinkIconHandle } from '@/components/ui/LinkIcon';
 import type { LogoutIconHandle } from '@/components/ui/LogoutIcon';
 import { usePeriod } from '@/contexts/PeriodContext';
@@ -86,6 +87,7 @@ export function MobileSidebar({
       handCoins: <HandCoinsIcon size={20} />,
       star: <PenToolIcon size={20} />,
       calendar: <CalendarDaysIcon size={20} />,
+      folderOpen: <FolderOpenIcon size={20} />,
     };
     if (item.iconType && iconMap[item.iconType]) return iconMap[item.iconType];
     return item.icon ?? null;

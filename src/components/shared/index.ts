@@ -11,6 +11,8 @@ export { FeedbackPage } from './FeedbackPage';
 
 export { StreamsPage } from './StreamsPage';
 
+export { MediaLibraryPage } from './MediaLibraryPage';
+
 export { GradesPage } from './GradesPage';
 
 export { ReportsPage } from './ReportsPage';

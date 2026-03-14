@@ -185,7 +185,7 @@ export default function TeacherLivePage() {
 
       {/* Main content: split when whiteboard is open */}
       <div className="flex-1 flex min-h-0">
-        {/* Daily.co iframe or GTM overlay */}
+        {/* Daily.co iframe or Zoom overlay */}
         <div className="flex-1 relative">
           {isZoom && zoomJoinUrl ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 bg-gray-900">
@@ -196,25 +196,18 @@ export default function TeacherLivePage() {
                   </svg>
                 </div>
                 <h2 className="text-white text-lg font-semibold">{stream?.title || 'Clase en vivo'}</h2>
-                <p className="text-gray-400 text-sm">La reunión se abre en la app de GoTo Meeting</p>
+                <p className="text-gray-400 text-sm">La reunión se abre en Zoom</p>
               </div>
               <a
                 href={zoomJoinUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={(e) => {
-                  if (zoomMeetingId) {
-                    e.preventDefault();
-                    window.location.href = `gotomeeting://join/${zoomMeetingId}`;
-                    setTimeout(() => window.open(zoomJoinUrl!, '_blank', 'noopener,noreferrer'), 2500);
-                  }
-                }}
-                className="flex items-center gap-2 px-6 py-3 bg-[#b1e787] text-gray-900 rounded-xl hover:bg-[#9fd470] font-semibold transition-colors text-sm"
+                className="flex items-center gap-2 px-6 py-3 bg-[#2D8CFF] text-white rounded-xl hover:bg-[#2681F2] font-semibold transition-colors text-sm"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                 </svg>
-                Abrir GoTo Meeting
+                Abrir Zoom
               </a>
             </div>
           ) : !embedUrl ? (

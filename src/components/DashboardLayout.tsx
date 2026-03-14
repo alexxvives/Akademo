@@ -26,7 +26,7 @@ interface MenuItem {
   label: string;
   href: string;
   icon?: JSX.Element;
-  iconType?: 'chart' | 'book' | 'userPlus' | 'message' | 'clap' | 'fileText' | 'clipboard' | 'activity' | 'users' | 'botMessage' | 'handCoins' | 'star' | 'calendar' | 'home';
+  iconType?: 'chart' | 'book' | 'userPlus' | 'message' | 'clap' | 'fileText' | 'clipboard' | 'activity' | 'users' | 'botMessage' | 'handCoins' | 'star' | 'calendar' | 'home' | 'folderOpen';
   badge?: number;
   badgeColor?: string;
   matchPaths?: string[];
@@ -577,6 +577,7 @@ export default function DashboardLayout({
           { label: 'Asignaturas', href: '/dashboard/academy/subjects', matchPaths: ['/dashboard/academy/subject'], iconType: 'book' as const, group: 'Contenido' },
           ...(academy?.feedbackEnabled !== 0 ? [{ label: 'Valoraciones', href: '/dashboard/academy/feedback', iconType: 'message' as const, badge: unreadValoracionesCount > 0 ? unreadValoracionesCount : undefined, badgeColor: 'bg-[#b0e788]', group: 'Contenido' }] : []),
           { label: 'Streams', href: '/dashboard/academy/streams', iconType: 'clap' as const, group: 'Contenido' },
+          { label: 'Mediateca', href: '/dashboard/academy/media', iconType: 'folderOpen' as const, group: 'Contenido' },
           { label: 'Ejercicios', href: '/dashboard/academy/assignments', iconType: 'fileText' as const, badge: academy?.requireGrading !== 0 && newSubmissionsCount > 0 ? newSubmissionsCount : undefined, badgeColor: 'bg-[#b0e788]', group: 'Contenido' },
           ...(academy?.requireGrading !== 0 ? [{ label: 'Calificaciones', href: '/dashboard/academy/grades', iconType: 'star' as const, group: 'Contenido' }] : []),
           { label: 'Profesores', href: '/dashboard/academy/teachers', iconType: 'botMessage' as const, group: 'Comunidad' },

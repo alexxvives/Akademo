@@ -37,10 +37,6 @@ export interface Bindings {
   ZOOM_CLIENT_SECRET: string;
   ZOOM_WEBHOOK_SECRET: string;
 
-  // GoToMeeting
-  GTM_CLIENT_ID: string;
-  GTM_CLIENT_SECRET: string;
-
   // Daily.co (test/prototype)
   DAILY_API_KEY?: string;
   DAILY_DOMAIN?: string;

@@ -22,6 +22,7 @@ import { HandCoinsIcon } from '@/components/ui/HandCoinsIcon';
 import { PenToolIcon, type PenToolIconHandle } from '@/components/ui/PenToolIcon';
 import { HomeIcon, type HomeIconHandle } from '@/components/ui/HomeIcon';
 import { CalendarDaysIcon } from '@/components/ui/CalendarDaysIcon';
+import { FolderOpenIcon, type FolderOpenIconHandle } from '@/components/ui/FolderOpenIcon';
 import { useAcademyLogo } from '@/hooks/useAcademyLogo';
 import { usePeriod } from '@/contexts/PeriodContext';
 
@@ -29,7 +30,7 @@ interface MenuItem {
   label: string;
   href: string;
   icon?: JSX.Element;
-  iconType?: 'chart' | 'book' | 'userPlus' | 'message' | 'clap' | 'fileText' | 'clipboard' | 'activity' | 'users' | 'botMessage' | 'handCoins' | 'star' | 'calendar' | 'home';
+  iconType?: 'chart' | 'book' | 'userPlus' | 'message' | 'clap' | 'fileText' | 'clipboard' | 'activity' | 'users' | 'botMessage' | 'handCoins' | 'star' | 'calendar' | 'home' | 'folderOpen';
   badge?: number;
   badgeColor?: string;
   matchPaths?: string[];
@@ -123,6 +124,8 @@ export function Sidebar({
       return <CalendarDaysIcon ref={iconRef} size={20} />;
     } else if (iconType === 'home') {
       return <HomeIcon ref={iconRef as RefObject<HomeIconHandle>} size={20} />;
+    } else if (iconType === 'folderOpen') {
+      return <FolderOpenIcon ref={iconRef as RefObject<FolderOpenIconHandle>} size={20} />;
     } else if (item.icon) {
       return item.icon;
     }

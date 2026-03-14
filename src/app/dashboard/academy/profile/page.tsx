@@ -186,7 +186,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const connected = params.get('zoom') === 'connected' || params.get('gtm') === 'connected';
+    const connected = params.get('zoom') === 'connected';
     if (!connected) return;
     confetti({ particleCount: 180, spread: 100, origin: { y: 0.55 } });
     setTimeout(() => confetti({ particleCount: 80, spread: 120, origin: { x: 0.1, y: 0.6 } }), 200);
@@ -194,7 +194,6 @@ export default function ProfilePage() {
     // Clean URL so confetti doesn't re-fire on refresh
     const cleanUrl = new URL(window.location.href);
     cleanUrl.searchParams.delete('zoom');
-    cleanUrl.searchParams.delete('gtm');
     window.history.replaceState({}, '', cleanUrl.toString());
   }, []);
 
@@ -314,23 +313,6 @@ export default function ProfilePage() {
     const redirectUri = encodeURIComponent(`${window.location.origin}/api/zoom/oauth/callback`);
     const state = academy?.id || '';
     window.location.href = `https://zoom.us/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&state=${state}`;
-  };
-
-  const handleConnectGTM = async () => {
-    try {
-      const response = await apiClient('/zoom-accounts/gtm-connect-url', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ academyId: academy?.id || '' })
-      });
-      const result = await response.json();
-      if (result.success && result.data?.url) {
-        window.location.href = result.data.url;
-      }
-    } catch (error) {
-      console.error('Error connecting GoToMeeting:', error);
-      alert('Error al conectar GoToMeeting');
-    }
   };
 
   const handleDisconnectZoom = async (accountId: string) => {
@@ -1403,7 +1385,7 @@ export default function ProfilePage() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <h2 className="text-lg sm:text-xl font-semibold">Cuentas de Streaming</h2>
-              <p className="text-gray-300 mt-1">Gestiona tus cuentas de Zoom o GoToMeeting para clases en vivo</p>
+              <p className="text-gray-300 mt-1">Gestiona tus cuentas de Zoom para clases en vivo</p>
             </div>
             <div ref={streamingDropdownRef} className="relative">
               <button
@@ -1429,15 +1411,6 @@ export default function ProfilePage() {
                     <Image src="/images/zoom_logo.png" alt="Zoom" width={20} height={20} unoptimized className="w-5 h-5 object-contain" />
                     Zoom
                   </button>
-                  <div className="border-t border-gray-100" />
-                  <button
-                    type="button"
-                    className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition"
-                    onClick={() => { handleConnectGTM(); setStreamingDropdownOpen(false); }}
-                  >
-                    <Image src="/images/GTM_logo.png" alt="GoToMeeting" width={20} height={20} unoptimized className="w-5 h-5 object-contain" />
-                    GoToMeeting
-                  </button>
                 </div>
               )}
             </div>
@@ -1453,7 +1426,7 @@ export default function ProfilePage() {
                 </svg>
               </div>
               <p className="text-gray-900 font-medium">No hay cuentas conectadas</p>
-              <p className="text-sm text-gray-500 mt-1">Conecta una cuenta de Zoom o GoToMeeting para crear clases en vivo</p>
+              <p className="text-sm text-gray-500 mt-1">Conecta una cuenta de Zoom para crear clases en vivo</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1473,8 +1446,8 @@ export default function ProfilePage() {
                   <div className="flex items-start gap-4">
                     <div className="w-20 h-12 bg-white rounded-xl flex items-center justify-center shadow-sm flex-shrink-0 overflow-hidden p-2">
                       <Image
-                        src={account.provider === 'gotomeeting' ? '/images/GTM_logo.png' : '/images/zoom_logo.png'}
-                        alt={account.provider === 'gotomeeting' ? 'GoToMeeting' : 'Zoom'}
+                        src="/images/zoom_logo.png"
+                        alt="Zoom"
                         width={80}
                         height={48}
                         unoptimized

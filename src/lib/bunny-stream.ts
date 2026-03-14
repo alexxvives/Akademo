@@ -132,12 +132,6 @@ export async function deleteBunnyVideo(videoGuid: string): Promise<void> {
   }
 }
 
-// Get embed URL for iframe player
-export function getBunnyEmbedUrl(videoGuid: string): string {
-  const config = getConfig();
-  return `https://iframe.mediadelivery.net/embed/${config.BUNNY_STREAM_LIBRARY_ID}/${videoGuid}`;
-}
-
 // Generate signed token for Bunny Stream URL
 // Based on Bunny CDN documentation: https://docs.bunny.net/docs/cdn-token-authentication
 // Format: Base64Encode(SHA256_RAW(token_key + signed_url + expiration + optional_params))
