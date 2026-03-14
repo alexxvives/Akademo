@@ -229,7 +229,9 @@ async function syncDerivedPendingPayments(db: D1Database, scope: BillingSyncScop
         ce.classId,
         ce.enrolledAt,
         ce.paymentFrequency,
-        ce.paymentMethod,
+        (SELECT p3.paymentMethod FROM Payment p3
+         WHERE p3.payerId = ce.userId AND p3.classId = ce.classId AND p3.type = 'STUDENT_TO_ACADEMY'
+         ORDER BY p3.createdAt DESC LIMIT 1) as paymentMethod,
         c.monthlyPrice,
         c.oneTimePrice,
         c.startDate as classStartDate,
@@ -271,7 +273,9 @@ export async function isPaymentOverdue(db: D1Database, userId: string, classId: 
         ce.classId,
         ce.enrolledAt,
         ce.paymentFrequency,
-        ce.paymentMethod,
+        (SELECT p3.paymentMethod FROM Payment p3
+         WHERE p3.payerId = ce.userId AND p3.classId = ce.classId AND p3.type = 'STUDENT_TO_ACADEMY'
+         ORDER BY p3.createdAt DESC LIMIT 1) as paymentMethod,
         c.monthlyPrice,
         c.oneTimePrice,
         c.startDate as classStartDate,

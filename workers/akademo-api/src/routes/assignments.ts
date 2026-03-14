@@ -172,8 +172,9 @@ assignments.get('/', async (c) => {
         ORDER BY a.dueDate DESC, a.createdAt DESC
       `;
       bindings = [classId, session.id];
-    } else if (session.role === 'ACADEMY') {
-      // Academy owners see all assignments for classes in their academy
+    } else if (session.role === 'ACADEMY' || session.role === 'ADMIN') {
+      // Academy owners see assignments for classes in their academy; ADMIN sees all
+      const ownerFilter = session.role === 'ADMIN' ? '' : 'AND ac.ownerId = ?';
       query = `
         SELECT 
           a.id, a.classId, a.teacherId, a.title, a.description, 
@@ -188,11 +189,11 @@ assignments.get('/', async (c) => {
         JOIN Academy ac ON c.academyId = ac.id
         LEFT JOIN AssignmentAttachment aa ON a.id = aa.assignmentId
         LEFT JOIN AssignmentSubmission s ON a.id = s.assignmentId
-        WHERE a.classId = ? AND ac.ownerId = ?
+        WHERE a.classId = ? ${ownerFilter}
         GROUP BY a.id
         ORDER BY a.dueDate DESC, a.createdAt DESC
       `;
-      bindings = [classId, session.id];
+      bindings = session.role === 'ADMIN' ? [classId] : [classId, session.id];
     } else if (session.role === 'STUDENT') {
       // Verify enrollment before listing assignments for a specific class
       const enrollment = await c.env.DB.prepare(
