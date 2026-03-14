@@ -440,18 +440,18 @@ export default function PaymentModal({
                   className={`w-full p-4 rounded-lg text-left transition-all ${
                     !paymentFrequency || !allowedPaymentMethods.includes('stripe')
                       ? 'bg-gray-50 border-2 border-gray-200 opacity-50 cursor-not-allowed'
-                      : 'bg-violet-50 border-2 border-violet-300 hover:border-violet-500 hover:shadow-md'
+                      : 'bg-gray-50 border-2 border-gray-300 hover:border-gray-400 hover:shadow-md'
                   }`}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="flex-shrink-0 w-10 h-10 bg-violet-100 rounded-lg flex items-center justify-center">
-                      <svg className="w-5 h-5 text-violet-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex-shrink-0 w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                       </svg>
                     </div>
                     <div className="flex-1">
-                      <h4 className="text-base font-semibold text-violet-950 mb-0.5">Tarjeta de Crédito/Débito</h4>
-                      <p className="text-sm text-violet-800">Pago seguro con Stripe</p>
+                      <h4 className="text-base font-semibold text-gray-900 mb-0.5">Tarjeta de Crédito/Débito</h4>
+                      <p className="text-sm text-gray-600">Pago seguro con Stripe</p>
                     </div>
                     <div className="flex-shrink-0">
                       {!allowedPaymentMethods.includes('stripe') ? (
@@ -512,18 +512,18 @@ export default function PaymentModal({
                   className={`w-full p-4 rounded-lg text-left transition-all ${
                     !paymentFrequency || !bizumAvailable
                       ? 'bg-gray-50 border-2 border-gray-200 opacity-50 cursor-not-allowed'
-                      : 'bg-blue-50 border-2 border-blue-300 hover:border-blue-500 hover:shadow-md'
+                      : 'bg-gray-50 border-2 border-gray-300 hover:border-gray-400 hover:shadow-md'
                   }`}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <svg className="w-5 h-5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex-shrink-0 w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2v-8a2 2 0 012-2h2m10 0V6a3 3 0 00-6 0v2m6 0H9" />
                       </svg>
                     </div>
                     <div className="flex-1">
-                      <h4 className="text-base font-semibold text-blue-950 mb-0.5">Bizum</h4>
-                      <p className="text-sm text-blue-800">Número: {bizumInfo || 'La academia aún no ha configurado su número'}</p>
+                      <h4 className="text-base font-semibold text-gray-900 mb-0.5">Bizum</h4>
+                      <p className="text-sm text-gray-600">Número: {bizumInfo || 'La academia aún no ha configurado su número'}</p>
                     </div>
                     <div className="flex-shrink-0">
                       {!bizumAvailable ? (
@@ -535,7 +535,7 @@ export default function PaymentModal({
                           Pendiente aprobación
                         </span>
                       ) : (
-                        <span className="inline-block text-xs font-medium text-blue-700 bg-blue-100 px-3 py-1 rounded-full">
+                        <span className="inline-block text-xs font-medium text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
                           Requiere aprobación manual
                         </span>
                       )}
@@ -550,18 +550,18 @@ export default function PaymentModal({
                   className={`w-full p-4 rounded-lg text-left transition-all ${
                     !paymentFrequency || !allowedPaymentMethods.includes('cash')
                       ? 'bg-gray-50 border-2 border-gray-200 opacity-50 cursor-not-allowed'
-                      : 'bg-green-50 border-2 border-green-400 hover:border-green-500 hover:shadow-md'
+                      : 'bg-gray-50 border-2 border-gray-300 hover:border-gray-400 hover:shadow-md'
                   }`}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                      <svg className="w-5 h-5 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex-shrink-0 w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                       </svg>
                     </div>
                     <div className="flex-1">
-                      <h4 className="text-base font-semibold text-green-950 mb-0.5">Efectivo</h4>
-                      <p className="text-sm text-green-800">Paga directamente en la academia</p>
+                      <h4 className="text-base font-semibold text-gray-900 mb-0.5">Efectivo</h4>
+                      <p className="text-sm text-gray-600">Paga directamente en la academia</p>
                     </div>
                     <div className="flex-shrink-0">
                       {!allowedPaymentMethods.includes('cash') ? (
