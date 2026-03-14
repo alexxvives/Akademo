@@ -1,5 +1,5 @@
-import Link from 'next/link';
 import { LegalNavbar } from '@/components/landing/LegalNavbar';
+import { Footer } from '@/components/landing/Footer';
 
 export const metadata = {
   title: 'Términos y Condiciones | AKADEMO',
@@ -155,10 +155,8 @@ export default function TerminosPage() {
 
         </div>
 
-        <div className="mt-12 pt-8 border-t border-gray-100">
-          <Link href="/" className="text-sm text-indigo-600 hover:underline">← Volver al inicio</Link>
-        </div>
-      </main>
+        </main>
+      <Footer t={{ footerTagline: 'Protegiendo el conocimiento que creas.', footerRights: '© 2026 AKADEMO. Todos los derechos reservados.' }} lang="es" />
     </div>
   );
 }

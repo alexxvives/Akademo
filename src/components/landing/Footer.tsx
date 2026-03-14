@@ -35,13 +35,6 @@ export function Footer({ t, lang }: FooterProps) {
           </div>
 
           <div>
-            <h4 className="font-semibold text-white mb-4">{lang === 'es' ? 'Compañía' : 'Company'}</h4>
-            <ul className="space-y-2">
-              <li><a href="/#hablemos" className="text-gray-400 hover:text-white text-sm transition-colors">{lang === 'es' ? 'Contacto' : 'Contact'}</a></li>
-            </ul>
-          </div>
-
-          <div>
             <h4 className="font-semibold text-white mb-4">Legal</h4>
             <ul className="space-y-2">
               <li><Link href="/privacidad" className="text-gray-400 hover:text-white text-sm transition-colors">{lang === 'es' ? 'Privacidad' : 'Privacy'}</Link></li>

@@ -12,17 +12,17 @@ const FAQ_ITEMS = {
     { q: '¿Cómo funciona la protección anti-compartir?', a: 'Cada estudiante solo puede tener una sesión activa. Si alguien inicia sesión desde otro dispositivo, la sesión anterior se cierra automáticamente.' },
     { q: '¿Qué pasa si un estudiante graba la pantalla?', a: 'Cada vídeo muestra una marca de agua dinámica con el nombre y email del estudiante, permitiendo identificar quién lo grabó.' },
     { q: '¿Hay límite de vídeos o estudiantes?', a: 'Los planes de pago ofrecen almacenamiento ilimitado.' },
-    { q: '¿Cómo funcionan las clases en directo?', a: 'Se integra con Zoom. Puedes programar y lanzar clases en directo desde el panel. Las sesiones se graban automáticamente.' },
+    { q: '¿Cómo funcionan las clases en directo?', a: 'Se integra con Zoom. Puedes programar y lanzar clases en directo desde el panel. Las sesiones se graban automáticamente y tienen una marca de agua con el nombre y email del estudiante.' },
     { q: '¿Puedo migrar desde otra plataforma?', a: 'Sí. Nuestro equipo te ayuda con la migración de contenido y estudiantes. Escríbenos para un plan personalizado.' },
-    { q: '¿Es seguro el pago?', a: 'Los pagos se procesan a través de Stripe, el procesador de pagos más seguro del mundo.' },
+    { q: '¿Se pueden procesar los pagos de los estudiantes?', a: 'Sí, ofrecemos una integración con Stripe para una gestión automática de los pagos o un seguimiento manual si se prefieren pagos en efectivo, bizum o transferencia bancaria.' },
   ],
   en: [
     { q: 'How does anti-sharing protection work?', a: 'Each student can only have one active session. If someone logs in from another device, the previous session is automatically closed.' },
     { q: 'What if a student records the screen?', a: 'Each video shows a dynamic watermark with the student\'s name and email, allowing you to identify who recorded it.' },
     { q: 'Is there a limit on videos or students?', a: 'It depends on the plan. The free plan includes basic features. Paid plans offer unlimited storage.' },
-    { q: 'How do live classes work?', a: 'It integrates with Zoom. You can schedule and launch live classes from the dashboard. Sessions are automatically recorded.' },
+    { q: 'How do live classes work?', a: 'It integrates with Zoom. You can schedule and launch live classes from the dashboard. Sessions are automatically recorded and include a watermark with the student\'s name and email.' },
     { q: 'Can I migrate from another platform?', a: 'Yes. Our team helps with content and student migration. Contact us for a personalized plan.' },
-    { q: 'Is payment secure?', a: 'Payments are processed through Stripe, the world\'s most secure payment processor.' },
+    { q: 'Can student payments be processed?', a: 'Yes, we offer a Stripe integration for automatic payment management or manual tracking if cash, Bizum or bank transfer is preferred.' },
   ],
 };
 
