@@ -288,7 +288,32 @@ function VideosGrid({ videos }: { videos: VideoItem[] }) {
 
 function VideoCard({ video }: { video: VideoItem }) {
   const [imgError, setImgError] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const thumbnailUrl = video.bunnyGuid ? getBunnyThumbnailUrl(video.bunnyGuid) : null;
+
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!video.bunnyGuid || downloading) return;
+    setDownloading(true);
+    try {
+      const url = getBunnyDownloadUrl(video.bunnyGuid);
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `${video.title || 'video'}.mp4`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch {
+      // Fallback: open in new tab if fetch fails (e.g. CORS)
+      window.open(getBunnyDownloadUrl(video.bunnyGuid), '_blank');
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   return (
     <div
@@ -337,6 +362,26 @@ function VideoCard({ video }: { video: VideoItem }) {
             Procesando...
           </span>
         )}
+        {/* Download button overlay */}
+        {video.bunnyGuid && video.bunnyStatus !== null && video.bunnyStatus >= 3 && (
+          <button
+            title={downloading ? 'Descargando...' : 'Descargar video'}
+            onClick={handleDownload}
+            disabled={downloading}
+            className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/50 hover:bg-black/70 text-white transition-colors opacity-0 group-hover:opacity-100"
+          >
+            {downloading ? (
+              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+            )}
+          </button>
+        )}
       </div>
       {/* Info */}
       <div className="p-3">
@@ -350,17 +395,7 @@ function VideoCard({ video }: { video: VideoItem }) {
               {video.lessonTitle && ` · ${video.lessonTitle}`}
             </p>
           </div>
-          {video.bunnyGuid && video.bunnyStatus !== null && video.bunnyStatus >= 3 && (
-            <button
-              title="Descargar video"
-              onClick={(e) => { e.stopPropagation(); window.open(getBunnyDownloadUrl(video.bunnyGuid), '_blank'); }}
-              className="shrink-0 p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-            </button>
-          )}
+
         </div>
         <div className="flex items-center justify-between mt-2 text-xs text-gray-400">
           <span>{formatDate(video.createdAt)}</span>
