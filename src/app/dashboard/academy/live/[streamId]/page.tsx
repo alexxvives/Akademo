@@ -1,8 +1,9 @@
 ﻿'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
+import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
-import { apiClient, API_BASE_URL } from '@/lib/api-client';
+import { apiClient } from '@/lib/api-client';
 
 const getLogoSrc = (url: string) => url.startsWith('http') ? url : `/api/storage/serve/${url}`;
 
@@ -24,9 +25,8 @@ export default function AcademyLivePage() {
   const [stream, setStream] = useState<StreamInfo | null>(null);
   const [embedUrl, setEmbedUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [ending, setEnding] = useState(false);
-  const [ended, setEnded] = useState(false);
-  const [recordingReady, setRecordingReady] = useState(false);
+  const [ended] = useState(false);
+  const [recordingReady] = useState(false);
   const [showWhiteboard, setShowWhiteboard] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const recordingStartedRef = useRef(false);
@@ -90,37 +90,9 @@ export default function AcademyLivePage() {
 
 
 
-  const handleEndSession = async () => {
-    if (!confirm('Â¿Finalizar la sesiÃ³n? La grabaciÃ³n se procesarÃ¡ automÃ¡ticamente.')) return;
-    setEnding(true);
-    try {
-      const res = await apiClient(`/live/${streamId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'ended' }),
-      });
-      const result = await res.json();
-      if (result.success) {
-        setEnded(true);
-        pollRef.current = setInterval(async () => {
-          const r = await apiClient(`/live/${streamId}/check-recording`);
-          const d = await r.json();
-          if (d.success && d.data?.recordingId) {
-            setRecordingReady(true);
-            if (pollRef.current) clearInterval(pollRef.current);
-          }
-        }, 8000);
-      }
-    } catch {
-      alert('Error al finalizar la sesiÃ³n');
-    } finally {
-      setEnding(false);
-    }
-  };
-
   useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current); }, []);
 
-  const backUrl = stream ? `/dashboard/academy/subject/${(stream as any).classSlug || stream.classId}` : '/dashboard/academy/streams';
+  const backUrl = stream ? `/dashboard/academy/subject/${stream.classSlug || stream.classId}` : '/dashboard/academy/streams';
 
   if (error) {
     return (
@@ -171,7 +143,7 @@ export default function AcademyLivePage() {
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="flex items-center gap-2 pointer-events-auto">
             {stream?.academyLogoUrl ? (
-              <img src={getLogoSrc(stream.academyLogoUrl)} alt={stream.academyName || 'Logo'} className="h-7 w-7 rounded object-cover" />
+              <Image src={getLogoSrc(stream.academyLogoUrl)} alt={stream.academyName || 'Logo'} width={28} height={28} className="h-7 w-7 rounded object-cover" unoptimized />
             ) : (
               <div className="h-7 w-7 rounded bg-white/10 flex items-center justify-center">
                 <span className="text-white text-xs font-bold">A</span>

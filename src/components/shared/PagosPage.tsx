@@ -415,31 +415,6 @@ export default function PagosPage({ role }: PagosPageProps) {
     }
   };
 
-  const handleReject = async (enrollmentId: string) => {
-    if (isAdmin) return;
-    if (!confirm('¿Denegar este pago? Se eliminará permanentemente.')) return;
-    
-    setProcessingIds(prev => new Set(prev).add(enrollmentId));
-    try {
-      const res = await apiClient(`/payments/${enrollmentId}`, { method: 'DELETE' });
-      const result = await res.json();
-      if (result.success) {
-        setPendingPayments(prev => prev.filter(p => p.enrollmentId !== enrollmentId));
-        window.dispatchEvent(new CustomEvent('pendingPaymentsChanged'));
-      } else {
-        alert(result.error || 'Error al denegar pago');
-      }
-    } catch (error: unknown) {
-      alert('Error: ' + (error instanceof Error ? error.message : 'Error desconocido'));
-    } finally {
-      setProcessingIds(prev => {
-        const next = new Set(prev);
-        next.delete(enrollmentId);
-        return next;
-      });
-    }
-  };
-
   const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat('es-ES', {
       style: 'currency',

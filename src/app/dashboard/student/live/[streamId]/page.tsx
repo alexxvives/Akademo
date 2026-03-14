@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
 import DailyWatermark from '@/components/DailyWatermark';
@@ -72,7 +73,7 @@ export default function StudentLivePage() {
     init();
   }, [streamId]);
 
-  const backUrl = stream ? `/dashboard/student/subject/${(stream as any).classSlug || stream.classId}` : '/dashboard/student/live';
+  const backUrl = stream ? `/dashboard/student/subject/${stream.classSlug || stream.classId}` : '/dashboard/student/live';
 
   if (error) {
     return (
@@ -109,7 +110,7 @@ export default function StudentLivePage() {
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="flex items-center gap-2 pointer-events-auto">
             {stream?.academyLogoUrl ? (
-              <img src={getLogoSrc(stream.academyLogoUrl)} alt={stream.academyName || 'Logo'} className="h-7 w-7 rounded object-cover" />
+              <Image src={getLogoSrc(stream.academyLogoUrl)} alt={stream.academyName || 'Logo'} width={28} height={28} className="h-7 w-7 rounded object-cover" unoptimized />
             ) : (
               <div className="h-7 w-7 rounded bg-white/10 flex items-center justify-center">
                 <span className="text-white text-xs font-bold">A</span>

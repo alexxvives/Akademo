@@ -78,6 +78,28 @@ interface StudentProgressAggregate {
   suspicionCount: number;
 }
 
+const DEMO_CLASS_NAME_TO_ID: Record<string, string> = {
+  'Programación Web': 'demo-c1',
+  'Matemáticas Avanzadas': 'demo-c2',
+  'Física Cuántica': 'demo-c4',
+  'Diseño Gráfico': 'demo-c3',
+};
+
+const DEMO_CLASSES: Class[] = [
+  { id: 'demo-c1', name: 'Programación Web' },
+  { id: 'demo-c2', name: 'Matemáticas Avanzadas' },
+  { id: 'demo-c3', name: 'Diseño Gráfico' },
+  { id: 'demo-c4', name: 'Física Cuántica' },
+];
+
+// Source of truth: must match generateDemoClasses() in demo-data.ts
+const DEMO_CLASS_TEACHER: Record<string, string> = {
+  'demo-c1': 'Carlos Rodríguez',
+  'demo-c2': 'María García',
+  'demo-c3': 'Ana Martínez',
+  'demo-c4': 'Luis López',
+};
+
 function computePaymentStatus(
   paymentFrequency: string | null | undefined,
   monthlyPrice: number | null | undefined,
@@ -143,28 +165,6 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
       setFilteredClasses(classes);
     }
   }, [selectedAcademy, classes, role]);
-
-  const DEMO_CLASS_NAME_TO_ID: Record<string, string> = {
-    'Programación Web': 'demo-c1',
-    'Matemáticas Avanzadas': 'demo-c2',
-    'Física Cuántica': 'demo-c4',
-    'Diseño Gráfico': 'demo-c3',
-  };
-
-  const DEMO_CLASSES = [
-    { id: 'demo-c1', name: 'Programación Web' },
-    { id: 'demo-c2', name: 'Matemáticas Avanzadas' },
-    { id: 'demo-c3', name: 'Diseño Gráfico' },
-    { id: 'demo-c4', name: 'Física Cuántica' },
-  ];
-
-  // Source of truth: must match generateDemoClasses() in demo-data.ts
-  const DEMO_CLASS_TEACHER: Record<string, string> = {
-    'demo-c1': 'Carlos Rodríguez',
-    'demo-c2': 'María García',
-    'demo-c3': 'Ana Martínez',
-    'demo-c4': 'Luis López',
-  };
 
   const buildDemoStudentProgress = useCallback((): StudentProgress[] => {
     const demoStudents = generateDemoStudents();

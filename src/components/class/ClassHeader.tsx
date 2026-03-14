@@ -34,7 +34,7 @@ export default function ClassHeader({
   backLink,
   creatingStream,
   showPendingRequests: _showPendingRequests,
-  paymentStatus = 'PAID',
+  paymentStatus: _paymentStatus = 'PAID',
   onCreateLesson,
   onCreateStream,
   onTogglePendingRequests: _onTogglePendingRequests,

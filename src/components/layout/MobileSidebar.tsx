@@ -54,7 +54,7 @@ export function MobileSidebar({
   onCopyAcademyLink,
   onLogout,
   user,
-  academyPaymentStatus,
+  academyPaymentStatus: _academyPaymentStatus,
 }: MobileSidebarProps) {
   const pathname = usePathname();
   const linkIconRef = useRef<LinkIconHandle | null>(null);

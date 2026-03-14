@@ -38,7 +38,7 @@ export function StudentPaymentDetailModal({
   studentEmail,
   className,
   payments,
-  paymentFrequency,
+  paymentFrequency: _paymentFrequency,
   enrollmentDate,
   availableClasses = [],
   currentClassId: externalClassId,

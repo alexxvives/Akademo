@@ -62,13 +62,13 @@ interface SidebarProps {
 export function Sidebar({
   role,
   menuItems,
-  academyId,
+  academyId: _academyId,
   linkCopied,
   onCopyJoinLink,
   onCopyAcademyLink,
   onLogout,
   user,
-  academyPaymentStatus,
+  academyPaymentStatus: _academyPaymentStatus,
 }: SidebarProps) {
   const pathname = usePathname();
   const iconRefs = useRef<Record<string, { current: IconHandle | null }>>({});

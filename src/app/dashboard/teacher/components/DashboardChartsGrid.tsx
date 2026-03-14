@@ -22,8 +22,8 @@ interface DashboardChartsGridProps {
 
 export function DashboardChartsGrid({ 
   filteredStudents, 
-  pendingEnrollments,
-  rejectedCount, 
+  pendingEnrollments: _pendingEnrollments,
+  rejectedCount: _rejectedCount, 
   streamStats,
   classWatchTime, 
   ratingsData,

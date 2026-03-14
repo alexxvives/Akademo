@@ -415,7 +415,7 @@ export default function DashboardLayout({
       }, 15000);
       return () => clearInterval(teacherInterval);
     }
-  }, [checkAuth, checkSession, role, loadNotifications, loadActiveStreams, loadAcademy, loadUnreadValoraciones, loadUngradedAssignments, loadNewGrades]);
+  }, [checkAuth, checkSession, role, loadNotifications, loadActiveStreams, loadAcademy, loadUnreadValoraciones, loadUngradedAssignments, loadNewGrades, loadStudentPendingPayments, loadUnpaidClasses]);
 
   const copyJoinLink = () => {
     if (!user) return;

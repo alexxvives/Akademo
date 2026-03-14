@@ -865,7 +865,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
       const result = await uploadToBunny({
         file: video.file,
         title: video.title || video.file.name,
-        collectionName: (classData as any)?.academyName || classData?.academy?.name, // Use academy name for collection
+        collectionName: classData?.academy?.name,
         onProgress: (progress) => {
           const fileProgress = progress.loaded;
           const totalUploaded = uploadedSize + fileProgress;

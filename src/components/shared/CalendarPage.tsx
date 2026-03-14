@@ -1009,7 +1009,6 @@ export function CalendarPage({ role }: CalendarPageProps) {
             const dayEvents = eventsByDate.get(key) || [];
             const isCurrentMonth = day.getMonth() === currentMonth;
             const isToday = isSameDay(day, today);
-            const isSelected = selectedDay && isSameDay(day, selectedDay);
             const isPast = day < today && !isToday;
             const isDragOver = dragOverDate === key;
 
@@ -1395,7 +1394,7 @@ export function CalendarPage({ role }: CalendarPageProps) {
   }
 
   // ─── Day detail panel (when clicking a day in month/week view) ───
-  function renderDayDetail() {
+  function _renderDayDetail() {
     if (!selectedDay) return null;
     const key = formatDateKey(selectedDay);
     const dayEvents = (eventsByDate.get(key) || []).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());

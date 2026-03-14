@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useState, useMemo, useRef } from 'react';
 import { BarChart, DonutChart } from '@/components/Charts';
 import { apiClient } from '@/lib/api-client';
 
@@ -120,8 +120,6 @@ export function DashboardPage({ role }: DashboardPageProps) {
     // will transition smoothly from the old value to the new one once the re-fetch completes.
   }, [activePeriodId, isAdmin]);
 
-  useEffect(() => { loadData(); }, []);
-
   // New-user welcome effect
   useEffect(() => {
     if (sessionStorage.getItem('akademo_new_user')) {
@@ -168,20 +166,9 @@ export function DashboardPage({ role }: DashboardPageProps) {
     }).catch(() => {/* silent */});
   }, [selectedClass, isAdmin, selectedAcademy, paymentStatus, activePeriodId, classes, isClassInPeriod]);
 
-  const loadData = async () => {
-    try {
-      if (isAcademy) await loadAcademyData();
-      else await loadAdminData();
-    } catch (error) {
-      console.error('❌ Failed to load data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Safe fetch helper: returns { success: false } on network/parse errors so individual failures don't kill the dashboard
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const safeFetch = async (path: string): Promise<any> => {
+  const safeFetch = useCallback(async (path: string): Promise<any> => {
     try {
       const res = await apiClient(path);
       return await res.json();
@@ -189,10 +176,40 @@ export function DashboardPage({ role }: DashboardPageProps) {
       console.warn(`[Dashboard] Failed to fetch ${path}`);
       return { success: false };
     }
-  };
+  }, []);
+
+  const loadDemoData = useCallback(() => {
+    const demoStats = generateDemoStats();
+    const demoStudents = generateDemoStudents();
+    const demoStreams = generateDemoStreams();
+    const demoClasses = generateDemoClasses();
+    void demoStats; // used for reference constants
+    setClasses((demoClasses || []).map(c => ({ id: c.id, name: c.name, description: c.description, slug: c.name.toLowerCase().replace(/\s+/g, '-'), academyName: 'Mi Academia Demo', enrollmentCount: c.studentCount })));
+    const classNameToId: Record<string, string> = { 'Programación Web': 'demo-c1', 'Matemáticas Avanzadas': 'demo-c2', 'Física Cuántica': 'demo-c4', 'Diseño Gráfico': 'demo-c3' };
+    const seen = new Set<string>();
+    setEnrolledStudents((demoStudents || []).map(s => ({
+      id: s.id, name: `${s.firstName} ${s.lastName}`, email: s.email,
+      classId: classNameToId[s.className] || 'demo-c1', className: s.className,
+      lessonsCompleted: Math.floor(Math.random() * 5) + 2, totalLessons: 10, lastActive: s.lastLoginAt,
+    })).filter(s => { const k = `${s.email}__${s.classId}`; if (seen.has(k)) return false; seen.add(k); return true; }));
+    setRatingsData(generateDemoLessonRatings());
+    const totalMin = [{ h: 15, m: 45 }, { h: 12, m: 30 }, { h: 10, m: 15 }, { h: 7, m: 0 }].reduce((s, d) => s + d.h * 60 + d.m, 0);
+    setClassWatchTime({ hours: Math.floor(totalMin / 60), minutes: totalMin % 60 });
+    const demoPending = generateDemoPendingPayments();
+    const demoHistory = generateDemoPaymentHistory();
+    setAllCompletedPayments(demoHistory.filter(p => p.paymentStatus === 'PAID').map(p => ({ paymentStatus: p.paymentStatus, paymentAmount: p.paymentAmount, paymentMethod: p.paymentMethod, classId: p.classId })));
+    setPendingEnrollments(demoPending.map((p, i) => ({
+      id: `demo-pending-${i + 1}`, student: { id: `demo-sp-${i + 1}`, firstName: p.studentFirstName, lastName: p.studentLastName, email: p.studentEmail },
+      class: { id: classNameToId[p.className] || 'demo-c1', name: p.className }, enrolledAt: p.createdAt,
+    })));
+    setRejectedCount(demoHistory.filter(p => p.paymentStatus === 'REJECTED').length);
+    setAllStreams(demoStreams);
+    // Set demo student payment status so the estudiantes card renders the same UI as real academies
+    setStudentPaymentStatus({ alDia: 8, atrasados: 3, total: 11, uniqueAlDia: 6, uniqueAtrasados: 2, uniqueTotal: 8 });
+  }, []);
 
   // ─── Academy data loading ───
-  const loadAcademyData = async () => {
+  const loadAcademyData = useCallback(async () => {
     const [academiesResult, classesResult, pendingResult, ratingsResult, rejectedResult, streamsResult, progressResult, paymentsResult, paymentStatusResult] = await Promise.all([
       safeFetch('/academies'), safeFetch('/academies/classes'), safeFetch('/enrollments/pending'),
       safeFetch('/ratings'), safeFetch('/enrollments/rejected'), safeFetch('/live/history'),
@@ -245,40 +262,10 @@ export function DashboardPage({ role }: DashboardPageProps) {
         setEnrolledStudents(all);
       }
     }
-  };
-
-  const loadDemoData = () => {
-    const demoStats = generateDemoStats();
-    const demoStudents = generateDemoStudents();
-    const demoStreams = generateDemoStreams();
-    const demoClasses = generateDemoClasses();
-    void demoStats; // used for reference constants
-    setClasses((demoClasses || []).map(c => ({ id: c.id, name: c.name, description: c.description, slug: c.name.toLowerCase().replace(/\s+/g, '-'), academyName: 'Mi Academia Demo', enrollmentCount: c.studentCount })));
-    const classNameToId: Record<string, string> = { 'Programación Web': 'demo-c1', 'Matemáticas Avanzadas': 'demo-c2', 'Física Cuántica': 'demo-c4', 'Diseño Gráfico': 'demo-c3' };
-    const seen = new Set<string>();
-    setEnrolledStudents((demoStudents || []).map(s => ({
-      id: s.id, name: `${s.firstName} ${s.lastName}`, email: s.email,
-      classId: classNameToId[s.className] || 'demo-c1', className: s.className,
-      lessonsCompleted: Math.floor(Math.random() * 5) + 2, totalLessons: 10, lastActive: s.lastLoginAt,
-    })).filter(s => { const k = `${s.email}__${s.classId}`; if (seen.has(k)) return false; seen.add(k); return true; }));
-    setRatingsData(generateDemoLessonRatings());
-    const totalMin = [{ h: 15, m: 45 }, { h: 12, m: 30 }, { h: 10, m: 15 }, { h: 7, m: 0 }].reduce((s, d) => s + d.h * 60 + d.m, 0);
-    setClassWatchTime({ hours: Math.floor(totalMin / 60), minutes: totalMin % 60 });
-    const demoPending = generateDemoPendingPayments();
-    const demoHistory = generateDemoPaymentHistory();
-    setAllCompletedPayments(demoHistory.filter(p => p.paymentStatus === 'PAID').map(p => ({ paymentStatus: p.paymentStatus, paymentAmount: p.paymentAmount, paymentMethod: p.paymentMethod, classId: p.classId })));
-    setPendingEnrollments(demoPending.map((p, i) => ({
-      id: `demo-pending-${i + 1}`, student: { id: `demo-sp-${i + 1}`, firstName: p.studentFirstName, lastName: p.studentLastName, email: p.studentEmail },
-      class: { id: classNameToId[p.className] || 'demo-c1', name: p.className }, enrolledAt: p.createdAt,
-    })));
-    setRejectedCount(demoHistory.filter(p => p.paymentStatus === 'REJECTED').length);
-    setAllStreams(demoStreams);
-    // Set demo student payment status so the estudiantes card renders the same UI as real academies
-    setStudentPaymentStatus({ alDia: 8, atrasados: 3, total: 11, uniqueAlDia: 6, uniqueAtrasados: 2, uniqueTotal: 8 });
-  };
+  }, [loadDemoData, safeFetch]);
 
   // ─── Admin data loading ───
-  const loadAdminData = async () => {
+  const loadAdminData = useCallback(async () => {
     const [academiesResult, classesResult, pendingResult, ratingsResult, rejectedResult, streamsResult, progressResult, paymentStatusResult, adminPaymentsResult] = await Promise.all([
       safeFetch('/admin/academies'), safeFetch('/admin/classes'), safeFetch('/enrollments/pending'),
       safeFetch('/ratings'), safeFetch('/enrollments/rejected'), safeFetch('/live/history'), safeFetch('/students/progress'),
@@ -323,7 +310,22 @@ export function DashboardPage({ role }: DashboardPageProps) {
     }
     paymentStatusInitRef.current = true;
     setPaymentStatus('PAID');
-  };
+  }, [safeFetch]);
+
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        if (isAcademy) await loadAcademyData();
+        else await loadAdminData();
+      } catch (error) {
+        console.error('❌ Failed to load data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadInitialData();
+  }, [isAcademy, loadAcademyData, loadAdminData]);
 
   // ─── Computed values ───
   const filteredStudents = useMemo(() => {
@@ -597,7 +599,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
     );
   }
 
-  function renderAdminStudentsContent() {
+  function _renderAdminStudentsContent() {
     const filteredPending = selectedClass !== 'all'
       ? pendingEnrollments.filter(p => p.class.id === selectedClass)
       : selectedAcademy !== 'all'

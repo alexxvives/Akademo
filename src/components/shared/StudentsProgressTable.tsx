@@ -335,7 +335,6 @@ export function StudentsProgressTable({
                 const activityStatus = getActivityStatus(student.lastActive);
                 const hasBreakdown = student.classBreakdown && student.classBreakdown.length > 1;
                 const isExpanded = expandedStudents.has(student.id);
-                const colCount = 1 + (visibleColumns.asignatura ? 1 : 0) + (showTeacherColumn ? 1 : 0) + (visibleColumns.videosVistos ? 1 : 0) + (visibleColumns.tiempoTotal ? 1 : 0) + (visibleColumns.ultimaActividad ? 1 : 0) + (visibleColumns.pagos ? 1 : 0) + (visibleColumns.sospechas ? 1 : 0) + (showBanButton && visibleColumns.acciones ? 1 : 0);
                 return (
                   <React.Fragment key={`${student.id}-${student.classId}`}>
                     <tr
