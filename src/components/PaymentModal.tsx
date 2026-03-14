@@ -21,6 +21,27 @@ interface PaymentModalProps {
   missedCycles?: number;
 }
 
+interface AcademyPaymentInfo {
+  allowedPaymentMethods?: string | string[];
+  stripeAccountId?: string;
+  transferenciaIban?: string | null;
+  bizumPhone?: string | null;
+}
+
+function formatDisplayIban(value?: string | null): string {
+  if (!value) return '';
+  return value.toUpperCase().replace(/\s+/g, '').match(/.{1,4}/g)?.join(' ') ?? value;
+}
+
+function formatDisplayBizumPhone(value?: string | null): string {
+  if (!value) return '';
+  const digits = value.replace(/\D/g, '');
+  const localNumber = (digits.startsWith('34') ? digits.slice(2) : digits).slice(0, 9);
+  if (!localNumber) return value;
+  const groups = localNumber.match(/\d{1,3}/g)?.join(' ') ?? localNumber;
+  return `+34 ${groups}`;
+}
+
 export default function PaymentModal({
   isOpen,
   onClose,
@@ -48,7 +69,8 @@ export default function PaymentModal({
   const [processing, setProcessing] = useState(false);
   const [_confirmingCash, _setConfirmingCash] = useState(false);
   const [_confirmingTransferencia, _setConfirmingTransferencia] = useState(false);
-  const [allowedPaymentMethods, setAllowedPaymentMethods] = useState<string[]>(['stripe', 'cash', 'transferencia']);
+  const [allowedPaymentMethods, setAllowedPaymentMethods] = useState<string[]>(['stripe', 'cash', 'transferencia', 'bizum']);
+  const [academyPaymentInfo, setAcademyPaymentInfo] = useState<AcademyPaymentInfo | null>(null);
 
   // Lock body scroll when modal is open
   useEffect(() => {
@@ -81,14 +103,14 @@ export default function PaymentModal({
                 methods = JSON.parse(methods);
               } catch (e) {
                 console.error('[PaymentModal] Failed to parse allowedPaymentMethods:', e);
-                methods = ['stripe', 'cash', 'transferencia'];
+                methods = ['stripe', 'cash', 'transferencia', 'bizum'];
               }
             }
             
             // Ensure it's an array
             if (!Array.isArray(methods)) {
               console.warn('[PaymentModal] allowedPaymentMethods is not an array, using default');
-              methods = ['stripe', 'cash', 'transferencia'];
+              methods = ['stripe', 'cash', 'transferencia', 'bizum'];
             }
             
             // Hide Stripe option if academy hasn't connected a Stripe account
@@ -97,6 +119,7 @@ export default function PaymentModal({
             }
             
             setAllowedPaymentMethods(methods);
+            setAcademyPaymentInfo(result.data);
           } else {
           }
         })
@@ -130,6 +153,10 @@ export default function PaymentModal({
   const needsFrequencySelection = hasMonthly && hasOneTime;
 
   const currency = 'EUR';
+  const transferenciaInfo = formatDisplayIban(academyPaymentInfo?.transferenciaIban);
+  const bizumInfo = formatDisplayBizumPhone(academyPaymentInfo?.bizumPhone);
+  const transferenciaAvailable = allowedPaymentMethods.includes('transferencia') && Boolean(transferenciaInfo);
+  const bizumAvailable = allowedPaymentMethods.includes('bizum') && Boolean(bizumInfo);
 
   const formatPrice = (amount: number, curr: string) => {
     return new Intl.NumberFormat('es-ES', {
@@ -225,6 +252,36 @@ export default function PaymentModal({
       }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Error al registrar pago por Transferencia';
+      alert('Error: ' + message);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleBizumPayment = async () => {
+    if (!paymentFrequency && needsFrequencySelection) {
+      alert('Por favor selecciona un tipo de pago primero');
+      return;
+    }
+
+    setProcessing(true);
+    try {
+      const res = await apiPost('/payments/initiate', {
+        classId,
+        paymentMethod: 'bizum',
+        paymentFrequency: paymentFrequency || (hasMonthly ? 'monthly' : 'one-time')
+      });
+
+      const result = await res.json();
+
+      if (result.success) {
+        alert(result.data?.message || 'Solicitud enviada. La academia confirmará la recepción del pago por Bizum.');
+        onPaymentComplete();
+      } else {
+        throw new Error(result.error || 'Error al registrar pago por Bizum');
+      }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Error al registrar pago por Bizum';
       alert('Error: ' + message);
     } finally {
       setProcessing(false);
@@ -383,18 +440,18 @@ export default function PaymentModal({
                   className={`w-full p-4 rounded-lg text-left transition-all ${
                     !paymentFrequency || !allowedPaymentMethods.includes('stripe')
                       ? 'bg-gray-50 border-2 border-gray-200 opacity-50 cursor-not-allowed'
-                      : 'bg-white border-2 border-gray-300 hover:border-[#b0e788] hover:shadow-md'
+                      : 'bg-violet-50 border-2 border-violet-300 hover:border-violet-500 hover:shadow-md'
                   }`}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="flex-shrink-0 w-10 h-10 bg-[#b0e788]/20 rounded-lg flex items-center justify-center">
-                      <svg className="w-5 h-5 text-[#1a1c29]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex-shrink-0 w-10 h-10 bg-violet-100 rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-violet-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                       </svg>
                     </div>
                     <div className="flex-1">
-                      <h4 className="text-base font-semibold text-[#1a1c29] mb-0.5">Tarjeta de Crédito/Débito</h4>
-                      <p className="text-sm text-gray-600">Pago seguro con Stripe</p>
+                      <h4 className="text-base font-semibold text-violet-950 mb-0.5">Tarjeta de Crédito/Débito</h4>
+                      <p className="text-sm text-violet-800">Pago seguro con Stripe</p>
                     </div>
                     <div className="flex-shrink-0">
                       {!allowedPaymentMethods.includes('stripe') ? (
@@ -413,25 +470,25 @@ export default function PaymentModal({
                 {/* Transferencia */}
                 <button
                   onClick={handleTransferenciaPayment}
-                  disabled={processing || !paymentFrequency || !allowedPaymentMethods.includes('transferencia')}
+                  disabled={processing || !paymentFrequency || !transferenciaAvailable}
                   className={`w-full p-4 rounded-lg text-left transition-all ${
-                    !paymentFrequency || !allowedPaymentMethods.includes('transferencia')
+                    !paymentFrequency || !transferenciaAvailable
                       ? 'bg-gray-50 border-2 border-gray-200 opacity-50 cursor-not-allowed'
-                      : 'bg-white border-2 border-gray-300 hover:border-[#b0e788] hover:shadow-md'
+                      : 'bg-gray-50 border-2 border-gray-300 hover:border-gray-500 hover:shadow-md'
                   }`}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="flex-shrink-0 w-10 h-10 bg-[#b0e788]/20 rounded-lg flex items-center justify-center">
-                      <svg className="w-5 h-5 text-[#1a1c29]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex-shrink-0 w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
                       </svg>
                     </div>
                     <div className="flex-1">
-                      <h4 className="text-base font-semibold text-[#1a1c29] mb-0.5">Transferencia</h4>
-                      <p className="text-sm text-gray-600">Pago con tu banco español</p>
+                      <h4 className="text-base font-semibold text-gray-900 mb-0.5">Transferencia</h4>
+                      <p className="text-sm text-gray-600">IBAN: {transferenciaInfo || 'La academia aún no ha configurado su IBAN'}</p>
                     </div>
                     <div className="flex-shrink-0">
-                      {!allowedPaymentMethods.includes('transferencia') ? (
+                      {!transferenciaAvailable ? (
                         <span className="inline-block text-xs font-medium text-gray-500 bg-gray-200 px-3 py-1 rounded-full">
                           No disponible
                         </span>
@@ -441,6 +498,44 @@ export default function PaymentModal({
                         </span>
                       ) : (
                         <span className="inline-block text-xs font-medium text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+                          Requiere aprobación manual
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </button>
+
+                {/* Bizum */}
+                <button
+                  onClick={handleBizumPayment}
+                  disabled={processing || !paymentFrequency || !bizumAvailable}
+                  className={`w-full p-4 rounded-lg text-left transition-all ${
+                    !paymentFrequency || !bizumAvailable
+                      ? 'bg-gray-50 border-2 border-gray-200 opacity-50 cursor-not-allowed'
+                      : 'bg-blue-50 border-2 border-blue-300 hover:border-blue-500 hover:shadow-md'
+                  }`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2v-8a2 2 0 012-2h2m10 0V6a3 3 0 00-6 0v2m6 0H9" />
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-base font-semibold text-blue-950 mb-0.5">Bizum</h4>
+                      <p className="text-sm text-blue-800">Número: {bizumInfo || 'La academia aún no ha configurado su número'}</p>
+                    </div>
+                    <div className="flex-shrink-0">
+                      {!bizumAvailable ? (
+                        <span className="inline-block text-xs font-medium text-gray-500 bg-gray-200 px-3 py-1 rounded-full">
+                          No disponible
+                        </span>
+                      ) : currentPaymentStatus === 'PENDING' && currentPaymentMethod === 'bizum' ? (
+                        <span className="inline-block text-xs font-medium px-3 py-1 rounded-full bg-[#b0e788] text-[#1a1c29]">
+                          Pendiente aprobación
+                        </span>
+                      ) : (
+                        <span className="inline-block text-xs font-medium text-blue-700 bg-blue-100 px-3 py-1 rounded-full">
                           Requiere aprobación manual
                         </span>
                       )}

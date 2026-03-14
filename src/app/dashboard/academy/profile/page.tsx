@@ -48,6 +48,8 @@ interface Academy {
   defaultMaxWatchTimeMultiplier?: number;
   logoUrl?: string;
   allowedPaymentMethods?: string;
+  transferenciaIban?: string;
+  bizumPhone?: string;
   allowMultipleTeachers?: number;
   requireGrading?: number;
   hiddenMenuItems?: string;
@@ -83,6 +85,35 @@ const MULTIPLIER_OPTIONS = [
   { value: 10.0, label: '10x (ilimitado)' }
 ];
 
+const DEFAULT_ALLOWED_PAYMENT_METHODS = ['cash', 'transferencia', 'bizum'];
+
+function formatSpanishIbanInput(value: string): string {
+  const sanitized = value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const core = (sanitized.startsWith('ES') ? sanitized.slice(2) : sanitized.replace(/^[A-Z]{0,2}/, ''))
+    .replace(/[^0-9]/g, '')
+    .slice(0, 22);
+  const full = `ES${core}`;
+  return full.match(/.{1,4}/g)?.join(' ') ?? full;
+}
+
+function isValidSpanishIban(value: string): boolean {
+  return /^ES\d{22}$/.test(value.replace(/\s+/g, ''));
+}
+
+function formatSpanishBizumPhone(value: string): string {
+  const digits = value.replace(/\D/g, '');
+  const localNumber = (digits.startsWith('34') ? digits.slice(2) : digits).slice(0, 9);
+  if (!localNumber) return '';
+  const groups = localNumber.match(/\d{1,3}/g)?.join(' ') ?? localNumber;
+  return `+34 ${groups}`;
+}
+
+function isValidSpanishBizumPhone(value: string): boolean {
+  const digits = value.replace(/\D/g, '');
+  const localNumber = digits.startsWith('34') ? digits.slice(2) : digits;
+  return /^[6789]\d{8}$/.test(localNumber);
+}
+
 export default function ProfilePage() {
   const { user } = useAuth();
   const { activePeriodId, setActivePeriodId, isClassInPeriod } = usePeriod();
@@ -115,7 +146,9 @@ export default function ProfilePage() {
     feedbackEnabled: true,
     defaultWatermarkIntervalMins: 5,
     defaultMaxWatchTimeMultiplier: 2.0,
-    allowedPaymentMethods: ['stripe', 'cash', 'transferencia'],
+    allowedPaymentMethods: ['stripe', 'cash', 'transferencia', 'bizum'],
+    transferenciaIban: '',
+    bizumPhone: '',
     allowMultipleTeachers: false,
     requireGrading: true,
     hiddenMenuItems: [] as string[],
@@ -155,7 +188,7 @@ export default function ProfilePage() {
         setAcademy(academyData);
         
         // Parse allowed payment methods from JSON string
-        let allowedMethods = ['cash', 'transferencia']; // default - stripe not included by default
+        let allowedMethods = [...DEFAULT_ALLOWED_PAYMENT_METHODS];
         if (academyData.allowedPaymentMethods) {
           try {
             allowedMethods = JSON.parse(academyData.allowedPaymentMethods);
@@ -184,6 +217,8 @@ export default function ProfilePage() {
           defaultWatermarkIntervalMins: academyData.defaultWatermarkIntervalMins || 5,
           defaultMaxWatchTimeMultiplier: academyData.defaultMaxWatchTimeMultiplier || 2.0,
           allowedPaymentMethods: allowedMethods,
+          transferenciaIban: academyData.transferenciaIban || '',
+          bizumPhone: academyData.bizumPhone || '',
           allowMultipleTeachers: academyData.allowMultipleTeachers === 1,
           requireGrading: academyData.requireGrading !== 0,
           hiddenMenuItems: (() => { try { return JSON.parse(academyData.hiddenMenuItems || '[]'); } catch { return []; } })(),
@@ -451,6 +486,8 @@ export default function ProfilePage() {
         defaultWatermarkIntervalMins: newFormData.defaultWatermarkIntervalMins,
         defaultMaxWatchTimeMultiplier: newFormData.defaultMaxWatchTimeMultiplier,
         allowedPaymentMethods: field === 'allowedPaymentMethods' ? value : JSON.stringify(newFormData.allowedPaymentMethods),
+        transferenciaIban: field === 'transferenciaIban' ? value : newFormData.transferenciaIban,
+        bizumPhone: field === 'bizumPhone' ? value : newFormData.bizumPhone,
         allowMultipleTeachers: field === 'allowMultipleTeachers' ? value : (newFormData.allowMultipleTeachers ? 1 : 0),
         requireGrading: field === 'requireGrading' ? value : (newFormData.requireGrading ? 1 : 0),
         hiddenMenuItems: field === 'hiddenMenuItems' ? JSON.stringify(value) : JSON.stringify(newFormData.hiddenMenuItems),
@@ -510,6 +547,8 @@ export default function ProfilePage() {
           defaultWatermarkIntervalMins: formData.defaultWatermarkIntervalMins,
           defaultMaxWatchTimeMultiplier: formData.defaultMaxWatchTimeMultiplier,
           allowedPaymentMethods: JSON.stringify(formData.allowedPaymentMethods),
+          transferenciaIban: formData.transferenciaIban,
+          bizumPhone: formData.bizumPhone,
           allowMultipleTeachers: formData.allowMultipleTeachers ? 1 : 0,
           requireGrading: formData.requireGrading ? 1 : 0,
           hiddenMenuItems: JSON.stringify(formData.hiddenMenuItems)
@@ -609,6 +648,37 @@ export default function ProfilePage() {
     setShowPasswordForm(false);
   };
 
+  const toggleAllowedPaymentMethod = async (method: 'stripe' | 'cash' | 'transferencia' | 'bizum') => {
+    const currentMethods = Array.isArray(formData.allowedPaymentMethods) ? formData.allowedPaymentMethods : [];
+    const hasMethod = currentMethods.includes(method);
+
+    if (!hasMethod) {
+      if (method === 'stripe' && !stripeStatus?.charges_enabled) {
+        alert('Debes conectar una cuenta de Stripe antes de habilitar pagos con Stripe');
+        return;
+      }
+      if (method === 'transferencia' && !isValidSpanishIban(formData.transferenciaIban)) {
+        alert('Introduce un IBAN español válido antes de habilitar Transferencia');
+        return;
+      }
+      if (method === 'bizum' && !isValidSpanishBizumPhone(formData.bizumPhone)) {
+        alert('Introduce un teléfono español válido antes de habilitar Bizum');
+        return;
+      }
+    }
+
+    if (hasMethod && currentMethods.length === 1) {
+      alert('Debes tener al menos un método de pago habilitado');
+      return;
+    }
+
+    const updated = hasMethod
+      ? currentMethods.filter((currentMethod) => currentMethod !== method)
+      : [...currentMethods, method];
+
+    await handleSettingChange('allowedPaymentMethods', JSON.stringify(updated));
+  };
+
   if (loading) {
     return <SkeletonProfile />;
   }
@@ -661,10 +731,12 @@ export default function ProfilePage() {
                               try {
                                 return JSON.parse(academy.allowedPaymentMethods);
                               } catch {
-                                return ['stripe', 'cash', 'transferencia'];
+                                return ['stripe', 'cash', 'transferencia', 'bizum'];
                               }
                             })()
-                          : ['stripe', 'cash', 'transferencia'],
+                          : ['stripe', 'cash', 'transferencia', 'bizum'],
+                        transferenciaIban: academy.transferenciaIban || '',
+                        bizumPhone: academy.bizumPhone || '',
                         allowMultipleTeachers: academy.allowMultipleTeachers === 1,
                         requireGrading: academy.requireGrading !== 0,
                         hiddenMenuItems: (() => { try { return JSON.parse(academy.hiddenMenuItems || '[]'); } catch { return []; } })(),
@@ -1092,169 +1164,146 @@ export default function ProfilePage() {
         </div>
 
         <div className="px-4 sm:px-8 py-4 sm:py-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Stripe */}
-            <button
-              type="button"
-              onClick={async () => {
-                const currentMethods = Array.isArray(formData.allowedPaymentMethods) ? formData.allowedPaymentMethods : [];
-                const hasStripe = currentMethods.includes('stripe');
-                
-                // Prevent selecting stripe if no Stripe account connected
-                if (!hasStripe && (!stripeStatus?.charges_enabled)) {
-                  alert('Debes conectar una cuenta de Stripe antes de habilitar pagos con Stripe');
-                  return;
-                }
-                
-                // Prevent deselecting if it's the last payment method
-                if (hasStripe && currentMethods.length === 1) {
-                  alert('Debes tener al menos un método de pago habilitado');
-                  return;
-                }
-                
-                const updated = hasStripe
-                  ? currentMethods.filter(m => m !== 'stripe')
-                  : [...currentMethods, 'stripe'];
-                await handleSettingChange('allowedPaymentMethods', JSON.stringify(updated));
-              }}
-              className={`p-4 border-2 rounded-xl transition-all duration-200 text-left ${
-                (Array.isArray(formData.allowedPaymentMethods) && formData.allowedPaymentMethods.includes('stripe'))
-                  ? 'border-brand-600 bg-brand-50 shadow-md'
-                  : 'border-gray-200 bg-white hover:border-gray-300'
-              } ${
-                (!stripeStatus?.charges_enabled && !formData.allowedPaymentMethods.includes('stripe'))
-                  ? 'opacity-50 cursor-not-allowed'
-                  : ''
-              }`}
-              disabled={!stripeStatus?.charges_enabled && !formData.allowedPaymentMethods.includes('stripe')}
-            >
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div className={`p-4 border-2 rounded-xl transition-all duration-200 ${
+              formData.allowedPaymentMethods.includes('stripe')
+                ? 'border-violet-500 bg-violet-50 shadow-md'
+                : 'border-gray-200 bg-white'
+            } ${(!stripeStatus?.charges_enabled && !formData.allowedPaymentMethods.includes('stripe')) ? 'opacity-60' : ''}`}>
               <div className="flex items-start gap-3">
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                  (Array.isArray(formData.allowedPaymentMethods) && formData.allowedPaymentMethods.includes('stripe')) ? 'border-brand-600 bg-brand-600' : 'border-gray-300'
-                }`}>
-                  {(Array.isArray(formData.allowedPaymentMethods) && formData.allowedPaymentMethods.includes('stripe')) && (
+                <button
+                  type="button"
+                  onClick={() => toggleAllowedPaymentMethod('stripe')}
+                  disabled={!stripeStatus?.charges_enabled && !formData.allowedPaymentMethods.includes('stripe')}
+                  className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                    formData.allowedPaymentMethods.includes('stripe') ? 'border-violet-500 bg-violet-500' : 'border-gray-300'
+                  }`}
+                >
+                  {formData.allowedPaymentMethods.includes('stripe') && (
                     <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                     </svg>
                   )}
-                </div>
+                </button>
                 <div className="flex-1">
-                  <div className={`text-sm font-semibold mb-1 ${
-                    (Array.isArray(formData.allowedPaymentMethods) && formData.allowedPaymentMethods.includes('stripe')) ? 'text-brand-900' : 'text-gray-900'
-                  }`}>
+                  <div className={`text-sm font-semibold mb-1 ${formData.allowedPaymentMethods.includes('stripe') ? 'text-violet-900' : 'text-gray-900'}`}>
                     Stripe
                   </div>
-                  <p className={`text-xs ${
-                    (Array.isArray(formData.allowedPaymentMethods) && formData.allowedPaymentMethods.includes('stripe')) ? 'text-brand-700' : 'text-gray-500'
-                  }`}>
-                    Tarjetas de crédito/débito
+                  <p className={`text-xs ${formData.allowedPaymentMethods.includes('stripe') ? 'text-violet-700' : 'text-gray-500'}`}>
+                    Tarjetas de crédito y débito
                   </p>
                   {(!stripeStatus?.charges_enabled && !formData.allowedPaymentMethods.includes('stripe')) && (
-                    <p className="text-xs text-amber-600 mt-1 font-medium">
-                      ⚠️ Conecta tu cuenta Stripe abajo
-                    </p>
+                    <p className="text-xs text-amber-600 mt-2 font-medium">Conecta tu cuenta de Stripe para activarlo</p>
                   )}
                 </div>
               </div>
-            </button>
+            </div>
 
-            {/* Cash */}
-            <button
-              type="button"
-              onClick={async () => {
-                const currentMethods = Array.isArray(formData.allowedPaymentMethods) ? formData.allowedPaymentMethods : [];
-                const hasCash = currentMethods.includes('cash');
-                
-                // Prevent deselecting if it's the last payment method
-                if (hasCash && currentMethods.length === 1) {
-                  alert('Debes tener al menos un método de pago habilitado');
-                  return;
-                }
-                
-                const updated = hasCash
-                  ? currentMethods.filter(m => m !== 'cash')
-                  : [...currentMethods, 'cash'];
-                await handleSettingChange('allowedPaymentMethods', JSON.stringify(updated));
-              }}
-              className={`p-4 border-2 rounded-xl transition-all duration-200 text-left ${
-                (Array.isArray(formData.allowedPaymentMethods) && formData.allowedPaymentMethods.includes('cash'))
-                  ? 'border-green-500 bg-green-50 shadow-md'
-                  : 'border-gray-200 bg-white hover:border-gray-300'
-              }`}
-            >
+            <div className={`p-4 border-2 rounded-xl transition-all duration-200 ${
+              formData.allowedPaymentMethods.includes('cash')
+                ? 'border-green-500 bg-green-50 shadow-md'
+                : 'border-gray-200 bg-white'
+            }`}>
               <div className="flex items-start gap-3">
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                  (Array.isArray(formData.allowedPaymentMethods) && formData.allowedPaymentMethods.includes('cash')) ? 'border-green-500 bg-green-500' : 'border-gray-300'
-                }`}>
-                  {(Array.isArray(formData.allowedPaymentMethods) && formData.allowedPaymentMethods.includes('cash')) && (
+                <button
+                  type="button"
+                  onClick={() => toggleAllowedPaymentMethod('cash')}
+                  className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                    formData.allowedPaymentMethods.includes('cash') ? 'border-green-500 bg-green-500' : 'border-gray-300'
+                  }`}
+                >
+                  {formData.allowedPaymentMethods.includes('cash') && (
                     <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                     </svg>
                   )}
-                </div>
+                </button>
                 <div className="flex-1">
-                  <div className={`text-sm font-semibold mb-1 ${
-                    (Array.isArray(formData.allowedPaymentMethods) && formData.allowedPaymentMethods.includes('cash')) ? 'text-green-900' : 'text-gray-900'
-                  }`}>
+                  <div className={`text-sm font-semibold mb-1 ${formData.allowedPaymentMethods.includes('cash') ? 'text-green-900' : 'text-gray-900'}`}>
                     Efectivo
                   </div>
-                  <p className={`text-xs ${
-                    (Array.isArray(formData.allowedPaymentMethods) && formData.allowedPaymentMethods.includes('cash')) ? 'text-green-700' : 'text-gray-500'
-                  }`}>
-                    Pago en persona
+                  <p className={`text-xs ${formData.allowedPaymentMethods.includes('cash') ? 'text-green-700' : 'text-gray-500'}`}>
+                    Pago en persona en la academia
                   </p>
                 </div>
               </div>
-            </button>
+            </div>
 
-            {/* Transferencia */}
-            <button
-              type="button"
-              onClick={async () => {
-                const currentMethods = Array.isArray(formData.allowedPaymentMethods) ? formData.allowedPaymentMethods : [];
-                const hasTransferencia = currentMethods.includes('transferencia');
-                
-                // Prevent deselecting if it's the last payment method
-                if (hasTransferencia && currentMethods.length === 1) {
-                  alert('Debes tener al menos un método de pago habilitado');
-                  return;
-                }
-                
-                const updated = hasTransferencia
-                  ? currentMethods.filter(m => m !== 'transferencia')
-                  : [...currentMethods, 'transferencia'];
-                await handleSettingChange('allowedPaymentMethods', JSON.stringify(updated));
-              }}
-              className={`p-4 border-2 rounded-xl transition-all duration-200 text-left ${
-                (Array.isArray(formData.allowedPaymentMethods) && formData.allowedPaymentMethods.includes('transferencia'))
-                  ? 'border-purple-500 bg-purple-50 shadow-md'
-                  : 'border-gray-200 bg-white hover:border-gray-300'
-              }`}
-            >
+            <div className={`p-4 border-2 rounded-xl transition-all duration-200 ${
+              formData.allowedPaymentMethods.includes('transferencia')
+                ? 'border-gray-500 bg-gray-50 shadow-md'
+                : 'border-gray-200 bg-white'
+            }`}>
               <div className="flex items-start gap-3">
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                  (Array.isArray(formData.allowedPaymentMethods) && formData.allowedPaymentMethods.includes('transferencia')) ? 'border-purple-500 bg-purple-500' : 'border-gray-300'
-                }`}>
-                  {(Array.isArray(formData.allowedPaymentMethods) && formData.allowedPaymentMethods.includes('transferencia')) && (
+                <button
+                  type="button"
+                  onClick={() => toggleAllowedPaymentMethod('transferencia')}
+                  className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                    formData.allowedPaymentMethods.includes('transferencia') ? 'border-gray-600 bg-gray-600' : 'border-gray-300'
+                  }`}
+                >
+                  {formData.allowedPaymentMethods.includes('transferencia') && (
                     <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                     </svg>
                   )}
-                </div>
-                <div className="flex-1">
-                  <div className={`text-sm font-semibold mb-1 ${
-                    (Array.isArray(formData.allowedPaymentMethods) && formData.allowedPaymentMethods.includes('transferencia')) ? 'text-purple-900' : 'text-gray-900'
-                  }`}>
-                    Transferencia
-                  </div>
-                  <p className={`text-xs ${
-                    (Array.isArray(formData.allowedPaymentMethods) && formData.allowedPaymentMethods.includes('transferencia')) ? 'text-purple-700' : 'text-gray-500'
-                  }`}>
-                    Transferencia instantánea
-                  </p>
+                </button>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold mb-1 text-gray-900">Transferencia</div>
+                  <p className="text-xs mb-3 text-gray-600">IBAN español que verá el alumno al pagar</p>
+                  <input
+                    type="text"
+                    value={formData.transferenciaIban}
+                    onChange={(e) => setFormData({ ...formData, transferenciaIban: formatSpanishIbanInput(e.target.value) })}
+                    onBlur={() => handleSettingChange('transferenciaIban', formatSpanishIbanInput(formData.transferenciaIban))}
+                    placeholder="ES12 1234 1234 12 1234567890"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-500 focus:border-gray-500 bg-white"
+                    maxLength={29}
+                  />
+                  <p className="text-[11px] text-gray-500 mt-2">Formato español fijo: ES + 22 dígitos</p>
                 </div>
               </div>
-            </button>
+            </div>
+
+            <div className={`p-4 border-2 rounded-xl transition-all duration-200 ${
+              formData.allowedPaymentMethods.includes('bizum')
+                ? 'border-blue-500 bg-blue-50 shadow-md'
+                : 'border-gray-200 bg-white'
+            }`}>
+              <div className="flex items-start gap-3">
+                <button
+                  type="button"
+                  onClick={() => toggleAllowedPaymentMethod('bizum')}
+                  className={`mt-0.5 w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                    formData.allowedPaymentMethods.includes('bizum') ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
+                  }`}
+                >
+                  {formData.allowedPaymentMethods.includes('bizum') && (
+                    <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
+                <div className="flex-1 min-w-0">
+                  <div className={`text-sm font-semibold mb-1 ${formData.allowedPaymentMethods.includes('bizum') ? 'text-blue-900' : 'text-gray-900'}`}>
+                    Bizum
+                  </div>
+                  <p className={`text-xs mb-3 ${formData.allowedPaymentMethods.includes('bizum') ? 'text-blue-700' : 'text-gray-500'}`}>
+                    Número móvil español visible para el alumno
+                  </p>
+                  <input
+                    type="tel"
+                    value={formData.bizumPhone}
+                    onChange={(e) => setFormData({ ...formData, bizumPhone: formatSpanishBizumPhone(e.target.value) })}
+                    onBlur={() => handleSettingChange('bizumPhone', formatSpanishBizumPhone(formData.bizumPhone))}
+                    placeholder="+34 600 123 456"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                    maxLength={14}
+                  />
+                  <p className="text-[11px] text-gray-500 mt-2">Se mostrará tal cual en la página de pago del alumno</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

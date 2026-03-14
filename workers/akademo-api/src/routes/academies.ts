@@ -571,6 +571,8 @@ academies.get('/:id', async (c) => {
       defaultWatermarkIntervalMins: academy.defaultWatermarkIntervalMins,
       defaultMaxWatchTimeMultiplier: academy.defaultMaxWatchTimeMultiplier,
       allowedPaymentMethods: academy.allowedPaymentMethods,
+      transferenciaIban: academy.transferenciaIban,
+      bizumPhone: academy.bizumPhone,
       hiddenMenuItems: academy.hiddenMenuItems,
       classCount: classCount?.count || 0,
       teacherCount: teacherCount?.count || 0,
@@ -655,6 +657,14 @@ academies.patch('/:id', async (c) => {
     if (body.allowedPaymentMethods !== undefined) {
       updates.push('allowedPaymentMethods = ?');
       values.push(body.allowedPaymentMethods);
+    }
+    if (body.transferenciaIban !== undefined) {
+      updates.push('transferenciaIban = ?');
+      values.push(body.transferenciaIban || null);
+    }
+    if (body.bizumPhone !== undefined) {
+      updates.push('bizumPhone = ?');
+      values.push(body.bizumPhone || null);
     }
     if (body.allowMultipleTeachers !== undefined) {
       updates.push('allowMultipleTeachers = ?');
