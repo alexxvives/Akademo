@@ -660,6 +660,21 @@ export default function ProfilePage() {
 
   const toggleAllowedPaymentMethod = async (method: 'stripe' | 'cash' | 'transferencia' | 'bizum') => {
     if (method === 'transferencia' || method === 'bizum') {
+      const isActive = formData.allowedPaymentMethods.includes(method);
+
+      if (isActive) {
+        // Already active → deactivate immediately, no input
+        if (formData.allowedPaymentMethods.length === 1) {
+          alert('Debes tener al menos un método de pago habilitado');
+          return;
+        }
+        setExpandedPaymentMethod(null);
+        const updated = formData.allowedPaymentMethods.filter((m) => m !== method);
+        await handleSettingChange('allowedPaymentMethods', JSON.stringify(updated));
+        return;
+      }
+
+      // Inactive → toggle the input open/closed
       if (expandedPaymentMethod === method) {
         setExpandedPaymentMethod(null);
         setFormData((current) => ({
