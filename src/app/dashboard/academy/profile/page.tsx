@@ -1290,9 +1290,6 @@ export default function ProfilePage() {
                 <div className="min-w-0">
                   <div className="text-sm font-semibold mb-1 text-gray-900">Transferencia</div>
                   <p className="text-xs text-gray-600">Transferencia a la academia</p>
-                  {formData.allowedPaymentMethods.includes('transferencia') && formData.transferenciaIban && (
-                    <p className="text-xs text-gray-500 mt-2 truncate">{formData.transferenciaIban}</p>
-                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   {formData.allowedPaymentMethods.includes('transferencia') && (
@@ -1335,9 +1332,6 @@ export default function ProfilePage() {
                   <p className={`text-xs ${formData.allowedPaymentMethods.includes('bizum') ? 'text-blue-700' : 'text-gray-500'}`}>
                     Bizum a la academia
                   </p>
-                  {formData.allowedPaymentMethods.includes('bizum') && formData.bizumPhone && (
-                    <p className="text-xs text-blue-600 mt-2 truncate">{formData.bizumPhone}</p>
-                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   {formData.allowedPaymentMethods.includes('bizum') && (
@@ -1359,9 +1353,9 @@ export default function ProfilePage() {
           </div>
 
           {isTransferenciaExpanded && (
-            <div className="mt-4 rounded-2xl border border-gray-200 bg-gray-50 p-4 sm:p-5">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                <div className="flex-1">
+            <div className="mt-4 flex justify-start">
+              <div className="w-full max-w-sm rounded-2xl border border-gray-200 bg-gray-50 p-4 shadow-lg sm:max-w-md">
+                <div className="flex flex-col gap-4">
                   <label className="block text-xs font-medium text-gray-700 mb-2">Transferencia a la academia</label>
                   <input
                     type="text"
@@ -1371,31 +1365,31 @@ export default function ProfilePage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-gray-500 focus:border-gray-500 bg-white"
                     maxLength={29}
                   />
-                </div>
-                <div className="flex items-center justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setExpandedPaymentMethod(null)}
-                    className="px-3 py-2 rounded-lg text-xs font-semibold border border-gray-300 text-gray-700 hover:bg-gray-50"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={saveTransferenciaSetup}
-                    className="px-3 py-2 rounded-lg text-xs font-semibold bg-gray-800 text-white hover:bg-gray-900"
-                  >
-                    {formData.allowedPaymentMethods.includes('transferencia') ? 'Guardar datos' : 'Guardar y activar'}
-                  </button>
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedPaymentMethod(null)}
+                      className="px-3 py-2 rounded-lg text-xs font-semibold border border-gray-300 text-gray-700 hover:bg-gray-50"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={saveTransferenciaSetup}
+                      className="px-3 py-2 rounded-lg text-xs font-semibold bg-gray-800 text-white hover:bg-gray-900"
+                    >
+                      {formData.allowedPaymentMethods.includes('transferencia') ? 'Guardar datos' : 'Guardar y activar'}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           )}
 
           {isBizumExpanded && (
-            <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 p-4 sm:p-5">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                <div className="flex-1">
+            <div className="mt-4 flex justify-start">
+              <div className="w-full max-w-sm rounded-2xl border border-blue-200 bg-blue-50 p-4 shadow-lg sm:max-w-md">
+                <div className="flex flex-col gap-4">
                   <label className="block text-xs font-medium text-blue-900 mb-2">Bizum a la academia</label>
                   <input
                     type="tel"
@@ -1405,22 +1399,22 @@ export default function ProfilePage() {
                     className="w-full px-3 py-2 border border-blue-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                     maxLength={14}
                   />
-                </div>
-                <div className="flex items-center justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setExpandedPaymentMethod(null)}
-                    className="px-3 py-2 rounded-lg text-xs font-semibold border border-gray-300 text-gray-700 hover:bg-gray-50"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={saveBizumSetup}
-                    className="px-3 py-2 rounded-lg text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700"
-                  >
-                    {formData.allowedPaymentMethods.includes('bizum') ? 'Guardar datos' : 'Guardar y activar'}
-                  </button>
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedPaymentMethod(null)}
+                      className="px-3 py-2 rounded-lg text-xs font-semibold border border-gray-300 text-gray-700 hover:bg-gray-50"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={saveBizumSetup}
+                      className="px-3 py-2 rounded-lg text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700"
+                    >
+                      {formData.allowedPaymentMethods.includes('bizum') ? 'Guardar datos' : 'Guardar y activar'}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
