@@ -2045,7 +2045,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
                         {lessonFormData.videos.length > 0 && (
                           <div className="mt-2 space-y-2">
                             {lessonFormData.videos.map((v, i) => (
-                              <div key={i} className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                              <div key={`video-${i}-${v.file.name}`} className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                                 <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
                                   <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                                     <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
@@ -2123,7 +2123,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
                       {lessonFormData.documents.length > 0 && (
                         <div className="mt-2 space-y-2">
                           {lessonFormData.documents.map((d, i) => (
-                            <div key={i} className="flex items-center gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <div key={`doc-${i}-${d.file.name}`} className="flex items-center gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
                               <div className="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center flex-shrink-0">
                                 <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                                   <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
@@ -2237,7 +2237,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
                               {lessonFormData.videos.length > 0 && (
                                 <div className="mt-2 space-y-2">
                                   {lessonFormData.videos.map((v, i) => (
-                                    <div key={i} className="relative p-2 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
+                                    <div key={`video-${i}-${v.file.name}`} className="relative p-2 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
                                       <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
                                         <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
@@ -2270,7 +2270,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
                               {lessonFormData.documents.length > 0 && (
                                 <div className="mt-2 space-y-2">
                                   {lessonFormData.documents.map((d, i) => (
-                                    <div key={i} className="relative p-2 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
+                                    <div key={`doc-${i}-${d.file.name}`} className="relative p-2 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
                                       <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
                                         <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />

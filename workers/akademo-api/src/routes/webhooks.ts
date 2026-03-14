@@ -834,6 +834,43 @@ webhooks.post('/stripe', async (c) => {
           .prepare('UPDATE ClassEnrollment SET nextPaymentDue = ? WHERE id = ?')
           .bind(billingCycle.nextPaymentDue, enrollment.id)
           .run();
+
+        // INV-4.9: Auto-cancel subscription when totalPaid >= oneTimePrice
+        const classInfo: any = await c.env.DB
+          .prepare('SELECT oneTimePrice, monthlyPrice FROM Class WHERE id = ?')
+          .bind(enrollment.classId)
+          .first();
+
+        if (classInfo && Number(classInfo.oneTimePrice) > 0) {
+          const totalPaidResult: any = await c.env.DB
+            .prepare(`SELECT COALESCE(SUM(amount), 0) as totalPaid FROM Payment WHERE classId = ? AND payerId = ? AND status = 'COMPLETED'`)
+            .bind(enrollment.classId, enrollment.userId)
+            .first();
+
+          const totalPaid = Number(totalPaidResult?.totalPaid) || 0;
+          const oneTimePrice = Number(classInfo.oneTimePrice);
+
+          if (totalPaid >= oneTimePrice) {
+            console.log(`[Stripe Webhook] Subscription fully paid (${totalPaid}€ >= ${oneTimePrice}€). Cancelling subscription ${subscription}`);
+            try {
+              const stripeModule = (await import('stripe')).default;
+              const stripeClient = new stripeModule(
+                ((c.env as unknown as Record<string, unknown>).STRIPE_SECRET_KEY as string),
+                { apiVersion: '2025-12-15.clover' as any }
+              );
+              await stripeClient.subscriptions.cancel(subscription);
+
+              await c.env.DB
+                .prepare('UPDATE ClassEnrollment SET stripeSubscriptionId = NULL, nextPaymentDue = NULL WHERE id = ?')
+                .bind(enrollment.id)
+                .run();
+
+              console.log(`[Stripe Webhook] Subscription ${subscription} cancelled — student has lifetime access`);
+            } catch (cancelErr: any) {
+              console.error(`[Stripe Webhook] Failed to cancel subscription ${subscription}:`, cancelErr);
+            }
+          }
+        }
       }
     } else if (event === 'invoice.payment_failed') {
       // Recurring payment failed - create pending payment

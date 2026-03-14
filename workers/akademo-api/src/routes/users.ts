@@ -198,6 +198,10 @@ users.delete('/teacher/:id', async (c) => {
       .bind(teacherId)
       .run();
 
+    // Note: LiveStream.teacherId is NOT NULL so we can't SET NULL.
+    // Historical LiveStream records will retain the deleted teacher's ID as a reference.
+    // Assignment records cascade-delete via FK ON DELETE CASCADE.
+
     // Delete teacher record
     await c.env.DB
       .prepare('DELETE FROM Teacher WHERE userId = ?')

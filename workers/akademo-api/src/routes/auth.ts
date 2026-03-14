@@ -109,7 +109,7 @@ auth.post('/register', registerRateLimit, validateBody(registerSchema), async (c
       .first();
 
     if (existing) {
-      return c.json(errorResponse('Email already registered'), 400);
+      return c.json(errorResponse('Unable to create account. Please try a different email or sign in.'), 400);
     }
 
     // Hash password

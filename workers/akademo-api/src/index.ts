@@ -70,6 +70,12 @@ app.use('*', cors({
 // CSRF protection: validate Origin + custom header on state-changing requests
 app.use('*', csrfProtection());
 
+// Security headers
+app.use('*', async (c, next) => {
+  await next();
+  c.res.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+});
+
 // Health check (minimal info in production to prevent reconnaissance)
 app.get('/', (c) => c.json({ status: 'ok' }));
 
