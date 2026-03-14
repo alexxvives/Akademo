@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import Image from 'next/image';
@@ -11,22 +11,19 @@ interface StreamInfo {
   id: string;
   title: string;
   className: string;
-  classSlug?: string;
   classId: string;
+  classSlug?: string;
   status: string;
   dailyRoomUrl: string | null;
   academyName?: string;
   academyLogoUrl?: string;
 }
 
-export default function TeacherLivePage() {
+export default function AdminLivePage() {
   const { streamId } = useParams<{ streamId: string }>();
   const router = useRouter();
   const [stream, setStream] = useState<StreamInfo | null>(null);
   const [embedUrl, setEmbedUrl] = useState<string | null>(null);
-  const [isZoom, setIsZoom] = useState(false);
-  const [zoomJoinUrl, setZoomJoinUrl] = useState<string | null>(null);
-  const [zoomMeetingId, setZoomMeetingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [ended] = useState(false);
   const [recordingReady] = useState(false);
@@ -37,7 +34,6 @@ export default function TeacherLivePage() {
   useEffect(() => {
     const init = async () => {
       try {
-        // Load stream info + generate join token in parallel
         const [streamRes, tokenRes] = await Promise.all([
           apiClient(`/live/${streamId}`),
           apiClient(`/live/${streamId}/join-token`),
@@ -50,17 +46,10 @@ export default function TeacherLivePage() {
 
         const sData = streamData.data;
         setStream(sData);
-
-        if (tokenData.data.isZoom) {
-          setIsZoom(true);
-          setZoomJoinUrl(tokenData.data.zoomLink || null);
-          setZoomMeetingId(tokenData.data.zoomMeetingId || null);
-        } else {
-          const redirectUrl = encodeURIComponent(
-            `${window.location.origin}/dashboard/teacher/subject/${sData.classSlug || sData.classId}`
-          );
-          setEmbedUrl(`${tokenData.data.roomUrl}?t=${tokenData.data.token}&redirect_on_meeting_exit=${redirectUrl}`);
-        }
+        const redirectUrl = encodeURIComponent(
+          `${window.location.origin}/dashboard/admin/streams`
+        );
+        setEmbedUrl(`${tokenData.data.roomUrl}?t=${tokenData.data.token}&redirect_on_meeting_exit=${redirectUrl}`);
       } catch {
         setError('Error de conexión');
       }
@@ -77,7 +66,6 @@ export default function TeacherLivePage() {
     } catch {}
   }, [streamId]);
 
-  // Start recording when host joins: listen for Daily.co postMessage + fallback retries
   useEffect(() => {
     if (!embedUrl) return;
     const handleMessage = (e: MessageEvent) => {
@@ -99,11 +87,9 @@ export default function TeacherLivePage() {
     };
   }, [embedUrl, startRecording]);
 
-
-
   useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current); }, []);
 
-  const backUrl = stream ? `/dashboard/teacher/subject/${stream.classSlug || stream.classId}` : '/dashboard/teacher/streams';
+  const backUrl = '/dashboard/admin/streams';
 
   if (error) {
     return (
@@ -139,7 +125,7 @@ export default function TeacherLivePage() {
             onClick={() => router.push(backUrl)}
             className="w-full px-4 py-3 bg-white text-gray-900 hover:bg-gray-100 rounded-lg font-semibold transition-colors"
           >
-            Ir a la asignatura
+            Volver a streams
           </button>
         </div>
       </div>
@@ -150,7 +136,6 @@ export default function TeacherLivePage() {
     <div className="fixed inset-0 bg-gray-950 flex flex-col">
       {/* Top bar */}
       <div className="flex-shrink-0 relative flex items-center px-4 py-3 bg-gray-900 border-b border-white/10">
-        {/* Center: academy branding */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="flex items-center gap-2 pointer-events-auto">
             {stream?.academyLogoUrl ? (
@@ -166,18 +151,16 @@ export default function TeacherLivePage() {
           </div>
         </div>
         <div className="ml-auto flex items-center gap-2 z-10">
-          {!isZoom && (
-            <button
-              onClick={() => setShowWhiteboard(prev => !prev)}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors ${showWhiteboard ? 'bg-violet-600 text-white' : 'bg-white/10 hover:bg-white/20 text-gray-300'}`}
-              title="Pizarra colaborativa"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              Pizarra
-            </button>
-          )}
+          <button
+            onClick={() => setShowWhiteboard(prev => !prev)}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors ${showWhiteboard ? 'bg-violet-600 text-white' : 'bg-white/10 hover:bg-white/20 text-gray-300'}`}
+            title="Pizarra colaborativa"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            Pizarra
+          </button>
           <span className="hidden sm:flex items-center gap-1.5 text-red-400 text-xs font-semibold">
             <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
             EN VIVO
@@ -185,41 +168,9 @@ export default function TeacherLivePage() {
         </div>
       </div>
 
-      {/* Main content: split when whiteboard is open */}
       <div className="flex-1 flex min-h-0">
-        {/* Daily.co iframe or GTM overlay */}
         <div className="flex-1 relative">
-          {isZoom && zoomJoinUrl ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 bg-gray-900">
-              <div className="text-center space-y-2">
-                <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.069A1 1 0 0121 8.867V15.133a1 1 0 01-1.447.902L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <h2 className="text-white text-lg font-semibold">{stream?.title || 'Clase en vivo'}</h2>
-                <p className="text-gray-400 text-sm">La reunión se abre en la app de GoTo Meeting</p>
-              </div>
-              <a
-                href={zoomJoinUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => {
-                  if (zoomMeetingId) {
-                    e.preventDefault();
-                    window.location.href = `gotomeeting://join/${zoomMeetingId}`;
-                    setTimeout(() => window.open(zoomJoinUrl!, '_blank', 'noopener,noreferrer'), 2500);
-                  }
-                }}
-                className="flex items-center gap-2 px-6 py-3 bg-[#b1e787] text-gray-900 rounded-xl hover:bg-[#9fd470] font-semibold transition-colors text-sm"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-                Abrir GoTo Meeting
-              </a>
-            </div>
-          ) : !embedUrl ? (
+          {!embedUrl ? (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center text-gray-400 space-y-3">
                 <div className="w-10 h-10 border-2 border-gray-600 border-t-white rounded-full animate-spin mx-auto" />
@@ -235,7 +186,6 @@ export default function TeacherLivePage() {
             />
           )}
         </div>
-        {/* Collaborative whiteboard panel */}
         {showWhiteboard && (
           <div className="w-[42%] flex-shrink-0 flex flex-col border-l border-white/10">
             <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 bg-gray-800 border-b border-white/10">

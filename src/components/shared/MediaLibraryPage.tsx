@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
-import { apiClient, openDocument } from '@/lib/api-client';
-import { getBunnyThumbnailUrl, getBunnyEmbedUrl } from '@/lib/bunny-stream';
+import { apiClient, openDocument, downloadDocument } from '@/lib/api-client';
+import { getBunnyThumbnailUrl, getBunnyEmbedUrl, getBunnyDownloadUrl } from '@/lib/bunny-stream';
 import { formatDuration, formatDate, formatBytes } from '@/lib/formatters';
 import { SkeletonTable } from '@/components/ui/SkeletonLoader';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
@@ -340,13 +340,28 @@ function VideoCard({ video }: { video: VideoItem }) {
       </div>
       {/* Info */}
       <div className="p-3">
-        <h3 className="text-sm font-medium text-gray-900 truncate" title={video.title}>
-          {video.title}
-        </h3>
-        <p className="text-xs text-gray-500 mt-0.5 truncate">
-          {video.className}
-          {video.lessonTitle && ` · ${video.lessonTitle}`}
-        </p>
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <h3 className="text-sm font-medium text-gray-900 truncate" title={video.title}>
+              {video.title}
+            </h3>
+            <p className="text-xs text-gray-500 mt-0.5 truncate">
+              {video.className}
+              {video.lessonTitle && ` · ${video.lessonTitle}`}
+            </p>
+          </div>
+          {video.bunnyGuid && video.bunnyStatus !== null && video.bunnyStatus >= 3 && (
+            <button
+              title="Descargar video"
+              onClick={(e) => { e.stopPropagation(); window.open(getBunnyDownloadUrl(video.bunnyGuid), '_blank'); }}
+              className="shrink-0 p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+            </button>
+          )}
+        </div>
         <div className="flex items-center justify-between mt-2 text-xs text-gray-400">
           <span>{formatDate(video.createdAt)}</span>
           {video.fileSize && <span>{formatBytes(video.fileSize)}</span>}
@@ -379,6 +394,7 @@ function DocumentsTable({ documents, getDocIcon }: { documents: DocumentItem[]; 
             <th className="px-4 py-3 hidden md:table-cell">Lección</th>
             <th className="px-4 py-3 hidden lg:table-cell">Tamaño</th>
             <th className="px-4 py-3 hidden lg:table-cell">Fecha</th>
+            <th className="px-4 py-3 w-10"></th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
@@ -401,6 +417,17 @@ function DocumentsTable({ documents, getDocIcon }: { documents: DocumentItem[]; 
               <td className="px-4 py-3 text-sm text-gray-600 hidden md:table-cell truncate max-w-[200px]">{doc.lessonTitle}</td>
               <td className="px-4 py-3 text-sm text-gray-500 hidden lg:table-cell">{formatBytes(doc.fileSize)}</td>
               <td className="px-4 py-3 text-sm text-gray-500 hidden lg:table-cell">{formatDate(doc.createdAt)}</td>
+              <td className="px-4 py-3">
+                <button
+                  title="Descargar"
+                  onClick={async (e) => { e.stopPropagation(); try { await downloadDocument(doc.storagePath, doc.title); } catch { /* noop */ } }}
+                  className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>

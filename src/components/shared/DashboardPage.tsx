@@ -63,7 +63,7 @@ interface Class { id: string; name: string; slug?: string | null; description: s
 interface EnrolledStudent { id: string; name: string; email: string; classId: string; className: string; academyId?: string; lessonsCompleted?: number; totalLessons?: number; lastActive?: string | null; }
 interface PendingEnrollment { id: string; student: { id: string; firstName: string; lastName: string; email: string }; class: { id: string; name: string; academyId?: string }; enrolledAt: string; }
 interface RatingsData { overall: { averageRating: number | null; totalRatings: number; ratedLessons: number }; lessons: Array<{ lessonId: string; lessonTitle: string; className: string; classId: string; academyId?: string; averageRating: number | null; ratingCount: number }>; }
-interface StreamRecord { classId?: string | null; participantCount?: number | null; startedAt?: string | null; endedAt?: string | null; createdAt?: string | null; academyId?: string; }
+interface StreamRecord { classId?: string | null; participantCount?: number | null; startedAt?: string | null; endedAt?: string | null; createdAt?: string | null; academyId?: string; dailyRoomName?: string | null; zoomMeetingId?: string | null; }
 interface ProgressRecord { id: string; firstName: string; lastName: string; email: string; classId: string; className: string; academyId?: string; lessonsCompleted?: number | null; totalLessons?: number | null; lastActive?: string | null; totalWatchTime?: number | null; }
 interface PaymentHistoryItem { paymentStatus?: string | null; paymentAmount?: number | null; paymentMethod?: string | null; classId?: string | null; }
 interface EnrollmentRecord { student: { id: string; firstName: string; lastName: string; email: string } }
@@ -360,7 +360,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
       const periodClassIds = new Set(classes.filter(c => isClassInPeriod(c.startDate)).map(c => c.id));
       filtered = filtered.filter(s => s.classId ? periodClassIds.has(s.classId) : false);
     }
-    if (filtered.length === 0) return { avgParticipants: 0, total: 0, totalHours: 0, totalMinutes: 0 };
+    if (filtered.length === 0) return { avgParticipants: 0, total: 0, totalHours: 0, totalMinutes: 0, dailyCoHours: 0, dailyCoMinutes: 0 };
     const withP = filtered.filter(s => s.participantCount != null && s.participantCount > 0);
     const totalP = withP.reduce((sum, s) => sum + (s.participantCount || 0), 0);
     const totalMs = filtered.reduce((sum, s) => {
@@ -368,7 +368,13 @@ export function DashboardPage({ role }: DashboardPageProps) {
       return sum;
     }, 0);
     const totalMin = Math.floor(totalMs / (1000 * 60));
-    return { avgParticipants: withP.length > 0 ? Math.round(totalP / withP.length) : 0, total: filtered.length, totalHours: Math.floor(totalMin / 60), totalMinutes: totalMin % 60 };
+    // Daily.co-specific minutes (exclude GTM/Zoom streams)
+    const dailyCoMs = filtered.filter(s => s.dailyRoomName && !s.zoomMeetingId).reduce((sum, s) => {
+      if (s.startedAt && s.endedAt) return sum + (new Date(s.endedAt).getTime() - new Date(s.startedAt).getTime());
+      return sum;
+    }, 0);
+    const dailyCoMin = Math.floor(dailyCoMs / (1000 * 60));
+    return { avgParticipants: withP.length > 0 ? Math.round(totalP / withP.length) : 0, total: filtered.length, totalHours: Math.floor(totalMin / 60), totalMinutes: totalMin % 60, dailyCoHours: Math.floor(dailyCoMin / 60), dailyCoMinutes: dailyCoMin % 60 };
   }, [allStreams, selectedAcademy, selectedClass, isAdmin, isAcademy, activePeriodId, classes, isClassInPeriod]);
 
   // For demo academies: scale al día/atrasados proportionally when a class filter is applied
@@ -517,6 +523,16 @@ export function DashboardPage({ role }: DashboardPageProps) {
                 </span>
               </div>
             </div>
+            {isAdmin && (
+              <div>
+                <div className="flex justify-between mb-2">
+                  <span className="text-sm text-gray-600">Minutos Daily.co</span>
+                  <span className="text-sm font-semibold text-blue-700">
+                    {filteredStreamStats.dailyCoHours > 0 || filteredStreamStats.dailyCoMinutes > 0 ? `${filteredStreamStats.dailyCoHours}h ${filteredStreamStats.dailyCoMinutes}min` : '0h 0min'}
+                  </span>
+                </div>
+              </div>
+            )}
 
           </div>
         ) : (

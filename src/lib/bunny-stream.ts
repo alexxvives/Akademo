@@ -221,6 +221,13 @@ export function getBunnyEmbedUrl(videoGuid: string): string {
   return `https://iframe.mediadelivery.net/embed/${libraryId}/${videoGuid}?autoplay=false`;
 }
 
+// Get Bunny direct MP4 download URL (720p fallback)
+export function getBunnyDownloadUrl(videoGuid: string): string {
+  const config = getConfig();
+  const hostname = config.BUNNY_STREAM_CDN_HOSTNAME || 'vz-bb8d111e-8eb.b-cdn.net';
+  return `https://${hostname}/${videoGuid}/play_720p.mp4`;
+}
+
 // Video status helpers
 export const BunnyVideoStatus = {
   CREATED: 0,

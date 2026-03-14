@@ -63,7 +63,6 @@ export function StreamsPage({ role }: StreamsPageProps) {
   const [editingTitleId, setEditingTitleId] = useState<string | null>(null);
   const [editingTitleValue, setEditingTitleValue] = useState<string>('');
   const [deletingStreamId, setDeletingStreamId] = useState<string | null>(null);
-  const [syncingGtmStreamId, setSyncingGtmStreamId] = useState<string | null>(null);
 
   // Admin-only
   const [academies, setAcademies] = useState<Academy[]>([]);
@@ -284,25 +283,6 @@ export function StreamsPage({ role }: StreamsPageProps) {
       alert('Error al actualizar el título');
     } finally {
       setEditingTitleValue('');
-    }
-  };
-
-  const handleSyncGtmRecording = async (streamId: string) => {
-    setSyncingGtmStreamId(streamId);
-    try {
-      const response = await apiClient(`/live/${streamId}/check-recording-gtm`, { method: 'POST' });
-      const result = await response.json();
-      if (result.success) {
-        alert(`Grabación sincronizada correctamente (${result.data?.segmentCount ?? 1} segmento${(result.data?.segmentCount ?? 1) > 1 ? 's' : ''})`);
-        loadStreams();
-      } else {
-        alert(`No se pudo sincronizar: ${result.error}`);
-      }
-    } catch (error) {
-      console.error('Error syncing GTM recording:', error);
-      alert('Error al sincronizar grabación de GoToMeeting');
-    } finally {
-      setSyncingGtmStreamId(null);
     }
   };
 
@@ -596,21 +576,7 @@ export function StreamsPage({ role }: StreamsPageProps) {
                           </span>
                         ) : stream.status === 'ended' ? (
                           stream.zoomLink?.includes('gotomeeting') ? (
-                            <button
-                              onClick={() => handleSyncGtmRecording(stream.id)}
-                              disabled={syncingGtmStreamId === stream.id}
-                              className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 hover:underline disabled:opacity-50"
-                              title="Sincronizar grabación de GoToMeeting"
-                            >
-                              {syncingGtmStreamId === stream.id ? (
-                                <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                              ) : (
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                </svg>
-                              )}
-                              Sincronizar
-                            </button>
+                            <span className="text-xs text-gray-400">No disponible</span>
                           ) : (
                             <span className="text-xs text-gray-400">Procesando...</span>
                           )

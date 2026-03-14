@@ -76,6 +76,25 @@ export async function openDocument(storagePath: string): Promise<void> {
 }
 
 /**
+ * Download a document by fetching a signed URL and triggering a file download.
+ */
+export async function downloadDocument(storagePath: string, fileName: string): Promise<void> {
+  const res = await apiClient(`/storage/signed-url?key=${encodeURIComponent(storagePath)}`);
+  if (!res.ok) throw new Error('Failed to get signed URL');
+  const json = await res.json() as { success: boolean; data: { token: string; expires: number } };
+  if (!json.success) throw new Error('Failed to get signed URL');
+  const { token, expires } = json.data;
+  const encodedKey = storagePath.split('/').map(encodeURIComponent).join('/');
+  const url = `/api/storage/serve/${encodedKey}?token=${token}&expires=${expires}`;
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+/**
  * Make a GET request
  */
 export async function apiGet(path: string, options?: ApiClientOptions): Promise<Response> {

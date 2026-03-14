@@ -57,6 +57,19 @@ live.get('/', async (c) => {
       .bind(classId)
       .run();
 
+    // Auto-expire "Preparado" (scheduled) streams that have sat idle for 30+ minutes
+    // without being started. This prevents stale scheduled streams from lingering.
+    await c.env.DB
+      .prepare(`
+        UPDATE LiveStream
+        SET status = 'ended', endedAt = datetime('now')
+        WHERE classId = ?
+          AND status = 'scheduled'
+          AND createdAt <= datetime('now', '-30 minutes')
+      `)
+      .bind(classId)
+      .run();
+
     // Also auto-end GTM streams whose startToken JWT has already expired.
     // The token embedded in zoomStartUrl has ~1hr TTL but the 2hr SQL rule above
     // runs too late. Parse exp from the JWT and end early if it has passed.
@@ -342,6 +355,16 @@ live.get('/history', async (c) => {
       return c.json(errorResponse('Not authorized'), 403);
     }
 
+    // Auto-expire scheduled streams that have sat idle for 30+ minutes
+    await c.env.DB
+      .prepare(`
+        UPDATE LiveStream
+        SET status = 'ended', endedAt = datetime('now')
+        WHERE status = 'scheduled'
+          AND createdAt <= datetime('now', '-30 minutes')
+      `)
+      .run();
+
     let query = '';
     let params: any[] = [];
 
@@ -616,7 +639,10 @@ live.get('/:id/join-token', async (c) => {
     }
 
     const apiKey = c.env.DAILY_API_KEY;
-    if (!apiKey) return c.json(errorResponse('Daily.co no configurado'), 500);
+    if (!apiKey) {
+      console.error('[Join Token] DAILY_API_KEY is not configured');
+      return c.json(errorResponse('La videoconferencia no está configurada. Contacta al administrador.'), 500);
+    }
 
     // Check per-academy Daily.co enablement
     if (!stream.dailyEnabled) return c.json(errorResponse('La videoconferencia integrada no está habilitada para esta academia'), 403);

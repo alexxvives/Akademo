@@ -100,7 +100,7 @@ export default function AcademyLivePage() {
         <div className="text-center text-white space-y-4">
           <p className="text-red-400 text-lg">{error}</p>
           <button onClick={() => router.back()} className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm transition-colors">
-            â† Volver
+            ← Volver
           </button>
         </div>
       </div>
@@ -117,11 +117,11 @@ export default function AcademyLivePage() {
             </svg>
           </div>
           <div>
-            <h2 className="text-xl font-semibold mb-2">SesiÃ³n finalizada</h2>
+            <h2 className="text-xl font-semibold mb-2">Sesión finalizada</h2>
             {recordingReady ? (
-              <p className="text-green-400 text-sm">âœ“ GrabaciÃ³n disponible en el historial de streams</p>
+              <p className="text-green-400 text-sm">✓ Grabación disponible en el historial de streams</p>
             ) : (
-              <p className="text-gray-400 text-sm">La grabaciÃ³n se estÃ¡ procesando. EstarÃ¡ disponible en breve en el historial de streams.</p>
+              <p className="text-gray-400 text-sm">La grabación se está procesando. Estará disponible en breve en el historial de streams.</p>
             )}
           </div>
           <button
