@@ -277,4 +277,167 @@ zoomAccounts.get('/refresh-name/:id', async (c) => {
   }
 });
 
-export { zoomAccounts, refreshZoomToken };
+// POST /zoom-accounts/gtm-connect-url - Get GTM OAuth URL (keeps client_id server-side)
+zoomAccounts.post('/gtm-connect-url', async (c) => {
+  const session = await getSession(c);
+  if (!session) return c.json(errorResponse('Not authorized'), 401);
+  if (session.role !== 'ACADEMY') return c.json(errorResponse('Forbidden'), 403);
+
+  try {
+    const { academyId } = await c.req.json();
+    if (!academyId) return c.json(errorResponse('Missing academyId'), 400);
+
+    const redirectUri = encodeURIComponent(`${c.env.FRONTEND_URL}/api/gtm/oauth/callback`);
+    const url = `https://authentication.logmeininc.com/oauth/authorize?response_type=code&client_id=${c.env.GTM_CLIENT_ID}&redirect_uri=${redirectUri}&scope=collab%3A&state=${academyId}`;
+
+    return c.json({ success: true, data: { url } });
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('Error generating GTM connect URL:', error);
+    return c.json(errorResponse('Failed to generate GTM connect URL'), 500);
+  }
+});
+
+// GTM OAuth callback handler
+zoomAccounts.post('/oauth/callback/gtm', async (c) => {
+  try {
+    const { code, state } = await c.req.json();
+    const academyId = state;
+
+    if (!code || !academyId) {
+      return c.json(errorResponse('Missing required parameters'), 400);
+    }
+
+    // Exchange code for tokens
+    const tokenResponse = await fetch('https://authentication.logmeininc.com/oauth/token', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${btoa(`${c.env.GTM_CLIENT_ID}:${c.env.GTM_CLIENT_SECRET}`)}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: `${c.env.FRONTEND_URL}/api/gtm/oauth/callback`
+      })
+    });
+
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      console.error('GTM token exchange failed:', errorText);
+      return c.json(errorResponse(`Failed to exchange code for tokens: ${errorText}`), 500);
+    }
+
+    const tokens = await tokenResponse.json() as any;
+
+    // GTM token response includes principal (email) directly
+    const accountName = tokens.principal || tokens.email || 'GoToMeeting Account';
+    const accountId = tokens.organizer_key || tokens.account_key || crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + (tokens.expires_in || 3600) * 1000).toISOString();
+
+    // Check if account already exists (upsert pattern)
+    const existingAccount = await c.env.DB.prepare(
+      'SELECT id FROM ZoomAccount WHERE accountId = ? AND provider = ?'
+    ).bind(accountId, 'gotomeeting').first() as any;
+
+    if (existingAccount) {
+      await c.env.DB.prepare(`
+        UPDATE ZoomAccount
+        SET accountName = ?, accessToken = ?, refreshToken = ?, expiresAt = ?, academyId = ?
+        WHERE accountId = ? AND provider = ?
+      `).bind(
+        accountName,
+        tokens.access_token,
+        tokens.refresh_token,
+        expiresAt,
+        academyId,
+        accountId,
+        'gotomeeting'
+      ).run();
+
+      return c.json({ success: true, data: { id: existingAccount.id } });
+    } else {
+      const newAccountId = crypto.randomUUID();
+      await c.env.DB.prepare(`
+        INSERT INTO ZoomAccount (id, academyId, accountName, accessToken, refreshToken, expiresAt, accountId, provider)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        newAccountId,
+        academyId,
+        accountName,
+        tokens.access_token,
+        tokens.refresh_token,
+        expiresAt,
+        accountId,
+        'gotomeeting'
+      ).run();
+
+      return c.json({ success: true, data: { id: newAccountId } });
+    }
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('GTM OAuth callback error:', error);
+    return c.json(errorResponse('GTM OAuth callback failed'), 500);
+  }
+});
+
+// Refresh GTM token helper (internal use)
+async function refreshGTMToken(c: Context<{ Bindings: Bindings }>, accountId: string): Promise<string | null> {
+  try {
+    const account = await c.env.DB.prepare(
+      'SELECT accessToken, refreshToken, expiresAt FROM ZoomAccount WHERE id = ?'
+    ).bind(accountId).first() as any;
+
+    if (!account) return null;
+
+    const expiresAt = new Date(account.expiresAt);
+    if (expiresAt > new Date(Date.now() + 5 * 60 * 1000)) {
+      return account.accessToken;
+    }
+
+    const tokenResponse = await fetch('https://authentication.logmeininc.com/oauth/token', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${btoa(`${c.env.GTM_CLIENT_ID}:${c.env.GTM_CLIENT_SECRET}`)}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: account.refreshToken
+      })
+    });
+
+    if (!tokenResponse.ok) {
+      const errBody = await tokenResponse.text();
+      console.error('Failed to refresh GTM token:', tokenResponse.status, errBody);
+      return null;
+    }
+
+    const tokens = await tokenResponse.json() as any;
+    const newExpiresAt = new Date(Date.now() + (tokens.expires_in || 3600) * 1000).toISOString();
+
+    // Only update refresh_token if GTM returned a new one — GTM may omit it on refresh,
+    // and overwriting with undefined/null would permanently break subsequent refreshes.
+    if (tokens.refresh_token) {
+      await c.env.DB.prepare(`
+        UPDATE ZoomAccount
+        SET accessToken = ?, refreshToken = ?, expiresAt = ?, updatedAt = datetime('now')
+        WHERE id = ?
+      `).bind(tokens.access_token, tokens.refresh_token, newExpiresAt, accountId).run();
+    } else {
+      await c.env.DB.prepare(`
+        UPDATE ZoomAccount
+        SET accessToken = ?, expiresAt = ?, updatedAt = datetime('now')
+        WHERE id = ?
+      `).bind(tokens.access_token, newExpiresAt, accountId).run();
+    }
+
+    return tokens.access_token;
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('Error refreshing GTM token:', error);
+    return null;
+  }
+}
+
+export { zoomAccounts, refreshZoomToken, refreshGTMToken };

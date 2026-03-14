@@ -41,6 +41,58 @@ live.get('/', async (c) => {
 
     const isHost = ['TEACHER', 'ACADEMY', 'ADMIN'].includes(session.role);
 
+    // Auto-end GTM streams that have exceeded their 2-hour scheduled meeting window.
+    // When we create a GTM meeting we schedule it for 2 hours; after that, GTM treats it
+    // as ended. Sync our DB so the banner disappears for the host automatically.
+    await c.env.DB
+      .prepare(`
+        UPDATE LiveStream
+        SET status = 'ended', endedAt = datetime('now')
+        WHERE classId = ?
+          AND zoomMeetingId IS NOT NULL
+          AND dailyRoomName IS NULL
+          AND status IN ('active', 'scheduled')
+          AND createdAt <= datetime('now', '-2 hours')
+      `)
+      .bind(classId)
+      .run();
+
+    // Also auto-end GTM streams whose startToken JWT has already expired.
+    // The token embedded in zoomStartUrl has ~1hr TTL but the 2hr SQL rule above
+    // runs too late. Parse exp from the JWT and end early if it has passed.
+    if (isHost) {
+      const gtmCandidates = await c.env.DB
+        .prepare(`
+          SELECT id, zoomStartUrl FROM LiveStream
+          WHERE classId = ? AND zoomMeetingId IS NOT NULL AND dailyRoomName IS NULL
+            AND status IN ('active', 'scheduled')
+        `)
+        .bind(classId)
+        .all<{ id: string; zoomStartUrl: string | null }>();
+      for (const row of (gtmCandidates.results ?? [])) {
+        const url = row.zoomStartUrl;
+        if (!url) continue;
+        // startToken is a JWT — grab its payload (second segment)
+        const tokenMatch = url.match(/[?&]startToken=([^&]+)/);
+        if (!tokenMatch) continue;
+        const segments = tokenMatch[1].split('.');
+        if (segments.length < 2) continue;
+        try {
+          const payload = JSON.parse(
+            atob(segments[1].replace(/-/g, '+').replace(/_/g, '/'))
+          ) as { exp?: number };
+          if (payload.exp && payload.exp * 1000 < Date.now()) {
+            await c.env.DB
+              .prepare(`UPDATE LiveStream SET status = 'ended', endedAt = datetime('now') WHERE id = ?`)
+              .bind(row.id)
+              .run();
+          }
+        } catch {
+          // malformed JWT — skip
+        }
+      }
+    }
+
     const result = await c.env.DB
       .prepare(`
         SELECT ls.id, ls.classId, ls.teacherId, ls.status, ls.title, ls.startedAt, ls.endedAt, 
@@ -149,23 +201,105 @@ live.post('/', async (c) => {
 
       if (zoomAccount) {
         let token = zoomAccount.accessToken;
+        const isGTM = zoomAccount.provider === 'gotomeeting';
 
         if (new Date(zoomAccount.expiresAt) <= new Date(Date.now() + 5 * 60 * 1000)) {
-          const { refreshZoomToken } = await import('./zoom-accounts');
-          token = (await refreshZoomToken(c, classZoomInfo.zoomAccountId)) ?? token;
+          if (isGTM) {
+            const { refreshGTMToken } = await import('./zoom-accounts');
+            const refreshed = await refreshGTMToken(c, classZoomInfo.zoomAccountId);
+            if (!refreshed) {
+              // Refresh token has expired — user must reconnect the GTM account
+              return c.json(errorResponse('La sesión de GoToMeeting ha expirado. Por favor, desconecta y vuelve a conectar tu cuenta de GoToMeeting en Ajustes → Streaming.'), 400);
+            }
+            token = refreshed;
+          } else {
+            const { refreshZoomToken } = await import('./zoom-accounts');
+            token = (await refreshZoomToken(c, classZoomInfo.zoomAccountId)) ?? token;
+          }
         }
 
-        // Zoom meeting creation
-        const meeting = await createZoomMeeting({ topic: title, config: { accessToken: token } });
+        if (isGTM) {
+          // GoToMeeting meeting creation (v1 API - developer.goto.com/GoToMeetingV1)
+          // Docs: https://developer.goto.com/GoToMeetingV1/#operation/createMeeting
+          // - Body must be a plain JSON object {} (response comes back as array)
+          // - starttime/endtime MUST be a future date (not "now") in ISO8601 UTC format
+          // - timezonekey is DEPRECATED but must be present as empty string ''
+          // - meetingtype: "immediate" | "scheduled" | "recurring"
+          const startTime = new Date(Date.now() + 2 * 60 * 1000).toISOString(); // 2 min in future
+          const endTime = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(); // 2 hours later
+          const gtmResponse = await fetch('https://api.getgo.com/G2M/rest/meetings', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+              subject: title,
+              starttime: startTime,
+              endtime: endTime,
+              passwordrequired: false,
+              conferencecallinfo: 'VoIP',
+              timezonekey: '',
+              meetingtype: 'scheduled',
+            })
+          });
 
-        await c.env.DB
-          .prepare(`
-            INSERT INTO LiveStream (id, classId, teacherId, title, status, zoomLink, zoomMeetingId, zoomStartUrl, createdAt) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `)
-          .bind(streamId, classId, classInfo.teacherId ?? session.id, title, 'scheduled',
-                meeting.join_url, String(meeting.id), meeting.start_url, now)
-          .run();
+          const errText = await gtmResponse.text();
+          if (!gtmResponse.ok) {
+            console.error('GTM meeting creation failed:', gtmResponse.status, errText);
+            // Check for token-related errors and give a clear reconnect message
+            const isTokenError = errText.includes('InvalidToken') || errText.includes('Invalid token') || gtmResponse.status === 401;
+            if (isTokenError) {
+              return c.json(errorResponse('Tu sesión de GoToMeeting ha expirado o no es válida. Por favor, desconecta y vuelve a conectar tu cuenta de GoToMeeting en Ajustes → Streaming.'), 400);
+            }
+            return c.json(errorResponse(`Failed to create GoToMeeting meeting: ${errText}`), 500);
+          }
+
+          const gtmMeeting = JSON.parse(errText) as any;
+          // v1 API returns an array of meeting objects
+          const meetingData = Array.isArray(gtmMeeting) ? gtmMeeting[0] : gtmMeeting;
+          const joinUrl = meetingData.joinURL || meetingData.joinUrl || meetingData.joinurl || '';
+          const meetingId = String(meetingData.meetingId || meetingData.meetingid || '');
+
+          // Fetch host start URL to open the GTM desktop app directly (like Zoom's start_url)
+          // GET /meetings/{meetingId}/start → { hostURL: "gotomeeting://..." }
+          let gtmHostUrl: string | null = null;
+          try {
+            const startResp = await fetch(`https://api.getgo.com/G2M/rest/meetings/${meetingId}/start`, {
+              headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+            });
+            if (startResp.ok) {
+              const startData = await startResp.json() as any;
+              gtmHostUrl = startData.hostURL || startData.startURL || startData.startUrl || null;
+            } else {
+              console.warn(`[GTM] Could not fetch hostURL for meeting ${meetingId}:`, await startResp.text());
+            }
+          } catch (startErr) {
+            console.warn('[GTM] Failed to fetch hostURL:', startErr);
+          }
+
+          await c.env.DB
+            .prepare(`
+              INSERT INTO LiveStream (id, classId, teacherId, title, status, zoomLink, zoomMeetingId, zoomStartUrl, startedAt, createdAt) 
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `)
+            .bind(streamId, classId, classInfo.teacherId ?? session.id, title, 'active',
+                  joinUrl, meetingId, gtmHostUrl, now, now)
+            .run();
+        } else {
+          // Zoom meeting creation
+          const meeting = await createZoomMeeting({ topic: title, config: { accessToken: token } });
+
+          await c.env.DB
+            .prepare(`
+              INSERT INTO LiveStream (id, classId, teacherId, title, status, zoomLink, zoomMeetingId, zoomStartUrl, createdAt) 
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `)
+            .bind(streamId, classId, classInfo.teacherId ?? session.id, title, 'scheduled',
+                  meeting.join_url, String(meeting.id), meeting.start_url, now)
+            .run();
+        }
 
         const stream = await c.env.DB.prepare('SELECT * FROM LiveStream WHERE id = ?').bind(streamId).first();
         return c.json(successResponse(stream), 201);
@@ -475,7 +609,7 @@ live.get('/:id/join-token', async (c) => {
       if (stream.academyOwnerId !== session.id) return c.json(errorResponse('Not authorized'), 403);
     }
 
-    // If this is a Zoom stream (no Daily.co room), return the external join URL for the watermark overlay page
+    // If this is a GTM/Zoom stream (no Daily.co room), return the external join URL for the watermark overlay page
     if (stream.zoomMeetingId && !stream.dailyRoomName) {
       const isHost = ['TEACHER', 'ACADEMY', 'ADMIN'].includes(session.role);
       return c.json(successResponse({ zoomLink: stream.zoomLink, isZoom: true, isHost, zoomMeetingId: stream.zoomMeetingId }));
@@ -710,21 +844,28 @@ live.patch('/:id', async (c) => {
           .bind(stream.classId)
           .first<{ zoomAccountId: string | null }>();
         let zoomToken2: string | undefined;
+        let isGtm2 = false;
         if (classInfo2?.zoomAccountId) {
           const zoomAccount2 = await c.env.DB
             .prepare('SELECT accessToken, refreshToken, expiresAt, provider FROM ZoomAccount WHERE id = ?')
             .bind(classInfo2.zoomAccountId)
             .first() as { accessToken: string; refreshToken: string; expiresAt: string; provider: string | null } | null;
           if (zoomAccount2) {
-            let token2 = zoomAccount2.accessToken;
-            if (new Date(zoomAccount2.expiresAt) <= new Date(Date.now() + 5 * 60 * 1000)) {
-              const { refreshZoomToken } = await import('./zoom-accounts');
-              token2 = (await refreshZoomToken(c, classInfo2.zoomAccountId)) ?? token2;
+            if (zoomAccount2.provider === 'gotomeeting') {
+              isGtm2 = true;
+            } else {
+              let token2 = zoomAccount2.accessToken;
+              if (new Date(zoomAccount2.expiresAt) <= new Date(Date.now() + 5 * 60 * 1000)) {
+                const { refreshZoomToken } = await import('./zoom-accounts');
+                token2 = (await refreshZoomToken(c, classInfo2.zoomAccountId)) ?? token2;
+              }
+              zoomToken2 = token2;
             }
-            zoomToken2 = token2;
           }
         }
-        await deleteZoomMeeting(oldZoomMeetingId, zoomToken2 ? { accessToken: zoomToken2 } : undefined);
+        if (!isGtm2) {
+          await deleteZoomMeeting(oldZoomMeetingId, zoomToken2 ? { accessToken: zoomToken2 } : undefined);
+        }
       } catch (zoomDeleteErr) {
         console.error('[PATCH Stream] Failed to delete Zoom meeting on unlink:', zoomDeleteErr);
         // Non-fatal — continue
@@ -790,6 +931,254 @@ live.patch('/:id', async (c) => {
     params.push(streamId);
 
     await c.env.DB.prepare(query).bind(...params).run();
+
+    // ── GTM auto-recording + fresh host URL: fires when stream becomes active ──
+    let freshHostUrl: string | null = null;
+    if (status === 'active' && stream.zoomMeetingId && !stream.dailyRoomName) {
+      try {
+        const gtmClassInfo = await c.env.DB
+          .prepare('SELECT zoomAccountId FROM Class WHERE id = ?')
+          .bind(stream.classId)
+          .first<{ zoomAccountId: string | null }>();
+        if (gtmClassInfo?.zoomAccountId) {
+          const gtmAccount = await c.env.DB
+            .prepare('SELECT accessToken, refreshToken, expiresAt, provider FROM ZoomAccount WHERE id = ?')
+            .bind(gtmClassInfo.zoomAccountId)
+            .first() as { accessToken: string; refreshToken: string; expiresAt: string; provider: string } | null;
+          if (gtmAccount?.provider === 'gotomeeting') {
+            const { refreshGTMToken } = await import('./zoom-accounts');
+            let gtmToken = gtmAccount.accessToken;
+            if (new Date(gtmAccount.expiresAt) <= new Date(Date.now() + 5 * 60 * 1000)) {
+              gtmToken = (await refreshGTMToken(c, gtmClassInfo.zoomAccountId)) ?? gtmToken;
+            }
+            // Fetch a fresh host URL so the stored (possibly expired) token doesn't block the host
+            try {
+              const freshStartResp = await fetch(
+                `https://api.getgo.com/G2M/rest/meetings/${stream.zoomMeetingId}/start`,
+                { headers: { 'Authorization': `Bearer ${gtmToken}`, 'Accept': 'application/json' } }
+              );
+              if (freshStartResp.ok) {
+                const freshStartData = await freshStartResp.json() as any;
+                freshHostUrl = freshStartData.hostURL || freshStartData.startURL || freshStartData.startUrl || null;
+                // Persist the fresh URL so the JWT expiry auto-end clock resets
+                if (freshHostUrl) {
+                  await c.env.DB
+                    .prepare('UPDATE LiveStream SET zoomStartUrl = ? WHERE id = ?')
+                    .bind(freshHostUrl, streamId)
+                    .run();
+                }
+              } else {
+                console.warn('[GTM] Could not fetch fresh hostURL:', freshStartResp.status);
+              }
+            } catch (freshErr) {
+              console.warn('[GTM] Failed to fetch fresh hostURL:', freshErr);
+            }
+            // Try starting recording immediately (may fail if host hasn't opened GTM yet)
+            const recRes = await fetch(
+              `https://api.getgo.com/G2M/rest/meetings/${stream.zoomMeetingId}/recording`,
+              {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${gtmToken}`, 'Content-Type': 'application/json' },
+              }
+            );
+            if (!recRes.ok) {
+              console.warn('[GTM Recording] Could not start recording immediately:', recRes.status, await recRes.text());
+              // Retry after 60 s — by then the host will have joined GTM
+              const meetingIdCapture = stream.zoomMeetingId;
+              const accountIdCapture = gtmClassInfo.zoomAccountId;
+              c.executionCtx.waitUntil((async () => {
+                // Retry at 30 s, 60 s, and 120 s — by then the host will have joined GTM
+                for (const delay of [30_000, 30_000, 60_000]) {
+                  await new Promise<void>(resolve => setTimeout(resolve, delay));
+                  try {
+                    const retryToken = (await refreshGTMToken(c, accountIdCapture)) ?? gtmToken;
+                    const retryRes = await fetch(
+                      `https://api.getgo.com/G2M/rest/meetings/${meetingIdCapture}/recording`,
+                      {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${retryToken}`, 'Content-Type': 'application/json' },
+                      }
+                    );
+                    if (retryRes.ok) {
+                      console.log('[GTM Recording] Recording started on retry for meeting', meetingIdCapture);
+                      break; // success — stop retrying
+                    } else {
+                      console.warn('[GTM Recording] Retry failed:', retryRes.status, await retryRes.text());
+                    }
+                  } catch (retryErr) {
+                    console.error('[GTM Recording] Retry error:', retryErr);
+                  }
+                }
+              })());
+            } else {
+              console.log('[GTM Recording] Recording started for meeting', stream.zoomMeetingId);
+            }
+          }
+        }
+      } catch (recErr) {
+        console.error('[GTM Recording] Non-fatal error starting recording:', recErr);
+      }
+    }
+
+    // ── GTM recording fetch + Bunny upload: fires when stream is ended ──
+    // Mirrors the Zoom `recording.completed` webhook handler. GTM has no webhook,
+    // so we poll GET /meetings/{id}/recordings until recordings are ready, then
+    // upload to Bunny inside the academy's collection.
+    if (status === 'ended' && stream.zoomMeetingId && !stream.dailyRoomName && !stream.recordingId) {
+      try {
+        const gtmEndClassInfo = await c.env.DB
+          .prepare('SELECT zoomAccountId FROM Class WHERE id = ?')
+          .bind(stream.classId)
+          .first<{ zoomAccountId: string | null }>();
+        if (gtmEndClassInfo?.zoomAccountId) {
+          const gtmEndAccount = await c.env.DB
+            .prepare('SELECT accessToken, refreshToken, expiresAt, provider FROM ZoomAccount WHERE id = ?')
+            .bind(gtmEndClassInfo.zoomAccountId)
+            .first() as { accessToken: string; refreshToken: string; expiresAt: string; provider: string } | null;
+          if (gtmEndAccount?.provider === 'gotomeeting') {
+            const { refreshGTMToken } = await import('./zoom-accounts');
+            const endMeetingId = stream.zoomMeetingId as string;
+            const endStreamId = streamId;
+            const endClassId = stream.classId as string;
+            const endAccountId = gtmEndClassInfo.zoomAccountId;
+            const endStreamTitle = (stream.title as string) || 'Grabación';
+            const endToken = gtmEndAccount.accessToken;
+            // Poll at 2 min, then 5 min, then 10 min after meeting ends
+            c.executionCtx.waitUntil((async () => {
+              for (const delay of [120_000, 180_000, 300_000]) {
+                await new Promise<void>(resolve => setTimeout(resolve, delay));
+                try {
+                  // Check for idempotency — another poll may have already set recordingId
+                  const existingStream = await c.env.DB
+                    .prepare('SELECT recordingId FROM LiveStream WHERE id = ?')
+                    .bind(endStreamId)
+                    .first<{ recordingId: string | null }>();
+                  if (existingStream?.recordingId) break;
+
+                  const pollToken = (await refreshGTMToken(c, endAccountId)) ?? endToken;
+                  // GTM v1 API does not have a /recordings endpoint.
+                  // Recordings are returned via GET /meetings/{id}/historicalMeetings
+                  // (docs: developer.goto.com/GoToMeetingV1/#operation/getHistoricalMeetingsByMeetingId)
+                  // Each session has a `recording` expand property with recording info.
+                  const now = new Date();
+                  const startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString(); // 24h window
+                  const endDate = now.toISOString();
+                  const recListRes = await fetch(
+                    `https://api.getgo.com/G2M/rest/meetings/${endMeetingId}/historicalMeetings?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`,
+                    { headers: { 'Authorization': `Bearer ${pollToken}`, 'Accept': 'application/json' } }
+                  );
+                  if (!recListRes.ok) {
+                    console.warn('[GTM Recording] historicalMeetings not ready yet:', recListRes.status);
+                    continue;
+                  }
+                  const sessions = (await recListRes.json()) as any[];
+                  if (!sessions || sessions.length === 0) {
+                    console.log('[GTM Recording] No sessions yet, will retry...');
+                    continue;
+                  }
+                  // Extract recording URLs from session recording objects.
+                  // The MeetingRecording schema is not fully documented; try common field names.
+                  const recordings = sessions
+                    .map((s: any) => s.recording)
+                    .filter(Boolean);
+                  if (recordings.length === 0) {
+                    console.log('[GTM Recording] Sessions found but no recording data yet, will retry...');
+                    continue;
+                  }
+
+                  // Resolve academy Bunny collection (create if it doesn't exist yet)
+                  let bunnyCollectionId: string | undefined;
+                  try {
+                    const academyRow = await c.env.DB
+                      .prepare('SELECT a.name FROM Academy a JOIN Class c ON c.academyId = a.id WHERE c.id = ?')
+                      .bind(endClassId)
+                      .first() as any;
+                    if (academyRow?.name) {
+                      const colRes = await fetch(
+                        `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/collections?itemsPerPage=100`,
+                        { headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY } }
+                      );
+                      if (colRes.ok) {
+                        const colData = await colRes.json() as any;
+                        const existing = (colData.items || []).find((col: any) => col.name === academyRow.name);
+                        if (existing) {
+                          bunnyCollectionId = existing.guid;
+                        } else {
+                          const createRes = await fetch(
+                            `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/collections`,
+                            {
+                              method: 'POST',
+                              headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY, 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ name: academyRow.name }),
+                            }
+                          );
+                          if (createRes.ok) bunnyCollectionId = ((await createRes.json()) as any).guid;
+                        }
+                      }
+                    }
+                  } catch (colErr) {
+                    console.error('[GTM Recording] Collection lookup failed:', colErr);
+                  }
+
+                  // Upload each recording segment to Bunny
+                  const bunnyGuids: string[] = [];
+                  for (let i = 0; i < recordings.length; i++) {
+                    const rec = recordings[i];
+                    // Try common field names for the download URL in the MeetingRecording object
+                    const contentURL = rec.recordingUrl || rec.downloadUrl || rec.contentURL || rec.url;
+                    if (!contentURL) continue;
+                    const partSuffix = recordings.length > 1 ? ` - Parte ${i + 1}` : '';
+                    const videoTitle = `${endStreamTitle}${partSuffix}`;
+                    const bunnyFetchRes = await fetch(
+                      `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/videos/fetch`,
+                      {
+                        method: 'POST',
+                        headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ url: contentURL, title: videoTitle }),
+                      }
+                    );
+                    if (!bunnyFetchRes.ok) {
+                      console.error('[GTM Recording] Bunny fetch failed:', bunnyFetchRes.status, await bunnyFetchRes.text());
+                      continue;
+                    }
+                    const bunnyData = (await bunnyFetchRes.json()) as any;
+                    const videoGuid = bunnyData.guid || bunnyData.videoGuid || bunnyData.id;
+                    if (!videoGuid) continue;
+                    bunnyGuids.push(videoGuid);
+                    if (bunnyCollectionId) {
+                      try {
+                        await fetch(
+                          `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/videos/${videoGuid}`,
+                          {
+                            method: 'POST',
+                            headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ collectionId: bunnyCollectionId }),
+                          }
+                        );
+                      } catch {}
+                    }
+                  }
+
+                  if (bunnyGuids.length > 0) {
+                    const recordingIds = bunnyGuids.length === 1 ? bunnyGuids[0] : JSON.stringify(bunnyGuids);
+                    await c.env.DB
+                      .prepare('UPDATE LiveStream SET recordingId = ? WHERE id = ?')
+                      .bind(recordingIds, endStreamId)
+                      .run();
+                    console.log('[GTM Recording] Uploaded', bunnyGuids.length, 'segment(s) to Bunny for stream', endStreamId);
+                    break; // success — stop polling
+                  }
+                } catch (pollErr) {
+                  console.error('[GTM Recording] Poll error:', pollErr);
+                }
+              }
+            })());
+          }
+        }
+      } catch (gtmEndErr) {
+        console.error('[GTM Recording Ended] Non-fatal error:', gtmEndErr);
+      }
+    }
 
     // ── Sync linked CalendarScheduledEvent ──
     if (stream.calendarEventId) {
@@ -912,21 +1301,28 @@ live.delete('/:id', async (c) => {
           .bind(stream.classId)
           .first<{ zoomAccountId: string | null }>();
         let zoomToken: string | undefined;
+        let isGtm = false;
         if (classInfo?.zoomAccountId) {
           const zoomAccount = await c.env.DB
             .prepare('SELECT accessToken, refreshToken, expiresAt, provider FROM ZoomAccount WHERE id = ?')
             .bind(classInfo.zoomAccountId)
             .first() as { accessToken: string; refreshToken: string; expiresAt: string; provider: string | null } | null;
           if (zoomAccount) {
-            let token = zoomAccount.accessToken;
-            if (new Date(zoomAccount.expiresAt) <= new Date(Date.now() + 5 * 60 * 1000)) {
-              const { refreshZoomToken } = await import('./zoom-accounts');
-              token = (await refreshZoomToken(c, classInfo.zoomAccountId)) ?? token;
+            if (zoomAccount.provider === 'gotomeeting') {
+              isGtm = true;
+            } else {
+              let token = zoomAccount.accessToken;
+              if (new Date(zoomAccount.expiresAt) <= new Date(Date.now() + 5 * 60 * 1000)) {
+                const { refreshZoomToken } = await import('./zoom-accounts');
+                token = (await refreshZoomToken(c, classInfo.zoomAccountId)) ?? token;
+              }
+              zoomToken = token;
             }
-            zoomToken = token;
           }
         }
-        await deleteZoomMeeting(stream.zoomMeetingId, zoomToken ? { accessToken: zoomToken } : undefined);
+        if (!isGtm) {
+          await deleteZoomMeeting(stream.zoomMeetingId, zoomToken ? { accessToken: zoomToken } : undefined);
+        }
       } catch (zoomErr) {
         console.error('[Delete Stream] Failed to delete Zoom meeting:', zoomErr);
         // Continue with DB deletion even if Zoom API fails
@@ -1262,6 +1658,9 @@ live.post('/:id/check-recording', async (c) => {
         .first() as { accessToken: string; refreshToken: string; expiresAt: string; provider: string } | null;
 
       if (zoomAccount) {
+        if (zoomAccount.provider === 'gotomeeting') {
+          return c.json(errorResponse('Este stream usa GoToMeeting. Usa el botón "Sincronizar" en la lista de streams para sincronizar la grabación.'), 400);
+        }
         let token = zoomAccount.accessToken;
         if (new Date(zoomAccount.expiresAt) <= new Date(Date.now() + 5 * 60 * 1000)) {
           const { refreshZoomToken } = await import('./zoom-accounts');
@@ -1467,6 +1866,194 @@ live.get('/:id/participants', async (c) => {
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Get Participants] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
+
+// POST /live/:id/check-recording-gtm - Manually sync GTM cloud recording to Bunny
+live.post('/:id/check-recording-gtm', async (c) => {
+  try {
+    const session = await requireAuth(c);
+
+    if (!['ADMIN', 'TEACHER', 'ACADEMY'].includes(session.role)) {
+      return c.json(errorResponse('Not authorized'), 403);
+    }
+
+    const streamId = c.req.param('id');
+    const stream = await c.env.DB.prepare('SELECT * FROM LiveStream WHERE id = ?').bind(streamId).first() as any;
+    if (!stream) return c.json(errorResponse('Stream not found'), 404);
+    if (!stream.zoomMeetingId) return c.json(errorResponse('No GTM meeting ID on this stream'), 400);
+
+    // Verify permission and get the GTM access token
+    const classInfo = await c.env.DB
+      .prepare('SELECT c.teacherId, c.zoomAccountId, a.ownerId FROM Class c JOIN Academy a ON c.academyId = a.id WHERE c.id = ?')
+      .bind(stream.classId)
+      .first() as any;
+
+    if (!classInfo) return c.json(errorResponse('Class not found'), 404);
+    if (session.role === 'TEACHER' && classInfo.teacherId !== session.id) {
+      return c.json(errorResponse('Not authorized'), 403);
+    }
+    if (session.role === 'ACADEMY' && classInfo.ownerId !== session.id) {
+      return c.json(errorResponse('Not authorized'), 403);
+    }
+
+    if (!classInfo.zoomAccountId) return c.json(errorResponse('No GTM account linked to this class'), 400);
+
+    const zoomAccount = await c.env.DB
+      .prepare('SELECT accessToken, refreshToken, expiresAt, provider FROM ZoomAccount WHERE id = ?')
+      .bind(classInfo.zoomAccountId)
+      .first() as any;
+
+    if (!zoomAccount || zoomAccount.provider !== 'gotomeeting') {
+      return c.json(errorResponse('No GoToMeeting account found'), 400);
+    }
+
+    let token = zoomAccount.accessToken;
+    if (new Date(zoomAccount.expiresAt) <= new Date(Date.now() + 5 * 60 * 1000)) {
+      const { refreshGTMToken } = await import('./zoom-accounts');
+      const refreshed = await refreshGTMToken(c, classInfo.zoomAccountId);
+      if (!refreshed) return c.json(errorResponse('GTM session expired — please reconnect the account'), 400);
+      token = refreshed;
+    }
+
+    // GET /meetings/{meetingId}/recordings — returns GTM cloud recordings
+    const recResp = await fetch(`https://api.getgo.com/G2M/rest/meetings/${stream.zoomMeetingId}/recordings`, {
+      headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+    });
+
+    if (!recResp.ok) {
+      const errBody = await recResp.text();
+      console.error('[GTM Recording] Fetch failed:', recResp.status, errBody);
+      if (recResp.status === 404) return c.json(errorResponse('No recording found for this GTM meeting yet'), 404);
+      return c.json(errorResponse(`GTM recordings API error: ${errBody}`), 502);
+    }
+
+    const recData = await recResp.json() as any;
+    // GTM /recordings response: { recordingList: [{ recordingId, downloadUrl, contentType, ... }] }
+    const recordings = recData.recordingList || recData.recordings || (Array.isArray(recData) ? recData : []);
+    const mp4Recordings = recordings.filter((r: any) =>
+      (r.contentType || r.fileType || '').toLowerCase().includes('mp4') ||
+      (r.downloadUrl || '').toLowerCase().includes('.mp4')
+    );
+
+    if (mp4Recordings.length === 0) {
+      return c.json(errorResponse('No MP4 recording found in GTM yet. Cloud recording may still be processing.'), 404);
+    }
+
+    // Sort by start time if available
+    mp4Recordings.sort((a: any, b: any) =>
+      new Date(a.startDate || a.recordingStartTime || 0).getTime() -
+      new Date(b.startDate || b.recordingStartTime || 0).getTime()
+    );
+
+    // Get or create Bunny collection for this academy
+    let bunnyCollectionId: string | undefined;
+    try {
+      const academyRow = await c.env.DB
+        .prepare('SELECT a.name FROM Academy a JOIN Class c ON c.academyId = a.id WHERE c.id = ?')
+        .bind(stream.classId)
+        .first() as any;
+
+      if (academyRow?.name) {
+        const collectionsRes = await fetch(
+          `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/collections?itemsPerPage=100`,
+          { headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY } }
+        );
+        if (collectionsRes.ok) {
+          const collectionsData = await collectionsRes.json() as any;
+          const existing = (collectionsData.items || []).find((col: any) => col.name === academyRow.name);
+          if (existing) {
+            bunnyCollectionId = existing.guid;
+          } else {
+            const createRes = await fetch(
+              `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/collections`,
+              {
+                method: 'POST',
+                headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: academyRow.name }),
+              }
+            );
+            if (createRes.ok) {
+              const createData = await createRes.json() as any;
+              bunnyCollectionId = createData.guid;
+            }
+          }
+        }
+      }
+    } catch (collectionError: any) {
+      console.error('[GTM Recording] Failed to get/create Bunny collection:', collectionError.message);
+    }
+
+    // Upload each MP4 segment to Bunny Stream
+    const bunnyGuids: string[] = [];
+    for (let i = 0; i < mp4Recordings.length; i++) {
+      const rec = mp4Recordings[i];
+      const partSuffix = mp4Recordings.length > 1 ? ` - Parte ${i + 1}` : '';
+      const videoTitle = `${stream.title || 'GTM Recording'}${partSuffix}`;
+
+      // GTM recordings require auth token for download
+      const downloadUrl: string = rec.downloadUrl || rec.download_url || '';
+      if (!downloadUrl) {
+        console.error(`[GTM Recording] No downloadUrl on recording ${i + 1}`);
+        continue;
+      }
+
+      // Append GTM access token as query param (GTM requires auth for download)
+      const authedUrl = downloadUrl.includes('?')
+        ? `${downloadUrl}&access_token=${token}`
+        : `${downloadUrl}?access_token=${token}`;
+
+      const bunnyResponse = await fetch(`https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/videos/fetch`, {
+        method: 'POST',
+        headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: authedUrl, title: videoTitle }),
+      });
+
+      if (!bunnyResponse.ok) {
+        const errorText = await bunnyResponse.text();
+        console.error(`[GTM Recording] Bunny fetch failed for segment ${i + 1}:`, errorText);
+        continue;
+      }
+
+      const bunnyData = await bunnyResponse.json() as any;
+      const bunnyGuid = bunnyData.guid || bunnyData.id;
+      if (bunnyGuid) {
+        bunnyGuids.push(bunnyGuid);
+
+        if (bunnyCollectionId) {
+          try {
+            await fetch(`https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/videos/${bunnyGuid}`, {
+              method: 'POST',
+              headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ collectionId: bunnyCollectionId }),
+            });
+          } catch (patchErr: any) {
+            console.error('[GTM Recording] Failed to set Bunny collection:', patchErr.message);
+          }
+        }
+      }
+    }
+
+    if (bunnyGuids.length === 0) {
+      return c.json(errorResponse('Failed to upload any GTM recording segments to Bunny'), 502);
+    }
+
+    const recordingIds = bunnyGuids.length === 1 ? bunnyGuids[0] : JSON.stringify(bunnyGuids);
+
+    await c.env.DB
+      .prepare('UPDATE LiveStream SET recordingId = ?, status = ? WHERE id = ?')
+      .bind(recordingIds, 'ended', streamId)
+      .run();
+
+    return c.json(successResponse({
+      message: `GTM recording synced successfully (${bunnyGuids.length} segment${bunnyGuids.length > 1 ? 's' : ''})`,
+      recordingIds: bunnyGuids,
+      segmentCount: bunnyGuids.length,
+    }));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[GTM Check Recording] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
 });

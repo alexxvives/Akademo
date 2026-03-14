@@ -108,7 +108,7 @@ export function ClassFormModal({
 
   const zoomOptions = useMemo(() => [
     { value: '', label: 'Sin cuenta de Streaming' },
-    ...zoomAccounts.map((a) => ({ value: a.id, label: `${a.accountName} (Zoom)` })),
+    ...zoomAccounts.map((a) => ({ value: a.id, label: `${a.accountName} (${a.provider === 'gotomeeting' ? 'GoToMeeting' : 'Zoom'})` })),
   ], [zoomAccounts]);
 
   return (

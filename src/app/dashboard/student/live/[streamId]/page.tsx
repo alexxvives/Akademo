@@ -146,7 +146,7 @@ export default function StudentLivePage() {
         <div className="flex-1 relative">
           {isZoom && zoomJoinUrl ? (
             <>
-              {/* Zoom: Show watermark overlay with join button */}
+              {/* GTM/Zoom: Show watermark overlay with join button */}
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 bg-gray-900">
                 <div className="text-center space-y-2">
                   <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto">
@@ -161,7 +161,15 @@ export default function StudentLivePage() {
                   href={zoomJoinUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-6 py-3 bg-[#2D8CFF] text-white rounded-xl hover:bg-[#2681F2] font-semibold transition-colors text-sm"
+                  onClick={(e) => {
+                    // Try GTM desktop app deep link first; fall back to browser URL after 2.5 s
+                    if (zoomMeetingId) {
+                      e.preventDefault();
+                      window.location.href = `gotomeeting://join/${zoomMeetingId}`;
+                      setTimeout(() => window.open(zoomJoinUrl!, '_blank', 'noopener,noreferrer'), 2500);
+                    }
+                  }}
+                  className="flex items-center gap-2 px-6 py-3 bg-[#b1e787] text-gray-900 rounded-xl hover:bg-[#9fd470] font-semibold transition-colors text-sm"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
