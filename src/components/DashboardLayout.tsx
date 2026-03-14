@@ -559,6 +559,7 @@ export default function DashboardLayout({
           { label: 'Asignaturas', href: '/dashboard/teacher/subjects', matchPaths: ['/dashboard/teacher/subject'], iconType: 'book', group: 'Contenido' },
           ...(academy?.feedbackEnabled !== 0 ? [{ label: 'Valoraciones', href: '/dashboard/teacher/feedback', iconType: 'message' as const, badge: unreadValoracionesCount > 0 ? unreadValoracionesCount : undefined, badgeColor: 'bg-[#b0e788]', group: 'Contenido' }] : []),
           { label: 'Streams', href: '/dashboard/teacher/streams', iconType: 'clap', group: 'Contenido' },
+          { label: 'Mediateca', href: '/dashboard/teacher/media', iconType: 'folderOpen' as const, group: 'Contenido' },
           { label: 'Ejercicios', href: '/dashboard/teacher/assignments', iconType: 'fileText', badge: academy?.requireGrading !== 0 && ungradedAssignmentsCount > 0 ? ungradedAssignmentsCount : undefined, badgeColor: 'bg-[#b0e788]', group: 'Contenido' },
           ...(academy?.requireGrading !== 0 ? [{ label: 'Calificaciones', href: '/dashboard/teacher/grades', iconType: 'star' as const, group: 'Contenido' }] : []),
           { label: 'Estudiantes', href: '/dashboard/teacher/progress', iconType: 'users', group: 'Comunidad' },

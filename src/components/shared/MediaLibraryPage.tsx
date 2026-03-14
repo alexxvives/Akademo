@@ -135,67 +135,67 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Mediateca</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Todos los archivos de tu academia en un solo lugar
-        </p>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit">
-        <button
-          onClick={() => setTab('videos')}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-            tab === 'videos'
-              ? 'bg-white text-gray-900 shadow-sm'
-              : 'text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          Videos {totalVideos > 0 && <span className="ml-1 text-xs text-gray-400">({totalVideos})</span>}
-        </button>
-        <button
-          onClick={() => setTab('documents')}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-            tab === 'documents'
-              ? 'bg-white text-gray-900 shadow-sm'
-              : 'text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          Documentos {totalDocuments > 0 && <span className="ml-1 text-xs text-gray-400">({totalDocuments})</span>}
-        </button>
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="w-full sm:w-64">
-          <ClassSearchDropdown
-            classes={filteredClasses}
-            value={selectedClass}
-            onChange={setSelectedClass}
-            allLabel="Todas las asignaturas"
-            placeholder="Filtrar por asignatura..."
-          />
+    <div className="space-y-6">
+      {/* Header with filters */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-900">Mediateca</h1>
+          <p className="text-gray-600 text-sm mt-1">
+            Todos los archivos de tu academia en un solo lugar
+          </p>
         </div>
-        <div className="relative w-full sm:w-72">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={tab === 'videos' ? 'Buscar videos...' : 'Buscar documentos...'}
-            className="w-full px-4 py-2 pl-10 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#b0e788] focus:border-transparent"
-          />
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-        </div>
-        {totalCount > 0 && (
-          <div className="flex items-center text-sm text-gray-500 ml-auto">
-            {totalCount} {tab === 'videos' ? 'video' : 'documento'}{totalCount !== 1 ? 's' : ''}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          {/* Tabs */}
+          <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit">
+            <button
+              onClick={() => setTab('videos')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                tab === 'videos'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Videos {totalVideos > 0 && <span className="ml-1 text-xs text-gray-400">({totalVideos})</span>}
+            </button>
+            <button
+              onClick={() => setTab('documents')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                tab === 'documents'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Documentos {totalDocuments > 0 && <span className="ml-1 text-xs text-gray-400">({totalDocuments})</span>}
+            </button>
           </div>
-        )}
+          {/* Filters */}
+          <div className="w-full sm:w-52">
+            <ClassSearchDropdown
+              classes={filteredClasses}
+              value={selectedClass}
+              onChange={setSelectedClass}
+              allLabel="Todas las asignaturas"
+              placeholder="Filtrar por asignatura..."
+            />
+          </div>
+          <div className="relative w-full sm:w-60">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={tab === 'videos' ? 'Buscar videos...' : 'Buscar documentos...'}
+              className="w-full px-4 py-2 pl-10 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#b0e788] focus:border-transparent"
+            />
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          {totalCount > 0 && (
+            <div className="flex items-center text-sm text-gray-500">
+              {totalCount} {tab === 'videos' ? 'video' : 'documento'}{totalCount !== 1 ? 's' : ''}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Content */}

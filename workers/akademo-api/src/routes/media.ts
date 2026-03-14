@@ -24,23 +24,32 @@ media.get('/', async (c) => {
 
     // Resolve academy scope
     let academyFilter = '';
+    let recAcademyFilter = ''; // for stream recordings (different table aliases)
     const baseParams: string[] = [];
+    const recBaseParams: string[] = [];
 
     if (session.role === 'ADMIN') {
       const academyId = c.req.query('academyId');
       if (academyId) {
         academyFilter = 'AND c.academyId = ?';
+        recAcademyFilter = 'AND c.academyId = ?';
         baseParams.push(academyId);
+        recBaseParams.push(academyId);
       }
     } else if (session.role === 'ACADEMY') {
       academyFilter = 'AND a.ownerId = ?';
+      recAcademyFilter = 'AND a.ownerId = ?';
       baseParams.push(session.id);
+      recBaseParams.push(session.id);
     } else if (session.role === 'TEACHER') {
       academyFilter = 'AND c.teacherId = ?';
+      recAcademyFilter = 'AND ls.teacherId = ?'; // LiveStream has teacherId directly
       baseParams.push(session.id);
+      recBaseParams.push(session.id);
     }
 
     const classFilter = classId ? 'AND c.id = ?' : '';
+    const recClassFilter = classId ? 'AND ls.classId = ?' : '';
     const classParams = classId ? [classId] : [];
 
     const results: { videos?: any[]; documents?: any[]; totalVideos?: number; totalDocuments?: number } = {};
@@ -81,7 +90,7 @@ media.get('/', async (c) => {
       // Stream recordings
       const recSearchFilter = search ? "AND (ls.title LIKE ? OR c.name LIKE ?)" : '';
       const recSearchParams = search ? [`%${search}%`, `%${search}%`] : [];
-      const recParams = [...baseParams, ...classParams, ...recSearchParams];
+      const recParams = [...recBaseParams, ...classParams, ...recSearchParams];
       const streamRecordingsQuery = `
         SELECT 
           ls.id,
@@ -105,20 +114,16 @@ media.get('/', async (c) => {
         LEFT JOIN Class c ON ls.classId = c.id
         LEFT JOIN Academy a ON c.academyId = a.id
         WHERE ls.recordingId IS NOT NULL
-        ${academyFilter}
-        ${classFilter}
+        ${recAcademyFilter}
+        ${recClassFilter}
         ${recSearchFilter}
       `;
 
-      // Count total
-      const countQuery = `
-        SELECT 
-          (SELECT COUNT(*) FROM (${lessonVideosQuery})) + 
-          (SELECT COUNT(*) FROM (${streamRecordingsQuery})) as total
-      `;
-      const countResult = await db.prepare(countQuery)
-        .bind(...lessonVideoParams, ...recParams)
-        .first<{ total: number }>();
+      // Count each separately (D1 doesn't support nested subqueries with bound params)
+      const [lessonCount, recCount] = await Promise.all([
+        db.prepare(`SELECT COUNT(*) as total FROM (${lessonVideosQuery})`).bind(...lessonVideoParams).first<{ total: number }>(),
+        db.prepare(`SELECT COUNT(*) as total FROM (${streamRecordingsQuery})`).bind(...recParams).first<{ total: number }>(),
+      ]);
 
       // Union with pagination
       const videosQuery = `
@@ -128,11 +133,10 @@ media.get('/', async (c) => {
         ORDER BY createdAt DESC
         LIMIT ? OFFSET ?
       `;
-      const allVideoParams = [...lessonVideoParams, ...recParams, limit, offset];
-      const videosResult = await db.prepare(videosQuery).bind(...allVideoParams).all();
+      const videosResult = await db.prepare(videosQuery).bind(...lessonVideoParams, ...recParams, limit, offset).all();
 
       results.videos = videosResult.results || [];
-      results.totalVideos = countResult?.total || 0;
+      results.totalVideos = (lessonCount?.total || 0) + (recCount?.total || 0);
     }
 
     // Fetch documents
