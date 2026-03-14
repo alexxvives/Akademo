@@ -1319,26 +1319,35 @@ export default function ProfilePage() {
                 </div>
               </div>
               {isTransferenciaExpanded && (
-                <input
-                  type="text"
-                  value={formData.transferenciaIban}
-                  onChange={(e) => setFormData({ ...formData, transferenciaIban: formatSpanishIbanInput(e.target.value) })}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') {
-                      event.preventDefault();
-                      void saveTransferenciaSetup();
-                    }
-                    if (event.key === 'Escape') {
-                      event.preventDefault();
-                      setExpandedPaymentMethod(null);
-                      setFormData((current) => ({ ...current, transferenciaIban: academy?.transferenciaIban || 'ES' }));
-                    }
-                  }}
-                  placeholder="ES12 1234 1234 12 1234567890"
-                  className="mt-2 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-200"
-                  maxLength={29}
-                  autoFocus
-                />
+                <div className="mt-2 flex gap-2 items-stretch">
+                  <input
+                    type="text"
+                    value={formData.transferenciaIban}
+                    onChange={(e) => setFormData({ ...formData, transferenciaIban: formatSpanishIbanInput(e.target.value) })}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        event.preventDefault();
+                        void saveTransferenciaSetup();
+                      }
+                      if (event.key === 'Escape') {
+                        event.preventDefault();
+                        setExpandedPaymentMethod(null);
+                        setFormData((current) => ({ ...current, transferenciaIban: academy?.transferenciaIban || 'ES' }));
+                      }
+                    }}
+                    placeholder="ES12 1234 1234 12 1234567890"
+                    className="flex-1 min-w-0 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-200"
+                    maxLength={29}
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void saveTransferenciaSetup()}
+                    className="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm font-semibold hover:bg-gray-800 transition-colors flex-shrink-0"
+                  >
+                    OK
+                  </button>
+                </div>
               )}
             </div>
 
@@ -1371,26 +1380,35 @@ export default function ProfilePage() {
                 </div>
               </div>
               {isBizumExpanded && (
-                <input
-                  type="tel"
-                  value={formData.bizumPhone}
-                  onChange={(e) => setFormData({ ...formData, bizumPhone: formatSpanishBizumPhone(e.target.value) })}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') {
-                      event.preventDefault();
-                      void saveBizumSetup();
-                    }
-                    if (event.key === 'Escape') {
-                      event.preventDefault();
-                      setExpandedPaymentMethod(null);
-                      setFormData((current) => ({ ...current, bizumPhone: academy?.bizumPhone || '' }));
-                    }
-                  }}
-                  placeholder="+34 600 123 456"
-                  className="mt-2 w-full rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                  maxLength={15}
-                  autoFocus
-                />
+                <div className="mt-2 flex gap-2 items-stretch">
+                  <input
+                    type="tel"
+                    value={formData.bizumPhone}
+                    onChange={(e) => setFormData({ ...formData, bizumPhone: formatSpanishBizumPhone(e.target.value) })}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        event.preventDefault();
+                        void saveBizumSetup();
+                      }
+                      if (event.key === 'Escape') {
+                        event.preventDefault();
+                        setExpandedPaymentMethod(null);
+                        setFormData((current) => ({ ...current, bizumPhone: academy?.bizumPhone || '' }));
+                      }
+                    }}
+                    placeholder="+34 600 123 456"
+                    className="flex-1 min-w-0 rounded-lg border border-blue-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                    maxLength={15}
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void saveBizumSetup()}
+                    className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors flex-shrink-0"
+                  >
+                    OK
+                  </button>
+                </div>
               )}
             </div>
           </div>

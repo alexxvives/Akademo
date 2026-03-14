@@ -114,7 +114,7 @@ export default function PaymentModal({
             }
             
             // Hide Stripe option if academy hasn't connected a Stripe account
-            if (!result.data.stripeAccountId) {
+            if (!result.data.hasStripe) {
               methods = methods.filter((m: string) => m !== 'stripe');
             }
             

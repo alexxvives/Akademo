@@ -831,8 +831,8 @@ webhooks.post('/stripe', async (c) => {
         );
 
         await c.env.DB
-          .prepare('UPDATE ClassEnrollment SET paymentMethod = ?, nextPaymentDue = ? WHERE id = ?')
-          .bind('stripe', billingCycle.nextPaymentDue, enrollment.id)
+          .prepare('UPDATE ClassEnrollment SET nextPaymentDue = ? WHERE id = ?')
+          .bind(billingCycle.nextPaymentDue, enrollment.id)
           .run();
       }
     } else if (event === 'invoice.payment_failed') {

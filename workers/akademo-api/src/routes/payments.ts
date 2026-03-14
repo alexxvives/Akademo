@@ -198,8 +198,8 @@ payments.post('/initiate', paymentInitiateRateLimit, async (c) => {
           billingCycle.billingCycleEnd,
           existingPayment.id
         ),
-        c.env.DB.prepare('UPDATE ClassEnrollment SET paymentFrequency = ?, paymentMethod = ? WHERE userId = ? AND classId = ?')
-          .bind(isMonthly ? 'MONTHLY' : 'ONE_TIME', paymentMethod, session.id, classId)
+        c.env.DB.prepare('UPDATE ClassEnrollment SET paymentFrequency = ? WHERE userId = ? AND classId = ?')
+          .bind(isMonthly ? 'MONTHLY' : 'ONE_TIME', session.id, classId)
       ]);
 
       // Format next payment due date for display
@@ -261,8 +261,8 @@ payments.post('/initiate', paymentInitiateRateLimit, async (c) => {
         billingCycle.nextPaymentDue,
         billingCycle.billingCycleEnd
       ),
-      c.env.DB.prepare('UPDATE ClassEnrollment SET paymentFrequency = ?, paymentMethod = ? WHERE userId = ? AND classId = ?')
-        .bind(isMonthly ? 'MONTHLY' : 'ONE_TIME', paymentMethod, session.id, classId)
+      c.env.DB.prepare('UPDATE ClassEnrollment SET paymentFrequency = ? WHERE userId = ? AND classId = ?')
+        .bind(isMonthly ? 'MONTHLY' : 'ONE_TIME', session.id, classId)
     ]);
 
     // Format next payment due date for display

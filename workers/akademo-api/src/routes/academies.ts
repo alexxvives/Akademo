@@ -576,6 +576,7 @@ academies.get('/:id', async (c) => {
       hiddenMenuItems: academy.hiddenMenuItems,
       classCount: classCount?.count || 0,
       teacherCount: teacherCount?.count || 0,
+      hasStripe: Boolean(academy.stripeAccountId),
     };
 
     // Owner/admin gets additional fields

@@ -90,6 +90,24 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
     return classes.filter(c => isClassInPeriod(c.id));
   }, [classes, activePeriodId, isClassInPeriod]);
 
+  // Fetch total counts for both tabs independently of the active tab
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const params = new URLSearchParams({ type: 'all', page: '1', limit: '1' });
+        if (selectedClass !== 'all') params.set('classId', selectedClass);
+        if (debouncedSearch) params.set('search', debouncedSearch);
+        const res = await apiClient(`/media?${params}`);
+        const data = await res.json();
+        if (data.success) {
+          setTotalVideos(data.data.totalVideos || 0);
+          setTotalDocuments(data.data.totalDocuments || 0);
+        }
+      } catch { /* ignore */ }
+    };
+    fetchCounts();
+  }, [selectedClass, debouncedSearch]);
+
   // Load media data
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -180,7 +198,7 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            Videos
+            Videos{totalVideos > 0 ? ` (${totalVideos})` : ''}
           </button>
           <button
             onClick={() => setTab('documents')}
@@ -190,17 +208,10 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
                 : 'text-gray-500 hover:text-gray-700'
             }`}
           >
-            Documentos
+            Documentos{totalDocuments > 0 ? ` (${totalDocuments})` : ''}
           </button>
         </div>
       </div>
-
-      {/* Count above content */}
-      {!loading && totalCount > 0 && (
-        <p className="text-sm text-gray-500">
-          {totalCount} {tab === 'videos' ? 'video' : 'documento'}{totalCount !== 1 ? 's' : ''}
-        </p>
-      )}
 
       {/* Content */}
       {loading ? (
@@ -302,7 +313,7 @@ function VideoCard({ video }: { video: VideoItem }) {
             ? 'bg-purple-100 text-purple-700'
             : 'bg-blue-100 text-blue-700'
         }`}>
-          {video.source === 'recording' ? 'Grabación' : 'Clase'}
+          {video.source === 'recording' ? 'Stream' : 'Clase'}
         </span>
         {/* Transcoding status */}
         {video.bunnyStatus !== null && video.bunnyStatus !== undefined && video.bunnyStatus < 3 && (
