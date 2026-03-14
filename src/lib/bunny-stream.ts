@@ -214,6 +214,13 @@ export function getBunnyThumbnailUrl(videoGuid: string, thumbnailFileName?: stri
   return `https://${hostname}/${videoGuid}/${thumb}`;
 }
 
+// Get Bunny iframe embed/player URL (opens video player in browser)
+export function getBunnyEmbedUrl(videoGuid: string): string {
+  const config = getConfig();
+  const libraryId = config.BUNNY_STREAM_LIBRARY_ID || '571240'; // Fallback to known library ID
+  return `https://iframe.mediadelivery.net/embed/${libraryId}/${videoGuid}?autoplay=false`;
+}
+
 // Video status helpers
 export const BunnyVideoStatus = {
   CREATED: 0,

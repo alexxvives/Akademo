@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
-import { apiClient } from '@/lib/api-client';
-import { getBunnyThumbnailUrl } from '@/lib/bunny-stream';
+import { apiClient, openDocument } from '@/lib/api-client';
+import { getBunnyThumbnailUrl, getBunnyEmbedUrl } from '@/lib/bunny-stream';
 import { formatDuration, formatDate, formatBytes } from '@/lib/formatters';
 import { SkeletonTable } from '@/components/ui/SkeletonLoader';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
@@ -136,7 +136,7 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
 
   return (
     <div className="space-y-6">
-      {/* Header with filters */}
+      {/* Row 1: Title (left) + Filters (right) */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Mediateca</h1>
@@ -145,30 +145,6 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
           </p>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          {/* Tabs */}
-          <div className="flex gap-1 bg-gray-100 rounded-lg p-1 w-fit">
-            <button
-              onClick={() => setTab('videos')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                tab === 'videos'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Videos {totalVideos > 0 && <span className="ml-1 text-xs text-gray-400">({totalVideos})</span>}
-            </button>
-            <button
-              onClick={() => setTab('documents')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                tab === 'documents'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Documentos {totalDocuments > 0 && <span className="ml-1 text-xs text-gray-400">({totalDocuments})</span>}
-            </button>
-          </div>
-          {/* Filters */}
           <div className="w-full sm:w-52">
             <ClassSearchDropdown
               classes={filteredClasses}
@@ -190,13 +166,41 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          {totalCount > 0 && (
-            <div className="flex items-center text-sm text-gray-500">
-              {totalCount} {tab === 'videos' ? 'video' : 'documento'}{totalCount !== 1 ? 's' : ''}
-            </div>
-          )}
         </div>
       </div>
+
+      {/* Row 2: Tabs — centered */}
+      <div className="flex justify-center">
+        <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+          <button
+            onClick={() => setTab('videos')}
+            className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
+              tab === 'videos'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Videos
+          </button>
+          <button
+            onClick={() => setTab('documents')}
+            className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
+              tab === 'documents'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Documentos
+          </button>
+        </div>
+      </div>
+
+      {/* Count above content */}
+      {!loading && totalCount > 0 && (
+        <p className="text-sm text-gray-500">
+          {totalCount} {tab === 'videos' ? 'video' : 'documento'}{totalCount !== 1 ? 's' : ''}
+        </p>
+      )}
 
       {/* Content */}
       {loading ? (
@@ -260,7 +264,13 @@ function VideoCard({ video }: { video: VideoItem }) {
   const thumbnailUrl = video.bunnyGuid ? getBunnyThumbnailUrl(video.bunnyGuid) : null;
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow group">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => { if (video.bunnyGuid) window.open(getBunnyEmbedUrl(video.bunnyGuid), '_blank'); }}
+      onKeyDown={(e) => { if (e.key === 'Enter' && video.bunnyGuid) window.open(getBunnyEmbedUrl(video.bunnyGuid), '_blank'); }}
+      className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow group cursor-pointer"
+    >
       {/* Thumbnail */}
       <div className="relative aspect-video bg-gray-100">
         {thumbnailUrl && !imgError ? (
@@ -346,7 +356,11 @@ function DocumentsTable({ documents, getDocIcon }: { documents: DocumentItem[]; 
         </thead>
         <tbody className="divide-y divide-gray-100">
           {documents.map((doc) => (
-            <tr key={doc.id} className="hover:bg-gray-50 transition-colors">
+            <tr
+              key={doc.id}
+              className="hover:bg-gray-50 transition-colors cursor-pointer"
+              onClick={async () => { try { await openDocument(doc.storagePath); } catch { /* noop */ } }}
+            >
               <td className="px-4 py-3">
                 <div className="flex items-center gap-3">
                   <span className="text-lg">{getDocIcon(doc.mimeType)}</span>
