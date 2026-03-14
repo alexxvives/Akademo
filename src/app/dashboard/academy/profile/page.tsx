@@ -721,6 +721,7 @@ export default function ProfilePage() {
     }
 
     setFormData((current) => ({ ...current, transferenciaIban: normalizedIban }));
+    setExpandedPaymentMethod(null);
     await handleSettingChange('transferenciaIban', normalizedIban);
 
     if (!formData.allowedPaymentMethods.includes('transferencia')) {
@@ -729,8 +730,6 @@ export default function ProfilePage() {
         JSON.stringify([...formData.allowedPaymentMethods, 'transferencia'])
       );
     }
-
-    setExpandedPaymentMethod(null);
   };
 
   const saveBizumSetup = async () => {
@@ -742,6 +741,7 @@ export default function ProfilePage() {
     }
 
     setFormData((current) => ({ ...current, bizumPhone: normalizedPhone }));
+    setExpandedPaymentMethod(null);
     await handleSettingChange('bizumPhone', normalizedPhone);
 
     if (!formData.allowedPaymentMethods.includes('bizum')) {
@@ -750,8 +750,6 @@ export default function ProfilePage() {
         JSON.stringify([...formData.allowedPaymentMethods, 'bizum'])
       );
     }
-
-    setExpandedPaymentMethod(null);
   };
 
   const isTransferenciaExpanded = expandedPaymentMethod === 'transferencia';

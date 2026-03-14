@@ -67,10 +67,10 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
     return () => clearTimeout(timer);
   }, [search]);
 
-  // Reset page when filters change
+  // Reset page when filters change (not on tab — handled in tab click handlers to avoid double-load)
   useEffect(() => {
     setPage(1);
-  }, [selectedClass, debouncedSearch, tab]);
+  }, [selectedClass, debouncedSearch]);
 
   // Load classes
   useEffect(() => {
@@ -191,7 +191,7 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
       <div className="flex justify-center">
         <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
           <button
-            onClick={() => setTab('videos')}
+            onClick={() => { setTab('videos'); setPage(1); }}
             className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
               tab === 'videos'
                 ? 'bg-white text-gray-900 shadow-sm'
@@ -201,7 +201,7 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
             Videos{totalVideos > 0 ? ` (${totalVideos})` : ''}
           </button>
           <button
-            onClick={() => setTab('documents')}
+            onClick={() => { setTab('documents'); setPage(1); }}
             className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
               tab === 'documents'
                 ? 'bg-white text-gray-900 shadow-sm'
@@ -215,7 +215,7 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
 
       {/* Content */}
       {loading ? (
-        <SkeletonTable rows={8} cols={5} />
+        tab === 'videos' ? <SkeletonVideosGrid /> : <SkeletonTable rows={8} cols={5} />
       ) : tab === 'videos' ? (
         <VideosGrid videos={videos} />
       ) : (
@@ -244,6 +244,22 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+function SkeletonVideosGrid() {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      {Array.from({ length: 8 }).map((_, i) => (
+        <div key={i} className="bg-white rounded-xl border border-gray-200 overflow-hidden animate-pulse">
+          <div className="aspect-video bg-gray-200" />
+          <div className="p-3 space-y-2">
+            <div className="h-3.5 bg-gray-200 rounded w-3/4" />
+            <div className="h-3 bg-gray-100 rounded w-1/2" />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

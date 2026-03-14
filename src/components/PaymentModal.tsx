@@ -459,7 +459,7 @@ export default function PaymentModal({
                           No disponible
                         </span>
                       ) : (
-                        <span className="inline-block text-xs font-medium text-white bg-black px-3 py-1 rounded-full">
+                        <span className="inline-block text-xs font-medium text-white bg-violet-800 px-3 py-1 rounded-full">
                           Instantáneo
                         </span>
                       )}
@@ -550,18 +550,18 @@ export default function PaymentModal({
                   className={`w-full p-4 rounded-lg text-left transition-all ${
                     !paymentFrequency || !allowedPaymentMethods.includes('cash')
                       ? 'bg-gray-50 border-2 border-gray-200 opacity-50 cursor-not-allowed'
-                      : 'bg-white border-2 border-gray-300 hover:border-[#b0e788] hover:shadow-md'
+                      : 'bg-green-50 border-2 border-green-400 hover:border-green-500 hover:shadow-md'
                   }`}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="flex-shrink-0 w-10 h-10 bg-[#b0e788]/20 rounded-lg flex items-center justify-center">
-                      <svg className="w-5 h-5 text-[#1a1c29]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                       </svg>
                     </div>
                     <div className="flex-1">
-                      <h4 className="text-base font-semibold text-[#1a1c29] mb-0.5">Efectivo</h4>
-                      <p className="text-sm text-gray-600">Paga directamente en la academia</p>
+                      <h4 className="text-base font-semibold text-green-950 mb-0.5">Efectivo</h4>
+                      <p className="text-sm text-green-800">Paga directamente en la academia</p>
                     </div>
                     <div className="flex-shrink-0">
                       {!allowedPaymentMethods.includes('cash') ? (
@@ -583,15 +583,7 @@ export default function PaymentModal({
               </div>
             </div>
 
-            {/* Security Badge */}
-            <div className="mt-6 pt-5 border-t border-gray-200">
-              <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
-                <svg className="w-5 h-5 text-[#b0e788]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-                <span>Pagos 100% seguros y encriptados</span>
-              </div>
-            </div>
+
           </div>
         )}
       </div>
