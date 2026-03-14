@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { apiClient } from '@/lib/api-client';
-import type { Notification, ApiResponse } from '@/types';
+import type { Notification, ApiResponse } from '@akademo/types';
 
 interface UseNotificationsOptions {
   pollInterval?: number;

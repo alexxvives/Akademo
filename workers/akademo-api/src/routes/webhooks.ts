@@ -244,9 +244,23 @@ webhooks.post('/zoom', async (c) => {
           const recordingsData = await recordingsResponse.json() as any;
 
           // Find ALL MP4 recording segments (handles pause/resume creating multiple files)
-          const mp4Recordings = (recordingsData.recording_files || []).filter(
-            (file: any) => file.file_type === 'MP4' && file.recording_type === 'shared_screen_with_speaker_view'
+          // Accept all common recording types in priority order
+          const acceptedRecordingTypes = [
+            'shared_screen_with_speaker_view',
+            'shared_screen_with_gallery_view',
+            'active_speaker',
+            'gallery_view',
+            'shared_screen',
+            'speaker_view',
+          ];
+          const allMp4 = (recordingsData.recording_files || []).filter(
+            (file: any) => file.file_type === 'MP4' && acceptedRecordingTypes.includes(file.recording_type)
           );
+          // Prefer shared_screen_with_speaker_view if available, otherwise use first available type
+          const preferredType = acceptedRecordingTypes.find(t => allMp4.some((f: any) => f.recording_type === t));
+          const mp4Recordings = preferredType
+            ? allMp4.filter((f: any) => f.recording_type === preferredType)
+            : (recordingsData.recording_files || []).filter((file: any) => file.file_type === 'MP4');
 
           if (mp4Recordings.length === 0) {
             return c.json(successResponse({ received: true, error: 'No MP4 recording found' }));

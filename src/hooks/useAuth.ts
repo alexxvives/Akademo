@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiClient } from '@/lib/api-client';
-import type { User, ApiResponse } from '@/types';
+import type { User, ApiResponse } from '@akademo/types';
 
 interface UseAuthReturn {
   user: User | null;

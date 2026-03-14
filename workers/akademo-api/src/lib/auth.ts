@@ -90,19 +90,19 @@ async function verifyToken(token: string, env: Bindings): Promise<string | null>
     const valid = await crypto.subtle.verify('HMAC', key, sigArray, encoder.encode(payload));
     if (!valid) return null;
 
-    // Check expiry — tokens with iat must not exceed SESSION_MAX_AGE
+    // Check expiry — tokens must have iat and must not exceed SESSION_MAX_AGE
     try {
       const parsed = JSON.parse(payload);
-      if (parsed.iat) {
-        const age = Math.floor(Date.now() / 1000) - parsed.iat;
-        if (age > SESSION_MAX_AGE) {
-          return null; // Token expired
-        }
+      if (!parsed.iat) {
+        return null; // Legacy tokens without iat are no longer accepted
       }
-      // Legacy tokens without iat are accepted during migration period
-      // TODO: After 2026-03-11, reject tokens without iat
+      const age = Math.floor(Date.now() / 1000) - parsed.iat;
+      if (age > SESSION_MAX_AGE) {
+        return null; // Token expired
+      }
     } catch {
-      // Simple string payload (legacy) — no expiry check possible
+      // Non-JSON payload has no expiry — reject it
+      return null;
     }
 
     return payload;

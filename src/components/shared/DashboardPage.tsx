@@ -346,8 +346,9 @@ export function DashboardPage({ role }: DashboardPageProps) {
     if (filteredStudents.length === 0) return 0;
     const withLessons = filteredStudents.filter(s => s.totalLessons && s.totalLessons > 0);
     if (withLessons.length === 0) return 0;
-    const total = withLessons.reduce((sum, s) => sum + (s.lessonsCompleted || 0) / (s.totalLessons || 1), 0);
-    return Math.round((total / withLessons.length) * 100);
+    const totalCompleted = withLessons.reduce((sum, s) => sum + (s.lessonsCompleted || 0), 0);
+    const totalLessons = withLessons.reduce((sum, s) => sum + (s.totalLessons || 0), 0);
+    return totalLessons > 0 ? Math.round((totalCompleted / totalLessons) * 100) : 0;
   }, [filteredStudents]);
 
   const filteredStreamStats = useMemo(() => {
