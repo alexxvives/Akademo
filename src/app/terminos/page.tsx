@@ -21,8 +21,8 @@ export default function TerminosPage() {
             <h2 className="text-xl font-semibold text-gray-900 mb-3">1. Partes del Contrato</h2>
             <p>
               Estos Términos y Condiciones regulan la relación contractual entre <strong>AKADEMO</strong>
-              (en adelante, "nosotros" o "el proveedor") y cualquier persona física o jurídica que acceda o
-              utilice la plataforma AKADEMO (en adelante, "el Usuario"). Al crear una cuenta o utilizar la
+              (en adelante, &quot;nosotros&quot; o &quot;el proveedor&quot;) y cualquier persona física o jurídica que acceda o
+              utilice la plataforma AKADEMO (en adelante, &quot;el Usuario&quot;). Al crear una cuenta o utilizar la
               plataforma, el Usuario acepta íntegramente estos términos.
             </p>
           </section>
@@ -31,7 +31,7 @@ export default function TerminosPage() {
             <h2 className="text-xl font-semibold text-gray-900 mb-3">2. Descripción del Servicio</h2>
             <p>
               AKADEMO es una plataforma tecnológica de gestión académica que permite a las academias y centros
-              educativos (en adelante, "Academias") crear contenido formativo, gestionar alumnos, organizar
+              educativos (en adelante, &quot;Academias&quot;) crear contenido formativo, gestionar alumnos, organizar
               clases en directo y presencial, gestionar pagos y proteger su propiedad intelectual.
             </p>
             <p className="mt-3">Los servicios incluyen, entre otros:</p>

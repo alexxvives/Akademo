@@ -111,7 +111,7 @@ export default function PrivacidadPage() {
             <ul className="list-disc ml-6 mt-3 space-y-2 text-sm">
               <li><strong>Acceso:</strong> obtener confirmación sobre si tratamos tus datos y recibir una copia.</li>
               <li><strong>Rectificación:</strong> corregir datos inexactos o incompletos.</li>
-              <li><strong>Supresión ("derecho al olvido"):</strong> solicitar la eliminación de tus datos cuando ya no sean necesarios.</li>
+              <li><strong>Supresión (&quot;derecho al olvido&quot;):</strong> solicitar la eliminación de tus datos cuando ya no sean necesarios.</li>
               <li><strong>Limitación:</strong> solicitar que suspendamos el tratamiento en determinadas circunstancias.</li>
               <li><strong>Portabilidad:</strong> recibir tus datos en formato estructurado y de uso común.</li>
               <li><strong>Oposición:</strong> oponerte al tratamiento basado en interés legítimo.</li>
