@@ -199,7 +199,7 @@ export default function AcademyLivePage() {
             <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 bg-gray-800 border-b border-white/10">
               <span className="text-white text-xs font-semibold">Pizarra colaborativa</span>
               <a
-                href={`https://www.tldraw.com/r/akademo-${streamId}`}
+                href={`https://wbo.ophir.dev/boards/akademo-${streamId}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-white text-xs transition-colors"
@@ -209,7 +209,7 @@ export default function AcademyLivePage() {
               </a>
             </div>
             <iframe
-              src={`https://www.tldraw.com/r/akademo-${streamId}`}
+              src={`https://wbo.ophir.dev/boards/akademo-${streamId}`}
               className="flex-1 border-0 bg-white"
               title="Pizarra"
               allow="clipboard-read; clipboard-write"

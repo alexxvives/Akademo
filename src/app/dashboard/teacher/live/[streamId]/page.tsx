@@ -77,7 +77,10 @@ export default function TeacherLivePage() {
     } catch {}
   }, [streamId]);
 
+  const backUrl = stream ? `/dashboard/teacher/subject/${stream.classSlug || stream.classId}` : '/dashboard/teacher/streams';
+
   // Start recording when host joins: listen for Daily.co postMessage + fallback retries
+  // Also redirect when host leaves
   useEffect(() => {
     if (!embedUrl) return;
     const handleMessage = (e: MessageEvent) => {
@@ -88,6 +91,11 @@ export default function TeacherLivePage() {
         m.action === 'meeting-joined' || m.type === 'meeting-joined' ||
         (m.type === 'daily-event' && m.eventName === 'joined-meeting')
       ) startRecording();
+      if (
+        m.action === 'left-meeting' || m.eventName === 'left-meeting' ||
+        m.action === 'meeting-left' || m.type === 'meeting-left' ||
+        (m.type === 'daily-event' && m.eventName === 'left-meeting')
+      ) router.push(backUrl);
     };
     window.addEventListener('message', handleMessage);
     const t1 = setTimeout(startRecording, 8000);
@@ -97,13 +105,11 @@ export default function TeacherLivePage() {
       window.removeEventListener('message', handleMessage);
       clearTimeout(t1); clearTimeout(t2); clearTimeout(t3);
     };
-  }, [embedUrl, startRecording]);
+  }, [embedUrl, startRecording, backUrl, router]);
 
 
 
   useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current); }, []);
-
-  const backUrl = stream ? `/dashboard/teacher/subject/${stream.classSlug || stream.classId}` : '/dashboard/teacher/streams';
 
   if (error) {
     return (
@@ -241,7 +247,7 @@ export default function TeacherLivePage() {
             <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 bg-gray-800 border-b border-white/10">
               <span className="text-white text-xs font-semibold">Pizarra colaborativa</span>
               <a
-                href={`https://www.tldraw.com/r/akademo-${streamId}`}
+                href={`https://wbo.ophir.dev/boards/akademo-${streamId}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-white text-xs transition-colors"
@@ -251,7 +257,7 @@ export default function TeacherLivePage() {
               </a>
             </div>
             <iframe
-              src={`https://www.tldraw.com/r/akademo-${streamId}`}
+              src={`https://wbo.ophir.dev/boards/akademo-${streamId}`}
               className="flex-1 border-0 bg-white"
               title="Pizarra"
               allow="clipboard-read; clipboard-write"

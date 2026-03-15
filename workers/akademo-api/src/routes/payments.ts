@@ -452,7 +452,6 @@ payments.get('/pending-count', async (c) => {
           WHERE a.ownerId = ? 
           AND p.status = 'PENDING'
           AND p.type = 'STUDENT_TO_ACADEMY'
-          AND json_extract(p.metadata, '$.studentSubmitted') = 1
         `)
         .bind(session.id)
         .first();
@@ -466,7 +465,6 @@ payments.get('/pending-count', async (c) => {
           WHERE c.teacherId = ?
           AND p.status = 'PENDING'
           AND p.type = 'STUDENT_TO_ACADEMY'
-          AND json_extract(p.metadata, '$.studentSubmitted') = 1
         `)
         .bind(session.id)
         .first();
@@ -731,20 +729,18 @@ payments.patch('/:id/approve-payment', async (c) => {
           c.env.DB.prepare(`
             UPDATE ClassEnrollment
             SET nextPaymentDue = ?,
-                paymentFrequency = ?,
-                paymentMethod = ?
+                paymentFrequency = ?
             WHERE userId = ? AND classId = ?
-          `).bind(payment.nextPaymentDue, freq, payment.paymentMethod, payment.payerId, payment.classId)
+          `).bind(payment.nextPaymentDue, freq, payment.payerId, payment.classId)
         );
       } else {
         // ONE_TIME payments: mark frequency correctly, no recurring due date
         approvalBatch.push(
           c.env.DB.prepare(`
             UPDATE ClassEnrollment
-            SET paymentFrequency = ?,
-                paymentMethod = ?
+            SET paymentFrequency = ?
             WHERE userId = ? AND classId = ?
-          `).bind(freq, payment.paymentMethod, payment.payerId, payment.classId)
+          `).bind(freq, payment.payerId, payment.classId)
         );
       }
     }
