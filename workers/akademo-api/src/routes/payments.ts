@@ -551,7 +551,7 @@ payments.post('/stripe-session', async (c) => {
     }
 
     // Stripe doesn't support Transferencia directly — redirect to card payment
-    const paymentMethods = ['card', 'link'];
+    const paymentMethods = ['card'];
 
     // Get enrollment ID for webhook
     const enrollment: any = await c.env.DB
@@ -594,6 +594,7 @@ payments.post('/stripe-session', async (c) => {
       }],
       mode: isRecurring ? 'subscription' : 'payment',
       customer_email: session.email,
+      currency_conversion: isRecurring ? undefined : { enabled: false },
       success_url: `${c.env.FRONTEND_URL || 'https://akademo-edu.com'}/dashboard/student/subjects?payment=success&classId=${classId}`,
       cancel_url: `${c.env.FRONTEND_URL || 'https://akademo-edu.com'}/dashboard/student/subjects?payment=cancel`,
       metadata: {
