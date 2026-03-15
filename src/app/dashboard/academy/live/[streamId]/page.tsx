@@ -190,18 +190,6 @@ export default function AcademyLivePage() {
             <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
             EN VIVO
           </span>
-          {embedUrl && (
-            <button
-              onClick={() => { if (confirm('¿Finalizar la sesión para todos los participantes?')) endSession(); }}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-red-600 hover:bg-red-700 text-white transition-colors"
-              title="Finalizar sesión para todos"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              Finalizar
-            </button>
-          )}
         </div>
       </div>
 
