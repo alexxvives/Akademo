@@ -217,6 +217,17 @@ export default function ProfilePage() {
         setAcademy(academyData);
         
         const allowedMethods = normalizeAllowedPaymentMethods(academyData.allowedPaymentMethods);
+        // Auto-remove stripe if the academy hasn't connected a working Stripe account
+        const stripeConnected = stripeResult.success && stripeResult.data?.charges_enabled === true;
+        const cleanedMethods = stripeConnected ? allowedMethods : allowedMethods.filter((m) => m !== 'stripe');
+        // If we removed stripe, persist the change to DB silently
+        if (!stripeConnected && allowedMethods.includes('stripe')) {
+          apiClient(`/academies/${academyData.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ allowedPaymentMethods: JSON.stringify(cleanedMethods) }),
+          }).catch(() => {});
+        }
         
         setFormData({
           name: academyData.name || '',
@@ -226,7 +237,7 @@ export default function ProfilePage() {
           feedbackEnabled: academyData.feedbackEnabled !== 0,
           defaultWatermarkIntervalMins: academyData.defaultWatermarkIntervalMins || 5,
           defaultMaxWatchTimeMultiplier: academyData.defaultMaxWatchTimeMultiplier || 2.0,
-          allowedPaymentMethods: allowedMethods,
+          allowedPaymentMethods: cleanedMethods,
           transferenciaIban: academyData.transferenciaIban || 'ES',
           bizumPhone: academyData.bizumPhone || '',
           allowMultipleTeachers: academyData.allowMultipleTeachers === 1,
@@ -1234,20 +1245,22 @@ export default function ProfilePage() {
         <div className="px-4 sm:px-8 py-4 sm:py-6">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 items-start">
             <div
-              role="button"
-              tabIndex={0}
-              onClick={() => toggleAllowedPaymentMethod('stripe')}
-              onKeyDown={(event) => {
+              role={stripeStatus?.charges_enabled ? 'button' : undefined}
+              tabIndex={stripeStatus?.charges_enabled ? 0 : -1}
+              onClick={stripeStatus?.charges_enabled ? () => toggleAllowedPaymentMethod('stripe') : undefined}
+              onKeyDown={stripeStatus?.charges_enabled ? (event) => {
                 if (event.key === 'Enter' || event.key === ' ') {
                   event.preventDefault();
                   void toggleAllowedPaymentMethod('stripe');
                 }
-              }}
-              className={`p-4 border-2 rounded-xl transition-all duration-200 cursor-pointer ${
-              formData.allowedPaymentMethods.includes('stripe')
-                ? 'border-violet-500 bg-violet-50 shadow-md'
-                : 'border-gray-200 bg-white'
-            } ${(!stripeStatus?.charges_enabled && !formData.allowedPaymentMethods.includes('stripe')) ? 'opacity-60' : ''}`}>
+              } : undefined}
+              className={`p-4 border-2 rounded-xl transition-all duration-200 ${
+              !stripeStatus?.charges_enabled
+                ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'
+                : formData.allowedPaymentMethods.includes('stripe')
+                  ? 'border-violet-500 bg-violet-50 shadow-md cursor-pointer'
+                  : 'border-gray-200 bg-white cursor-pointer'
+            }`}>
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <div className={`text-sm font-semibold mb-1 ${formData.allowedPaymentMethods.includes('stripe') ? 'text-violet-900' : 'text-gray-900'}`}>
