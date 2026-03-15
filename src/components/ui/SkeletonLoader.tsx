@@ -121,23 +121,7 @@ export function SkeletonDashboard() {
 
       {/* 2×2 Analytics Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Card 1: Participación */}
-        <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full">
-          <SkeletonBox className="h-6 w-32 mb-6" />
-          <div className="space-y-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="space-y-2">
-                <div className="flex justify-between">
-                  <SkeletonBox className="h-4 w-52" />
-                  <SkeletonBox className="h-4 w-10" />
-                </div>
-                <SkeletonBox className="h-2 w-full rounded-full" />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Card 2: Estudiantes — 2-col grid layout */}
+        {/* Card 1: Estudiantes — 2-col grid layout */}
         <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full">
           <SkeletonBox className="h-6 w-32 mb-6" />
           <div className="grid grid-cols-2 gap-4">
@@ -177,6 +161,22 @@ export function SkeletonDashboard() {
                 ))}
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Card 2: Participación */}
+        <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full">
+          <SkeletonBox className="h-6 w-32 mb-6" />
+          <div className="space-y-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="space-y-2">
+                <div className="flex justify-between">
+                  <SkeletonBox className="h-4 w-52" />
+                  <SkeletonBox className="h-4 w-10" />
+                </div>
+                <SkeletonBox className="h-2 w-full rounded-full" />
+              </div>
+            ))}
           </div>
         </div>
 
