@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@akademo/types": "^1.0.0",
+    "@daily-co/daily-js": "^0.89.0",
     "@headlessui/react": "^2.2.9",
     "@opennextjs/cloudflare": "1.14.0",
     "@stripe/stripe-js": "^8.6.1",

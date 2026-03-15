@@ -68,47 +68,41 @@ export default function AcademyLivePage() {
 
   const backUrl = stream ? `/dashboard/academy/subject/${stream.classSlug || stream.classId}` : '/dashboard/academy/streams';
 
-  // End the stream on the server (marks ended + deletes Daily.co room), then navigate away
-  const endSession = useCallback(async () => {
-    try {
-      await apiClient(`/live/${streamId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'ended' }),
-      });
-    } catch { /* ignore — we navigate away regardless */ }
+  const endSession = useCallback(() => {
+    // fire-and-forget: navigate away immediately, API cleanup runs in background
+    apiClient(`/live/${streamId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'ended' }),
+    }).catch(() => {});
     router.push(backUrl);
   }, [streamId, backUrl, router]);
 
-  // Start recording when host joins: listen for Daily.co postMessage + fallback retries
-  // When host leaves Daily.co, end the stream for everyone and navigate away
+  const dailyContainerRef = useRef<HTMLDivElement>(null);
+
+  // Use @daily-co/daily-js SDK — proper typed events, no fragile postMessage parsing
   useEffect(() => {
-    if (!embedUrl) return;
-    const handleMessage = (e: MessageEvent) => {
-      if (!e.data) return;
-      const m = e.data;
-      if (
-        m.action === 'joined-meeting' || m.eventName === 'joined-meeting' ||
-        m.action === 'meeting-joined' || m.type === 'meeting-joined' ||
-        (m.type === 'daily-event' && m.eventName === 'joined-meeting') ||
-        (m.type === 'daily-event' && m.action === 'joined-meeting')
-      ) startRecording();
-      if (
-        m.action === 'left-meeting' || m.eventName === 'left-meeting' ||
-        m.action === 'meeting-left' || m.type === 'meeting-left' ||
-        (m.type === 'daily-event' && m.eventName === 'left-meeting') ||
-        (m.type === 'daily-event' && m.action === 'left-meeting')
-      ) endSession();
-    };
-    window.addEventListener('message', handleMessage);
+    if (!embedUrl || !dailyContainerRef.current) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let callFrame: any = null;
     const t1 = setTimeout(startRecording, 8000);
     const t2 = setTimeout(startRecording, 25000);
     const t3 = setTimeout(startRecording, 60000);
-    return () => {
-      window.removeEventListener('message', handleMessage);
-      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3);
+    const setup = async () => {
+      const { default: DailyIframe } = await import('@daily-co/daily-js');
+      callFrame = DailyIframe.createFrame(dailyContainerRef.current!, {
+        iframeStyle: { border: '0', width: '100%', height: '100%' },
+      });
+      callFrame.on('joined-meeting', () => startRecording());
+      callFrame.on('left-meeting', () => endSession());
+      await callFrame.join({ url: embedUrl });
     };
-  }, [embedUrl, startRecording, endSession, backUrl, router]);
+    setup().catch(console.error);
+    return () => {
+      clearTimeout(t1); clearTimeout(t2); clearTimeout(t3);
+      callFrame?.destroy();
+    };
+  }, [embedUrl, startRecording, endSession]);
 
 
 
@@ -205,12 +199,7 @@ export default function AcademyLivePage() {
               </div>
             </div>
           ) : (
-            <iframe
-              src={embedUrl}
-              allow="camera; microphone; fullscreen; display-capture; autoplay"
-              className="w-full h-full border-0"
-              title="Sesión en vivo"
-            />
+            <div ref={dailyContainerRef} className="absolute inset-0" />
           )}
         </div>
         {/* Collaborative whiteboard panel */}
