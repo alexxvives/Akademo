@@ -681,12 +681,7 @@ classes.delete('/:id', async (c) => {
     // 10. Delete enrollments
     await c.env.DB.prepare('DELETE FROM ClassEnrollment WHERE classId = ?').bind(classId).run();
 
-    // 11. Delete notifications (data is JSON, filter by classId inside)
-    try {
-      await c.env.DB.prepare(`DELETE FROM Notification WHERE json_extract(data, '$.classId') = ?`).bind(classId).run();
-    } catch { /* Notification cleanup is best-effort */ }
-
-    // 12. Delete payments for this class
+    // 11. Delete payments for this class
     try {
       await c.env.DB.prepare('DELETE FROM Payment WHERE classId = ?').bind(classId).run();
     } catch { /* Payment cleanup is best-effort */ }

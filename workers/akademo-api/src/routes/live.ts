@@ -659,7 +659,7 @@ live.get('/:id/join-token', async (c) => {
     }
 
     // Check per-academy Daily.co enablement
-    if (!stream.dailyEnabled) return c.json(errorResponse('La videoconferencia integrada no está habilitada para esta academia'), 403);
+    if (!stream.dailyEnabled) return c.json(errorResponse('Esta academia necesita conectar una cuenta de streaming. Contacta al administrador de la plataforma.'), 403);
 
     // If room not yet created (host is joining for first time), create it now
     if (!stream.dailyRoomName) {

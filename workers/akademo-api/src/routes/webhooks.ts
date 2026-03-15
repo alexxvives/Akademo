@@ -412,7 +412,7 @@ webhooks.post('/zoom', async (c) => {
       // Get current stream with class and zoom account info
       const stream = await c.env.DB
         .prepare(`
-          SELECT ls.*, c.zoomAccountId, c.teacherId, a.ownerId, a.restrictStreamAccess
+          SELECT ls.*, c.zoomAccountId, c.teacherId, a.ownerId
           FROM LiveStream ls
           JOIN Class c ON ls.classId = c.id
           JOIN Academy a ON c.academyId = a.id

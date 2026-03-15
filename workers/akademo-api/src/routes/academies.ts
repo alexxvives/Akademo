@@ -567,7 +567,6 @@ academies.get('/:id', async (c) => {
       feedbackEnabled: academy.feedbackEnabled,
       requireGrading: academy.requireGrading,
       allowMultipleTeachers: academy.allowMultipleTeachers,
-      restrictStreamAccess: academy.restrictStreamAccess,
       defaultWatermarkIntervalMins: academy.defaultWatermarkIntervalMins,
       defaultMaxWatchTimeMultiplier: academy.defaultMaxWatchTimeMultiplier,
       allowedPaymentMethods: academy.allowedPaymentMethods,
@@ -679,11 +678,6 @@ academies.patch('/:id', async (c) => {
       updates.push('hiddenMenuItems = ?');
       values.push(typeof body.hiddenMenuItems === 'string' ? body.hiddenMenuItems : JSON.stringify(body.hiddenMenuItems));
     }
-    if (body.restrictStreamAccess !== undefined) {
-      updates.push('restrictStreamAccess = ?');
-      values.push(body.restrictStreamAccess);
-    }
-
     if (updates.length === 0) {
       return c.json(errorResponse('No fields to update'), 400);
     }

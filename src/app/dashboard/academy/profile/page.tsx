@@ -53,7 +53,6 @@ interface Academy {
   allowMultipleTeachers?: number;
   requireGrading?: number;
   hiddenMenuItems?: string;
-  restrictStreamAccess?: number;
 }
 
 interface AcademicYear {
@@ -178,8 +177,7 @@ export default function ProfilePage() {
     bizumPhone: '',
     allowMultipleTeachers: false,
     requireGrading: true,
-    hiddenMenuItems: [] as string[],
-    restrictStreamAccess: false
+    hiddenMenuItems: [] as string[]
   });
 
   useEffect(() => {
@@ -240,8 +238,7 @@ export default function ProfilePage() {
           bizumPhone: academyData.bizumPhone || '',
           allowMultipleTeachers: academyData.allowMultipleTeachers === 1,
           requireGrading: academyData.requireGrading !== 0,
-          hiddenMenuItems: (() => { try { return JSON.parse(academyData.hiddenMenuItems || '[]'); } catch { return []; } })(),
-          restrictStreamAccess: academyData.restrictStreamAccess === 1
+          hiddenMenuItems: (() => { try { return JSON.parse(academyData.hiddenMenuItems || '[]'); } catch { return []; } })()
         });
       }
 
@@ -479,8 +476,7 @@ export default function ProfilePage() {
         bizumPhone: field === 'bizumPhone' ? value : newFormData.bizumPhone,
         allowMultipleTeachers: field === 'allowMultipleTeachers' ? value : (newFormData.allowMultipleTeachers ? 1 : 0),
         requireGrading: field === 'requireGrading' ? value : (newFormData.requireGrading ? 1 : 0),
-        hiddenMenuItems: field === 'hiddenMenuItems' ? JSON.stringify(value) : JSON.stringify(newFormData.hiddenMenuItems),
-        restrictStreamAccess: field === 'restrictStreamAccess' ? value : (newFormData.restrictStreamAccess ? 1 : 0)
+        hiddenMenuItems: field === 'hiddenMenuItems' ? JSON.stringify(value) : JSON.stringify(newFormData.hiddenMenuItems)
       };
 
 
@@ -786,8 +782,7 @@ export default function ProfilePage() {
                         bizumPhone: academy.bizumPhone || '',
                         allowMultipleTeachers: academy.allowMultipleTeachers === 1,
                         requireGrading: academy.requireGrading !== 0,
-                        hiddenMenuItems: (() => { try { return JSON.parse(academy.hiddenMenuItems || '[]'); } catch { return []; } })(),
-                        restrictStreamAccess: academy.restrictStreamAccess === 1
+                        hiddenMenuItems: (() => { try { return JSON.parse(academy.hiddenMenuItems || '[]'); } catch { return []; } })()
                       });
                     }}
                     disabled={saving}
@@ -1073,30 +1068,6 @@ export default function ProfilePage() {
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
                   ))}
                 </select>
-              </div>
-            </div>
-
-            {/* Restrict Stream Access */}
-            <div className="flex items-center justify-between">
-              <div>
-                <label className="block text-sm font-medium text-gray-900">
-                  Restricción de acceso a streams
-                </label>
-                <p className="text-xs text-gray-500">Solo estudiantes matriculados pueden unirse. Sin email o sin matrícula = acceso bloqueado</p>
-              </div>
-              <div className="flex items-center gap-3 ml-4 shrink-0">
-                <button
-                  onClick={() => handleSettingChange('restrictStreamAccess', formData.restrictStreamAccess ? 0 : 1)}
-                  className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors cursor-pointer ${
-                    formData.restrictStreamAccess ? 'bg-brand-600' : 'bg-gray-300'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform ${
-                      formData.restrictStreamAccess ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
               </div>
             </div>
 
