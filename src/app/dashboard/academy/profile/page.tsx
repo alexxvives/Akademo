@@ -1638,22 +1638,9 @@ export default function ProfilePage() {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-indigo-900 mb-2">Verificación en proceso</h3>
-                  <p className="text-indigo-700 text-sm mb-4">
+                  <p className="text-indigo-700 text-sm">
                     Tu cuenta de Stripe está siendo verificada. Este proceso puede tardar entre 24-48 horas. Recibirás un email de Stripe cuando esté lista.
                   </p>
-                  
-                  <div className="bg-white/70 rounded-lg p-4 border border-indigo-200 mb-4">
-                    <p className="text-sm text-gray-700 mb-1"><span className="font-medium">ID de cuenta:</span> {stripeStatus.accountId}</p>
-                    <p className="text-xs text-gray-600 mt-2">
-                      ⏳ Estado: Esperando verificación de Stripe
-                    </p>
-                  </div>
-                  
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <p className="text-xs text-blue-800">
-                      <strong>¿Qué sigue?</strong> Stripe está verificando tu información. Una vez aprobada, podrás recibir pagos automáticamente. No necesitas hacer nada más.
-                    </p>
-                  </div>
                 </div>
               </div>
             </div>
