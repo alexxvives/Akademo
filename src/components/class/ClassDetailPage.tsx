@@ -129,6 +129,7 @@ interface StreamRecording {
   recordingId?: string;
   validRecordingId?: string;
   classDeleted?: boolean;
+  bunnyStatus?: number | null;
 }
 
 interface AnalyticsData {
@@ -407,7 +408,10 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
           const matchClass = stream.classId === classId || stream.classSlug === classId || stream.classDeleted;
           const hasRecording = (stream.status === 'ended' || (stream.recordingId && stream.recordingId.length > 5));
           const notUsed = !stream.validRecordingId;
-          return matchClass && hasRecording && notUsed;
+          // Only show recordings Bunny has finished processing (status >= 4); null = API hiccup, show anyway
+          const bunnyReady = stream.bunnyStatus === null || stream.bunnyStatus === undefined
+            || (stream.bunnyStatus >= 4 && stream.bunnyStatus !== 6);
+          return matchClass && hasRecording && notUsed && bunnyReady;
         });
         setAvailableStreamRecordings(recordingsForClass);
         return recordingsForClass; // Return the recordings for the useEffect
