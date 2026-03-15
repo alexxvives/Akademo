@@ -71,6 +71,14 @@ export default function PaymentModal({
   const [_confirmingTransferencia, _setConfirmingTransferencia] = useState(false);
   const [allowedPaymentMethods, setAllowedPaymentMethods] = useState<string[]>(['cash']);
   const [academyPaymentInfo, setAcademyPaymentInfo] = useState<AcademyPaymentInfo | null>(null);
+  const [copiedField, setCopiedField] = useState<'iban' | 'bizum' | null>(null);
+
+  const copyToClipboard = (text: string, field: 'iban' | 'bizum') => {
+    navigator.clipboard.writeText(text.replace(/\s/g, '')).then(() => {
+      setCopiedField(field);
+      setTimeout(() => setCopiedField(null), 2000);
+    });
+  };
 
   // Lock body scroll when modal is open
   useEffect(() => {
@@ -468,13 +476,15 @@ export default function PaymentModal({
                 </button>
 
                 {/* Transferencia */}
-                <button
-                  onClick={handleTransferenciaPayment}
-                  disabled={processing || !paymentFrequency || !transferenciaAvailable}
+                <div
+                  role="button"
+                  tabIndex={!processing && !!paymentFrequency && transferenciaAvailable ? 0 : -1}
+                  onClick={!processing && !!paymentFrequency && transferenciaAvailable ? handleTransferenciaPayment : undefined}
+                  onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && !processing && !!paymentFrequency && transferenciaAvailable) handleTransferenciaPayment(); }}
                   className={`w-full p-4 rounded-lg text-left transition-all ${
                     !paymentFrequency || !transferenciaAvailable
                       ? 'bg-gray-50 border-2 border-gray-200 opacity-50 cursor-not-allowed'
-                      : 'bg-gray-50 border-2 border-gray-300 hover:border-gray-500 hover:shadow-md'
+                      : 'bg-gray-50 border-2 border-gray-300 hover:border-gray-500 hover:shadow-md cursor-pointer'
                   }`}
                 >
                   <div className="flex items-center gap-4">
@@ -484,8 +494,32 @@ export default function PaymentModal({
                       </svg>
                     </div>
                     <div className="flex-1">
-                      <h4 className="text-base font-semibold text-gray-900 mb-0.5">Transferencia</h4>
-                      <p className="text-sm text-gray-600">IBAN: {transferenciaInfo || 'La academia aún no ha configurado su IBAN'}</p>
+                      <h4 className="text-base font-semibold text-gray-900 mb-0.5">Transferencia Bancaria</h4>
+                      {transferenciaInfo ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="font-mono font-bold text-gray-900 text-sm tracking-wide bg-white border border-gray-300 px-2 py-0.5 rounded select-all">
+                            {transferenciaInfo}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); copyToClipboard(transferenciaInfo, 'iban'); }}
+                            className="flex-shrink-0 p-1 text-gray-400 hover:text-[#1a1c29] transition-colors rounded"
+                            title="Copiar IBAN"
+                          >
+                            {copiedField === 'iban' ? (
+                              <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            ) : (
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                              </svg>
+                            )}
+                          </button>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500">La academia aún no ha configurado su IBAN</p>
+                      )}
                     </div>
                     <div className="flex-shrink-0">
                       {!transferenciaAvailable ? (
@@ -503,16 +537,18 @@ export default function PaymentModal({
                       )}
                     </div>
                   </div>
-                </button>
+                </div>
 
                 {/* Bizum */}
-                <button
-                  onClick={handleBizumPayment}
-                  disabled={processing || !paymentFrequency || !bizumAvailable}
+                <div
+                  role="button"
+                  tabIndex={!processing && !!paymentFrequency && bizumAvailable ? 0 : -1}
+                  onClick={!processing && !!paymentFrequency && bizumAvailable ? handleBizumPayment : undefined}
+                  onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && !processing && !!paymentFrequency && bizumAvailable) handleBizumPayment(); }}
                   className={`w-full p-4 rounded-lg text-left transition-all ${
                     !paymentFrequency || !bizumAvailable
                       ? 'bg-gray-50 border-2 border-gray-200 opacity-50 cursor-not-allowed'
-                      : 'bg-gray-50 border-2 border-gray-300 hover:border-gray-400 hover:shadow-md'
+                      : 'bg-gray-50 border-2 border-gray-300 hover:border-gray-400 hover:shadow-md cursor-pointer'
                   }`}
                 >
                   <div className="flex items-center gap-4">
@@ -523,7 +559,31 @@ export default function PaymentModal({
                     </div>
                     <div className="flex-1">
                       <h4 className="text-base font-semibold text-gray-900 mb-0.5">Bizum</h4>
-                      <p className="text-sm text-gray-600">Número: {bizumInfo || 'La academia aún no ha configurado su número'}</p>
+                      {bizumInfo ? (
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="font-mono font-bold text-gray-900 text-sm tracking-wide bg-white border border-gray-300 px-2 py-0.5 rounded select-all">
+                            {bizumInfo}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); copyToClipboard(bizumInfo, 'bizum'); }}
+                            className="flex-shrink-0 p-1 text-gray-400 hover:text-[#1a1c29] transition-colors rounded"
+                            title="Copiar número"
+                          >
+                            {copiedField === 'bizum' ? (
+                              <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            ) : (
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                              </svg>
+                            )}
+                          </button>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500">La academia aún no ha configurado su número</p>
+                      )}
                     </div>
                     <div className="flex-shrink-0">
                       {!bizumAvailable ? (
@@ -541,7 +601,7 @@ export default function PaymentModal({
                       )}
                     </div>
                   </div>
-                </button>
+                </div>
 
                 {/* Cash Payment */}
                 <button
