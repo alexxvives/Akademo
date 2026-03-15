@@ -574,7 +574,7 @@ payments.post('/stripe-session', async (c) => {
       priceData.recurring = { interval: 'month' };
     }
 
-    // Build session params; add Connect transfer_data when the academy has a Stripe account
+    // Build session params — direct charge on the academy's connected Stripe account
     const sessionParams: any = {
       payment_method_types: paymentMethods,
       line_items: [{
@@ -594,24 +594,11 @@ payments.post('/stripe-session', async (c) => {
       },
     };
 
-    // Stripe Connect: route funds to academy account and take a 5% platform fee
-    if (classData.stripeAccountId) {
-      if (isRecurring) {
-        // Subscription mode: transfer_data goes on the subscription object
-        sessionParams.subscription_data = {
-          transfer_data: { destination: classData.stripeAccountId },
-          application_fee_percent: 5,
-        };
-      } else {
-        // One-time payment: transfer_data goes on payment_intent_data
-        sessionParams.payment_intent_data = {
-          application_fee_amount: Math.round(price * 100 * 0.05),
-          transfer_data: { destination: classData.stripeAccountId },
-        };
-      }
-    }
-
-    const checkoutSession = await stripe.checkout.sessions.create(sessionParams);
+    // Direct charge: session is created on the academy's connected account so funds go straight to them
+    const checkoutSession = await stripe.checkout.sessions.create(
+      sessionParams,
+      { stripeAccount: classData.stripeAccountId }
+    );
 
     // Enrollment already exists, no need to update it — payment will be created by webhook
     return c.json(successResponse({ url: checkoutSession.url }));

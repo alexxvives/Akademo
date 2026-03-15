@@ -613,6 +613,8 @@ webhooks.post('/stripe', async (c) => {
     const payload = JSON.parse(rawBody);
     const event = payload.type;
     const data = payload.data.object;
+    // For connected-account webhooks, Stripe includes the connected account ID at the top level
+    const connectedAccountId: string | undefined = payload.account;
 
     // Handle all 5 Stripe webhook events
     if (event === 'checkout.session.completed') {
@@ -855,11 +857,11 @@ webhooks.post('/stripe', async (c) => {
             console.log(`[Stripe Webhook] Subscription fully paid (${totalPaid}€ >= ${oneTimePrice}€). Cancelling subscription ${subscription}`);
             try {
               const stripeModule = (await import('stripe')).default;
-              const stripeClient = new stripeModule(
-                ((c.env as unknown as Record<string, unknown>).STRIPE_SECRET_KEY_SANDBOX as string),
-                { apiVersion: '2025-12-15.clover' as any }
-              );
-              await stripeClient.subscriptions.cancel(subscription);
+              const cancelStripeKey = c.env.STRIPE_SECRET_KEY || (c.env as unknown as Record<string, unknown>).STRIPE_SECRET_KEY_SANDBOX as string;
+              const stripeClient = new stripeModule(cancelStripeKey, { apiVersion: '2025-12-15.clover' as any });
+              // Cancel on the connected account if the subscription was created via direct charges
+              const cancelOpts = connectedAccountId ? { stripeAccount: connectedAccountId } : undefined;
+              await stripeClient.subscriptions.cancel(subscription, undefined, cancelOpts);
 
               await c.env.DB
                 .prepare('UPDATE ClassEnrollment SET stripeSubscriptionId = NULL, nextPaymentDue = NULL WHERE id = ?')
