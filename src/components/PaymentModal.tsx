@@ -497,7 +497,7 @@ export default function PaymentModal({
                       <h4 className="text-base font-semibold text-gray-900 mb-0.5">Transferencia Bancaria</h4>
                       {transferenciaInfo ? (
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="font-mono font-bold text-gray-900 text-sm tracking-wide bg-white border border-gray-300 px-2 py-0.5 rounded select-all">
+                          <span className="font-mono text-gray-700 text-sm tracking-wide select-all">
                             {transferenciaInfo}
                           </span>
                           <button
@@ -561,7 +561,7 @@ export default function PaymentModal({
                       <h4 className="text-base font-semibold text-gray-900 mb-0.5">Bizum</h4>
                       {bizumInfo ? (
                         <div className="flex items-center gap-2 mt-1">
-                          <span className="font-mono font-bold text-gray-900 text-sm tracking-wide bg-white border border-gray-300 px-2 py-0.5 rounded select-all">
+                          <span className="font-mono text-gray-700 text-sm tracking-wide select-all">
                             {bizumInfo}
                           </span>
                           <button

@@ -485,7 +485,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
     const attendancePct = filteredStreamStats.total > 0 && filteredStudents.length > 0 && filteredStreamStats.avgParticipants > 0
       ? Math.round((filteredStreamStats.avgParticipants / filteredStudents.length) * 100) : 0;
     return (
-      <div className={`bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm h-full animate-fade-in ${isAcademy ? 'order-4 lg:order-1' : ''}`}>
+      <div className={`bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm h-full animate-fade-in ${isAcademy ? 'order-4 lg:order-2' : ''}`}>
         <h3 className="text-lg font-semibold text-gray-900 mb-3 sm:mb-6">Participación</h3>
         {filteredStudents.length > 0 ? (
           <div className="space-y-4">
@@ -546,7 +546,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
   function renderStudentsCard() {
     const hasData = filteredStudents.length > 0 || pendingEnrollments.length > 0 || rejectedCount > 0;
     return (
-      <div className={`bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm h-full ${isAcademy ? 'order-1 lg:order-2' : ''}`}>
+      <div className={`bg-white rounded-lg p-4 sm:p-6 border border-gray-200 shadow-sm h-full ${isAcademy ? 'order-1 lg:order-1' : ''}`}>
         <h3 className="text-lg font-semibold text-gray-900 mb-3 sm:mb-6">Estudiantes</h3>
         {hasData ? (
           renderAcademyStudentsContent()

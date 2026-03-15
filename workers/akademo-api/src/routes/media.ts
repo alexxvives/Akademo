@@ -139,6 +139,24 @@ media.get('/', async (c) => {
 
       results.videos = videosResult.results || [];
       results.totalVideos = (lessonCount?.total || 0) + (recCount?.total || 0);
+
+      // For recording-source items, fetch actual video duration from Bunny
+      const recordingItems = (results.videos as any[]).filter((v: any) => v.source === 'recording' && v.bunnyGuid);
+      if (recordingItems.length > 0) {
+        await Promise.all(recordingItems.map(async (item: any) => {
+          try {
+            const bunnyRes = await fetch(
+              `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/videos/${item.bunnyGuid}`,
+              { headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY } }
+            );
+            if (bunnyRes.ok) {
+              const bunnyData = await bunnyRes.json() as any;
+              item.durationSeconds = bunnyData.length || item.durationSeconds;
+              item.bunnyStatus = bunnyData.status ?? item.bunnyStatus;
+            }
+          } catch { /* keep DB-computed duration as fallback */ }
+        }));
+      }
     }
 
     // Fetch documents
