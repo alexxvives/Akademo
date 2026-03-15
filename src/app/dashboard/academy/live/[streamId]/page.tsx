@@ -34,22 +34,27 @@ export default function AcademyLivePage() {
   useEffect(() => {
     const init = async () => {
       try {
-        const [streamRes, tokenRes] = await Promise.all([
+        const [streamRes] = await Promise.all([
           apiClient(`/live/${streamId}`),
-          apiClient(`/live/${streamId}/join-token`),
         ]);
         const streamData = await streamRes.json();
-        const tokenData = await tokenRes.json();
 
         if (!streamData.success) { setError(streamData.error || 'Stream no encontrado'); return; }
-        if (!tokenData.success) { setError(tokenData.error || 'Error al cargar la sala'); return; }
 
         const sData = streamData.data;
         setStream(sData);
-        const redirectUrl = encodeURIComponent(
-          `${window.location.origin}/dashboard/academy/subject/${sData.classSlug || sData.classId}`
+
+        const redirectPath = `/dashboard/academy/subject/${sData.classSlug || sData.classId}`;
+        const redirectUrl = `${window.location.origin}${redirectPath}`;
+        const tokenRes = await apiClient(
+          `/live/${streamId}/join-token?redirectOnExit=${encodeURIComponent(redirectUrl)}`
         );
-        setEmbedUrl(`${tokenData.data.roomUrl}?t=${tokenData.data.token}&redirect_on_meeting_exit=${redirectUrl}`);
+        const tokenData = await tokenRes.json();
+
+        if (!tokenData.success) { setError(tokenData.error || 'Error al cargar la sala'); return; }
+
+        // redirect_on_meeting_exit is embedded in the token by the API
+        setEmbedUrl(`${tokenData.data.roomUrl}?t=${tokenData.data.token}`);
       } catch {
         setError('Error de conexión');
       }
@@ -66,7 +71,10 @@ export default function AcademyLivePage() {
     } catch {}
   }, [streamId]);
 
+  const backUrl = stream ? `/dashboard/academy/subject/${stream.classSlug || stream.classId}` : '/dashboard/academy/streams';
+
   // Start recording when host joins: listen for Daily.co postMessage + fallback retries
+  // Also redirect when host leaves
   useEffect(() => {
     if (!embedUrl) return;
     const handleMessage = (e: MessageEvent) => {
@@ -77,6 +85,11 @@ export default function AcademyLivePage() {
         m.action === 'meeting-joined' || m.type === 'meeting-joined' ||
         (m.type === 'daily-event' && m.eventName === 'joined-meeting')
       ) startRecording();
+      if (
+        m.action === 'left-meeting' || m.eventName === 'left-meeting' ||
+        m.action === 'meeting-left' || m.type === 'meeting-left' ||
+        (m.type === 'daily-event' && m.eventName === 'left-meeting')
+      ) router.push(backUrl);
     };
     window.addEventListener('message', handleMessage);
     const t1 = setTimeout(startRecording, 8000);
@@ -86,13 +99,11 @@ export default function AcademyLivePage() {
       window.removeEventListener('message', handleMessage);
       clearTimeout(t1); clearTimeout(t2); clearTimeout(t3);
     };
-  }, [embedUrl, startRecording]);
+  }, [embedUrl, startRecording, backUrl, router]);
 
 
 
   useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current); }, []);
-
-  const backUrl = stream ? `/dashboard/academy/subject/${stream.classSlug || stream.classId}` : '/dashboard/academy/streams';
 
   if (error) {
     return (

@@ -88,6 +88,22 @@ export default function StudentLivePage() {
     );
   }
 
+  // Listen for Daily.co left-meeting event so students are redirected when host ends the session
+  useEffect(() => {
+    if (!embedUrl) return;
+    const handleMessage = (e: MessageEvent) => {
+      if (!e.data) return;
+      const m = e.data;
+      if (
+        m.action === 'left-meeting' || m.eventName === 'left-meeting' ||
+        m.action === 'meeting-left' || m.type === 'meeting-left' ||
+        (m.type === 'daily-event' && m.eventName === 'left-meeting')
+      ) router.push(backUrl);
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [embedUrl, backUrl, router]);
+
   const displayName = user ? `${user.firstName} ${user.lastName}`.trim() : '';
   const displayEmail = user?.email || '';
   const displayId = user?.id || '';

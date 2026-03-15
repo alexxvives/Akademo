@@ -37,29 +37,32 @@ export default function TeacherLivePage() {
   useEffect(() => {
     const init = async () => {
       try {
-        // Load stream info + generate join token in parallel
-        const [streamRes, tokenRes] = await Promise.all([
-          apiClient(`/live/${streamId}`),
-          apiClient(`/live/${streamId}/join-token`),
-        ]);
+        // Load stream info first, then generate join token with redirect URL embedded in token
+        const streamRes = await apiClient(`/live/${streamId}`);
         const streamData = await streamRes.json();
-        const tokenData = await tokenRes.json();
 
         if (!streamData.success) { setError(streamData.error || 'Stream no encontrado'); return; }
-        if (!tokenData.success) { setError(tokenData.error || 'Error al cargar la sala'); return; }
 
         const sData = streamData.data;
         setStream(sData);
+
+        const redirectPath = `/dashboard/teacher/subject/${sData.classSlug || sData.classId}`;
+        const redirectUrl = `${window.location.origin}${redirectPath}`;
+
+        const tokenRes = await apiClient(
+          `/live/${streamId}/join-token?redirectOnExit=${encodeURIComponent(redirectUrl)}`
+        );
+        const tokenData = await tokenRes.json();
+
+        if (!tokenData.success) { setError(tokenData.error || 'Error al cargar la sala'); return; }
 
         if (tokenData.data.isZoom) {
           setIsZoom(true);
           setZoomJoinUrl(tokenData.data.zoomLink || null);
           setZoomMeetingId(tokenData.data.zoomMeetingId || null);
         } else {
-          const redirectUrl = encodeURIComponent(
-            `${window.location.origin}/dashboard/teacher/subject/${sData.classSlug || sData.classId}`
-          );
-          setEmbedUrl(`${tokenData.data.roomUrl}?t=${tokenData.data.token}&redirect_on_meeting_exit=${redirectUrl}`);
+          // redirect_on_meeting_exit is embedded in the token by the API — no need for URL param
+          setEmbedUrl(`${tokenData.data.roomUrl}?t=${tokenData.data.token}`);
         }
       } catch {
         setError('Error de conexión');
