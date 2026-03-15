@@ -49,9 +49,13 @@ export interface Bindings {
   // Email
   RESEND_API_KEY: string;
   
-  // Stripe (sandbox — swap to STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET for production)
+  // Stripe
+  // Sandbox keys (sk_test_*, whsec_ from sandbox endpoint) — used while testing
   STRIPE_SECRET_KEY_SANDBOX: string;
   STRIPE_WEBHOOK_SECRET_SANDBOX: string;
+  // Production keys (sk_live_*, whsec_ from live endpoint) — when present, take priority over sandbox
+  STRIPE_SECRET_KEY?: string;
+  STRIPE_WEBHOOK_SECRET?: string;
   
   // Session
   SESSION_SECRET: string;

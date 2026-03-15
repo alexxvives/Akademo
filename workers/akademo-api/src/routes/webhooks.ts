@@ -562,8 +562,9 @@ webhooks.post('/stripe', async (c) => {
     }
 
     // Verify webhook signature with HMAC-SHA256 (Stripe v1 scheme)
+    // Prefer production key; fall back to sandbox
     const rawBody = await c.req.text();
-    const webhookSecret = (c.env as unknown as Record<string, unknown>).STRIPE_WEBHOOK_SECRET_SANDBOX as string;
+    const webhookSecret = (c.env.STRIPE_WEBHOOK_SECRET || (c.env as unknown as Record<string, unknown>).STRIPE_WEBHOOK_SECRET_SANDBOX) as string;
     
     if (webhookSecret) {
       const parts = signature.split(',').reduce((acc: Record<string, string>, part: string) => {

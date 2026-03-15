@@ -518,12 +518,13 @@ payments.post('/stripe-session', async (c) => {
     if (!price || price <= 0) {
       return c.json(errorResponse(`${paymentFrequency === 'monthly' ? 'Monthly' : 'One-time'} payment not available for this class`), 400);
     }
-    if (!c.env.STRIPE_SECRET_KEY_SANDBOX) {
-      return c.json(errorResponse('Stripe (sandbox) is not configured on this server'), 500);
+    const stripeKey = c.env.STRIPE_SECRET_KEY || c.env.STRIPE_SECRET_KEY_SANDBOX;
+    if (!stripeKey) {
+      return c.json(errorResponse('Stripe is not configured on this server'), 500);
     }
 
     // Create Stripe Checkout Session
-    const stripe = require('stripe')(c.env.STRIPE_SECRET_KEY_SANDBOX);
+    const stripe = require('stripe')(stripeKey);
 
     // Verify the academy's Connect account has completed onboarding and can accept charges.
     // If we skip this, Stripe throws an opaque error when creating the session and the student

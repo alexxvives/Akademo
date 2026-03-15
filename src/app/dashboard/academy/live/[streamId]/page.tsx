@@ -168,7 +168,7 @@ export default function AcademyLivePage() {
             </span>
           </div>
         </div>
-        {/* Right: EN VIVO */}
+        {/* Right side */}
         <div className="ml-auto flex items-center gap-2 z-10">
           <button
             onClick={() => setShowWhiteboard(prev => !prev)}
@@ -180,10 +180,6 @@ export default function AcademyLivePage() {
             </svg>
             Pizarra
           </button>
-          <span className="hidden sm:flex items-center gap-1.5 text-red-400 text-xs font-semibold">
-            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-            EN VIVO
-          </span>
           {embedUrl && (
             <button
               onClick={endSession}
