@@ -677,8 +677,8 @@ live.get('/:id/join-token', async (c) => {
             enable_chat: true,
             start_video_off: false,
             start_audio_off: false,
+            enable_recording: 'cloud',
             exp: Math.floor(Date.now() / 1000) + 6 * 60 * 60,
-            redirect_on_exit: `${c.env.FRONTEND_URL}/dashboard/streaming`,
           },
         }),
       });
@@ -712,7 +712,7 @@ live.get('/:id/join-token', async (c) => {
           is_owner: isHost,
           user_name: userName,
           exp: Math.floor(Date.now() / 1000) + 6 * 60 * 60,
-          ...(isHost ? { start_cloud_recording: true } : {}),
+          ...(isHost ? { enable_recording: 'cloud', start_cloud_recording: true } : {}),
         },
       }),
     });

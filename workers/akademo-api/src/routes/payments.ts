@@ -328,7 +328,6 @@ payments.get('/pending-cash', async (c) => {
         WHERE a.ownerId = ? 
         AND p.status = 'PENDING'
         AND p.type = 'STUDENT_TO_ACADEMY'
-        AND json_extract(p.metadata, '$.studentSubmitted') = 1
         ORDER BY p.createdAt DESC
       `;
       params = [session.id];
@@ -357,7 +356,6 @@ payments.get('/pending-cash', async (c) => {
         WHERE c.teacherId = ? 
         AND p.status = 'PENDING'
         AND p.type = 'STUDENT_TO_ACADEMY'
-        AND json_extract(p.metadata, '$.studentSubmitted') = 1
         ORDER BY p.createdAt DESC
       `;
       params = [session.id];
@@ -389,7 +387,6 @@ payments.get('/pending-cash', async (c) => {
           WHERE a.id = ?
           AND p.status = 'PENDING'
           AND p.type = 'STUDENT_TO_ACADEMY'
-          AND json_extract(p.metadata, '$.studentSubmitted') = 1
           ORDER BY p.createdAt DESC
         `;
         params = [academyId];
@@ -418,7 +415,6 @@ payments.get('/pending-cash', async (c) => {
           LEFT JOIN User teacher ON c.teacherId = teacher.id
           WHERE p.status = 'PENDING'
           AND p.type = 'STUDENT_TO_ACADEMY'
-          AND json_extract(p.metadata, '$.studentSubmitted') = 1
           ORDER BY p.createdAt DESC
         `;
       }
