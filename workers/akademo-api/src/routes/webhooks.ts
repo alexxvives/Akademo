@@ -858,7 +858,7 @@ webhooks.post('/stripe', async (c) => {
             try {
               const stripeModule = (await import('stripe')).default;
               const cancelStripeKey = c.env.STRIPE_SECRET_KEY || (c.env as unknown as Record<string, unknown>).STRIPE_SECRET_KEY_SANDBOX as string;
-              const stripeClient = new stripeModule(cancelStripeKey, { apiVersion: '2025-12-15.clover' as any });
+              const stripeClient = new stripeModule(cancelStripeKey, { apiVersion: '2026-02-25.clover' as any });
               // Cancel on the connected account if the subscription was created via direct charges
               const cancelOpts = connectedAccountId ? { stripeAccount: connectedAccountId } : undefined;
               await stripeClient.subscriptions.cancel(subscription, undefined, cancelOpts);

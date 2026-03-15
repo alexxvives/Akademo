@@ -589,7 +589,7 @@ enrollments.post('/leave', async (c) => {
         } else {
           const stripe = (await import('stripe')).default;
           const stripeClient = new stripe(c.env.STRIPE_SECRET_KEY_SANDBOX, {
-            apiVersion: '2025-12-15.clover' as any,
+            apiVersion: '2026-02-25.clover' as any,
           });
           
           await stripeClient.subscriptions.cancel(enrollment.stripeSubscriptionId);
@@ -671,7 +671,7 @@ enrollments.delete('/:id', async (c) => {
         } else {
           const stripe = (await import('stripe')).default;
           const stripeClient = new stripe(c.env.STRIPE_SECRET_KEY_SANDBOX, {
-            apiVersion: '2025-12-15.clover' as any,
+            apiVersion: '2026-02-25.clover' as any,
           });
           await stripeClient.subscriptions.cancel(enrollment.stripeSubscriptionId);
         }
