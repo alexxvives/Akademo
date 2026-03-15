@@ -441,7 +441,7 @@ function DocumentsTable({ documents, getDocIcon }: { documents: DocumentItem[]; 
             >
               <td className="px-4 py-3">
                 <div className="flex items-center gap-3">
-                  <span className="text-lg">{getDocIcon(doc.mimeType)}</span>
+                  {getDocIcon(doc.mimeType)}
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">{doc.title}</p>
                     <p className="text-xs text-gray-500 truncate sm:hidden">{doc.className}</p>

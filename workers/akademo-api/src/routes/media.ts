@@ -106,7 +106,7 @@ media.get('/', async (c) => {
           c.id as classId,
           COALESCE(c.name, '[Clase eliminada]') as className,
           ls.recordingId as bunnyGuid,
-          NULL as bunnyStatus,
+          4 as bunnyStatus,
           NULL as fileName,
           NULL as fileSize,
           'recording' as source

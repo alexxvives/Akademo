@@ -187,6 +187,20 @@ live.post('/', async (c) => {
       }
     }
 
+    // Auto-expire stale streams before checking (mirrors the GET /live display logic).
+    // This prevents "phantom" streams (older than 24h) from blocking creation when
+    // they're already invisible to the user in the UI.
+    await c.env.DB
+      .prepare(`
+        UPDATE LiveStream
+        SET status = 'ended', endedAt = datetime('now')
+        WHERE classId = ?
+          AND status IN ('active', 'LIVE', 'scheduled')
+          AND createdAt <= datetime('now', '-24 hours')
+      `)
+      .bind(classId)
+      .run();
+
     // Check for existing active stream on this class
     const activeStream = await c.env.DB
       .prepare("SELECT id FROM LiveStream WHERE classId = ? AND status IN ('active', 'LIVE', 'scheduled')")
