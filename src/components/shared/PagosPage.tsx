@@ -116,6 +116,7 @@ export default function PagosPage({ role }: PagosPageProps) {
   });
   const [students, setStudents] = useState<{id: string; firstName: string; lastName: string; email: string}[]>([]);
   const [deletingPaymentId, setDeletingPaymentId] = useState<string | null>(null);
+  const [reversingPaymentId, setReversingPaymentId] = useState<string | null>(null);
   const [studentSearchTerm, setStudentSearchTerm] = useState('');
   const [showStudentDropdown, setShowStudentDropdown] = useState(false);
   const [studentEnrollments, setStudentEnrollments] = useState<{[key: string]: {classId: string; className: string}[]}>({});
@@ -825,39 +826,77 @@ export default function PagosPage({ role }: PagosPageProps) {
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                 </svg>
                               </button>
-                              <button
-                                onClick={async (e) => {
-                                  if (paymentStatus === 'NOT PAID') { e.preventDefault(); e.stopPropagation(); return; }
-                                  e.stopPropagation();
-                                  if (!confirm('¿Estás seguro de que quieres eliminar este pago? Esta acción no se puede deshacer.')) return;
-                                  try {
-                                    setDeletingPaymentId(history.paymentId || null);
-                                    const response = await apiClient(`/payments/${history.paymentId}`, { method: 'DELETE' });
-                                    if (response.ok) {
-                                      await loadData();
-                                    } else {
-                                      alert('Error al eliminar el pago');
+                              {(history.paymentStatus === 'PAID' || history.paymentStatus === 'COMPLETED') ? (
+                                <button
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    if (!confirm('¿Quieres cancelar este pago y devolverlo a pendiente?')) return;
+                                    try {
+                                      setReversingPaymentId(history.paymentId || null);
+                                      const response = await apiClient(`/payments/history/${history.paymentId}/reverse`, { method: 'PUT' });
+                                      if (response.ok) {
+                                        await loadData();
+                                      } else {
+                                        const data = await response.json().catch(() => ({}));
+                                        alert((data as { message?: string }).message || 'Error al cancelar el pago');
+                                      }
+                                    } catch (error) {
+                                      console.error('Error reversing payment:', error);
+                                      alert('Error al cancelar el pago');
+                                    } finally {
+                                      setReversingPaymentId(null);
                                     }
-                                  } catch (error) {
-                                    console.error('Error deleting payment:', error);
-                                    alert('Error al eliminar el pago');
-                                  } finally {
-                                    setDeletingPaymentId(null);
-                                  }
-                                }}
-                                disabled={deletingPaymentId === history.paymentId || paymentStatus === 'NOT PAID'}
-                                className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                                title={paymentStatus === 'NOT PAID' ? 'Disponible solo en academias activadas' : 'Eliminar pago'}
-                              >
-                                {deletingPaymentId === history.paymentId ? (
-                                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                  </svg>
-                                ) : (
-                                  <DeleteIcon size={16} />
-                                )}
-                              </button>
+                                  }}
+                                  disabled={reversingPaymentId === history.paymentId || paymentStatus === 'NOT PAID'}
+                                  className="p-1.5 text-orange-500 hover:text-orange-700 hover:bg-orange-50 rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                                  title={paymentStatus === 'NOT PAID' ? 'Disponible solo en academias activadas' : 'Cancelar pago (volver a pendiente)'}
+                                >
+                                  {reversingPaymentId === history.paymentId ? (
+                                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                  ) : (
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                                    </svg>
+                                  )}
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={async (e) => {
+                                    if (paymentStatus === 'NOT PAID') { e.preventDefault(); e.stopPropagation(); return; }
+                                    e.stopPropagation();
+                                    if (!confirm('¿Estás seguro de que quieres eliminar este pago? Esta acción no se puede deshacer.')) return;
+                                    try {
+                                      setDeletingPaymentId(history.paymentId || null);
+                                      const response = await apiClient(`/payments/${history.paymentId}`, { method: 'DELETE' });
+                                      if (response.ok) {
+                                        await loadData();
+                                      } else {
+                                        alert('Error al eliminar el pago');
+                                      }
+                                    } catch (error) {
+                                      console.error('Error deleting payment:', error);
+                                      alert('Error al eliminar el pago');
+                                    } finally {
+                                      setDeletingPaymentId(null);
+                                    }
+                                  }}
+                                  disabled={deletingPaymentId === history.paymentId || paymentStatus === 'NOT PAID'}
+                                  className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                                  title={paymentStatus === 'NOT PAID' ? 'Disponible solo en academias activadas' : 'Eliminar pago'}
+                                >
+                                  {deletingPaymentId === history.paymentId ? (
+                                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                  ) : (
+                                    <DeleteIcon size={16} />
+                                  )}
+                                </button>
+                              )}
                             </>
                           )}
                         </div>
