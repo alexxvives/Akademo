@@ -24,10 +24,13 @@ export function getErrorMessage(error: unknown): string {
  * @returns Formatted string like "2h 30m" or "45m"
  */
 export function formatDuration(seconds: number): string {
-  if (!seconds || seconds <= 0) return '0m';
+  if (!seconds || seconds <= 0) return '0m 0s';
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  const s = Math.floor(seconds % 60);
+  if (h > 0) return `${h}h ${m}m ${s}s`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
 }
 
 /**
