@@ -49,5 +49,6 @@ crons = ["0 0 1 * *"]  # Run at midnight on 1st of each month
 # RESEND_API_KEY - Configured
 
 # Stripe (for payments)
+# STRIPE_SANDBOX = "true" to use sandbox keys, "false" (or any other value) to use live keys
 # STRIPE_SECRET_KEY - Configured
 # STRIPE_WEBHOOK_SECRET - Configured

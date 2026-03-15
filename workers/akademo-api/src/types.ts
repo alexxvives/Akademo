@@ -50,10 +50,12 @@ export interface Bindings {
   RESEND_API_KEY: string;
   
   // Stripe
-  // Sandbox keys (sk_test_*, whsec_ from sandbox endpoint) — used while testing
+  // Toggle: set STRIPE_SANDBOX = "true" to use sandbox keys, anything else (or absent) = live keys
+  STRIPE_SANDBOX: string;
+  // Sandbox keys (sk_test_*, whsec_ from sandbox endpoint)
   STRIPE_SECRET_KEY_SANDBOX: string;
   STRIPE_WEBHOOK_SECRET_SANDBOX: string;
-  // Production keys (sk_live_*, whsec_ from live endpoint) — when present, take priority over sandbox
+  // Production keys (sk_live_*, whsec_ from live endpoint)
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
   

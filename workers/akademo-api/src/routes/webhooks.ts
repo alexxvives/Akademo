@@ -6,6 +6,14 @@ import { addMonths } from '../lib/payment-utils';
 
 const webhooks = new Hono<{ Bindings: Bindings }>();
 
+function getStripeKeys(env: Bindings): { secretKey: string; webhookSecret: string } {
+  const sandbox = env.STRIPE_SANDBOX === 'true';
+  return {
+    secretKey: sandbox ? env.STRIPE_SECRET_KEY_SANDBOX : (env.STRIPE_SECRET_KEY ?? env.STRIPE_SECRET_KEY_SANDBOX),
+    webhookSecret: sandbox ? env.STRIPE_WEBHOOK_SECRET_SANDBOX : (env.STRIPE_WEBHOOK_SECRET ?? env.STRIPE_WEBHOOK_SECRET_SANDBOX),
+  };
+}
+
 // Helper function to calculate billing cycles based on class start date (webhook variant — dates only)
 function calculateBillingCycle(classStartDate: string, _enrollmentDate: string, isMonthly: boolean) {
   const classStart = new Date(classStartDate);
@@ -562,9 +570,8 @@ webhooks.post('/stripe', async (c) => {
     }
 
     // Verify webhook signature with HMAC-SHA256 (Stripe v1 scheme)
-    // Prefer production key; fall back to sandbox
     const rawBody = await c.req.text();
-    const webhookSecret = (c.env.STRIPE_WEBHOOK_SECRET || (c.env as unknown as Record<string, unknown>).STRIPE_WEBHOOK_SECRET_SANDBOX) as string;
+    const { webhookSecret } = getStripeKeys(c.env);
     
     if (webhookSecret) {
       const parts = signature.split(',').reduce((acc: Record<string, string>, part: string) => {
@@ -857,7 +864,7 @@ webhooks.post('/stripe', async (c) => {
             console.log(`[Stripe Webhook] Subscription fully paid (${totalPaid}€ >= ${oneTimePrice}€). Cancelling subscription ${subscription}`);
             try {
               const stripeModule = (await import('stripe')).default;
-              const cancelStripeKey = c.env.STRIPE_SECRET_KEY || (c.env as unknown as Record<string, unknown>).STRIPE_SECRET_KEY_SANDBOX as string;
+              const { secretKey: cancelStripeKey } = getStripeKeys(c.env);
               const stripeClient = new stripeModule(cancelStripeKey, { apiVersion: '2026-02-25.clover' as any });
               // Cancel on the connected account if the subscription was created via direct charges
               const cancelOpts = connectedAccountId ? { stripeAccount: connectedAccountId } : undefined;
