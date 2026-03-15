@@ -1074,12 +1074,43 @@ payments.post('/stripe-connect', async (c) => {
     }
 
     // Create account link for onboarding
-    const accountLink = await stripe.accountLinks.create({
-      account: accountId,
-      refresh_url: `${c.env.FRONTEND_URL || 'https://akademo-edu.com'}/dashboard/academy/profile?stripe=refresh`,
-      return_url: `${c.env.FRONTEND_URL || 'https://akademo-edu.com'}/dashboard/academy/profile?stripe=complete`,
-      type: 'account_onboarding',
-    });
+    // If this fails (e.g. account belongs to a different Stripe platform), create a fresh one
+    let accountLink: any;
+    try {
+      accountLink = await stripe.accountLinks.create({
+        account: accountId,
+        refresh_url: `${c.env.FRONTEND_URL || 'https://akademo-edu.com'}/dashboard/academy/profile?stripe=refresh`,
+        return_url: `${c.env.FRONTEND_URL || 'https://akademo-edu.com'}/dashboard/academy/profile?stripe=complete`,
+        type: 'account_onboarding',
+      });
+    } catch (linkErr: any) {
+      // The stored account ID is invalid/belongs to another platform — create a new one
+      console.warn('[Stripe Connect] accountLinks.create failed, creating fresh account:', linkErr.message);
+      const freshAccount = await stripe.accounts.create({
+        type: 'express',
+        country: 'ES',
+        email: session.email,
+        capabilities: {
+          card_payments: { requested: true },
+          transfers: { requested: true },
+        },
+        business_type: 'company',
+        business_profile: {
+          name: academy.name,
+        },
+      });
+      accountId = freshAccount.id;
+      await c.env.DB
+        .prepare('UPDATE Academy SET stripeAccountId = ? WHERE id = ?')
+        .bind(accountId, academy.id)
+        .run();
+      accountLink = await stripe.accountLinks.create({
+        account: accountId,
+        refresh_url: `${c.env.FRONTEND_URL || 'https://akademo-edu.com'}/dashboard/academy/profile?stripe=refresh`,
+        return_url: `${c.env.FRONTEND_URL || 'https://akademo-edu.com'}/dashboard/academy/profile?stripe=complete`,
+        type: 'account_onboarding',
+      });
+    }
 
     return c.json(successResponse({ 
       url: accountLink.url,

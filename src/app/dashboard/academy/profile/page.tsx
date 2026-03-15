@@ -1269,9 +1269,7 @@ export default function ProfilePage() {
                   <p className={`text-xs ${formData.allowedPaymentMethods.includes('stripe') ? 'text-violet-700' : 'text-gray-500'}`}>
                     Tarjetas de crédito y débito
                   </p>
-                  {(!stripeStatus?.charges_enabled && !formData.allowedPaymentMethods.includes('stripe')) && (
-                    <p className="text-xs text-amber-600 mt-2 font-medium">Conecta tu cuenta de Stripe para activarlo</p>
-                  )}
+
                 </div>
                 <div className={`mt-0.5 h-3 w-3 rounded-full ${formData.allowedPaymentMethods.includes('stripe') ? 'bg-violet-500' : 'bg-gray-300'}`} />
               </div>
