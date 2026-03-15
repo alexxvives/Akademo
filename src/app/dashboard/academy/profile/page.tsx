@@ -215,9 +215,11 @@ export default function ProfilePage() {
         const allowedMethods = normalizeAllowedPaymentMethods(academyData.allowedPaymentMethods);
         // Auto-remove stripe if the academy hasn't connected a working Stripe account
         const stripeConnected = stripeResult.success && stripeResult.data?.charges_enabled === true;
-        const cleanedMethods = stripeConnected ? allowedMethods : allowedMethods.filter((m) => m !== 'stripe');
-        // If we removed stripe, persist the change to DB silently
-        if (!stripeConnected && allowedMethods.includes('stripe')) {
+        const cleanedMethods = stripeConnected
+          ? (allowedMethods.includes('stripe') ? allowedMethods : [...allowedMethods, 'stripe'])
+          : allowedMethods.filter((m) => m !== 'stripe');
+        // Auto-sync stripe in allowed methods if it changed
+        if (cleanedMethods.length !== allowedMethods.length || cleanedMethods.some((m, i) => m !== allowedMethods[i])) {
           apiClient(`/academies/${academyData.id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
@@ -368,6 +370,22 @@ export default function ProfilePage() {
       console.error('Error connecting Stripe:', error);
       setConnectingStripe(false);
       alert('Error al conectar con Stripe');
+    }
+  };
+
+  const handleDisconnectStripe = async () => {
+    if (!confirm('¿Estás seguro de que deseas desconectar tu cuenta de Stripe? Los pagos con tarjeta dejarán de estar disponibles.')) return;
+    try {
+      const res = await apiClient('/payments/stripe-connect', { method: 'DELETE' });
+      const result = await res.json();
+      if (result.success) {
+        setStripeStatus(null);
+        setFormData((f) => ({ ...f, allowedPaymentMethods: f.allowedPaymentMethods.filter((m) => m !== 'stripe') }));
+      } else {
+        alert('Error al desconectar Stripe: ' + (result.error || 'Error desconocido'));
+      }
+    } catch {
+      alert('Error al desconectar Stripe');
     }
   };
 
@@ -1572,9 +1590,20 @@ export default function ProfilePage() {
                       </div>
                       <p className="text-sm text-gray-500 mt-1">ID: {stripeStatus.accountId}</p>
                     </div>
-                    <p className="text-xs text-gray-500">
-                      Conectado el {new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
-                    </p>
+                    <div className="flex items-center gap-3">
+                      <p className="text-xs text-gray-500">
+                        Conectado
+                      </p>
+                      <button
+                        onClick={handleDisconnectStripe}
+                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Desconectar Stripe"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

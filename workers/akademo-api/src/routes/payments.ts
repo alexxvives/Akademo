@@ -518,7 +518,8 @@ payments.post('/stripe-session', async (c) => {
     if (!price || price <= 0) {
       return c.json(errorResponse(`${paymentFrequency === 'monthly' ? 'Monthly' : 'One-time'} payment not available for this class`), 400);
     }
-    const stripeKey = c.env.STRIPE_SECRET_KEY || c.env.STRIPE_SECRET_KEY_SANDBOX;
+    // Always use the sandbox key — Connect accounts are created with it and keys must match
+    const stripeKey = c.env.STRIPE_SECRET_KEY_SANDBOX;
     if (!stripeKey) {
       return c.json(errorResponse('Stripe is not configured on this server'), 500);
     }
@@ -1120,6 +1121,37 @@ payments.post('/stripe-connect', async (c) => {
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Stripe Connect] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
+
+// DELETE /payments/stripe-connect - Disconnect Stripe account from academy
+payments.delete('/stripe-connect', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    await requireRole(c, ['ACADEMY']);
+
+    const academy: any = await c.env.DB
+      .prepare('SELECT id, allowedPaymentMethods FROM Academy WHERE ownerId = ?')
+      .bind(session.id)
+      .first();
+
+    if (!academy) return c.json(errorResponse('Academy not found'), 404);
+
+    // Remove stripe from allowed payment methods
+    let methods: string[] = [];
+    try { methods = JSON.parse(academy.allowedPaymentMethods || '[]'); } catch {}
+    const updatedMethods = methods.filter((m: string) => m !== 'stripe');
+
+    await c.env.DB
+      .prepare('UPDATE Academy SET stripeAccountId = NULL, allowedPaymentMethods = ? WHERE id = ?')
+      .bind(JSON.stringify(updatedMethods), academy.id)
+      .run();
+
+    return c.json(successResponse({ disconnected: true }));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Stripe Disconnect] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
 });
