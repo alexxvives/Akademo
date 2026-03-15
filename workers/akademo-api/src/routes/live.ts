@@ -971,6 +971,23 @@ live.patch('/:id', async (c) => {
 
     await c.env.DB.prepare(query).bind(...params).run();
 
+    // ── Daily.co room teardown: fires when a Daily.co stream is ended ──
+    // Deleting the room kicks all participants immediately.
+    if (status === 'ended' && stream.dailyRoomName) {
+      const dailyApiKey = c.env.DAILY_API_KEY;
+      if (dailyApiKey) {
+        try {
+          await fetch(`https://api.daily.co/v1/rooms/${stream.dailyRoomName}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${dailyApiKey}` },
+          });
+          console.log('[End Stream] Daily.co room deleted:', stream.dailyRoomName);
+        } catch (dailyErr) {
+          console.error('[End Stream] Failed to delete Daily.co room:', dailyErr);
+        }
+      }
+    }
+
     // ── GTM auto-recording + fresh host URL: fires when stream becomes active ──
     let freshHostUrl: string | null = null;
     if (status === 'active' && stream.zoomMeetingId && !stream.dailyRoomName) {

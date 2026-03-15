@@ -76,8 +76,20 @@ export default function TeacherLivePage() {
 
   const backUrl = stream ? `/dashboard/teacher/subject/${stream.classSlug || stream.classId}` : '/dashboard/teacher/streams';
 
+  // End the stream on the server (marks ended + deletes Daily.co room), then navigate away
+  const endSession = useCallback(async () => {
+    try {
+      await apiClient(`/live/${streamId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'ended' }),
+      });
+    } catch { /* ignore — we navigate away regardless */ }
+    router.push(backUrl);
+  }, [streamId, backUrl, router]);
+
   // Start recording when host joins: listen for Daily.co postMessage + fallback retries
-  // Also redirect when host leaves
+  // When host leaves Daily.co, end the stream for everyone and navigate away
   useEffect(() => {
     if (!embedUrl) return;
     const handleMessage = (e: MessageEvent) => {
@@ -86,13 +98,15 @@ export default function TeacherLivePage() {
       if (
         m.action === 'joined-meeting' || m.eventName === 'joined-meeting' ||
         m.action === 'meeting-joined' || m.type === 'meeting-joined' ||
-        (m.type === 'daily-event' && m.eventName === 'joined-meeting')
+        (m.type === 'daily-event' && m.eventName === 'joined-meeting') ||
+        (m.type === 'daily-event' && m.action === 'joined-meeting')
       ) startRecording();
       if (
         m.action === 'left-meeting' || m.eventName === 'left-meeting' ||
         m.action === 'meeting-left' || m.type === 'meeting-left' ||
-        (m.type === 'daily-event' && m.eventName === 'left-meeting')
-      ) router.push(backUrl);
+        (m.type === 'daily-event' && m.eventName === 'left-meeting') ||
+        (m.type === 'daily-event' && m.action === 'left-meeting')
+      ) endSession();
     };
     window.addEventListener('message', handleMessage);
     const t1 = setTimeout(startRecording, 8000);
@@ -102,7 +116,7 @@ export default function TeacherLivePage() {
       window.removeEventListener('message', handleMessage);
       clearTimeout(t1); clearTimeout(t2); clearTimeout(t3);
     };
-  }, [embedUrl, startRecording, backUrl, router]);
+  }, [embedUrl, startRecording, endSession, backUrl, router]);
 
 
 
@@ -185,6 +199,18 @@ export default function TeacherLivePage() {
             <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
             EN VIVO
           </span>
+          {embedUrl && (
+            <button
+              onClick={() => { if (confirm('¿Finalizar la sesión para todos los participantes?')) endSession(); }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-red-600 hover:bg-red-700 text-white transition-colors"
+              title="Finalizar sesión para todos"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              Finalizar
+            </button>
+          )}
         </div>
       </div>
 
