@@ -702,7 +702,6 @@ live.get('/:id/join-token', async (c) => {
 
     const isHost = ['TEACHER', 'ACADEMY', 'ADMIN'].includes(session.role);
     const userName = `${session.firstName} ${session.lastName}`.trim() || session.email;
-    const redirectOnExit = c.req.query('redirectOnExit') || null;
 
     const tokenRes = await fetch('https://api.daily.co/v1/meeting-tokens', {
       method: 'POST',
@@ -714,7 +713,6 @@ live.get('/:id/join-token', async (c) => {
           user_name: userName,
           exp: Math.floor(Date.now() / 1000) + 6 * 60 * 60,
           ...(isHost ? { enable_recording: 'cloud', start_cloud_recording: true } : {}),
-          ...(isHost && redirectOnExit ? { redirect_on_meeting_exit: redirectOnExit } : {}),
         },
       }),
     });

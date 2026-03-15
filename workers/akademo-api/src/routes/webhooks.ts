@@ -563,7 +563,7 @@ webhooks.post('/stripe', async (c) => {
 
     // Verify webhook signature with HMAC-SHA256 (Stripe v1 scheme)
     const rawBody = await c.req.text();
-    const webhookSecret = (c.env as unknown as Record<string, unknown>).STRIPE_WEBHOOK_SECRET as string;
+    const webhookSecret = (c.env as unknown as Record<string, unknown>).STRIPE_WEBHOOK_SECRET_SANDBOX as string;
     
     if (webhookSecret) {
       const parts = signature.split(',').reduce((acc: Record<string, string>, part: string) => {
@@ -605,7 +605,7 @@ webhooks.post('/stripe', async (c) => {
         return c.json(errorResponse('Invalid signature'), 400);
       }
     } else {
-      console.error('[Stripe Webhook] STRIPE_WEBHOOK_SECRET not configured — rejecting webhook');
+      console.error('[Stripe Webhook] STRIPE_WEBHOOK_SECRET_SANDBOX not configured — rejecting webhook');
       return c.json(errorResponse('Webhook secret not configured'), 500);
     }
 
@@ -855,7 +855,7 @@ webhooks.post('/stripe', async (c) => {
             try {
               const stripeModule = (await import('stripe')).default;
               const stripeClient = new stripeModule(
-                ((c.env as unknown as Record<string, unknown>).STRIPE_SECRET_KEY as string),
+                ((c.env as unknown as Record<string, unknown>).STRIPE_SECRET_KEY_SANDBOX as string),
                 { apiVersion: '2025-12-15.clover' as any }
               );
               await stripeClient.subscriptions.cancel(subscription);

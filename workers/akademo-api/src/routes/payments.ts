@@ -518,12 +518,12 @@ payments.post('/stripe-session', async (c) => {
     if (!price || price <= 0) {
       return c.json(errorResponse(`${paymentFrequency === 'monthly' ? 'Monthly' : 'One-time'} payment not available for this class`), 400);
     }
-    if (!c.env.STRIPE_SECRET_KEY) {
-      return c.json(errorResponse('Stripe is not configured on this server'), 500);
+    if (!c.env.STRIPE_SECRET_KEY_SANDBOX) {
+      return c.json(errorResponse('Stripe (sandbox) is not configured on this server'), 500);
     }
 
     // Create Stripe Checkout Session
-    const stripe = require('stripe')(c.env.STRIPE_SECRET_KEY);
+    const stripe = require('stripe')(c.env.STRIPE_SECRET_KEY_SANDBOX);
 
     // Verify the academy's Connect account has completed onboarding and can accept charges.
     // If we skip this, Stripe throws an opaque error when creating the session and the student
@@ -1043,8 +1043,8 @@ payments.post('/stripe-connect', async (c) => {
     const session = await requireAuth(c);
     await requireRole(c, ['ACADEMY']);
 
-    if (!c.env.STRIPE_SECRET_KEY) {
-      return c.json(errorResponse('Stripe is not configured on this server'), 500);
+    if (!c.env.STRIPE_SECRET_KEY_SANDBOX) {
+      return c.json(errorResponse('Stripe (sandbox) is not configured on this server'), 500);
     }
 
     // Get academy
@@ -1057,7 +1057,7 @@ payments.post('/stripe-connect', async (c) => {
       return c.json(errorResponse('Academy not found'), 404);
     }
 
-    const stripe = require('stripe')(c.env.STRIPE_SECRET_KEY);
+    const stripe = require('stripe')(c.env.STRIPE_SECRET_KEY_SANDBOX);
     let accountId = academy.stripeAccountId;
 
     // If academy doesn't have a Stripe account, create one
@@ -1128,11 +1128,11 @@ payments.get('/stripe-status', async (c) => {
       }));
     }
 
-    if (!c.env.STRIPE_SECRET_KEY) {
-      return c.json(errorResponse('Stripe is not configured on this server'), 500);
+    if (!c.env.STRIPE_SECRET_KEY_SANDBOX) {
+      return c.json(errorResponse('Stripe (sandbox) is not configured on this server'), 500);
     }
 
-    const stripe = require('stripe')(c.env.STRIPE_SECRET_KEY);
+    const stripe = require('stripe')(c.env.STRIPE_SECRET_KEY_SANDBOX);
     const account = await stripe.accounts.retrieve(academy.stripeAccountId);
 
     return c.json(successResponse({
@@ -1410,7 +1410,7 @@ payments.post('/academy-activation-session', async (c) => {
       return c.json(errorResponse('Esta academia ya est\u00e1 activada. Si crees que esto es un error, contacta con soporte.'), 400);
     }
 
-    const stripe = require('stripe')(c.env.STRIPE_SECRET_KEY) as any;
+    const stripe = require('stripe')(c.env.STRIPE_SECRET_KEY_SANDBOX) as any;
 
     const checkoutSession = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],

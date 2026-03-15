@@ -49,9 +49,9 @@ export interface Bindings {
   // Email
   RESEND_API_KEY: string;
   
-  // Stripe
-  STRIPE_SECRET_KEY: string;
-  STRIPE_WEBHOOK_SECRET: string;
+  // Stripe (sandbox — swap to STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET for production)
+  STRIPE_SECRET_KEY_SANDBOX: string;
+  STRIPE_WEBHOOK_SECRET_SANDBOX: string;
   
   // Session
   SESSION_SECRET: string;

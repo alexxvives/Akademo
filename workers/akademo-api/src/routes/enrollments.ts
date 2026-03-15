@@ -584,11 +584,11 @@ enrollments.post('/leave', async (c) => {
     // Cancel Stripe subscription if exists
     if (enrollment.stripeSubscriptionId) {
       try {
-        if (!c.env.STRIPE_SECRET_KEY) {
-          console.warn('[Leave Class] STRIPE_SECRET_KEY not configured, skipping subscription cancellation');
+        if (!c.env.STRIPE_SECRET_KEY_SANDBOX) {
+          console.warn('[Leave Class] STRIPE_SECRET_KEY_SANDBOX not configured, skipping subscription cancellation');
         } else {
           const stripe = (await import('stripe')).default;
-          const stripeClient = new stripe(c.env.STRIPE_SECRET_KEY, {
+          const stripeClient = new stripe(c.env.STRIPE_SECRET_KEY_SANDBOX, {
             apiVersion: '2025-12-15.clover' as any,
           });
           
@@ -666,11 +666,11 @@ enrollments.delete('/:id', async (c) => {
     // Cancel Stripe subscription if exists
     if (enrollment.stripeSubscriptionId) {
       try {
-        if (!c.env.STRIPE_SECRET_KEY) {
-          console.warn('[Ban Student] STRIPE_SECRET_KEY not configured, skipping subscription cancellation');
+        if (!c.env.STRIPE_SECRET_KEY_SANDBOX) {
+          console.warn('[Ban Student] STRIPE_SECRET_KEY_SANDBOX not configured, skipping subscription cancellation');
         } else {
           const stripe = (await import('stripe')).default;
-          const stripeClient = new stripe(c.env.STRIPE_SECRET_KEY, {
+          const stripeClient = new stripe(c.env.STRIPE_SECRET_KEY_SANDBOX, {
             apiVersion: '2025-12-15.clover' as any,
           });
           await stripeClient.subscriptions.cancel(enrollment.stripeSubscriptionId);

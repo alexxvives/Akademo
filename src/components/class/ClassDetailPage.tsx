@@ -767,16 +767,19 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
   };
 
   const deleteLiveClass = async (classLiveId: string) => {
-    if (!confirm('¿Eliminar esta clase en vivo? También se eliminará la reunión de Zoom.')) return;
+    if (!confirm('¿Eliminar este stream? Se cerrará la sala y se eliminará el registro.')) return;
     
     try {
       const res = await apiClient(`/live/${classLiveId}`, { method: 'DELETE' });
       const result = await res.json();
       if (result.success) {
         setLiveClasses(prev => prev.filter(s => s.id !== classLiveId));
+      } else {
+        alert(`Error al eliminar el stream: ${result.error || 'Inténtalo de nuevo'}`);
       }
     } catch (e) {
       console.error(e);
+      alert('Error de conexión al intentar eliminar el stream');
     }
   };
 

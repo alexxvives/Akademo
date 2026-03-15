@@ -46,12 +46,7 @@ export default function TeacherLivePage() {
         const sData = streamData.data;
         setStream(sData);
 
-        const redirectPath = `/dashboard/teacher/subject/${sData.classSlug || sData.classId}`;
-        const redirectUrl = `${window.location.origin}${redirectPath}`;
-
-        const tokenRes = await apiClient(
-          `/live/${streamId}/join-token?redirectOnExit=${encodeURIComponent(redirectUrl)}`
-        );
+        const tokenRes = await apiClient(`/live/${streamId}/join-token`);
         const tokenData = await tokenRes.json();
 
         if (!tokenData.success) { setError(tokenData.error || 'Error al cargar la sala'); return; }
@@ -61,7 +56,6 @@ export default function TeacherLivePage() {
           setZoomJoinUrl(tokenData.data.zoomLink || null);
           setZoomMeetingId(tokenData.data.zoomMeetingId || null);
         } else {
-          // redirect_on_meeting_exit is embedded in the token by the API — no need for URL param
           setEmbedUrl(`${tokenData.data.roomUrl}?t=${tokenData.data.token}`);
         }
       } catch {
