@@ -675,7 +675,6 @@ live.get('/:id/join-token', async (c) => {
           properties: {
             enable_screenshare: true,
             enable_chat: true,
-            enable_recording: 'cloud',
             start_video_off: false,
             start_audio_off: false,
             exp: Math.floor(Date.now() / 1000) + 6 * 60 * 60,
