@@ -1511,8 +1511,11 @@ export default function ProfilePage() {
               <h2 className="text-lg sm:text-xl font-semibold">Cuenta de Stripe</h2>
               <p className="text-indigo-100 mt-1">Recibe pagos de estudiantes directamente en tu cuenta bancaria</p>
             </div>
-            {!stripeStatus?.connected && (
-              <StripeConnectButton onClick={handleConnectStripe} />
+            {!stripeStatus?.charges_enabled && (
+              <StripeConnectButton
+                onClick={handleConnectStripe}
+                label={stripeStatus?.connected ? 'Completar verificación' : 'Conectar Stripe'}
+              />
             )}
           </div>
         </div>
@@ -1580,12 +1583,7 @@ export default function ProfilePage() {
                   <p className="text-indigo-700 text-sm mb-4">
                     Tu cuenta de Stripe está siendo verificada. Este proceso puede tardar entre 24-48 horas. Recibirás un email de Stripe cuando esté lista.
                   </p>
-                  <button
-                    onClick={handleConnectStripe}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
-                  >
-                    Completar verificación
-                  </button>
+
                 </div>
               </div>
             </div>
