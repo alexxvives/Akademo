@@ -1579,9 +1579,9 @@ export default function ProfilePage() {
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-indigo-900 mb-2">Verificación en proceso</h3>
+                  <h3 className="text-lg font-semibold text-indigo-900 mb-2">Verificación pendiente</h3>
                   <p className="text-indigo-700 text-sm mb-4">
-                    Tu cuenta de Stripe está siendo verificada. Este proceso puede tardar entre 24-48 horas. Recibirás un email de Stripe cuando esté lista.
+                    Necesitas completar el proceso de verificación en Stripe para poder cobrar pagos. Haz clic en el botón de arriba para continuar.
                   </p>
 
                 </div>
