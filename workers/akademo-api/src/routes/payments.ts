@@ -1007,29 +1007,26 @@ payments.put('/history/:id/reverse', async (c) => {
             c.env.DB.prepare(`
               UPDATE ClassEnrollment
               SET paymentFrequency = ?,
-                  paymentMethod = ?,
                   nextPaymentDue = ?
               WHERE userId = ? AND classId = ?
-            `).bind(freq, payment.paymentMethod, payment.nextPaymentDue, payment.payerId, payment.classId)
+            `).bind(freq, payment.nextPaymentDue, payment.payerId, payment.classId)
           );
         } else {
           reverseBatch.push(
             c.env.DB.prepare(`
               UPDATE ClassEnrollment
-              SET paymentFrequency = ?,
-                  paymentMethod = ?
+              SET paymentFrequency = ?
               WHERE userId = ? AND classId = ?
-            `).bind(freq, payment.paymentMethod, payment.payerId, payment.classId)
+            `).bind(freq, payment.payerId, payment.classId)
           );
         }
       } else {
         reverseBatch.push(
           c.env.DB.prepare(`
             UPDATE ClassEnrollment
-            SET paymentFrequency = ?,
-                paymentMethod = ?
+            SET paymentFrequency = ?
             WHERE userId = ? AND classId = ?
-          `).bind(freq, payment.paymentMethod, payment.payerId, payment.classId)
+          `).bind(freq, payment.payerId, payment.classId)
         );
       }
     }
