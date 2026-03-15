@@ -685,8 +685,8 @@ live.get('/:id/join-token', async (c) => {
       });
       if (!roomRes.ok) {
         const err = await roomRes.text();
-        console.error('[Join Token] Daily.co room creation failed:', err);
-        return c.json(errorResponse('Error al crear sala de videoconferencia'), 500);
+        console.error('[Join Token] Daily.co room creation failed:', roomRes.status, err);
+        return c.json(errorResponse(`Error al crear sala Daily.co (${roomRes.status}): ${err}`), 500);
       }
       const room = await roomRes.json() as { name: string; url: string };
       await c.env.DB
@@ -720,8 +720,8 @@ live.get('/:id/join-token', async (c) => {
 
     if (!tokenRes.ok) {
       const err = await tokenRes.text();
-      console.error('[Join Token] Daily.co token error:', err);
-      return c.json(errorResponse('Error al generar token de acceso'), 500);
+      console.error('[Join Token] Daily.co token error:', tokenRes.status, err);
+      return c.json(errorResponse(`Error al generar token Daily.co (${tokenRes.status}): ${err}`), 500);
     }
 
     const tokenData = await tokenRes.json() as { token: string };
