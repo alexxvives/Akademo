@@ -162,6 +162,7 @@ export default function ProfilePage() {
   const [editing, setEditing] = useState(false);
   const [expandedPaymentMethod, setExpandedPaymentMethod] = useState<'transferencia' | 'bizum' | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [connectingStripe, setConnectingStripe] = useState(false);
   const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -246,22 +247,6 @@ export default function ProfilePage() {
 
       if (stripeResult.success) {
         setStripeStatus(stripeResult.data);
-
-        // If user just came back from Stripe but onboarding isn't done yet, auto-redirect to next step
-        const stripeParam = new URLSearchParams(window.location.search).get('stripe');
-        if (stripeParam === 'complete' && stripeResult.data?.connected && !stripeResult.data?.charges_enabled) {
-          const cleanUrl = new URL(window.location.href);
-          cleanUrl.searchParams.delete('stripe');
-          window.history.replaceState({}, '', cleanUrl.toString());
-          try {
-            const linkRes = await apiClient('/payments/stripe-connect', { method: 'POST' });
-            const linkResult = await linkRes.json();
-            if (linkResult.success && linkResult.data?.url) {
-              window.location.href = linkResult.data.url;
-              return;
-            }
-          } catch {}
-        }
       }
 
       if (yearsResult.success) {
@@ -365,6 +350,7 @@ export default function ProfilePage() {
   };
 
   const handleConnectStripe = async () => {
+    setConnectingStripe(true);
     try {
       const response = await apiClient('/payments/stripe-connect', {
         method: 'POST'
@@ -373,13 +359,14 @@ export default function ProfilePage() {
       const result = await response.json();
 
       if (result.success && result.data?.url) {
-        // Redirect in same tab — forces user to complete onboarding before returning
         window.location.href = result.data.url;
       } else {
+        setConnectingStripe(false);
         alert('Error al conectar con Stripe: ' + (result.error || 'Error desconocido'));
       }
     } catch (error) {
       console.error('Error connecting Stripe:', error);
+      setConnectingStripe(false);
       alert('Error al conectar con Stripe');
     }
   };
@@ -748,6 +735,24 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-6 pb-12">
+      {/* Stripe connecting overlay */}
+      {connectingStripe && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl px-10 py-8 flex flex-col items-center gap-4 max-w-sm w-full mx-4">
+            <div className="w-14 h-14 rounded-full bg-indigo-50 flex items-center justify-center">
+              <svg className="w-7 h-7 text-indigo-600 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+              </svg>
+            </div>
+            <div className="text-center">
+              <p className="text-lg font-semibold text-gray-900">Conectando con Stripe</p>
+              <p className="text-sm text-gray-500 mt-1">Preparando tu sesión de verificación...</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
