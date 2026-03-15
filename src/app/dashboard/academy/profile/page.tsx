@@ -1638,9 +1638,15 @@ export default function ProfilePage() {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-indigo-900 mb-2">Verificación en proceso</h3>
-                  <p className="text-indigo-700 text-sm">
+                  <p className="text-indigo-700 text-sm mb-4">
                     Tu cuenta de Stripe está siendo verificada. Este proceso puede tardar entre 24-48 horas. Recibirás un email de Stripe cuando esté lista.
                   </p>
+                  <button
+                    onClick={handleConnectStripe}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
+                  >
+                    Completar verificación
+                  </button>
                 </div>
               </div>
             </div>
