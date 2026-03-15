@@ -1133,7 +1133,7 @@ webhooks.post('/daily', async (c) => {
       ).bind(room_name).first<{ id: string }>();
 
       const liveStream = await c.env.DB.prepare(
-        "SELECT id, status FROM LiveStream WHERE dailyRoomName = ?"
+        "SELECT id, status, recordingId FROM LiveStream WHERE dailyRoomName = ?"
       ).bind(room_name).first<{ id: string; status: string }>();
 
       if (!testRoom && !liveStream) {
@@ -1263,9 +1263,21 @@ webhooks.post('/daily', async (c) => {
               ).bind(videoGuid, testRoom.id).run();
             }
             if (liveStream) {
+              // Accumulate recording IDs (like Zoom) — if there's already a recordingId, append
+              let finalRecordingId = videoGuid;
+              if (liveStream.recordingId) {
+                try {
+                  const existing = JSON.parse(liveStream.recordingId as string) as string[];
+                  existing.push(videoGuid);
+                  finalRecordingId = JSON.stringify(existing);
+                } catch {
+                  // Was a single GUID string, convert to array
+                  finalRecordingId = JSON.stringify([liveStream.recordingId, videoGuid]);
+                }
+              }
               await c.env.DB.prepare(
                 "UPDATE LiveStream SET recordingId = ?, status = 'ended', endedAt = ? WHERE id = ?"
-              ).bind(videoGuid, new Date().toISOString(), liveStream.id).run();
+              ).bind(finalRecordingId, new Date().toISOString(), liveStream.id).run();
             }
             console.log(`[Daily Webhook] Ready: Bunny GUID ${videoGuid}, room ${room_name}`);
           } else {

@@ -441,39 +441,35 @@ export default function PaymentModal({
               </h3>
               
               <div className="space-y-3">
-                {/* Stripe Payment */}
-                <button
-                  onClick={handleStripePayment}
-                  disabled={processing || !paymentFrequency || !allowedPaymentMethods.includes('stripe')}
-                  className={`w-full p-4 rounded-lg text-left transition-all ${
-                    !paymentFrequency || !allowedPaymentMethods.includes('stripe')
-                      ? 'bg-gray-50 border-2 border-gray-200 opacity-50 cursor-not-allowed'
-                      : 'bg-gray-50 border-2 border-gray-300 hover:border-gray-400 hover:shadow-md'
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="flex-shrink-0 w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
-                      <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                      </svg>
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="text-base font-semibold text-gray-900 mb-0.5">Tarjeta de Crédito/Débito</h4>
-                      <p className="text-sm text-gray-600">Pago seguro con Stripe</p>
-                    </div>
-                    <div className="flex-shrink-0">
-                      {!allowedPaymentMethods.includes('stripe') ? (
-                        <span className="inline-block text-xs font-medium text-gray-500 bg-gray-200 px-3 py-1 rounded-full">
-                          No disponible
-                        </span>
-                      ) : (
+                {/* Stripe Payment - only shown if academy has Stripe connected */}
+                {allowedPaymentMethods.includes('stripe') && (
+                  <button
+                    onClick={handleStripePayment}
+                    disabled={processing || !paymentFrequency}
+                    className={`w-full p-4 rounded-lg text-left transition-all ${
+                      !paymentFrequency
+                        ? 'bg-gray-50 border-2 border-gray-200 opacity-50 cursor-not-allowed'
+                        : 'bg-gray-50 border-2 border-gray-300 hover:border-gray-400 hover:shadow-md'
+                    }`}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="flex-shrink-0 w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
+                        <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="text-base font-semibold text-gray-900 mb-0.5">Tarjeta de Crédito/Débito</h4>
+                        <p className="text-sm text-gray-600">Pago seguro con Stripe</p>
+                      </div>
+                      <div className="flex-shrink-0">
                         <span className="inline-block text-xs font-medium text-white bg-violet-800 px-3 py-1 rounded-full">
                           Instantáneo
                         </span>
-                      )}
+                      </div>
                     </div>
-                  </div>
-                </button>
+                  </button>
+                )}
 
                 {/* Transferencia */}
                 <div
