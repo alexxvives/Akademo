@@ -152,8 +152,6 @@ export default function ProfilePage() {
   const [streamingDropdownOpen, setStreamingDropdownOpen] = useState(false);
   const streamingDropdownRef = useRef<HTMLDivElement>(null);
   const streamingIconRef = useRef<CctvIconHandle>(null);
-  const stripePollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const stripePollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [academicYears, setAcademicYears] = useState<AcademicYear[]>([]);
   const [showAcademicYearModal, setShowAcademicYearModal] = useState(false);
   const [newYearData, setNewYearData] = useState({ name: '', startDate: '', endDate: '' });
@@ -300,14 +298,6 @@ export default function ProfilePage() {
     loadData();
   }, [loadData]);
 
-  // Cleanup Stripe polling on unmount
-  useEffect(() => {
-    return () => {
-      if (stripePollRef.current) clearInterval(stripePollRef.current);
-      if (stripePollTimeoutRef.current) clearTimeout(stripePollTimeoutRef.current);
-    };
-  }, []);
-
   useEffect(() => {
     if (!streamingDropdownOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
@@ -372,30 +362,8 @@ export default function ProfilePage() {
       const result = await response.json();
 
       if (result.success && result.data?.url) {
-        // Open Stripe onboarding in new window
-        window.open(result.data.url, '_blank');
-        
-        // Set up polling to check status when user returns
-        if (stripePollRef.current) clearInterval(stripePollRef.current);
-        if (stripePollTimeoutRef.current) clearTimeout(stripePollTimeoutRef.current);
-        stripePollRef.current = setInterval(async () => {
-          if (!document.hidden) {
-            const statusRes = await apiClient('/payments/stripe-status');
-            const statusResult = await statusRes.json();
-            
-            if (statusResult.success && statusResult.data?.charges_enabled) {
-              setStripeStatus(statusResult.data);
-              if (stripePollRef.current) clearInterval(stripePollRef.current);
-              stripePollRef.current = null;
-            }
-          }
-        }, 3000);
-
-        // Stop polling after 5 minutes
-        stripePollTimeoutRef.current = setTimeout(() => {
-          if (stripePollRef.current) clearInterval(stripePollRef.current);
-          stripePollRef.current = null;
-        }, 300000);
+        // Redirect in same tab — forces user to complete onboarding before returning
+        window.location.href = result.data.url;
       } else {
         alert('Error al conectar con Stripe: ' + (result.error || 'Error desconocido'));
       }
