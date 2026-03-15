@@ -1027,9 +1027,10 @@ webhooks.post('/daily', async (c) => {
     if (webhookSecret) {
       const sigHeader = c.req.header('x-webhook-signature') || '';
       const tsHeader  = c.req.header('x-webhook-timestamp') || '';
-      // Daily signs: timestamp + '.' + raw JSON body, using the raw secret as key
+      // Daily signs: timestamp + '.' + raw JSON body
+      // The HMAC secret from Daily is BASE-64 encoded — must decode before use as key
       const message = `${tsHeader}.${rawBody}`;
-      const keyBytes = new TextEncoder().encode(webhookSecret);
+      const keyBytes = Uint8Array.from(atob(webhookSecret), ch => ch.charCodeAt(0));
       const key = await crypto.subtle.importKey(
         'raw', keyBytes, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
       );
