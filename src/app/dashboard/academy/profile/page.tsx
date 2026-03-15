@@ -50,7 +50,7 @@ interface Academy {
   allowedPaymentMethods?: string;
   transferenciaIban?: string;
   bizumPhone?: string;
-  allowMultipleTeachers?: number;
+
   requireGrading?: number;
   hiddenMenuItems?: string;
 }
@@ -175,7 +175,6 @@ export default function ProfilePage() {
     allowedPaymentMethods: [...DEFAULT_ALLOWED_PAYMENT_METHODS],
     transferenciaIban: '',
     bizumPhone: '',
-    allowMultipleTeachers: false,
     requireGrading: true,
     hiddenMenuItems: [] as string[]
   });
@@ -236,7 +235,6 @@ export default function ProfilePage() {
           allowedPaymentMethods: cleanedMethods,
           transferenciaIban: academyData.transferenciaIban || 'ES',
           bizumPhone: academyData.bizumPhone || '',
-          allowMultipleTeachers: academyData.allowMultipleTeachers === 1,
           requireGrading: academyData.requireGrading !== 0,
           hiddenMenuItems: (() => { try { return JSON.parse(academyData.hiddenMenuItems || '[]'); } catch { return []; } })()
         });
@@ -248,6 +246,22 @@ export default function ProfilePage() {
 
       if (stripeResult.success) {
         setStripeStatus(stripeResult.data);
+
+        // If user just came back from Stripe but onboarding isn't done yet, auto-redirect to next step
+        const stripeParam = new URLSearchParams(window.location.search).get('stripe');
+        if (stripeParam === 'complete' && stripeResult.data?.connected && !stripeResult.data?.charges_enabled) {
+          const cleanUrl = new URL(window.location.href);
+          cleanUrl.searchParams.delete('stripe');
+          window.history.replaceState({}, '', cleanUrl.toString());
+          try {
+            const linkRes = await apiClient('/payments/stripe-connect', { method: 'POST' });
+            const linkResult = await linkRes.json();
+            if (linkResult.success && linkResult.data?.url) {
+              window.location.href = linkResult.data.url;
+              return;
+            }
+          } catch {}
+        }
       }
 
       if (yearsResult.success) {
@@ -474,7 +488,6 @@ export default function ProfilePage() {
         allowedPaymentMethods: field === 'allowedPaymentMethods' ? value : JSON.stringify(newFormData.allowedPaymentMethods),
         transferenciaIban: field === 'transferenciaIban' ? value : newFormData.transferenciaIban,
         bizumPhone: field === 'bizumPhone' ? value : newFormData.bizumPhone,
-        allowMultipleTeachers: field === 'allowMultipleTeachers' ? value : (newFormData.allowMultipleTeachers ? 1 : 0),
         requireGrading: field === 'requireGrading' ? value : (newFormData.requireGrading ? 1 : 0),
         hiddenMenuItems: field === 'hiddenMenuItems' ? JSON.stringify(value) : JSON.stringify(newFormData.hiddenMenuItems)
       };
@@ -534,7 +547,6 @@ export default function ProfilePage() {
           allowedPaymentMethods: JSON.stringify(formData.allowedPaymentMethods),
           transferenciaIban: formData.transferenciaIban,
           bizumPhone: formData.bizumPhone,
-          allowMultipleTeachers: formData.allowMultipleTeachers ? 1 : 0,
           requireGrading: formData.requireGrading ? 1 : 0,
           hiddenMenuItems: JSON.stringify(formData.hiddenMenuItems)
         })
@@ -780,8 +792,7 @@ export default function ProfilePage() {
                         allowedPaymentMethods: normalizeAllowedPaymentMethods(academy.allowedPaymentMethods),
                         transferenciaIban: academy.transferenciaIban || 'ES',
                         bizumPhone: academy.bizumPhone || '',
-                        allowMultipleTeachers: academy.allowMultipleTeachers === 1,
-                        requireGrading: academy.requireGrading !== 0,
+                                      requireGrading: academy.requireGrading !== 0,
                         hiddenMenuItems: (() => { try { return JSON.parse(academy.hiddenMenuItems || '[]'); } catch { return []; } })()
                       });
                     }}

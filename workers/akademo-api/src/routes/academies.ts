@@ -566,7 +566,6 @@ academies.get('/:id', async (c) => {
       createdAt: academy.createdAt,
       feedbackEnabled: academy.feedbackEnabled,
       requireGrading: academy.requireGrading,
-      allowMultipleTeachers: academy.allowMultipleTeachers,
       defaultWatermarkIntervalMins: academy.defaultWatermarkIntervalMins,
       defaultMaxWatchTimeMultiplier: academy.defaultMaxWatchTimeMultiplier,
       allowedPaymentMethods: academy.allowedPaymentMethods,
@@ -665,10 +664,6 @@ academies.patch('/:id', async (c) => {
     if (body.bizumPhone !== undefined) {
       updates.push('bizumPhone = ?');
       values.push(body.bizumPhone || null);
-    }
-    if (body.allowMultipleTeachers !== undefined) {
-      updates.push('allowMultipleTeachers = ?');
-      values.push(body.allowMultipleTeachers);
     }
     if (body.requireGrading !== undefined) {
       updates.push('requireGrading = ?');

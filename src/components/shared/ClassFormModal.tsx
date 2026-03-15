@@ -59,7 +59,6 @@ interface ClassFormModalProps {
   teachers: Teacher[];
   zoomAccounts: ZoomAccount[];
   classes: ClassItem[];
-  allowMultipleTeachers: boolean;
   editingClass: ClassItem | null;
   saving: boolean;
   error: string;
@@ -76,7 +75,6 @@ export function ClassFormModal({
   teachers,
   zoomAccounts,
   classes,
-  allowMultipleTeachers,
   editingClass,
   saving,
   error,
@@ -89,22 +87,10 @@ export function ClassFormModal({
   const submitLabel = mode === 'create' ? 'Crear Asignatura' : 'Guardar Cambios';
   const savingLabel = mode === 'create' ? 'Creando...' : 'Guardando...';
 
-  const teacherOptions = useMemo(() => {
-    const filtered = teachers.filter((teacher) => {
-      if (!editingClass) return true;
-      if (!allowMultipleTeachers && editingClass) {
-        return teacher.userId === editingClass.teacherId || !classes.some((cls) => cls.teacherId === teacher.userId);
-      }
-      if (!allowMultipleTeachers) {
-        return !classes.some((cls) => cls.teacherId === teacher.userId);
-      }
-      return true;
-    });
-    return [
-      { value: '', label: 'Sin profesor asignado' },
-      ...filtered.map((t) => ({ value: t.userId, label: `${t.firstName} ${t.lastName}` })),
-    ];
-  }, [teachers, allowMultipleTeachers, editingClass, classes]);
+  const teacherOptions = useMemo(() => [
+    { value: '', label: 'Sin profesor asignado' },
+    ...teachers.map((t) => ({ value: t.userId, label: `${t.firstName} ${t.lastName}` })),
+  ], [teachers]);
 
   const zoomOptions = useMemo(() => [
     { value: '', label: 'Sin cuenta de Streaming' },

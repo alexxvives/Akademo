@@ -112,7 +112,6 @@ export function ClassesPage({ role }: ClassesPageProps) {
   const [zoomAccounts, setZoomAccounts] = useState<ZoomAccount[]>([]);
   const [academyName, setAcademyName] = useState<string>('');
   const [paymentStatus, setPaymentStatus] = useState<string>('NOT PAID');
-  const [allowMultipleTeachers, setAllowMultipleTeachers] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -148,7 +147,6 @@ export function ClassesPage({ role }: ClassesPageProps) {
             setAcademyName(academy.name);
             const status = academy.paymentStatus || 'NOT PAID';
             setPaymentStatus(status);
-            setAllowMultipleTeachers(academy.allowMultipleTeachers === 1);
 
             if (status === 'NOT PAID') {
               const demoClasses = generateDemoClasses();
@@ -753,7 +751,6 @@ export function ClassesPage({ role }: ClassesPageProps) {
           teachers={teachers}
           zoomAccounts={zoomAccounts}
           classes={classes}
-          allowMultipleTeachers={allowMultipleTeachers}
           editingClass={null}
           saving={saving}
           error={error}
@@ -773,7 +770,6 @@ export function ClassesPage({ role }: ClassesPageProps) {
           teachers={teachers}
           zoomAccounts={zoomAccounts}
           classes={classes}
-          allowMultipleTeachers={allowMultipleTeachers}
           editingClass={editingClass}
           saving={saving}
           error={error}
