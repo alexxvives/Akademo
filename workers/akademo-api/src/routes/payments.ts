@@ -588,6 +588,7 @@ payments.post('/stripe-session', async (c) => {
     // Build session params — direct charge on the academy's connected Stripe account
     const sessionParams: any = {
       payment_method_types: paymentMethods,
+      currency: 'eur',
       line_items: [{
         price_data: priceData,
         quantity: 1,
