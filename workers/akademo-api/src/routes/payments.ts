@@ -572,6 +572,19 @@ payments.post('/stripe-session', async (c) => {
 
     const isRecurring = paymentFrequency === 'monthly';
 
+    // Calculate missed billing cycles for late-joining monthly students
+    let missedCycles = 1;
+    if (isRecurring && classData.startDate) {
+      const classStart = new Date(classData.startDate);
+      const today = new Date();
+      if (today >= classStart) {
+        let months = (today.getFullYear() - classStart.getFullYear()) * 12
+                   + (today.getMonth() - classStart.getMonth());
+        if (today.getDate() < classStart.getDate()) months = Math.max(0, months - 1);
+        missedCycles = Math.max(1, months + 1);
+      }
+    }
+
     const priceData: any = {
       currency: 'eur',
       product_data: { 
@@ -586,14 +599,28 @@ payments.post('/stripe-session', async (c) => {
       priceData.recurring = { interval: 'month' };
     }
 
+    const lineItems: any[] = [{ price_data: priceData, quantity: 1 }];
+
+    // In subscription mode, a second non-recurring line item gets charged on the first invoice.
+    // Use this to collect catch-up months upfront for late-joining students.
+    if (isRecurring && missedCycles > 1) {
+      lineItems.push({
+        price_data: {
+          currency: 'eur',
+          product_data: {
+            name: `${classData.name} - Meses anteriores (${missedCycles - 1} ${missedCycles - 1 === 1 ? 'mes' : 'meses'})`,
+          },
+          unit_amount: Math.round((missedCycles - 1) * price * 100),
+        },
+        quantity: 1,
+      });
+    }
+
     // Build session params — direct charge on the academy's connected Stripe account
     const sessionParams: any = {
       payment_method_types: paymentMethods,
       currency: 'eur',
-      line_items: [{
-        price_data: priceData,
-        quantity: 1,
-      }],
+      line_items: lineItems,
       mode: isRecurring ? 'subscription' : 'payment',
       customer_email: session.email,
       success_url: `${c.env.FRONTEND_URL || 'https://akademo-edu.com'}/dashboard/student/subjects?payment=success&classId=${classId}&session_id={CHECKOUT_SESSION_ID}`,
@@ -604,6 +631,7 @@ payments.post('/stripe-session', async (c) => {
         userId: session.id,
         academyId: classData.academyId,
         paymentFrequency: paymentFrequency,
+        missedCycles: String(missedCycles),
       },
     };
 
