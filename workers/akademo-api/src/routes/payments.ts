@@ -621,35 +621,43 @@ payments.post('/stripe-session', async (c) => {
       },
     };
 
-    // If student joins late (missedCycles > 1), add catch-up months to the first invoice.
-    // Stripe charges the add_invoice_items on the first invoice of the new subscription,
-    // so the student pays missedCycles * monthlyPrice upfront, then monthlyPrice per month.
+    // If student joins late (missedCycles > 1), add catch-up months as one-time invoice items.
+    // add_invoice_items is a top-level Checkout Session param, NOT inside subscription_data.
     if (isRecurring && missedCycles > 1) {
-      sessionParams.subscription_data = {
-        add_invoice_items: [{
-          price_data: {
-            currency: 'eur',
-            product_data: {
-              name: `${classData.name} - Meses atrasados (${missedCycles - 1} ${missedCycles - 1 === 1 ? 'mes' : 'meses'})`,
-            },
-            unit_amount: Math.round((missedCycles - 1) * price * 100),
+      sessionParams.add_invoice_items = [{
+        price_data: {
+          currency: 'eur',
+          product_data: {
+            name: `${classData.name} - Meses atrasados (${missedCycles - 1} ${missedCycles - 1 === 1 ? 'mes' : 'meses'})`,
           },
-          quantity: 1,
-        }],
-      };
+          unit_amount: Math.round((missedCycles - 1) * price * 100),
+        },
+        quantity: 1,
+      }];
     }
 
     // Direct charge: session is created on the academy's connected account so funds go straight to them
-    const checkoutSession = await stripe.checkout.sessions.create(
-      sessionParams,
-      { stripeAccount: classData.stripeAccountId }
-    );
+    console.log('[Stripe Session] Creating session - mode:', sessionParams.mode, 'account:', classData.stripeAccountId, 'missedCycles:', missedCycles, 'hasSubscriptionData:', !!sessionParams.subscription_data);
+    let checkoutSession;
+    try {
+      checkoutSession = await stripe.checkout.sessions.create(
+        sessionParams,
+        { stripeAccount: classData.stripeAccountId }
+      );
+    } catch (stripeErr: any) {
+      console.error('[Stripe Session] Create failed type:', stripeErr.type);
+      console.error('[Stripe Session] Create failed message:', stripeErr.message);
+      console.error('[Stripe Session] Create failed code:', stripeErr.code);
+      const userMsg = stripeErr.message || 'No se pudo crear la sesión de pago';
+      return c.json(errorResponse(userMsg), 400);
+    }
 
     // Enrollment already exists, no need to update it — payment will be created by webhook
     return c.json(successResponse({ url: checkoutSession.url }));
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
-    console.error('[Stripe Session] Error:', error);
+    console.error('[Stripe Session] Unexpected error type:', error.type);
+    console.error('[Stripe Session] Unexpected error message:', error.message);
     return c.json(errorResponse('Internal server error'), 500);
   }
 });
