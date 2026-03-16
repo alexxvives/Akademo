@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import confetti from 'canvas-confetti';
 import { apiClient } from '@/lib/api-client';
 import { generateDemoStudentEnrolledClasses } from '@/lib/demo-data';
@@ -52,16 +52,41 @@ interface ActiveStream {
 
 export default function StudentClassesPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [enrolledClasses, setEnrolledClasses] = useState<EnrolledClass[]>([]);
   const [activeStreams, setActiveStreams] = useState<ActiveStream[]>([]);
   const [academyName, setAcademyName] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [verifying, setVerifying] = useState(false);
   const [signingClass, setSigningClass] = useState<EnrolledClass | null>(null);
   const [viewingDocClass, setViewingDocClass] = useState<EnrolledClass | null>(null);
   const [payingClass, setPayingClass] = useState<EnrolledClass | null>(null);
 
+  // When returning from Stripe checkout, verify the payment before loading data
   useEffect(() => {
-    loadData();
+    const sessionId = searchParams.get('session_id');
+    const classId = searchParams.get('classId');
+    const payment = searchParams.get('payment');
+
+    if (payment === 'success' && sessionId && classId) {
+      setVerifying(true);
+      apiClient(`/payments/stripe-verify?session_id=${encodeURIComponent(sessionId)}&classId=${encodeURIComponent(classId)}`)
+        .then(res => res.json())
+        .then(() => {
+          // Clear the URL params then load fresh data
+          router.replace('/dashboard/student/subjects');
+          loadData();
+        })
+        .catch(() => loadData())
+        .finally(() => setVerifying(false));
+    } else {
+      loadData();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Keep existing confetti + streams useEffect separate
+  useEffect(() => {
 
     // Confetti for new registrations
     if (sessionStorage.getItem('akademo_new_user')) {
@@ -213,7 +238,7 @@ export default function StudentClassesPage() {
 
   const hasClasses = enrolledClasses.length > 0;
 
-  if (loading) {
+  if (loading || verifying) {
     return <SkeletonClasses />;
   }
 

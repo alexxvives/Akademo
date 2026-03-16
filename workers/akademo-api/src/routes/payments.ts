@@ -595,7 +595,7 @@ payments.post('/stripe-session', async (c) => {
       }],
       mode: isRecurring ? 'subscription' : 'payment',
       customer_email: session.email,
-      success_url: `${c.env.FRONTEND_URL || 'https://akademo-edu.com'}/dashboard/student/subjects?payment=success&classId=${classId}`,
+      success_url: `${c.env.FRONTEND_URL || 'https://akademo-edu.com'}/dashboard/student/subjects?payment=success&classId=${classId}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${c.env.FRONTEND_URL || 'https://akademo-edu.com'}/dashboard/student/subjects?payment=cancel`,
       metadata: {
         enrollmentId: enrollment.id,
@@ -617,6 +617,149 @@ payments.post('/stripe-session', async (c) => {
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Stripe Session] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
+
+// GET /payments/stripe-verify - Called after student returns from Stripe checkout.
+// Retrieves the session directly from Stripe (on the connected account) and processes the payment
+// if it hasn't been processed yet (webhook may not fire for direct charges without Connect webhook).
+payments.get('/stripe-verify', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    const sessionId = c.req.query('session_id');
+    const classId = c.req.query('classId');
+
+    if (!sessionId || !classId) {
+      return c.json(errorResponse('Missing session_id or classId'), 400);
+    }
+
+    // Get class + connected Stripe account
+    const classData: any = await c.env.DB
+      .prepare(`
+        SELECT c.id, c.academyId, c.name, c.monthlyPrice, c.oneTimePrice, c.startDate,
+               a.stripeAccountId
+        FROM Class c
+        JOIN Academy a ON c.academyId = a.id
+        WHERE c.id = ?
+      `)
+      .bind(classId)
+      .first();
+
+    if (!classData?.stripeAccountId) {
+      return c.json(errorResponse('Class or Stripe account not found'), 404);
+    }
+
+    // Retrieve the session from Stripe on the connected account
+    const { secretKey } = getStripeKeys(c.env);
+    const stripe = require('stripe')(secretKey);
+    let checkoutSession: any;
+    try {
+      checkoutSession = await stripe.checkout.sessions.retrieve(
+        sessionId,
+        { expand: ['payment_intent'] },
+        { stripeAccount: classData.stripeAccountId }
+      );
+    } catch (err: any) {
+      console.error('[stripe-verify] Failed to retrieve session:', err.message);
+      return c.json(errorResponse('No se pudo verificar la sesión de pago'), 400);
+    }
+
+    if (checkoutSession.payment_status !== 'paid') {
+      return c.json(errorResponse('El pago no fue completado'), 400);
+    }
+
+    const metadata = checkoutSession.metadata || {};
+
+    // Verify this session belongs to this user
+    if (metadata.userId && metadata.userId !== session.id) {
+      return c.json(errorResponse('Forbidden'), 403);
+    }
+
+    const enrollmentId = metadata.enrollmentId;
+    if (!enrollmentId) {
+      return c.json(errorResponse('Metadata de pago incompleta'), 400);
+    }
+
+    // Idempotency: if already processed, return success immediately
+    const alreadyProcessed = await c.env.DB
+      .prepare('SELECT id FROM Payment WHERE stripeCheckoutSessionId = ?')
+      .bind(sessionId)
+      .first();
+
+    if (alreadyProcessed) {
+      return c.json(successResponse({ message: 'Pago ya procesado' }));
+    }
+
+    // Get enrollment details
+    const enrollment: any = await c.env.DB
+      .prepare(`
+        SELECT e.*, c.name as className, c.academyId, c.startDate, c.monthlyPrice, c.oneTimePrice,
+               u.firstName, u.lastName, u.email
+        FROM ClassEnrollment e
+        JOIN Class c ON e.classId = c.id
+        JOIN User u ON e.userId = u.id
+        WHERE e.id = ?
+      `)
+      .bind(enrollmentId)
+      .first() as any;
+
+    if (!enrollment) {
+      return c.json(errorResponse('Enrollment no encontrado'), 404);
+    }
+
+    const paymentFrequency = metadata.paymentFrequency || 'one-time';
+    const isMonthly = paymentFrequency === 'monthly';
+    const amountTotal = checkoutSession.amount_total ? checkoutSession.amount_total / 100 : 0;
+    const subscription = checkoutSession.subscription || null;
+
+    const billingCycle = {
+      nextPaymentDue: isMonthly ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() : null,
+      billingCycleEnd: isMonthly ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() : null,
+    };
+
+    await c.env.DB.batch([
+      c.env.DB.prepare(`
+        INSERT INTO Payment (
+          id, type, payerId, receiverId, amount, currency, status,
+          stripePaymentId, stripeCheckoutSessionId, paymentMethod, classId,
+          metadata, completedAt, nextPaymentDue, billingCycleEnd, createdAt
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ?, ?, datetime('now'))
+      `).bind(
+        crypto.randomUUID(),
+        'STUDENT_TO_ACADEMY',
+        enrollment.userId,
+        enrollment.academyId,
+        amountTotal,
+        'EUR',
+        'COMPLETED',
+        sessionId,
+        sessionId,
+        'stripe',
+        enrollment.classId,
+        JSON.stringify({ subscriptionId: subscription, source: 'stripe_verify', paymentFrequency }),
+        billingCycle.nextPaymentDue,
+        billingCycle.billingCycleEnd
+      ),
+      c.env.DB.prepare(`
+        UPDATE ClassEnrollment
+        SET status = 'APPROVED', paymentFrequency = ?, paymentMethod = 'stripe',
+            stripeSubscriptionId = ?, nextPaymentDue = ?
+        WHERE id = ?
+      `).bind(
+        isMonthly ? 'MONTHLY' : 'ONE_TIME',
+        subscription,
+        billingCycle.nextPaymentDue,
+        enrollmentId
+      ),
+      c.env.DB.prepare("DELETE FROM Payment WHERE payerId = ? AND classId = ? AND status = 'PENDING'")
+        .bind(enrollment.userId, enrollment.classId),
+    ]);
+
+    return c.json(successResponse({ message: 'Pago confirmado' }));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[stripe-verify] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
 });
