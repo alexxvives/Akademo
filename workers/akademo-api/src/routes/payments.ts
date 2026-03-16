@@ -594,7 +594,6 @@ payments.post('/stripe-session', async (c) => {
       }],
       mode: isRecurring ? 'subscription' : 'payment',
       customer_email: session.email,
-      currency_conversion: isRecurring ? undefined : { enabled: false },
       success_url: `${c.env.FRONTEND_URL || 'https://akademo-edu.com'}/dashboard/student/subjects?payment=success&classId=${classId}`,
       cancel_url: `${c.env.FRONTEND_URL || 'https://akademo-edu.com'}/dashboard/student/subjects?payment=cancel`,
       metadata: {
