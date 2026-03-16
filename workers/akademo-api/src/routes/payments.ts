@@ -572,19 +572,6 @@ payments.post('/stripe-session', async (c) => {
 
     const isRecurring = paymentFrequency === 'monthly';
 
-    // Calculate missed billing cycles for late-joining students
-    let missedCycles = 1;
-    if (isRecurring && classData.startDate) {
-      const classStart = new Date(classData.startDate);
-      const today = new Date();
-      if (today >= classStart) {
-        let months = (today.getFullYear() - classStart.getFullYear()) * 12
-                   + (today.getMonth() - classStart.getMonth());
-        if (today.getDate() < classStart.getDate()) months = Math.max(0, months - 1);
-        missedCycles = Math.max(1, months + 1);
-      }
-    }
-
     const priceData: any = {
       currency: 'eur',
       product_data: { 
@@ -617,27 +604,11 @@ payments.post('/stripe-session', async (c) => {
         userId: session.id,
         academyId: classData.academyId,
         paymentFrequency: paymentFrequency,
-        missedCycles: String(missedCycles),
       },
     };
 
-    // If student joins late (missedCycles > 1), add catch-up months as one-time invoice items.
-    // add_invoice_items is a top-level Checkout Session param, NOT inside subscription_data.
-    if (isRecurring && missedCycles > 1) {
-      sessionParams.add_invoice_items = [{
-        price_data: {
-          currency: 'eur',
-          product_data: {
-            name: `${classData.name} - Meses atrasados (${missedCycles - 1} ${missedCycles - 1 === 1 ? 'mes' : 'meses'})`,
-          },
-          unit_amount: Math.round((missedCycles - 1) * price * 100),
-        },
-        quantity: 1,
-      }];
-    }
-
     // Direct charge: session is created on the academy's connected account so funds go straight to them
-    console.log('[Stripe Session] Creating session - mode:', sessionParams.mode, 'account:', classData.stripeAccountId, 'missedCycles:', missedCycles, 'hasSubscriptionData:', !!sessionParams.subscription_data);
+    console.log('[Stripe Session] Creating session - mode:', sessionParams.mode, 'account:', classData.stripeAccountId);
     let checkoutSession;
     try {
       checkoutSession = await stripe.checkout.sessions.create(
