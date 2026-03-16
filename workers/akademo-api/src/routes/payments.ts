@@ -505,7 +505,7 @@ payments.post('/stripe-session', async (c) => {
     // Get class details
     const classData: any = await c.env.DB
       .prepare(`
-        SELECT c.id, c.name, c.monthlyPrice, c.oneTimePrice, a.stripeAccountId, a.id as academyId
+        SELECT c.id, c.name, c.monthlyPrice, c.oneTimePrice, c.startDate, a.stripeAccountId, a.id as academyId
         FROM Class c
         JOIN Academy a ON c.academyId = a.id
         WHERE c.id = ?
@@ -571,6 +571,20 @@ payments.post('/stripe-session', async (c) => {
     }
 
     const isRecurring = paymentFrequency === 'monthly';
+
+    // Calculate missed billing cycles for late-joining students
+    let missedCycles = 1;
+    if (isRecurring && classData.startDate) {
+      const classStart = new Date(classData.startDate);
+      const today = new Date();
+      if (today >= classStart) {
+        let months = (today.getFullYear() - classStart.getFullYear()) * 12
+                   + (today.getMonth() - classStart.getMonth());
+        if (today.getDate() < classStart.getDate()) months = Math.max(0, months - 1);
+        missedCycles = Math.max(1, months + 1);
+      }
+    }
+
     const priceData: any = {
       currency: 'eur',
       product_data: { 
@@ -603,8 +617,27 @@ payments.post('/stripe-session', async (c) => {
         userId: session.id,
         academyId: classData.academyId,
         paymentFrequency: paymentFrequency,
+        missedCycles: String(missedCycles),
       },
     };
+
+    // If student joins late (missedCycles > 1), add catch-up months to the first invoice.
+    // Stripe charges the add_invoice_items on the first invoice of the new subscription,
+    // so the student pays missedCycles * monthlyPrice upfront, then monthlyPrice per month.
+    if (isRecurring && missedCycles > 1) {
+      sessionParams.subscription_data = {
+        add_invoice_items: [{
+          price_data: {
+            currency: 'eur',
+            product_data: {
+              name: `${classData.name} - Meses atrasados (${missedCycles - 1} ${missedCycles - 1 === 1 ? 'mes' : 'meses'})`,
+            },
+            unit_amount: Math.round((missedCycles - 1) * price * 100),
+          },
+          quantity: 1,
+        }],
+      };
+    }
 
     // Direct charge: session is created on the academy's connected account so funds go straight to them
     const checkoutSession = await stripe.checkout.sessions.create(
