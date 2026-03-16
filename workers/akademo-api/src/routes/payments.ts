@@ -776,7 +776,7 @@ payments.get('/stripe-verify', async (c) => {
       ),
       c.env.DB.prepare(`
         UPDATE ClassEnrollment
-        SET status = 'APPROVED', paymentFrequency = ?, paymentMethod = 'stripe',
+        SET status = 'APPROVED', paymentFrequency = ?,
             stripeSubscriptionId = ?, nextPaymentDue = ?
         WHERE id = ?
       `).bind(

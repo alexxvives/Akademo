@@ -296,6 +296,24 @@ export default function ProfilePage() {
     loadData();
   }, [loadData]);
 
+  // Auto-reload when returning from Stripe onboarding so the connected account shows immediately
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const stripeParam = params.get('stripe');
+    if (!stripeParam) return;
+    if (stripeParam === 'complete') {
+      confetti({ particleCount: 180, spread: 100, origin: { y: 0.55 } });
+      setTimeout(() => confetti({ particleCount: 80, spread: 120, origin: { x: 0.1, y: 0.6 } }), 200);
+      setTimeout(() => confetti({ particleCount: 80, spread: 120, origin: { x: 0.9, y: 0.6 } }), 400);
+    }
+    // Reload data so stripe status is up to date
+    loadData();
+    // Clean stripe param from URL so effect doesn't re-fire on refresh
+    const cleanUrl = new URL(window.location.href);
+    cleanUrl.searchParams.delete('stripe');
+    window.history.replaceState({}, '', cleanUrl.toString());
+  }, [loadData]);
+
   useEffect(() => {
     if (!streamingDropdownOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
