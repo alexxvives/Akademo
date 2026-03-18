@@ -43,13 +43,14 @@ export default function DailyWatermark({ name, email, userId, watermarkIntervalM
   const clock = useClock();
   const shortId = userId ? `#${userId.slice(0, 8).toUpperCase()}` : '';
 
-  // Intermittent center watermark: show for 5s, hide for watermarkIntervalMins
+  // Intermittent center watermark: show for first 60s, then 30s on / interval off
   const [showCenter, setShowCenter] = useState(true);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const initialPhaseRef = useRef(true);
 
   const scheduleNext = useCallback((visible: boolean) => {
     if (timerRef.current) clearTimeout(timerRef.current);
-    const delay = visible ? 5000 : watermarkIntervalMins * 60 * 1000;
+    const delay = visible ? 30000 : watermarkIntervalMins * 60 * 1000;
     timerRef.current = setTimeout(() => {
       setShowCenter(!visible);
       scheduleNext(!visible);
@@ -58,7 +59,13 @@ export default function DailyWatermark({ name, email, userId, watermarkIntervalM
 
   useEffect(() => {
     setShowCenter(true);
-    scheduleNext(true);
+    initialPhaseRef.current = true;
+    // Stay visible for first 60s, then start intermittent cycle
+    timerRef.current = setTimeout(() => {
+      initialPhaseRef.current = false;
+      setShowCenter(false);
+      scheduleNext(false);
+    }, 60000);
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [scheduleNext]);
 
@@ -74,12 +81,12 @@ export default function DailyWatermark({ name, email, userId, watermarkIntervalM
       }}
     >
       {/* Top-left: Name — positioned near video edge */}
-      <div style={{ position: 'absolute', top: '12%', left: '8%' }}>
+      <div style={{ position: 'absolute', top: '12%', left: '12%' }}>
         <span style={badge}>{name}</span>
       </div>
 
       {/* Top-right: Email — positioned near video edge */}
-      <div style={{ position: 'absolute', top: '12%', right: '8%' }}>
+      <div style={{ position: 'absolute', top: '12%', right: '22%' }}>
         <span style={badge}>{email}</span>
       </div>
 
@@ -112,12 +119,12 @@ export default function DailyWatermark({ name, email, userId, watermarkIntervalM
       )}
 
       {/* Bottom-left: User ID — positioned near video edge */}
-      <div style={{ position: 'absolute', bottom: '12%', left: '8%' }}>
+      <div style={{ position: 'absolute', bottom: '12%', left: '12%' }}>
         <span style={badge}>ID: {shortId}</span>
       </div>
 
       {/* Bottom-right: Live clock — positioned near video edge */}
-      <div style={{ position: 'absolute', bottom: '12%', right: '8%' }}>
+      <div style={{ position: 'absolute', bottom: '12%', right: '22%' }}>
         <span style={badge}>{clock}</span>
       </div>
     </div>
