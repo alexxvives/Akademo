@@ -712,7 +712,9 @@ live.get('/:id/join-token', async (c) => {
           is_owner: isHost,
           user_name: userName,
           exp: Math.floor(Date.now() / 1000) + 6 * 60 * 60,
-          ...(isHost ? { enable_recording: 'cloud', start_cloud_recording: true } : {}),
+          ...(isHost
+            ? { enable_recording: 'cloud', start_cloud_recording: true }
+            : { enable_recording: false }),
         },
       }),
     });
@@ -723,8 +725,15 @@ live.get('/:id/join-token', async (c) => {
       return c.json(errorResponse(`Error al generar token Daily.co (${tokenRes.status}): ${err}`), 500);
     }
 
+    // Fetch academy watermark interval for the live watermark overlay
+    const academyWatermark = await c.env.DB
+      .prepare('SELECT a.defaultWatermarkIntervalMins FROM Academy a JOIN Class c ON c.academyId = a.id WHERE c.id = ?')
+      .bind(stream.classId)
+      .first<{ defaultWatermarkIntervalMins: number | null }>();
+    const watermarkIntervalMins = academyWatermark?.defaultWatermarkIntervalMins ?? 5;
+
     const tokenData = await tokenRes.json() as { token: string };
-    return c.json(successResponse({ token: tokenData.token, roomUrl: stream.dailyRoomUrl, isHost, userName }));
+    return c.json(successResponse({ token: tokenData.token, roomUrl: stream.dailyRoomUrl, isHost, userName, watermarkIntervalMins }));
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Join Token] Error:', error);

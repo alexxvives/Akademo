@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 
 interface DailyWatermarkProps {
   name: string;
   email: string;
   userId: string;
+  watermarkIntervalMins?: number;
 }
 
 function useClock() {
@@ -38,9 +39,28 @@ const badge = {
   border: '1px solid rgba(255,255,255,0.10)',
 };
 
-export default function DailyWatermark({ name, email, userId }: DailyWatermarkProps) {
+export default function DailyWatermark({ name, email, userId, watermarkIntervalMins = 5 }: DailyWatermarkProps) {
   const clock = useClock();
   const shortId = userId ? `#${userId.slice(0, 8).toUpperCase()}` : '';
+
+  // Intermittent center watermark: show for 5s, hide for watermarkIntervalMins
+  const [showCenter, setShowCenter] = useState(true);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const scheduleNext = useCallback((visible: boolean) => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    const delay = visible ? 5000 : watermarkIntervalMins * 60 * 1000;
+    timerRef.current = setTimeout(() => {
+      setShowCenter(!visible);
+      scheduleNext(!visible);
+    }, delay);
+  }, [watermarkIntervalMins]);
+
+  useEffect(() => {
+    setShowCenter(true);
+    scheduleNext(true);
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, [scheduleNext]);
 
   return (
     <div
@@ -53,49 +73,51 @@ export default function DailyWatermark({ name, email, userId }: DailyWatermarkPr
         userSelect: 'none',
       }}
     >
-      {/* Top-left: Name */}
-      <div style={{ position: 'absolute', top: 14, left: 14 }}>
+      {/* Top-left: Name — positioned near video edge */}
+      <div style={{ position: 'absolute', top: '12%', left: '8%' }}>
         <span style={badge}>{name}</span>
       </div>
 
-      {/* Top-right: Email */}
-      <div style={{ position: 'absolute', top: 14, right: 14 }}>
+      {/* Top-right: Email — positioned near video edge */}
+      <div style={{ position: 'absolute', top: '12%', right: '8%' }}>
         <span style={badge}>{email}</span>
       </div>
 
-      {/* Center: large diagonal full name */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <span
+      {/* Center: large diagonal full name — intermittent */}
+      {showCenter && (
+        <div
           style={{
-            transform: 'rotate(-30deg)',
-            fontSize: 'clamp(1.4rem, 3.5vw, 2.8rem)',
-            fontWeight: 700,
-            color: 'rgba(255,255,255,0.12)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.12em',
-            whiteSpace: 'nowrap',
-            textShadow: '0 1px 4px rgba(0,0,0,0.4)',
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
-          {name}
-        </span>
-      </div>
+          <span
+            style={{
+              transform: 'rotate(-30deg)',
+              fontSize: 'clamp(1.4rem, 3.5vw, 2.8rem)',
+              fontWeight: 700,
+              color: 'rgba(255,255,255,0.12)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.12em',
+              whiteSpace: 'nowrap',
+              textShadow: '0 1px 4px rgba(0,0,0,0.4)',
+            }}
+          >
+            {name}
+          </span>
+        </div>
+      )}
 
-      {/* Bottom-left: User ID */}
-      <div style={{ position: 'absolute', bottom: 14, left: 14 }}>
+      {/* Bottom-left: User ID — positioned near video edge */}
+      <div style={{ position: 'absolute', bottom: '12%', left: '8%' }}>
         <span style={badge}>ID: {shortId}</span>
       </div>
 
-      {/* Bottom-right: Live clock */}
-      <div style={{ position: 'absolute', bottom: 14, right: 14 }}>
+      {/* Bottom-right: Live clock — positioned near video edge */}
+      <div style={{ position: 'absolute', bottom: '12%', right: '8%' }}>
         <span style={badge}>{clock}</span>
       </div>
     </div>

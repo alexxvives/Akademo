@@ -37,6 +37,7 @@ export default function StudentLivePage() {
   const [zoomMeetingId, setZoomMeetingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showWhiteboard, setShowWhiteboard] = useState(false);
+  const [watermarkIntervalMins, setWatermarkIntervalMins] = useState(5);
 
   useEffect(() => {
     const init = async () => {
@@ -54,6 +55,10 @@ export default function StudentLivePage() {
         if (!tokenData.success) { setError(tokenData.error || 'No tienes acceso a esta sesión'); return; }
 
         setStream(streamData.data);
+
+        if (tokenData.data.watermarkIntervalMins) {
+          setWatermarkIntervalMins(tokenData.data.watermarkIntervalMins);
+        }
 
         if (tokenData.data.isZoom) {
           setIsZoom(true);
@@ -200,6 +205,7 @@ export default function StudentLivePage() {
                   name={displayName}
                   email={displayEmail}
                   userId={displayId}
+                  watermarkIntervalMins={watermarkIntervalMins}
                 />
               )}
             </>
@@ -223,6 +229,7 @@ export default function StudentLivePage() {
                   name={displayName}
                   email={displayEmail}
                   userId={displayId}
+                  watermarkIntervalMins={watermarkIntervalMins}
                 />
               )}
             </>
