@@ -90,32 +90,25 @@ export default function DailyWatermark({ name, email, userId, watermarkIntervalM
         <span style={badge}>{email}</span>
       </div>
 
-      {/* Center: large diagonal full name — intermittent */}
+      {/* Center: large diagonal full name — intermittent, anchored to center of badge rectangle */}
       {showCenter && (
-        <div
+        <span
           style={{
             position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            top: '50%',
+            left: '45%',
+            transform: 'translate(-50%, -50%) rotate(-30deg)',
+            fontSize: 'clamp(1.4rem, 3.5vw, 2.8rem)',
+            fontWeight: 700,
+            color: 'rgba(255,255,255,0.12)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.12em',
+            whiteSpace: 'nowrap',
+            textShadow: '0 1px 4px rgba(0,0,0,0.4)',
           }}
         >
-          <span
-            style={{
-              transform: 'rotate(-30deg)',
-              fontSize: 'clamp(1.4rem, 3.5vw, 2.8rem)',
-              fontWeight: 700,
-              color: 'rgba(255,255,255,0.12)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.12em',
-              whiteSpace: 'nowrap',
-              textShadow: '0 1px 4px rgba(0,0,0,0.4)',
-            }}
-          >
-            {name}
-          </span>
-        </div>
+          {name}
+        </span>
       )}
 
       {/* Bottom-left: User ID — positioned near video edge */}
