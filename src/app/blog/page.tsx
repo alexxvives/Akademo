@@ -60,27 +60,36 @@ export default function BlogPage() {
               <Link
                 key={post.slug}
                 href={`/blog/${post.slug}`}
-                className="group block bg-white p-6 sm:p-7 hover:bg-gray-50 transition-colors duration-150"
+                className="group block bg-white hover:bg-gray-50 transition-colors duration-150"
               >
-                <div className="flex items-center justify-between mb-4">
-                  <span className={`text-xs font-semibold uppercase tracking-wide ${categoryColor[post.category] || 'text-gray-500'}`}>
-                    {post.category}
-                  </span>
-                  <span className="text-xs text-gray-400">{post.readTime}</span>
-                </div>
-                <h2 className="text-base font-semibold text-gray-900 group-hover:text-indigo-600 leading-snug mb-2 transition-colors">
-                  {post.title}
-                </h2>
-                <p className="text-sm text-gray-500 leading-relaxed mb-5 line-clamp-3">
-                  {post.description}
-                </p>
-                <div className="flex items-center justify-between">
-                  <time className="text-xs text-gray-400" dateTime={post.date}>
-                    {new Date(post.date).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  </time>
-                  <span className="text-xs font-medium text-indigo-600 group-hover:underline">
-                    Leer
-                  </span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={post.image}
+                  alt={post.imageAlt}
+                  className="w-full h-40 object-cover"
+                  loading="lazy"
+                />
+                <div className="p-6 sm:p-7">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className={`text-xs font-semibold uppercase tracking-wide ${categoryColor[post.category] || 'text-gray-500'}`}>
+                      {post.category}
+                    </span>
+                    <span className="text-xs text-gray-400">{post.readTime}</span>
+                  </div>
+                  <h2 className="text-base font-semibold text-gray-900 group-hover:text-indigo-600 leading-snug mb-2 transition-colors">
+                    {post.title}
+                  </h2>
+                  <p className="text-sm text-gray-500 leading-relaxed mb-5 line-clamp-3">
+                    {post.description}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <time className="text-xs text-gray-400" dateTime={post.date}>
+                      {new Date(post.date).toLocaleDateString('es', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </time>
+                    <span className="text-xs font-medium text-indigo-600 group-hover:underline">
+                      Leer
+                    </span>
+                  </div>
                 </div>
               </Link>
             ))}

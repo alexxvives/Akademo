@@ -8,7 +8,7 @@ export function BlogLayout({ post, children }: { post: BlogPost; children: React
     '@type': 'BlogPosting',
     headline: post.title,
     description: post.description,
-    image: `https://akademo-edu.com${ogImage}`,
+    image: post.image || `https://akademo-edu.com${ogImage}`,
     datePublished: post.date,
     dateModified: post.date,
     author: { '@type': 'Organization', name: 'AKADEMO', url: 'https://akademo-edu.com' },
@@ -25,7 +25,7 @@ export function BlogLayout({ post, children }: { post: BlogPost; children: React
         <div className="absolute inset-0 bg-gradient-to-b from-indigo-900/20 via-gray-950 to-gray-950 pointer-events-none" />
         <div className="absolute top-0 left-1/4 w-[600px] h-[400px] bg-indigo-600/8 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative max-w-3xl mx-auto">
+        <div className="relative max-w-4xl mx-auto">
           <Link
             href="/blog"
             className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors mb-6"
@@ -47,7 +47,7 @@ export function BlogLayout({ post, children }: { post: BlogPost; children: React
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-4">
             {post.title}
           </h1>
-          <p className="text-lg text-gray-400 leading-relaxed">
+          <p className="text-lg text-gray-400 leading-relaxed max-w-3xl">
             {post.description}
           </p>
         </div>
@@ -55,15 +55,15 @@ export function BlogLayout({ post, children }: { post: BlogPost; children: React
 
       {/* Featured image */}
       <div className="px-4 sm:px-6 bg-gray-950 pb-0">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <div className="rounded-2xl overflow-hidden shadow-2xl translate-y-8">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={ogImage}
-              alt={post.title}
+              src={post.image}
+              alt={post.imageAlt}
               width={1200}
               height={630}
-              className="w-full h-auto block"
+              className="w-full h-[300px] sm:h-[400px] object-cover block"
               loading="eager"
             />
           </div>
@@ -72,8 +72,8 @@ export function BlogLayout({ post, children }: { post: BlogPost; children: React
 
       {/* Article content */}
       <section className="pt-16 pb-12 sm:pb-16 px-4 sm:px-6">
-        <article className="max-w-3xl mx-auto">
-          <div className="prose prose-gray prose-lg max-w-none prose-headings:font-semibold prose-headings:text-gray-900 prose-a:text-indigo-600 prose-a:no-underline hover:prose-a:underline prose-p:leading-relaxed">
+        <article className="max-w-4xl mx-auto">
+          <div className="prose prose-gray prose-lg max-w-none prose-headings:font-semibold prose-headings:text-gray-900 prose-a:text-indigo-600 prose-a:no-underline hover:prose-a:underline prose-p:leading-relaxed prose-headings:mt-10 prose-headings:mb-4 prose-p:text-gray-600 prose-li:text-gray-600 prose-img:rounded-xl prose-img:shadow-lg">
             {children}
           </div>
         </article>
@@ -81,7 +81,7 @@ export function BlogLayout({ post, children }: { post: BlogPost; children: React
 
       {/* CTA */}
       <section className="py-16 px-4 sm:px-6">
-        <div className="max-w-3xl mx-auto rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 p-8 sm:p-10 text-center text-white">
+        <div className="max-w-4xl mx-auto rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 p-8 sm:p-10 text-center text-white">
           <h2 className="text-2xl font-bold mb-3">¿Listo para proteger tu academia?</h2>
           <p className="text-indigo-100 mb-6 max-w-lg mx-auto">
             AKADEMO te da las herramientas para proteger tu contenido, gestionar tu equipo y hacer crecer tu academia.
@@ -94,7 +94,7 @@ export function BlogLayout({ post, children }: { post: BlogPost; children: React
 
       {/* Related articles */}
       <section className="py-8 pb-16 px-4 sm:px-6 border-t border-gray-200">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-500">¿Quieres seguir leyendo?</p>
             <Link href="/blog" className="text-sm font-medium text-indigo-600 hover:underline">

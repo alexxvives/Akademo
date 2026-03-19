@@ -8,6 +8,8 @@ export interface BlogPost {
   readTime: string;
   category: string;
   keywords: string[];
+  image: string;
+  imageAlt: string;
 }
 
 export const blogPosts: BlogPost[] = [
@@ -19,6 +21,8 @@ export const blogPosts: BlogPost[] = [
     readTime: '8 min',
     category: 'Protección',
     keywords: ['proteger contenido educativo', 'anti-piratería academia', 'seguridad vídeos online'],
+    image: 'https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?auto=format&fit=crop&w=1200&q=80',
+    imageAlt: 'Pantalla de ordenador mostrando código de seguridad digital',
   },
   {
     slug: 'cuentas-compartidas-problema-academias',
@@ -28,6 +32,8 @@ export const blogPosts: BlogPost[] = [
     readTime: '6 min',
     category: 'Seguridad',
     keywords: ['cuentas compartidas educación', 'control acceso academia', 'sesiones simultáneas'],
+    image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80',
+    imageAlt: 'Múltiples dispositivos conectados representando cuentas compartidas',
   },
   {
     slug: 'guia-digitalizar-academia',
@@ -37,6 +43,8 @@ export const blogPosts: BlogPost[] = [
     readTime: '10 min',
     category: 'Gestión',
     keywords: ['digitalizar academia', 'academia online', 'plataforma educativa', 'software para academias'],
+    image: 'https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?auto=format&fit=crop&w=1200&q=80',
+    imageAlt: 'Persona trabajando en la transformación digital de su negocio',
   },
   {
     slug: 'marca-de-agua-videos-educativos',
@@ -46,6 +54,8 @@ export const blogPosts: BlogPost[] = [
     readTime: '7 min',
     category: 'Protección',
     keywords: ['marca de agua vídeos', 'watermark educación', 'protección vídeos academia'],
+    image: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=1200&q=80',
+    imageAlt: 'Grabación de vídeo profesional para contenido educativo',
   },
   {
     slug: 'software-gestion-academias-que-necesitas',
@@ -55,6 +65,8 @@ export const blogPosts: BlogPost[] = [
     readTime: '9 min',
     category: 'Gestión',
     keywords: ['software gestión academias', 'plataforma gestión académica', 'LMS para academias'],
+    image: 'https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=1200&q=80',
+    imageAlt: 'Dashboard de software de gestión en pantalla de ordenador',
   },
   {
     slug: 'como-fijar-precio-academia-online',
@@ -64,6 +76,8 @@ export const blogPosts: BlogPost[] = [
     readTime: '8 min',
     category: 'Precios',
     keywords: ['precio academia online', 'modelo suscripción educación', 'tarifa academia', 'cuánto cobrar academia'],
+    image: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=1200&q=80',
+    imageAlt: 'Calculadora y gráficos de precios sobre un escritorio',
   },
   {
     slug: 'reducir-abandono-estudiantes-academia',
@@ -73,6 +87,8 @@ export const blogPosts: BlogPost[] = [
     readTime: '7 min',
     category: 'Gestión',
     keywords: ['retención estudiantes academia', 'abandono cursos online', 'engagement educativo'],
+    image: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=1200&q=80',
+    imageAlt: 'Estudiantes participando activamente en una clase',
   },
   {
     slug: 'clases-en-directo-vs-grabadas',
@@ -82,6 +98,8 @@ export const blogPosts: BlogPost[] = [
     readTime: '6 min',
     category: 'Gestión',
     keywords: ['clases en directo academia', 'clases grabadas vs directo', 'modelo híbrido educación online'],
+    image: 'https://images.unsplash.com/photo-1588196749597-9ff075ee6b5b?auto=format&fit=crop&w=1200&q=80',
+    imageAlt: 'Cámara profesional grabando una clase en directo',
   },
   {
     slug: 'errores-comunes-academia-online',
@@ -91,6 +109,8 @@ export const blogPosts: BlogPost[] = [
     readTime: '9 min',
     category: 'Gestión',
     keywords: ['errores academia online', 'fracasar academia online', 'lanzar academia online'],
+    image: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=1200&q=80',
+    imageAlt: 'Persona planificando estrategia con notas y documentos',
   },
   {
     slug: 'conseguir-primeros-estudiantes-academia',
@@ -100,6 +120,30 @@ export const blogPosts: BlogPost[] = [
     readTime: '10 min',
     category: 'Crecimiento',
     keywords: ['primeros estudiantes academia', 'marketing academia online', 'captar alumnos academia'],
+    image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200&q=80',
+    imageAlt: 'Grupo de estudiantes trabajando juntos en una academia',
+  },
+  {
+    slug: 'crear-comunidad-estudiantes-academia-online',
+    title: 'Cómo crear una comunidad de estudiantes que impulse tu academia online',
+    description: 'Una comunidad activa reduce la tasa de abandono un 40% y multiplica el boca a boca. Aprende a construir un espacio donde tus estudiantes se motiven entre sí.',
+    date: '2026-03-18',
+    readTime: '8 min',
+    category: 'Crecimiento',
+    keywords: ['comunidad estudiantes online', 'fidelizar alumnos academia', 'engagement comunidad educativa'],
+    image: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1200&q=80',
+    imageAlt: 'Grupo de personas conectadas trabajando en comunidad',
+  },
+  {
+    slug: 'seo-academias-online-atraer-estudiantes-google',
+    title: 'SEO para academias online: cómo atraer estudiantes desde Google',
+    description: 'El 68% de los estudiantes buscan academias en Google antes de inscribirse. Estas son las técnicas de SEO que funcionan específicamente para plataformas educativas.',
+    date: '2026-03-19',
+    readTime: '9 min',
+    category: 'Crecimiento',
+    keywords: ['SEO academia online', 'posicionamiento web educación', 'marketing orgánico academia', 'Google para academias'],
+    image: 'https://images.unsplash.com/photo-1432888498266-38ffec3eaf0a?auto=format&fit=crop&w=1200&q=80',
+    imageAlt: 'Pantalla mostrando analíticas de tráfico web y SEO',
   },
 ];
 
