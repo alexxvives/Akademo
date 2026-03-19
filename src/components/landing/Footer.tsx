@@ -30,6 +30,7 @@ export function Footer({ t, lang }: FooterProps) {
             <h4 className="font-semibold text-white mb-4">{lang === 'es' ? 'Producto' : 'Product'}</h4>
             <ul className="space-y-2">
               <li><Link href="/pricing" className="text-gray-400 hover:text-white text-sm transition-colors">{lang === 'es' ? 'Precios' : 'Pricing'}</Link></li>
+              <li><Link href="/blog" className="text-gray-400 hover:text-white text-sm transition-colors">Blog</Link></li>
             </ul>
           </div>
 
