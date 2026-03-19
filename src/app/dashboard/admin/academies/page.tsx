@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
 import { SkeletonTable } from '@/components/ui/SkeletonLoader';
 import { DeleteIcon } from '@/components/ui/DeleteIcon';
+import { MigrationModal } from '@/components/admin/MigrationModal';
 
 interface Academy {
   id: string;
@@ -119,7 +119,6 @@ function AddBillingForm({ academyId, onAdded }: { academyId: string; onAdded: (r
 }
 
 export default function AdminAcademies() {
-  const router = useRouter();
   const [academies, setAcademies] = useState<Academy[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -127,6 +126,7 @@ export default function AdminAcademies() {
   const [togglingDailyId, setTogglingDailyId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [billingByAcademy, setBillingByAcademy] = useState<Record<string, BillingRecord[]>>({});
+  const [migrationAcademy, setMigrationAcademy] = useState<{ id: string; name: string } | null>(null);
   const filteredAcademies = academies;
 
   useEffect(() => { loadAcademies(); }, []);
@@ -306,7 +306,7 @@ export default function AdminAcademies() {
                             )}
                           </button>
                           <button
-                            onClick={() => router.push(`/dashboard/admin/migration?academyId=${academy.id}`)}
+                            onClick={() => setMigrationAcademy({ id: academy.id, name: academy.ownerName })}
                             className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                             title="Migración CSV"
                           >
@@ -380,6 +380,14 @@ export default function AdminAcademies() {
             </table>
           </div>
         </div>
+      )}
+
+      {migrationAcademy && (
+        <MigrationModal
+          academyId={migrationAcademy.id}
+          academyName={migrationAcademy.name}
+          onClose={() => setMigrationAcademy(null)}
+        />
       )}
     </div>
   );

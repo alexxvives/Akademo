@@ -552,12 +552,6 @@ export default function DashboardLayout({
             iconType: 'calendar' as const,
             group: 'Gestión',
           },
-          {
-            label: 'Migración',
-            href: '/dashboard/admin/migration',
-            iconType: 'clipboard' as const,
-            group: 'Gestión',
-          },
 
         ];
       case 'TEACHER':
