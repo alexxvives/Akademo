@@ -30,6 +30,10 @@ export const metadata: Metadata = {
   ],
   alternates: {
     canonical: 'https://akademo-edu.com',
+    languages: {
+      'es': 'https://akademo-edu.com',
+      'en': 'https://akademo-edu.com',
+    },
   },
   icons: {
     icon: '/logo/AKADEMO_favicon.ico',
@@ -43,13 +47,13 @@ export const metadata: Metadata = {
     siteName: 'AKADEMO',
     title: "AKADEMO - Software de Gestión para Academias",
     description: "Protege tu contenido educativo, evita cuentas compartidas y gestiona tu academia online desde una sola plataforma.",
-    images: [{ url: '/logo/AKADEMO_logo_OTHER2.svg', width: 512, height: 512, alt: 'AKADEMO Logo' }],
+    images: [{ url: '/images/og-image.svg', width: 1200, height: 630, alt: 'AKADEMO - Software de Gestión para Academias' }],
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
     title: "AKADEMO - Software de Gestión para Academias",
     description: "Protege tu contenido educativo, evita cuentas compartidas y gestiona tu academia online.",
-    images: ['/logo/AKADEMO_logo_OTHER2.svg'],
+    images: ['/images/og-image.svg'],
   },
   robots: {
     index: true,
@@ -74,6 +78,9 @@ export default function RootLayout({
       <head>
         <meta name="theme-color" content="#111318" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://api.akademo-edu.com" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
