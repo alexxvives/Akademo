@@ -2,10 +2,27 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { blogPosts } from '@/lib/blog-data';
 
+const ogBlogImage = 'https://akademo-edu.com/api/og?title=Blog%20%E2%80%94%20Recursos%20para%20academias%20online&category=';
+
 export const metadata: Metadata = {
   title: 'Blog | AKADEMO - Recursos para Academias Online',
   description: 'Artículos sobre protección de contenido educativo, gestión de academias online, marcas de agua en vídeos y estrategias para digitalizar tu academia.',
   keywords: ['blog academias online', 'protección contenido educativo', 'gestión académica', 'software para academias'],
+  openGraph: {
+    title: 'Blog — Recursos para academias online',
+    description: 'Artículos sobre protección de contenido educativo, gestión de academias online, marcas de agua en vídeos y estrategias para digitalizar tu academia.',
+    url: 'https://akademo-edu.com/blog',
+    siteName: 'AKADEMO',
+    locale: 'es_ES',
+    type: 'website',
+    images: [{ url: ogBlogImage, width: 1200, height: 630, alt: 'AKADEMO Blog' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Blog — Recursos para academias online',
+    description: 'Artículos sobre protección de contenido educativo, gestión de academias online, marcas de agua en vídeos y estrategias para digitalizar tu academia.',
+    images: [ogBlogImage],
+  },
   alternates: {
     canonical: 'https://akademo-edu.com/blog',
   },

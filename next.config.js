@@ -36,6 +36,9 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: '500mb',
     },
+    outputFileTracingIncludes: {
+      '/api/og': ['./node_modules/next/dist/compiled/@vercel/og/*.ttf'],
+    },
   },
   // Enable compression and optimize images
   compress: true,

@@ -2,8 +2,24 @@ import Link from 'next/link';
 import { BlogPost } from '@/lib/blog-data';
 
 export function BlogLayout({ post, children }: { post: BlogPost; children: React.ReactNode }) {
+  const ogImage = `/api/og?title=${encodeURIComponent(post.title)}&category=${encodeURIComponent(post.category)}`;
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.description,
+    image: `https://akademo-edu.com${ogImage}`,
+    datePublished: post.date,
+    dateModified: post.date,
+    author: { '@type': 'Organization', name: 'AKADEMO', url: 'https://akademo-edu.com' },
+    publisher: { '@type': 'Organization', name: 'AKADEMO', url: 'https://akademo-edu.com' },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': `https://akademo-edu.com/blog/${post.slug}` },
+    keywords: post.keywords.join(', '),
+  };
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       {/* Hero section — dark like landing page */}
       <section className="relative pt-32 sm:pt-40 pb-16 sm:pb-20 px-4 sm:px-6 overflow-hidden bg-gray-950">
         <div className="absolute inset-0 bg-gradient-to-b from-indigo-900/20 via-gray-950 to-gray-950 pointer-events-none" />
@@ -37,8 +53,25 @@ export function BlogLayout({ post, children }: { post: BlogPost; children: React
         </div>
       </section>
 
+      {/* Featured image */}
+      <div className="px-4 sm:px-6 bg-gray-950 pb-0">
+        <div className="max-w-3xl mx-auto">
+          <div className="rounded-2xl overflow-hidden shadow-2xl translate-y-8">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={ogImage}
+              alt={post.title}
+              width={1200}
+              height={630}
+              className="w-full h-auto block"
+              loading="eager"
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Article content */}
-      <section className="py-12 sm:py-16 px-4 sm:px-6">
+      <section className="pt-16 pb-12 sm:pb-16 px-4 sm:px-6">
         <article className="max-w-3xl mx-auto">
           <div className="prose prose-gray prose-lg max-w-none prose-headings:font-semibold prose-headings:text-gray-900 prose-a:text-indigo-600 prose-a:no-underline hover:prose-a:underline prose-p:leading-relaxed">
             {children}

@@ -108,6 +108,7 @@ export function getBlogPost(slug: string): BlogPost | undefined {
 }
 
 export function getBlogMetadata(post: BlogPost): Metadata {
+  const ogImage = `https://akademo-edu.com/api/og?title=${encodeURIComponent(post.title)}&category=${encodeURIComponent(post.category)}`;
   return {
     title: `${post.title} | AKADEMO Blog`,
     description: post.description,
@@ -118,6 +119,16 @@ export function getBlogMetadata(post: BlogPost): Metadata {
       type: 'article',
       publishedTime: post.date,
       authors: ['AKADEMO'],
+      url: `https://akademo-edu.com/blog/${post.slug}`,
+      siteName: 'AKADEMO',
+      locale: 'es_ES',
+      images: [{ url: ogImage, width: 1200, height: 630, alt: post.title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description: post.description,
+      images: [ogImage],
     },
     alternates: {
       canonical: `https://akademo-edu.com/blog/${post.slug}`,
