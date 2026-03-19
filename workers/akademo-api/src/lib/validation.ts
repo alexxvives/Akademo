@@ -166,6 +166,16 @@ export const createAssignmentSchema = z.object({
   maxScore: z.coerce.number().int().min(0).max(1000).default(100),
   uploadId: z.string().optional(),
   uploadIds: z.array(z.string()).optional(),
+  type: z.enum(['file', 'quiz']).default('file'),
+  questions: z.array(z.object({
+    questionText: z.string().min(1).max(1000),
+    options: z.array(z.object({
+      id: z.string(),
+      text: z.string().min(1).max(500),
+    })).min(2).max(6),
+    correctOptionId: z.string().min(1),
+    explanation: z.string().max(1000).optional(),
+  })).optional(),
 });
 
 export const gradeSubmissionSchema = z.object({

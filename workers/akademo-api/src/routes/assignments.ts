@@ -103,7 +103,7 @@ assignments.get('/', async (c) => {
       // Get all assignments from all enrolled classes
       const query = `
         SELECT 
-          a.id, a.classId, a.title, a.description, 
+          a.id, a.classId, a.title, a.description, a.type,
           a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt,
           c.name as className,
           s.id as submissionId,
@@ -116,14 +116,18 @@ assignments.get('/', async (c) => {
           s.version,
           GROUP_CONCAT(aa.uploadId) as attachmentIds,
           COUNT(DISTINCT aa.id) as attachmentCount,
-          e.classId as enrolledClassId
+          e.classId as enrolledClassId,
+          qa.id as quizAttemptId,
+          qa.score as quizScore,
+          qa.totalQuestions as quizTotalQuestions,
+          qa.correctAnswers as quizCorrectAnswers
         FROM Assignment a
         JOIN Class c ON a.classId = c.id
         JOIN ClassEnrollment e ON c.id = e.classId
         LEFT JOIN AssignmentAttachment aa ON a.id = aa.assignmentId
-        LEFT JOIN AssignmentSubmission s ON a.id = s.assignmentId AND s.studentId = ? 
-          AND s.version = (SELECT MAX(version) FROM AssignmentSubmission WHERE assignmentId = a.id AND studentId = ?)
+        LEFT JOIN AssignmentSubmission s ON a.id = s.assignmentId AND s.studentId = ?
         LEFT JOIN Upload up ON s.uploadId = up.id
+        LEFT JOIN QuizAttempt qa ON a.id = qa.assignmentId AND qa.studentId = ?
         WHERE e.userId = ? AND e.status = 'APPROVED'
         GROUP BY a.id, s.id
         ORDER BY a.dueDate DESC, a.createdAt DESC
@@ -156,7 +160,7 @@ assignments.get('/', async (c) => {
       // Teachers see all assignments for their classes
       query = `
         SELECT 
-          a.id, a.classId, a.teacherId, a.title, a.description, 
+          a.id, a.classId, a.teacherId, a.title, a.description, a.type,
           a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt, a.updatedAt,
           c.name as className,
           GROUP_CONCAT(DISTINCT aa.uploadId) as attachmentIds,
@@ -177,7 +181,7 @@ assignments.get('/', async (c) => {
       const ownerFilter = session.role === 'ADMIN' ? '' : 'AND ac.ownerId = ?';
       query = `
         SELECT 
-          a.id, a.classId, a.teacherId, a.title, a.description, 
+          a.id, a.classId, a.teacherId, a.title, a.description, a.type,
           a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt, a.updatedAt,
           c.name as className,
           GROUP_CONCAT(DISTINCT aa.uploadId) as attachmentIds,
@@ -211,7 +215,7 @@ assignments.get('/', async (c) => {
       // Students see assignments with their submission status for specific class
       query = `
         SELECT 
-          a.id, a.classId, a.title, a.description, 
+          a.id, a.classId, a.title, a.description, a.type,
           a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt,
           c.name as className,
           s.id as submissionId,
@@ -222,13 +226,17 @@ assignments.get('/', async (c) => {
           s.submittedAt,
           s.gradedAt,
           s.version,
-          GROUP_CONCAT(DISTINCT aa.uploadId) as attachmentIds
+          GROUP_CONCAT(DISTINCT aa.uploadId) as attachmentIds,
+          qa.id as quizAttemptId,
+          qa.score as quizScore,
+          qa.totalQuestions as quizTotalQuestions,
+          qa.correctAnswers as quizCorrectAnswers
         FROM Assignment a
         JOIN Class c ON a.classId = c.id
         LEFT JOIN AssignmentAttachment aa ON a.id = aa.assignmentId
         LEFT JOIN AssignmentSubmission s ON a.id = s.assignmentId AND s.studentId = ?
-          AND s.version = (SELECT MAX(version) FROM AssignmentSubmission WHERE assignmentId = a.id AND studentId = ?)
         LEFT JOIN Upload up ON s.uploadId = up.id
+        LEFT JOIN QuizAttempt qa ON a.id = qa.assignmentId AND qa.studentId = ?
         WHERE a.classId = ?
         GROUP BY a.id
         ORDER BY a.dueDate DESC, a.createdAt DESC
@@ -267,7 +275,14 @@ assignments.post('/', async (c) => {
       }));
       return c.json({ success: false, error: 'Validation failed', details: errors }, 400);
     }
-    const { classId, title, description, dueDate, maxScore, uploadId, uploadIds } = body;
+    const { classId, title, description, dueDate, maxScore, uploadId, uploadIds, type, questions } = body;
+
+    // Validate quiz-specific fields
+    if (type === 'quiz') {
+      if (!questions || !Array.isArray(questions) || questions.length === 0) {
+        return c.json(errorResponse('Quiz must have at least one question'), 400);
+      }
+    }
 
     // Collect all upload IDs (support both single uploadId and array uploadIds)
     let allUploadIds: string[] = [];
@@ -298,10 +313,10 @@ assignments.post('/', async (c) => {
 
     const assignmentId = nanoid();
 
-    // Create Assignment record (no file columns except legacy uploadId)
+    // Create Assignment record
     await c.env.DB.prepare(`
-      INSERT INTO Assignment (id, classId, teacherId, title, description, dueDate, maxScore, uploadId, attachmentIds)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO Assignment (id, classId, teacherId, title, description, dueDate, maxScore, uploadId, attachmentIds, type)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       assignmentId,
       classId,
@@ -310,17 +325,40 @@ assignments.post('/', async (c) => {
       description || null,
       dueDate || null,
       maxScore || 100,
-      allUploadIds.length > 0 ? allUploadIds[0] : null, // Legacy: first file as uploadId
-      '[]' // Deprecated column, keep empty for now
+      allUploadIds.length > 0 ? allUploadIds[0] : null,
+      '[]',
+      type || 'file'
     ).run();
 
-    // Create AssignmentAttachment records (state of the art approach)
-    for (const uploadId of allUploadIds) {
-      const attachmentId = nanoid();
-      await c.env.DB.prepare(`
-        INSERT INTO AssignmentAttachment (id, assignmentId, uploadId)
-        VALUES (?, ?, ?)
-      `).bind(attachmentId, assignmentId, uploadId).run();
+    // Create AssignmentAttachment records for file type
+    if (type !== 'quiz') {
+      for (const uploadId of allUploadIds) {
+        const attachmentId = nanoid();
+        await c.env.DB.prepare(`
+          INSERT INTO AssignmentAttachment (id, assignmentId, uploadId)
+          VALUES (?, ?, ?)
+        `).bind(attachmentId, assignmentId, uploadId).run();
+      }
+    }
+
+    // Create QuizQuestion records for quiz type
+    if (type === 'quiz' && questions) {
+      for (let i = 0; i < questions.length; i++) {
+        const q = questions[i];
+        const questionId = nanoid();
+        await c.env.DB.prepare(`
+          INSERT INTO QuizQuestion (id, assignmentId, questionText, questionOrder, options, correctOptionId, explanation)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          questionId,
+          assignmentId,
+          q.questionText,
+          i,
+          JSON.stringify(q.options),
+          q.correctOptionId,
+          q.explanation || null
+        ).run();
+      }
     }
 
     const assignment = await c.env.DB.prepare(`
@@ -461,7 +499,7 @@ assignments.get('/:id', async (c) => {
         JOIN User u ON s.studentId = u.id
         JOIN Upload up ON s.uploadId = up.id
         WHERE s.assignmentId = ?
-        ORDER BY u.lastName ASC, u.firstName ASC, s.version DESC
+        ORDER BY u.lastName ASC, u.firstName ASC
       `).bind(assignmentId).all();
 
       return c.json(successResponse({ ...assignment, submissions: submissions.results || [] }));
@@ -484,8 +522,7 @@ assignments.get('/:id', async (c) => {
         FROM AssignmentSubmission s
         LEFT JOIN Upload up ON s.uploadId = up.id
         WHERE s.assignmentId = ? AND s.studentId = ?
-          AND s.version = (SELECT MAX(version) FROM AssignmentSubmission WHERE assignmentId = ? AND studentId = ?)
-      `).bind(assignmentId, session.id, assignmentId, session.id).first();
+      `).bind(assignmentId, session.id).first();
 
       return c.json(successResponse({ ...assignment, submission }));
     }
@@ -520,11 +557,16 @@ assignments.post('/:id/submit', async (c) => {
 
     // Verify assignment exists
     const assignment = await c.env.DB.prepare(`
-      SELECT id, classId FROM Assignment WHERE id = ?
-    `).bind(assignmentId).first();
+      SELECT id, classId, dueDate FROM Assignment WHERE id = ?
+    `).bind(assignmentId).first() as any;
 
     if (!assignment) {
       return c.json(errorResponse('Assignment not found'), 404);
+    }
+
+    // Enforce deadline - block submissions after due date
+    if (assignment.dueDate && new Date(assignment.dueDate) < new Date()) {
+      return c.json(errorResponse('La fecha límite ha pasado. No se pueden entregar ejercicios.'), 403);
     }
 
     // Verify student is enrolled in the class
@@ -542,25 +584,21 @@ assignments.post('/:id/submit', async (c) => {
       return c.json(errorResponse('Acceso bloqueado por pago pendiente.'), 403);
     }
 
-    // Check if submission already exists
-    const existingSubmissions = await c.env.DB.prepare(`
-      SELECT id, version FROM AssignmentSubmission 
-      WHERE assignmentId = ? AND studentId = ?
-      ORDER BY version DESC
-      LIMIT 1
-    `).bind(assignmentId, session.id).first() as any;
+    // Delete any existing submission (resubmit replaces previous)
+    await c.env.DB.prepare(`
+      DELETE FROM AssignmentSubmission WHERE assignmentId = ? AND studentId = ?
+    `).bind(assignmentId, session.id).run();
 
-    const newVersion = existingSubmissions ? (existingSubmissions.version + 1) : 1;
     const submissionId = nanoid();
 
     // Store first file as uploadId for backwards compatibility
     const primaryUploadId = fileIds[0];
 
-    // Always create a NEW submission (never update existing)
+    // Create the submission (always version 1 since we replace)
     await c.env.DB.prepare(`
       INSERT INTO AssignmentSubmission (id, assignmentId, studentId, uploadId, version)
-      VALUES (?, ?, ?, ?, ?)
-    `).bind(submissionId, assignmentId, session.id, primaryUploadId, newVersion).run();
+      VALUES (?, ?, ?, ?, 1)
+    `).bind(submissionId, assignmentId, session.id, primaryUploadId).run();
 
     const submission = await c.env.DB.prepare(`
       SELECT * FROM AssignmentSubmission WHERE id = ?
@@ -932,6 +970,218 @@ assignments.delete('/:id/submissions/:studentId', async (c) => {
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Assignments/:id/submissions/:studentId DELETE] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
+
+// ============ QUIZ ENDPOINTS ============
+
+// GET /assignments/:id/questions - Get quiz questions (students see without correctOptionId)
+assignments.get('/:id/questions', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    const assignmentId = c.req.param('id');
+
+    const assignment = await c.env.DB.prepare(`
+      SELECT a.id, a.classId, a.type, a.teacherId, a.dueDate, a.maxScore
+      FROM Assignment a WHERE a.id = ? AND a.type = 'quiz'
+    `).bind(assignmentId).first() as any;
+
+    if (!assignment) {
+      return c.json(errorResponse('Quiz not found'), 404);
+    }
+
+    // Verify access
+    if (session.role === 'STUDENT') {
+      const enrollment = await c.env.DB.prepare(
+        "SELECT id FROM ClassEnrollment WHERE userId = ? AND classId = ? AND status = 'APPROVED'"
+      ).bind(session.id, assignment.classId).first();
+      if (!enrollment) return c.json(errorResponse('No estás matriculado en esta clase'), 403);
+      if (await isPaymentOverdue(c.env.DB, session.id, assignment.classId)) {
+        return c.json(errorResponse('Acceso bloqueado por pago pendiente.'), 403);
+      }
+    }
+
+    const questions = await c.env.DB.prepare(`
+      SELECT id, questionText, questionOrder, options, correctOptionId, explanation
+      FROM QuizQuestion WHERE assignmentId = ?
+      ORDER BY questionOrder ASC
+    `).bind(assignmentId).all();
+
+    const parsed = (questions.results || []).map((q: any) => ({
+      ...q,
+      options: JSON.parse(q.options || '[]'),
+      // Students don't see correct answers until they submit
+      ...(session.role === 'STUDENT' ? { correctOptionId: undefined, explanation: undefined } : {}),
+    }));
+
+    return c.json(successResponse(parsed));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Quiz questions GET] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
+
+// POST /assignments/:id/quiz-submit - Submit quiz attempt (students only, one attempt)
+assignments.post('/:id/quiz-submit', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    if (session.role !== 'STUDENT') {
+      return c.json(errorResponse('Only students can submit quizzes'), 403);
+    }
+
+    const assignmentId = c.req.param('id');
+    const body = await c.req.json();
+    const { answers } = body; // [{questionId, selectedOptionId}]
+
+    if (!answers || !Array.isArray(answers) || answers.length === 0) {
+      return c.json(errorResponse('Answers are required'), 400);
+    }
+
+    const assignment = await c.env.DB.prepare(`
+      SELECT id, classId, dueDate, maxScore, type FROM Assignment WHERE id = ? AND type = 'quiz'
+    `).bind(assignmentId).first() as any;
+
+    if (!assignment) return c.json(errorResponse('Quiz not found'), 404);
+
+    // Enforce deadline
+    if (assignment.dueDate && new Date(assignment.dueDate) < new Date()) {
+      return c.json(errorResponse('La fecha límite ha pasado.'), 403);
+    }
+
+    // Verify enrollment
+    const enrollment = await c.env.DB.prepare(
+      "SELECT id FROM ClassEnrollment WHERE userId = ? AND classId = ? AND status = 'APPROVED'"
+    ).bind(session.id, assignment.classId).first();
+    if (!enrollment) return c.json(errorResponse('No estás matriculado en esta clase'), 403);
+
+    if (await isPaymentOverdue(c.env.DB, session.id, assignment.classId)) {
+      return c.json(errorResponse('Acceso bloqueado por pago pendiente.'), 403);
+    }
+
+    // Check if already attempted
+    const existing = await c.env.DB.prepare(`
+      SELECT id FROM QuizAttempt WHERE assignmentId = ? AND studentId = ?
+    `).bind(assignmentId, session.id).first();
+
+    if (existing) {
+      return c.json(errorResponse('Ya has completado este cuestionario. Solo se permite un intento.'), 400);
+    }
+
+    // Fetch questions to grade
+    const questions = await c.env.DB.prepare(`
+      SELECT id, correctOptionId, explanation FROM QuizQuestion WHERE assignmentId = ?
+    `).bind(assignmentId).all();
+
+    const questionMap = new Map<string, any>();
+    for (const q of (questions.results || []) as any[]) {
+      questionMap.set(q.id, q);
+    }
+
+    const totalQuestions = questionMap.size;
+    let correctAnswers = 0;
+    const gradedAnswers = [];
+
+    for (const ans of answers) {
+      const question = questionMap.get(ans.questionId);
+      if (!question) continue;
+      const correct = question.correctOptionId === ans.selectedOptionId;
+      if (correct) correctAnswers++;
+      gradedAnswers.push({
+        questionId: ans.questionId,
+        selectedOptionId: ans.selectedOptionId,
+        correct,
+        correctOptionId: question.correctOptionId,
+        explanation: question.explanation || null,
+      });
+    }
+
+    const score = totalQuestions > 0
+      ? Math.round((correctAnswers / totalQuestions) * (assignment.maxScore || 100) * 100) / 100
+      : 0;
+
+    const attemptId = nanoid();
+    await c.env.DB.prepare(`
+      INSERT INTO QuizAttempt (id, assignmentId, studentId, score, totalQuestions, correctAnswers, answers)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).bind(attemptId, assignmentId, session.id, score, totalQuestions, correctAnswers, JSON.stringify(gradedAnswers)).run();
+
+    return c.json(successResponse({
+      attemptId,
+      score,
+      maxScore: assignment.maxScore || 100,
+      totalQuestions,
+      correctAnswers,
+      answers: gradedAnswers, // Includes correct answers + explanations for immediate feedback
+    }), 201);
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Quiz submit POST] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
+
+// GET /assignments/:id/quiz-result - Get quiz result for student
+assignments.get('/:id/quiz-result', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    const assignmentId = c.req.param('id');
+
+    let attempt;
+    if (session.role === 'STUDENT') {
+      attempt = await c.env.DB.prepare(`
+        SELECT * FROM QuizAttempt WHERE assignmentId = ? AND studentId = ?
+      `).bind(assignmentId, session.id).first();
+    } else {
+      // Teachers/academy/admin can view any student's attempt via query param
+      const studentId = c.req.query('studentId');
+      if (!studentId) return c.json(errorResponse('studentId query param required'), 400);
+      attempt = await c.env.DB.prepare(`
+        SELECT * FROM QuizAttempt WHERE assignmentId = ? AND studentId = ?
+      `).bind(assignmentId, studentId).first();
+    }
+
+    if (!attempt) return c.json(errorResponse('No quiz attempt found'), 404);
+
+    return c.json(successResponse({
+      ...(attempt as any),
+      answers: JSON.parse((attempt as any).answers || '[]'),
+    }));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Quiz result GET] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
+
+// GET /assignments/:id/quiz-attempts - Get all quiz attempts for an assignment (teacher/academy/admin)
+assignments.get('/:id/quiz-attempts', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    if (!['TEACHER', 'ACADEMY', 'ADMIN'].includes(session.role)) {
+      return c.json(errorResponse('Unauthorized'), 403);
+    }
+
+    const assignmentId = c.req.param('id');
+
+    const attempts = await c.env.DB.prepare(`
+      SELECT qa.*, u.firstName || ' ' || u.lastName as studentName, u.email as studentEmail
+      FROM QuizAttempt qa
+      JOIN User u ON qa.studentId = u.id
+      WHERE qa.assignmentId = ?
+      ORDER BY u.lastName ASC, u.firstName ASC
+    `).bind(assignmentId).all();
+
+    const parsed = (attempts.results || []).map((a: any) => ({
+      ...a,
+      answers: JSON.parse(a.answers || '[]'),
+    }));
+
+    return c.json(successResponse(parsed));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Quiz attempts GET] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
 });

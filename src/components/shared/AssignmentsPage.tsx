@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { apiClient, apiPost, openDocument } from '@/lib/api-client';
 import { generateDemoAssignments, generateDemoSubmissions, generateDemoClasses, countNewDemoSubmissions } from '@/lib/demo-data';
 import { AssignmentModals } from './AssignmentModals';
+import { QuizQuestionForm, createEmptyQuestion } from './QuizQuestionBuilder';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 import { AcademySearchDropdown } from '@/components/ui/AcademySearchDropdown';
 import { usePeriod } from '@/contexts/PeriodContext';
@@ -77,6 +78,10 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
   const [uploadingSolutionId, setUploadingSolutionId] = useState<string | null>(null);
   const solutionFileRef = useRef<HTMLInputElement>(null);
   const solutionAssignmentRef = useRef<string | null>(null);
+
+  // Quiz state
+  const [assignmentType, setAssignmentType] = useState<'file' | 'quiz'>('file');
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestionForm[]>([createEmptyQuestion()]);
 
   // Admin-only state
   const [academies, setAcademies] = useState<Academy[]>([]);
@@ -432,10 +437,20 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
   const handleCreateAssignment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedClassForCreate) { alert('Por favor, selecciona una asignatura'); return; }
+    
+    // Validate quiz questions
+    if (assignmentType === 'quiz') {
+      for (const q of quizQuestions) {
+        if (!q.questionText.trim()) { alert('Todas las preguntas deben tener texto'); return; }
+        if (q.options.some(o => !o.text.trim())) { alert('Todas las opciones deben tener texto'); return; }
+        if (!q.correctOptionId) { alert('Selecciona la respuesta correcta para cada pregunta'); return; }
+      }
+    }
+
     setCreating(true);
     try {
       const uploadIds: string[] = [];
-      if (uploadFiles.length > 0) {
+      if (assignmentType === 'file' && uploadFiles.length > 0) {
         for (let i = 0; i < uploadFiles.length; i++) {
           setUploadProgress(Math.round((i / uploadFiles.length) * 80));
           const formData = new FormData();
@@ -449,7 +464,9 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
       }
       const res = await apiPost('/assignments', {
         classId: selectedClassForCreate, title: newTitle, description: newDescription,
-        dueDate: newDueDate || undefined, maxScore: 100, uploadIds,
+        dueDate: newDueDate || undefined, maxScore: 100,
+        type: assignmentType,
+        ...(assignmentType === 'file' ? { uploadIds } : { questions: quizQuestions }),
       });
       const result = await res.json();
       if (result.success) { setShowCreateModal(false); resetForm(); loadAcademyAssignments(); }
@@ -555,6 +572,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
   const resetForm = () => {
     setNewTitle(''); setNewDescription(''); setNewDueDate('');
     setUploadFiles([]); setUploadProgress(0); setSelectedClassForCreate('');
+    setAssignmentType('file'); setQuizQuestions([createEmptyQuestion()]);
   };
 
   const openEditAssignment = (assignment: Assignment) => {
@@ -749,6 +767,8 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
           uploadFiles={uploadFiles} setUploadFiles={setUploadFiles}
           uploadProgress={uploadProgress} creating={creating}
           handleCreateAssignment={handleCreateAssignment} resetForm={resetForm}
+          assignmentType={assignmentType} setAssignmentType={setAssignmentType}
+          quizQuestions={quizQuestions} setQuizQuestions={setQuizQuestions}
           showEditModal={showEditModal} setShowEditModal={setShowEditModal}
           editTitle={editTitle} setEditTitle={setEditTitle}
           editDescription={editDescription} setEditDescription={setEditDescription}

@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { Bindings } from '../types';
-import { requireAuth } from '../lib/auth';
+import { requireAuth, hashPassword } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { nanoid } from 'nanoid';
 import { writeAuditLog } from '../lib/audit';
@@ -722,6 +722,158 @@ admin.get('/daily-webhook-setup', async (c) => {
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Admin] Daily webhook setup error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
+
+// POST /admin/bulk-import - Bulk import teachers and students for an academy
+admin.post('/bulk-import', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    if (session.role !== 'ADMIN') {
+      return c.json(errorResponse('Forbidden'), 403);
+    }
+
+    const { academyId, users: rows } = await c.req.json();
+    if (!academyId || !Array.isArray(rows) || rows.length === 0) {
+      return c.json(errorResponse('academyId and users array required'), 400);
+    }
+    if (rows.length > 500) {
+      return c.json(errorResponse('Maximum 500 users per import'), 400);
+    }
+
+    // Verify academy exists
+    const academy = await c.env.DB
+      .prepare('SELECT id, name FROM Academy WHERE id = ?')
+      .bind(academyId)
+      .first();
+    if (!academy) {
+      return c.json(errorResponse('Academy not found'), 404);
+    }
+
+    // Load all classes for this academy (for matching by name)
+    const classesResult = await c.env.DB
+      .prepare('SELECT id, name FROM Class WHERE academyId = ?')
+      .bind(academyId)
+      .all();
+    const classes = classesResult.results || [];
+    const classMap = new Map<string, string>(); // lowercase name -> id
+    for (const cls of classes) {
+      classMap.set((cls.name as string).toLowerCase().trim(), cls.id as string);
+    }
+
+    const results: Array<{
+      row: number;
+      email: string;
+      status: 'created' | 'skipped' | 'error';
+      message: string;
+      tempPassword?: string;
+    }> = [];
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const email = (row.email || '').toLowerCase().trim();
+      const firstName = (row.firstName || '').trim();
+      const lastName = (row.lastName || '').trim();
+      const role = (row.role || 'STUDENT').toUpperCase().trim();
+      const classNames: string[] = (row.classNames || '')
+        .split(',')
+        .map((n: string) => n.trim().toLowerCase())
+        .filter(Boolean);
+
+      if (!email || !firstName || !lastName) {
+        results.push({ row: i + 1, email, status: 'error', message: 'Missing email, firstName, or lastName' });
+        continue;
+      }
+      if (!['STUDENT', 'TEACHER'].includes(role)) {
+        results.push({ row: i + 1, email, status: 'error', message: `Invalid role: ${role}. Must be STUDENT or TEACHER` });
+        continue;
+      }
+
+      // Check if user already exists
+      const existing = await c.env.DB
+        .prepare('SELECT id, role FROM User WHERE email = ?')
+        .bind(email)
+        .first();
+
+      if (existing) {
+        results.push({ row: i + 1, email, status: 'skipped', message: 'Email already registered' });
+        continue;
+      }
+
+      // Generate temp password: first 3 chars of firstName + random 5 digits
+      const tempPassword = firstName.slice(0, 3).toLowerCase() + Math.floor(10000 + Math.random() * 90000);
+      const hashedPassword = await hashPassword(String(tempPassword));
+      const userId = crypto.randomUUID();
+
+      try {
+        await c.env.DB
+          .prepare('INSERT INTO User (id, email, password, firstName, lastName, role) VALUES (?, ?, ?, ?, ?, ?)')
+          .bind(userId, email, hashedPassword, firstName, lastName, role)
+          .run();
+
+        // For TEACHER: create Teacher record linking to academy
+        if (role === 'TEACHER') {
+          const teacherId = crypto.randomUUID();
+          const now = new Date().toISOString();
+          await c.env.DB
+            .prepare('INSERT INTO Teacher (id, userId, academyId, createdAt) VALUES (?, ?, ?, ?)')
+            .bind(teacherId, userId, academyId, now)
+            .run();
+
+          // Assign teacher to classes by name
+          for (const cn of classNames) {
+            const classId = classMap.get(cn);
+            if (classId) {
+              await c.env.DB
+                .prepare('UPDATE Class SET teacherId = ? WHERE id = ? AND academyId = ?')
+                .bind(userId, classId, academyId)
+                .run();
+            }
+          }
+        }
+
+        // For STUDENT: enroll in classes by name
+        if (role === 'STUDENT') {
+          for (const cn of classNames) {
+            const classId = classMap.get(cn);
+            if (classId) {
+              const enrollmentId = crypto.randomUUID();
+              await c.env.DB
+                .prepare('INSERT INTO ClassEnrollment (id, classId, userId, status, documentSigned) VALUES (?, ?, ?, ?, ?)')
+                .bind(enrollmentId, classId, userId, 'APPROVED', 0)
+                .run();
+            }
+          }
+        }
+
+        const unmatchedClasses = classNames.filter(cn => !classMap.has(cn));
+        const msg = unmatchedClasses.length > 0
+          ? `Created. Unmatched classes: ${unmatchedClasses.join(', ')}`
+          : 'Created successfully';
+
+        results.push({ row: i + 1, email, status: 'created', message: msg, tempPassword: String(tempPassword) });
+      } catch (err: any) {
+        results.push({ row: i + 1, email, status: 'error', message: err.message || 'Database error' });
+      }
+    }
+
+    const created = results.filter(r => r.status === 'created').length;
+    const skipped = results.filter(r => r.status === 'skipped').length;
+    const errors = results.filter(r => r.status === 'error').length;
+
+    await writeAuditLog(c.env.DB, {
+      userId: session.id,
+      action: 'BULK_IMPORT',
+      resourceType: 'User',
+      resourceId: academyId,
+      details: `Imported ${created} users (${skipped} skipped, ${errors} errors) for academy ${academy.name}`,
+    });
+
+    return c.json(successResponse({ created, skipped, errors, total: rows.length, results }));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Admin Bulk Import] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
 });

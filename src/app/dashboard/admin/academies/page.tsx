@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
 import { SkeletonTable } from '@/components/ui/SkeletonLoader';
 import { DeleteIcon } from '@/components/ui/DeleteIcon';
@@ -118,6 +119,7 @@ function AddBillingForm({ academyId, onAdded }: { academyId: string; onAdded: (r
 }
 
 export default function AdminAcademies() {
+  const router = useRouter();
   const [academies, setAcademies] = useState<Academy[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -302,6 +304,15 @@ export default function AdminAcademies() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.069A1 1 0 0121 8.868v6.264a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                               </svg>
                             )}
+                          </button>
+                          <button
+                            onClick={() => router.push(`/dashboard/admin/migration?academyId=${academy.id}`)}
+                            className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                            title="Migración CSV"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                            </svg>
                           </button>
                           <button
                             onClick={() => handleDelete(academy.ownerId, academy.name)}

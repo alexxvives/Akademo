@@ -156,7 +156,7 @@ export default function TerminosPage() {
         </div>
 
         </main>
-      <Footer t={{ footerTagline: 'Protegiendo el conocimiento que creas.', footerRights: '© 2026 AKADEMO. Todos los derechos reservados.' }} lang="es" />
+      <Footer t={{ footerTagline: 'Protegiendo el conocimiento que creas.' }} lang="es" />
     </div>
   );
 }

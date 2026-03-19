@@ -76,7 +76,6 @@ export const translations = {
     contactText: 'No somos un chatbot. Somos personas reales que entienden tu negocio y quieren ayudarte a protegerlo.',
     contactEmail: 'Escríbenos a',
     contactDemo: 'Solicitar Demo',
-    footerRights: '© 2025 AKADEMO. Todos los derechos reservados.',
     footerTagline: 'Protegiendo el conocimiento que creas.',
   },
   en: {
@@ -156,7 +155,6 @@ export const translations = {
     contactText: 'We\'re not a chatbot. We\'re real people who understand your business and want to help you protect it.',
     contactEmail: 'Email us at',
     contactDemo: 'Request Demo',
-    footerRights: '© 2025 AKADEMO. All rights reserved.',
     footerTagline: 'Protecting the knowledge you create.',
   }
 };

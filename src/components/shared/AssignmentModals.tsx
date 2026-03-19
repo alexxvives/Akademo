@@ -2,13 +2,14 @@
 
 import React from 'react';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
+import { QuizQuestionBuilder, QuizQuestionForm } from '@/components/shared/QuizQuestionBuilder';
 
 interface Class { id: string; name: string; }
 interface Assignment {
   id: string; title: string; description?: string; dueDate?: string; maxScore: number;
   submissionCount: number; gradedCount: number; attachmentName?: string; className?: string;
   academyName?: string; createdAt: string; classId?: string;
-  uploadId?: string; attachmentIds?: string;
+  uploadId?: string; attachmentIds?: string; type?: string;
 }
 interface Submission {
   id: string; studentName: string; studentEmail: string; submissionFileName: string;
@@ -33,6 +34,11 @@ export interface AssignmentModalsProps {
   creating: boolean;
   handleCreateAssignment: (e: React.FormEvent) => void;
   resetForm: () => void;
+  // Quiz
+  assignmentType: 'file' | 'quiz';
+  setAssignmentType: (v: 'file' | 'quiz') => void;
+  quizQuestions: QuizQuestionForm[];
+  setQuizQuestions: (q: QuizQuestionForm[]) => void;
   // Edit
   showEditModal: boolean;
   setShowEditModal: (v: boolean) => void;
@@ -66,6 +72,7 @@ export function AssignmentModals(props: AssignmentModalsProps) {
     showCreateModal, setShowCreateModal, selectedClassForCreate, setSelectedClassForCreate,
     newTitle, setNewTitle, newDescription, setNewDescription, newDueDate, setNewDueDate,
     uploadFiles, setUploadFiles, uploadProgress, creating, handleCreateAssignment, resetForm,
+    assignmentType, setAssignmentType, quizQuestions, setQuizQuestions,
     showEditModal, setShowEditModal, editTitle, setEditTitle, editDescription, setEditDescription,
     editDueDate, setEditDueDate, editUploadFiles, setEditUploadFiles, updating, handleUpdateAssignment,
     showSubmissionsModal, setShowSubmissionsModal, submissions, handleBulkDownload,
@@ -83,6 +90,23 @@ export function AssignmentModals(props: AssignmentModalsProps) {
           <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
             <h2 className="text-2xl font-semibold mb-6">Crear Ejercicio</h2>
             <form onSubmit={handleCreateAssignment} className="space-y-4">
+              {/* Type toggle */}
+              <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+                <button type="button"
+                  onClick={() => setAssignmentType('file')}
+                  className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
+                    assignmentType === 'file' ? 'bg-gray-900 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
+                  }`}>
+                  Documento
+                </button>
+                <button type="button"
+                  onClick={() => setAssignmentType('quiz')}
+                  className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
+                    assignmentType === 'quiz' ? 'bg-gray-900 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
+                  }`}>
+                  Cuestionario
+                </button>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Asignatura</label>
                 <ClassSearchDropdown
@@ -114,6 +138,8 @@ export function AssignmentModals(props: AssignmentModalsProps) {
                 </div>
               </div>
               )}
+              {/* File upload (only for file type) */}
+              {assignmentType === 'file' && (
               <div>
                 <label htmlFor="create-files" className="block text-sm font-medium text-gray-700 mb-1">Archivos adjuntos</label>
                 <input id="create-files" name="files" type="file" multiple
@@ -132,6 +158,11 @@ export function AssignmentModals(props: AssignmentModalsProps) {
                   </div>
                 )}
               </div>
+              )}
+              {/* Quiz builder (only for quiz type) */}
+              {assignmentType === 'quiz' && (
+                <QuizQuestionBuilder questions={quizQuestions} setQuestions={setQuizQuestions} />
+              )}
               {uploadProgress > 0 && uploadProgress < 100 && (
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div className="bg-brand-600 h-2 rounded-full transition-all" style={{ width: `${uploadProgress}%` }} />
@@ -236,7 +267,6 @@ export function AssignmentModals(props: AssignmentModalsProps) {
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estudiante</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Archivo</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Versión</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nota</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
@@ -257,7 +287,6 @@ export function AssignmentModals(props: AssignmentModalsProps) {
                           </svg>
                         </button>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{sub.version || 1}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {new Date(sub.submittedAt).toLocaleDateString('es-ES')}
                       </td>

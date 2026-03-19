@@ -67,7 +67,6 @@ const translations = {
     nav: { login: 'Iniciar Sesión', getStarted: 'Comenzar' },
     footer: {
       footerTagline: 'La plataforma de gestión académica diseñada para academias que se toman en serio su negocio.',
-      footerRights: '© 2025 AKADEMO. Todos los derechos reservados.',
     },
     hero: {
       badge: 'Planes a medida',
@@ -126,7 +125,6 @@ const translations = {
     nav: { login: 'Log In', getStarted: 'Get started' },
     footer: {
       footerTagline: 'The academic management platform designed for academies that take their business seriously.',
-      footerRights: '© 2025 AKADEMO. All rights reserved.',
     },
     hero: {
       badge: 'Custom plans',

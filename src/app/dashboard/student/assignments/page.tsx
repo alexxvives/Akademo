@@ -5,6 +5,7 @@ import { apiClient, apiPost, openDocument } from '@/lib/api-client';
 import { SkeletonAssignments } from '@/components/ui/SkeletonLoader';
 import { generateDemoClasses, generateDemoStudentAssignments } from '@/lib/demo-data';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
+import QuizTakingModal from '@/components/shared/QuizTakingModal';
 
 interface Class { 
   id: string; 
@@ -14,13 +15,18 @@ interface Class {
 }
 interface Assignment {
   id: string; title: string; description?: string; dueDate?: string; maxScore: number;
+  type?: string;
   attachmentName?: string; submissionId?: string; submittedAt?: string;
   score?: number; feedback?: string; gradedAt?: string; createdAt: string;
   className?: string; classId?: string; 
-  uploadId?: string; // Legacy single file
-  attachmentIds?: string; // JSON array of upload IDs
-  submissionUploadId?: string; // Student's submitted file uploadId
-  submissionStoragePath?: string; // Student's submitted file storage path
+  uploadId?: string;
+  attachmentIds?: string;
+  submissionUploadId?: string;
+  submissionStoragePath?: string;
+  quizAttemptId?: string;
+  quizScore?: number;
+  quizTotalQuestions?: number;
+  quizCorrectAnswers?: number;
 }
 
 export default function StudentAssignments() {
@@ -34,6 +40,7 @@ export default function StudentAssignments() {
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<string>('PAID');
+  const [showQuizModal, setShowQuizModal] = useState(false);
   // Multi-file dropdown state for Ejercicios column
   const [openDropdown, setOpenDropdown] = useState<string | null>(null); // assignmentId
   const [dropdownFiles, setDropdownFiles] = useState<{uploadId: string; name: string; storagePath: string}[]>([]);
@@ -328,7 +335,8 @@ export default function StudentAssignments() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {assignments.map((assignment) => {
-                  const isCompleted = !!assignment.submittedAt;
+                  const isQuiz = assignment.type === 'quiz';
+                  const isCompleted = isQuiz ? !!assignment.quizAttemptId : !!assignment.submittedAt;
                   return (
                     <tr key={assignment.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -349,7 +357,15 @@ export default function StudentAssignments() {
                         {assignment.className || '—'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {(() => {
+                        {isQuiz ? (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                            Cuestionario
+                          </span>
+                        ) : (
+                        (() => {
                           let fileCount = 0;
                           if (assignment.attachmentIds && assignment.attachmentIds.trim()) {
                             fileCount = assignment.attachmentIds.split(',').filter((id: string) => id.trim()).length;
@@ -395,10 +411,22 @@ export default function StudentAssignments() {
                           ) : (
                             <span className="text-xs text-gray-400">Sin archivo</span>
                           );
-                        })()}
+                        })()
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {assignment.submittedAt && assignment.submissionStoragePath ? (
+                        {isQuiz ? (
+                          assignment.quizAttemptId ? (
+                            <span className="inline-flex items-center gap-1 text-xs text-green-700 font-medium">
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                              Realizado
+                            </span>
+                          ) : (
+                            <span className="text-xs text-gray-400">Sin realizar</span>
+                          )
+                        ) : assignment.submittedAt && assignment.submissionStoragePath ? (
                           <div className="flex items-center gap-2 text-sm text-gray-900 group">
                             <div className="relative">
                               <a
@@ -440,7 +468,36 @@ export default function StudentAssignments() {
                         ) : 'Sin fecha'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                        {isCompleted ? (
+                        {isQuiz ? (
+                          assignment.quizAttemptId ? (
+                            <button
+                              onClick={() => { setSelectedAssignment(assignment); setShowQuizModal(true); }}
+                              className="group"
+                            >
+                              <div className={`text-lg font-bold ${
+                                (() => {
+                                  const s = assignment.quizScore ?? 0;
+                                  const mx = assignment.maxScore ?? 100;
+                                  const pct = mx > 0 ? (s / mx) * 100 : 0;
+                                  if (pct <= 50) return 'text-red-600';
+                                  if (pct <= 69) return 'text-orange-500';
+                                  if (pct <= 90) return 'text-green-500';
+                                  return 'text-green-700';
+                                })()
+                              }`}>
+                                {assignment.quizScore ?? 0}/{assignment.maxScore ?? 100}
+                              </div>
+                              <span className="text-xs text-gray-400 group-hover:text-brand-600">Ver resultado</span>
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => { setSelectedAssignment(assignment); setShowQuizModal(true); }}
+                              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                            >
+                              Realizar
+                            </button>
+                          )
+                        ) : isCompleted ? (
                           assignment.gradedAt ? (
                             <div className={`text-lg font-bold ${
                               (() => {
@@ -497,7 +554,7 @@ export default function StudentAssignments() {
             <p className="text-gray-600 mb-2">{selectedAssignment.title}</p>
             {selectedAssignment.submittedAt && (
               <p className="text-sm text-amber-600 mb-4">
-                ⚠️ Esto reemplazará tu entrega anterior. El profesor verá todas las versiones.
+                ⚠️ Esto reemplazará tu entrega anterior.
               </p>
             )}
 
@@ -599,6 +656,18 @@ export default function StudentAssignments() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Quiz Modal */}
+      {showQuizModal && selectedAssignment && selectedAssignment.type === 'quiz' && (
+        <QuizTakingModal
+          assignmentId={selectedAssignment.id}
+          assignmentTitle={selectedAssignment.title}
+          maxScore={selectedAssignment.maxScore}
+          alreadyAttempted={!!selectedAssignment.quizAttemptId}
+          onClose={() => { setShowQuizModal(false); setSelectedAssignment(null); }}
+          onCompleted={() => loadAssignments()}
+        />
       )}
     </>
   );
