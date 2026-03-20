@@ -99,7 +99,7 @@ export function BlogLayout({ post, children }: { post: BlogPost; children: React
           {/* Table of Contents */}
           {post.toc && post.toc.length > 0 && <TableOfContents items={post.toc} />}
 
-          <div className="blog-content prose prose-gray prose-lg max-w-none prose-headings:font-bold prose-headings:text-gray-900 prose-a:text-indigo-600 prose-a:no-underline hover:prose-a:underline prose-p:leading-relaxed prose-p:text-gray-600 prose-li:text-gray-600 prose-img:rounded-xl prose-img:shadow-lg prose-h2:text-2xl prose-h2:mt-14 prose-h2:mb-5 prose-h2:pb-3 prose-h2:border-b prose-h2:border-gray-200 prose-h3:text-lg prose-h3:mt-8 prose-h3:mb-3 prose-h3:pl-4 prose-h3:border-l-4 prose-h3:border-indigo-500 prose-ul:my-5 prose-li:my-1">
+          <div className="blog-content prose prose-gray prose-lg max-w-none prose-headings:font-bold prose-headings:text-gray-900 prose-a:text-indigo-600 prose-a:no-underline hover:prose-a:underline prose-p:leading-relaxed prose-p:text-gray-600 prose-li:text-gray-600 prose-img:rounded-xl prose-img:shadow-lg prose-ul:my-5 prose-li:my-1">
             {children}
           </div>
         </article>
