@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import * as XLSX from 'xlsx';
 import { apiClient } from '@/lib/api-client';
 
 interface ImportRow {
@@ -25,6 +26,30 @@ interface ImportSummary {
   errors: number;
   total: number;
   results: ImportResult[];
+}
+
+function normalizeRows(rows: Record<string, unknown>[]): ImportRow[] {
+  if (rows.length === 0) return [];
+  const raw = rows[0];
+  const keys = Object.keys(raw).map(k => k.toLowerCase().trim());
+  const find = (...names: string[]) => keys.findIndex(k => names.includes(k));
+
+  const emailIdx = find('email');
+  const firstIdx = find('firstname', 'nombre');
+  const lastIdx = find('lastname', 'apellido', 'apellidos');
+  const roleIdx = find('role', 'rol');
+  const classIdx = find('classes', 'clases', 'classnames');
+
+  if (emailIdx === -1 || firstIdx === -1 || lastIdx === -1) return [];
+
+  const origKeys = Object.keys(raw);
+  return rows.map(row => ({
+    email: String(row[origKeys[emailIdx]] ?? '').trim(),
+    firstName: String(row[origKeys[firstIdx]] ?? '').trim(),
+    lastName: String(row[origKeys[lastIdx]] ?? '').trim(),
+    role: roleIdx !== -1 ? String(row[origKeys[roleIdx]] ?? 'STUDENT').trim() : 'STUDENT',
+    classNames: classIdx !== -1 ? String(row[origKeys[classIdx]] ?? '').trim() : '',
+  })).filter(r => r.email);
 }
 
 function parseCSV(text: string): ImportRow[] {
@@ -81,23 +106,40 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.name.endsWith('.csv')) {
-      setError('Solo se aceptan archivos .csv');
+    const isXlsx = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
+    const isCsv = file.name.endsWith('.csv');
+    if (!isXlsx && !isCsv) {
+      setError('Solo se aceptan archivos .xlsx o .csv');
       return;
     }
 
     const reader = new FileReader();
     reader.onload = (ev) => {
-      const text = ev.target?.result as string;
-      const rows = parseCSV(text);
+      const result = ev.target?.result;
+      let rows: ImportRow[] = [];
+
+      if (isXlsx) {
+        const wb = XLSX.read(result, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: '' });
+        rows = normalizeRows(json);
+      } else {
+        rows = parseCSV(result as string);
+      }
+
       if (rows.length === 0) {
-        setError('No se pudo leer el CSV. Columnas requeridas: email, firstName (o nombre), lastName (o apellido). Opcionales: role, classes.');
+        setError('No se pudo leer el archivo. Columnas requeridas: email, firstName (o nombre), lastName (o apellido). Opcionales: role, classes.');
         return;
       }
       setPreview(rows);
       setStep('preview');
     };
-    reader.readAsText(file);
+
+    if (isXlsx) {
+      reader.readAsArrayBuffer(file);
+    } else {
+      reader.readAsText(file);
+    }
   };
 
   const handleImport = async () => {
@@ -174,9 +216,9 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
           {step === 'upload' && (
             <div className="space-y-5">
               <div className="bg-gray-50 rounded-xl p-5 border border-gray-200">
-                <h3 className="text-sm font-semibold text-gray-700 mb-3">Formato del CSV (un solo archivo)</h3>
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">Formato del archivo (CSV o Excel)</h3>
                 <p className="text-xs text-gray-500 mb-3">
-                  La primera fila debe ser el encabezado. Columnas requeridas en <span className="font-semibold text-gray-700">negrita</span>:
+                  Sube un archivo <span className="font-semibold text-gray-700">.xlsx</span> (Excel) o <span className="font-semibold text-gray-700">.csv</span>. La primera fila debe ser el encabezado. Columnas requeridas en <span className="font-semibold text-gray-700">negrita</span>:
                 </p>
                 <table className="text-xs text-gray-500 w-full">
                   <thead>
@@ -206,7 +248,7 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
               <input
                 ref={fileRef}
                 type="file"
-                accept=".csv"
+                accept=".csv,.xlsx,.xls"
                 onChange={handleFileUpload}
                 className="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 file:cursor-pointer"
               />
