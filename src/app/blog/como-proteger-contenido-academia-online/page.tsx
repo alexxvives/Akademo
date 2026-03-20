@@ -17,7 +17,7 @@ export default function BlogPostPage() {
         es un problema creciente que puede destruir tu modelo de negocio.
       </p>
 
-      <h2>El problema: la piratería educativa en números</h2>
+      <h2 id="pirateria-en-numeros">El problema: la piratería educativa en números</h2>
       <p>
         Según estudios recientes, <strong>más del 40% del contenido educativo premium</strong> acaba siendo compartido 
         ilegalmente en grupos de Telegram, WhatsApp o foros. Para una academia que cobra 50€/mes por estudiante, 
@@ -33,7 +33,7 @@ export default function BlogPostPage() {
         <li><strong>Screenshots de documentos</strong> — Material escrito capturado y redistribuido</li>
       </ul>
 
-      <h2>Estrategia 1: Marcas de agua dinámicas</h2>
+      <h2 id="marcas-de-agua-dinamicas">Estrategia 1: Marcas de agua dinámicas</h2>
       <p>
         La marca de agua dinámica es la herramienta más efectiva contra la piratería de vídeos educativos. A diferencia de una 
         marca de agua estática (como un logo), una <strong>marca de agua dinámica muestra el nombre y email del estudiante</strong> 
@@ -45,7 +45,7 @@ export default function BlogPostPage() {
         puedes configurar cada cuánto tiempo aparece la marca de agua y su posición.
       </p>
 
-      <h2>Estrategia 2: Control de sesiones simultáneas</h2>
+      <h2 id="control-sesiones">Estrategia 2: Control de sesiones simultáneas</h2>
       <p>
         El control de sesiones es fundamental. Si un estudiante inicia sesión desde un nuevo dispositivo, 
         <strong>la sesión anterior se cierra automáticamente</strong>. Esto impide que una cuenta sea utilizada 
@@ -56,7 +56,7 @@ export default function BlogPostPage() {
         contraproducente. Un estudiante = una sesión activa. Así de simple.
       </p>
 
-      <h2>Estrategia 3: Streaming sin descarga</h2>
+      <h2 id="streaming-sin-descarga">Estrategia 3: Streaming sin descarga</h2>
       <p>
         Tu contenido no debería poder descargarse. En lugar de subir archivos MP4 que el estudiante puede guardar, 
         utiliza un sistema de <strong>streaming seguro</strong> donde el vídeo se transmite pero nunca se almacena 
@@ -67,7 +67,7 @@ export default function BlogPostPage() {
         imposibilita la descarga del archivo original, incluso con extensiones del navegador.
       </p>
 
-      <h2>Estrategia 4: Monitoreo de comportamiento sospechoso</h2>
+      <h2 id="monitoreo-comportamiento">Estrategia 4: Monitoreo de comportamiento sospechoso</h2>
       <p>
         Los patrones de uso revelan cuentas compartidas. Si un estudiante accede desde Madrid a las 10AM y desde 
         Barcelona a las 10:05AM, algo no cuadra. Un buen sistema de protección debería:
@@ -78,14 +78,14 @@ export default function BlogPostPage() {
         <li>Registrar todos los accesos para auditoría</li>
       </ul>
 
-      <h2>Estrategia 5: Acuerdos legales claros</h2>
+      <h2 id="acuerdos-legales">Estrategia 5: Acuerdos legales claros</h2>
       <p>
         Combinado con las medidas técnicas, un <strong>acuerdo de uso firmado digitalmente</strong> por cada estudiante 
         establece las consecuencias legales de compartir contenido. Cuando tienes pruebas técnicas (marca de agua) + 
         un acuerdo legal, tu posición es mucho más fuerte.
       </p>
 
-      <h2>Conclusión</h2>
+      <h2 id="conclusion">Conclusión</h2>
       <p>
         Proteger el contenido de tu academia no es opcional — es una inversión en la sostenibilidad de tu negocio. 
         Las academias que implementan estas 5 estrategias reportan una <strong>reducción del 80% en piratería</strong> y 

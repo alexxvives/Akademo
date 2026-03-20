@@ -17,7 +17,7 @@ export default function BlogPostPage() {
         El resultado: trabajan el doble para ganar lo mismo que podrían con la mitad de alumnos si el precio fuera el correcto.
       </p>
 
-      <h2>El error de fijar el precio por el tiempo que tardaste en crear el contenido</h2>
+      <h2 id="error-de-precio">El error de fijar el precio por el tiempo que tardaste en crear el contenido</h2>
       <p>
         El precio no debería estar basado en el número de horas de vídeo que tienes ni en el tiempo que tardaste en grabarlos. 
         Está basado en el valor que genera para el estudiante. Un curso de 4 horas que enseña a alguien a conseguir un trabajo 
@@ -28,7 +28,7 @@ export default function BlogPostPage() {
         y cuánto vale resolver ese problema para el estudiante?</strong>
       </p>
 
-      <h2>Los tres modelos de precios más comunes</h2>
+      <h2 id="tres-modelos">Los tres modelos de precios más comunes</h2>
 
       <h3>1. Pago único por curso</h3>
       <p>
@@ -54,7 +54,7 @@ export default function BlogPostPage() {
         academias de formación profesional.
       </p>
 
-      <h2>Cómo saber si tu precio es demasiado bajo</h2>
+      <h2 id="precio-bajo">Cómo saber si tu precio es demasiado bajo</h2>
       <p>
         Hay un indicador claro: si más del 60% de las personas a quienes presentas tu academia la compran sin pensarlo mucho, 
         tu precio probablemente es bajo. Un buen precio tiene algo de fricción. Si nadie objeta el precio, estás regalando valor.
@@ -65,7 +65,7 @@ export default function BlogPostPage() {
         <li><strong>Nadie compra</strong> — el problema probablemente no es el precio, sino el posicionamiento</li>
       </ul>
 
-      <h2>Estrategias para aumentar el precio percibido</h2>
+      <h2 id="aumentar-valor">Estrategias para aumentar el precio percibido</h2>
       <p>
         No siempre tienes que bajar el precio para vender más. A veces basta con cambiar cómo lo presentas:
       </p>
@@ -76,7 +76,7 @@ export default function BlogPostPage() {
         <li><strong>Garantía de devolución</strong> — Reduce el riesgo percibido y suele aumentar las ventas aunque casi nadie la use</li>
       </ul>
 
-      <h2>La trampa de los descuentos permanentes</h2>
+      <h2 id="trampa-descuentos">La trampa de los descuentos permanentes</h2>
       <p>
         Muchas academias entran en un ciclo de descuentos constantes: lanzan con precio normal, las ventas bajan, hacen 
         descuento del 50%, las ventas suben, el descuento se convierte en el precio real. Resultado: han entrenado a sus 
@@ -87,7 +87,7 @@ export default function BlogPostPage() {
         <strong>fecha de vencimiento visible</strong>. Un descuento sin fecha límite no motiva la compra, solo baja el precio.
       </p>
 
-      <h2>Un punto de partida práctico</h2>
+      <h2 id="punto-de-partida">Un punto de partida práctico</h2>
       <p>
         Si estás empezando y no sabes por dónde empezar, aquí tienes una guía orientativa según el tipo de contenido:
       </p>

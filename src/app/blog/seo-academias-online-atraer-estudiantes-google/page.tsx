@@ -17,7 +17,7 @@ export default function BlogPostPage() {
         noticia: el SEO para academias sigue unas reglas claras y accionables.
       </p>
 
-      <h2>Por qué el SEO es más rentable que la publicidad</h2>
+      <h2 id="seo-vs-publicidad">Por qué el SEO es más rentable que la publicidad</h2>
       <p>
         Un anuncio en Google Ads deja de traer tráfico en cuanto dejas de pagar. Un artículo bien
         posicionado sigue atrayendo estudiantes durante meses o años. Para una academia online,
@@ -35,7 +35,7 @@ export default function BlogPostPage() {
         className="rounded-xl shadow-lg my-8"
       />
 
-      <h2>1. Investiga las palabras clave correctas</h2>
+      <h2 id="palabras-clave">1. Investiga las palabras clave correctas</h2>
       <p>
         No compitas por términos genéricos como &quot;cursos online&quot;. En su lugar, apunta a
         palabras clave de cola larga específicas de tu nicho:
@@ -50,7 +50,7 @@ export default function BlogPostPage() {
         exactamente qué buscan tus potenciales estudiantes.
       </p>
 
-      <h2>2. Crea contenido que responda preguntas reales</h2>
+      <h2 id="contenido">2. Crea contenido que responda preguntas reales</h2>
       <p>
         El mejor contenido SEO para academias no es promocional — es educativo. Artículos que resuelven
         problemas reales de tu audiencia:
@@ -74,7 +74,7 @@ export default function BlogPostPage() {
         className="rounded-xl shadow-lg my-8"
       />
 
-      <h2>3. Optimiza las páginas de tus cursos</h2>
+      <h2 id="paginas-cursos">3. Optimiza las páginas de tus cursos</h2>
       <p>
         Cada clase o curso de tu academia debería tener su propia página optimizada. Los elementos
         clave son:
@@ -87,7 +87,7 @@ export default function BlogPostPage() {
         <li><strong>Schema markup</strong> de tipo Course para resultados enriquecidos</li>
       </ul>
 
-      <h2>4. SEO técnico: lo que Google ve pero tú no</h2>
+      <h2 id="seo-tecnico">4. SEO técnico: lo que Google ve pero tú no</h2>
       <p>
         La velocidad y estructura técnica importan tanto como el contenido:
       </p>
@@ -98,7 +98,7 @@ export default function BlogPostPage() {
         <li><strong>Sitemap XML</strong> — Ayuda a Google a descubrir todas tus páginas</li>
       </ul>
 
-      <h2>5. Construye autoridad con enlaces</h2>
+      <h2 id="autoridad-enlaces">5. Construye autoridad con enlaces</h2>
       <p>
         Los backlinks siguen siendo uno de los factores más importantes de posicionamiento.
         Estrategias que funcionan para academias:
@@ -110,7 +110,7 @@ export default function BlogPostPage() {
         <li><strong>Contenido referenciable</strong> — estadísticas originales, infografías y estudios</li>
       </ul>
 
-      <h2>6. Mide y ajusta cada mes</h2>
+      <h2 id="mide-ajusta">6. Mide y ajusta cada mes</h2>
       <p>
         El SEO no es una acción puntual sino un proceso continuo. Revisa mensualmente:
       </p>

@@ -21,7 +21,7 @@ export default function BlogPostPage() {
         marca de agua sirve — la clave está en hacerla <strong>única por estudiante</strong>.
       </p>
 
-      <h2>¿Qué es una marca de agua en vídeos educativos?</h2>
+      <h2 id="que-es">¿Qué es una marca de agua en vídeos educativos?</h2>
       <p>
         Una marca de agua es una superposición visible (o invisible) sobre el vídeo que identifica quién lo está 
         viendo. En el contexto educativo, la marca de agua típicamente muestra:
@@ -36,7 +36,7 @@ export default function BlogPostPage() {
         aparece en cada fotograma del vídeo, pensará dos veces antes de compartirlo.
       </p>
 
-      <h2>Marca de agua estática vs. dinámica</h2>
+      <h2 id="estatica-vs-dinamica">Marca de agua estática vs. dinámica</h2>
       <h3>Marca de agua estática</h3>
       <p>
         Un logo o texto fijo grabado dentro del vídeo. Igual para todos los estudiantes. Fácil de implementar 
@@ -54,7 +54,7 @@ export default function BlogPostPage() {
         <Link href="/">AKADEMO</Link> de forma automática en cada reproducción.
       </p>
 
-      <h2>¿Por qué no basta con impedir la descarga?</h2>
+      <h2 id="por-que-no-basta">¿Por qué no basta con impedir la descarga?</h2>
       <p>
         Muchas plataformas permiten "streaming sin descarga", pero esto es insuficiente:
       </p>
@@ -69,7 +69,7 @@ export default function BlogPostPage() {
         queda grabada con el vídeo, identificando al responsable.
       </p>
 
-      <h2>Cómo implementar marcas de agua correctamente</h2>
+      <h2 id="como-implementar">Cómo implementar marcas de agua correctamente</h2>
       <h3>1. Posición semi-aleatoria</h3>
       <p>
         La marca no debe estar siempre en la misma esquina. Cambiar la posición entre segmentos dificulta 
@@ -91,7 +91,7 @@ export default function BlogPostPage() {
         de vídeo. Esto permite que cada visualización tenga una marca única sin duplicar archivos.
       </p>
 
-      <h2>El efecto disuasorio</h2>
+      <h2 id="efecto-disuasorio">El efecto disuasorio</h2>
       <p>
         Las academias que implementan marcas de agua visibles reportan una <strong>reducción del 85% en 
         redistribución</strong> de contenido. El simple hecho de que los estudiantes vean su nombre sobre el 
@@ -102,7 +102,7 @@ export default function BlogPostPage() {
         cuando saben que están siendo observadas.
       </p>
 
-      <h2>Caso práctico: academia de oposiciones</h2>
+      <h2 id="caso-practico">Caso práctico: academia de oposiciones</h2>
       <p>
         Una academia de oposiciones con 320 estudiantes detectó que sus vídeos circulaban en grupos de 
         Telegram. Tras implementar marca de agua dinámica con el nombre de cada alumno:
@@ -113,7 +113,7 @@ export default function BlogPostPage() {
         <li>Los ingresos aumentaron un 22% en 3 meses (alumnos que antes accedían gratis ahora se matriculan)</li>
       </ul>
 
-      <h2>¿Qué necesitas para empezar?</h2>
+      <h2 id="que-necesitas">¿Qué necesitas para empezar?</h2>
       <p>
         Implementar marca de agua dinámica requiere un sistema de vídeo que soporte overlay personalizado por 
         sesión. Las opciones son:
@@ -125,7 +125,7 @@ export default function BlogPostPage() {
         desde el primer día, sin configuración adicional</li>
       </ul>
 
-      <h2>Conclusión</h2>
+      <h2 id="conclusion">Conclusión</h2>
       <p>
         Si vendes contenido en vídeo, la marca de agua dinámica no es un lujo — es una necesidad. Es la 
         diferencia entre perder ingresos por piratería o mantener el control total de tu contenido educativo.

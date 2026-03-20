@@ -10,6 +10,7 @@ export interface BlogPost {
   keywords: string[];
   image: string;
   imageAlt: string;
+  toc?: { id: string; label: string }[];
 }
 
 export const blogPosts: BlogPost[] = [
@@ -23,6 +24,15 @@ export const blogPosts: BlogPost[] = [
     keywords: ['proteger contenido educativo', 'anti-piratería academia', 'seguridad vídeos online'],
     image: 'https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?auto=format&fit=crop&w=1200&q=80',
     imageAlt: 'Pantalla de ordenador mostrando código de seguridad digital',
+    toc: [
+      { id: 'pirateria-en-numeros', label: 'La piratería educativa en números' },
+      { id: 'marcas-de-agua-dinamicas', label: 'Marcas de agua dinámicas' },
+      { id: 'control-sesiones', label: 'Control de sesiones simultáneas' },
+      { id: 'streaming-sin-descarga', label: 'Streaming sin descarga' },
+      { id: 'monitoreo-comportamiento', label: 'Monitoreo de comportamiento sospechoso' },
+      { id: 'acuerdos-legales', label: 'Acuerdos legales claros' },
+      { id: 'conclusion', label: 'Conclusión' },
+    ],
   },
   {
     slug: 'cuentas-compartidas-problema-academias',
@@ -34,6 +44,15 @@ export const blogPosts: BlogPost[] = [
     keywords: ['cuentas compartidas educación', 'control acceso academia', 'sesiones simultáneas'],
     image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80',
     imageAlt: 'Múltiples dispositivos conectados representando cuentas compartidas',
+    toc: [
+      { id: 'cuanto-cuestan', label: '¿Cuánto te cuestan las cuentas compartidas?' },
+      { id: 'por-que-no-detectan', label: 'Por qué las academias no lo detectan' },
+      { id: 'senales', label: 'Señales de que tus cuentas se comparten' },
+      { id: 'solucion', label: 'La solución: una sesión por estudiante' },
+      { id: 'deteccion-inteligente', label: 'Detección inteligente' },
+      { id: 'resultados-reales', label: 'Resultados reales' },
+      { id: 'conclusion', label: 'Conclusión' },
+    ],
   },
   {
     slug: 'guia-digitalizar-academia',
@@ -45,6 +64,17 @@ export const blogPosts: BlogPost[] = [
     keywords: ['digitalizar academia', 'academia online', 'plataforma educativa', 'software para academias'],
     image: 'https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?auto=format&fit=crop&w=1200&q=80',
     imageAlt: 'Persona trabajando en la transformación digital de su negocio',
+    toc: [
+      { id: 'paso-1-estructura', label: 'Define tu estructura académica' },
+      { id: 'paso-2-contenido', label: 'Graba contenido de calidad' },
+      { id: 'paso-3-plataforma', label: 'Elige tu plataforma' },
+      { id: 'paso-4-sube-contenido', label: 'Sube y organiza tu contenido' },
+      { id: 'paso-5-equipo', label: 'Invita a tu equipo' },
+      { id: 'paso-6-pagos', label: 'Configura los pagos' },
+      { id: 'paso-7-directo', label: 'Clases en directo' },
+      { id: 'paso-8-migracion', label: 'Migra tus estudiantes' },
+      { id: 'conclusion', label: 'Conclusión' },
+    ],
   },
   {
     slug: 'marca-de-agua-videos-educativos',
@@ -56,6 +86,16 @@ export const blogPosts: BlogPost[] = [
     keywords: ['marca de agua vídeos', 'watermark educación', 'protección vídeos academia'],
     image: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?auto=format&fit=crop&w=1200&q=80',
     imageAlt: 'Grabación de vídeo profesional para contenido educativo',
+    toc: [
+      { id: 'que-es', label: '¿Qué es una marca de agua?' },
+      { id: 'estatica-vs-dinamica', label: 'Estática vs. dinámica' },
+      { id: 'por-que-no-basta', label: '¿Por qué no basta con impedir la descarga?' },
+      { id: 'como-implementar', label: 'Cómo implementar marcas de agua' },
+      { id: 'efecto-disuasorio', label: 'El efecto disuasorio' },
+      { id: 'caso-practico', label: 'Caso práctico: academia de oposiciones' },
+      { id: 'que-necesitas', label: '¿Qué necesitas para empezar?' },
+      { id: 'conclusion', label: 'Conclusión' },
+    ],
   },
   {
     slug: 'software-gestion-academias-que-necesitas',
@@ -67,6 +107,13 @@ export const blogPosts: BlogPost[] = [
     keywords: ['software gestión academias', 'plataforma gestión académica', 'LMS para academias'],
     image: 'https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=1200&q=80',
     imageAlt: 'Dashboard de software de gestión en pantalla de ordenador',
+    toc: [
+      { id: 'que-incluir', label: '¿Qué debe incluir?' },
+      { id: 'comparativa', label: 'Comparativa de opciones en 2026' },
+      { id: 'como-elegir', label: 'Cómo elegir el software correcto' },
+      { id: 'coste-del-gratis', label: 'El coste real del "gratis"' },
+      { id: 'conclusion', label: 'Conclusión' },
+    ],
   },
   {
     slug: 'como-fijar-precio-academia-online',
@@ -78,6 +125,14 @@ export const blogPosts: BlogPost[] = [
     keywords: ['precio academia online', 'modelo suscripción educación', 'tarifa academia', 'cuánto cobrar academia'],
     image: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&w=1200&q=80',
     imageAlt: 'Calculadora y gráficos de precios sobre un escritorio',
+    toc: [
+      { id: 'error-de-precio', label: 'El error de fijar el precio por el tiempo' },
+      { id: 'tres-modelos', label: 'Los tres modelos de precios' },
+      { id: 'precio-bajo', label: '¿Tu precio es demasiado bajo?' },
+      { id: 'aumentar-valor', label: 'Estrategias para aumentar el valor percibido' },
+      { id: 'trampa-descuentos', label: 'La trampa de los descuentos' },
+      { id: 'punto-de-partida', label: 'Un punto de partida práctico' },
+    ],
   },
   {
     slug: 'reducir-abandono-estudiantes-academia',
@@ -89,6 +144,15 @@ export const blogPosts: BlogPost[] = [
     keywords: ['retención estudiantes academia', 'abandono cursos online', 'engagement educativo'],
     image: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=1200&q=80',
     imageAlt: 'Estudiantes participando activamente en una clase',
+    toc: [
+      { id: 'por-que-abandonan', label: 'Por qué abandonan los estudiantes' },
+      { id: 'secuencia-bienvenida', label: 'La secuencia de bienvenida' },
+      { id: 'modulos-cortos', label: 'Dividir en módulos cortos' },
+      { id: 'clases-directo', label: 'Clases en directo periódicas' },
+      { id: 'estudiantes-inactivos', label: 'Contactar estudiantes inactivos' },
+      { id: 'comunidad', label: 'Comunidad entre estudiantes' },
+      { id: 'metrica', label: 'La métrica que importa' },
+    ],
   },
   {
     slug: 'clases-en-directo-vs-grabadas',
@@ -100,6 +164,13 @@ export const blogPosts: BlogPost[] = [
     keywords: ['clases en directo academia', 'clases grabadas vs directo', 'modelo híbrido educación online'],
     image: 'https://images.unsplash.com/photo-1588196749597-9ff075ee6b5b?auto=format&fit=crop&w=1200&q=80',
     imageAlt: 'Cámara profesional grabando una clase en directo',
+    toc: [
+      { id: 'ventajas-grabado', label: 'Ventajas del contenido grabado' },
+      { id: 'ventajas-directo', label: 'Ventajas de las clases en directo' },
+      { id: 'desventajas', label: 'Desventajas de cada modelo' },
+      { id: 'modelo-hibrido', label: 'El modelo híbrido' },
+      { id: 'como-decidir', label: 'Cómo decidir qué modelo elegir' },
+    ],
   },
   {
     slug: 'errores-comunes-academia-online',
@@ -111,6 +182,14 @@ export const blogPosts: BlogPost[] = [
     keywords: ['errores academia online', 'fracasar academia online', 'lanzar academia online'],
     image: 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=1200&q=80',
     imageAlt: 'Persona planificando estrategia con notas y documentos',
+    toc: [
+      { id: 'error-1', label: 'Esperar al producto perfecto' },
+      { id: 'error-2', label: 'Elegir la plataforma equivocada' },
+      { id: 'error-3', label: 'Ignorar la retención' },
+      { id: 'error-4', label: 'No proteger el contenido' },
+      { id: 'error-5', label: 'Fijar precios sin estrategia' },
+      { id: 'denominador-comun', label: 'El denominador común' },
+    ],
   },
   {
     slug: 'conseguir-primeros-estudiantes-academia',
@@ -122,6 +201,15 @@ export const blogPosts: BlogPost[] = [
     keywords: ['primeros estudiantes academia', 'marketing academia online', 'captar alumnos academia'],
     image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200&q=80',
     imageAlt: 'Grupo de estudiantes trabajando juntos en una academia',
+    toc: [
+      { id: 'paso-1-red', label: 'Empieza con tu red directa' },
+      { id: 'paso-2-contenido', label: 'Publica contenido de valor' },
+      { id: 'paso-3-demo', label: 'Sesión gratuita de demostración' },
+      { id: 'paso-4-condiciones', label: 'Condiciones para primeros matriculados' },
+      { id: 'paso-5-referencias', label: 'Pide referencias activamente' },
+      { id: 'lo-que-no-funciona', label: 'Lo que no funciona en esta fase' },
+      { id: 'objetivo-real', label: 'El objetivo real' },
+    ],
   },
   {
     slug: 'crear-comunidad-estudiantes-academia-online',
@@ -133,6 +221,14 @@ export const blogPosts: BlogPost[] = [
     keywords: ['comunidad estudiantes online', 'fidelizar alumnos academia', 'engagement comunidad educativa'],
     image: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1200&q=80',
     imageAlt: 'Grupo de personas conectadas trabajando en comunidad',
+    toc: [
+      { id: 'retencion', label: 'Tu mejor herramienta de retención' },
+      { id: 'canal', label: 'Elige el canal adecuado' },
+      { id: 'rituales', label: 'Crea rituales de participación' },
+      { id: 'empoderar', label: 'Empodera a los avanzados' },
+      { id: 'medir', label: 'Mide lo que importa' },
+      { id: 'boca-a-boca', label: 'El efecto boca a boca' },
+    ],
   },
   {
     slug: 'seo-academias-online-atraer-estudiantes-google',
@@ -144,6 +240,15 @@ export const blogPosts: BlogPost[] = [
     keywords: ['SEO academia online', 'posicionamiento web educación', 'marketing orgánico academia', 'Google para academias'],
     image: 'https://images.unsplash.com/photo-1432888498266-38ffec3eaf0a?auto=format&fit=crop&w=1200&q=80',
     imageAlt: 'Pantalla mostrando analíticas de tráfico web y SEO',
+    toc: [
+      { id: 'seo-vs-publicidad', label: 'SEO vs. publicidad' },
+      { id: 'palabras-clave', label: 'Investiga las palabras clave' },
+      { id: 'contenido', label: 'Contenido que responda preguntas' },
+      { id: 'paginas-cursos', label: 'Optimiza páginas de cursos' },
+      { id: 'seo-tecnico', label: 'SEO técnico' },
+      { id: 'autoridad-enlaces', label: 'Construye autoridad con enlaces' },
+      { id: 'mide-ajusta', label: 'Mide y ajusta cada mes' },
+    ],
   },
 ];
 

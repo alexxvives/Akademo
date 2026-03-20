@@ -17,7 +17,7 @@ export default function BlogPostPage() {
         casualidad: el aprendizaje es social por naturaleza.
       </p>
 
-      <h2>Por qué la comunidad es tu mejor herramienta de retención</h2>
+      <h2 id="retencion">Por qué la comunidad es tu mejor herramienta de retención</h2>
       <p>
         Un estudiante que solo consume vídeos tiene pocas razones para quedarse cuando pierde la motivación.
         Pero un estudiante que conoce a compañeros, participa en debates y recibe feedback del profesor
@@ -35,7 +35,7 @@ export default function BlogPostPage() {
         className="rounded-xl shadow-lg my-8"
       />
 
-      <h2>Paso 1: Elige el canal adecuado</h2>
+      <h2 id="canal">Paso 1: Elige el canal adecuado</h2>
       <p>
         No necesitas construir tu propia red social. Estas son las opciones más efectivas ordenadas
         por facilidad de implementación:
@@ -47,7 +47,7 @@ export default function BlogPostPage() {
         <li><strong>Grupo privado de Facebook</strong> — Funciona bien para audiencias mayores de 35 años donde Facebook sigue siendo habitual.</li>
       </ul>
 
-      <h2>Paso 2: Crea rituales de participación</h2>
+      <h2 id="rituales">Paso 2: Crea rituales de participación</h2>
       <p>
         Una comunidad sin actividad regular muere en semanas. Implementa rituales semanales que den
         a los estudiantes una razón para volver:
@@ -69,7 +69,7 @@ export default function BlogPostPage() {
         className="rounded-xl shadow-lg my-8"
       />
 
-      <h2>Paso 3: Empodera a los estudiantes avanzados</h2>
+      <h2 id="empoderar">Paso 3: Empodera a los estudiantes avanzados</h2>
       <p>
         Tus mejores estudiantes pueden convertirse en mentores del resto. Esto tiene un triple beneficio:
         reduces tu carga de soporte, los mentores se sienten valorados y los nuevos estudiantes reciben
@@ -80,7 +80,7 @@ export default function BlogPostPage() {
         mención en la academia o un descuento en la suscripción.
       </p>
 
-      <h2>Paso 4: Mide lo que importa</h2>
+      <h2 id="medir">Paso 4: Mide lo que importa</h2>
       <p>
         Estas métricas te dirán si tu comunidad está funcionando:
       </p>
@@ -90,7 +90,7 @@ export default function BlogPostPage() {
         <li><strong>Tasa de retención comparada</strong> — Compara la retención de miembros de la comunidad vs. los que no participan</li>
       </ul>
 
-      <h2>El efecto boca a boca</h2>
+      <h2 id="boca-a-boca">El efecto boca a boca</h2>
       <p>
         Una comunidad activa genera un beneficio que no aparece en las métricas directas:
         el <strong>boca a boca</strong>. Los estudiantes que se sienten parte de algo hablan

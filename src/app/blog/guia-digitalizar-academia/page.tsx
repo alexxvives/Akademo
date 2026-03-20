@@ -20,7 +20,7 @@ export default function BlogPostPage() {
         En esta guía te llevamos paso a paso por todo lo que necesitas para digitalizar tu academia en 2026.
       </p>
 
-      <h2>Paso 1: Define tu estructura académica</h2>
+      <h2 id="paso-1-estructura">Paso 1: Define tu estructura académica</h2>
       <p>
         Antes de grabar un solo vídeo, necesitas planificar:
       </p>
@@ -35,7 +35,7 @@ export default function BlogPostPage() {
         directamente: academias, clases, profesores y estudiantes organizados por roles con permisos claros.
       </p>
 
-      <h2>Paso 2: Graba contenido de calidad</h2>
+      <h2 id="paso-2-contenido">Paso 2: Graba contenido de calidad</h2>
       <p>
         No necesitas un estudio profesional. Con estas herramientas puedes empezar:
       </p>
@@ -50,7 +50,7 @@ export default function BlogPostPage() {
         enfocadas que puedan repasar fácilmente.
       </p>
 
-      <h2>Paso 3: Elige tu plataforma</h2>
+      <h2 id="paso-3-plataforma">Paso 3: Elige tu plataforma</h2>
       <p>
         Hay tres categorías de plataformas para academias online:
       </p>
@@ -71,7 +71,7 @@ export default function BlogPostPage() {
         Todo en uno.
       </p>
 
-      <h2>Paso 4: Sube y organiza tu contenido</h2>
+      <h2 id="paso-4-sube-contenido">Paso 4: Sube y organiza tu contenido</h2>
       <p>
         Una vez elegida la plataforma:
       </p>
@@ -82,7 +82,7 @@ export default function BlogPostPage() {
         <li>Activa la protección: marca de agua, streaming sin descarga</li>
       </ul>
 
-      <h2>Paso 5: Invita a tu equipo</h2>
+      <h2 id="paso-5-equipo">Paso 5: Invita a tu equipo</h2>
       <p>
         Si tienes profesores, dales acceso con el rol adecuado. Cada profesor debería poder:
       </p>
@@ -93,7 +93,7 @@ export default function BlogPostPage() {
         <li>NO tener acceso al contenido de otros profesores</li>
       </ul>
 
-      <h2>Paso 6: Configura los pagos</h2>
+      <h2 id="paso-6-pagos">Paso 6: Configura los pagos</h2>
       <p>
         Para cobrar automáticamente, necesitas una pasarela de pago. <strong>Stripe</strong> es la opción más 
         popular para academias en Europa y Latinoamérica: soporta tarjetas, domiciliación bancaria y múltiples 
@@ -104,7 +104,7 @@ export default function BlogPostPage() {
         permitirte marcar quién ha pagado y quién no.
       </p>
 
-      <h2>Paso 7: Lanza y mantén clases en directo</h2>
+      <h2 id="paso-7-directo">Paso 7: Lanza y mantén clases en directo</h2>
       <p>
         Las clases en directo son un diferenciador clave. Los estudiantes valoran la interacción en tiempo real 
         con el profesor. Integra <strong>Zoom</strong> para:
@@ -115,14 +115,14 @@ export default function BlogPostPage() {
         <li>Aplicar marca de agua incluso en las grabaciones en vivo</li>
       </ul>
 
-      <h2>Paso 8: Migra tus estudiantes existentes</h2>
+      <h2 id="paso-8-migracion">Paso 8: Migra tus estudiantes existentes</h2>
       <p>
         Si ya tienes estudiantes en otra plataforma o en hojas de cálculo, necesitas un proceso de migración. 
         Lo ideal es una <strong>importación CSV masiva</strong> que cree las cuentas automáticamente y genere 
         contraseñas temporales que puedas enviar a cada estudiante.
       </p>
 
-      <h2>Conclusión</h2>
+      <h2 id="conclusion">Conclusión</h2>
       <p>
         Digitalizar tu academia requiere planificación, pero no tiene que ser complicado. Con la plataforma 
         adecuada, puedes tener tu academia online funcionando en cuestión de días, no meses.

@@ -17,7 +17,7 @@ export default function BlogPostPage() {
         la mayoría de las academias, ni siquiera se enteran de que está pasando.
       </p>
 
-      <h2>¿Cuánto te cuestan las cuentas compartidas?</h2>
+      <h2 id="cuanto-cuestan">¿Cuánto te cuestan las cuentas compartidas?</h2>
       <p>
         Hagamos números. Si tu academia cobra 40€/mes por estudiante y tienes 200 cuentas activas con un 25% de 
         compartición (la media del sector), estás perdiendo:
@@ -28,7 +28,7 @@ export default function BlogPostPage() {
         <li>Más la degradación de valor: ¿por qué pagar si puedo pedirle la cuenta a un amigo?</li>
       </ul>
 
-      <h2>Por qué las academias no lo detectan</h2>
+      <h2 id="por-que-no-detectan">Por qué las academias no lo detectan</h2>
       <p>
         A diferencia de Netflix o Spotify, la mayoría de plataformas educativas no tienen herramientas para 
         detectar cuentas compartidas. Los LMS tradicionales (Moodle, Teachable, Thinkific) fueron diseñados 
@@ -39,7 +39,7 @@ export default function BlogPostPage() {
         desde dónde se conecta cada usuario.
       </p>
 
-      <h2>Señales de que tus cuentas se están compartiendo</h2>
+      <h2 id="senales">Señales de que tus cuentas se están compartiendo</h2>
       <p>
         Estos son indicadores claros de compartición masiva:
       </p>
@@ -50,7 +50,7 @@ export default function BlogPostPage() {
         <li><strong>Grupos de WhatsApp/Telegram</strong> — Estudiantes compartiendo credenciales abiertamente</li>
       </ul>
 
-      <h2>La solución: una sesión activa por estudiante</h2>
+      <h2 id="solucion">La solución: una sesión activa por estudiante</h2>
       <p>
         La forma más efectiva de combatir las cuentas compartidas es simple: <strong>cuando alguien inicia sesión, 
         la sesión anterior se cierra automáticamente</strong>. No hay castigo, no hay bloqueo, simplemente el 
@@ -62,7 +62,7 @@ export default function BlogPostPage() {
         para compartir.
       </p>
 
-      <h2>Detección inteligente sin molestar al estudiante legítimo</h2>
+      <h2 id="deteccion-inteligente">Detección inteligente sin molestar al estudiante legítimo</h2>
       <p>
         Un buen sistema no solo cierra sesiones duplicadas — también detecta patrones. Si un estudiante cambia de 
         móvil a portátil en su casa, eso es normal. Pero si hay accesos desde dos ciudades diferentes al mismo 
@@ -74,7 +74,7 @@ export default function BlogPostPage() {
         siquiera lo notan.
       </p>
 
-      <h2>Resultados reales</h2>
+      <h2 id="resultados-reales">Resultados reales</h2>
       <p>
         Las academias que implementan control de sesiones reportan:
       </p>
@@ -84,7 +84,7 @@ export default function BlogPostPage() {
         <li><strong>Mejor percepción de valor</strong> — el contenido se percibe como más exclusivo</li>
       </ul>
 
-      <h2>Conclusión</h2>
+      <h2 id="conclusion">Conclusión</h2>
       <p>
         Las cuentas compartidas son el equivalente digital de fotocopiar un libro de texto. Es comprensible, 
         pero destruye el modelo de negocio de quien crea el contenido. Con las herramientas adecuadas, 

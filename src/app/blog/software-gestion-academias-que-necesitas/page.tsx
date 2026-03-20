@@ -21,7 +21,7 @@ export default function BlogPostPage() {
         y cómo elegir el que mejor se adapte a tu centro.
       </p>
 
-      <h2>¿Qué debe incluir un buen software de gestión?</h2>
+      <h2 id="que-incluir">¿Qué debe incluir un buen software de gestión?</h2>
       <p>
         Independientemente del tamaño de tu academia, hay funciones esenciales que todo software debería cubrir:
       </p>
@@ -91,7 +91,7 @@ export default function BlogPostPage() {
         Un sistema de notificaciones integrado (email + in-app) ahorra horas de gestión manual.
       </p>
 
-      <h2>Comparativa de opciones en 2026</h2>
+      <h2 id="comparativa">Comparativa de opciones en 2026</h2>
 
       <h3>Google Classroom (Gratis)</h3>
       <p>
@@ -127,7 +127,7 @@ export default function BlogPostPage() {
         <Link href="/pricing">Ver precios</Link>.
       </p>
 
-      <h2>Cómo elegir el software correcto</h2>
+      <h2 id="como-elegir">Cómo elegir el software correcto</h2>
       <p>
         Hazte estas preguntas:
       </p>
@@ -143,7 +143,7 @@ export default function BlogPostPage() {
         separadas que no se comunican entre sí.
       </p>
 
-      <h2>El coste real del &quot;gratis&quot;</h2>
+      <h2 id="coste-del-gratis">El coste real del &quot;gratis&quot;</h2>
       <p>
         Muchas academias empiezan con herramientas gratuitas: Google Classroom + Zoom gratuito + WhatsApp 
         para comunicación + Excel para pagos. Esto funciona con 10 estudiantes. Con 50+ estudiantes, 
@@ -154,7 +154,7 @@ export default function BlogPostPage() {
         los ingresos recuperados al evitar piratería de contenido.
       </p>
 
-      <h2>Conclusión</h2>
+      <h2 id="conclusion">Conclusión</h2>
       <p>
         El software de gestión ideal para tu academia depende de tu situación, pero en 2026 ya no es aceptable 
         gestionar todo manualmente. La tecnología existe para automatizar la administración, proteger tu 

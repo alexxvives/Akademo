@@ -19,7 +19,7 @@ export default function BlogPostPage() {
         Estas son las acciones más efectivas para pasar de cero a cien estudiantes, ordenadas por esfuerzo y retorno.
       </p>
 
-      <h2>Paso 1: Empieza con tu red directa</h2>
+      <h2 id="paso-1-red">Paso 1: Empieza con tu red directa</h2>
       <p>
         El primer punto de contacto no es Instagram ni Google Ads. Es el móvil que ya tienes.
       </p>
@@ -33,7 +33,7 @@ export default function BlogPostPage() {
         en estudiantes tempranos y el resto te dará referencias.
       </p>
 
-      <h2>Paso 2: Publica contenido de valor antes de pedir nada</h2>
+      <h2 id="paso-2-contenido">Paso 2: Publica contenido de valor antes de pedir nada</h2>
       <p>
         Elige un canal donde ya tengas alguna presencia aunque sea mínima (LinkedIn, Instagram, YouTube, un grupo de 
         WhatsApp o Telegram, un foro especializado) y publica contenido útil durante cuatro semanas antes de mencionar 
@@ -48,7 +48,7 @@ export default function BlogPostPage() {
         que ves constantemente, un proceso que haces diferente. Lo que saben que tú sabes es lo que les da confianza.
       </p>
 
-      <h2>Paso 3: Haz una sesión gratuita de demostración</h2>
+      <h2 id="paso-3-demo">Paso 3: Haz una sesión gratuita de demostración</h2>
       <p>
         Organiza una clase o webinar gratuito sobre un tema concreto y específico. No &ldquo;introducción a la contabilidad&rdquo;. 
         Algo como &ldquo;Los tres errores de contabilidad que cometen autónomos en su primer año y que les generan problemas 
@@ -64,7 +64,7 @@ export default function BlogPostPage() {
         al que estás intentando vender.
       </p>
 
-      <h2>Paso 4: Ofrece condiciones especiales para los primeros matriculados</h2>
+      <h2 id="paso-4-condiciones">Paso 4: Ofrece condiciones especiales para los primeros matriculados</h2>
       <p>
         Los primeros estudiantes asumen un riesgo mayor que los que llegan cuando ya hay reseñas y testimonios. 
         Reconócelo. Puedes ofrecerles:
@@ -80,7 +80,7 @@ export default function BlogPostPage() {
         justifiquen. Estos primeros estudiantes también son los que generarán los primeros testimonios.
       </p>
 
-      <h2>Paso 5: Pide referencias activamente</h2>
+      <h2 id="paso-5-referencias">Paso 5: Pide referencias activamente</h2>
       <p>
         El error más frecuente es esperar a que las referencias lleguen solas. No llegan.
       </p>
@@ -94,7 +94,7 @@ export default function BlogPostPage() {
         también refiere, estarás cerca de treinta sin haber invertido un euro en publicidad.
       </p>
 
-      <h2>Lo que no funciona en esta fase</h2>
+      <h2 id="lo-que-no-funciona">Lo que no funciona en esta fase</h2>
       <p>
         Antes de los cien estudiantes, invierte tu energía en canales directos. Son cosas que no suelen funcionar 
         bien en esta fase:
@@ -110,7 +110,7 @@ export default function BlogPostPage() {
         valor concretas. Cuando ya tengas esa base, inviertes en canales que escalan.
       </p>
 
-      <h2>El objetivo real</h2>
+      <h2 id="objetivo-real">El objetivo real</h2>
       <p>
         Los primeros 100 estudiantes no son solo ingresos. Son testimonios, casos prácticos, feedback sobre qué 
         funciona y qué no, y la prueba social que necesitas para que el siguiente paso (publicidad, partnerships, 

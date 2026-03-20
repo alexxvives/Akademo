@@ -1,6 +1,29 @@
 import Link from 'next/link';
 import { BlogPost } from '@/lib/blog-data';
 
+function TableOfContents({ items }: { items: { id: string; label: string }[] }) {
+  return (
+    <nav className="bg-gray-50 border border-gray-200 rounded-2xl p-6 sm:p-8 my-10">
+      <h2 className="text-sm font-bold uppercase tracking-wider text-gray-500 mb-4">Contenido</h2>
+      <ol className="space-y-2.5">
+        {items.map((item, i) => (
+          <li key={item.id}>
+            <a
+              href={`#${item.id}`}
+              className="flex items-start gap-3 text-[15px] text-gray-700 hover:text-indigo-600 transition-colors group"
+            >
+              <span className="shrink-0 w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 text-xs font-semibold flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                {i + 1}
+              </span>
+              <span className="leading-snug">{item.label}</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+  );
+}
+
 export function BlogLayout({ post, children }: { post: BlogPost; children: React.ReactNode }) {
   const ogImage = `/api/og?title=${encodeURIComponent(post.title)}&category=${encodeURIComponent(post.category)}`;
   const jsonLd = {
@@ -73,7 +96,10 @@ export function BlogLayout({ post, children }: { post: BlogPost; children: React
       {/* Article content */}
       <section className="pt-16 pb-12 sm:pb-16 px-4 sm:px-6">
         <article className="max-w-4xl mx-auto">
-          <div className="prose prose-gray prose-lg max-w-none prose-headings:font-semibold prose-headings:text-gray-900 prose-a:text-indigo-600 prose-a:no-underline hover:prose-a:underline prose-p:leading-relaxed prose-headings:mt-10 prose-headings:mb-4 prose-p:text-gray-600 prose-li:text-gray-600 prose-img:rounded-xl prose-img:shadow-lg">
+          {/* Table of Contents */}
+          {post.toc && post.toc.length > 0 && <TableOfContents items={post.toc} />}
+
+          <div className="blog-content prose prose-gray prose-lg max-w-none prose-headings:font-bold prose-headings:text-gray-900 prose-a:text-indigo-600 prose-a:no-underline hover:prose-a:underline prose-p:leading-relaxed prose-p:text-gray-600 prose-li:text-gray-600 prose-img:rounded-xl prose-img:shadow-lg prose-h2:text-2xl prose-h2:mt-14 prose-h2:mb-5 prose-h2:pb-3 prose-h2:border-b prose-h2:border-gray-200 prose-h3:text-lg prose-h3:mt-8 prose-h3:mb-3 prose-h3:pl-4 prose-h3:border-l-4 prose-h3:border-indigo-500 prose-ul:my-5 prose-li:my-1">
             {children}
           </div>
         </article>

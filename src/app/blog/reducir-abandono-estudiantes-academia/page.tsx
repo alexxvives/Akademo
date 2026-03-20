@@ -21,7 +21,7 @@ export default function BlogPostPage() {
         y daña las posibilidades de que esa persona vuelva a comprarte en el futuro.
       </p>
 
-      <h2>Por qué abandonan los estudiantes</h2>
+      <h2 id="por-que-abandonan">Por qué abandonan los estudiantes</h2>
       <p>
         Antes de hablar de soluciones, es importante entender las causas reales. El abandono casi nunca es porque el contenido 
         sea malo. Las causas más frecuentes son:
@@ -34,7 +34,7 @@ export default function BlogPostPage() {
         <li><strong>Vida que interrumpe</strong> — Trabajo, familia, vacaciones. Cuando alguien para tres semanas, raramente vuelve</li>
       </ul>
 
-      <h2>Estrategia 1: la secuencia de bienvenida</h2>
+      <h2 id="secuencia-bienvenida">Estrategia 1: la secuencia de bienvenida</h2>
       <p>
         Los primeros tres días después de la compra son los más críticos. El estudiante tiene la motivación en el punto 
         más alto y hay que aprovecharla. Una buena secuencia de bienvenida incluye:
@@ -49,7 +49,7 @@ export default function BlogPostPage() {
         conseguir un resultado pequeño. Una vez que alguien tiene esa primera victoria, es mucho más probable que continúe.
       </p>
 
-      <h2>Estrategia 2: dividir el contenido en módulos cortos</h2>
+      <h2 id="modulos-cortos">Estrategia 2: dividir el contenido en módulos cortos</h2>
       <p>
         Los cursos largos intimidan. Si tu academia tiene 40 horas de contenido, el estudiante mira el total y siente que 
         nunca va a terminar. La solución no es hacer el contenido más corto, sino estructurarlo de manera que el progreso 
@@ -61,7 +61,7 @@ export default function BlogPostPage() {
         reforzar la sensación de avance.
       </p>
 
-      <h2>Estrategia 3: clases en directo periódicas</h2>
+      <h2 id="clases-directo">Estrategia 3: clases en directo periódicas</h2>
       <p>
         Aunque tu academia sea mayoritariamente pregrabada, añadir una sesión en directo mensual o quincenal cambia completamente 
         la dinámica de retención. El directo crea una razón para estar al día: si no has visto el módulo 4, no vas a entender 
@@ -72,7 +72,7 @@ export default function BlogPostPage() {
         de largo plazo.
       </p>
 
-      <h2>Estrategia 4: identificar y contactar estudiantes inactivos</h2>
+      <h2 id="estudiantes-inactivos">Estrategia 4: identificar y contactar estudiantes inactivos</h2>
       <p>
         Si tienes acceso a datos de actividad —qué estudiantes no han entrado en la plataforma en los últimos 14 días— 
         puedes reactivarlos antes de que abandonen definitivamente. Un mensaje personalizado ("Hola Ana, veo que llevas un par 
@@ -83,7 +83,7 @@ export default function BlogPostPage() {
         antes de que el abandono sea definitivo.
       </p>
 
-      <h2>Estrategia 5: comunidad entre estudiantes</h2>
+      <h2 id="comunidad">Estrategia 5: comunidad entre estudiantes</h2>
       <p>
         Los estudiantes que forman vínculos con otros estudiantes de la misma academia abandonan con mucho menos frecuencia. 
         Un grupo de Whatsapp, un canal de Slack, o una sección de foro dentro de la plataforma puede marcar la diferencia. 
@@ -91,7 +91,7 @@ export default function BlogPostPage() {
         parte de algo.
       </p>
 
-      <h2>Una métrica que vale más que la tasa de finalización</h2>
+      <h2 id="metrica">Una métrica que vale más que la tasa de finalización</h2>
       <p>
         Obsesionarse con la tasa de finalización puede llevar a tomar malas decisiones (acortar el contenido, reducir la 
         dificultad). Una métrica más relevante es la <strong>tasa de renovación o recompra</strong>: ¿cuántos estudiantes 

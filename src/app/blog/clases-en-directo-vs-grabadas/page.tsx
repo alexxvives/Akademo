@@ -19,7 +19,7 @@ export default function BlogPostPage() {
         No hay una respuesta universal, pero sí hay patrones claros que se repiten en academias con buenos resultados.
       </p>
 
-      <h2>Las ventajas del contenido grabado</h2>
+      <h2 id="ventajas-grabado">Las ventajas del contenido grabado</h2>
       <p>
         El vídeo grabado es la base de la mayoría de academias online de éxito. Sus ventajas son evidentes:
       </p>
@@ -34,7 +34,7 @@ export default function BlogPostPage() {
         Un curso de fotografía, diseño, programación o idiomas funciona perfectamente en formato grabado.
       </p>
 
-      <h2>Las ventajas de las clases en directo</h2>
+      <h2 id="ventajas-directo">Las ventajas de las clases en directo</h2>
       <p>
         Las clases en directo tienen algo que el contenido grabado no puede replicar: la interacción en tiempo real. 
         Esto genera:
@@ -50,7 +50,7 @@ export default function BlogPostPage() {
         o discusión: preparación de oposiciones, coaching, análisis de casos, idiomas conversacionales, terapia, etc.
       </p>
 
-      <h2>Las desventajas de cada modelo</h2>
+      <h2 id="desventajas">Las desventajas de cada modelo</h2>
 
       <h3>Contenido grabado</h3>
       <ul>
@@ -67,7 +67,7 @@ export default function BlogPostPage() {
         <li>Las franjas horarias excluyen a parte de la audiencia (diferentes zonas horarias)</li>
       </ul>
 
-      <h2>El modelo híbrido: la opción más robusta</h2>
+      <h2 id="modelo-hibrido">El modelo híbrido: la opción más robusta</h2>
       <p>
         La combinación que mejor funciona en la mayoría de academias con más de 50 estudiantes es:
       </p>
@@ -81,7 +81,7 @@ export default function BlogPostPage() {
         justifica precios de suscripción mensuales sin que tengas que crear contenido nuevo constantemente.
       </p>
 
-      <h2>Cómo decidir qué modelo encaja con tu academia</h2>
+      <h2 id="como-decidir">Cómo decidir qué modelo encaja con tu academia</h2>
       <p>
         Hazte estas tres preguntas:
       </p>

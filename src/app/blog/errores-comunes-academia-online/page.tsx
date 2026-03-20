@@ -18,7 +18,7 @@ export default function BlogPostPage() {
         Estos son los cinco errores más comunes y cómo evitarlos antes de que te cuesten tiempo, dinero o reputación.
       </p>
 
-      <h2>Error 1: Esperar a tener el producto perfecto para lanzar</h2>
+      <h2 id="error-1">Error 1: Esperar a tener el producto perfecto para lanzar</h2>
       <p>
         El síndrome del lanzamiento perfecto destruye más academias que cualquier competidor. El fundador graba, regraba, 
         rediseña y pospone el lanzamiento durante meses. Cuando finalmente lanza, no hay audiencia, no ha validado nada 
@@ -34,7 +34,7 @@ export default function BlogPostPage() {
         avanzan. Su feedback mejorará el producto mejor que cualquier revisión que hagas solo.
       </p>
 
-      <h2>Error 2: Elegir la plataforma equivocada y quedarse atrapado</h2>
+      <h2 id="error-2">Error 2: Elegir la plataforma equivocada y quedarse atrapado</h2>
       <p>
         Muchas academias empiezan en plataformas de marketplace (Udemy, Teachable, Hotmart) porque son rápidas de 
         configurar. El problema aparece cuando:
@@ -50,7 +50,7 @@ export default function BlogPostPage() {
         el estudiante. Los datos de tus estudiantes son uno de los activos más valiosos de tu academia.
       </p>
 
-      <h2>Error 3: Ignorar la retención y centrarse solo en la captación</h2>
+      <h2 id="error-3">Error 3: Ignorar la retención y centrarse solo en la captación</h2>
       <p>
         Captar un estudiante nuevo cuesta entre cinco y diez veces más que retener uno. Sin embargo, la mayoría de 
         academias dedican el 90% de su energía a conseguir nuevas matriculaciones y prácticamente cero a mantener 
@@ -64,7 +64,7 @@ export default function BlogPostPage() {
         70%, hay un problema de producto que resolver antes de invertir más en captación.
       </p>
 
-      <h2>Error 4: No proteger el contenido que has creado</h2>
+      <h2 id="error-4">Error 4: No proteger el contenido que has creado</h2>
       <p>
         Dedicar meses a crear un curso y luego distribuirlo sin ninguna protección es uno de los errores más costosos. 
         El contenido sin proteger acaba compartido en grupos de Telegram, foros o simplemente pasado de cuenta en cuenta.
@@ -79,7 +79,7 @@ export default function BlogPostPage() {
         que ha costado crear.
       </p>
 
-      <h2>Error 5: Fijar precios sin estrategia</h2>
+      <h2 id="error-5">Error 5: Fijar precios sin estrategia</h2>
       <p>
         El precio de una academia online no debería calcularse en base a "lo que parece justo" o a lo que cobran otros. 
         Dos errores frecuentes:
@@ -97,7 +97,7 @@ export default function BlogPostPage() {
         30 euros. El valor que genera es lo que manda.
       </p>
 
-      <h2>El denominador común</h2>
+      <h2 id="denominador-comun">El denominador común</h2>
       <p>
         Si analizas estos cinco errores, todos tienen algo en común: provienen de tomar decisiones sin datos 
         ni sistema. Las academias que prosperan a largo plazo son las que miden, ajustan y construyen estructura 
