@@ -21,7 +21,11 @@ export function Navbar({ t, isScrolled, lang, onLangChange, onOpenModal }: Navba
     <>
       <header className="fixed top-0 left-0 right-0 z-40 transition-all">
         <div className="mx-3 sm:mx-6 mt-3 sm:mt-4">
-          <div className="max-w-6xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-lg bg-white/10 border border-white/20">
+          <div className={`max-w-6xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3 backdrop-blur-xl rounded-xl sm:rounded-2xl shadow-lg transition-all ${
+              isScrolled
+                ? 'bg-white/90 border border-gray-200'
+                : 'bg-white/10 border border-white/20'
+            }`}>
             <div className="flex justify-between items-center relative">
               <Link href="/" className="flex items-center gap-2">
                 <Image 

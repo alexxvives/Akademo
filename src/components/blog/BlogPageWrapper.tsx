@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navbar } from '@/components/landing/Navbar';
 import { Footer } from '@/components/landing/Footer';
 import AuthModal from '@/components/AuthModal';
@@ -21,6 +21,25 @@ export function BlogPageWrapper({ children }: { children: React.ReactNode }) {
   const [lang, setLang] = useState<Lang>('es');
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'login' | 'register'>('register');
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const NAVBAR_Y = 50;
+    const check = () => {
+      const sections = document.querySelectorAll<HTMLElement>('[data-section-dark]');
+      let activeLight = false;
+      sections.forEach(el => {
+        const rect = el.getBoundingClientRect();
+        if (rect.top <= NAVBAR_Y && rect.bottom > NAVBAR_Y) {
+          activeLight = el.dataset.sectionDark !== 'true';
+        }
+      });
+      setIsScrolled(activeLight);
+    };
+    check();
+    window.addEventListener('scroll', check, { passive: true });
+    return () => window.removeEventListener('scroll', check);
+  }, []);
 
   const openModal = (mode: 'login' | 'register') => {
     setModalMode(mode);
@@ -32,7 +51,7 @@ export function BlogPageWrapper({ children }: { children: React.ReactNode }) {
       {modalOpen && <AuthModal mode={modalMode} onClose={() => setModalOpen(false)} />}
       <Navbar
         t={navTranslations[lang]}
-        isScrolled={false}
+        isScrolled={isScrolled}
         lang={lang}
         onLangChange={setLang}
         onOpenModal={openModal}

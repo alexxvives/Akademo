@@ -44,7 +44,7 @@ export function BlogLayout({ post, children }: { post: BlogPost; children: React
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       {/* Hero section — dark like landing page */}
-      <section className="relative pt-32 sm:pt-40 pb-16 sm:pb-20 px-4 sm:px-6 overflow-hidden bg-gray-950">
+      <section data-section-dark="true" className="relative pt-32 sm:pt-40 pb-16 sm:pb-20 px-4 sm:px-6 overflow-hidden bg-gray-950">
         <div className="absolute inset-0 bg-gradient-to-b from-indigo-900/20 via-gray-950 to-gray-950 pointer-events-none" />
         <div className="absolute top-0 left-1/4 w-[600px] h-[400px] bg-indigo-600/8 rounded-full blur-3xl pointer-events-none" />
 
@@ -77,7 +77,7 @@ export function BlogLayout({ post, children }: { post: BlogPost; children: React
       </section>
 
       {/* Featured image */}
-      <div className="px-4 sm:px-6 bg-gray-950 pb-0">
+      <div data-section-dark="true" className="px-4 sm:px-6 bg-gray-950 pb-0">
         <div className="max-w-4xl mx-auto">
           <div className="rounded-2xl overflow-hidden shadow-2xl translate-y-8">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -94,7 +94,7 @@ export function BlogLayout({ post, children }: { post: BlogPost; children: React
       </div>
 
       {/* Article content */}
-      <section className="pt-16 pb-12 sm:pb-16 px-4 sm:px-6">
+      <section data-section-dark="false" className="pt-16 pb-12 sm:pb-16 px-4 sm:px-6">
         <article className="max-w-4xl mx-auto">
           {/* Table of Contents */}
           {post.toc && post.toc.length > 0 && <TableOfContents items={post.toc} />}
