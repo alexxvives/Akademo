@@ -797,6 +797,11 @@ admin.post('/bulk-import', async (c) => {
         results.push({ row: i + 1, email, status: 'error', message: 'Missing email, firstName, or lastName' });
         continue;
       }
+      // Reject example template emails
+      if (email.endsWith('@ejemplo.com')) {
+        results.push({ row: i + 1, email, status: 'error', message: 'Esta dirección es del archivo de ejemplo — usa emails reales' });
+        continue;
+      }
       if (!['STUDENT', 'TEACHER'].includes(role)) {
         results.push({ row: i + 1, email, status: 'error', message: `Invalid role: ${role}. Must be STUDENT or TEACHER` });
         continue;

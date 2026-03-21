@@ -141,7 +141,7 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
 
           {step === 'upload' && <UploadStep fileRef={fileRef} handleFileUpload={handleFileUpload} />}
           {step === 'preview' && <PreviewStep preview={preview} importing={importing} reset={reset} handleImport={handleImport} />}
-          {step === 'results' && summary && <ResultsStep summary={summary} downloadResults={downloadResults} reset={reset} />}
+          {step === 'results' && summary && <ResultsStep summary={summary} downloadResults={downloadResults} reset={reset} onClose={onClose} />}
         </div>
       </div>
     </div>,

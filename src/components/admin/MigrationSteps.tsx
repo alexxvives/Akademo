@@ -118,9 +118,11 @@ interface ResultsStepProps {
   summary: ImportSummary;
   downloadResults: () => void;
   reset: () => void;
+  onClose: () => void;
 }
 
-export function ResultsStep({ summary, downloadResults, reset }: ResultsStepProps) {
+export function ResultsStep({ summary, downloadResults, reset, onClose }: ResultsStepProps) {
+  const hasCreated = summary.created > 0;
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-3 gap-3">
@@ -138,16 +140,27 @@ export function ResultsStep({ summary, downloadResults, reset }: ResultsStepProp
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-amber-600 font-medium">
-          Descarga el CSV — contiene las contraseñas temporales para el primer login.
-        </p>
-        <div className="flex gap-2">
-          <button onClick={downloadResults} className="px-4 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">
-            Descargar CSV
-          </button>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          {hasCreated ? (
+            <p className="text-xs text-amber-600 font-medium">
+              Las contraseñas temporales se muestran en la tabla. Descarga el CSV para guardarlas — no estarán disponibles después.
+            </p>
+          ) : (
+            <p className="text-xs text-gray-400">No se crearon usuarios nuevos.</p>
+          )}
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {hasCreated && (
+            <button onClick={downloadResults} className="px-4 py-1.5 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors">
+              Descargar CSV
+            </button>
+          )}
           <button onClick={reset} className="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors">
             Nueva importación
+          </button>
+          <button onClick={onClose} className="px-4 py-1.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
+            Cerrar
           </button>
         </div>
       </div>
