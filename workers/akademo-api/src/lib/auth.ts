@@ -1,5 +1,5 @@
 import { Context } from 'hono';
-import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
+import { getCookie } from 'hono/cookie';
 import bcrypt from 'bcryptjs';
 import { Bindings } from '../types';
 
@@ -27,10 +27,6 @@ export interface SessionUser {
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 12);
-}
-
-export async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
-  return bcrypt.compare(password, hashedPassword);
 }
 
 /**
@@ -111,30 +107,8 @@ async function verifyToken(token: string, env: Bindings): Promise<string | null>
   }
 }
 
-export async function createSession(c: Context<{ Bindings: Bindings }>, userId: string): Promise<string> {
-  // Include issued-at time for server-side expiry enforcement
-  const payload = JSON.stringify({ userId, iat: Math.floor(Date.now() / 1000) });
-  const sessionId = await signToken(payload, c.env);
-  setCookie(c, SESSION_COOKIE_NAME, sessionId, {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'Lax',
-    maxAge: SESSION_MAX_AGE,
-    path: '/',
-    domain: '.akademo-edu.com',
-  });
-  return sessionId;
-}
-
 export async function createSignedSession(data: string, env: Bindings): Promise<string> {
   return signToken(data, env);
-}
-
-export async function deleteSession(c: Context<{ Bindings: Bindings }>): Promise<void> {
-  deleteCookie(c, SESSION_COOKIE_NAME, {
-      path: '/',
-      domain: '.akademo-edu.com',
-  });
 }
 
 export async function getSession(c: Context<{ Bindings: Bindings }>): Promise<SessionUser | null> {

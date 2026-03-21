@@ -40,11 +40,6 @@ export interface Bindings {
   // GoToMeeting
   GTM_CLIENT_ID: string;
   GTM_CLIENT_SECRET: string;
-
-  // Daily.co (test/prototype)
-  DAILY_API_KEY?: string;
-  DAILY_DOMAIN?: string;
-  DAILY_WEBHOOK_SECRET?: string;
   
   // Email
   RESEND_API_KEY: string;

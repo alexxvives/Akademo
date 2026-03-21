@@ -95,13 +95,6 @@ export async function downloadDocument(storagePath: string, fileName: string): P
 }
 
 /**
- * Make a GET request
- */
-export async function apiGet(path: string, options?: ApiClientOptions): Promise<Response> {
-  return apiClient(path, { ...options, method: 'GET' });
-}
-
-/**
  * Make a POST request
  */
 export async function apiPost(path: string, body?: unknown, options?: ApiClientOptions): Promise<Response> {
@@ -112,31 +105,4 @@ export async function apiPost(path: string, body?: unknown, options?: ApiClientO
   });
 }
 
-/**
- * Make a PATCH request
- */
-export async function apiPatch(path: string, body?: unknown, options?: ApiClientOptions): Promise<Response> {
-  return apiClient(path, {
-    ...options,
-    method: 'PATCH',
-    body: body ? JSON.stringify(body) : undefined,
-  });
-}
 
-/**
- * Make a DELETE request
- */
-export async function apiDelete(path: string, options?: ApiClientOptions): Promise<Response> {
-  return apiClient(path, { ...options, method: 'DELETE' });
-}
-
-/**
- * Make a PUT request
- */
-export async function apiPut(path: string, body?: unknown, options?: ApiClientOptions): Promise<Response> {
-  return apiClient(path, {
-    ...options,
-    method: 'PUT',
-    body: body ? JSON.stringify(body) : undefined,
-  });
-}

@@ -4,21 +4,6 @@
  */
 
 /**
- * Extracts an error message from an unknown error.
- * Use this instead of `catch (error: any)` pattern.
- * @param error - The caught error (unknown type)
- * @returns Error message string
- */
-export function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  if (typeof error === 'string') return error;
-  if (error && typeof error === 'object' && 'message' in error) {
-    return String((error as { message: unknown }).message);
-  }
-  return 'An unexpected error occurred';
-}
-
-/**
  * Formats a duration in seconds to a human-readable string.
  * @param seconds - Duration in seconds
  * @returns Formatted string like "2h 30m" or "45m"
@@ -49,20 +34,6 @@ export function formatDate(dateString: string | null | undefined, fallback = '')
 }
 
 /**
- * Formats a date string to a long Spanish locale format.
- * @param dateString - ISO date string
- * @returns Formatted date like "5 de febrero de 2026"
- */
-export function formatDateLong(dateString: string): string {
-  if (!dateString) return '';
-  return new Date(dateString).toLocaleDateString('es-ES', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
-}
-
-/**
  * Checks if a date has been released (is in the past or now).
  * @param dateString - ISO date string
  * @returns true if the date is now or in the past
@@ -82,59 +53,6 @@ export function formatBytes(bytes: number): string {
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
-}
-
-/**
- * Formats a time in seconds to mm:ss format.
- * @param seconds - Time in seconds
- * @returns Formatted string like "05:30"
- */
-export function formatTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-}
-
-/**
- * Formats a percentage value.
- * @param value - Decimal value (e.g., 0.75 for 75%)
- * @param decimals - Number of decimal places (default: 0)
- * @returns Formatted string like "75%"
- */
-export function formatPercent(value: number, decimals = 0): string {
-  return `${(value * 100).toFixed(decimals)}%`;
-}
-
-/**
- * Formats a currency value in EUR.
- * @param amount - Amount in euros
- * @returns Formatted string like "€25.00"
- */
-export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('es-ES', {
-    style: 'currency',
-    currency: 'EUR',
-  }).format(amount);
-}
-
-/**
- * Gets relative time from a date (e.g., "hace 2 horas").
- * @param dateString - ISO date string
- * @returns Relative time string in Spanish
- */
-export function formatTimeAgo(dateString: string): string {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffMins < 1) return 'ahora mismo';
-  if (diffMins < 60) return `hace ${diffMins} min`;
-  if (diffHours < 24) return `hace ${diffHours}h`;
-  if (diffDays < 7) return `hace ${diffDays} días`;
-  return formatDate(dateString);
 }
 
 /**
