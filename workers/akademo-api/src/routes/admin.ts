@@ -797,11 +797,6 @@ admin.post('/bulk-import', async (c) => {
         results.push({ row: i + 1, email, status: 'error', message: 'Missing email, firstName, or lastName' });
         continue;
       }
-      // Reject example template emails
-      if (email.endsWith('@ejemplo.com')) {
-        results.push({ row: i + 1, email, status: 'error', message: 'Esta dirección es del archivo de ejemplo — usa emails reales' });
-        continue;
-      }
       if (!['STUDENT', 'TEACHER'].includes(role)) {
         results.push({ row: i + 1, email, status: 'error', message: `Invalid role: ${role}. Must be STUDENT or TEACHER` });
         continue;
@@ -870,6 +865,50 @@ admin.post('/bulk-import', async (c) => {
           : 'Created successfully';
 
         results.push({ row: i + 1, email, status: 'created', message: msg, tempPassword: String(tempPassword) });
+
+        // Send onboarding email with credentials
+        const resendApiKey = c.env.RESEND_API_KEY;
+        if (resendApiKey) {
+          const roleLabel = role === 'TEACHER' ? 'profesor' : 'alumno';
+          fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${resendApiKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              from: 'AKADEMO <onboarding@akademo-edu.com>',
+              to: [email],
+              subject: 'Bienvenido a AKADEMO - Tus credenciales de acceso',
+              html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                  <div style="background: linear-gradient(135deg, #b1e787 0%, #8dd65f 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+                    <h1 style="color: #1f2937; margin: 0; font-size: 28px;">¡Bienvenido a AKADEMO!</h1>
+                  </div>
+                  <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+                    <p style="color: #374151; font-size: 16px; line-height: 1.6;">Hola <strong>${firstName}</strong>,</p>
+                    <p style="color: #374151; font-size: 16px; line-height: 1.6;">Has sido dado de alta como ${roleLabel} en <strong>${academy.name as string}</strong>. A continuación encontrarás tus credenciales de acceso:</p>
+                    <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #b1e787;">
+                      <p style="margin: 0 0 10px 0; color: #6b7280; font-size: 14px;">Correo electrónico:</p>
+                      <p style="margin: 0 0 20px 0; color: #1f2937; font-size: 16px; font-weight: 600;">${email}</p>
+                      <p style="margin: 0 0 10px 0; color: #6b7280; font-size: 14px;">Contraseña temporal:</p>
+                      <div style="background: #ffffff; padding: 15px; border-radius: 6px; border: 2px dashed #b1e787;">
+                        <p style="margin: 0; color: #1f2937; font-size: 20px; font-weight: 700; letter-spacing: 3px; text-align: center;">${String(tempPassword)}</p>
+                      </div>
+                    </div>
+                    <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
+                      <p style="margin: 0; color: #92400e; font-size: 14px;"><strong>⚠️ Importante:</strong> Por tu seguridad, te recomendamos cambiar esta contraseña después de tu primer inicio de sesión.</p>
+                    </div>
+                    <div style="text-align: center; margin: 30px 0;">
+                      <a href="https://akademo-edu.com" style="background: #b1e787; color: #1f2937; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block; font-size: 16px;">Iniciar Sesión</a>
+                    </div>
+                    <p style="color: #6b7280; font-size: 14px; margin-bottom: 0;">Saludos,<br><strong style="color: #1f2937;">El equipo de AKADEMO</strong></p>
+                  </div>
+                  <div style="text-align: center; padding: 20px 0; color: #9ca3af; font-size: 12px;">
+                    <p style="margin: 0;">© 2026 AKADEMO - Plataforma de Educación en Línea</p>
+                  </div>
+                </div>
+              `,
+            }),
+          }).catch(emailErr => console.error('[Bulk Import] Email send failed (non-fatal):', emailErr));
+        }
       } catch (err: any) {
         results.push({ row: i + 1, email, status: 'error', message: err.message || 'Database error' });
       }
