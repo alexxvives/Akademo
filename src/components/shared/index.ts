@@ -9,7 +9,7 @@ export type { Rating, Lesson, Topic, ClassFeedback } from './FeedbackView';
 
 export { FeedbackPage } from './FeedbackPage';
 
-export { StreamsPage } from './StreamsPage';
+export { StreamsPage } from './streams';
 
 export { MediaLibraryPage } from './MediaLibraryPage';
 
