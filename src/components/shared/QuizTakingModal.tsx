@@ -45,7 +45,6 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
   async function loadQuestions() {
     try {
       const res = await apiClient(`/assignments/${assignmentId}/questions`);
@@ -83,14 +82,12 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
       setLoading(false);
     }
   }
-
   async function handleSubmit() {
     const unanswered = questions.filter(q => !answers[q.id]);
     if (unanswered.length > 0) {
       setError(`Faltan ${unanswered.length} pregunta${unanswered.length > 1 ? 's' : ''} por responder`);
       return;
     }
-
     setSubmitting(true);
     setError('');
     try {

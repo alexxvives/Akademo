@@ -2,91 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { apiClient } from '@/lib/api-client';
-
-interface Step {
-  selector: string;
-  title: string;
-  description: string;
-  icon: string;
-}
-
-const STEPS: Step[] = [
-  {
-    selector: 'a[href="/dashboard/teacher/subjects"]',
-    title: 'Tus Asignaturas',
-    description: 'Aquí gestionas todas tus asignaturas. Añade lecciones, sube vídeos y organiza el temario de cada clase.',
-    icon: '📚',
-  },
-  {
-    selector: 'a[href="/dashboard/teacher/streams"]',
-    title: 'Clases en Directo',
-    description: 'Consulta el historial de tus clases en directo grabadas. Las nuevas clases se crean desde cada asignatura.',
-    icon: '🎥',
-  },
-  {
-    selector: 'a[href="/dashboard/teacher/assignments"]',
-    title: 'Ejercicios y Tareas',
-    description: 'Crea ejercicios, revisa entregas de los alumnos y asigna calificaciones con comentarios.',
-    icon: '📝',
-  },
-  {
-    selector: 'a[href="/dashboard/teacher/progress"]',
-    title: 'Progreso de Alumnos',
-    description: 'Consulta el tiempo de visualización, lecciones completadas y actividad reciente de cada alumno.',
-    icon: '📊',
-  },
-  {
-    selector: 'a[href="/dashboard/teacher/calendar"]',
-    title: 'Calendario',
-    description: 'Planifica tu agenda: programa clases, establece fechas de entrega y mantén todo organizado en un solo lugar.',
-    icon: '📅',
-  },
-  {
-    selector: 'button[title*="invitaci"], button[title*="Copiar"]',
-    title: 'Enlace de Invitación',
-    description: 'Comparte este enlace con tus alumnos para que puedan unirse directamente a tus asignaturas.',
-    icon: '🔗',
-  },
-];
-
-const STORAGE_KEY = 'akademo_teacher_tutorial_v1';
-const PAD = 8;
-
-interface SpotlightRect {
-  top: number;
-  left: number;
-  width: number;
-  height: number;
-}
-
-function getTooltipStyle(
-  rect: SpotlightRect,
-  viewportW: number,
-  viewportH: number
-): React.CSSProperties {
-  const TOOLTIP_W = 340;
-  const TOOLTIP_H = 290; // estimated max height
-  const TOOLTIP_GAP = 20;
-
-  const clampTop = (t: number) => Math.max(12, Math.min(t, viewportH - TOOLTIP_H - 12));
-  const clampLeft = (l: number) => Math.max(12, Math.min(l, viewportW - TOOLTIP_W - 12));
-
-  // Try to place tooltip to the right of the spotlight
-  const rightX = rect.left + rect.width + TOOLTIP_GAP;
-  if (rightX + TOOLTIP_W < viewportW) {
-    return { position: 'fixed', left: rightX, top: clampTop(rect.top), width: TOOLTIP_W };
-  }
-
-  // Fall back to below
-  const belowY = rect.top + rect.height + TOOLTIP_GAP;
-  if (belowY + TOOLTIP_H < viewportH) {
-    return { position: 'fixed', top: belowY, left: clampLeft(rect.left), width: TOOLTIP_W };
-  }
-
-  // Above
-  const aboveY = rect.top - TOOLTIP_GAP - TOOLTIP_H;
-  return { position: 'fixed', top: clampTop(aboveY), left: clampLeft(rect.left), width: TOOLTIP_W };
-}
+import {
+  STEPS,
+  STORAGE_KEY,
+  PAD,
+  getTooltipStyle,
+  type SpotlightRect,
+} from './TeacherTutorial.constants';
 
 export function TeacherTutorial() {
   const [visible, setVisible] = useState(false);

@@ -125,8 +125,6 @@ export default function TeacherDashboard() {
 
       <DashboardChartsGrid
         filteredStudents={filteredStudents}
-        pendingEnrollments={pendingEnrollments}
-        rejectedCount={rejectedCount}
         streamStats={streamStats}
         classWatchTime={classWatchTime}
         ratingsData={ratingsData}

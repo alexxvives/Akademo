@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState, Suspense, useCallback } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { SkeletonForm } from '@/components/ui/SkeletonLoader';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { apiClient } from '@/lib/api-client';
-import confetti from 'canvas-confetti';
+import { fireConfetti } from './confetti';
+import { ErrorAlert } from './ErrorAlert';
 
 type RegistrationData = Record<string, unknown>;
 
@@ -63,18 +64,6 @@ function VerifyEmailContent() {
       }
     }
   }, [searchParams]);
-
-  const fireConfetti = useCallback(() => {
-    const duration = 1500;
-    const end = Date.now() + duration;
-    const colors = ['#6366f1', '#8b5cf6', '#3b82f6', '#22c55e', '#f59e0b'];
-    const frame = () => {
-      confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0, y: 0.7 }, colors });
-      confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1, y: 0.7 }, colors });
-      if (Date.now() < end) requestAnimationFrame(frame);
-    };
-    frame();
-  }, []);
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -183,33 +172,7 @@ function VerifyEmailContent() {
           <p className="text-sm font-medium text-gray-900 mt-2">{email}</p>
         </div>
 
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex items-start gap-3">
-              <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <div className="flex-1">
-                <p className="text-sm text-red-600 font-medium mb-2">{error}</p>
-                {error.toLowerCase().includes('email') && !error.includes('código') && (
-                  <div className="mt-3 p-3 bg-white border border-red-200 rounded-lg">
-                    <p className="text-xs text-gray-700 font-semibold mb-2">¿Tu email rebotó o es incorrecto?</p>
-                    <p className="text-xs text-gray-600 mb-3">Si no puedes recibir emails en esta dirección, puedes regresar y usar un email diferente.</p>
-                    <Link 
-                      href={getJoinUrl()}
-                      className="inline-flex items-center gap-1 text-xs font-medium text-red-700 hover:text-red-800 underline"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                      </svg>
-                      Actualizar dirección de email
-                    </Link>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+        {error && <ErrorAlert error={error} joinUrl={getJoinUrl()} />}
 
         <form onSubmit={handleVerify} className="space-y-6">
           <div>

@@ -156,7 +156,6 @@ export default function LessonCard({
               </svg>
             </div>
           )}
-
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
             <div className="flex items-center gap-2">
               {videoCount > 0 && (
@@ -178,7 +177,6 @@ export default function LessonCard({
             </div>
           </div>
         </div>
-
         <div className="p-4 space-y-3">
           {!lesson.isUploading && !lesson.isTranscoding && (
             <div className="space-y-2">

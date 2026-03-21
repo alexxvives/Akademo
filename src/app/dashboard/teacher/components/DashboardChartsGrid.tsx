@@ -1,29 +1,8 @@
-import { EnrolledStudent } from '@/hooks/useTeacherDashboard';
 import { BarChart, DonutChart } from '@/components/Charts';
-import { RatingsData } from '@/hooks/useTeacherDashboard';
-import { useAnimatedNumber } from '@/hooks';
-import { PendingEnrollment } from '@/hooks/useTeacherDashboard';
-
-function AnimatedNumber({ value, className }: { value: number; className?: string }) {
-  const animatedValue = useAnimatedNumber(value);
-  return <div className={className}>{animatedValue}</div>;
-}
-
-interface DashboardChartsGridProps {
-  filteredStudents: EnrolledStudent[];
-  pendingEnrollments: PendingEnrollment[];
-  rejectedCount: number;
-  streamStats: { total: number; avgParticipants: number; thisMonth: number; totalHours: number; totalMinutes: number };
-  classWatchTime: { hours: number; minutes: number };
-  ratingsData: RatingsData | null;
-  selectedClass: string;
-  paymentStatusCounts: { alDia: number; atrasados: number; uniqueAlDia: number; uniqueAtrasados: number };
-}
+import { AnimatedNumber, DashboardChartsGridProps } from './DashboardChartsGridHelpers';
 
 export function DashboardChartsGrid({ 
   filteredStudents, 
-  pendingEnrollments: _pendingEnrollments,
-  rejectedCount: _rejectedCount, 
   streamStats,
   classWatchTime, 
   ratingsData,

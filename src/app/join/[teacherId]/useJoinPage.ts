@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
-import type { Teacher, JoinClass, JoinFormData, AuthUser } from './types';
+import type { Teacher, JoinClass, JoinFormData } from './types';
 
 export function useJoinPage() {
   const params = useParams();
@@ -12,7 +12,6 @@ export function useJoinPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [, setCurrentUser] = useState<AuthUser | null>(null);
   const [showLogin, setShowLogin] = useState(false);
   const [formData, setFormData] = useState<JoinFormData>({ email: '', password: '', fullName: '' });
   const [authLoading, setAuthLoading] = useState(false);
@@ -170,7 +169,6 @@ export function useJoinPage() {
         sessionStorage.setItem('akademo_new_user', '1');
         setTimeout(() => {
           setIsLoggedIn(true);
-          setCurrentUser(regResult.data);
           setShowVerification(false);
           setVerificationSuccess(false);
         }, 500);

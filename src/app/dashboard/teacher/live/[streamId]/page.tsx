@@ -4,20 +4,9 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
-
-const getLogoSrc = (url: string) => url.startsWith('http') ? url : `/api/storage/serve/${url}`;
-
-interface StreamInfo {
-  id: string;
-  title: string;
-  className: string;
-  classSlug?: string;
-  classId: string;
-  status: string;
-  dailyRoomUrl: string | null;
-  academyName?: string;
-  academyLogoUrl?: string;
-}
+import type { StreamInfo } from './types';
+import { getLogoSrc } from './types';
+import ZoomOverlay from './ZoomOverlay';
 
 export default function TeacherLivePage() {
   const { streamId } = useParams<{ streamId: string }>();
@@ -37,7 +26,6 @@ export default function TeacherLivePage() {
   useEffect(() => {
     const init = async () => {
       try {
-        // Load stream info first, then generate join token with redirect URL embedded in token
         const streamRes = await apiClient(`/live/${streamId}`);
         const streamData = await streamRes.json();
 
@@ -77,7 +65,6 @@ export default function TeacherLivePage() {
   const backUrl = stream ? `/dashboard/teacher/subject/${stream.classSlug || stream.classId}` : '/dashboard/teacher/streams';
 
   const endSession = useCallback(() => {
-    // fire-and-forget: navigate away immediately, API cleanup runs in background
     apiClient(`/live/${streamId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -88,7 +75,6 @@ export default function TeacherLivePage() {
 
   const dailyContainerRef = useRef<HTMLDivElement>(null);
 
-  // Use @daily-co/daily-js SDK — proper typed events, no fragile postMessage parsing
   useEffect(() => {
     if (!embedUrl || !dailyContainerRef.current) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -111,8 +97,6 @@ export default function TeacherLivePage() {
       callFrame?.destroy();
     };
   }, [embedUrl, startRecording, endSession]);
-
-
 
   useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current); }, []);
 
@@ -161,7 +145,6 @@ export default function TeacherLivePage() {
     <div className="fixed inset-0 bg-gray-950 flex flex-col">
       {/* Top bar */}
       <div className="flex-shrink-0 relative flex items-center px-4 py-3 bg-gray-900 border-b border-white/10">
-        {/* Center: academy branding */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="flex items-center gap-2 pointer-events-auto">
             {stream?.academyLogoUrl ? (
@@ -191,75 +174,53 @@ export default function TeacherLivePage() {
         </div>
       </div>
 
-      {/* Main content: split when whiteboard is open */}
-      <div className="flex-1 flex min-h-0">
-        {/* Daily.co iframe or GTM overlay */}
-        <div className="flex-1 relative">
-          {isZoom && zoomJoinUrl ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 bg-gray-900">
-              <div className="text-center space-y-2">
-                <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.069A1 1 0 0121 8.867V15.133a1 1 0 01-1.447.902L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
+      {/* Main content */}
+      {isZoom && zoomJoinUrl ? (
+        <ZoomOverlay
+          stream={stream}
+          zoomJoinUrl={zoomJoinUrl}
+          zoomMeetingId={zoomMeetingId}
+          streamId={streamId}
+          showWhiteboard={showWhiteboard}
+        />
+      ) : (
+        <div className="flex-1 flex min-h-0">
+          <div className="flex-1 relative">
+            {!embedUrl ? (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center text-gray-400 space-y-3">
+                  <div className="w-10 h-10 border-2 border-gray-600 border-t-white rounded-full animate-spin mx-auto" />
+                  <p className="text-sm">Preparando sala...</p>
                 </div>
-                <h2 className="text-white text-lg font-semibold">{stream?.title || 'Clase en vivo'}</h2>
-                <p className="text-gray-400 text-sm">La reunión se abre en la app de GoTo Meeting</p>
               </div>
-              <a
-                href={zoomJoinUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => {
-                  if (zoomMeetingId) {
-                    e.preventDefault();
-                    window.location.href = `gotomeeting://join/${zoomMeetingId}`;
-                    setTimeout(() => window.open(zoomJoinUrl!, '_blank', 'noopener,noreferrer'), 2500);
-                  }
-                }}
-                className="flex items-center gap-2 px-6 py-3 bg-[#b1e787] text-gray-900 rounded-xl hover:bg-[#9fd470] font-semibold transition-colors text-sm"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-                Abrir GoTo Meeting
-              </a>
-            </div>
-          ) : !embedUrl ? (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center text-gray-400 space-y-3">
-                <div className="w-10 h-10 border-2 border-gray-600 border-t-white rounded-full animate-spin mx-auto" />
-                <p className="text-sm">Preparando sala...</p>
+            ) : (
+              <div ref={dailyContainerRef} className="absolute inset-0" />
+            )}
+          </div>
+          {showWhiteboard && (
+            <div className="w-[42%] flex-shrink-0 flex flex-col border-l border-white/10">
+              <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 bg-gray-800 border-b border-white/10">
+                <span className="text-white text-xs font-semibold">Pizarra colaborativa</span>
+                <a
+                  href={`https://wbo.ophir.dev/boards/akademo-${streamId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-400 hover:text-white text-xs transition-colors"
+                  title="Abrir en nueva pestaña"
+                >
+                  ↗ Nueva pestaña
+                </a>
               </div>
+              <iframe
+                src={`https://wbo.ophir.dev/boards/akademo-${streamId}`}
+                className="flex-1 border-0 bg-white"
+                title="Pizarra"
+                allow="clipboard-read; clipboard-write"
+              />
             </div>
-          ) : (
-            <div ref={dailyContainerRef} className="absolute inset-0" />
           )}
         </div>
-        {/* Collaborative whiteboard panel */}
-        {showWhiteboard && (
-          <div className="w-[42%] flex-shrink-0 flex flex-col border-l border-white/10">
-            <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 bg-gray-800 border-b border-white/10">
-              <span className="text-white text-xs font-semibold">Pizarra colaborativa</span>
-              <a
-                href={`https://wbo.ophir.dev/boards/akademo-${streamId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-gray-400 hover:text-white text-xs transition-colors"
-                title="Abrir en nueva pestaña"
-              >
-                ↗ Nueva pestaña
-              </a>
-            </div>
-            <iframe
-              src={`https://wbo.ophir.dev/boards/akademo-${streamId}`}
-              className="flex-1 border-0 bg-white"
-              title="Pizarra"
-              allow="clipboard-read; clipboard-write"
-            />
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 }
