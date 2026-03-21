@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { SkeletonTable } from '@/components/ui/SkeletonLoader';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
+import { AcademySearchDropdown } from '@/components/ui/AcademySearchDropdown';
 import { usePeriod } from '@/contexts/PeriodContext';
 import type { VideoItem, DocumentItem, ClassOption, Tab } from './types';
 import { SkeletonVideosGrid, VideosGrid } from './VideosGrid';
@@ -18,6 +19,7 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
   const [classes, setClasses] = useState<ClassOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedClass, setSelectedClass] = useState('all');
+  const [selectedAcademy, setSelectedAcademy] = useState('all');
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -32,7 +34,7 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
   // Reset page when filters change (not on tab — handled in tab click handlers to avoid double-load)
   useEffect(() => {
     setPage(1);
-  }, [selectedClass, debouncedSearch]);
+  }, [selectedClass, debouncedSearch, selectedAcademy]);
 
   // Load classes
   useEffect(() => {
@@ -52,6 +54,18 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
     return classes.filter(c => isClassInPeriod(c.id));
   }, [classes, activePeriodId, isClassInPeriod]);
 
+  // Derive academy options for admin from classes list
+  const adminAcademies = useMemo(() => {
+    if (role !== 'ADMIN') return [];
+    const map = new Map<string, { id: string; name: string }>();
+    classes.forEach(c => {
+      if (c.academyId && c.academyName && !map.has(c.academyId)) {
+        map.set(c.academyId, { id: c.academyId, name: c.academyName });
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [classes, role]);
+
   // Fetch total counts for both tabs independently of the active tab
   useEffect(() => {
     const fetchCounts = async () => {
@@ -59,6 +73,7 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
         const params = new URLSearchParams({ type: 'all', page: '1', limit: '1' });
         if (selectedClass !== 'all') params.set('classId', selectedClass);
         if (debouncedSearch) params.set('search', debouncedSearch);
+        if (role === 'ADMIN' && selectedAcademy !== 'all') params.set('academyId', selectedAcademy);
         const res = await apiClient(`/media?${params}`);
         const data = await res.json();
         if (data.success) {
@@ -68,7 +83,7 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
       } catch { /* ignore */ }
     };
     fetchCounts();
-  }, [selectedClass, debouncedSearch]);
+  }, [selectedClass, debouncedSearch, selectedAcademy, role]);
 
   // Load media data
   const loadData = useCallback(async () => {
@@ -81,6 +96,7 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
       });
       if (selectedClass !== 'all') params.set('classId', selectedClass);
       if (debouncedSearch) params.set('search', debouncedSearch);
+      if (role === 'ADMIN' && selectedAcademy !== 'all') params.set('academyId', selectedAcademy);
 
       const res = await apiClient(`/media?${params}`);
       const data = await res.json();
@@ -98,7 +114,7 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
     } finally {
       setLoading(false);
     }
-  }, [tab, page, selectedClass, debouncedSearch]);
+  }, [tab, page, selectedClass, debouncedSearch, selectedAcademy, role]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -115,13 +131,23 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
           </p>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          {role === 'ADMIN' && adminAcademies.length > 0 && (
+            <AcademySearchDropdown
+              academies={adminAcademies}
+              value={selectedAcademy}
+              onChange={(value) => { setSelectedAcademy(value); setSelectedClass('all'); }}
+              allLabel="Todas las academias"
+              allValue="all"
+              className="w-full sm:w-56"
+            />
+          )}
           <div className="relative w-full sm:w-48">
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={tab === 'videos' ? 'Buscar videos...' : 'Buscar documentos...'}
-              className="w-full px-4 py-2 pl-10 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#b0e788] focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
             />
             <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -129,7 +155,9 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
           </div>
           <div className="w-full sm:w-56">
             <ClassSearchDropdown
-              classes={filteredClasses}
+              classes={role === 'ADMIN' && selectedAcademy !== 'all'
+                ? filteredClasses.filter(c => c.academyId === selectedAcademy)
+                : filteredClasses}
               value={selectedClass}
               onChange={setSelectedClass}
               allLabel="Todas las asignaturas"

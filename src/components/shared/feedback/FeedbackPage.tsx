@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useMemo } from 'react';
 import { FeedbackView } from '../FeedbackView';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 import { AcademySearchDropdown } from '@/components/ui/AcademySearchDropdown';
@@ -26,6 +27,25 @@ export function FeedbackPage({ role }: FeedbackPageProps) {
     activePeriodId,
     isClassInPeriod,
   } = useFeedbackData(role);
+
+  const [searchStudent, setSearchStudent] = useState('');
+
+  const searchFilteredClasses = useMemo(() => {
+    if (!searchStudent.trim()) return filteredClasses;
+    const q = searchStudent.toLowerCase();
+    return filteredClasses
+      .map(cls => ({
+        ...cls,
+        topics: cls.topics.map(topic => ({
+          ...topic,
+          lessons: topic.lessons.map(lesson => ({
+            ...lesson,
+            ratings: lesson.ratings.filter(r => r.studentName.toLowerCase().includes(q)),
+          })).filter(l => l.ratings.length > 0),
+        })).filter(t => t.lessons.length > 0),
+      }))
+      .filter(c => c.topics.length > 0);
+  }, [filteredClasses, searchStudent]);
 
   if (loading) {
     return <SkeletonFeedback />;
@@ -60,6 +80,18 @@ export function FeedbackPage({ role }: FeedbackPageProps) {
         {/* Admin filters */}
         {isAdmin && (
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="relative w-full sm:w-48">
+              <input
+                type="text"
+                value={searchStudent}
+                onChange={(e) => setSearchStudent(e.target.value)}
+                placeholder="Buscar estudiante..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              />
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
             {selectedAcademy !== 'all' && filteredClassOptions.length > 0 && (
               <ClassSearchDropdown
                 classes={filteredClassOptions}
@@ -86,7 +118,7 @@ export function FeedbackPage({ role }: FeedbackPageProps) {
       </div>
 
       <FeedbackView
-        classes={filteredClasses}
+        classes={searchFilteredClasses}
         loading={loading}
         showClassFilter={false}
         onRatingsViewed={handleRatingsViewed}

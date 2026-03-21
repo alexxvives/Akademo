@@ -32,6 +32,8 @@ export interface ClassOption {
   id: string;
   name: string;
   startDate?: string;
+  academyId?: string;
+  academyName?: string;
 }
 
 export type Tab = 'videos' | 'documents';

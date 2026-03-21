@@ -9,6 +9,7 @@ import { CalendarMonthView } from './CalendarMonthView';
 import { CalendarWeekView } from './CalendarWeekView';
 import { CalendarDayView } from './CalendarDayView';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
+import { AcademySearchDropdown } from '@/components/ui/AcademySearchDropdown';
 import { CalendarAddEventModal } from '../CalendarAddEventModal';
 
 export function CalendarPage({ role }: CalendarPageProps) {
@@ -110,16 +111,14 @@ export function CalendarPage({ role }: CalendarPageProps) {
               />
             )}
             {role === 'ADMIN' && adminAcademies.length > 0 && (
-              <select
+              <AcademySearchDropdown
+                academies={adminAcademies}
                 value={selectedAdminAcademy}
-                onChange={e => { setSelectedAdminAcademy(e.target.value); setSelectedClass('all'); }}
-                className="h-10 pl-3 pr-8 text-sm border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 w-full sm:w-56"
-              >
-                <option value="all">Todas las academias</option>
-                {adminAcademies.map(a => (
-                  <option key={a.id} value={a.id}>{a.name}</option>
-                ))}
-              </select>
+                onChange={(value) => { setSelectedAdminAcademy(value); setSelectedClass('all'); }}
+                allLabel="Todas las academias"
+                allValue="all"
+                className="w-full sm:w-56"
+              />
             )}
           </div>
         </div>
