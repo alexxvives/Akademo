@@ -68,6 +68,15 @@ export function AcademyRow({
           </button>
         </td>
         <td className="px-6 py-4 whitespace-nowrap">
+          {academy.paymentStatus === 'PAID' ? (
+            <span className="text-sm text-blue-700 font-medium">
+              {academy.dailyCoMinutes ? `${Math.floor((academy.dailyCoMinutes || 0) / 60)}h ${(academy.dailyCoMinutes || 0) % 60}min` : '0h 0min'}
+            </span>
+          ) : (
+            <span className="text-sm text-gray-400">—</span>
+          )}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap">
           <span className="text-sm text-gray-500">{new Date(academy.createdAt).toLocaleDateString('es')}</span>
         </td>
         <td className="px-6 py-4 whitespace-nowrap">
@@ -90,6 +99,7 @@ export function AcademyRow({
                 </svg>
               )}
             </button>
+            {academy.paymentStatus === 'PAID' && (
             <button
               onClick={() => onMigration({ id: academy.id, name: academy.ownerName })}
               className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
@@ -99,6 +109,7 @@ export function AcademyRow({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
               </svg>
             </button>
+            )}
             <button
               onClick={() => onDelete(academy.ownerId, academy.name)}
               disabled={deletingId === academy.ownerId}
@@ -117,7 +128,7 @@ export function AcademyRow({
 
       {isExpanded && (
         <tr>
-          <td colSpan={8} className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+          <td colSpan={9} className="bg-gray-50 px-6 py-4 border-b border-gray-200">
             <div className="flex flex-wrap items-end justify-between gap-3 mb-3">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Facturación mensual — {academy.ownerName}</p>
               <AddBillingForm

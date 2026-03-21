@@ -13,7 +13,7 @@ export default function AdminAcademies() {
     handleToggleDaily, handleDelete, handleBillingAdded, handleBillingDeleted,
   } = useAcademies();
 
-  if (loading) return <SkeletonTable rows={10} cols={7} />;
+  if (loading) return <SkeletonTable rows={10} cols={8} />;
 
   return (
     <div className="space-y-6">
@@ -38,6 +38,7 @@ export default function AdminAcademies() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estudiantes</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Matrículas</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado de Pago</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Min. Daily.co</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Creada</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                 </tr>

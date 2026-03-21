@@ -31,7 +31,19 @@ admin.get('/academies', async (c) => {
         COUNT(DISTINCT c.id) as classCount,
         COUNT(DISTINCT t.id) as teacherCount,
         COUNT(DISTINCT e.userId) as studentCount,
-        COUNT(DISTINCT e.id) as enrollmentCount
+        COUNT(DISTINCT e.id) as enrollmentCount,
+        (
+          SELECT COALESCE(SUM(
+            CAST((strftime('%s', ls.endedAt) - strftime('%s', ls.startedAt)) AS INTEGER) / 60
+          ), 0)
+          FROM LiveStream ls
+          JOIN Class cls ON ls.classId = cls.id
+          WHERE cls.academyId = a.id
+            AND ls.endedAt IS NOT NULL
+            AND ls.startedAt IS NOT NULL
+            AND ls.dailyRoomName IS NOT NULL
+            AND ls.zoomMeetingId IS NULL
+        ) as dailyCoMinutes
       FROM Academy a
       LEFT JOIN User u ON a.ownerId = u.id
       LEFT JOIN Class c ON a.id = c.academyId

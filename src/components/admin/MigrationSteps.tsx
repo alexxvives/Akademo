@@ -77,7 +77,7 @@ export function PreviewStep({ preview, importing, reset, handleImport }: Preview
         </div>
       </div>
 
-      <div className="overflow-x-auto max-h-72 overflow-y-auto border border-gray-200 rounded-xl">
+      <div className="overflow-x-auto max-h-[55vh] overflow-y-auto border border-gray-200 rounded-xl">
         <table className="w-full text-sm">
           <thead className="text-gray-500 text-xs sticky top-0 bg-gray-50">
             <tr>

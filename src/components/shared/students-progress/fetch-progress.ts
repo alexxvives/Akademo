@@ -37,7 +37,15 @@ export async function fetchStudentProgress(role: 'TEACHER' | 'ACADEMY' | 'ADMIN'
     // Group by unique student ID to show each student once (aggregate across all classes)
     const studentMap = new Map<string, StudentProgressAggregate>();
 
-    data.data.forEach((student: StudentProgressApiRecord) => {
+    // For ADMIN: exclude students from unpaid academies using the paid-only classes list
+    const paidClassIds = role === 'ADMIN' && result.classes.length > 0
+      ? new Set(result.classes.map((c: Class) => c.id))
+      : null;
+    const records: StudentProgressApiRecord[] = paidClassIds
+      ? (data.data as StudentProgressApiRecord[]).filter(s => paidClassIds.has(s.classId))
+      : (data.data as StudentProgressApiRecord[]);
+
+    records.forEach((student: StudentProgressApiRecord) => {
       const paymentResult = computePaymentStatus(
         student.paymentFrequency,
         student.monthlyPrice,

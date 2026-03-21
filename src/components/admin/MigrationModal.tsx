@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { apiClient } from '@/lib/api-client';
 import { type ImportRow, type ImportSummary, XLSX, normalizeRows, parseCSV } from './migration-utils';
 import { UploadStep, PreviewStep, ResultsStep } from './MigrationSteps';
@@ -17,7 +18,10 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
   const [summary, setSummary] = useState<ImportSummary | null>(null);
   const [error, setError] = useState('');
   const [step, setStep] = useState<'upload' | 'preview' | 'results'>('upload');
+  const [mounted, setMounted] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => setMounted(true), []);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     setError('');
@@ -107,9 +111,13 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
     if (fileRef.current) fileRef.current.value = '';
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] overflow-hidden" onClick={e => e.stopPropagation()}>
+  if (!mounted) return null;
+
+  const maxWidth = step === 'preview' ? 'max-w-5xl' : 'max-w-3xl';
+
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={onClose}>
+      <div className={`bg-white rounded-2xl shadow-2xl w-full ${maxWidth} max-h-[92vh] overflow-hidden`} onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
           <div>
@@ -124,7 +132,7 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
         </div>
 
         {/* Body */}
-        <div className="px-6 py-5 overflow-y-auto max-h-[calc(85vh-70px)]">
+        <div className="px-6 py-5 overflow-y-auto max-h-[calc(92vh-72px)]">
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-5">
               <p className="text-red-700 text-sm">{error}</p>
@@ -136,6 +144,7 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
           {step === 'results' && summary && <ResultsStep summary={summary} downloadResults={downloadResults} reset={reset} />}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

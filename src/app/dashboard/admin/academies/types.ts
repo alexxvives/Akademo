@@ -12,6 +12,7 @@ export interface Academy {
   enrollmentCount: number;
   classCount: number;
   createdAt: string;
+  dailyCoMinutes?: number;
 }
 
 export interface BillingRecord {
