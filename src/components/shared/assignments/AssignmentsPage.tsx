@@ -51,7 +51,8 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
                 value={data.selectedAcademy}
                 onChange={(value) => { data.setSelectedAcademy(value); data.setSelectedClass(''); }}
                 allLabel="Todas las academias"
-                className="w-full sm:w-48"
+                allValue=""
+                className="w-full sm:w-56"
               />
             )}
             {(data.isAcademy || data.isTeacher || (data.isAdmin && data.selectedAcademy)) && (

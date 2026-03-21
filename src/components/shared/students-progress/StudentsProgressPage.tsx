@@ -56,6 +56,17 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
+          {/* Academy Filter - Only for ADMIN */}
+          {role === 'ADMIN' && academies.length > 0 && (
+            <AcademySearchDropdown
+              academies={academies}
+              value={selectedAcademy}
+              onChange={(v) => { setSelectedAcademy(v); setSelectedClass('all'); }}
+              allLabel="Todas las Academias"
+              allValue="all"
+              className="w-full sm:w-56"
+            />
+          )}
           {/* Class Filter - Shows when academy is selected for ADMIN or always for others */}
           {(role !== 'ADMIN' || selectedAcademy !== 'all') && (
             <ClassSearchDropdown
@@ -63,17 +74,6 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
               value={selectedClass}
               onChange={setSelectedClass}
               allLabel="Todas las asignaturas"
-              className="w-full sm:w-56"
-            />
-          )}
-          {/* Academy Filter - Only for ADMIN */}
-          {role === 'ADMIN' && academies.length > 0 && (
-            <AcademySearchDropdown
-              academies={academies}
-              value={selectedAcademy}
-              onChange={setSelectedAcademy}
-              allLabel="Todas las Academias"
-              allValue="all"
               className="w-full sm:w-56"
             />
           )}

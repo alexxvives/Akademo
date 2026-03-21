@@ -12,12 +12,12 @@ interface ProgressResult {
 export async function fetchStudentProgress(role: 'TEACHER' | 'ACADEMY' | 'ADMIN'): Promise<ProgressResult> {
   const result: ProgressResult = { academies: [], classes: [], students: [] };
 
-  // Load academies if ADMIN
+  // Load academies if ADMIN (only paid/onboarded ones)
   if (role === 'ADMIN') {
     const academiesRes = await apiClient('/admin/academies');
     const academiesData = await academiesRes.json();
     if (academiesData.success && Array.isArray(academiesData.data)) {
-      result.academies = academiesData.data;
+      result.academies = academiesData.data.filter((a: { paymentStatus?: string }) => a.paymentStatus === 'PAID');
     }
   }
 

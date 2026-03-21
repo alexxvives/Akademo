@@ -152,17 +152,30 @@ export function useStudentsData(role: 'TEACHER' | 'ACADEMY' | 'ADMIN') {
     }
   };
 
-  // Filter students to only those enrolled in period classes when a period is active
+  // Filter students by academy and period
   const visibleStudents = useMemo(() => {
-    if (activePeriodId === 'all') return students;
+    let filtered = students;
+
+    // Filter by selected academy (admin only)
+    if (role === 'ADMIN' && selectedAcademy !== 'all') {
+      const academyClassIds = new Set(classes.filter(c => c.academyId === selectedAcademy).map(c => c.id));
+      filtered = filtered.filter(s => {
+        if (s.classBreakdown && s.classBreakdown.length > 0) {
+          return s.classBreakdown.some((b: { classId: string }) => academyClassIds.has(b.classId));
+        }
+        return s.classId ? academyClassIds.has(s.classId) : false;
+      });
+    }
+
+    if (activePeriodId === 'all') return filtered;
     const periodIds = new Set(filteredClasses.filter(c => isClassInPeriod(c.startDate)).map(c => c.id));
-    return students.filter(s => {
+    return filtered.filter(s => {
       if (s.classBreakdown && s.classBreakdown.length > 0) {
         return s.classBreakdown.some((b: { classId: string }) => periodIds.has(b.classId));
       }
       return s.classId ? periodIds.has(s.classId) : false;
     });
-  }, [students, activePeriodId, filteredClasses, isClassInPeriod]);
+  }, [students, activePeriodId, filteredClasses, isClassInPeriod, selectedAcademy, role, classes]);
 
   return {
     students: visibleStudents,

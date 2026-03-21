@@ -154,9 +154,12 @@ export function useAssignmentsData(role: AssignmentsPageProps['role']) {
   const loadAdminData = async () => {
     try {
       setLoading(true);
-      const res = await apiClient('/academies');
+      const res = await apiClient('/admin/academies');
       const result = await res.json();
-      if (result.success) setAcademies(result.data || []);
+      if (result.success) {
+        const paid = (result.data || []).filter((a: { paymentStatus?: string }) => a.paymentStatus === 'PAID');
+        setAcademies(paid);
+      }
     } catch (error) {
       console.error('Failed to load academies:', error);
     } finally { setLoading(false); }
