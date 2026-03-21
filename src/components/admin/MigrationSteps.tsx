@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { type ImportRow, type ImportSummary } from './migration-utils';
 
 interface UploadStepProps {
@@ -119,10 +120,25 @@ interface ResultsStepProps {
   downloadResults: () => void;
   reset: () => void;
   onClose: () => void;
+  onSendEmails: () => Promise<{ sent: number; failed: number }>;
 }
 
-export function ResultsStep({ summary, downloadResults, reset, onClose }: ResultsStepProps) {
+export function ResultsStep({ summary, downloadResults, reset, onClose, onSendEmails }: ResultsStepProps) {
   const hasCreated = summary.created > 0;
+  const [emailState, setEmailState] = useState<'idle' | 'sending' | 'sent'>('idle');
+  const [emailResult, setEmailResult] = useState<{ sent: number; failed: number } | null>(null);
+
+  const handleSend = async () => {
+    setEmailState('sending');
+    try {
+      const result = await onSendEmails();
+      setEmailResult(result);
+      setEmailState('sent');
+    } catch {
+      setEmailState('idle');
+    }
+  };
+
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-3 gap-3">
@@ -140,11 +156,42 @@ export function ResultsStep({ summary, downloadResults, reset, onClose }: Result
         </div>
       </div>
 
+      {hasCreated && (
+        <div className="rounded-xl border p-4
+          border-amber-200 bg-amber-50
+          data-[sent]:border-green-200 data-[sent]:bg-green-50"
+          {...(emailState === 'sent' ? { 'data-sent': '' } : {})}>
+          {emailState === 'idle' && (
+            <>
+              <p className="text-sm font-semibold text-amber-800 mb-1">Enviar emails de bienvenida</p>
+              <p className="text-xs text-amber-700 mb-3">Cada usuario recibirá su email con contraseña temporal. Solo envía cuando hayas verificado la lista y la academia esté lista para recibir alumnos.</p>
+              <button
+                onClick={handleSend}
+                className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                Enviar emails de bienvenida ({summary.created})
+              </button>
+            </>
+          )}
+          {emailState === 'sending' && (
+            <p className="text-sm text-amber-700 font-medium">Enviando emails...</p>
+          )}
+          {emailState === 'sent' && emailResult && (
+            <>
+              <p className="text-sm font-semibold text-green-800 mb-1">✓ Emails enviados</p>
+              <p className="text-xs text-green-700">
+                {emailResult.sent} enviados correctamente{emailResult.failed > 0 ? ` · ${emailResult.failed} fallaron` : ''}.
+              </p>
+            </>
+          )}
+        </div>
+      )}
+
       <div className="flex items-center justify-between gap-3">
         <div>
           {hasCreated ? (
             <p className="text-xs text-amber-600 font-medium">
-              Las contraseñas temporales se muestran en la tabla. Descarga el CSV para guardarlas — no estarán disponibles después.
+              Las contraseñas temporales se muestran en la tabla. Descarga el CSV para guardarlas.
             </p>
           ) : (
             <p className="text-xs text-gray-400">No se crearon usuarios nuevos.</p>
