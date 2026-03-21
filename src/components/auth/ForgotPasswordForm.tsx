@@ -18,20 +18,24 @@ export function ForgotPasswordForm({ onBackToLogin }: ForgotPasswordFormProps) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
 
-  const handleSendCode = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const doSendCode = async (targetEmail: string) => {
     setLoading(true);
     setError('');
     try {
       const res = await apiClient('/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: targetEmail }),
       });
       const result = await res.json();
       if (result.success) {
         setStep('code');
+        setResendCooldown(60);
+        const interval = setInterval(() => {
+          setResendCooldown((c) => { if (c <= 1) { clearInterval(interval); return 0; } return c - 1; });
+        }, 1000);
       } else {
         setError(result.error || 'Error al enviar el código');
       }
@@ -40,6 +44,11 @@ export function ForgotPasswordForm({ onBackToLogin }: ForgotPasswordFormProps) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSendCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await doSendCode(email);
   };
 
   const handleVerifyCode = async (e: React.FormEvent) => {
@@ -161,8 +170,16 @@ export function ForgotPasswordForm({ onBackToLogin }: ForgotPasswordFormProps) {
           </button>
           <button
             type="button"
+            disabled={resendCooldown > 0 || loading}
+            onClick={() => doSendCode(email)}
+            className="w-full text-sm text-gray-500 hover:text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {resendCooldown > 0 ? `Reenviar código (${resendCooldown}s)` : 'Reenviar código'}
+          </button>
+          <button
+            type="button"
             onClick={() => { setStep('email'); setError(''); }}
-            className="w-full text-sm text-gray-500 hover:text-gray-700"
+            className="w-full text-sm text-gray-400 hover:text-gray-600"
           >
             Cambiar email
           </button>
