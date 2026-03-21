@@ -1,84 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiClient } from '@/lib/api-client';
-import { generateDemoClasses, generateDemoStudents, generateDemoLessonRatings, generateDemoStreams, generateDemoStats } from '@/lib/demo-data';
+import { buildDemoTeacherData } from './teacher-dashboard-demo';
+import type { Academy, Membership, Class, EnrolledStudent, PendingEnrollment, RatingsData, StreamStats, ClassWatchTime, PaymentStatusCounts } from './teacher-dashboard-types';
 
-export interface Academy {
-  id: string;
-  name: string;
-  description: string | null;
-}
-
-export interface Membership {
-  id: string;
-  status: string;
-  academyName: string;
-  academyDescription: string | null;
-  requestedAt: string;
-}
-
-export interface Class {
-  id: string;
-  name: string;
-  slug?: string | null;
-  description: string | null;
-  academyName: string;
-  enrollmentCount: number;
-  students?: Student[];
-  zoomAccountName?: string | null;
-  videoCount?: number;
-  documentCount?: number;
-  university?: string | null;
-  carrera?: string | null;
-}
-
-export interface Student {
-  id: string;
-  name: string;
-  email: string;
-}
-
-export interface EnrolledStudent {
-  id: string;
-  name: string;
-  email: string;
-  classId: string;
-  className: string;
-  lessonsCompleted?: number;
-  totalLessons?: number;
-  lastActive: string | null;
-  totalWatchTime?: number;
-}
-
-export interface PendingEnrollment {
-  id: string;
-  student: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
-  class: {
-    id: string;
-    name: string;
-  };
-  enrolledAt: string;
-}
-
-export interface RatingsData {
-  overall: {
-    averageRating: number | null;
-    totalRatings: number;
-    ratedLessons: number;
-  };
-  lessons: Array<{
-    lessonId: string;
-    lessonTitle: string;
-    className: string;
-    classId: string;
-    averageRating: number | null;
-    ratingCount: number;
-  }>;
-}
+// Re-export all types so existing imports from '@/hooks/useTeacherDashboard' keep working
+export type { Academy, Membership, Class, Student, EnrolledStudent, PendingEnrollment, RatingsData, StreamStats, ClassWatchTime, PaymentStatusCounts } from './teacher-dashboard-types';
 
 export function useTeacherDashboard() {
   const [memberships, setMemberships] = useState<Membership[]>([]);
@@ -90,9 +16,9 @@ export function useTeacherDashboard() {
   const [academyName, setAcademyName] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [rejectedCount, setRejectedCount] = useState(0);
-  const [streamStats, setStreamStats] = useState({ total: 0, avgParticipants: 0, thisMonth: 0, totalHours: 0, totalMinutes: 0 });
-  const [classWatchTime, setClassWatchTime] = useState({ hours: 0, minutes: 0 });
-  const [paymentStatusCounts, setPaymentStatusCounts] = useState({ alDia: 0, atrasados: 0, uniqueAlDia: 0, uniqueAtrasados: 0 });
+  const [streamStats, setStreamStats] = useState<StreamStats>({ total: 0, avgParticipants: 0, thisMonth: 0, totalHours: 0, totalMinutes: 0 });
+  const [classWatchTime, setClassWatchTime] = useState<ClassWatchTime>({ hours: 0, minutes: 0 });
+  const [paymentStatusCounts, setPaymentStatusCounts] = useState<PaymentStatusCounts>({ alDia: 0, atrasados: 0, uniqueAlDia: 0, uniqueAtrasados: 0 });
 
   const loadData = useCallback(async () => {
     try {
@@ -110,67 +36,17 @@ export function useTeacherDashboard() {
       } catch { /* continue with normal load */ }
 
       if (isDemoAcademy) {
-        // Use shared demo data (same source as academy dashboard)
-        const demoClasses = generateDemoClasses();
-        const demoStudentsRaw = generateDemoStudents();
-        const demoRatings = generateDemoLessonRatings();
-        const demoStreams = generateDemoStreams();
-        const demoStats = generateDemoStats();
-
-        setMemberships([{ id: 'demo-m1', status: 'APPROVED', academyName: 'Academia Demo', academyDescription: 'Academia de demostración', requestedAt: new Date().toISOString() }]);
+        const demo = buildDemoTeacherData();
+        setMemberships(demo.memberships);
         setAvailableAcademies([]);
-        setClasses(demoClasses.map(c => ({
-          id: c.id,
-          name: c.name,
-          slug: c.name.toLowerCase().replace(/\s+/g, '-'),
-          description: c.description || null,
-          academyName: 'Academia Demo',
-          enrollmentCount: c.studentCount || 0,
-        })));
-
-        // Map demo students to EnrolledStudent format (same mapping as academy)
-        const classNameToId: Record<string, string> = {
-          'Programación Web': 'demo-c1',
-          'Matemáticas Avanzadas': 'demo-c2',
-          'Física Cuántica': 'demo-c4',
-          'Diseño Gráfico': 'demo-c3',
-        };
-        const seen = new Set<string>();
-        const mappedStudents: EnrolledStudent[] = demoStudentsRaw
-          .map(s => ({
-            id: s.id,
-            name: `${s.firstName} ${s.lastName}`,
-            email: s.email,
-            classId: classNameToId[s.className] || 'demo-c1',
-            className: s.className,
-            lessonsCompleted: Math.floor(Math.random() * 5) + 2,
-            totalLessons: 10,
-            lastActive: s.lastLoginAt || null,
-          }))
-          .filter(s => {
-            const key = `${s.email}__${s.classId}`;
-            if (seen.has(key)) return false;
-            seen.add(key);
-            return true;
-          });
-        setEnrolledStudents(mappedStudents);
-        setPendingEnrollments([]);
-        setRatingsData(demoRatings);
-        setRejectedCount(0);
-
-        // Stream stats from demo data
-        const streamsWithParticipants = demoStreams.filter(s => s.participantCount > 0);
-        const totalParticipants = streamsWithParticipants.reduce((sum, s) => sum + s.participantCount, 0);
-        setStreamStats({
-          total: demoStreams.length,
-          avgParticipants: streamsWithParticipants.length > 0 ? Math.round(totalParticipants / streamsWithParticipants.length) : 0,
-          thisMonth: demoStats.totalStreams,
-          totalHours: demoStats.totalStreamHours,
-          totalMinutes: 0,
-        });
-
-        setClassWatchTime({ hours: 45, minutes: 30 });
-        setPaymentStatusCounts({ alDia: 18, atrasados: 4, uniqueAlDia: 15, uniqueAtrasados: 3 });
+        setClasses(demo.classes);
+        setEnrolledStudents(demo.enrolledStudents);
+        setPendingEnrollments(demo.pendingEnrollments);
+        setRatingsData(demo.ratingsData);
+        setRejectedCount(demo.rejectedCount);
+        setStreamStats(demo.streamStats);
+        setClassWatchTime(demo.classWatchTime);
+        setPaymentStatusCounts(demo.paymentStatusCounts);
         setLoading(false);
         return;
       }

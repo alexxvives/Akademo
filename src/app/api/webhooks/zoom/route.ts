@@ -1,45 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
-
-interface WebhookEnv {
-  DB: {
-    prepare(sql: string): {
-      bind(...params: unknown[]): {
-        run(): Promise<unknown>;
-      };
-    };
-  };
-  ZOOM_WEBHOOK_SECRET: string;
-  ZOOM_ACCOUNT_ID: string;
-  ZOOM_CLIENT_ID: string;
-  ZOOM_CLIENT_SECRET: string;
-  BUNNY_STREAM_LIBRARY_ID: string;
-  BUNNY_STREAM_API_KEY: string;
-  BUNNY_STREAM_LIVE_API_KEY: string;
-}
-
-interface ZoomRecordingFile {
-  file_type: string;
-  recording_type?: string;
-  download_url?: string;
-}
+import type { WebhookEnv } from './types';
+import {
+  handleMeetingStarted,
+  handleMeetingEnded,
+  handleRecordingCompleted,
+  handleParticipantEvent,
+} from './handlers';
 
 // Zoom webhook handler
 export async function POST(request: NextRequest) {
   try {
     const payload = await request.json();
-    
-    
+
     const ctx = await getCloudflareContext();
     const env = ctx.env as WebhookEnv;
     const db = env.DB;
-    
+
     // Handle Zoom URL validation (required for webhook setup)
     if (payload.event === 'endpoint.url_validation') {
       const plainToken = payload.payload.plainToken;
       const secretToken = process.env.ZOOM_WEBHOOK_SECRET || env.ZOOM_WEBHOOK_SECRET || '';
-      
-      
+
       // Use Web Crypto API
       const encoder = new TextEncoder();
       const key = await crypto.subtle.importKey(
@@ -53,24 +35,23 @@ export async function POST(request: NextRequest) {
       const hashForValidate = Array.from(new Uint8Array(signature))
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
-      
-      
+
       const response = {
         plainToken: plainToken,
         encryptedToken: hashForValidate
       };
-      
+
       return NextResponse.json(response, { status: 200 });
     }
 
     const { event, payload: data } = payload;
-    
+
     // Verify Zoom webhook signature for all non-validation events
     const rawBody = JSON.stringify(payload);
-    const signature = request.headers.get('x-zm-signature') || '';
+    const reqSignature = request.headers.get('x-zm-signature') || '';
     const timestamp = request.headers.get('x-zm-request-timestamp') || '';
     const secretToken = process.env.ZOOM_WEBHOOK_SECRET || env.ZOOM_WEBHOOK_SECRET || '';
-    
+
     if (secretToken && timestamp) {
       const message = `v0:${timestamp}:${rawBody}`;
       const encoder = new TextEncoder();
@@ -85,8 +66,8 @@ export async function POST(request: NextRequest) {
       const expectedSig = 'v0=' + Array.from(new Uint8Array(sigBytes))
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
-      
-      if (signature !== expectedSig) {
+
+      if (reqSignature !== expectedSig) {
         console.error('[Next.js Zoom Webhook] Signature verification failed');
         return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
       }
@@ -97,206 +78,18 @@ export async function POST(request: NextRequest) {
 
     // Handle different Zoom events
     if (event === 'meeting.started') {
-      const meetingId = data.object.id;
-
-      await db
-        .prepare('UPDATE LiveStream SET status = ?, startedAt = ? WHERE zoomMeetingId = ?')
-        .bind('active', new Date().toISOString(), meetingId.toString())
-        .run();
-
+      await handleMeetingStarted(db, data);
     } else if (event === 'meeting.ended') {
-      const meetingId = data.object.id;
-      
-      // Log all possible participant count locations
-      
-      // Try multiple possible locations for participant count
-      const participantCount = 
-        data.object.participant_count || 
-        data.object.participants_count ||
-        data.object.total_participants ||
-        data.object.participants?.length ||
-        null;
-
-      await db
-        .prepare('UPDATE LiveStream SET status = ?, endedAt = ?, participantCount = ?, participantsFetchedAt = ? WHERE zoomMeetingId = ?')
-        .bind('ended', new Date().toISOString(), participantCount, new Date().toISOString(), meetingId.toString())
-        .run();
-
-      
-      // Try to fetch participants via Zoom API as fallback
-      if (participantCount === null || participantCount === 0) {
-        try {
-          // Get Zoom access token
-          const ZOOM_ACCOUNT_ID = env.ZOOM_ACCOUNT_ID;
-          const ZOOM_CLIENT_ID = env.ZOOM_CLIENT_ID;
-          const ZOOM_CLIENT_SECRET = env.ZOOM_CLIENT_SECRET;
-          
-          if (ZOOM_ACCOUNT_ID && ZOOM_CLIENT_ID && ZOOM_CLIENT_SECRET) {
-            const tokenResponse = await fetch(
-              `https://zoom.us/oauth/token?grant_type=account_credentials&account_id=${ZOOM_ACCOUNT_ID}`,
-              {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Basic ${btoa(`${ZOOM_CLIENT_ID}:${ZOOM_CLIENT_SECRET}`)}`,
-                  'Content-Type': 'application/x-www-form-urlencoded'
-                }
-              }
-            );
-            
-            if (tokenResponse.ok) {
-              const tokenData = await tokenResponse.json();
-              const accessToken = tokenData.access_token;
-              
-              // Fetch past meeting participants
-              const participantsResponse = await fetch(
-                `https://api.zoom.us/v2/past_meetings/${meetingId}/participants`,
-                {
-                  headers: { 'Authorization': `Bearer ${accessToken}` }
-                }
-              );
-              
-              if (participantsResponse.ok) {
-                const participantsData = await participantsResponse.json();
-                const apiParticipantCount = participantsData.total_records || participantsData.participants?.length || 0;
-                
-                await db
-                  .prepare('UPDATE LiveStream SET participantCount = ?, participantsFetchedAt = ? WHERE zoomMeetingId = ?')
-                  .bind(apiParticipantCount, new Date().toISOString(), meetingId.toString())
-                  .run();
-                
-              }
-            }
-          }
-        } catch (apiError: unknown) {
-          console.error('[Zoom Webhook] Failed to fetch participants via API:', apiError instanceof Error ? apiError.message : String(apiError));
-        }
-      }
+      await handleMeetingEnded(db, env, data);
     } else if (event === 'recording.completed') {
-      const meetingId = data.object.id;
-      const meetingTopic = data.object.topic || 'Zoom Recording';
-      const recordingFiles = data.object?.recording_files || [];
-      const downloadToken = data.download_token; // Zoom provides this for authenticated download
-
-
-      // Find MP4 recording (shared_screen_with_speaker_view or speaker_view preferred)
-      const mp4Recording = recordingFiles.find((f: ZoomRecordingFile) => 
-        f.file_type === 'MP4' && f.recording_type === 'shared_screen_with_speaker_view'
-      ) || recordingFiles.find((f: ZoomRecordingFile) => 
-        f.file_type === 'MP4' && f.recording_type === 'speaker_view'
-      ) || recordingFiles.find((f: ZoomRecordingFile) => 
-        f.file_type === 'MP4'
-      );
-
-      if (mp4Recording) {
-        let downloadUrl = mp4Recording.download_url;
-        
-        // Add download token if provided (required for authenticated access)
-        if (downloadToken) {
-          downloadUrl = `${downloadUrl}?access_token=${downloadToken}`;
-        }
-        
-
-        // Get Zoom access token to fetch the recording with proper auth
-        const ZOOM_ACCOUNT_ID = env.ZOOM_ACCOUNT_ID;
-        const ZOOM_CLIENT_ID = env.ZOOM_CLIENT_ID;
-        const ZOOM_CLIENT_SECRET = env.ZOOM_CLIENT_SECRET;
-        const BUNNY_LIBRARY_ID = env.BUNNY_STREAM_LIBRARY_ID || '571240';
-        // Try both possible env var names for Bunny API key
-        const BUNNY_API_KEY = env.BUNNY_STREAM_API_KEY || env.BUNNY_STREAM_LIVE_API_KEY;
-        
-        
-        // Track the token we'll use for Bunny headers
-        let authToken = downloadToken; // Start with webhook-provided token
-
-        try {
-          // First, try to get the recording download URL with OAuth token
-          if (ZOOM_ACCOUNT_ID && ZOOM_CLIENT_ID && ZOOM_CLIENT_SECRET) {
-            const tokenResponse = await fetch(
-              `https://zoom.us/oauth/token?grant_type=account_credentials&account_id=${ZOOM_ACCOUNT_ID}`,
-              {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Basic ${btoa(`${ZOOM_CLIENT_ID}:${ZOOM_CLIENT_SECRET}`)}`,
-                  'Content-Type': 'application/x-www-form-urlencoded'
-                }
-              }
-            );
-            
-            if (tokenResponse.ok) {
-              const tokenData = await tokenResponse.json();
-              const accessToken = tokenData.access_token;
-              
-              // Get recording details with download_access_token
-              const recordingResponse = await fetch(
-                `https://api.zoom.us/v2/meetings/${meetingId}/recordings?include_fields=download_access_token`,
-                {
-                  headers: { 'Authorization': `Bearer ${accessToken}` }
-                }
-              );
-              
-              if (recordingResponse.ok) {
-                const recordingData = await recordingResponse.json();
-                const apiRecordingFiles = recordingData.recording_files || [];
-                
-                // Find MP4 in API response (has fresh download URL)
-                const apiMp4 = apiRecordingFiles.find((f: ZoomRecordingFile) => f.file_type === 'MP4');
-                
-                if (apiMp4 && apiMp4.download_url) {
-                  // Use download_access_token if available (preferred), otherwise use OAuth token
-                  authToken = recordingData.download_access_token || accessToken;
-                  downloadUrl = `${apiMp4.download_url}?access_token=${authToken}`;
-                }
-              }
-            }
-          }
-
-          // Create video in Bunny via fetch URL with auth headers
-          const bunnyResponse = await fetch(`https://video.bunnycdn.com/library/${BUNNY_LIBRARY_ID}/videos/fetch`, {
-            method: 'POST',
-            headers: {
-              'AccessKey': BUNNY_API_KEY,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              url: downloadUrl,
-              title: `${meetingTopic} - Recording`,
-              headers: authToken ? { 'Authorization': `Bearer ${authToken}` } : undefined
-            })
-          });
-
-          const bunnyResponseText = await bunnyResponse.text();
-
-          if (bunnyResponse.ok) {
-            const bunnyData = JSON.parse(bunnyResponseText);
-            const bunnyGuid = bunnyData.guid || bunnyData.id;
-
-            if (bunnyGuid) {
-              // Update LiveStream with Bunny recording ID
-              await db
-                .prepare('UPDATE LiveStream SET recordingId = ? WHERE zoomMeetingId = ?')
-                .bind(bunnyGuid, meetingId.toString())
-                .run();
-
-            } else {
-              console.error('[Zoom Webhook] Bunny response missing guid/id:', bunnyResponseText);
-            }
-          } else {
-            console.error('[Zoom Webhook] Bunny fetch failed:', bunnyResponseText);
-          }
-        } catch (bunnyError: unknown) {
-          console.error('[Zoom Webhook] Recording upload error:', bunnyError instanceof Error ? bunnyError.message : String(bunnyError));
-        }
-      } else {
-      }
-    } else if (event === 'meeting.participant_joined' || event === 'meeting.participant_left' || event === 'participant.joined' || event === 'participant.left') {
-      const meetingId = data.object.id;
-      const participantCount = data.object.participant?.count || data.object.participant_count || 0;
-
-      await db
-        .prepare('UPDATE LiveStream SET participantCount = ?, participantsFetchedAt = ? WHERE zoomMeetingId = ?')
-        .bind(participantCount, new Date().toISOString(), meetingId.toString())
-        .run();
-
+      await handleRecordingCompleted(db, env, data);
+    } else if (
+      event === 'meeting.participant_joined' ||
+      event === 'meeting.participant_left' ||
+      event === 'participant.joined' ||
+      event === 'participant.left'
+    ) {
+      await handleParticipantEvent(db, data);
     }
 
     return NextResponse.json({ success: true, received: true });
@@ -309,9 +102,9 @@ export async function POST(request: NextRequest) {
 
 // Also handle GET for webhook validation test
 export async function GET() {
-  return NextResponse.json({ 
-    status: 'ok', 
+  return NextResponse.json({
+    status: 'ok',
     endpoint: 'zoom-webhook',
-    message: 'Zoom webhook endpoint is active' 
+    message: 'Zoom webhook endpoint is active'
   });
 }
