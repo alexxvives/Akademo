@@ -70,14 +70,6 @@ export function DashboardPage({ role }: DashboardPageProps) {
 
       {/* 2×2 Analytics Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <EngagementCard
-          isAcademy={data.isAcademy}
-          isAdmin={data.isAdmin}
-          filteredStudents={computed.filteredStudents}
-          avgLessonProgress={computed.avgLessonProgress}
-          filteredClassWatchTime={computed.filteredClassWatchTime}
-          filteredStreamStats={computed.filteredStreamStats}
-        />
         <StudentsCard
           isAcademy={data.isAcademy}
           filteredStudents={computed.filteredStudents}
@@ -89,6 +81,14 @@ export function DashboardPage({ role }: DashboardPageProps) {
           selectedAcademy={data.selectedAcademy}
           displayedPaymentStatus={computed.displayedPaymentStatus}
           paymentStats={computed.paymentStats}
+        />
+        <EngagementCard
+          isAcademy={data.isAcademy}
+          isAdmin={data.isAdmin}
+          filteredStudents={computed.filteredStudents}
+          avgLessonProgress={computed.avgLessonProgress}
+          filteredClassWatchTime={computed.filteredClassWatchTime}
+          filteredStreamStats={computed.filteredStreamStats}
         />
         <RatingsCard
           isAcademy={data.isAcademy}

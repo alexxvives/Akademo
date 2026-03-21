@@ -40,6 +40,48 @@ export function DashboardChartsGrid({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Student Summary */}
+      <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
+        <h3 className="text-lg font-semibold text-gray-900 mb-6">Estudiantes</h3>
+        <div className="grid grid-cols-2 gap-4">
+          {/* Estudiantes Container */}
+          <div className="flex flex-col justify-between p-4 bg-gray-50 rounded-lg">
+            <div className="text-center">
+              <AnimatedNumber value={new Set(filteredStudents.map(s => s.id)).size} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1" />
+              <div className="text-xs text-gray-500">Estudiantes</div>
+            </div>
+            <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-gray-500">al día</span>
+                <AnimatedNumber value={paymentStatusCounts.uniqueAlDia} className="text-lg font-bold text-green-600" />
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-gray-500">atrasados</span>
+                <AnimatedNumber value={paymentStatusCounts.uniqueAtrasados} className="text-lg font-bold text-red-600" />
+              </div>
+            </div>
+          </div>
+
+          {/* Matrículas Container */}
+          <div className="flex flex-col justify-between p-4 bg-gray-50 rounded-lg">
+            <div className="text-center">
+              <AnimatedNumber value={filteredStudents.length} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1" />
+              <div className="text-xs text-gray-500">Matrículas</div>
+            </div>
+            <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-gray-500">al día</span>
+                <AnimatedNumber value={paymentStatusCounts.alDia} className="text-lg font-bold text-green-600" />
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-xs text-gray-500">atrasados</span>
+                <AnimatedNumber value={paymentStatusCounts.atrasados} className="text-lg font-bold text-red-600" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Engagement Metrics */}
       <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm h-full">
         <h3 className="text-lg font-semibold text-gray-900 mb-6">Participación</h3>
@@ -106,48 +148,6 @@ export function DashboardChartsGrid({
             <p className="text-xs text-gray-400 mt-1">{selectedClass === 'all' ? 'Aún no hay estudiantes' : 'No hay estudiantes en esta clase'}</p>
           </div>
         )}
-      </div>
-
-      {/* Student Summary */}
-      <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">Estudiantes</h3>
-        <div className="grid grid-cols-2 gap-4">
-          {/* Estudiantes Container */}
-          <div className="flex flex-col justify-between p-4 bg-gray-50 rounded-lg">
-            <div className="text-center">
-              <AnimatedNumber value={new Set(filteredStudents.map(s => s.id)).size} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1" />
-              <div className="text-xs text-gray-500">Estudiantes</div>
-            </div>
-            <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-gray-500">al día</span>
-                <AnimatedNumber value={paymentStatusCounts.uniqueAlDia} className="text-lg font-bold text-green-600" />
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-gray-500">atrasados</span>
-                <AnimatedNumber value={paymentStatusCounts.uniqueAtrasados} className="text-lg font-bold text-red-600" />
-              </div>
-            </div>
-          </div>
-
-          {/* Matrículas Container */}
-          <div className="flex flex-col justify-between p-4 bg-gray-50 rounded-lg">
-            <div className="text-center">
-              <AnimatedNumber value={filteredStudents.length} className="text-3xl sm:text-4xl font-bold text-gray-900 mb-1" />
-              <div className="text-xs text-gray-500">Matrículas</div>
-            </div>
-            <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-gray-500">al día</span>
-                <AnimatedNumber value={paymentStatusCounts.alDia} className="text-lg font-bold text-green-600" />
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-gray-500">atrasados</span>
-                <AnimatedNumber value={paymentStatusCounts.atrasados} className="text-lg font-bold text-red-600" />
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Star Ratings Distribution */}
