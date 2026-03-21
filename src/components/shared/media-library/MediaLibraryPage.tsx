@@ -115,7 +115,7 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
           </p>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          <div className="relative w-full sm:w-60">
+          <div className="relative w-full sm:w-48">
             <input
               type="text"
               value={search}
