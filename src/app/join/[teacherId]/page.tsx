@@ -1,338 +1,16 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { apiClient } from '@/lib/api-client';
-import { PasswordInput } from '@/components/ui';
 import Image from 'next/image';
-
-interface Teacher {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  academyLogoUrl?: string | null;
-  academyName?: string | null;
-}
-
-interface Class {
-  id: string;
-  name: string;
-  description: string | null;
-  academyName: string;
-}
-
-type AuthUser = Record<string, unknown>;
+import { useRouter } from 'next/navigation';
+import { useJoinPage } from './useJoinPage';
+import { JoinAuthForm } from './JoinAuthForm';
+import { JoinClassSelection } from './JoinClassSelection';
 
 export default function JoinPage() {
-  const params = useParams();
   const router = useRouter();
-  const teacherId = params?.teacherId as string;
-  
-  const [teacher, setTeacher] = useState<Teacher | null>(null);
-  const [classes, setClasses] = useState<Class[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  
-  // Auth state
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [, setCurrentUser] = useState<AuthUser | null>(null);
-  const [showLogin, setShowLogin] = useState(false);
+  const state = useJoinPage();
 
-  // Pre-select login tab if redirected from logout
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('login') === 'true') setShowLogin(true);
-  }, []);
-
-  // Skip class selection — redirect to student dashboard when logged in (non-student roles redirect in _checkAuth)
-  useEffect(() => {
-    if (isLoggedIn) router.push('/dashboard/student');
-  }, [isLoggedIn, router]);
-  
-  // Form state
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    fullName: '',
-  });
-  const [authLoading, setAuthLoading] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
-  
-  // Email verification state - inline
-  const [showVerification, setShowVerification] = useState(false);
-  const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '']);
-  const [verificationError, setVerificationError] = useState(false);
-  const [verificationSuccess, setVerificationSuccess] = useState(false);
-  const [verifyingCode, setVerifyingCode] = useState(false);
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  
-  // Selected classes (multi-select)
-  const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
-  const toggleClass = (id: string) => setSelectedClassIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-  const [requestSent, _setRequestSent] = useState(false);
-
-  useEffect(() => {
-    if (teacherId) {
-      loadTeacherData();
-      _checkAuth(); // Check if already logged in
-      // Store this join origin so logout can redirect back here
-      localStorage.setItem('akademo_join_origin', `/join/${teacherId}`);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [teacherId]);
-
-  const _checkAuth = async () => {
-    try {
-      const response = await apiClient('/auth/me');
-      const result = await response.json();
-      if (result.success && result.data) {
-        const role = result.data.role as string;
-        if (role === 'STUDENT') {
-          setIsLoggedIn(true);
-        } else {
-          // Non-student roles go directly to their dashboard
-          const roleMap: Record<string, string> = { TEACHER: '/dashboard/teacher', ACADEMY: '/dashboard/academy', ADMIN: '/dashboard/admin' };
-          router.push(roleMap[role] || '/dashboard/student');
-        }
-      }
-    } catch (e) {
-      // Not logged in
-    }
-  };
-
-  const loadTeacherData = async () => {
-    try {
-      // Use the worker API directly instead of Next.js API route
-      const response = await apiClient(`/auth/join/${teacherId}`);
-      const result = await response.json();
-      
-      if (result.success) {
-        setTeacher(result.data.teacher);
-        setClasses(result.data.classes);
-      } else {
-        setError(result.error || 'No se encontró el profesor');
-      }
-    } catch (e) {
-      setError('Error al cargar los datos');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const sendVerificationCode = async () => {
-    setAuthLoading(true);
-    setAuthError(null);
-
-    try {
-      // First check if email already exists
-      const checkResponse = await apiClient('/auth/check-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: formData.email }),
-      });
-      const checkResult = await checkResponse.json();
-
-      if (checkResult.data?.exists) {
-        setAuthError('Este email ya está registrado. Inicia sesión en su lugar.');
-        setAuthLoading(false);
-        return;
-      }
-
-      // Email doesn't exist, proceed with verification
-      const response = await apiClient('/auth/send-verification', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: formData.email }),
-      });
-      const result = await response.json();
-
-      if (result.success) {
-        setShowVerification(true);
-        setVerificationCode(['', '', '', '', '', '']);
-        setVerificationError(false);
-        // Focus first input
-        setTimeout(() => inputRefs.current[0]?.focus(), 100);
-        // For testing: show code in console
-        if (result.data.code) {
-        }
-      } else {
-        setAuthError(result.error || 'Error al enviar código');
-      }
-    } catch (e) {
-      setAuthError('Error de conexión');
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
-  const handleCodeChange = (index: number, value: string) => {
-    // Only allow digits
-    const digit = value.replace(/\D/g, '').slice(-1);
-    
-    const newCode = [...verificationCode];
-    newCode[index] = digit;
-    setVerificationCode(newCode);
-    setVerificationError(false);
-    
-    // Auto-focus next input
-    if (digit && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
-    
-    // Auto-submit when all 6 digits are entered
-    const fullCode = newCode.join('');
-    if (fullCode.length === 6) {
-      verifyCodeAndRegister(fullCode);
-    }
-  };
-
-  const handleCodeKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === 'Backspace' && !verificationCode[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  };
-
-  const handleCodePaste = (e: React.ClipboardEvent) => {
-    e.preventDefault();
-    const pastedData = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-    if (pastedData.length === 6) {
-      const newCode = pastedData.split('');
-      setVerificationCode(newCode);
-      verifyCodeAndRegister(pastedData);
-    }
-  };
-
-  const verifyCodeAndRegister = async (code: string) => {
-    setVerifyingCode(true);
-    setVerificationError(false);
-
-    try {
-      // Verify email code
-      const verifyResponse = await apiClient('/auth/verify-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: formData.email, code }),
-      });
-      const verifyResult = await verifyResponse.json();
-
-      if (!verifyResult.success) {
-        // Show error animation
-        setVerificationError(true);
-        setVerificationCode(['', '', '', '', '', '']);
-        setTimeout(() => inputRefs.current[0]?.focus(), 100);
-        setVerifyingCode(false);
-        return;
-      }
-
-      // Success - register the user
-      setVerificationSuccess(true);
-      
-      const regResponse = await apiClient('/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-          firstName: formData.fullName.split(' ')[0] || formData.fullName,
-          lastName: formData.fullName.split(' ').slice(1).join(' ') || undefined,
-          role: 'STUDENT',
-        }),
-      });
-      const regResult = await regResponse.json();
-
-      if (regResult.success) {
-        // Store auth token for API requests
-        if (regResult.data.token) {
-          localStorage.setItem('auth_token', regResult.data.token);
-        }
-        sessionStorage.setItem('akademo_new_user', '1');
-        
-        // Auto-login happened, redirect to class selection
-        setTimeout(() => {
-          setIsLoggedIn(true);
-          setCurrentUser(regResult.data);
-          setShowVerification(false);
-          setVerificationSuccess(false);
-        }, 500);
-      } else {
-        setAuthError(regResult.error || 'Error al registrarse');
-        setVerificationSuccess(false);
-        setShowVerification(false);
-      }
-    } catch (e) {
-      setVerificationError(true);
-      setVerificationCode(['', '', '', '', '', '']);
-    } finally {
-      setVerifyingCode(false);
-    }
-  };
-
-  const handleAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setAuthLoading(true);
-    setAuthError(null);
-
-    try {
-      if (showLogin) {
-        // Login
-        const response = await apiClient('/auth/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: formData.email, password: formData.password }),
-        });
-        const result = await response.json();
-        
-        if (result.success) {
-          if (result.data.token) {
-            localStorage.setItem('auth_token', result.data.token);
-          }
-          if (result.data?.suspicionWarning) {
-            sessionStorage.setItem('akademo_suspicion_warning', '1');
-          }
-          // Redirect to role-appropriate dashboard
-          const role = result.data.role as string;
-          const roleMap: Record<string, string> = { STUDENT: '/dashboard/student', TEACHER: '/dashboard/teacher', ACADEMY: '/dashboard/academy', ADMIN: '/dashboard/admin' };
-          router.push(roleMap[role] || '/dashboard/student');
-          return;
-        } else {
-          setAuthError(result.error || 'Credenciales incorrectas');
-        }
-      } else {
-        // Registration with email verification
-        await sendVerificationCode();
-        return; // Don't set loading to false here
-      }
-    } catch (e) {
-      setAuthError('Error de conexión');
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
-  const handleRequestAccess = async () => {
-    if (selectedClassIds.length === 0) return;
-    
-    setAuthLoading(true);
-    setAuthError(null);
-
-    try {
-      await Promise.all(selectedClassIds.map(classId =>
-        apiClient('/requests/student', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ classId }),
-        })
-      ));
-      router.push('/dashboard/student');
-    } catch (e) {
-      setAuthError('Error de conexión');
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
-  if (loading) {
+  if (state.loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin" />
@@ -340,18 +18,18 @@ export default function JoinPage() {
     );
   }
 
-  if (error) {
+  if (state.error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Error</h1>
-          <p className="text-gray-600">{error}</p>
+          <p className="text-gray-600">{state.error}</p>
         </div>
       </div>
     );
   }
 
-  if (requestSent) {
+  if (state.requestSent) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8 text-center">
@@ -381,12 +59,12 @@ export default function JoinPage() {
         {/* Header with Logo */}
         <div className="text-center mb-8">
           <p className="text-gray-600">Únete a las clases de</p>
-          {teacher && (
+          {state.teacher && (
             <div className="flex flex-col items-center mt-2 gap-2">
-              {teacher.academyLogoUrl && (
+              {state.teacher.academyLogoUrl && (
                 <Image
-                  src={`/api/storage/serve/${teacher.academyLogoUrl}`}
-                  alt={teacher.academyName || teacher.firstName}
+                  src={`/api/storage/serve/${state.teacher.academyLogoUrl}`}
+                  alt={state.teacher.academyName || state.teacher.firstName}
                   width={64}
                   height={64}
                   unoptimized
@@ -394,223 +72,43 @@ export default function JoinPage() {
                 />
               )}
               <p className="text-xl font-semibold text-gray-900">
-                {teacher.firstName} {teacher.lastName}
+                {state.teacher.firstName} {state.teacher.lastName}
               </p>
             </div>
           )}
         </div>
 
-        {!isLoggedIn ? (
-          /* Auth Form */
-          <div className="bg-white rounded-2xl shadow-lg p-8">
-            <>
-              <div className="flex mb-6">
-                <button
-                  onClick={() => { setShowLogin(true); setShowVerification(false); }}
-                  className={`flex-1 py-2 text-center font-medium border-b-2 transition-colors ${
-                    showLogin ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500'
-                  }`}
-                >
-                  Iniciar Sesión
-                </button>
-                <button
-                  onClick={() => { setShowLogin(false); setShowVerification(false); }}
-                  className={`flex-1 py-2 text-center font-medium border-b-2 transition-colors ${
-                    !showLogin ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500'
-                  }`}
-                >
-                  Registrarse
-                </button>
-              </div>
-
-              {authError && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-600 text-sm rounded-lg">
-                  {authError}
-                </div>
-              )}
-
-              <form onSubmit={handleAuth} className="space-y-4">
-                {!showLogin && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nombre completo</label>
-                    <input
-                      type="text"
-                      required={!showLogin}
-                      value={formData.fullName}
-                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                      autoComplete="name"
-                      disabled={showVerification}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-500"
-                      placeholder="Juan García"
-                    />
-                  </div>
-                )}
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <div className="relative">
-                    <input
-                      type="email"
-                      required
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      autoComplete="email"
-                      disabled={showVerification}
-                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-500 ${
-                        showVerification ? 'pr-[220px] border-gray-200' : 'border-gray-200'
-                      }`}
-                      placeholder="tu@email.com"
-                    />
-                    
-                    {/* Inline Verification Code Input */}
-                    {showVerification && !showLogin && (
-                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                        <div className={`flex gap-0.5 p-1 rounded-lg transition-all ${
-                          verificationError ? 'animate-shake bg-red-50' : 
-                          verificationSuccess ? 'bg-green-50' : 'bg-gray-50'
-                        }`}>
-                          {verificationCode.map((digit, index) => (
-                            <input
-                              key={index}
-                              ref={(el) => { inputRefs.current[index] = el; }}
-                              type="text"
-                              inputMode="numeric"
-                              maxLength={1}
-                              value={digit}
-                              onChange={(e) => handleCodeChange(index, e.target.value)}
-                              onKeyDown={(e) => handleCodeKeyDown(index, e)}
-                              onPaste={index === 0 ? handleCodePaste : undefined}
-                              disabled={verifyingCode || verificationSuccess}
-                              className={`w-7 h-8 text-center text-sm font-bold border rounded transition-all focus:outline-none focus:ring-1 ${
-                                verificationError 
-                                  ? 'border-red-400 bg-red-50 text-red-600 focus:ring-red-400' 
-                                  : verificationSuccess 
-                                    ? 'border-green-400 bg-green-50 text-green-600' 
-                                    : 'border-gray-300 focus:ring-gray-900 focus:border-gray-900'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                        {verifyingCode && (
-                          <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin"></div>
-                        )}
-                        {verificationSuccess && (
-                          <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Verification hint text */}
-                  {showVerification && !showLogin && (
-                    <div className="mt-2 flex items-center justify-between">
-                      <p className="text-xs text-gray-500">
-                        Código enviado a {formData.email}
-                      </p>
-                      <div className="flex items-center gap-3">
-                        <button
-                          type="button"
-                          onClick={sendVerificationCode}
-                          disabled={authLoading}
-                          className="text-xs text-indigo-600 hover:text-indigo-800 font-medium disabled:opacity-50"
-                        >
-                          {authLoading ? 'Enviando...' : 'Reenviar código'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => { setShowVerification(false); setVerificationCode(['', '', '', '', '', '']); }}
-                          className="text-xs text-gray-500 hover:text-gray-700 underline"
-                        >
-                          Cambiar email
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
-                  <PasswordInput
-                    required
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-500"
-                    placeholder="••••••••"
-                  />
-                </div>
-                
-                {!showVerification && (
-                  <button
-                    type="submit"
-                    disabled={authLoading}
-                    className="w-full py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium disabled:opacity-50"
-                  >
-                    {authLoading ? 'Cargando...' : showLogin ? 'Iniciar Sesión' : 'Continuar'}
-                  </button>
-                )}
-              </form>
-            </>
-          </div>
+        {!state.isLoggedIn ? (
+          <JoinAuthForm
+            showLogin={state.showLogin}
+            setShowLogin={state.setShowLogin}
+            showVerification={state.showVerification}
+            setShowVerification={state.setShowVerification}
+            authError={state.authError}
+            formData={state.formData}
+            setFormData={state.setFormData}
+            authLoading={state.authLoading}
+            handleAuth={state.handleAuth}
+            verificationCode={state.verificationCode}
+            setVerificationCode={state.setVerificationCode}
+            verificationError={state.verificationError}
+            verificationSuccess={state.verificationSuccess}
+            verifyingCode={state.verifyingCode}
+            inputRefs={state.inputRefs}
+            handleCodeChange={state.handleCodeChange}
+            handleCodeKeyDown={state.handleCodeKeyDown}
+            handleCodePaste={state.handleCodePaste}
+            sendVerificationCode={state.sendVerificationCode}
+          />
         ) : (
-          /* Class Selection */
-          <div className="bg-white rounded-2xl shadow-lg p-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-6">Selecciona tus clases</h2>
-
-            {authError && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-600 text-sm rounded-lg">
-                {authError}
-              </div>
-            )}
-
-            <div className="space-y-3 mb-6">
-              {classes.map((cls) => (
-                <div
-                  key={cls.id}
-                  onClick={() => toggleClass(cls.id)}
-                  className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${
-                    selectedClassIds.includes(cls.id)
-                      ? 'border-gray-900 bg-gray-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{cls.name}</h3>
-                      {cls.description && (
-                        <p className="text-sm text-gray-600 mt-1">{cls.description}</p>
-                      )}
-                      <p className="text-xs text-gray-500 mt-2">{cls.academyName}</p>
-                    </div>
-                    <div className={`flex-shrink-0 w-6 h-6 rounded border-2 flex items-center justify-center transition-all ${
-                      selectedClassIds.includes(cls.id) ? 'bg-gray-900 border-gray-900' : 'border-gray-300'
-                    }`}>
-                      {selectedClassIds.includes(cls.id) && (
-                        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-              
-              {classes.length === 0 && (
-                <p className="text-center text-gray-500 py-8">
-                  Este profesor no tiene clases disponibles actualmente.
-                </p>
-              )}
-            </div>
-
-            <button
-              onClick={handleRequestAccess}
-              disabled={selectedClassIds.length === 0 || authLoading}
-              className="w-full py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {authLoading ? 'Enviando...' : 'Solicitar Acceso'}
-            </button>
-          </div>
+          <JoinClassSelection
+            classes={state.classes}
+            selectedClassIds={state.selectedClassIds}
+            toggleClass={state.toggleClass}
+            authError={state.authError}
+            authLoading={state.authLoading}
+            handleRequestAccess={state.handleRequestAccess}
+          />
         )}
       </div>
     </div>
