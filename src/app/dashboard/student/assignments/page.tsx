@@ -1,292 +1,29 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
-import { apiClient, apiPost, openDocument } from '@/lib/api-client';
 import { SkeletonAssignments } from '@/components/ui/SkeletonLoader';
-import { generateDemoClasses, generateDemoStudentAssignments } from '@/lib/demo-data';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 import QuizTakingModal from '@/components/shared/QuizTakingModal';
-
-interface Class { 
-  id: string; 
-  name: string;
-  university?: string | null;
-  carrera?: string | null;
-}
-interface Assignment {
-  id: string; title: string; description?: string; dueDate?: string; maxScore: number;
-  type?: string;
-  attachmentName?: string; submissionId?: string; submittedAt?: string;
-  score?: number; feedback?: string; gradedAt?: string; createdAt: string;
-  className?: string; classId?: string; 
-  uploadId?: string;
-  attachmentIds?: string;
-  submissionUploadId?: string;
-  submissionStoragePath?: string;
-  quizAttemptId?: string;
-  quizScore?: number;
-  quizTotalQuestions?: number;
-  quizCorrectAnswers?: number;
-}
+import { useAssignments } from './useAssignments';
+import { AssignmentRow } from './AssignmentRow';
+import { UploadModal } from './UploadModal';
 
 export default function StudentAssignments() {
-  const [classes, setClasses] = useState<Class[]>([]);
-  const [selectedClassId, setSelectedClassId] = useState(''); // Default to empty (all classes)
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showUploadModal, setShowUploadModal] = useState(false);
-  const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
-  const [uploadFiles, setUploadFiles] = useState<File[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const [dragActive, setDragActive] = useState(false);
-  const [paymentStatus, setPaymentStatus] = useState<string>('PAID');
-  const [showQuizModal, setShowQuizModal] = useState(false);
-  // Multi-file dropdown state for Ejercicios column
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null); // assignmentId
-  const [dropdownFiles, setDropdownFiles] = useState<{uploadId: string; name: string; storagePath: string}[]>([]);
-  const [loadingDropdown, setLoadingDropdown] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setOpenDropdown(null);
-      }
-    };
-    if (openDropdown) document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [openDropdown]);
-
-  // Helper to check if assignment is past due
-  const isPastDue = (dueDate?: string) => {
-    if (!dueDate) return false;
-    return new Date(dueDate) < new Date();
-  };
-
-  // Helper function to determine due date color
-  const getDueDateColor = (dueDate?: string) => {
-    if (!dueDate) return 'text-gray-500';
-    
-    const now = new Date();
-    const due = new Date(dueDate);
-    const diffDays = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (diffDays < 0) return 'text-gray-500'; // Past due - gray
-    if (diffDays <= 1) return 'text-red-600 font-semibold'; // Today or tomorrow
-    if (diffDays <= 5) return 'text-orange-600 font-medium'; // 2-5 days
-    return 'text-gray-900'; // 6+ days - black
-  };
-
-  useEffect(() => { loadClasses(); }, []);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { loadAssignments(); }, [selectedClassId]); // Load even when empty
-
-  const loadClasses = async () => {
-    try {
-      setLoading(true);
-
-      // Check academy payment status for demo mode
-      const academyRes = await apiClient('/academies');
-      const academyResult = await academyRes.json();
-      let currentPaymentStatus = 'PAID';
-      if (academyResult.success && Array.isArray(academyResult.data) && academyResult.data.length > 0) {
-        currentPaymentStatus = academyResult.data[0].paymentStatus || 'PAID';
-        setPaymentStatus(currentPaymentStatus);
-      }
-
-      // Demo mode: load demo classes and assignments
-      if (currentPaymentStatus === 'NOT PAID') {
-        const demoClasses = generateDemoClasses();
-        setClasses(demoClasses.map(c => ({ id: c.id, name: c.name })));
-        const demoAssignments = generateDemoStudentAssignments();
-        setAssignments(demoAssignments as Assignment[]);
-        return;
-      }
-
-      const res = await apiClient('/enrollments');
-      const result = await res.json();
-      if (result.success && result.data) {
-        const enrolledClasses = result.data
-          .filter((e: { status: string; classId: string; className: string; university?: string | null; carrera?: string | null }) => e.status === 'APPROVED')
-          .map((e: { status: string; classId: string; className: string; university?: string | null; carrera?: string | null }) => ({ 
-            id: e.classId, 
-            name: e.className,
-            university: e.university,
-            carrera: e.carrera
-          }));
-        setClasses(enrolledClasses);
-        // Don't set default - show all assignments
-      }
-    } catch (error) {
-      console.error('Failed to load classes:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadAssignments = async () => {
-    try {
-      // Demo mode: filter from already-loaded demo assignments
-      if (paymentStatus === 'NOT PAID') {
-        const demoAssignments = generateDemoStudentAssignments();
-        const filtered = selectedClassId
-          ? demoAssignments.filter(a => a.classId === selectedClassId)
-          : demoAssignments;
-        setAssignments(filtered as Assignment[]);
-        return;
-      }
-
-      // If no class selected, fetch all assignments
-      const url = selectedClassId 
-        ? `/assignments?classId=${selectedClassId}` 
-        : '/assignments'; // Fetch all
-      const res = await apiClient(url);
-      const result = await res.json();
-      if (result.success) setAssignments(result.data);
-    } catch (error) {
-      console.error('Failed to load assignments:', error);
-    }
-  };
-
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === 'dragenter' || e.type === 'dragover') {
-      setDragActive(true);
-    } else if (e.type === 'dragleave') {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const newFiles = Array.from(e.dataTransfer.files);
-      setUploadFiles(prev => [...prev, ...newFiles]);
-    }
-  };
-
-  const handleSubmitAssignment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (uploadFiles.length === 0 || !selectedAssignment) return;
-
-    setUploading(true);
-    try {
-      // Upload all files
-      const uploadIds: string[] = [];
-      for (const file of uploadFiles) {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('type', 'assignment_submission');
-
-        const uploadRes = await apiClient('/storage/upload', {
-          method: 'POST',
-          body: formData,
-        });
-
-        const uploadResult = await uploadRes.json();
-        if (!uploadResult.success) {
-          throw new Error(uploadResult.error || 'Error al subir archivo');
-        }
-        uploadIds.push(uploadResult.data.uploadId);
-      }
-
-      // Submit assignment with all upload IDs
-      const res = await apiPost(`/assignments/${selectedAssignment.id}/submit`, {
-        uploadIds, // Send array instead of single uploadId
-      });
-
-      const result = await res.json();
-      if (result.success) {
-        setShowUploadModal(false);
-        setUploadFiles([]);
-        loadAssignments();
-      } else {
-        throw new Error(result.error || 'Error al entregar ejercicio');
-      }
-    } catch (error: unknown) {
-      console.error('Failed to submit assignment:', error);
-      alert(error instanceof Error ? error.message : 'Error al entregar ejercicio');
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const openUploadModal = (assignment: Assignment) => {
-    setSelectedAssignment(assignment);
-    setShowUploadModal(true);
-  };
-  const handleEjerciciosClick = async (assignment: Assignment, e: React.MouseEvent) => {
-    e.stopPropagation();
-    let uploadIds: string[] = [];
-    if (assignment.attachmentIds && assignment.attachmentIds.trim()) {
-      uploadIds = assignment.attachmentIds.split(',').filter((id: string) => id.trim());
-    }
-    if (uploadIds.length === 0 && assignment.uploadId) {
-      uploadIds = [assignment.uploadId];
-    }
-    if (uploadIds.length === 0) return;
-
-    // Toggle dropdown if same assignment clicked again
-    if (openDropdown === assignment.id) {
-      setOpenDropdown(null);
-      setDropdownFiles([]);
-      return;
-    }
-
-    // 1 file — open directly
-    if (uploadIds.length === 1) {
-      try {
-        const res = await apiClient(`/storage/upload/${uploadIds[0]}`);
-        const result = await res.json();
-        if (result.success && result.data) {
-          try { await openDocument(result.data.storagePath); } catch { console.error('Failed to open file'); }
-        }
-      } catch (error) {
-        console.error('Failed to open file:', error);
-      }
-      return;
-    }
-
-    // Multiple files — show dropdown with fetched names
-    setLoadingDropdown(true);
-    setOpenDropdown(assignment.id);
-    setDropdownFiles([]);
-    try {
-      const files: {uploadId: string; name: string; storagePath: string}[] = [];
-      for (const uploadId of uploadIds) {
-        const res = await apiClient(`/storage/upload/${uploadId}`);
-        const result = await res.json();
-        if (result.success && result.data) {
-          files.push({ uploadId, name: result.data.fileName, storagePath: result.data.storagePath });
-        }
-      }
-      setDropdownFiles(files);
-    } catch (error) {
-      console.error('Failed to load file list:', error);
-      setOpenDropdown(null);
-    } finally {
-      setLoadingDropdown(false);
-    }
-  };
-  const handleDeleteSubmission = async (assignmentId: string) => {
-    if (!confirm('¿Quieres eliminar tu entrega? Podrás volver a entregar después.')) return;
-    try {
-      const res = await apiClient(`/assignments/${assignmentId}/submit`, { method: 'DELETE' });
-      const result = await res.json();
-      if (result.success) {
-        loadAssignments();
-      } else {
-        alert(result.error || 'Error al eliminar la entrega');
-      }
-    } catch (error) {
-      console.error('Failed to delete submission:', error);
-      alert('Error al eliminar la entrega');
-    }
-  };
+  const {
+    classes, selectedClassId, setSelectedClassId,
+    assignments, loading,
+    showUploadModal, setShowUploadModal,
+    selectedAssignment, setSelectedAssignment,
+    uploadFiles, setUploadFiles,
+    uploading, dragActive,
+    showQuizModal, setShowQuizModal,
+    openDropdown, dropdownFiles, loadingDropdown, dropdownRef,
+    closeDropdown,
+    isPastDue, getDueDateColor,
+    handleDrag, handleDrop,
+    handleSubmitAssignment, openUploadModal,
+    handleEjerciciosClick, handleDeleteSubmission,
+    loadAssignments,
+  } = useAssignments();
 
   if (loading) return <SkeletonAssignments />;
 
@@ -308,7 +45,6 @@ export default function StudentAssignments() {
           />
         </div>
 
-        {/* Unified assignments table */}
         {assignments.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-6 sm:p-12 text-center">
             <div className="w-14 h-14 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -334,331 +70,43 @@ export default function StudentAssignments() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {assignments.map((assignment) => {
-                  const isQuiz = assignment.type === 'quiz';
-                  const isCompleted = isQuiz ? !!assignment.quizAttemptId : !!assignment.submittedAt;
-                  return (
-                    <tr key={assignment.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {isCompleted ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            Completado
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
-                            Pendiente
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-gray-900">{assignment.title}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {assignment.className || '—'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {isQuiz ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                            </svg>
-                            Cuestionario
-                          </span>
-                        ) : (
-                        (() => {
-                          let fileCount = 0;
-                          if (assignment.attachmentIds && assignment.attachmentIds.trim()) {
-                            fileCount = assignment.attachmentIds.split(',').filter((id: string) => id.trim()).length;
-                          } else if (assignment.uploadId) {
-                            fileCount = 1;
-                          }
-                          return fileCount > 0 ? (
-                            <div className="relative" ref={openDropdown === assignment.id ? dropdownRef : null}>
-                              <button
-                                onClick={(e) => handleEjerciciosClick(assignment, e)}
-                                className="flex items-center gap-2 text-sm text-gray-900 hover:text-gray-700 transition-colors group"
-                              >
-                                <div className="w-8 h-10 flex items-center justify-center bg-gray-100 rounded border border-gray-200 group-hover:bg-gray-200 transition-colors">
-                                  <svg className="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                                  </svg>
-                                </div>
-                                <span className="text-xs">{fileCount} archivo{fileCount > 1 ? 's' : ''}</span>
-                              </button>
-                              {openDropdown === assignment.id && (
-                                <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 z-50 min-w-[200px]">
-                                  {loadingDropdown ? (
-                                    <div className="p-3 text-xs text-gray-500">Cargando...</div>
-                                  ) : (
-                                    <div className="py-1">
-                                      {dropdownFiles.map((file) => (
-                                        <button
-                                          key={file.uploadId}
-                                          onClick={async () => { setOpenDropdown(null); try { await openDocument(file.storagePath); } catch { alert('Error al abrir'); } }}
-                                          className="w-full flex items-center gap-2 px-3 py-2 text-left text-xs text-gray-700 hover:bg-gray-50 transition-colors"
-                                        >
-                                          <svg className="w-4 h-4 text-gray-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                                          </svg>
-                                          <span className="truncate max-w-[180px]">{file.name}</span>
-                                        </button>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-xs text-gray-400">Sin archivo</span>
-                          );
-                        })()
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {isQuiz ? (
-                          assignment.quizAttemptId ? (
-                            <span className="inline-flex items-center gap-1 text-xs text-green-700 font-medium">
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                              Realizado
-                            </span>
-                          ) : (
-                            <span className="text-xs text-gray-400">Sin realizar</span>
-                          )
-                        ) : assignment.submittedAt && assignment.submissionStoragePath ? (
-                          <div className="flex items-center gap-2 text-sm text-gray-900 group">
-                            <div className="relative">
-                              <a
-                                href="#"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 hover:text-gray-700 transition-colors"
-                                onClick={async (e) => { e.preventDefault(); e.stopPropagation(); if (assignment.submissionStoragePath) try { await openDocument(assignment.submissionStoragePath); } catch { alert('Error al abrir'); } }}
-                              >
-                                <div className="w-8 h-10 flex items-center justify-center bg-gray-100 rounded border border-gray-200 group-hover:bg-gray-200 transition-colors">
-                                  <svg className="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                                  </svg>
-                                </div>
-                              </a>
-                              <button
-                                onClick={(e) => { e.stopPropagation(); handleDeleteSubmission(assignment.id); }}
-                                className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center bg-red-500 hover:bg-red-600 rounded-full text-white transition-colors opacity-0 group-hover:opacity-100"
-                                title="Eliminar entrega"
-                              >
-                                <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                              </button>
-                            </div>
-                            <span className="text-xs">1 archivo</span>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-gray-400">Sin entregar</span>
-                        )}
-                      </td>
-                      <td className={`px-6 py-4 whitespace-nowrap text-sm ${getDueDateColor(assignment.dueDate)}`}>
-                        {assignment.dueDate ? (
-                          <div className="flex items-center">
-                            {new Date(assignment.dueDate).toLocaleDateString('es-ES')}
-                            <span className="text-xs ml-1">
-                              {new Date(assignment.dueDate).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          </div>
-                        ) : 'Sin fecha'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                        {isQuiz ? (
-                          assignment.quizAttemptId ? (
-                            <button
-                              onClick={() => { setSelectedAssignment(assignment); setShowQuizModal(true); }}
-                              className="group"
-                            >
-                              <div className={`text-lg font-bold ${
-                                (() => {
-                                  const s = assignment.quizScore ?? 0;
-                                  const mx = assignment.maxScore ?? 100;
-                                  const pct = mx > 0 ? (s / mx) * 100 : 0;
-                                  if (pct <= 50) return 'text-red-600';
-                                  if (pct <= 69) return 'text-orange-500';
-                                  if (pct <= 90) return 'text-green-500';
-                                  return 'text-green-700';
-                                })()
-                              }`}>
-                                {assignment.quizScore ?? 0}/{assignment.maxScore ?? 100}
-                              </div>
-                              <span className="text-xs text-gray-400 group-hover:text-brand-600">Ver resultado</span>
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => { setSelectedAssignment(assignment); setShowQuizModal(true); }}
-                              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-                            >
-                              Realizar
-                            </button>
-                          )
-                        ) : isCompleted ? (
-                          assignment.gradedAt ? (
-                            <div className={`text-lg font-bold ${
-                              (() => {
-                                const s = assignment.score ?? 0;
-                                const mx = assignment.maxScore ?? 100;
-                                const pct = mx > 0 ? (s / mx) * 100 : 0;
-                                if (pct <= 50) return 'text-red-600';
-                                if (pct <= 69) return 'text-orange-500';
-                                if (pct <= 90) return 'text-green-500';
-                                return 'text-green-700';
-                              })()
-                            }`}>
-                              {assignment.score ?? 0}/{assignment.maxScore ?? 100}
-                            </div>
-                          ) : (
-                            <div className="flex justify-end">
-                              {!isPastDue(assignment.dueDate) ? (
-                                <button
-                                  onClick={() => openUploadModal(assignment)}
-                                  className="px-2.5 py-1 text-xs font-medium text-brand-600 hover:text-brand-700 border border-brand-300 rounded-lg hover:bg-brand-50 transition-colors whitespace-nowrap"
-                                >
-                                  Reenviar
-                                </button>
-                              ) : (
-                                <span className="text-xs text-gray-500">En corrección</span>
-                              )}
-                            </div>
-                          )
-                        ) : (
-                          <button
-                            onClick={() => openUploadModal(assignment)}
-                            className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
-                          >
-                            Entregar
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
+                {assignments.map((assignment) => (
+                  <AssignmentRow
+                    key={assignment.id}
+                    assignment={assignment}
+                    openDropdown={openDropdown}
+                    dropdownRef={dropdownRef}
+                    dropdownFiles={dropdownFiles}
+                    loadingDropdown={loadingDropdown}
+                    onEjerciciosClick={handleEjerciciosClick}
+                    onDeleteSubmission={handleDeleteSubmission}
+                    onUpload={openUploadModal}
+                    onQuiz={(a) => { setSelectedAssignment(a); setShowQuizModal(true); }}
+                    onCloseDropdown={closeDropdown}
+                    isPastDue={isPastDue}
+                    getDueDateColor={getDueDateColor}
+                  />
+                ))}
               </tbody>
             </table>
           </div>
         )}
       </div>
 
-      {/* Upload Modal */}
       {showUploadModal && selectedAssignment && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-2xl w-full p-6">
-            <h2 className="text-2xl font-semibold mb-2">
-              {selectedAssignment.submittedAt ? 'Reenviar Ejercicio' : 'Entregar Ejercicio'}
-            </h2>
-            <p className="text-gray-600 mb-2">{selectedAssignment.title}</p>
-            {selectedAssignment.submittedAt && (
-              <p className="text-sm text-amber-600 mb-4">
-                ⚠️ Esto reemplazará tu entrega anterior.
-              </p>
-            )}
-
-            <form onSubmit={handleSubmitAssignment} className="space-y-4">
-              <div
-                onDragEnter={handleDrag}
-                onDragLeave={handleDrag}
-                onDragOver={handleDrag}
-                onDrop={handleDrop}
-                className={`border-2 border-dashed rounded-lg p-6 sm:p-12 text-center ${
-                  dragActive ? 'border-brand-500 bg-brand-50' : 'border-gray-300'
-                }`}
-              >
-                <input
-                  type="file"
-                  id="fileInput"
-                  multiple
-                  onChange={(e) => {
-                    if (e.target.files) {
-                      const newFiles = Array.from(e.target.files);
-                      setUploadFiles(prev => [...prev, ...newFiles]);
-                    }
-                  }}
-                  className="hidden"
-                />
-                {uploadFiles.length > 0 ? (
-                  <div className="space-y-3">
-                    {uploadFiles.map((file, index) => (
-                      <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-brand-100 rounded-lg flex items-center justify-center">
-                            <svg className="w-5 h-5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-gray-900">{file.name}</p>
-                            <p className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setUploadFiles(prev => prev.filter((_, i) => i !== index))}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                    ))}
-                    <label
-                      htmlFor="fileInput"
-                      className="inline-block w-full text-center px-4 py-2 border-2 border-dashed border-brand-300 text-brand-600 rounded-lg hover:border-brand-500 hover:bg-brand-50 cursor-pointer transition-colors"
-                    >
-                      + Agregar más archivos
-                    </label>
-                  </div>
-                ) : (
-                  <div>
-                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                      </svg>
-                    </div>
-                    <p className="text-lg font-medium text-gray-900 mb-2">
-                      Arrastra tus archivos aquí
-                    </p>
-                    <p className="text-sm text-gray-500 mb-4">o</p>
-                    <label
-                      htmlFor="fileInput"
-                      className="inline-block px-6 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 cursor-pointer"
-                    >
-                      Seleccionar archivos
-                    </label>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex gap-4 justify-end pt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowUploadModal(false);
-                    setUploadFiles([]);
-                  }}
-                  className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={uploadFiles.length === 0 || uploading}
-                  className="px-6 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {uploading ? 'Entregando...' : `Entregar ${uploadFiles.length > 0 ? `(${uploadFiles.length} archivo${uploadFiles.length > 1 ? 's' : ''})` : 'Ejercicio'}`}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <UploadModal
+          assignment={selectedAssignment}
+          uploadFiles={uploadFiles}
+          setUploadFiles={setUploadFiles}
+          uploading={uploading}
+          dragActive={dragActive}
+          onDrag={handleDrag}
+          onDrop={handleDrop}
+          onSubmit={handleSubmitAssignment}
+          onClose={() => { setShowUploadModal(false); setUploadFiles([]); }}
+        />
       )}
 
-      {/* Quiz Modal */}
       {showQuizModal && selectedAssignment && selectedAssignment.type === 'quiz' && (
         <QuizTakingModal
           assignmentId={selectedAssignment.id}
