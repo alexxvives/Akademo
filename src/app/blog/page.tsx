@@ -107,7 +107,7 @@ export default function BlogPage() {
             AKADEMO protege tu contenido, gestiona tu equipo y te da las herramientas para crecer.
           </p>
           <Link
-            href="/?modal=register"
+            href="/pricing"
             className="inline-flex items-center px-7 py-3 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition-colors"
           >
             Solicitar demo gratuita

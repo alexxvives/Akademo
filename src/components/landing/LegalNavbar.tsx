@@ -30,7 +30,7 @@ export function LegalNavbar() {
                 Iniciar sesión
               </Link>
               <Link
-                href="/?modal=register"
+                href="/pricing"
                 className="px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium bg-gray-900 text-white hover:bg-gray-800 transition-all shadow-sm"
               >
                 Empieza gratis

@@ -61,12 +61,12 @@ export function Hero({ t, isScrolled: _isScrolled, onOpenModal }: HeroProps) {
               {t.heroSubtitle}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 mb-10 hero-u3">
-              <button
-                onClick={() => onOpenModal('register', 'ACADEMY')}
+              <a
+                href="/pricing"
                 className="px-8 py-3.5 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-medium rounded-lg hover:from-emerald-400 hover:to-cyan-400 transition-all text-sm sm:text-base text-center shadow-lg shadow-emerald-500/25"
               >
                 {t.startFree}
-              </button>
+              </a>
               <a
                 href="/pricing"
                 className="px-8 py-3.5 bg-transparent border border-white/30 text-white font-medium rounded-lg hover:bg-white/10 transition-all text-sm sm:text-base text-center"

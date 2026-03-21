@@ -112,7 +112,7 @@ export function BlogLayout({ post, children }: { post: BlogPost; children: React
           <p className="text-indigo-100 mb-6 max-w-lg mx-auto">
             AKADEMO te da las herramientas para proteger tu contenido, gestionar tu equipo y hacer crecer tu academia.
           </p>
-          <Link href="/?modal=register" className="inline-flex items-center px-6 py-3 bg-white text-indigo-600 font-semibold rounded-xl hover:bg-gray-100 transition-colors">
+          <Link href="/pricing" className="inline-flex items-center px-6 py-3 bg-white text-indigo-600 font-semibold rounded-xl hover:bg-gray-100 transition-colors">
             Solicitar Demo Gratuita
           </Link>
         </div>

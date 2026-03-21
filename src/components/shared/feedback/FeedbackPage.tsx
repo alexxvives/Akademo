@@ -56,7 +56,7 @@ export function FeedbackPage({ role }: FeedbackPageProps) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">
-            {isAdmin ? 'Feedback de Estudiantes' : 'Valoraciones de Estudiantes'}
+            {isAdmin ? 'Valoraciones de Estudiantes' : 'Valoraciones de Estudiantes'}
           </h1>
           {(isAcademy || isTeacher) && academyName && (
             <p className="text-sm text-gray-500 mt-1">{academyName}</p>

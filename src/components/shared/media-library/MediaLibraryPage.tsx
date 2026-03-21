@@ -131,16 +131,6 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
           </p>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          {role === 'ADMIN' && adminAcademies.length > 0 && (
-            <AcademySearchDropdown
-              academies={adminAcademies}
-              value={selectedAcademy}
-              onChange={(value) => { setSelectedAcademy(value); setSelectedClass('all'); }}
-              allLabel="Todas las academias"
-              allValue="all"
-              className="w-full sm:w-56"
-            />
-          )}
           <div className="relative w-full sm:w-48">
             <input
               type="text"
@@ -153,17 +143,38 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          <div className="w-full sm:w-56">
-            <ClassSearchDropdown
-              classes={role === 'ADMIN' && selectedAcademy !== 'all'
-                ? filteredClasses.filter(c => c.academyId === selectedAcademy)
-                : filteredClasses}
-              value={selectedClass}
-              onChange={setSelectedClass}
-              allLabel="Todas las asignaturas"
-              placeholder="Filtrar por asignatura..."
+          {role === 'ADMIN' && selectedAcademy !== 'all' && (
+            <div className="w-full sm:w-56">
+              <ClassSearchDropdown
+                classes={filteredClasses.filter(c => c.academyId === selectedAcademy)}
+                value={selectedClass}
+                onChange={setSelectedClass}
+                allLabel="Todas las asignaturas"
+                placeholder="Filtrar por asignatura..."
+              />
+            </div>
+          )}
+          {role !== 'ADMIN' && (
+            <div className="w-full sm:w-56">
+              <ClassSearchDropdown
+                classes={filteredClasses}
+                value={selectedClass}
+                onChange={setSelectedClass}
+                allLabel="Todas las asignaturas"
+                placeholder="Filtrar por asignatura..."
+              />
+            </div>
+          )}
+          {role === 'ADMIN' && adminAcademies.length > 0 && (
+            <AcademySearchDropdown
+              academies={adminAcademies}
+              value={selectedAcademy}
+              onChange={(value) => { setSelectedAcademy(value); setSelectedClass('all'); }}
+              allLabel="Todas las academias"
+              allValue="all"
+              className="w-full sm:w-56"
             />
-          </div>
+          )}
         </div>
       </div>
 

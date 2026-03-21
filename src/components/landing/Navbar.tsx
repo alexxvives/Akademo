@@ -73,8 +73,8 @@ export function Navbar({ t, isScrolled, lang, onLangChange, onOpenModal }: Navba
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
                   </svg>
                 </button>
-                <button
-                  onClick={() => onOpenModal('register')}
+                <Link
+                  href="/pricing"
                   className={`hidden sm:block px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-medium text-xs sm:text-sm transition-all shadow-sm whitespace-nowrap ${
                     isScrolled 
                       ? 'bg-gray-900 text-white hover:bg-gray-800' 
@@ -82,7 +82,7 @@ export function Navbar({ t, isScrolled, lang, onLangChange, onOpenModal }: Navba
                   }`}
                 >
                   {t.getStarted}
-                </button>
+                </Link>
               </div>
             </div>
           </div>
