@@ -44,9 +44,6 @@ export function WatermarkSection({ t }: WatermarkSectionProps) {
           </ScrollReveal>
         </div>
         
-        <ScrollReveal direction="zoom-in" delay={0}>
-          <QuoteCard quote={t.watermarkQuote} />
-        </ScrollReveal>
       </div>
     </section>
   );
@@ -134,19 +131,6 @@ function WatermarkFeature({ icon, title, description }: { icon: React.ReactNode;
       <div>
         <h3 className="text-base sm:text-lg font-semibold text-white mb-2">{title}</h3>
         <p className="text-sm text-gray-400 leading-relaxed">{description}</p>
-      </div>
-    </div>
-  );
-}
-
-function QuoteCard({ quote }: { quote: string }) {
-  return (
-    <div className="relative">
-      <div className="absolute inset-0 bg-emerald-500 rounded-2xl blur-2xl opacity-10" />
-      <div className="relative bg-emerald-500/10 backdrop-blur-xl rounded-2xl p-8 sm:p-12 text-center border border-emerald-500/20">
-        <p className="text-lg sm:text-2xl lg:text-3xl font-bold text-white italic leading-tight">
-          {quote}
-        </p>
       </div>
     </div>
   );
