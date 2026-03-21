@@ -1060,14 +1060,10 @@ assignments.post('/:id/quiz-submit', async (c) => {
       return c.json(errorResponse('Acceso bloqueado por pago pendiente.'), 403);
     }
 
-    // Check if already attempted
+    // Check if already attempted (first attempt only counts for grade)
     const existing = await c.env.DB.prepare(`
-      SELECT id FROM QuizAttempt WHERE assignmentId = ? AND studentId = ?
-    `).bind(assignmentId, session.id).first();
-
-    if (existing) {
-      return c.json(errorResponse('Ya has completado este cuestionario. Solo se permite un intento.'), 400);
-    }
+      SELECT id, score, totalQuestions, correctAnswers FROM QuizAttempt WHERE assignmentId = ? AND studentId = ?
+    `).bind(assignmentId, session.id).first() as any;
 
     // Fetch questions to grade
     const questions = await c.env.DB.prepare(`
@@ -1101,6 +1097,22 @@ assignments.post('/:id/quiz-submit', async (c) => {
       ? Math.round((correctAnswers / totalQuestions) * (assignment.maxScore || 100) * 100) / 100
       : 0;
 
+    // If already attempted: grade in-memory but don't overwrite official grade
+    if (existing) {
+      return c.json(successResponse({
+        score,
+        maxScore: assignment.maxScore || 100,
+        totalQuestions,
+        correctAnswers,
+        answers: gradedAnswers,
+        isRetry: true,
+        officialScore: existing.score,
+        officialTotalQuestions: existing.totalQuestions,
+        officialCorrectAnswers: existing.correctAnswers,
+      }));
+    }
+
+    // First attempt: save official grade
     const attemptId = nanoid();
     await c.env.DB.prepare(`
       INSERT INTO QuizAttempt (id, assignmentId, studentId, score, totalQuestions, correctAnswers, answers)
@@ -1113,7 +1125,9 @@ assignments.post('/:id/quiz-submit', async (c) => {
       maxScore: assignment.maxScore || 100,
       totalQuestions,
       correctAnswers,
-      answers: gradedAnswers, // Includes correct answers + explanations for immediate feedback
+      answers: gradedAnswers,
+      isRetry: false,
+      officialScore: score,
     }), 201);
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;

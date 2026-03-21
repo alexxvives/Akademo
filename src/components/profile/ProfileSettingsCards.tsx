@@ -20,7 +20,7 @@ export function AdvancedSettingsCard({ s, actions }: { s: ProfileState; actions:
       <div className="px-4 sm:px-8 py-4 sm:py-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-y-4 gap-x-8">
           <ToggleSetting label="Habilitar feedback" desc="Permitir valoraciones de estudiantes en las clases" checked={formData.feedbackEnabled} onToggle={() => actions.handleSettingChange('feedbackEnabled', formData.feedbackEnabled ? 0 : 1)} />
-          <SelectSetting label="Marca de agua" desc="Frecuencia de aparición" value={formData.defaultWatermarkIntervalMins} options={WATERMARK_OPTIONS} onChange={(v) => actions.handleSettingChange('defaultWatermarkIntervalMins', parseInt(v))} />
+          <SelectSetting label="Marca de agua" desc="Frecuencia de aparición" value={formData.defaultWatermarkIntervalMins} options={WATERMARK_OPTIONS} onChange={(v) => actions.handleSettingChange('defaultWatermarkIntervalMins', parseFloat(v))} />
           <SelectSetting label="Límite de visualización" desc="Veces que puede ver el contenido" value={formData.defaultMaxWatchTimeMultiplier} options={MULTIPLIER_OPTIONS} onChange={(v) => actions.handleSettingChange('defaultMaxWatchTimeMultiplier', parseFloat(v))} />
           <ToggleSetting label="Calificación obligatoria" desc="Requiere que los profesores califiquen los ejercicios" checked={formData.requireGrading} onToggle={() => actions.handleSettingChange('requireGrading', formData.requireGrading ? 0 : 1)} />
         </div>

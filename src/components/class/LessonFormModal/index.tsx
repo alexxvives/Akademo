@@ -109,11 +109,11 @@ export default function LessonFormModal({
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Multiplicador <span className="text-xs font-normal text-gray-500">(El video podrá verse durante X veces su duración)</span></label>
-              <input type="number" min="1" max="10" step="0.5" value={formData.maxWatchTimeMultiplier} onChange={e => setFormData(prev => ({ ...prev, maxWatchTimeMultiplier: parseFloat(e.target.value) }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"/>
+              <input type="number" min="0" max="10" step="0.5" value={formData.maxWatchTimeMultiplier} onChange={e => setFormData(prev => ({ ...prev, maxWatchTimeMultiplier: parseFloat(e.target.value) }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"/>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Marca de agua <span className="text-xs font-normal text-gray-500">(Cada cuántos minutos aparece)</span></label>
-              <input type="number" min="1" max="60" value={formData.watermarkIntervalMins} onChange={e => setFormData(prev => ({ ...prev, watermarkIntervalMins: parseInt(e.target.value) }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"/>
+              <input type="number" min="0" max="60" step="0.5" value={formData.watermarkIntervalMins} onChange={e => setFormData(prev => ({ ...prev, watermarkIntervalMins: parseFloat(e.target.value) }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"/>
             </div>
           </div>
 

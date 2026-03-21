@@ -31,10 +31,11 @@ export function useVideoEffects(p: UseVideoEffectsParams) {
   const triggerWatermark = useCallback(() => {
     if (p.isUnlimitedUser || !p.studentName) return;
     p.setShowWatermark(true);
+    if (p.watermarkIntervalMins === 0) return; // CONSTANT: never auto-hide
     if (watermarkTimeoutRef.current) clearTimeout(watermarkTimeoutRef.current);
     watermarkTimeoutRef.current = setTimeout(() => p.setShowWatermark(false), 5000);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [p.isUnlimitedUser, p.studentName]);
+  }, [p.isUnlimitedUser, p.studentName, p.watermarkIntervalMins]);
 
   // Update play state when video changes
   useEffect(() => {
@@ -92,6 +93,12 @@ export function useVideoEffects(p: UseVideoEffectsParams) {
     if (p.isUnlimitedUser || !p.studentName || !p.isPlaying) {
       p.setShowWatermark(false);
       return;
+    }
+
+    // CONSTANT mode (watermarkIntervalMins === 0): always visible while playing
+    if (p.watermarkIntervalMins === 0) {
+      p.setShowWatermark(true);
+      return () => { p.setShowWatermark(false); };
     }
 
     const intervalMs = p.watermarkIntervalMins * 60 * 1000;

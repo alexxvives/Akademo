@@ -92,8 +92,8 @@ export const createLessonSchema = z.object({
   topicId: z.string().optional().nullable(),
   releaseDate: z.string().optional().nullable(),
   orderIndex: z.coerce.number().int().min(0).optional(),
-  maxWatchTimeMultiplier: z.coerce.number().min(1).max(10).optional(),
-  watermarkIntervalMins: z.coerce.number().min(1).max(60).optional(),
+  maxWatchTimeMultiplier: z.coerce.number().min(0).max(10).optional(),
+  watermarkIntervalMins: z.coerce.number().min(0).max(60).optional(),
   // Explicitly allow known extra fields instead of .passthrough()
   videos: z.array(z.object({
     fileName: z.string(),

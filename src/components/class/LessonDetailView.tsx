@@ -47,7 +47,7 @@ export default function LessonDetailView({
               <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 bg-black/60 backdrop-blur-sm text-white text-xs px-3 py-1.5 rounded-full flex items-center gap-3 pointer-events-none">
                 <span>Multiplicador: {lesson.maxWatchTimeMultiplier}x</span>
                 <span className="w-px h-3 bg-white/40"></span>
-                <span>Marca de agua: cada {lesson.watermarkIntervalMins} min</span>
+                <span>Marca de agua: {lesson.watermarkIntervalMins === 0 ? 'siempre visible' : lesson.watermarkIntervalMins < 1 ? `cada ${lesson.watermarkIntervalMins * 60}s` : `cada ${lesson.watermarkIntervalMins} min`}</span>
               </div>
               <ProtectedVideoPlayer
                 key={selectedVideo.id}

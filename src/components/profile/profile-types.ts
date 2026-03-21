@@ -60,12 +60,14 @@ export interface ProfileFormData {
 }
 
 export const WATERMARK_OPTIONS = [
+  { value: 0, label: 'Siempre visible' }, { value: 0.5, label: '30 segundos' },
   { value: 1, label: '1 minuto' }, { value: 3, label: '3 minutos' },
   { value: 5, label: '5 minutos' }, { value: 10, label: '10 minutos' },
   { value: 15, label: '15 minutos' }, { value: 30, label: '30 minutos' },
 ];
 
 export const MULTIPLIER_OPTIONS = [
+  { value: 0, label: '0x (sin acceso)' }, { value: 0.5, label: '0.5x (media vez)' },
   { value: 1.0, label: '1x (una vez)' }, { value: 1.5, label: '1.5x' },
   { value: 2.0, label: '2x (dos veces)' }, { value: 2.5, label: '2.5x' },
   { value: 3.0, label: '3x (tres veces)' }, { value: 5.0, label: '5x (cinco veces)' },
