@@ -6,35 +6,7 @@ import { apiClient } from '@/lib/api-client';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 import { CustomTimePicker } from '@/components/ui/CustomTimePicker';
 import { CustomDatePicker } from '@/components/ui/CustomDatePicker';
-
-interface ClassOption {
-  id: string;
-  name: string;
-  university?: string | null;
-  carrera?: string | null;
-}
-
-interface CalendarAddEventModalProps {
-  date: Date;
-  classes: ClassOption[];
-  onClose: () => void;
-  disabled?: boolean; // disables saving (e.g. demo mode)
-  editEvent?: { id: string; title: string; type: string; classId?: string; extra?: string; location?: string; startTime?: string; zoomLink?: string; zoomMeetingId?: string };
-  onSaved: (event: {
-    id: string;
-    title: string;
-    type: 'physicalClass' | 'scheduledStream';
-    eventDate: string;
-    notes?: string | null;
-    classId?: string | null;
-    location?: string | null;
-    startTime?: string | null;
-    zoomLink?: string | null;
-    zoomMeetingId?: string | null;
-  }) => void;
-}
-
-function pad(n: number) { return String(n).padStart(2, '0'); }
+import { type CalendarAddEventModalProps, pad } from './CalendarAddEventModal.types';
 
 export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEvent, disabled }: CalendarAddEventModalProps) {
   const defaultDate = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
@@ -168,8 +140,6 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
         </div>
 
         <div className="px-6 py-5 space-y-4">
-          {/* Type label removed — all events are streams */}
-
           {/* Title */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">Título <span className="text-red-400">*</span></label>
