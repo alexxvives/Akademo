@@ -1,71 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { getBunnyThumbnailUrl } from '@/lib/bunny-stream';
-import Image from 'next/image';
-
-interface Video {
-  id: string;
-  title: string;
-  description: string | null;
-  durationSeconds: number | null;
-  playStates: Array<{
-    totalWatchTimeSeconds: number;
-    sessionStartTime: string | null;
-  }>;
-  upload?: {
-    storageType?: string;
-    bunnyGuid?: string;
-    storagePath?: string;
-  };
-}
-
-interface Document {
-  id: string;
-  title: string;
-  description: string | null;
-  upload: {
-    fileName: string;
-    storagePath: string;
-    mimeType?: string;
-  };
-}
-
-interface Lesson {
-  id: string;
-  title: string;
-  description: string | null;
-  releaseDate: string;
-  topicId: string | null;
-  topicName?: string;
-  maxWatchTimeMultiplier: number;
-  watermarkIntervalMins: number;
-  videos: Video[];
-  documents: Document[];
-  // API list fields
-  firstVideoBunnyGuid?: string | null;
-  isTranscoding?: number; // 1 if transcoding, 0 if ready
-  videoCount?: number;
-  documentCount?: number;
-  totalVideoDuration?: number;
-  totalWatchedSeconds?: number;
-}
-
-interface Topic {
-  id: string;
-  name: string;
-  classId: string;
-  orderIndex: number;
-  lessonCount: number;
-}
-
-interface StudentTopicsLessonsListProps {
-  lessons: Lesson[];
-  topics: Topic[];
-  expandedTopics: Set<string>;
-  setExpandedTopics: React.Dispatch<React.SetStateAction<Set<string>>>;
-  onSelectLesson: (lesson: Lesson) => void;
-}
+import StudentTopicSection from './StudentTopicSection';
+import type { Lesson, StudentTopicsLessonsListProps } from './StudentTopicsLessonsTypes';
 
 export default function StudentTopicsLessonsList({
   lessons,
@@ -74,21 +10,6 @@ export default function StudentTopicsLessonsList({
   setExpandedTopics,
   onSelectLesson,
 }: StudentTopicsLessonsListProps) {
-  const [thumbnailErrors, setThumbnailErrors] = useState<Record<string, boolean>>({});
-
-  const formatDate = (d: string) => {
-    const date = new Date(d);
-    const formatted = date.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
-    const parts = formatted.split(' de ');
-    if (parts.length === 2) {
-      const month = parts[1];
-      return `${parts[0]} de ${month.charAt(0).toUpperCase()}${month.slice(1)}`;
-    }
-    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
-  };
-
-  const isReleased = (d: string) => new Date(d) <= new Date();
-
   const toggleTopic = (topicId: string) => {
     setExpandedTopics(prev => {
       const newSet = new Set(prev);
@@ -111,240 +32,6 @@ export default function StudentTopicsLessonsList({
     lessonsByTopic.get(key)!.push(lesson);
   });
 
-  const renderLessonCard = (lesson: Lesson) => {
-    const released = isReleased(lesson.releaseDate);
-    // Use API-provided counts or fallback to array length
-    const videoCount = lesson.videoCount ?? lesson.videos?.length ?? 0;
-    const docCount = lesson.documentCount ?? lesson.documents?.length ?? 0;
-
-    // Calculate combined progress for all videos (only if video data is loaded)
-    let totalWatched = 0;
-    let totalMax = 0;
-    
-    // Check if we have pre-calculated progress from API (list view optimization)
-    if (typeof lesson.totalVideoDuration === 'number') {
-      totalMax = lesson.totalVideoDuration * lesson.maxWatchTimeMultiplier;
-      totalWatched = lesson.totalWatchedSeconds || 0;
-    } 
-    // Fallback to detailed video calculation if videos array exists
-    else if (lesson.videos && lesson.videos.length > 0) {
-      lesson.videos.forEach((video: Video) => {
-        const playState = video.playStates?.[0];
-        const watchedSeconds = playState?.totalWatchTimeSeconds || 0;
-        const videoDuration = video.durationSeconds || 0;
-        if (videoDuration > 0) {
-          totalWatched += watchedSeconds;
-          totalMax += videoDuration * lesson.maxWatchTimeMultiplier;
-        }
-      });
-    }
-    
-    const overallProgress = totalMax > 0 ? Math.min(100, (totalWatched / totalMax) * 100) : 0;
-    const remainingMinutes = totalMax > 0 ? Math.ceil((totalMax - totalWatched) / 60) : 0;
-
-    // Get thumbnail from API field or first video
-    let thumbnailUrl = null;
-    const bunnyGuid = lesson.firstVideoBunnyGuid || lesson.videos?.[0]?.upload?.bunnyGuid;
-    if (bunnyGuid) {
-      try {
-        thumbnailUrl = getBunnyThumbnailUrl(bunnyGuid);
-        if (!thumbnailUrl.includes('b-cdn.net')) {
-          thumbnailUrl = null;
-        }
-      } catch (e) {
-        thumbnailUrl = null;
-      }
-    }
-
-    return (
-      <div
-        key={lesson.id}
-        onClick={() => released && onSelectLesson(lesson)}
-        className={`bg-[#1a1d29] rounded-xl overflow-hidden transition-all duration-300 group border border-gray-700 shadow-sm ${
-          released
-            ? 'hover:border-accent-500 hover:shadow-xl hover:shadow-accent-500/20 hover:scale-[1.03] cursor-pointer'
-            : 'opacity-60 cursor-not-allowed'
-        }`}
-      >
-        <div className="flex flex-col h-full">
-          {/* Header with Title */}
-          <div className="px-4 pt-4 pb-3 relative">
-            <h3 
-              className="text-lg font-bold text-white line-clamp-2"
-              title={lesson.description || undefined}
-            >
-              {lesson.title}
-            </h3>
-          </div>
-
-          {/* Thumbnail with play button overlay and content badges */}
-          <div className="relative" style={{ height: '160px' }}>
-            {thumbnailUrl && videoCount > 0 ? (
-              <>
-                {thumbnailErrors[lesson.id] ? (
-                  <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center">
-                    <svg className="w-12 h-12 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-                    </svg>
-                  </div>
-                ) : (
-                  <Image 
-                    src={thumbnailUrl} 
-                    alt={lesson.title}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 600px"
-                    unoptimized
-                    className="object-cover"
-                    onError={() => setThumbnailErrors(prev => ({ ...prev, [lesson.id]: true }))}
-                  />
-                )}
-                {/* Transcoding Badge - Show when video is still processing */}
-                {lesson.isTranscoding === 1 && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/60">
-                    <div className="bg-amber-500/90 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-lg backdrop-blur-sm border border-amber-400/50">
-                      <div className="flex items-center gap-2">
-                        <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                        <span>TRANSCODIFICANDO</span>
-                      </div>
-                      <p className="text-xs mt-1 text-center opacity-90">Procesando video...</p>
-                    </div>
-                  </div>
-                )}
-                {/* Date Badge - Top Right */}
-                <div className={`absolute top-2 right-2 z-10 flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg backdrop-blur-sm shadow-lg ${
-                  released
-                    ? 'bg-gray-100/90 text-gray-600 border border-gray-300/50'
-                    : 'bg-emerald-500/90 text-white border border-emerald-400/50'
-                }`}>
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <span className="font-medium">{formatDate(lesson.releaseDate)}</span>
-                </div>
-                {/* Play Button Overlay */}
-                {released && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
-                    <div className="w-16 h-16 bg-white/90 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
-                      <svg className="w-8 h-8 text-gray-900 ml-1" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                      </svg>
-                    </div>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center">
-                <svg className="w-16 h-16 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-                </svg>
-              </div>
-            )}
-            {/* Content Badges */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
-              <div className="flex items-center gap-2">
-                {videoCount > 0 && (
-                  <div className="flex items-center gap-1.5 bg-blue-500/90 px-2.5 py-1 rounded-lg border border-blue-400/50">
-                    <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-                    </svg>
-                    <span className="text-white font-bold text-xs">{videoCount}</span>
-                  </div>
-                )}
-                {docCount > 0 && (
-                  <div className="flex items-center gap-1.5 bg-purple-500/90 px-2.5 py-1 rounded-lg border border-purple-400/50">
-                    <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-white font-bold text-xs">{docCount}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Card Body - Progress or PROXIMAMENTE */}
-          <div className="p-4">
-            {!released ? (
-              <div className="flex items-center justify-center py-2">
-                <div className="border-2 border-white/40 rounded-lg px-4 py-2">
-                  <span className="text-white font-bold text-lg tracking-wide">PRÓXIMAMENTE</span>
-                </div>
-              </div>
-            ) : (
-              videoCount > 0 && (
-                <>
-                  <div className="flex items-center justify-between text-sm mb-2">
-                    <span className="text-gray-400 text-xs">Progreso</span>
-                    <span className="text-gray-300 font-bold text-sm">
-                      {Math.round(overallProgress)}%
-                      {remainingMinutes > 0 && (
-                        <span className="text-xs font-normal text-gray-500 ml-1">
-                          ({remainingMinutes}m restantes)
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                  <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-accent-500 to-green-500 transition-all"
-                      style={{ width: `${overallProgress}%` }}
-                    />
-                  </div>
-                </>
-              )
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderTopicSection = (topicId: string | null, topicName: string, topicLessons: Lesson[]) => {
-    const isExpanded = expandedTopics.has(topicId || 'uncategorized');
-    
-    // Don't render empty topics for students
-    if (topicLessons.length === 0) return null;
-
-    return (
-      <div
-        key={topicId || 'uncategorized'}
-        className="rounded-xl border-2 border-slate-600/40 transition-all duration-200"
-      >
-        {/* Topic Header */}
-        <div
-          className="flex items-center justify-between px-4 py-3.5 cursor-pointer rounded-t-xl transition-colors"
-          onClick={() => toggleTopic(topicId || 'uncategorized')}
-        >
-          <div className="flex items-center gap-3">
-            <svg
-              className={`w-5 h-5 text-gray-600 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-            <span className="font-semibold text-gray-900">{topicName}</span>
-            <span className="text-xs text-gray-600 bg-gray-200 px-2.5 py-1 rounded-full font-medium">
-              {topicLessons.length} {topicLessons.length === 1 ? 'lección' : 'Clases'}
-            </span>
-          </div>
-        </div>
-
-        {/* Lessons Grid */}
-        {isExpanded && (
-          <div className="px-4 pb-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-2">
-              {topicLessons.map(renderLessonCard)}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
@@ -363,11 +50,25 @@ export default function StudentTopicsLessonsList({
         </div>
       ) : (
         <div className="max-h-[700px] overflow-y-auto space-y-3 py-2">
-          {/* Render topics in order */}
-          {topics.map(topic => renderTopicSection(topic.id, topic.name, lessonsByTopic.get(topic.id) || []))}
-          
-          {/* Render uncategorized lessons */}
-          {renderTopicSection(null, 'Sin tema', lessonsByTopic.get(null) || [])}
+          {topics.map(topic => (
+            <StudentTopicSection
+              key={topic.id}
+              topicId={topic.id}
+              topicName={topic.name}
+              lessons={lessonsByTopic.get(topic.id) || []}
+              isExpanded={expandedTopics.has(topic.id)}
+              onToggle={() => toggleTopic(topic.id)}
+              onSelectLesson={onSelectLesson}
+            />
+          ))}
+          <StudentTopicSection
+            topicId={null}
+            topicName="Sin tema"
+            lessons={lessonsByTopic.get(null) || []}
+            isExpanded={expandedTopics.has('uncategorized')}
+            onToggle={() => toggleTopic('uncategorized')}
+            onSelectLesson={onSelectLesson}
+          />
         </div>
       )}
     </div>
