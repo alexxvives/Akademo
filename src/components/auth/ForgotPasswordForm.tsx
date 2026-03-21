@@ -168,21 +168,23 @@ export function ForgotPasswordForm({ onBackToLogin }: ForgotPasswordFormProps) {
           >
             Verificar código
           </button>
-          <button
-            type="button"
-            disabled={resendCooldown > 0 || loading}
-            onClick={() => doSendCode(email)}
-            className="w-full text-sm text-gray-500 hover:text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {resendCooldown > 0 ? `Reenviar código (${resendCooldown}s)` : 'Reenviar código'}
-          </button>
-          <button
-            type="button"
-            onClick={() => { setStep('email'); setError(''); }}
-            className="w-full text-sm text-gray-400 hover:text-gray-600"
-          >
-            Cambiar email
-          </button>
+          <div className="flex justify-between items-center pt-1">
+            <button
+              type="button"
+              onClick={() => { setStep('email'); setError(''); }}
+              className="text-sm text-gray-400 hover:text-gray-600"
+            >
+              Cambiar email
+            </button>
+            <button
+              type="button"
+              disabled={resendCooldown > 0 || loading}
+              onClick={() => doSendCode(email)}
+              className="text-sm text-gray-500 hover:text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {resendCooldown > 0 ? `Reenviar código (${resendCooldown}s)` : 'Reenviar código'}
+            </button>
+          </div>
         </form>
       )}
 

@@ -43,6 +43,7 @@ export interface Bindings {
   
   // Email
   RESEND_API_KEY: string;
+  MAILEROO_API_KEY: string;
   
   // Stripe
   // Toggle: set STRIPE_SANDBOX = "true" to use sandbox keys, anything else (or absent) = live keys

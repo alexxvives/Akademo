@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { requireAuth, getSession } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
+import { sendEmail } from '../lib/sendEmail';
 
 const academies = new Hono<{ Bindings: Bindings }>();
 
@@ -238,22 +239,12 @@ academies.post('/teachers', async (c) => {
        VALUES (?, ?, ?, datetime('now'))`
     ).bind(crypto.randomUUID(), userId, academyId).run();
 
-    // Send onboarding email via Resend API
-    const resendApiKey = c.env.RESEND_API_KEY;
-    
-    if (resendApiKey) {
-      try {
-        const emailResponse = await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${resendApiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            from: 'AKADEMO <onboarding@akademo-edu.com>',
-            to: [email],
-            subject: 'Bienvenido a AKADEMO - Tus credenciales de acceso',
-            html: `
+    // Send onboarding email
+    await sendEmail(c.env, {
+      from: 'AKADEMO <onboarding@akademo-edu.com>',
+      to: email,
+      subject: 'Bienvenido a AKADEMO - Tus credenciales de acceso',
+      html: `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
                 <div style="background: linear-gradient(135deg, #b1e787 0%, #8dd65f 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
                   <h1 style="color: #1f2937; margin: 0; font-size: 28px;">¡Bienvenido a AKADEMO!</h1>
@@ -298,20 +289,7 @@ academies.post('/teachers', async (c) => {
                 </div>
               </div>
             `,
-          }),
-        });
-
-        if (!emailResponse.ok) {
-          console.error('[Create Teacher] Resend API error:', await emailResponse.text());
-        } else {
-        }
-      } catch (emailError) {
-        console.error('[Create Teacher] Email sending failed:', emailError);
-        // Continue even if email fails - teacher is created
-      }
-    } else {
-      console.warn('[Create Teacher] RESEND_API_KEY not configured - email not sent');
-    }
+    });
 
     return c.json(successResponse({ 
       id: userId, 

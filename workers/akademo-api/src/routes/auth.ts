@@ -6,6 +6,7 @@ import { getSession, createSignedSession, hashPassword } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { loginSchema, registerSchema, validateBody } from '../lib/validation';
 import { loginRateLimit, registerRateLimit, checkEmailRateLimit, emailVerificationRateLimit, forgotPasswordRateLimit, resetPasswordRateLimit, joinRateLimit, academyRegisterRateLimit } from '../lib/rate-limit';
+import { sendEmail } from '../lib/sendEmail';
 
 const auth = new Hono<{ Bindings: Bindings }>();
 
@@ -459,22 +460,12 @@ auth.post('/send-verification', emailVerificationRateLimit, async (c) => {
       .bind(email.toLowerCase(), code, new Date(expires).toISOString())
       .run();
 
-    // Send email via Resend API
-    const resendApiKey = c.env.RESEND_API_KEY;
-    
-    if (resendApiKey) {
-      try {
-        const emailResponse = await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${resendApiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            from: 'AKADEMO <onboarding@akademo-edu.com>',
-            to: [email],
-            subject: 'Tu código de verificación - AKADEMO',
-            html: `
+    // Send verification email
+    await sendEmail(c.env, {
+      from: 'AKADEMO <onboarding@akademo-edu.com>',
+      to: email,
+      subject: 'Tu código de verificación - AKADEMO',
+      html: `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 <h2 style="color: #2563eb;">Verifica tu correo electrónico</h2>
                 <p>Tu código de verificación es:</p>
@@ -485,16 +476,7 @@ auth.post('/send-verification', emailVerificationRateLimit, async (c) => {
                 <p style="color: #6b7280;">Si no solicitaste este código, puedes ignorar este mensaje.</p>
               </div>
             `,
-          }),
-        });
-
-        if (!emailResponse.ok) {
-          console.error('[Send Verification] Resend API error:', await emailResponse.text());
-        }
-      } catch (emailError) {
-        console.error('[Send Verification] Email sending failed:', emailError);
-      }
-    }
+    });
 
     // Log code for development/testing
 
@@ -716,17 +698,11 @@ auth.post('/forgot-password', forgotPasswordRateLimit, async (c) => {
         .bind(email.toLowerCase(), code, expires)
         .run();
 
-      const resendApiKey = c.env.RESEND_API_KEY;
-      if (resendApiKey) {
-        try {
-          await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${resendApiKey}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              from: 'AKADEMO <onboarding@akademo-edu.com>',
-              to: [email],
-              subject: 'Restablecer contraseña - AKADEMO',
-              html: `
+      await sendEmail(c.env, {
+        from: 'AKADEMO <onboarding@akademo-edu.com>',
+        to: email,
+        subject: 'Restablecer contraseña - AKADEMO',
+        html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                   <h2 style="color: #2563eb;">Restablecer contraseña</h2>
                   <p>Tu código de restablecimiento es:</p>
@@ -737,12 +713,7 @@ auth.post('/forgot-password', forgotPasswordRateLimit, async (c) => {
                   <p style="color: #6b7280;">Si no solicitaste esto, puedes ignorar este mensaje.</p>
                 </div>
               `,
-            }),
-          });
-        } catch (emailError) {
-          console.error('[Forgot Password] Email error:', emailError);
-        }
-      }
+      });
     }
 
     return c.json(successResponse({ message: 'If that email exists, a reset code has been sent' }));

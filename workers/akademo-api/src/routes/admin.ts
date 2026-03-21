@@ -4,6 +4,7 @@ import { requireAuth, hashPassword } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { nanoid } from 'nanoid';
 import { writeAuditLog } from '../lib/audit';
+import { sendEmail } from '../lib/sendEmail';
 
 const admin = new Hono<{ Bindings: Bindings }>();
 
@@ -906,7 +907,6 @@ admin.post('/send-welcome-emails', async (c) => {
       return c.json(errorResponse('Maximum 500 users per batch'), 400);
     }
 
-    const resendApiKey = c.env.RESEND_API_KEY;
     let sent = 0;
     let failed = 0;
 
@@ -914,16 +914,12 @@ admin.post('/send-welcome-emails', async (c) => {
       const { email, firstName, role, tempPassword } = user;
       if (!email || !firstName || !tempPassword) { failed++; continue; }
       const roleLabel = role === 'TEACHER' ? 'profesor' : 'alumno';
-      if (!resendApiKey) { failed++; continue; }
       try {
-        const res = await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${resendApiKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            from: 'AKADEMO <onboarding@akademo-edu.com>',
-            to: [email],
-            subject: 'Bienvenido a AKADEMO - Tus credenciales de acceso',
-            html: `
+        const ok = await sendEmail(c.env, {
+          from: 'AKADEMO <onboarding@akademo-edu.com>',
+          to: email,
+          subject: 'Bienvenido a AKADEMO - Tus credenciales de acceso',
+          html: `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
                 <div style="background: linear-gradient(135deg, #b1e787 0%, #8dd65f 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
                   <h1 style="color: #1f2937; margin: 0; font-size: 28px;">¡Bienvenido a AKADEMO!</h1>
@@ -952,9 +948,8 @@ admin.post('/send-welcome-emails', async (c) => {
                 </div>
               </div>
             `,
-          }),
         });
-        if (res.ok) sent++; else { console.error('[Send Welcome Emails] Resend error:', await res.text()); failed++; }
+        if (ok) sent++; else failed++;
       } catch (emailErr) {
         console.error('[Send Welcome Emails] Email failed:', emailErr);
         failed++;

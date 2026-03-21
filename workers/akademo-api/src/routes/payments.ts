@@ -5,6 +5,7 @@ import { successResponse, errorResponse } from '../lib/utils';
 import { initiatePaymentSchema } from '../lib/validation';
 import { autoCreatePendingPayments, addMonths, countElapsedCycles } from '../lib/payment-utils';
 import { rateLimit } from '../lib/rate-limit';
+import { sendEmail } from '../lib/sendEmail';
 
 const payments = new Hono<{ Bindings: Bindings }>();
 
@@ -944,24 +945,17 @@ payments.patch('/:id/approve-payment', async (c) => {
           .bind(paymentId)
           .first();
 
-        const resendApiKey = c.env.RESEND_API_KEY;
-        if (resendApiKey && studentInfo?.email) {
+        if (studentInfo?.email) {
           const studentName = `${studentInfo.firstName || ''} ${studentInfo.lastName || ''}`.trim() || 'Estudiante';
           const amountDisplay = studentInfo.amount
             ? `${studentInfo.amount} ${studentInfo.currency === 'EUR' ? '€' : studentInfo.currency}`
             : '';
 
-          await fetch('https://api.resend.com/emails', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${resendApiKey}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              from: 'AKADEMO <noreply@akademo-edu.com>',
-              to: [studentInfo.email],
-              subject: `✅ Pago aprobado — ${studentInfo.className}`,
-              html: `
+          await sendEmail(c.env, {
+            from: 'AKADEMO <noreply@akademo-edu.com>',
+            to: studentInfo.email,
+            subject: `✅ Pago aprobado — ${studentInfo.className}`,
+            html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
                   <div style="text-align: center; margin-bottom: 30px;">
                     <img src="https://akademo-edu.com/logo/akademo-icon.png" alt="AKADEMO" style="height: 40px;" />
@@ -979,7 +973,6 @@ payments.patch('/:id/approve-payment', async (c) => {
                   <p style="color: #aaa; font-size: 12px; margin-top: 32px; text-align: center;">AKADEMO · akademo-edu.com</p>
                 </div>
               `,
-            }),
           });
         }
       } catch (emailErr) {

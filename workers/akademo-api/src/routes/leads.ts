@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { requireAuth } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
+import { sendEmail } from '../lib/sendEmail';
 
 const leads = new Hono<{ Bindings: Bindings }>();
 
@@ -50,9 +51,7 @@ leads.post('/', async (c) => {
     ).run();
 
     // Send notification email to team
-    const resendApiKey = c.env.RESEND_API_KEY;
-    if (resendApiKey) {
-      const htmlBody = `
+    const htmlBody = `
         <h2>Nueva solicitud de precios</h2>
         <table style="border-collapse:collapse;width:100%">
           <tr><td style="padding:6px 12px;font-weight:bold">Nombre</td><td style="padding:6px 12px">${escapeHtml(name.trim())}</td></tr>
@@ -65,21 +64,12 @@ leads.post('/', async (c) => {
           <tr style="background:#f9f9f9"><td style="padding:6px 12px;font-weight:bold">Mensaje</td><td style="padding:6px 12px">${escapeHtml(message?.trim())}</td></tr>
         </table>
       `;
-      try {
-        await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${resendApiKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            from: 'AKADEMO <noreply@akademo-edu.com>',
-            to: ['alex@akademo-edu.com', 'david@akademo-edu.com'],
-            subject: `Nueva solicitud de precios de ${name.trim()} (${academyName?.trim() || email.trim()})`,
-            html: htmlBody,
-          }),
-        });
-      } catch (emailErr) {
-        console.error('[Leads] Email notification failed:', emailErr);
-      }
-    }
+    await sendEmail(c.env, {
+      from: 'AKADEMO <noreply@akademo-edu.com>',
+      to: ['alex@akademo-edu.com', 'david@akademo-edu.com'],
+      subject: `Nueva solicitud de precios de ${name.trim()} (${academyName?.trim() || email.trim()})`,
+      html: htmlBody,
+    });
 
     return c.json(successResponse({ id }), 201);
   } catch (error: unknown) {
