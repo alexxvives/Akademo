@@ -9,8 +9,8 @@ import type { ProfileActions } from './useProfileActions';
 export function AdvancedSettingsCard({ s, actions }: { s: ProfileState; actions: ProfileActions }) {
   const { formData } = s;
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-      <div className="px-4 sm:px-8 py-5 bg-gray-50 border-b border-gray-200">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
+      <div className="px-4 sm:px-8 py-5 bg-gray-50 border-b border-gray-200 rounded-t-2xl">
         <div className="flex items-center gap-3">
           <div>
             <h3 className="text-base sm:text-lg font-semibold text-gray-900">Configuración Avanzada</h3>

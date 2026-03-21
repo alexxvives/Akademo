@@ -21,8 +21,6 @@ export function SubmissionsModal(props: AssignmentModalsProps) {
             <p className="text-sm text-gray-500 mt-1">{submissions.length} entregas para &quot;{selectedAssignment.title}&quot;</p>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => handleBulkDownload(true)}
-              className="px-4 py-2 border border-gray-900 text-gray-900 rounded-lg hover:bg-gray-50 transition-colors">Descargar nuevas</button>
             <button onClick={() => handleBulkDownload(false)}
               className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors">Descargar todas</button>
             <button onClick={() => setShowSubmissionsModal(false)}
