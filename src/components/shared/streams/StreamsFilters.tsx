@@ -44,7 +44,7 @@ export function StreamsFilters({
             value={selectedClass}
             onChange={setSelectedClass}
             allLabel="Todas las asignaturas"
-            className="w-full md:w-64"
+            className="w-full sm:w-56"
           />
         )}
 
@@ -54,7 +54,7 @@ export function StreamsFilters({
             value={selectedClass}
             onChange={setSelectedClass}
             allLabel="Todas las asignaturas"
-            className="w-64"
+            className="w-full sm:w-56"
           />
         )}
 
@@ -67,7 +67,7 @@ export function StreamsFilters({
               setSelectedClass('all');
             }}
             allLabel="Todas las academias"
-            className="w-56"
+            className="w-full sm:w-56"
           />
         )}
       </div>

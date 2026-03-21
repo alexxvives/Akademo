@@ -25,7 +25,7 @@ export function TeacherDashboardHeader({ academyName, hasAcademy, classes, selec
           value={selectedClass}
           onChange={onClassChange}
           allLabel="Todas las asignaturas"
-          className="w-full md:w-64"
+          className="w-full sm:w-56"
         />
       )}
     </div>

@@ -127,7 +127,7 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          <div className="w-full sm:w-52">
+          <div className="w-full sm:w-56">
             <ClassSearchDropdown
               classes={filteredClasses}
               value={selectedClass}

@@ -52,7 +52,8 @@ export async function loadCalendarData(
       const acadRes = await apiClient('/admin/academies');
       const acadResult = await acadRes.json();
       if (acadResult.success && Array.isArray(acadResult.data)) {
-        for (const a of acadResult.data) adminAcademies.push({ id: a.id, name: a.name });
+        const paid = acadResult.data.filter((a: { paymentStatus?: string }) => a.paymentStatus === 'PAID');
+        for (const a of paid) adminAcademies.push({ id: a.id, name: a.name });
       }
     } catch { /* continue */ }
     const res = await apiClient('/admin/classes');

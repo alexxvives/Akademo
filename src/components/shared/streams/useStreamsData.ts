@@ -100,12 +100,14 @@ export function useStreamsData(role: 'ACADEMY' | 'ADMIN' | 'TEACHER') {
         if (classesResult.success && Array.isArray(classesResult.data)) setClasses(classesResult.data);
       } else {
         const [academiesRes, classesRes, streamsRes] = await Promise.all([
-          apiClient('/academies'), apiClient('/classes'), apiClient('/live/history'),
+          apiClient('/admin/academies'), apiClient('/classes'), apiClient('/live/history'),
         ]);
         const [academiesResult, classesResult, streamsResult] = await Promise.all([
           academiesRes.json(), classesRes.json(), streamsRes.json(),
         ]);
-        if (academiesResult.success && Array.isArray(academiesResult.data)) setAcademies(academiesResult.data);
+        if (academiesResult.success && Array.isArray(academiesResult.data)) {
+          setAcademies(academiesResult.data.filter((a: { paymentStatus?: string }) => a.paymentStatus === 'PAID'));
+        }
         if (classesResult.success && Array.isArray(classesResult.data)) setClasses(classesResult.data);
         if (streamsResult.success && Array.isArray(streamsResult.data)) setStreams(streamsResult.data);
         setLoading(false);

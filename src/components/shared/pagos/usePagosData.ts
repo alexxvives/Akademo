@@ -53,7 +53,8 @@ export function usePagosData(role: 'ACADEMY' | 'ADMIN') {
         const academiesRes = await apiClient('/admin/academies');
         const academiesResult = await academiesRes.json();
         if (academiesResult.success && Array.isArray(academiesResult.data)) {
-          setAcademies(academiesResult.data.map((a: Academy & { ownerName?: string }) => ({ id: a.id, name: a.name })));
+          const paid = academiesResult.data.filter((a: { paymentStatus?: string }) => a.paymentStatus === 'PAID');
+          setAcademies(paid.map((a: Academy & { ownerName?: string }) => ({ id: a.id, name: a.name })));
         }
         const academyParam = selectedAcademy !== 'all' ? `?academyId=${selectedAcademy}` : '';
         const [pendingRes, historyRes] = await Promise.all([

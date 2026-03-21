@@ -40,16 +40,6 @@ export function TeachersHeader({
         {!academyName && role === 'ADMIN' && <p className="text-sm text-gray-500 mt-1">AKADEMO PLATFORM</p>}
       </div>
       <div className="flex items-center gap-3">
-        {role === 'ADMIN' && academies.length > 0 && (
-          <AcademySearchDropdown
-            academies={academies}
-            value={selectedAcademy}
-            onChange={onSelectAcademy}
-            allLabel="Todas las Academias"
-            allValue="ALL"
-            className="w-full md:w-64"
-          />
-        )}
         <div className="relative">
           <input
             type="text"
@@ -62,6 +52,16 @@ export function TeachersHeader({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </div>
+        {role === 'ADMIN' && academies.length > 0 && (
+          <AcademySearchDropdown
+            academies={academies}
+            value={selectedAcademy}
+            onChange={onSelectAcademy}
+            allLabel="Todas las Academias"
+            allValue="ALL"
+            className="w-full sm:w-56"
+          />
+        )}
       </div>
     </div>
   );

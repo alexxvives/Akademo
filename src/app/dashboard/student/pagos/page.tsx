@@ -122,7 +122,7 @@ export default function StudentPagosPage() {
             onChange={setClassFilter}
             allLabel="Todas las asignaturas"
             allValue="all"
-            className="w-full sm:w-72"
+            className="w-full sm:w-56"
           />
         )}
       </div>

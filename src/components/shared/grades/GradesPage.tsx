@@ -124,26 +124,28 @@ export function GradesPage({ role }: GradesPageProps) {
             </svg>
           </div>
 
+          {/* Class filter - cascaded behind academy for admin */}
+          {(role !== 'ADMIN' || (selectedAcademy !== 'all' && selectedAcademy !== '')) && (
+            <ClassSearchDropdown
+              classes={activePeriodId === 'all' ? classes : classes.filter(c => isClassInPeriod(c.startDate))}
+              value={selectedClass}
+              onChange={setSelectedClass}
+              allLabel="Todas las asignaturas"
+              className="w-full sm:w-56"
+              disabled={classes.length === 0}
+            />
+          )}
+
           {/* Admin: academy filter */}
           {role === 'ADMIN' && (
             <AcademySearchDropdown
               academies={academies}
               value={selectedAcademy}
-              onChange={setSelectedAcademy}
+              onChange={(val) => { setSelectedAcademy(val); if (val === 'all') setSelectedClass('all'); }}
               allLabel="Todas las academias"
               className="w-full sm:w-56"
             />
           )}
-
-          {/* Class filter */}
-          <ClassSearchDropdown
-            classes={activePeriodId === 'all' ? classes : classes.filter(c => isClassInPeriod(c.startDate))}
-            value={selectedClass}
-            onChange={setSelectedClass}
-            allLabel="Todas las asignaturas"
-            className="w-full sm:w-56"
-            disabled={classes.length === 0}
-          />
         </div>
       </div>
 

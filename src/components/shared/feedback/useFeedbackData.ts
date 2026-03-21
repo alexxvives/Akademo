@@ -123,7 +123,7 @@ export function useFeedbackData(role: FeedbackPageProps['role']): FeedbackDataRe
   const loadAdminData = async () => {
     try {
       const [academiesRes, classesRes] = await Promise.all([
-        apiClient('/academies'),
+        apiClient('/admin/academies'),
         apiClient('/classes'),
       ]);
       const [academiesResult, classesResult] = await Promise.all([
@@ -132,7 +132,7 @@ export function useFeedbackData(role: FeedbackPageProps['role']): FeedbackDataRe
       ]);
 
       if (academiesResult.success && Array.isArray(academiesResult.data)) {
-        setAcademies(academiesResult.data);
+        setAcademies(academiesResult.data.filter((a: { paymentStatus?: string }) => a.paymentStatus === 'PAID'));
       }
       if (classesResult.success && Array.isArray(classesResult.data)) {
         setAllClasses(classesResult.data);

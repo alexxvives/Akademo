@@ -60,7 +60,7 @@ export function ClassesHeader({
             value={selectedAcademy}
             onChange={setSelectedAcademy}
             allLabel="Todas las Academias"
-            className="w-full md:w-64"
+            className="w-full sm:w-56"
           />
         )}
         {(role === 'ACADEMY' || role === 'TEACHER') && classes.length > 1 && (
@@ -69,7 +69,7 @@ export function ClassesHeader({
             value={selectedClassId}
             onChange={setSelectedClassId}
             allLabel="Todas las asignaturas"
-            className="w-64"
+            className="w-full sm:w-56"
           />
         )}
       </div>

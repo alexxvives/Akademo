@@ -43,7 +43,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
               value={data.selectedClass}
               onChange={data.setSelectedClass}
               allLabel="Todas las clases"
-              className="w-full md:w-56"
+              className="w-full sm:w-56"
             />
           )}
           {data.isAdmin && data.academies.length > 0 && (
@@ -53,7 +53,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
               onChange={data.setSelectedAcademy}
               allLabel="Todas las Academias"
               allValue="all"
-              className="w-full md:w-56"
+              className="w-full sm:w-56"
             />
           )}
           {data.isAcademy && data.classes.length > 0 && (
@@ -62,7 +62,7 @@ export function DashboardPage({ role }: DashboardPageProps) {
               value={data.selectedClass}
               onChange={data.setSelectedClass}
               allLabel="Todas las asignaturas"
-              className="w-full md:w-56"
+              className="w-full sm:w-56"
             />
           )}
         </div>

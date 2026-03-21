@@ -45,22 +45,22 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            {data.isAdmin && (
-              <AcademySearchDropdown
-                academies={data.academies}
-                value={data.selectedAcademy}
-                onChange={(value) => { data.setSelectedAcademy(value); data.setSelectedClass(''); }}
-                allLabel="Todas las academias"
-                allValue=""
-                className="w-full sm:w-56"
-              />
-            )}
             {(data.isAcademy || data.isTeacher || (data.isAdmin && data.selectedAcademy)) && (
               <ClassSearchDropdown
                 classes={data.filteredClasses}
                 value={(data.isAcademy || data.isTeacher) ? data.selectedClassId : data.selectedClass}
                 onChange={(v) => (data.isAcademy || data.isTeacher) ? data.setSelectedClassId(v) : data.setSelectedClass(v)}
                 allLabel="Todas las asignaturas"
+                allValue=""
+                className="w-full sm:w-56"
+              />
+            )}
+            {data.isAdmin && (
+              <AcademySearchDropdown
+                academies={data.academies}
+                value={data.selectedAcademy}
+                onChange={(value) => { data.setSelectedAcademy(value); data.setSelectedClass(''); }}
+                allLabel="Todas las academias"
                 allValue=""
                 className="w-full sm:w-56"
               />

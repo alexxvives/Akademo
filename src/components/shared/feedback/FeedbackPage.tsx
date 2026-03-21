@@ -53,7 +53,7 @@ export function FeedbackPage({ role }: FeedbackPageProps) {
             value={selectedClass}
             onChange={setSelectedClass}
             allLabel="Todas las asignaturas"
-            className="w-56"
+            className="w-full sm:w-56"
           />
         )}
 
@@ -66,7 +66,7 @@ export function FeedbackPage({ role }: FeedbackPageProps) {
                 value={selectedClass}
                 onChange={setSelectedClass}
                 allLabel="Todas las clases"
-                className="w-56"
+                className="w-full sm:w-56"
               />
             )}
 
@@ -79,7 +79,7 @@ export function FeedbackPage({ role }: FeedbackPageProps) {
               }}
               allLabel="Todas las academias"
               allValue="all"
-              className="w-56"
+              className="w-full sm:w-56"
             />
           </div>
         )}

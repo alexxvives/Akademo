@@ -41,13 +41,21 @@ const app = new Hono<{ Bindings: Bindings }>();
 // Global error handler - map auth errors to proper status codes
 app.onError((err, c) => {
   console.error('[API Error]', err);
+  const origin = c.req.header('Origin') || '';
+  const allowedOrigins = ['https://akademo-edu.com', 'https://www.akademo-edu.com', 'https://akademo.alexxvives.workers.dev', 'http://localhost:3000'];
+  const corsOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+  const addCors = (res: Response) => {
+    res.headers.set('Access-Control-Allow-Origin', corsOrigin);
+    res.headers.set('Access-Control-Allow-Credentials', 'true');
+    return res;
+  };
   if (err.message === 'Unauthorized') {
-    return c.json({ success: false, error: 'Unauthorized' }, 401);
+    return addCors(c.json({ success: false, error: 'Unauthorized' }, 401));
   }
   if (err.message === 'Forbidden') {
-    return c.json({ success: false, error: 'Forbidden' }, 403);
+    return addCors(c.json({ success: false, error: 'Forbidden' }, 403));
   }
-  return c.json({ success: false, error: 'Internal server error' }, 500);
+  return addCors(c.json({ success: false, error: 'Internal server error' }, 500));
 });
 
 // Middleware

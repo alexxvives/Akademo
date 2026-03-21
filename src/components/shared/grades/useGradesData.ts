@@ -140,10 +140,11 @@ export function useGradesData(role: 'ACADEMY' | 'ADMIN' | 'TEACHER') {
           setLoading(false);
         }
       } else {
-        const res = await apiClient('/academies');
-        const response: { success: boolean; data: Academy[] } = await res.json();
+        const res = await apiClient('/admin/academies');
+        const response = await res.json() as { success: boolean; data: (Academy & { paymentStatus?: string })[] };
         if (response.success) {
-          setAcademies(response.data);
+          const paid = (response.data || []).filter(a => a.paymentStatus === 'PAID');
+          setAcademies(paid);
           if (response.data.length > 0) setSelectedAcademy('all');
           else setLoading(false);
         } else {
