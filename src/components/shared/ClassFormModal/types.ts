@@ -60,6 +60,7 @@ export interface ClassFormModalProps {
   error: string;
   paymentOptionsError: boolean;
   isDemo: boolean;
+  hasEnrollments?: boolean;
   onSubmit: (e: React.FormEvent) => void;
   onClose: () => void;
 }

@@ -96,6 +96,7 @@ export function ClassesPage({ role }: ClassesPageProps) {
           error={data.error}
           paymentOptionsError={data.paymentOptionsError}
           isDemo={data.isDemo}
+          hasEnrollments={(data.editingClass.studentCount ?? 0) > 0}
           onSubmit={crud.handleEditClass}
           onClose={() => {
             data.setShowEditModal(false);

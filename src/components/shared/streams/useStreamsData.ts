@@ -58,15 +58,22 @@ export function useStreamsData(role: 'ACADEMY' | 'ADMIN' | 'TEACHER') {
 
   const setDemoData = useCallback((status: string) => {
     if (status === 'NOT PAID') {
-      const demoStreams = generateDemoStreams() as Stream[];
-      setStreams(demoStreams.map((stream) => ({
+      const allDemoStreams = generateDemoStreams() as Stream[];
+      // Teachers only see streams from their own classes (demo-c1: Programación Web)
+      const filteredStreams = isTeacher
+        ? allDemoStreams.filter(s => s.classId === 'demo-c1')
+        : allDemoStreams;
+      const filteredClasses = isTeacher
+        ? demoClasses.filter(c => c.id === 'demo-c1')
+        : demoClasses;
+      setStreams(filteredStreams.map((stream) => ({
         ...stream,
         classSlug: stream.className.toLowerCase().replace(/\s+/g, '-'),
       })));
-      setClasses(demoClasses);
+      setClasses(filteredClasses);
       setLoading(false);
     }
-  }, []);
+  }, [isTeacher]);
 
   const loadData = useCallback(async () => {
     try {

@@ -18,6 +18,7 @@ export function ClassFormModal({
   error,
   paymentOptionsError,
   isDemo,
+  hasEnrollments,
   onSubmit,
   onClose,
 }: ClassFormModalProps) {
@@ -67,12 +68,21 @@ export function ClassFormModal({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Fecha de inicio
+                {mode === 'edit' && hasEnrollments && (
+                  <span className="ml-2 text-xs text-gray-400 font-normal">bloqueada</span>
+                )}
               </label>
-              <DatePickerInput
-                value={formData.startDate}
-                onChange={(v) => setFormData((f) => ({ ...f, startDate: v }))}
-                required
-              />
+              {mode === 'edit' && hasEnrollments ? (
+                <div className="w-full h-[42px] px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 text-sm flex items-center">
+                  {formData.startDate || '—'}
+                </div>
+              ) : (
+                <DatePickerInput
+                  value={formData.startDate}
+                  onChange={(v) => setFormData((f) => ({ ...f, startDate: v }))}
+                  required
+                />
+              )}
             </div>
 
             <div>
