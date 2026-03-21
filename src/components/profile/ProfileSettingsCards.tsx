@@ -2,6 +2,7 @@
 
 import { WATERMARK_OPTIONS, MULTIPLIER_OPTIONS } from './profile-types';
 import { PasswordInput } from '@/components/ui';
+import { StyledSelect } from '@/components/ui/StyledSelect';
 import type { ProfileState } from './useProfileData';
 import type { ProfileActions } from './useProfileActions';
 
@@ -21,8 +22,8 @@ export function AdvancedSettingsCard({ s, actions }: { s: ProfileState; actions:
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-y-4 gap-x-8">
           <ToggleSetting label="Habilitar feedback" desc="Permitir valoraciones de estudiantes en las clases" checked={formData.feedbackEnabled} onToggle={() => actions.handleSettingChange('feedbackEnabled', formData.feedbackEnabled ? 0 : 1)} />
           <SelectSetting label="Marca de agua" desc="Frecuencia de aparición" value={formData.defaultWatermarkIntervalMins} options={WATERMARK_OPTIONS} onChange={(v) => actions.handleSettingChange('defaultWatermarkIntervalMins', parseFloat(v))} />
-          <SelectSetting label="Límite de visualización" desc="Veces que puede ver el contenido" value={formData.defaultMaxWatchTimeMultiplier} options={MULTIPLIER_OPTIONS} onChange={(v) => actions.handleSettingChange('defaultMaxWatchTimeMultiplier', parseFloat(v))} />
           <ToggleSetting label="Calificación obligatoria" desc="Requiere que los profesores califiquen los ejercicios" checked={formData.requireGrading} onToggle={() => actions.handleSettingChange('requireGrading', formData.requireGrading ? 0 : 1)} />
+          <SelectSetting label="Límite de visualización" desc="Veces que puede ver el contenido" value={formData.defaultMaxWatchTimeMultiplier} options={MULTIPLIER_OPTIONS} onChange={(v) => actions.handleSettingChange('defaultMaxWatchTimeMultiplier', parseFloat(v))} />
         </div>
       </div>
     </div>
@@ -46,10 +47,12 @@ function SelectSetting({ label, desc, value, options, onChange }: { label: strin
   return (
     <div className="flex items-center justify-between">
       <div><label className="block text-sm font-medium text-gray-900">{label}</label><p className="text-xs text-gray-500">{desc}</p></div>
-      <div className="ml-4 shrink-0 w-32">
-        <select value={value} onChange={(e) => onChange(e.target.value)} className="block w-full pl-3 pr-8 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all text-sm bg-white appearance-none bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNNSA3LjVMMTAgMTIuNUwxNSA3LjUiIHN0cm9rZT0iIzZCNzI4MCIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjwvc3ZnPg==')] bg-no-repeat bg-[position:right_0.5rem_center]">
-          {options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-        </select>
+      <div className="ml-4 shrink-0 w-40">
+        <StyledSelect
+          value={String(value)}
+          onChange={onChange}
+          options={options.map(o => ({ value: String(o.value), label: o.label }))}
+        />
       </div>
     </div>
   );

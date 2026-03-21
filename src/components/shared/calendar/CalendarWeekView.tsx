@@ -40,55 +40,57 @@ export function CalendarWeekView({
   const hasAnyAllDay = Array.from(allDayByDate.values()).some(arr => arr.length > 0);
 
   return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">
-      <div className="grid border-b border-gray-200" style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}>
-        <div className="border-r border-gray-100" />
-        {calendarDays.map((day, i) => {
-          const isToday = isSameDay(day, today);
-          return (
-            <div key={i} className={`text-center py-2 border-r border-gray-100 last:border-r-0 ${isToday ? 'bg-blue-50' : ''}`}>
-              <div className="text-xs text-gray-500 font-medium">{WEEKDAYS[i]}</div>
-              <div className={`text-lg font-bold ${isToday ? 'text-blue-600' : 'text-gray-900'}`}>
-                {isToday ? (
-                  <span className="inline-flex w-8 h-8 items-center justify-center rounded-full bg-blue-600 text-white text-sm">
-                    {day.getDate()}
-                  </span>
-                ) : day.getDate()}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+    <div className="border border-gray-200 rounded-lg bg-white" style={{ overflow: 'clip' }}>
+      <div className="overflow-y-auto" style={{ maxHeight: 'calc(100dvh - 320px)', minHeight: '460px' }}>
 
-      {hasAnyAllDay && (
-        <div className="grid border-b border-gray-200" style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}>
-          <div className="border-r border-gray-100 px-1 py-1.5 text-[10px] text-gray-400 text-right">Todo el día</div>
+        {/* Sticky day header — inside the scroll container so widths always match */}
+        <div className="grid border-b border-gray-200 sticky top-0 bg-white z-20" style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}>
+          <div className="border-r border-gray-100" />
           {calendarDays.map((day, i) => {
-            const key = formatDateKey(day);
-            const events = allDayByDate.get(key) || [];
-            const dayMidnight = new Date(day.getFullYear(), day.getMonth(), day.getDate());
-            const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-            const isAllDayPast = dayMidnight < todayMidnight;
+            const isToday = isSameDay(day, today);
             return (
-              <div key={i} className="border-r border-gray-100 last:border-r-0 px-0.5 py-1 space-y-0.5 min-h-[28px]">
-                {events.map(event => (
-                  <div
-                    key={event.id}
-                    style={{ opacity: isAllDayPast ? 0.4 : 1 }}
-                    className={`text-[10px] px-1.5 py-0.5 rounded truncate ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text} cursor-pointer`}
-                    onClick={() => handleEventClick(event)}
-                    title={`${event.title}${event.className ? ` — ${event.className}` : ''}`}
-                  >
-                    {event.title}
-                  </div>
-                ))}
+              <div key={i} className={`text-center py-2 border-r border-gray-100 last:border-r-0 ${isToday ? 'bg-blue-50' : ''}`}>
+                <div className="text-xs text-gray-500 font-medium">{WEEKDAYS[i]}</div>
+                <div className={`text-lg font-bold ${isToday ? 'text-blue-600' : 'text-gray-900'}`}>
+                  {isToday ? (
+                    <span className="inline-flex w-8 h-8 items-center justify-center rounded-full bg-blue-600 text-white text-sm">
+                      {day.getDate()}
+                    </span>
+                  ) : day.getDate()}
+                </div>
               </div>
             );
           })}
         </div>
-      )}
 
-      <div className="overflow-y-auto" style={{ maxHeight: 'calc(100dvh - 380px)', minHeight: '400px' }}>
+        {hasAnyAllDay && (
+          <div className="grid border-b border-gray-200 bg-white" style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}>
+            <div className="border-r border-gray-100 px-1 py-1.5 text-[10px] text-gray-400 text-right">Todo el día</div>
+            {calendarDays.map((day, i) => {
+              const key = formatDateKey(day);
+              const events = allDayByDate.get(key) || [];
+              const dayMidnight = new Date(day.getFullYear(), day.getMonth(), day.getDate());
+              const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+              const isAllDayPast = dayMidnight < todayMidnight;
+              return (
+                <div key={i} className="border-r border-gray-100 last:border-r-0 px-0.5 py-1 space-y-0.5 min-h-[28px]">
+                  {events.map(event => (
+                    <div
+                      key={event.id}
+                      style={{ opacity: isAllDayPast ? 0.4 : 1 }}
+                      className={`text-[10px] px-1.5 py-0.5 rounded truncate ${EVENT_COLORS[event.type].bg} ${EVENT_COLORS[event.type].text} cursor-pointer`}
+                      onClick={() => handleEventClick(event)}
+                      title={`${event.title}${event.className ? ` — ${event.className}` : ''}`}
+                    >
+                      {event.title}
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         <div className="grid" style={{ gridTemplateColumns: '60px repeat(7, 1fr)' }}>
           <div>
             {WEEK_HOURS.map((hour) => (

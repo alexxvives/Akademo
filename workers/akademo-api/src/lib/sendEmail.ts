@@ -24,7 +24,7 @@ export async function sendEmail(
           'X-API-Key': env.MAILEROO_API_KEY,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ from, to: toList.join(', '), subject, html }),
+        body: JSON.stringify({ from, to: toList.join(', '), subject, html_body: html, plain_body: '' }),
       });
       if (!res.ok) {
         console.error('[sendEmail] Maileroo error:', await res.text());
