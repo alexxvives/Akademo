@@ -1,19 +1,23 @@
 'use client';
 
+import { useState } from 'react';
 import { useAssignmentsData } from './useAssignmentsData';
 import { useAssignmentsActions } from './useAssignmentsActions';
 import { useSubmissionActions } from './useSubmissionActions';
 import { AssignmentsLoadingSkeleton } from './AssignmentsLoadingSkeleton';
 import { AssignmentsTable } from './AssignmentsTable';
+import { QuizQuestionsViewerModal } from './QuizQuestionsViewerModal';
 import { AssignmentModals } from '../AssignmentModals';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 import { AcademySearchDropdown } from '@/components/ui/AcademySearchDropdown';
+import type { Assignment } from './assignments-types';
 import type { AssignmentsPageProps } from './assignments-types';
 
 export function AssignmentsPage({ role }: AssignmentsPageProps) {
   const data = useAssignmentsData(role);
   const actions = useAssignmentsActions(data);
   const subActions = useSubmissionActions(data);
+  const [viewingQuiz, setViewingQuiz] = useState<Assignment | null>(null);
 
   if (data.loading) return <AssignmentsLoadingSkeleton />;
 
@@ -123,6 +127,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
                   onEdit={actions.openEditAssignment}
                   onViewSubmissions={subActions.openSubmissions}
                   onDelete={actions.handleDeleteAssignment}
+                  onViewQuizQuestions={(a) => setViewingQuiz(a)}
                 />
               </div>
             </div>
@@ -160,6 +165,14 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
           gradeFeedback={data.gradeFeedback} setGradeFeedback={data.setGradeFeedback}
           handleGradeSubmission={subActions.handleGradeSubmission}
           requireGrading={data.requireGrading}
+        />
+      )}
+
+      {viewingQuiz && (
+        <QuizQuestionsViewerModal
+          assignmentId={viewingQuiz.id}
+          title={viewingQuiz.title}
+          onClose={() => setViewingQuiz(null)}
         />
       )}
     </>

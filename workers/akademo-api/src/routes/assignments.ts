@@ -20,7 +20,7 @@ assignments.get('/all', async (c) => {
       // Teachers see all assignments for all their classes
       query = `
         SELECT 
-          a.id, a.classId, a.teacherId, a.title, a.description, 
+          a.id, a.classId, a.teacherId, a.title, a.description, a.type,
           a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt, a.updatedAt,
           c.name as className,
           GROUP_CONCAT(DISTINCT aa.uploadId) as attachmentIds,
@@ -40,7 +40,7 @@ assignments.get('/all', async (c) => {
       // Academy owners see all assignments for all classes in their academy
       query = `
         SELECT 
-          a.id, a.classId, a.teacherId, a.title, a.description, 
+          a.id, a.classId, a.teacherId, a.title, a.description, a.type,
           a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt, a.updatedAt,
           c.name as className,
           GROUP_CONCAT(DISTINCT aa.uploadId) as attachmentIds,
@@ -61,7 +61,7 @@ assignments.get('/all', async (c) => {
       // Admin sees all assignments from all academies
       query = `
         SELECT 
-          a.id, a.classId, a.teacherId, a.title, a.description, 
+          a.id, a.classId, a.teacherId, a.title, a.description, a.type,
           a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt, a.updatedAt,
           c.name as className,
           ac.name as academyName,

@@ -24,6 +24,7 @@ export interface Assignment {
   uploadId?: string;
   attachmentIds?: string;
   solutionUploadId?: string;
+  type?: 'file' | 'quiz';
 }
 
 export interface Submission {

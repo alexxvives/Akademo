@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { nanoid } from 'nanoid';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
+import { CustomDatePicker } from '@/components/ui/CustomDatePicker';
+import { CustomTimePicker } from '@/components/ui/CustomTimePicker';
 import { QuizQuestionBuilder } from '@/components/shared/QuizQuestionBuilder';
 import type { QuizQuestionForm } from '@/components/shared/QuizQuestionBuilder';
 import type { AssignmentModalsProps } from './types';
@@ -44,6 +46,11 @@ export function CreateAssignmentModal(props: AssignmentModalsProps) {
   };
 
   const confirmQuiz = () => {
+    for (const q of quizQuestions) {
+      if (!q.questionText.trim()) { alert('Todas las preguntas deben tener texto'); return; }
+      if (q.options.some(o => !o.text.trim())) { alert('Todas las opciones deben tener texto'); return; }
+      if (!q.correctOptionIds?.length) { alert('Selecciona al menos una respuesta correcta para cada pregunta'); return; }
+    }
     setAssignmentType('quiz');
     setUploadFiles([]);
     setShowQuizBuilder(false);
@@ -88,18 +95,13 @@ export function CreateAssignmentModal(props: AssignmentModalsProps) {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Fecha y hora límite</label>
                 <div className="grid grid-cols-2 gap-3">
-                  <input
-                    type="date"
+                  <CustomDatePicker
                     value={dueDatePart}
-                    onChange={(e) => handleDueDateChange(e.target.value)}
-                    min={new Date().toISOString().slice(0, 10)}
-                    className="w-full h-[38px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 text-gray-700 text-sm"
+                    onChange={handleDueDateChange}
                   />
-                  <input
-                    type="time"
+                  <CustomTimePicker
                     value={dueTimePart}
-                    onChange={(e) => handleDueTimeChange(e.target.value)}
-                    className="w-full h-[38px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 text-gray-700 text-sm"
+                    onChange={handleDueTimeChange}
                   />
                 </div>
               </div>
@@ -170,7 +172,7 @@ export function CreateAssignmentModal(props: AssignmentModalsProps) {
       {/* Quiz builder overlay modal */}
       {showQuizBuilder && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-xl max-w-2xl w-full flex flex-col max-h-[85vh]">
+          <div className="bg-white rounded-xl max-w-[800px] w-full flex flex-col max-h-[95vh]">
             <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100 flex-shrink-0">
               <h3 className="text-xl font-semibold text-gray-900">Crear cuestionario</h3>
               <button type="button" onClick={cancelQuiz} className="p-1 text-gray-400 hover:text-gray-600">
