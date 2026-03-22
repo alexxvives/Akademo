@@ -1,5 +1,6 @@
 'use client';
 
+import { createPortal } from 'react-dom';
 import { useRef, useState } from 'react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://akademo-api.alexxvives.workers.dev';
@@ -65,7 +66,8 @@ export function ArchiveUploadModal({ onClose, onSuccess }: Props) {
     xhr.send(file);
   };
 
-  return (
+  if (typeof document === 'undefined') return null;
+  return createPortal(
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
         {/* Header */}
@@ -149,5 +151,5 @@ export function ArchiveUploadModal({ onClose, onSuccess }: Props) {
         </div>
       </div>
     </div>
-  );
+  , document.body);
 }

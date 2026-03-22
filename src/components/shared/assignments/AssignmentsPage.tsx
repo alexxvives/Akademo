@@ -18,6 +18,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
   const actions = useAssignmentsActions(data);
   const subActions = useSubmissionActions(data);
   const [viewingQuiz, setViewingQuiz] = useState<Assignment | null>(null);
+  const [activeTab, setActiveTab] = useState<'file' | 'quiz'>('file');
 
   if (data.loading) return <AssignmentsLoadingSkeleton />;
 
@@ -104,6 +105,16 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
                 e.target.value = '';
               }}
             />
+            <div className="flex justify-center">
+              <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+                <button onClick={() => setActiveTab('file')} className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'file' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                  Ejercicios ({data.visibleAssignments.filter(a => a.type !== 'quiz').length})
+                </button>
+                <button onClick={() => setActiveTab('quiz')} className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'quiz' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
+                  Cuestionarios ({data.visibleAssignments.filter(a => a.type === 'quiz').length})
+                </button>
+              </div>
+            </div>
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
               <div className="overflow-x-auto max-h-[700px] overflow-y-auto">
                 <AssignmentsTable
@@ -128,6 +139,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
                   onViewSubmissions={subActions.openSubmissions}
                   onDelete={actions.handleDeleteAssignment}
                   onViewQuizQuestions={(a) => setViewingQuiz(a)}
+                  activeTab={activeTab}
                 />
               </div>
             </div>

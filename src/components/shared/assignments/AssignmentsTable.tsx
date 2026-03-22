@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { countNewDemoSubmissions } from '@/lib/demo-data';
 import { DeleteIcon } from '@/components/ui/DeleteIcon';
 import { getDueDateColor, getFileCount } from './assignments-types';
@@ -28,6 +27,7 @@ interface AssignmentsTableProps {
   onViewSubmissions: (assignment: Assignment) => void;
   onDelete: (assignmentId: string, title: string) => void;
   onViewQuizQuestions?: (assignment: Assignment) => void;
+  activeTab: 'file' | 'quiz';
 }
 
 export function AssignmentsTable({
@@ -36,10 +36,9 @@ export function AssignmentsTable({
   deletingAssignmentId, uploadingSolutionId,
   onOpenFiles, onRemoveFiles, onOpenSolution, onRemoveSolution,
   onTriggerSolutionUpload, onEdit, onViewSubmissions, onDelete,
-  onViewQuizQuestions,
+  onViewQuizQuestions, activeTab,
 }: AssignmentsTableProps) {
   const isDemo = (isAcademy || isTeacher) && paymentStatus === 'NOT PAID';
-  const [activeTab, setActiveTab] = useState<'file' | 'quiz'>('file');
 
   const fileAssignments = assignments.filter(a => a.type !== 'quiz');
   const quizAssignments = assignments.filter(a => a.type === 'quiz');
@@ -47,28 +46,6 @@ export function AssignmentsTable({
 
   return (
     <div>
-      {/* Tabs */}
-      <div className="flex justify-center py-4">
-        <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
-          <button
-            onClick={() => setActiveTab('file')}
-            className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'file' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Ejercicios ({fileAssignments.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('quiz')}
-            className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === 'quiz' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Cuestionarios ({quizAssignments.length})
-          </button>
-        </div>
-      </div>
-
       {filtered.length === 0 ? (
         <div className="py-12 text-center text-gray-400 text-sm">
           {activeTab === 'file' ? 'No hay ejercicios' : 'No hay cuestionarios'}
@@ -294,7 +271,7 @@ function QuizAssignmentsTable({ assignments, isAdmin, isDemo, canManage, require
           {isAdmin && <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Academia</th>}
           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asignatura</th>
           {requireGrading && <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha límite</th>}
-          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completions</th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Realizados</th>
           {canManage && <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Preguntas</th>}
           <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
         </tr>
@@ -350,7 +327,7 @@ function QuizAssignmentsTable({ assignments, isAdmin, isDemo, canManage, require
               <div className="flex items-center justify-end gap-1">
                 <button onClick={() => onViewSubmissions(assignment)}
                   className="p-1.5 text-gray-500 hover:text-brand-600 hover:bg-gray-100 rounded-lg transition-colors"
-                  title="Ver completions">
+                  title="Ver realizados">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                   </svg>
