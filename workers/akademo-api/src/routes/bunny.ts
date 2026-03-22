@@ -455,7 +455,7 @@ bunny.get('/archive', async (c) => {
     if (!academyId) return c.json(successResponse({ videos: [], total: 0 }));
 
     const result = await c.env.DB.prepare(
-      'SELECT av.*, u.name as uploaderName FROM ArchivedVideo av LEFT JOIN User u ON av.uploadedById = u.id WHERE av.academyId = ? ORDER BY av.createdAt DESC'
+      "SELECT av.*, (u.firstName || ' ' || u.lastName) as uploaderName FROM ArchivedVideo av LEFT JOIN User u ON av.uploadedById = u.id WHERE av.academyId = ? ORDER BY av.createdAt DESC"
     ).bind(academyId).all();
 
     return c.json(successResponse({ videos: result.results || [], total: result.results?.length || 0 }));
