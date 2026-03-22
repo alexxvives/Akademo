@@ -1,9 +1,16 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
+import { nanoid } from 'nanoid';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 import { QuizQuestionBuilder } from '@/components/shared/QuizQuestionBuilder';
+import type { QuizQuestionForm } from '@/components/shared/QuizQuestionBuilder';
 import type { AssignmentModalsProps } from './types';
+
+function emptyQuestion(): QuizQuestionForm {
+  const o1 = nanoid(6); const o2 = nanoid(6);
+  return { questionText: '', options: [{ id: o1, text: '' }, { id: o2, text: '' }], correctOptionId: '', explanation: '' };
+}
 
 export function CreateAssignmentModal(props: AssignmentModalsProps) {
   const {
@@ -15,102 +22,156 @@ export function CreateAssignmentModal(props: AssignmentModalsProps) {
     requireGrading = true,
   } = props;
 
+  const [showQuizBuilder, setShowQuizBuilder] = useState(false);
+
   if (!showCreateModal) return null;
 
+  const openQuizBuilder = () => {
+    if (quizQuestions.length === 0) setQuizQuestions([emptyQuestion()]);
+    setShowQuizBuilder(true);
+  };
+
+  const confirmQuiz = () => {
+    setAssignmentType('quiz');
+    setUploadFiles([]);
+    setShowQuizBuilder(false);
+  };
+
+  const cancelQuiz = () => {
+    if (assignmentType !== 'quiz') setQuizQuestions([]);
+    setShowQuizBuilder(false);
+  };
+
+  const quizReady = assignmentType === 'quiz' && quizQuestions.length > 0;
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
-        <h2 className="text-2xl font-semibold mb-6">Crear Ejercicio</h2>
-        <form onSubmit={handleCreateAssignment} className="space-y-4">
-          {/* Type toggle */}
-          <div className="flex rounded-lg border border-gray-200 overflow-hidden">
-            <button type="button"
-              onClick={() => setAssignmentType('file')}
-              className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
-                assignmentType === 'file' ? 'bg-gray-900 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}>
-              Documento
-            </button>
-            <button type="button"
-              onClick={() => setAssignmentType('quiz')}
-              className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
-                assignmentType === 'quiz' ? 'bg-gray-900 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}>
-              Cuestionario
-            </button>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Asignatura</label>
-            <ClassSearchDropdown
-              classes={classes}
-              value={selectedClassForCreate}
-              onChange={setSelectedClassForCreate}
-              placeholder="Seleccionar asignatura..."
-              className="w-full"
-              required
-            />
-          </div>
-          <div>
-            <label htmlFor="create-title" className="block text-sm font-medium text-gray-700 mb-1">Título *</label>
-            <input id="create-title" name="title" type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} required
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
-          </div>
-          <div>
-            <label htmlFor="create-description" className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
-            <textarea id="create-description" name="description" value={newDescription} onChange={(e) => setNewDescription(e.target.value)} rows={4}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
-          </div>
-          {requireGrading && (
-          <div className="grid grid-cols-1 gap-4">
+    <>
+      {/* Main create modal */}
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+          <h2 className="text-2xl font-semibold mb-6">Crear Ejercicio</h2>
+          <form onSubmit={handleCreateAssignment} className="space-y-4">
             <div>
-              <label htmlFor="create-due-date" className="block text-sm font-medium text-gray-700 mb-1">Fecha y hora límite</label>
-              <input id="create-due-date" name="dueDate" type="datetime-local" value={newDueDate} onChange={(e) => setNewDueDate(e.target.value)}
-                min={(() => { const now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); return now.toISOString().slice(0, 16); })()}
-                className="w-full h-[38px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 text-gray-700" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Asignatura</label>
+              <ClassSearchDropdown
+                classes={classes}
+                value={selectedClassForCreate}
+                onChange={setSelectedClassForCreate}
+                placeholder="Seleccionar asignatura..."
+                className="w-full"
+                required
+              />
             </div>
-          </div>
-          )}
-          {/* File upload (only for file type) */}
-          {assignmentType === 'file' && (
-          <div>
-            <label htmlFor="create-files" className="block text-sm font-medium text-gray-700 mb-1">Archivos adjuntos</label>
-            <input id="create-files" name="files" type="file" multiple
-              onChange={(e) => setUploadFiles(Array.from(e.target.files || []))}
-              className="w-full h-[38px] px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 file:mr-4 file:py-0.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200" />
-            {uploadFiles.length > 0 && (
-              <div className="mt-2 space-y-1">
-                {uploadFiles.map((file, idx) => (
-                  <div key={idx} className="flex items-center gap-2 text-sm text-gray-600">
-                    <svg className="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
-                    </svg>
-                    <span>{file.name}</span>
-                  </div>
-                ))}
+            <div>
+              <label htmlFor="create-title" className="block text-sm font-medium text-gray-700 mb-1">Título *</label>
+              <input id="create-title" type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} required
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
+            </div>
+            <div>
+              <label htmlFor="create-description" className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+              <textarea id="create-description" value={newDescription} onChange={(e) => setNewDescription(e.target.value)} rows={3}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
+            </div>
+            {requireGrading && (
+              <div>
+                <label htmlFor="create-due-date" className="block text-sm font-medium text-gray-700 mb-1">Fecha y hora límite</label>
+                <input id="create-due-date" type="datetime-local" value={newDueDate} onChange={(e) => setNewDueDate(e.target.value)}
+                  min={(() => { const n = new Date(); n.setMinutes(n.getMinutes() - n.getTimezoneOffset()); return n.toISOString().slice(0, 16); })()}
+                  className="w-full h-[38px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 text-gray-700" />
               </div>
             )}
-          </div>
-          )}
-          {/* Quiz builder (only for quiz type) */}
-          {assignmentType === 'quiz' && (
-            <QuizQuestionBuilder questions={quizQuestions} setQuestions={setQuizQuestions} />
-          )}
-          {uploadProgress > 0 && uploadProgress < 100 && (
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div className="bg-brand-600 h-2 rounded-full transition-all" style={{ width: `${uploadProgress}%` }} />
+
+            {/* Archivos adjuntos + Crear cuestionario — side by side */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Archivos adjuntos</label>
+                <label className={`flex items-center justify-center gap-2 w-full h-[38px] px-3 text-sm border rounded-lg cursor-pointer transition-colors ${
+                  uploadFiles.length > 0 ? 'border-brand-400 bg-brand-50 text-brand-700' : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                }`}>
+                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                  </svg>
+                  <span className="truncate">{uploadFiles.length > 0 ? `${uploadFiles.length} archivo(s)` : 'Adjuntar archivo'}</span>
+                  <input type="file" multiple className="hidden"
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files || []);
+                      setUploadFiles(files);
+                      if (files.length > 0) { setAssignmentType('file'); setQuizQuestions([]); }
+                    }} />
+                </label>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Cuestionario</label>
+                <button type="button" onClick={openQuizBuilder}
+                  className={`w-full h-[38px] px-3 text-sm border rounded-lg transition-colors flex items-center justify-center gap-2 ${
+                    quizReady ? 'border-green-400 bg-green-50 text-green-700' : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                  }`}>
+                  {quizReady ? (
+                    <>
+                      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      {quizQuestions.length} pregunta(s) ✓
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Crear cuestionario
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
-          )}
-          <div className="flex gap-3 pt-4">
-            <button type="button" onClick={() => { setShowCreateModal(false); resetForm(); }}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">Cancelar</button>
-            <button type="submit" disabled={creating || paymentStatus === 'NOT PAID'}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              title={paymentStatus === 'NOT PAID' ? 'No disponible en modo demostración' : ''}>
-              {creating ? 'Creando...' : 'Crear Ejercicio'}
-            </button>
-          </div>
-        </form>
+
+            {uploadProgress > 0 && uploadProgress < 100 && (
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="bg-brand-600 h-2 rounded-full transition-all" style={{ width: `${uploadProgress}%` }} />
+              </div>
+            )}
+            <div className="flex gap-3 pt-4">
+              <button type="button" onClick={() => { setShowCreateModal(false); resetForm(); }}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">Cancelar</button>
+              <button type="submit" disabled={creating || paymentStatus === 'NOT PAID'}
+                className="flex-1 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+                title={paymentStatus === 'NOT PAID' ? 'No disponible en modo demostración' : ''}>
+                {creating ? 'Creando...' : 'Crear Ejercicio'}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+
+      {/* Quiz builder overlay modal */}
+      {showQuizBuilder && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-xl max-w-2xl w-full flex flex-col max-h-[85vh]">
+            <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100 flex-shrink-0">
+              <h3 className="text-xl font-semibold text-gray-900">Crear cuestionario</h3>
+              <button type="button" onClick={cancelQuiz} className="p-1 text-gray-400 hover:text-gray-600">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="overflow-y-auto px-6 py-4 flex-1">
+              <QuizQuestionBuilder
+                questions={quizQuestions.length ? quizQuestions : [emptyQuestion()]}
+                setQuestions={setQuizQuestions}
+              />
+            </div>
+            <div className="flex gap-3 px-6 py-4 border-t border-gray-100 flex-shrink-0">
+              <button type="button" onClick={cancelQuiz}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">Cancelar</button>
+              <button type="button" onClick={confirmQuiz}
+                className="flex-1 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium transition-colors">
+                Confirmar cuestionario
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
