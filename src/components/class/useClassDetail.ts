@@ -197,7 +197,7 @@ export function useClassDetail(role: 'academy' | 'teacher' | 'admin') {
         const academyRes = await apiClient(`/academies/${classResult.data.academyId}`);
         const academyResult = await academyRes.json();
         if (academyResult.success && academyResult.data) {
-          const defaults = { maxWatchTimeMultiplier: academyResult.data.defaultMaxWatchTimeMultiplier || 2.0, watermarkIntervalMins: academyResult.data.defaultWatermarkIntervalMins || 5 };
+          const defaults = { maxWatchTimeMultiplier: academyResult.data.defaultMaxWatchTimeMultiplier ?? 2.0, watermarkIntervalMins: academyResult.data.defaultWatermarkIntervalMins ?? 5 };
           setAcademyDefaults(defaults);
           if (role === 'teacher') { if (academyResult.data.paymentStatus) setPaymentStatus(academyResult.data.paymentStatus); setFeedbackEnabled(academyResult.data.feedbackEnabled !== 0); }
           setLessonFormData(prev => ({
