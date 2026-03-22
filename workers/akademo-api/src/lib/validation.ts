@@ -173,7 +173,7 @@ export const createAssignmentSchema = z.object({
       id: z.string(),
       text: z.string().min(1).max(500),
     })).min(2).max(6),
-    correctOptionId: z.string().min(1),
+    correctOptionIds: z.array(z.string().min(1)).min(1).max(6),
     explanation: z.string().max(1000).optional(),
   })).optional(),
 });

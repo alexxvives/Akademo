@@ -19,7 +19,7 @@ interface QuizResult {
   officialScore?: number;
   officialTotalQuestions?: number;
   officialCorrectAnswers?: number;
-  answers: { questionId: string; selectedOptionId: string; correct: boolean; correctOptionId: string; explanation?: string }[];
+  answers: { questionId: string; selectedOptionId: string; correct: boolean; correctOptionIds: string[]; explanation?: string }[];
   questions?: QuizQuestion[];
 }
 
@@ -159,7 +159,7 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
                     <div className="space-y-1">
                       {q.options.map(opt => {
                         const isSelected = answer?.selectedOptionId === opt.id;
-                        const isCorrect = answer?.correctOptionId === opt.id;
+                        const isCorrect = answer?.correctOptionIds?.includes(opt.id) ?? false;
                         let optStyle = 'text-gray-600';
                         if (isCorrect) optStyle = 'text-green-700 font-medium';
                         if (isSelected && !isCorrect) optStyle = 'text-red-600 line-through';

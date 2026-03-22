@@ -11,7 +11,7 @@ export interface QuizOption {
 export interface QuizQuestionForm {
   questionText: string;
   options: QuizOption[];
-  correctOptionId: string;
+  correctOptionIds: string[];
   explanation: string;
 }
 
@@ -26,7 +26,7 @@ function createEmptyQuestion(): QuizQuestionForm {
   return {
     questionText: '',
     options: [{ id: opt1, text: '' }, { id: opt2, text: '' }],
-    correctOptionId: '',
+    correctOptionIds: [],
     explanation: '',
   };
 }
@@ -39,9 +39,19 @@ export function QuizQuestionBuilder({ questions, setQuestions }: QuizQuestionBui
     setQuestions(questions.filter((_, i) => i !== idx));
   };
 
-  const updateQuestion = (idx: number, field: keyof QuizQuestionForm, value: string) => {
+  const updateQuestion = (idx: number, field: 'questionText' | 'explanation', value: string) => {
     const updated = [...questions];
     updated[idx] = { ...updated[idx], [field]: value };
+    setQuestions(updated);
+  };
+
+  const toggleCorrectOption = (qIdx: number, optId: string) => {
+    const updated = [...questions];
+    const current = updated[qIdx].correctOptionIds;
+    const newCorrect = current.includes(optId)
+      ? current.filter((id) => id !== optId)
+      : [...current, optId];
+    updated[qIdx] = { ...updated[qIdx], correctOptionIds: newCorrect };
     setQuestions(updated);
   };
 
@@ -68,7 +78,7 @@ export function QuizQuestionBuilder({ questions, setQuestions }: QuizQuestionBui
     updated[qIdx] = {
       ...updated[qIdx],
       options: opts,
-      correctOptionId: updated[qIdx].correctOptionId === removedOpt.id ? '' : updated[qIdx].correctOptionId,
+      correctOptionIds: updated[qIdx].correctOptionIds.filter((id) => id !== removedOpt.id),
     };
     setQuestions(updated);
   };
@@ -94,21 +104,20 @@ export function QuizQuestionBuilder({ questions, setQuestions }: QuizQuestionBui
           />
 
           <div className="space-y-2">
-            <label className="text-xs font-medium text-gray-600">Opciones (selecciona la correcta)</label>
+            <label className="text-xs font-medium text-gray-600">Opciones (marca las correctas)</label>
             {q.options.map((opt, oIdx) => (
               <div key={opt.id} className="flex items-center gap-2">
                 <input
-                  type="radio" name={`correct-${qIdx}`}
-                  checked={q.correctOptionId === opt.id}
-                  onChange={() => updateQuestion(qIdx, 'correctOptionId', opt.id)}
-                  className="w-4 h-4 text-green-600 focus:ring-green-500"
-                  required
+                  type="checkbox"
+                  checked={q.correctOptionIds.includes(opt.id)}
+                  onChange={() => toggleCorrectOption(qIdx, opt.id)}
+                  className="w-4 h-4 rounded text-green-600 focus:ring-green-500"
                 />
                 <input
                   type="text" value={opt.text} placeholder={`Opción ${oIdx + 1}`}
                   onChange={(e) => updateOption(qIdx, oIdx, e.target.value)}
                   className={`flex-1 px-3 py-1.5 border rounded-lg text-sm focus:ring-2 focus:ring-brand-500 ${
-                    q.correctOptionId === opt.id ? 'border-green-400 bg-green-50' : 'border-gray-300'
+                    q.correctOptionIds.includes(opt.id) ? 'border-green-400 bg-green-50' : 'border-gray-300'
                   }`}
                   required
                 />

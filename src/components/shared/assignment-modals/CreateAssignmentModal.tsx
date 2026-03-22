@@ -9,7 +9,7 @@ import type { AssignmentModalsProps } from './types';
 
 function emptyQuestion(): QuizQuestionForm {
   const o1 = nanoid(6); const o2 = nanoid(6);
-  return { questionText: '', options: [{ id: o1, text: '' }, { id: o2, text: '' }], correctOptionId: '', explanation: '' };
+  return { questionText: '', options: [{ id: o1, text: '' }, { id: o2, text: '' }], correctOptionIds: [], explanation: '' };
 }
 
 export function CreateAssignmentModal(props: AssignmentModalsProps) {
@@ -23,6 +23,18 @@ export function CreateAssignmentModal(props: AssignmentModalsProps) {
   } = props;
 
   const [showQuizBuilder, setShowQuizBuilder] = useState(false);
+  const [dueDatePart, setDueDatePart] = useState(() => newDueDate ? newDueDate.slice(0, 10) : '');
+  const [dueTimePart, setDueTimePart] = useState(() => newDueDate ? newDueDate.slice(11, 16) : '');
+
+  const handleDueDateChange = (date: string) => {
+    setDueDatePart(date);
+    setNewDueDate(date ? `${date}T${dueTimePart || '00:00'}` : '');
+  };
+
+  const handleDueTimeChange = (time: string) => {
+    setDueTimePart(time);
+    setNewDueDate(dueDatePart ? `${dueDatePart}T${time || '00:00'}` : '');
+  };
 
   if (!showCreateModal) return null;
 
@@ -74,10 +86,22 @@ export function CreateAssignmentModal(props: AssignmentModalsProps) {
             </div>
             {requireGrading && (
               <div>
-                <label htmlFor="create-due-date" className="block text-sm font-medium text-gray-700 mb-1">Fecha y hora límite</label>
-                <input id="create-due-date" type="datetime-local" value={newDueDate} onChange={(e) => setNewDueDate(e.target.value)}
-                  min={(() => { const n = new Date(); n.setMinutes(n.getMinutes() - n.getTimezoneOffset()); return n.toISOString().slice(0, 16); })()}
-                  className="w-full h-[38px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 text-gray-700" />
+                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha y hora límite</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <input
+                    type="date"
+                    value={dueDatePart}
+                    onChange={(e) => handleDueDateChange(e.target.value)}
+                    min={new Date().toISOString().slice(0, 10)}
+                    className="w-full h-[38px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 text-gray-700 text-sm"
+                  />
+                  <input
+                    type="time"
+                    value={dueTimePart}
+                    onChange={(e) => handleDueTimeChange(e.target.value)}
+                    className="w-full h-[38px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 text-gray-700 text-sm"
+                  />
+                </div>
               </div>
             )}
 

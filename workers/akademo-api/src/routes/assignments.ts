@@ -355,7 +355,7 @@ assignments.post('/', async (c) => {
           q.questionText,
           i,
           JSON.stringify(q.options),
-          q.correctOptionId,
+          JSON.stringify(q.correctOptionIds),
           q.explanation || null
         ).run();
       }
@@ -1008,12 +1008,21 @@ assignments.get('/:id/questions', async (c) => {
       ORDER BY questionOrder ASC
     `).bind(assignmentId).all();
 
-    const parsed = (questions.results || []).map((q: any) => ({
-      ...q,
-      options: JSON.parse(q.options || '[]'),
-      // Students don't see correct answers until they submit
-      ...(session.role === 'STUDENT' ? { correctOptionId: undefined, explanation: undefined } : {}),
-    }));
+    const parsed = (questions.results || []).map((q: any) => {
+      let correctOptionIds: string[] = [];
+      try {
+        const raw = q.correctOptionId;
+        const p = JSON.parse(raw);
+        correctOptionIds = Array.isArray(p) ? p : [raw];
+      } catch { correctOptionIds = q.correctOptionId ? [q.correctOptionId] : []; }
+      return {
+        ...q,
+        options: JSON.parse(q.options || '[]'),
+        correctOptionId: undefined,
+        explanation: session.role === 'STUDENT' ? undefined : q.explanation,
+        ...(session.role !== 'STUDENT' ? { correctOptionIds } : {}),
+      };
+    });
 
     return c.json(successResponse(parsed));
   } catch (error: any) {
@@ -1082,13 +1091,26 @@ assignments.post('/:id/quiz-submit', async (c) => {
     for (const ans of answers) {
       const question = questionMap.get(ans.questionId);
       if (!question) continue;
-      const correct = question.correctOptionId === ans.selectedOptionId;
+      const correct = (() => {
+        try {
+          const raw = question.correctOptionId;
+          const ids: string[] = Array.isArray(JSON.parse(raw)) ? JSON.parse(raw) : [raw];
+          return ids.includes(ans.selectedOptionId);
+        } catch {
+          return question.correctOptionId === ans.selectedOptionId;
+        }
+      })();
       if (correct) correctAnswers++;
       gradedAnswers.push({
         questionId: ans.questionId,
         selectedOptionId: ans.selectedOptionId,
         correct,
-        correctOptionId: question.correctOptionId,
+        correctOptionIds: (() => {
+          try {
+            const raw = question.correctOptionId;
+            return Array.isArray(JSON.parse(raw)) ? JSON.parse(raw) : [raw];
+          } catch { return [question.correctOptionId]; }
+        })(),
         explanation: question.explanation || null,
       });
     }

@@ -38,7 +38,7 @@ export function ArchiveUploadModal({ onClose, onSuccess }: Props) {
     xhr.withCredentials = true;
     xhr.setRequestHeader('Content-Type', 'application/octet-stream');
 
-    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
     if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
 
     xhr.upload.onprogress = (e) => {

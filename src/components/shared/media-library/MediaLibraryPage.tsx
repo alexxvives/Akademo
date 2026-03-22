@@ -28,6 +28,29 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
   const [page, setPage] = useState(1);
   const { activePeriodId, isClassInPeriod } = usePeriod();
   const { archivedVideos, loadingArchived, showUploadModal, setShowUploadModal, loadArchived, deleteArchived } = useArchivedVideos(role, selectedAcademy);
+  const [academyName, setAcademyName] = useState('');
+
+  // Load academy name for subtitle
+  useEffect(() => {
+    const load = async () => {
+      try {
+        if (role === 'ACADEMY') {
+          const res = await apiClient('/academies');
+          const data = await res.json();
+          if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+            setAcademyName(data.data[0].name || '');
+          }
+        } else if (role === 'TEACHER') {
+          const res = await apiClient('/teacher/academy');
+          if (res.ok) {
+            const data = await res.json() as { data?: { academy?: { name?: string } } };
+            setAcademyName(data.data?.academy?.name || '');
+          }
+        }
+      } catch { /* ignore */ }
+    };
+    load();
+  }, [role]);
 
   // Debounce search
   useEffect(() => {
@@ -132,18 +155,20 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Mediateca</h1>
-            <p className="text-gray-600 text-sm mt-1">Todos los archivos de tu academia en un solo lugar</p>
+            <div className="flex items-center gap-4">
+              <h1 className="text-2xl font-semibold text-gray-900">Mediateca</h1>
+              {role === 'ACADEMY' && (
+                <button
+                  onClick={() => setShowUploadModal(true)}
+                  className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium text-sm transition-all flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                  Subir video
+                </button>
+              )}
+            </div>
+            <p className="text-gray-600 text-sm mt-1">{academyName || 'Todos los archivos de tu academia en un solo lugar'}</p>
           </div>
-          {role === 'ACADEMY' && (
-            <button
-              onClick={() => setShowUploadModal(true)}
-              className="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium text-sm transition-all flex items-center gap-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-              Subir video
-            </button>
-          )}
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <div className="relative w-full sm:w-48">

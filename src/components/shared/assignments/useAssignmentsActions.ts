@@ -129,7 +129,7 @@ export function useAssignmentsActions(data: AssignmentsDataReturn) {
       for (const q of data.quizQuestions) {
         if (!q.questionText.trim()) { alert('Todas las preguntas deben tener texto'); return; }
         if (q.options.some(o => !o.text.trim())) { alert('Todas las opciones deben tener texto'); return; }
-        if (!q.correctOptionId) { alert('Selecciona la respuesta correcta para cada pregunta'); return; }
+        if (!q.correctOptionIds?.length) { alert('Selecciona al menos una respuesta correcta para cada pregunta'); return; }
       }
     }
     data.setCreating(true);
