@@ -134,14 +134,14 @@ export function ArchiveUploadModal({ onClose, onSuccess }: Props) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 pb-5">
+        <div className="flex items-center justify-center gap-3 px-6 pb-5">
           <button onClick={onClose} disabled={uploading} className="px-4 py-2 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50">
             Cancelar
           </button>
           <button
             onClick={handleUpload}
             disabled={!file || uploading}
-            className="px-4 py-2 text-sm font-medium text-white bg-brand-600 rounded-lg hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {uploading && (
               <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
