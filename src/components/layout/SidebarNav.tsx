@@ -101,7 +101,7 @@ export function SidebarNav({ menuItems, role, pathname }: SidebarNavProps) {
             {group.label && (
               <button
                 onClick={() => toggleGroup(group.label!)}
-                className={`w-full flex items-center justify-between px-3 pb-1 text-[10px] font-semibold tracking-widest text-gray-500 hover:text-gray-300 uppercase transition-colors ${gi > 0 ? 'pt-3' : 'pt-0'}`}
+                className={`w-full flex items-center justify-between px-3 pb-1 text-[10px] font-semibold tracking-widest text-gray-500 hover:text-gray-300 uppercase transition-colors ${gi > 0 ? 'pt-4' : 'pt-0'}`}
               >
                 <span>{group.label}</span>
                 <svg className={`w-3 h-3 transition-transform ${isCollapsed ? '-rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -137,7 +137,7 @@ export function SidebarNav({ menuItems, role, pathname }: SidebarNavProps) {
                     <Link
                       key={item.href}
                       href={item.href}
-                      className={`relative flex items-center gap-3 px-3 py-2 rounded-xl transition-all group ${
+                      className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group ${
                         isActive
                           ? 'bg-gray-800/50 text-white'
                           : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'

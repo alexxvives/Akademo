@@ -89,6 +89,12 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
       }, 15000);
       return () => clearInterval(teacherInterval);
     }
+
+    if (role === 'ADMIN') {
+      loadActiveStreams();
+      const adminInterval = setInterval(loadActiveStreams, 15000);
+      return () => clearInterval(adminInterval);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checkAuth, checkSession, role, loadNotifications, loadActiveStreams, loadAcademy, loadUnreadValoraciones, loadUngradedAssignments, loadNewGrades, loadStudentPendingPayments, loadUnpaidClasses]);
 

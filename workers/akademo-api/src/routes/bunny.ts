@@ -358,7 +358,7 @@ function getStatusText(status: number): string {
 bunny.put('/archive/upload', async (c) => {
   try {
     const session = await requireAuth(c);
-    if (!['ACADEMY', 'ADMIN'].includes(session.role)) {
+    if (!['ACADEMY', 'ADMIN', 'TEACHER'].includes(session.role)) {
       return c.json(errorResponse('Not authorized'), 403);
     }
 
@@ -377,6 +377,10 @@ bunny.put('/archive/upload', async (c) => {
       const academy = await c.env.DB.prepare('SELECT id FROM Academy WHERE ownerId = ?').bind(session.id).first() as any;
       if (!academy) return c.json(errorResponse('Academy not found'), 404);
       academyId = academy.id;
+    } else if (session.role === 'TEACHER') {
+      const teacher = await c.env.DB.prepare('SELECT academyId FROM Teacher WHERE userId = ?').bind(session.id).first() as any;
+      if (!teacher) return c.json(errorResponse('Teacher not found'), 404);
+      academyId = teacher.academyId;
     } else {
       const { academyId: qAcademyId } = c.req.query();
       if (!qAcademyId) return c.json(errorResponse('academyId required for admin'), 400);

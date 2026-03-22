@@ -202,7 +202,10 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6">
-        <h2 className="text-2xl font-semibold mb-1">{assignmentTitle}</h2>
+        <div className="flex items-start justify-between mb-1">
+          <h2 className="text-2xl font-semibold">{assignmentTitle}</h2>
+          <span className="text-sm text-gray-500 mt-1 ml-4 shrink-0">{Object.keys(answers).length}/{questions.length} respondidas</span>
+        </div>
         <p className="text-sm text-gray-500 mb-4">{questions.length} preguntas · {maxScore} puntos</p>
 
         {(alreadyAttempted || officialResult) && (
@@ -245,22 +248,17 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
           ))}
         </div>
 
-        <div className="flex gap-4 justify-between items-center pt-4 border-t">
-          <p className="text-sm text-gray-500">
-            {Object.keys(answers).length}/{questions.length} respondidas
-          </p>
-          <div className="flex gap-3">
-            <button onClick={onClose} className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-              Cancelar
-            </button>
-            <button
-              onClick={handleSubmit}
-              disabled={submitting || Object.keys(answers).length === 0}
-              className="px-6 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {submitting ? 'Enviando...' : 'Enviar Cuestionario'}
-            </button>
-          </div>
+        <div className="flex gap-3 justify-center pt-4 border-t">
+          <button onClick={onClose} className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+            Cancelar
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={submitting || Object.keys(answers).length === 0}
+            className="px-6 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {submitting ? 'Enviando...' : 'Enviar Cuestionario'}
+          </button>
         </div>
       </div>
     </div>

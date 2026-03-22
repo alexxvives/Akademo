@@ -26,7 +26,7 @@ export function getMenuItems(config: MenuItemsConfig): MenuItem[] {
         { label: 'Panel de Control', href: '/dashboard/admin', iconType: 'chart' as const, group: 'General' },
         { label: 'Leads', href: '/dashboard/admin/leads', iconType: 'users' as const, group: 'General' },
         { label: 'Asignaturas', href: '/dashboard/admin/subjects', iconType: 'book' as const, group: 'Contenido' },
-        { label: 'Streams', href: '/dashboard/admin/streams', iconType: 'clap' as const, group: 'Contenido' },
+        { label: 'Streams', href: '/dashboard/admin/streams', iconType: 'clap' as const, group: 'Contenido', showPulse: activeStreams.length > 0 },
         { label: 'Mediateca', href: '/dashboard/admin/media', iconType: 'folderOpen' as const, group: 'Contenido' },
         { label: 'Ejercicios', href: '/dashboard/admin/assignments', iconType: 'fileText' as const, group: 'Contenido' },
         { label: 'Calificaciones', href: '/dashboard/admin/grades', iconType: 'star' as const, group: 'Contenido' },
