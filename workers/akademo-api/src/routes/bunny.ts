@@ -414,7 +414,7 @@ bunny.put('/archive/upload', async (c) => {
     if (!uploadRes.ok) {
       const err = await uploadRes.text();
       console.error(`[Archive Upload] Bunny Storage error ${uploadRes.status}:`, err);
-      return c.json(errorResponse(`Upload to storage failed (${uploadRes.status}): ${err.slice(0, 200)}`), 500);
+      return c.json(errorResponse(`Upload failed (${uploadRes.status}) via ${storageHostname}: ${err.slice(0, 200)}`), 500);
     }
 
     const id = crypto.randomUUID();
