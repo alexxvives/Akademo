@@ -224,7 +224,7 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
           {([
             { id: 'videos' as Tab, label: `Videos${totalVideos > 0 ? ` (${totalVideos})` : ''}` },
             { id: 'documents' as Tab, label: `Documentos${totalDocuments > 0 ? ` (${totalDocuments})` : ''}` },
-            ...(role === 'ACADEMY' ? [{ id: 'archived' as Tab, label: `Archivados${archivedVideos.length > 0 ? ` (${archivedVideos.length})` : ''}` }] : []),
+            { id: 'archived' as Tab, label: `Archivados${archivedVideos.length > 0 ? ` (${archivedVideos.length})` : ''}` },
           ]).map(t => (
             <button key={t.id} onClick={() => { setTab(t.id); setPage(1); }}
               className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${tab === t.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}

@@ -38,6 +38,7 @@ crons = ["0 0 1 * *"]  # Run at midnight on 1st of each month
 # Bunny Storage (for archived videos)
 # BUNNY_STORAGE_ZONE_NAME - Configured
 # BUNNY_STORAGE_API_KEY - Configured
+# BUNNY_STORAGE_HOSTNAME - Configured (e.g. uk.storage.bunnycdn.com for UK region)
 
 # Zoom (for live streaming)
 # ZOOM_ACCOUNT_ID - Configured

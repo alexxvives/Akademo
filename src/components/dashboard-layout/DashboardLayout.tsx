@@ -67,11 +67,13 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
         loadUnreadValoraciones(status);
         loadUngradedAssignments(status);
       });
+      loadActiveStreams();
       const academyInterval = setInterval(() => {
         loadAcademy().then((status) => {
           loadUnreadValoraciones(status);
           loadUngradedAssignments(status);
         });
+        loadActiveStreams();
       }, 15000);
       return () => clearInterval(academyInterval);
     }
@@ -79,9 +81,11 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
     if (role === 'TEACHER') {
       loadUnreadValoraciones();
       loadUngradedAssignments();
+      loadActiveStreams();
       const teacherInterval = setInterval(() => {
         loadUnreadValoraciones();
         loadUngradedAssignments();
+        loadActiveStreams();
       }, 15000);
       return () => clearInterval(teacherInterval);
     }

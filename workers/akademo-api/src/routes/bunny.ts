@@ -388,10 +388,11 @@ bunny.put('/archive/upload', async (c) => {
     const storageKey = `${academyId}/${uuid}-${safeFilename}`;
     const contentLength = parseInt(c.req.header('Content-Length') || '0', 10);
 
-    console.log(`[Archive Upload] Uploading to storage.bunnycdn.com/${storageZone}/${storageKey}, size: ${contentLength}`);
+    const storageHostname = c.env.BUNNY_STORAGE_HOSTNAME || 'storage.bunnycdn.com';
+    console.log(`[Archive Upload] Uploading to ${storageHostname}/${storageZone}/${storageKey}, size: ${contentLength}`);
 
     const uploadRes = await fetch(
-      `https://storage.bunnycdn.com/${storageZone}/${storageKey}`,
+      `https://${storageHostname}/${storageZone}/${storageKey}`,
       {
         method: 'PUT',
         headers: {
@@ -481,7 +482,8 @@ bunny.delete('/archive/:id', async (c) => {
     const storageApiKey = c.env.BUNNY_STORAGE_API_KEY;
     if (storageZone && storageApiKey) {
       try {
-        await fetch(`https://storage.bunnycdn.com/${storageZone}/${video.storageKey}`, {
+        const storageHostname = c.env.BUNNY_STORAGE_HOSTNAME || 'storage.bunnycdn.com';
+        await fetch(`https://${storageHostname}/${storageZone}/${video.storageKey}`, {
           method: 'DELETE',
           headers: { 'AccessKey': storageApiKey },
         });
@@ -521,7 +523,8 @@ bunny.get('/archive/:id/download', async (c) => {
     const storageApiKey = c.env.BUNNY_STORAGE_API_KEY;
     if (!storageZone || !storageApiKey) return c.json(errorResponse('Storage not configured'), 500);
 
-    const res = await fetch(`https://storage.bunnycdn.com/${storageZone}/${video.storageKey}`, {
+    const storageHostname = c.env.BUNNY_STORAGE_HOSTNAME || 'storage.bunnycdn.com';
+    const res = await fetch(`https://${storageHostname}/${storageZone}/${video.storageKey}`, {
       headers: { 'AccessKey': storageApiKey },
     });
     if (!res.ok) return c.json(errorResponse('File not found in storage'), 404);
