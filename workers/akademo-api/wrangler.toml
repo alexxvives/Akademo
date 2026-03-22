@@ -36,8 +36,8 @@ crons = ["0 0 1 * *"]  # Run at midnight on 1st of each month
 # BUNNY_STREAM_TOKEN_KEY - Configured
 
 # Bunny Storage (for archived videos)
-# BUNNY_STORAGE_ZONE_NAME - NEEDS CONFIGURATION: wrangler secret put BUNNY_STORAGE_ZONE_NAME
-# BUNNY_STORAGE_API_KEY - NEEDS CONFIGURATION: wrangler secret put BUNNY_STORAGE_API_KEY
+# BUNNY_STORAGE_ZONE_NAME - Configured
+# BUNNY_STORAGE_API_KEY - Configured
 
 # Zoom (for live streaming)
 # ZOOM_ACCOUNT_ID - Configured

@@ -6,6 +6,7 @@ interface CustomDatePickerProps {
   value: string; // "YYYY-MM-DD"
   onChange: (value: string) => void;
   className?: string;
+  dropUp?: boolean;
 }
 
 function pad(n: number) {
@@ -18,7 +19,7 @@ const MONTH_NAMES = [
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ];
 
-export function CustomDatePicker({ value, onChange, className }: CustomDatePickerProps) {
+export function CustomDatePicker({ value, onChange, className, dropUp }: CustomDatePickerProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -95,7 +96,7 @@ export function CustomDatePicker({ value, onChange, className }: CustomDatePicke
 
       {/* Dropdown calendar */}
       {open && (
-        <div className="absolute z-50 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl p-3 w-[280px]">
+        <div className={`absolute z-50 bg-white border border-gray-200 rounded-xl shadow-xl p-3 w-[280px] ${dropUp ? 'bottom-full mb-1' : 'mt-1'}`}>
           {/* Month/year nav */}
           <div className="flex items-center justify-between mb-2">
             <button type="button" onClick={() => goMonth(-1)} className="p-1 hover:bg-gray-100 rounded-lg transition-colors">

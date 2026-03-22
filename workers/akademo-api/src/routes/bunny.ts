@@ -388,6 +388,8 @@ bunny.put('/archive/upload', async (c) => {
     const storageKey = `${academyId}/${uuid}-${safeFilename}`;
     const contentLength = parseInt(c.req.header('Content-Length') || '0', 10);
 
+    console.log(`[Archive Upload] Uploading to storage.bunnycdn.com/${storageZone}/${storageKey}, size: ${contentLength}`);
+
     const uploadRes = await fetch(
       `https://storage.bunnycdn.com/${storageZone}/${storageKey}`,
       {
@@ -406,8 +408,8 @@ bunny.put('/archive/upload', async (c) => {
 
     if (!uploadRes.ok) {
       const err = await uploadRes.text();
-      console.error('[Archive Upload] Bunny Storage error:', err);
-      return c.json(errorResponse('Upload to storage failed'), 500);
+      console.error(`[Archive Upload] Bunny Storage error ${uploadRes.status}:`, err);
+      return c.json(errorResponse(`Upload to storage failed (${uploadRes.status}): ${err.slice(0, 200)}`), 500);
     }
 
     const id = crypto.randomUUID();

@@ -6,13 +6,14 @@ interface CustomTimePickerProps {
   value: string; // "HH:MM"
   onChange: (value: string) => void;
   className?: string;
+  dropUp?: boolean;
 }
 
 function pad(n: number) {
   return String(n).padStart(2, '0');
 }
 
-export function CustomTimePicker({ value, onChange, className }: CustomTimePickerProps) {
+export function CustomTimePicker({ value, onChange, className, dropUp }: CustomTimePickerProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const hourColRef = useRef<HTMLDivElement>(null);
@@ -79,7 +80,7 @@ export function CustomTimePicker({ value, onChange, className }: CustomTimePicke
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute z-50 mt-1 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden w-full min-w-[180px]">
+        <div className={`absolute z-50 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden w-full min-w-[180px] ${dropUp ? 'bottom-full mb-1' : 'mt-1'}`}>
           <div className="flex divide-x divide-gray-100" style={{ height: '200px' }}>
             {/* Hours column */}
             <div ref={hourColRef} className="flex-1 overflow-y-auto scrollbar-thin">
