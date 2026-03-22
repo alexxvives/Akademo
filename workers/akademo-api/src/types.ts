@@ -30,6 +30,10 @@ export interface Bindings {
   BUNNY_API_KEY: string;
   BUNNY_LIBRARY_ID: string;
   BUNNY_DEMO_VIDEO_GUID?: string;
+
+  // Bunny Storage (archival videos — one shared zone, organized by academyId prefix)
+  BUNNY_STORAGE_ZONE_NAME?: string;
+  BUNNY_STORAGE_API_KEY?: string;
   
   // Zoom
   ZOOM_ACCOUNT_ID: string;

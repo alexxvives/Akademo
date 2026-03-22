@@ -9,6 +9,9 @@ import { usePeriod } from '@/contexts/PeriodContext';
 import type { VideoItem, DocumentItem, ClassOption, Tab } from './types';
 import { SkeletonVideosGrid, VideosGrid } from './VideosGrid';
 import { DocumentsTable } from './DocumentsTable';
+import { ArchivedVideosGrid } from './ArchivedVideosGrid';
+import { ArchiveUploadModal } from './ArchiveUploadModal';
+import { useArchivedVideos } from '@/hooks/useArchivedVideos';
 
 export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHER' }) {
   const [tab, setTab] = useState<Tab>('videos');
@@ -24,6 +27,7 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
   const { activePeriodId, isClassInPeriod } = usePeriod();
+  const { archivedVideos, loadingArchived, showUploadModal, setShowUploadModal, loadArchived, deleteArchived } = useArchivedVideos(role, selectedAcademy);
 
   // Debounce search
   useEffect(() => {
@@ -116,19 +120,30 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
     }
   }, [tab, page, selectedClass, debouncedSearch, selectedAcademy, role]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    if (tab === 'archived') { loadArchived(); } else { loadData(); }
+  }, [tab, loadData, loadArchived]);
 
-  const totalPages = Math.ceil((tab === 'videos' ? totalVideos : totalDocuments) / 50);
+  const totalPages = tab === 'archived' ? 0 : Math.ceil((tab === 'videos' ? totalVideos : totalDocuments) / 50);
 
   return (
     <div className="space-y-6">
       {/* Row 1: Title (left) + Filters (right) */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Mediateca</h1>
-          <p className="text-gray-600 text-sm mt-1">
-            Todos los archivos de tu academia en un solo lugar
-          </p>
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">Mediateca</h1>
+            <p className="text-gray-600 text-sm mt-1">Todos los archivos de tu academia en un solo lugar</p>
+          </div>
+          {role === 'ACADEMY' && (
+            <button
+              onClick={() => setShowUploadModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 text-white text-sm font-medium rounded-lg hover:bg-brand-700 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+              Subir archivo
+            </button>
+          )}
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <div className="relative w-full sm:w-48">
@@ -181,31 +196,22 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
       {/* Row 2: Tabs — centered */}
       <div className="flex justify-center">
         <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
-          <button
-            onClick={() => { setTab('videos'); setPage(1); }}
-            className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
-              tab === 'videos'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Videos{totalVideos > 0 ? ` (${totalVideos})` : ''}
-          </button>
-          <button
-            onClick={() => { setTab('documents'); setPage(1); }}
-            className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${
-              tab === 'documents'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Documentos{totalDocuments > 0 ? ` (${totalDocuments})` : ''}
-          </button>
+          {([
+            { id: 'videos' as Tab, label: `Videos${totalVideos > 0 ? ` (${totalVideos})` : ''}` },
+            { id: 'documents' as Tab, label: `Documentos${totalDocuments > 0 ? ` (${totalDocuments})` : ''}` },
+            ...(role === 'ACADEMY' ? [{ id: 'archived' as Tab, label: `Archivados${archivedVideos.length > 0 ? ` (${archivedVideos.length})` : ''}` }] : []),
+          ]).map(t => (
+            <button key={t.id} onClick={() => { setTab(t.id); setPage(1); }}
+              className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${tab === t.id ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            >{t.label}</button>
+          ))}
         </div>
       </div>
 
       {/* Content */}
-      {loading ? (
+      {tab === 'archived' ? (
+        <ArchivedVideosGrid videos={archivedVideos} loading={loadingArchived} canDelete={role === 'ACADEMY'} onDelete={deleteArchived} />
+      ) : loading ? (
         tab === 'videos' ? <SkeletonVideosGrid /> : <SkeletonTable rows={8} cols={5} />
       ) : tab === 'videos' ? (
         <VideosGrid videos={videos} />
@@ -234,6 +240,9 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
             Siguiente
           </button>
         </div>
+      )}
+      {showUploadModal && (
+        <ArchiveUploadModal onClose={() => setShowUploadModal(false)} onSuccess={loadArchived} />
       )}
     </div>
   );

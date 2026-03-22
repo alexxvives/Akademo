@@ -36,4 +36,18 @@ export interface ClassOption {
   academyName?: string;
 }
 
-export type Tab = 'videos' | 'documents';
+export interface ArchivedVideoItem {
+  id: string;
+  academyId: string;
+  title: string;
+  fileName: string;
+  fileSize: number | null;
+  mimeType: string | null;
+  storageKey: string;
+  durationSeconds: number | null;
+  uploadedById: string;
+  uploaderName: string | null;
+  createdAt: string;
+}
+
+export type Tab = 'videos' | 'documents' | 'archived';

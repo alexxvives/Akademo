@@ -351,4 +351,191 @@ function getStatusText(status: number): string {
   }
 }
 
+// ─── Bunny Storage (archived videos) ────────────────────────────────────────
+
+// PUT /bunny/archive/upload?filename=...&title=...
+// Streams the request body directly to Bunny Storage, then saves metadata to DB.
+bunny.put('/archive/upload', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    if (!['ACADEMY', 'ADMIN'].includes(session.role)) {
+      return c.json(errorResponse('Not authorized'), 403);
+    }
+
+    const { filename, title } = c.req.query();
+    if (!filename) return c.json(errorResponse('filename required'), 400);
+
+    const storageZone = c.env.BUNNY_STORAGE_ZONE_NAME;
+    const storageApiKey = c.env.BUNNY_STORAGE_API_KEY;
+    if (!storageZone || !storageApiKey) {
+      return c.json(errorResponse('Bunny Storage not configured — contact admin'), 500);
+    }
+
+    // Resolve academyId
+    let academyId: string;
+    if (session.role === 'ACADEMY') {
+      const academy = await c.env.DB.prepare('SELECT id FROM Academy WHERE ownerId = ?').bind(session.id).first() as any;
+      if (!academy) return c.json(errorResponse('Academy not found'), 404);
+      academyId = academy.id;
+    } else {
+      const { academyId: qAcademyId } = c.req.query();
+      if (!qAcademyId) return c.json(errorResponse('academyId required for admin'), 400);
+      academyId = qAcademyId;
+    }
+
+    const uuid = crypto.randomUUID();
+    const safeFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const storageKey = `${academyId}/${uuid}-${safeFilename}`;
+    const contentLength = parseInt(c.req.header('Content-Length') || '0', 10);
+
+    const uploadRes = await fetch(
+      `https://${storageZone}.storage.bunnycdn.com/${storageKey}`,
+      {
+        method: 'PUT',
+        headers: {
+          'AccessKey': storageApiKey,
+          'Content-Type': 'application/octet-stream',
+          ...(contentLength > 0 ? { 'Content-Length': String(contentLength) } : {}),
+        },
+        // Stream body directly to avoid buffering entire file in Worker memory
+        body: c.req.raw.body,
+        // @ts-ignore — duplex required for streaming request bodies
+        duplex: 'half',
+      }
+    );
+
+    if (!uploadRes.ok) {
+      const err = await uploadRes.text();
+      console.error('[Archive Upload] Bunny Storage error:', err);
+      return c.json(errorResponse('Upload to storage failed'), 500);
+    }
+
+    const id = crypto.randomUUID();
+    await c.env.DB.prepare(
+      'INSERT INTO ArchivedVideo (id, academyId, title, fileName, fileSize, storageKey, uploadedById) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    ).bind(id, academyId, title || filename, filename, contentLength || null, storageKey, session.id).run();
+
+    return c.json(successResponse({ id, storageKey, title: title || filename }));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Archive Upload] Error:', error);
+    return c.json(errorResponse('Upload failed'), 500);
+  }
+});
+
+// GET /bunny/archive — list archived videos for the current academy
+bunny.get('/archive', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    if (!['ACADEMY', 'ADMIN', 'TEACHER'].includes(session.role)) {
+      return c.json(errorResponse('Not authorized'), 403);
+    }
+
+    let academyId: string | null = null;
+    if (session.role === 'ACADEMY') {
+      const academy = await c.env.DB.prepare('SELECT id FROM Academy WHERE ownerId = ?').bind(session.id).first() as any;
+      if (!academy) return c.json(successResponse({ videos: [], total: 0 }));
+      academyId = academy.id;
+    } else if (session.role === 'ADMIN') {
+      const { academyId: qId } = c.req.query();
+      if (qId) academyId = qId;
+    } else {
+      const teacher = await c.env.DB.prepare('SELECT academyId FROM Teacher WHERE userId = ?').bind(session.id).first() as any;
+      if (teacher) academyId = teacher.academyId;
+    }
+
+    if (!academyId) return c.json(successResponse({ videos: [], total: 0 }));
+
+    const result = await c.env.DB.prepare(
+      'SELECT av.*, u.name as uploaderName FROM ArchivedVideo av LEFT JOIN User u ON av.uploadedById = u.id WHERE av.academyId = ? ORDER BY av.createdAt DESC'
+    ).bind(academyId).all();
+
+    return c.json(successResponse({ videos: result.results || [], total: result.results?.length || 0 }));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Archive List] Error:', error);
+    return c.json(errorResponse('Failed to list archived videos'), 500);
+  }
+});
+
+// DELETE /bunny/archive/:id — delete archived video from DB + Storage
+bunny.delete('/archive/:id', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    if (!['ACADEMY', 'ADMIN'].includes(session.role)) {
+      return c.json(errorResponse('Not authorized'), 403);
+    }
+
+    const id = c.req.param('id');
+    const video = await c.env.DB.prepare('SELECT * FROM ArchivedVideo WHERE id = ?').bind(id).first() as any;
+    if (!video) return c.json(errorResponse('Video not found'), 404);
+
+    if (session.role === 'ACADEMY') {
+      const academy = await c.env.DB.prepare('SELECT id FROM Academy WHERE ownerId = ?').bind(session.id).first() as any;
+      if (!academy || academy.id !== video.academyId) return c.json(errorResponse('Forbidden'), 403);
+    }
+
+    const storageZone = c.env.BUNNY_STORAGE_ZONE_NAME;
+    const storageApiKey = c.env.BUNNY_STORAGE_API_KEY;
+    if (storageZone && storageApiKey) {
+      try {
+        await fetch(`https://${storageZone}.storage.bunnycdn.com/${video.storageKey}`, {
+          method: 'DELETE',
+          headers: { 'AccessKey': storageApiKey },
+        });
+      } catch (e) {
+        console.error('[Archive Delete] Failed to delete from storage:', e);
+      }
+    }
+
+    await c.env.DB.prepare('DELETE FROM ArchivedVideo WHERE id = ?').bind(id).run();
+    return c.json(successResponse({ deleted: true }));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Archive Delete] Error:', error);
+    return c.json(errorResponse('Failed to delete archived video'), 500);
+  }
+});
+
+// GET /bunny/archive/:id/download — authenticated proxy download
+bunny.get('/archive/:id/download', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    const id = c.req.param('id');
+    const video = await c.env.DB.prepare('SELECT * FROM ArchivedVideo WHERE id = ?').bind(id).first() as any;
+    if (!video) return c.json(errorResponse('Video not found'), 404);
+
+    if (session.role === 'ACADEMY') {
+      const academy = await c.env.DB.prepare('SELECT id FROM Academy WHERE ownerId = ?').bind(session.id).first() as any;
+      if (!academy || academy.id !== video.academyId) return c.json(errorResponse('Forbidden'), 403);
+    } else if (session.role === 'TEACHER') {
+      const teacher = await c.env.DB.prepare('SELECT academyId FROM Teacher WHERE userId = ?').bind(session.id).first() as any;
+      if (!teacher || teacher.academyId !== video.academyId) return c.json(errorResponse('Forbidden'), 403);
+    } else if (session.role !== 'ADMIN') {
+      return c.json(errorResponse('Forbidden'), 403);
+    }
+
+    const storageZone = c.env.BUNNY_STORAGE_ZONE_NAME;
+    const storageApiKey = c.env.BUNNY_STORAGE_API_KEY;
+    if (!storageZone || !storageApiKey) return c.json(errorResponse('Storage not configured'), 500);
+
+    const res = await fetch(`https://${storageZone}.storage.bunnycdn.com/${video.storageKey}`, {
+      headers: { 'AccessKey': storageApiKey },
+    });
+    if (!res.ok) return c.json(errorResponse('File not found in storage'), 404);
+
+    return new Response(res.body, {
+      headers: {
+        'Content-Type': video.mimeType || 'video/mp4',
+        'Content-Disposition': `attachment; filename="${video.fileName}"`,
+        ...(video.fileSize ? { 'Content-Length': String(video.fileSize) } : {}),
+      },
+    });
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Archive Download] Error:', error);
+    return c.json(errorResponse('Download failed'), 500);
+  }
+});
+
 export default bunny;
