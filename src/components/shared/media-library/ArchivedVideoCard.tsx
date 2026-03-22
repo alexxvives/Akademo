@@ -47,25 +47,32 @@ export function ArchivedVideoCard({ video, canDelete, onDelete }: Props) {
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col gap-3 hover:shadow-md transition-shadow">
-      {/* Icon + title */}
-      <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-lg bg-brand-50 flex items-center justify-center flex-shrink-0">
-          <svg className="w-5 h-5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
+    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col hover:shadow-md transition-shadow">
+      {/* Thumbnail area */}
+      <div className="relative w-full aspect-video bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+        <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
+          <svg className="w-6 h-6 text-white/80 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M8 5v14l11-7z" />
           </svg>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-gray-900 truncate" title={video.title}>{video.title}</p>
-          <p className="text-xs text-gray-500 truncate" title={video.fileName}>{video.fileName}</p>
+        <div className="absolute bottom-2 right-2 text-xs text-white/70 bg-black/40 px-1.5 py-0.5 rounded">
+          {video.durationSeconds ? `${Math.floor(video.durationSeconds / 60)}:${String(video.durationSeconds % 60).padStart(2, '0')}` : 'Video'}
         </div>
       </div>
 
-      {/* Metadata */}
-      <div className="flex items-center justify-between text-xs text-gray-500">
-        <span>{formatBytes(video.fileSize)}</span>
-        <span>{formatDate(video.createdAt)}</span>
-      </div>
+      {/* Info + actions */}
+      <div className="p-4 flex flex-col gap-3">
+        {/* Title */}
+        <div>
+          <p className="text-sm font-semibold text-gray-900 truncate" title={video.title}>{video.title}</p>
+          <p className="text-xs text-gray-400 truncate" title={video.fileName}>{video.fileName}</p>
+        </div>
+
+        {/* Metadata */}
+        <div className="flex items-center justify-between text-xs text-gray-500">
+          <span>{formatBytes(video.fileSize)}</span>
+          <span>{formatDate(video.createdAt)}</span>
+        </div>
 
       {/* Actions */}
       <div className="flex items-center gap-2 pt-1 border-t border-gray-100">
@@ -107,6 +114,7 @@ export function ArchivedVideoCard({ video, canDelete, onDelete }: Props) {
             </button>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

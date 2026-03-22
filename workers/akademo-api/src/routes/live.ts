@@ -484,27 +484,68 @@ live.get('/active', async (c) => {
   try {
     const session = await requireAuth(c);
 
-    if (session.role !== 'STUDENT') {
-      return c.json(errorResponse('Only students can access this'), 403);
-    }
+    let result;
 
-    const result = await c.env.DB
-      .prepare(`
-        SELECT 
-          ls.*,
-          c.name as className,
-          u.firstName || ' ' || u.lastName as teacherName
-        FROM LiveStream ls
-        JOIN Class c ON ls.classId = c.id
-        JOIN User u ON ls.teacherId = u.id
-        JOIN ClassEnrollment ce ON ce.classId = c.id
-        WHERE ce.userId = ? 
-          AND ce.status = 'APPROVED'
-          AND ls.status = 'active'
-        ORDER BY ls.createdAt DESC
-      `)
-      .bind(session.id)
-      .all();
+    if (session.role === 'STUDENT') {
+      result = await c.env.DB
+        .prepare(`
+          SELECT 
+            ls.*,
+            c.name as className,
+            u.firstName || ' ' || u.lastName as teacherName
+          FROM LiveStream ls
+          JOIN Class c ON ls.classId = c.id
+          JOIN User u ON ls.teacherId = u.id
+          JOIN ClassEnrollment ce ON ce.classId = c.id
+          WHERE ce.userId = ? 
+            AND ce.status = 'APPROVED'
+            AND ls.status = 'active'
+          ORDER BY ls.createdAt DESC
+        `)
+        .bind(session.id)
+        .all();
+    } else if (session.role === 'TEACHER') {
+      result = await c.env.DB
+        .prepare(`
+          SELECT ls.*, c.name as className,
+            u.firstName || ' ' || u.lastName as teacherName
+          FROM LiveStream ls
+          JOIN Class c ON ls.classId = c.id
+          JOIN User u ON ls.teacherId = u.id
+          WHERE ls.teacherId = ? AND ls.status = 'active'
+          ORDER BY ls.createdAt DESC
+        `)
+        .bind(session.id)
+        .all();
+    } else if (session.role === 'ACADEMY') {
+      const academy = await c.env.DB.prepare('SELECT id FROM Academy WHERE ownerId = ?').bind(session.id).first() as any;
+      if (!academy) return c.json(successResponse([]));
+      result = await c.env.DB
+        .prepare(`
+          SELECT ls.*, c.name as className,
+            u.firstName || ' ' || u.lastName as teacherName
+          FROM LiveStream ls
+          JOIN Class c ON ls.classId = c.id
+          JOIN User u ON ls.teacherId = u.id
+          WHERE c.academyId = ? AND ls.status = 'active'
+          ORDER BY ls.createdAt DESC
+        `)
+        .bind(academy.id)
+        .all();
+    } else {
+      // ADMIN — all active streams
+      result = await c.env.DB
+        .prepare(`
+          SELECT ls.*, c.name as className,
+            u.firstName || ' ' || u.lastName as teacherName
+          FROM LiveStream ls
+          JOIN Class c ON ls.classId = c.id
+          JOIN User u ON ls.teacherId = u.id
+          WHERE ls.status = 'active'
+          ORDER BY ls.createdAt DESC
+        `)
+        .all();
+    }
 
     return c.json(successResponse(result.results || []));
   } catch (error: any) {

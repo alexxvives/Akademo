@@ -17,6 +17,7 @@ export function ArchiveUploadModal({ onClose, onSuccess }: Props) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
+  const uploadingRef = useRef(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0] ?? null;
@@ -25,7 +26,8 @@ export function ArchiveUploadModal({ onClose, onSuccess }: Props) {
   };
 
   const handleUpload = () => {
-    if (!file) return;
+    if (!file || uploadingRef.current) return;
+    uploadingRef.current = true;
     setUploading(true);
     setError('');
     setProgress(0);
@@ -47,6 +49,7 @@ export function ArchiveUploadModal({ onClose, onSuccess }: Props) {
     };
 
     xhr.onload = () => {
+      uploadingRef.current = false;
       setUploading(false);
       if (xhr.status >= 200 && xhr.status < 300) {
         onSuccess();
@@ -61,8 +64,8 @@ export function ArchiveUploadModal({ onClose, onSuccess }: Props) {
       }
     };
 
-    xhr.onerror = () => { setUploading(false); setError('Error de red durante la subida'); };
-    xhr.onabort = () => { setUploading(false); setError('Subida cancelada'); };
+    xhr.onerror = () => { uploadingRef.current = false; setUploading(false); setError('Error de red durante la subida'); };
+    xhr.onabort = () => { uploadingRef.current = false; setUploading(false); setError('Subida cancelada'); };
     xhr.send(file);
   };
 
