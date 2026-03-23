@@ -44,6 +44,7 @@ export interface AssignmentModalsProps {
   editDescription: string; setEditDescription: (v: string) => void;
   editDueDate: string; setEditDueDate: (v: string) => void;
   editUploadFiles: File[]; setEditUploadFiles: (v: File[]) => void;
+  editQuizQuestions: QuizQuestionForm[]; setEditQuizQuestions: (q: QuizQuestionForm[]) => void;
   updating: boolean;
   handleUpdateAssignment: (e: React.FormEvent) => void;
   // Submissions

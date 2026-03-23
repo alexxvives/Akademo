@@ -184,6 +184,8 @@ export function useAssignmentsActions(data: AssignmentsDataReturn) {
           title: data.editTitle, description: data.editDescription,
           dueDate: data.editDueDate || undefined,
           ...(uploadIds.length > 0 && { uploadIds }),
+          ...(data.selectedAssignment.type === 'quiz' && data.editQuizQuestions.length > 0
+            && { questions: data.editQuizQuestions }),
         }),
       });
       const result = await res.json();
@@ -201,12 +203,33 @@ export function useAssignmentsActions(data: AssignmentsDataReturn) {
     data.setAssignmentType('file'); data.setQuizQuestions([createEmptyQuestion()]);
   };
 
-  const openEditAssignment = (assignment: Assignment) => {
+  const openEditAssignment = async (assignment: Assignment) => {
     data.setSelectedAssignment(assignment);
     data.setEditTitle(assignment.title);
     data.setEditDescription(assignment.description || '');
-    data.setEditDueDate(assignment.dueDate ? assignment.dueDate.split('T')[0] : '');
+    data.setEditDueDate(assignment.dueDate ? assignment.dueDate.slice(0, 16) : '');
     data.setEditUploadFiles([]);
+    // For quiz assignments, pre-load the existing questions
+    if (assignment.type === 'quiz') {
+      try {
+        const res = await apiClient(`/assignments/${assignment.id}/questions`);
+        const result = await res.json();
+        if (result.success && Array.isArray(result.data) && result.data.length > 0) {
+          data.setEditQuizQuestions(result.data.map((q: { questionText: string; options: { id: string; text: string }[]; correctOptionIds: string[]; explanation: string }) => ({
+            questionText: q.questionText,
+            options: q.options,
+            correctOptionIds: q.correctOptionIds || [],
+            explanation: q.explanation || '',
+          })));
+        } else {
+          data.setEditQuizQuestions([]);
+        }
+      } catch {
+        data.setEditQuizQuestions([]);
+      }
+    } else {
+      data.setEditQuizQuestions([]);
+    }
     data.setShowEditModal(true);
   };
 

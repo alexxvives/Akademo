@@ -794,7 +794,7 @@ assignments.patch('/:id', async (c) => {
     }
 
     const assignmentId = c.req.param('id');
-    const { title, description, dueDate, maxScore, uploadId, uploadIds, solutionUploadId } = await c.req.json();
+    const { title, description, dueDate, maxScore, uploadId, uploadIds, solutionUploadId, questions } = await c.req.json();
 
     // Verify assignment exists
     const assignment = await c.env.DB.prepare(`
@@ -874,6 +874,23 @@ assignments.patch('/:id', async (c) => {
       await c.env.DB.prepare(`DELETE FROM AssignmentAttachment WHERE assignmentId = ?`).bind(assignmentId).run();
       for (const uid of uploadIds) {
         await c.env.DB.prepare(`INSERT INTO AssignmentAttachment (id, assignmentId, uploadId) VALUES (?, ?, ?)`).bind(nanoid(), assignmentId, uid).run();
+      }
+    }
+
+    // If quiz questions provided, replace all QuizQuestion records
+    if (questions !== undefined && Array.isArray(questions) && questions.length > 0) {
+      await c.env.DB.prepare(`DELETE FROM QuizQuestion WHERE assignmentId = ?`).bind(assignmentId).run();
+      for (let i = 0; i < questions.length; i++) {
+        const q = questions[i];
+        await c.env.DB.prepare(
+          `INSERT INTO QuizQuestion (id, assignmentId, questionText, questionOrder, options, correctOptionId, explanation)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`
+        ).bind(
+          nanoid(), assignmentId, q.questionText, i,
+          JSON.stringify(q.options || []),
+          JSON.stringify(q.correctOptionIds || []),
+          q.explanation || null
+        ).run();
       }
     }
 

@@ -1,6 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
+import { CustomDatePicker } from '@/components/ui/CustomDatePicker';
+import { CustomTimePicker } from '@/components/ui/CustomTimePicker';
+import { QuizQuestionBuilder, createEmptyQuestion } from '@/components/shared/QuizQuestionBuilder';
 import type { AssignmentModalsProps } from './types';
 
 export function EditAssignmentModal(props: AssignmentModalsProps) {
@@ -9,67 +12,152 @@ export function EditAssignmentModal(props: AssignmentModalsProps) {
     showEditModal, setShowEditModal,
     editTitle, setEditTitle, editDescription, setEditDescription,
     editDueDate, setEditDueDate, editUploadFiles, setEditUploadFiles,
+    editQuizQuestions, setEditQuizQuestions,
     updating, handleUpdateAssignment,
-    requireGrading = true,
   } = props;
+
+  const [showQuizBuilder, setShowQuizBuilder] = useState(false);
 
   if (!showEditModal || !selectedAssignment) return null;
 
+  const isQuiz = selectedAssignment.type === 'quiz';
+
+  // Split editDueDate (YYYY-MM-DDTHH:MM) into parts
+  const datePart = editDueDate ? editDueDate.split('T')[0] : '';
+  const timePart = editDueDate ? (editDueDate.split('T')[1]?.slice(0, 5) || '') : '';
+
+  const handleDateChange = (date: string) => {
+    setEditDueDate(date + (timePart ? 'T' + timePart : ''));
+  };
+  const handleTimeChange = (time: string) => {
+    setEditDueDate((datePart || '') + 'T' + time);
+  };
+
+  const quizReady = isQuiz && editQuizQuestions.length > 0 && editQuizQuestions.every(q => q.questionText.trim());
+
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900">Editar Ejercicio</h2>
-        </div>
-        <form onSubmit={handleUpdateAssignment} className="p-6 space-y-6">
-          <div>
-            <label htmlFor="edit-title" className="block text-sm font-medium text-gray-700 mb-1">Título</label>
-            <input id="edit-title" type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} required
-              className="w-full h-[38px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
+    <>
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="p-6 border-b border-gray-200">
+            <h2 className="text-2xl font-bold text-gray-900">
+              {isQuiz ? 'Editar Cuestionario' : 'Editar Ejercicio'}
+            </h2>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
-            <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} rows={2}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-y focus:ring-2 focus:ring-brand-500" />
-          </div>
-          {requireGrading && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de entrega</label>
-            <input type="date" value={editDueDate} onChange={(e) => setEditDueDate(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
-          </div>
-          )}
-          <div>
-            <label htmlFor="edit-files" className="block text-sm font-medium text-gray-700 mb-1">Actualizar archivos adjuntos (opcional, hasta 5)</label>
-            {selectedAssignment.attachmentName && (
-              <div className="mb-2 text-sm text-gray-600">Archivos actuales: {selectedAssignment.attachmentName}</div>
-            )}
-            <input id="edit-files" type="file" multiple
-              onChange={(e) => setEditUploadFiles(Array.from(e.target.files || []).slice(0, 5))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200" />
-            {editUploadFiles.length > 0 && (
-              <div className="mt-2 space-y-1">
-                {editUploadFiles.map((f, i) => (
-                  <div key={i} className="flex items-center gap-2 text-sm text-gray-600">
-                    <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
-                    </svg>
-                    <span>{f.name}</span>
+          <form onSubmit={handleUpdateAssignment} className="p-6 space-y-4">
+            <div>
+              <label htmlFor="edit-title" className="block text-sm font-medium text-gray-700 mb-1">Título</label>
+              <input id="edit-title" type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} required
+                className="w-full h-[38px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+              <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} rows={2}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-y focus:ring-2 focus:ring-brand-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de entrega</label>
+              <div className="grid grid-cols-2 gap-3">
+                <CustomDatePicker value={datePart} onChange={handleDateChange} dropUp />
+                <CustomTimePicker value={timePart} onChange={handleTimeChange} dropUp />
+              </div>
+            </div>
+
+            {/* File attachment — only for file assignments */}
+            {!isQuiz && (
+              <div>
+                <label htmlFor="edit-files" className="block text-sm font-medium text-gray-700 mb-1">
+                  Actualizar archivos adjuntos (opcional, hasta 5)
+                </label>
+                {selectedAssignment.attachmentName && (
+                  <div className="mb-2 text-sm text-gray-600">Archivos actuales: {selectedAssignment.attachmentName}</div>
+                )}
+                <input id="edit-files" type="file" multiple
+                  onChange={(e) => setEditUploadFiles(Array.from(e.target.files || []).slice(0, 5))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200" />
+                {editUploadFiles.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    {editUploadFiles.map((f, i) => (
+                      <div key={i} className="flex items-center gap-2 text-sm text-gray-600">
+                        <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
+                        </svg>
+                        <span>{f.name}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
             )}
-          </div>
-          <div className="flex gap-4 justify-end pt-4">
-            <button type="button" onClick={() => setShowEditModal(false)} disabled={updating}
-              className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
-            <button type="submit" disabled={updating}
-              className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50">
-              {updating ? 'Actualizando...' : 'Guardar Cambios'}
-            </button>
-          </div>
-        </form>
+
+            {/* Quiz question builder button — only for quiz assignments */}
+            {isQuiz && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Preguntas del cuestionario</label>
+                <button type="button" onClick={() => setShowQuizBuilder(true)}
+                  className={`w-full h-[38px] px-3 text-sm border rounded-lg transition-colors flex items-center justify-center gap-2 ${
+                    quizReady ? 'border-green-400 bg-green-50 text-green-700' : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                  }`}>
+                  {quizReady ? (
+                    <>
+                      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      {editQuizQuestions.length} pregunta(s) ✓
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                      Editar preguntas
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+
+            <div className="flex gap-4 justify-end pt-4">
+              <button type="button" onClick={() => setShowEditModal(false)} disabled={updating}
+                className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
+              <button type="submit" disabled={updating}
+                className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50">
+                {updating ? 'Actualizando...' : 'Guardar Cambios'}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+
+      {/* Quiz builder overlay */}
+      {showQuizBuilder && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[10000] p-4">
+          <div className="bg-white rounded-xl max-w-[800px] w-full flex flex-col max-h-[95vh]">
+            <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100 flex-shrink-0">
+              <h3 className="text-xl font-semibold text-gray-900">Editar preguntas</h3>
+              <button type="button" onClick={() => setShowQuizBuilder(false)} className="p-1 text-gray-400 hover:text-gray-600">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="overflow-y-auto px-6 py-4 flex-1">
+              <QuizQuestionBuilder
+                questions={editQuizQuestions.length ? editQuizQuestions : [createEmptyQuestion()]}
+                setQuestions={setEditQuizQuestions}
+              />
+            </div>
+            <div className="flex gap-3 px-6 py-4 border-t border-gray-100 flex-shrink-0">
+              <button type="button" onClick={() => setShowQuizBuilder(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">Cancelar</button>
+              <button type="button" onClick={() => setShowQuizBuilder(false)}
+                className="flex-1 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium transition-colors">
+                Confirmar preguntas
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

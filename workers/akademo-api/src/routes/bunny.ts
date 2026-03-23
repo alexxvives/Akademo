@@ -389,7 +389,10 @@ bunny.put('/archive/upload', async (c) => {
 
     const uuid = crypto.randomUUID();
     const safeFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const storageKey = `${academyId}/${uuid}-${safeFilename}`;
+    const { classId } = c.req.query();
+    const storageKey = classId
+      ? `${academyId}/${classId}/${uuid}-${safeFilename}`
+      : `${academyId}/${uuid}-${safeFilename}`;
     const contentLength = parseInt(c.req.header('Content-Length') || '0', 10);
 
     const storageHostname = c.env.BUNNY_STORAGE_HOSTNAME || 'uk.storage.bunnycdn.com';

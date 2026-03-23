@@ -36,6 +36,7 @@ export function useAssignmentsData(role: AssignmentsPageProps['role']) {
   const [editDescription, setEditDescription] = useState('');
   const [editDueDate, setEditDueDate] = useState('');
   const [editUploadFiles, setEditUploadFiles] = useState<File[]>([]);
+  const [editQuizQuestions, setEditQuizQuestions] = useState<QuizQuestionForm[]>([]);
   const [updating, setUpdating] = useState(false);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
@@ -236,7 +237,7 @@ export function useAssignmentsData(role: AssignmentsPageProps['role']) {
     showSubmissionsModal, setShowSubmissionsModal, showGradeModal, setShowGradeModal,
     selectedAssignment, setSelectedAssignment,
     editTitle, setEditTitle, editDescription, setEditDescription, editDueDate, setEditDueDate,
-    editUploadFiles, setEditUploadFiles, updating, setUpdating,
+    editUploadFiles, setEditUploadFiles, editQuizQuestions, setEditQuizQuestions, updating, setUpdating,
     submissions, setSubmissions, selectedSubmission, setSelectedSubmission,
     newTitle, setNewTitle, newDescription, setNewDescription, newDueDate, setNewDueDate,
     uploadFiles, setUploadFiles, uploadProgress, setUploadProgress,

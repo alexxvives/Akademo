@@ -167,6 +167,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
           editDescription={data.editDescription} setEditDescription={data.setEditDescription}
           editDueDate={data.editDueDate} setEditDueDate={data.setEditDueDate}
           editUploadFiles={data.editUploadFiles} setEditUploadFiles={data.setEditUploadFiles}
+          editQuizQuestions={data.editQuizQuestions} setEditQuizQuestions={data.setEditQuizQuestions}
           updating={data.updating} handleUpdateAssignment={actions.handleUpdateAssignment}
           showSubmissionsModal={data.showSubmissionsModal} setShowSubmissionsModal={data.setShowSubmissionsModal}
           submissions={data.submissions} handleBulkDownload={subActions.handleBulkDownload}

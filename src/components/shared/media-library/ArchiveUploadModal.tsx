@@ -2,17 +2,20 @@
 
 import { createPortal } from 'react-dom';
 import { useRef, useState } from 'react';
+import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://akademo-api.alexxvives.workers.dev';
 
 interface Props {
   onClose: () => void;
   onSuccess: () => void;
+  classes?: { id: string; name: string }[];
 }
 
-export function ArchiveUploadModal({ onClose, onSuccess }: Props) {
+export function ArchiveUploadModal({ onClose, onSuccess, classes }: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState('');
+  const [selectedClassId, setSelectedClassId] = useState('');
   const [progress, setProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
@@ -37,6 +40,7 @@ export function ArchiveUploadModal({ onClose, onSuccess }: Props) {
       filename: file.name,
       title: title || file.name,
     });
+    if (selectedClassId) params.set('classId', selectedClassId);
     xhr.open('PUT', `${API_URL}/bunny/archive/upload?${params}`);
     xhr.withCredentials = true;
     xhr.setRequestHeader('Content-Type', 'application/octet-stream');
@@ -115,6 +119,21 @@ export function ArchiveUploadModal({ onClose, onSuccess }: Props) {
               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50"
             />
           </div>
+
+          {/* Asignatura selector */}
+          {classes && classes.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Asignatura (opcional)</label>
+              <ClassSearchDropdown
+                classes={classes}
+                value={selectedClassId}
+                onChange={setSelectedClassId}
+                allLabel="Sin asignatura"
+                placeholder="Filtrar por asignatura..."
+                disabled={uploading}
+              />
+            </div>
+          )}
 
           {/* Progress bar */}
           {uploading && (

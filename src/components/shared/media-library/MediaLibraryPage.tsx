@@ -143,9 +143,15 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
     }
   }, [tab, page, selectedClass, debouncedSearch, selectedAcademy, role]);
 
+  // Always keep archive count fresh (backing the tab badge) — runs on mount and on role/academy change
   useEffect(() => {
-    if (tab === 'archived') { loadArchived(); } else { loadData(); }
-  }, [tab, loadData, loadArchived]);
+    loadArchived();
+  }, [loadArchived]);
+
+  // Load active-tab data (archived tab is handled above)
+  useEffect(() => {
+    if (tab !== 'archived') { loadData(); }
+  }, [tab, loadData]);
 
   const totalPages = tab === 'archived' ? 0 : Math.ceil((tab === 'videos' ? totalVideos : totalDocuments) / 50);
 
@@ -165,7 +171,7 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
                 Subir video
               </button>
             </div>
-            <p className="text-gray-600 text-sm mt-1">{academyName || 'Todos los archivos de tu academia en un solo lugar'}</p>
+            <p className="text-gray-600 text-sm mt-1 min-h-[1.25rem]">{academyName}</p>
           </div>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -265,7 +271,7 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
         </div>
       )}
       {showUploadModal && (
-        <ArchiveUploadModal onClose={() => setShowUploadModal(false)} onSuccess={loadArchived} />
+        <ArchiveUploadModal onClose={() => setShowUploadModal(false)} onSuccess={loadArchived} classes={filteredClasses} />
       )}
     </div>
   );
