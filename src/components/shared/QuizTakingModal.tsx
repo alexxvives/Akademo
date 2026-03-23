@@ -184,11 +184,7 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
             <p className="text-gray-600">{assignmentTitle}</p>
             <div className={`text-4xl font-bold mt-4 ${scoreColor}`}>{displayScore}/{result.maxScore}</div>
             <p className="text-sm text-gray-500 mt-1">{result.correctAnswers} de {result.totalQuestions} correctas</p>
-            {isRetry && (
-              <div className="mt-3 inline-block px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm text-blue-800">Nota oficial (primer intento): <span className={`font-bold ${officialScoreColor}`}>{officialScore}/{result.maxScore}</span></p>
-              </div>
-            )}
+
           </div>
 
           {result.answers && result.questions && result.questions.length > 0 && (
@@ -217,7 +213,7 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
                       })}
                     </div>
                     {answer && !answer.correct && answer.explanation && (
-                      <p className="text-sm text-gray-600 mt-2 italic">💡 {answer.explanation}</p>
+                      <p className="text-sm text-gray-600 mt-2"><span className="font-medium">Explicación:</span> {answer.explanation}</p>
                     )}
                   </div>
                 );
@@ -225,13 +221,7 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
             </div>
           )}
 
-          <div className="flex gap-3 justify-between">
-            <button
-              onClick={() => { setResult(null); setAnswers({}); setCurrentIndex(0); }}
-              className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              Repetir
-            </button>
+          <div className="flex justify-end">
             <button onClick={onClose} className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors">
               Cerrar
             </button>

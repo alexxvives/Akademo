@@ -11,7 +11,7 @@ import { UploadModal } from './UploadModal';
 export default function StudentAssignments() {
   const {
     classes, selectedClassId, setSelectedClassId,
-    assignments, loading,
+    assignments, loading, academyName,
     showUploadModal, setShowUploadModal,
     selectedAssignment, setSelectedAssignment,
     uploadFiles, setUploadFiles,
@@ -38,7 +38,7 @@ export default function StudentAssignments() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">Ejercicios</h1>
-            <p className="text-sm text-gray-500 mt-1">Completa y entrega tus ejercicios</p>
+            {academyName && <p className="text-sm text-gray-500 mt-1">{academyName}</p>}
           </div>
           <ClassSearchDropdown
             classes={classes}
@@ -131,7 +131,6 @@ export default function StudentAssignments() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Título</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Asignatura</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nota</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Preguntas</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha límite</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acción</th>
                   </tr>
@@ -156,9 +155,6 @@ export default function StudentAssignments() {
                           {attempted ? (
                             <span className={`text-sm font-medium ${scoreColor}`}>{assignment.quizScore ?? 0}/{assignment.maxScore}</span>
                           ) : <span className="text-sm text-gray-400">—</span>}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {attempted ? `${assignment.quizCorrectAnswers ?? 0}/${assignment.quizTotalQuestions ?? 0} correctas` : '—'}
                         </td>
                         <td className={`px-6 py-4 whitespace-nowrap text-sm ${getDueDateColor(assignment.dueDate)}`}>
                           {assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}

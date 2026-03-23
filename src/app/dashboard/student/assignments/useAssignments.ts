@@ -10,6 +10,7 @@ export function useAssignments() {
   const [selectedClassId, setSelectedClassId] = useState('');
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [academyName, setAcademyName] = useState<string>('');
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
@@ -63,18 +64,21 @@ export function useAssignments() {
       if (currentPaymentStatus === 'NOT PAID') {
         const demoClasses = generateDemoClasses();
         setClasses(demoClasses.map(c => ({ id: c.id, name: c.name })));
+        setAcademyName('Academia Demo');
         const demoAssignments = generateDemoStudentAssignments();
         setAssignments(demoAssignments as Assignment[]);
         return;
       }
       const res = await apiClient('/enrollments');
       const result = await res.json();
-      type Enrollment = { status: string; classId: string; className: string; university?: string | null; carrera?: string | null };
+      type Enrollment = { status: string; classId: string; className: string; academyName?: string | null; university?: string | null; carrera?: string | null };
       if (result.success && result.data) {
         const enrolledClasses = result.data
           .filter((e: Enrollment) => e.status === 'APPROVED')
           .map((e: Enrollment) => ({ id: e.classId, name: e.className, university: e.university, carrera: e.carrera }));
         setClasses(enrolledClasses);
+        const firstApproved = result.data.find((e: Enrollment) => e.status === 'APPROVED');
+        if (firstApproved?.academyName) setAcademyName(firstApproved.academyName);
       }
     } catch (error) {
       console.error('Failed to load classes:', error);
@@ -230,7 +234,7 @@ export function useAssignments() {
 
   return {
     classes, selectedClassId, setSelectedClassId,
-    assignments, loading,
+    assignments, loading, academyName,
     showUploadModal, setShowUploadModal,
     selectedAssignment, setSelectedAssignment,
     uploadFiles, setUploadFiles,
