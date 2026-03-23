@@ -50,6 +50,7 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
   const [result, setResult] = useState<QuizResult | null>(null);
   const [officialResult, setOfficialResult] = useState<QuizResult | null>(null);
   const [error, setError] = useState('');
+  const [showRetryNotice, setShowRetryNotice] = useState(!!alreadyAttempted);
   const restored = useRef(false);
   const storageKey = `quiz-progress-${assignmentId}`;
 
@@ -207,8 +208,8 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
                         if (isSelected && !isCorrect) optStyle = 'text-red-600 line-through';
                         return (
                           <div key={opt.id} className={`flex items-center gap-2 text-sm ${optStyle}`}>
-                            {isCorrect && <span>âœ“</span>}
-                            {isSelected && !isCorrect && <span>âœ—</span>}
+                          {isCorrect && <span>✓</span>}
+                            {isSelected && !isCorrect && <span>✗</span>}
                             {!isSelected && !isCorrect && <span className="w-3" />}
                             <span>{opt.text}</span>
                           </div>
@@ -216,7 +217,7 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
                       })}
                     </div>
                     {answer && !answer.correct && answer.explanation && (
-                      <p className="text-sm text-gray-600 mt-2 italic">ðŸ’¡ {answer.explanation}</p>
+                      <p className="text-sm text-gray-600 mt-2 italic">💡 {answer.explanation}</p>
                     )}
                   </div>
                 );
@@ -274,10 +275,19 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
           />
         </div>
 
-        {/* Already attempted notice */}
-        {(alreadyAttempted || officialResult) && (
-          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
-            Ya has completado este cuestionario.{officialResult ? <> Nota oficial: <span className="font-bold">{officialResult.score}/{maxScore}</span>.</> : null} Puedes repetirlo, pero tu nota oficial no cambiarÃ¡.
+        {/* Retry notice popup */}
+        {showRetryNotice && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-10">
+            <div className="bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4 text-center">
+              <p className="text-gray-800 font-medium mb-2">Ya has completado este cuestionario</p>
+              <p className="text-sm text-gray-500 mb-5">Puedes repetirlo, pero tu nota oficial no cambiará.</p>
+              <button
+                onClick={() => setShowRetryNotice(false)}
+                className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
+              >
+                Entendido
+              </button>
+            </div>
           </div>
         )}
 
@@ -339,7 +349,7 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
             disabled={currentIndex === 0}
             className="px-4 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-40 hover:bg-gray-50 transition-colors"
           >
-            â† Anterior
+            ← Anterior
           </button>
           <div className="flex-1" />
           {!isLast ? (
@@ -347,7 +357,7 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
               onClick={() => setCurrentIndex(i => Math.min(i + 1, questions.length - 1))}
               className="px-4 py-2 bg-black text-white rounded-lg text-sm hover:bg-gray-800 transition-colors"
             >
-              Siguiente â†’
+              Siguiente →
             </button>
           ) : (
             <button

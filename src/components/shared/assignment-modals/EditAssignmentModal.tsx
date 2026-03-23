@@ -126,7 +126,7 @@ export function EditAssignmentModal(props: AssignmentModalsProps) {
               </div>
             )}
 
-            <div className="flex gap-4 justify-end pt-4">
+            <div className="flex gap-4 justify-center pt-4">
               <button type="button" onClick={() => setShowEditModal(false)} disabled={updating}
                 className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
               <button type="submit" disabled={updating}
