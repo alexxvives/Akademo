@@ -18,6 +18,15 @@ export function EditAssignmentModal(props: AssignmentModalsProps) {
 
   const [showQuizBuilder, setShowQuizBuilder] = useState(false);
 
+  const confirmEditQuiz = () => {
+    for (const q of editQuizQuestions) {
+      if (!q.questionText.trim()) { alert('Todas las preguntas deben tener texto'); return; }
+      if (q.options.some((o) => !o.text.trim())) { alert('Todas las opciones deben tener texto'); return; }
+      if (!q.correctOptionIds?.length) { alert('Selecciona al menos una respuesta correcta para cada pregunta'); return; }
+    }
+    setShowQuizBuilder(false);
+  };
+
   if (!showEditModal || !selectedAssignment) return null;
 
   const isQuiz = selectedAssignment.type === 'quiz';
@@ -150,7 +159,7 @@ export function EditAssignmentModal(props: AssignmentModalsProps) {
             <div className="flex gap-3 px-6 py-4 border-t border-gray-100 flex-shrink-0">
               <button type="button" onClick={() => setShowQuizBuilder(false)}
                 className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">Cancelar</button>
-              <button type="button" onClick={() => setShowQuizBuilder(false)}
+              <button type="button" onClick={confirmEditQuiz}
                 className="flex-1 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium transition-colors">
                 Confirmar preguntas
               </button>

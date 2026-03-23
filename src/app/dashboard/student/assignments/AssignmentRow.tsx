@@ -133,26 +133,26 @@ export function AssignmentRow({
             <span className="text-xs text-gray-400">Sin realizar</span>
           )
         ) : assignment.submittedAt && assignment.submissionStoragePath ? (
-          <div className="flex items-center gap-2 text-sm text-gray-900 group">
+          <div className="flex items-center gap-1.5 text-sm text-gray-900 group">
             <div className="relative">
               <a
                 href="#"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 hover:text-gray-700 transition-colors"
+                className="flex items-center gap-1.5 hover:text-gray-700 transition-colors"
                 onClick={async (e) => { e.preventDefault(); e.stopPropagation(); if (assignment.submissionStoragePath) try { await openDocument(assignment.submissionStoragePath); } catch { alert('Error al abrir'); } }}
               >
-                <div className="w-8 h-10 flex items-center justify-center bg-gray-100 rounded border border-gray-200 group-hover:bg-gray-200 transition-colors">
-                  <svg className="w-5 h-5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
+                <div className="w-6 h-8 flex items-center justify-center bg-gray-100 rounded border border-gray-200 group-hover:bg-gray-200 transition-colors">
+                  <svg className="w-3.5 h-3.5 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                   </svg>
                 </div>
               </a>
               <button
                 onClick={(e) => { e.stopPropagation(); onDeleteSubmission(assignment.id); }}
-                className="absolute -top-1 -right-1 w-4 h-4 flex items-center justify-center bg-red-500 hover:bg-red-600 rounded-full text-white transition-colors opacity-0 group-hover:opacity-100"
+                className="absolute -top-1 -right-1 w-3.5 h-3.5 flex items-center justify-center bg-red-500 hover:bg-red-600 rounded-full text-white transition-colors opacity-0 group-hover:opacity-100"
                 title="Eliminar entrega"
               >
-                <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-2 h-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -189,7 +189,7 @@ export function AssignmentRow({
           ) : (
             <button
               onClick={() => onQuiz(assignment)}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
             >
               Realizar
             </button>

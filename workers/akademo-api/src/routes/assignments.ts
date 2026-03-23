@@ -1108,26 +1108,27 @@ assignments.post('/:id/quiz-submit', async (c) => {
     for (const ans of answers) {
       const question = questionMap.get(ans.questionId);
       if (!question) continue;
-      const correct = (() => {
+      // Support both selectedOptionIds (array, new) and selectedOptionId (string, legacy)
+      const selectedIds: string[] = ans.selectedOptionIds
+        ? (Array.isArray(ans.selectedOptionIds) ? ans.selectedOptionIds : [ans.selectedOptionIds])
+        : (ans.selectedOptionId ? [ans.selectedOptionId] : []);
+      const corrIds: string[] = (() => {
         try {
           const raw = question.correctOptionId;
-          const ids: string[] = Array.isArray(JSON.parse(raw)) ? JSON.parse(raw) : [raw];
-          return ids.includes(ans.selectedOptionId);
-        } catch {
-          return question.correctOptionId === ans.selectedOptionId;
-        }
+          return Array.isArray(JSON.parse(raw)) ? JSON.parse(raw) : [raw];
+        } catch { return question.correctOptionId ? [question.correctOptionId] : []; }
       })();
+      // Exact set-match: must select all correct and no incorrect
+      const correct = corrIds.length > 0 &&
+        corrIds.length === selectedIds.length &&
+        selectedIds.every((id: string) => corrIds.includes(id));
       if (correct) correctAnswers++;
       gradedAnswers.push({
         questionId: ans.questionId,
-        selectedOptionId: ans.selectedOptionId,
+        selectedOptionId: selectedIds[0] ?? null,
+        selectedOptionIds: selectedIds,
         correct,
-        correctOptionIds: (() => {
-          try {
-            const raw = question.correctOptionId;
-            return Array.isArray(JSON.parse(raw)) ? JSON.parse(raw) : [raw];
-          } catch { return [question.correctOptionId]; }
-        })(),
+        correctOptionIds: corrIds,
         explanation: question.explanation || null,
       });
     }

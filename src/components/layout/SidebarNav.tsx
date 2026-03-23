@@ -137,7 +137,7 @@ export function SidebarNav({ menuItems, role, pathname }: SidebarNavProps) {
                     <Link
                       key={item.href}
                       href={item.href}
-                      className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group ${
+                      className={`relative flex items-center gap-3 px-3 py-3 rounded-xl transition-all group ${
                         isActive
                           ? 'bg-gray-800/50 text-white'
                           : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'

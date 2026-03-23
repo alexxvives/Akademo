@@ -25,11 +25,11 @@ export function ArchiveUploadModal({ onClose, onSuccess, classes }: Props) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0] ?? null;
     setFile(f);
-    if (f && !title) setTitle(f.name.replace(/\.[^/.]+$/, ''));
   };
 
   const handleUpload = () => {
     if (!file || uploadingRef.current) return;
+    if (classes && classes.length > 0 && !selectedClassId) return;
     uploadingRef.current = true;
     setUploading(true);
     setError('');
@@ -89,6 +89,36 @@ export function ArchiveUploadModal({ onClose, onSuccess, classes }: Props) {
 
         {/* Body */}
         <div className="px-6 py-5 space-y-4">
+          {/* Asignatura selector — required when classes are available */}
+          {classes && classes.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Asignatura <span className="text-red-500">*</span>
+              </label>
+              <ClassSearchDropdown
+                classes={classes}
+                value={selectedClassId}
+                onChange={setSelectedClassId}
+                allLabel="Selecciona una asignatura..."
+                placeholder="Filtrar por asignatura..."
+                disabled={uploading}
+              />
+            </div>
+          )}
+
+          {/* Title */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Título</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Nombre descriptivo del video"
+              disabled={uploading}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50"
+            />
+          </div>
+
           {/* File picker */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Archivo de video</label>
@@ -106,34 +136,6 @@ export function ArchiveUploadModal({ onClose, onSuccess, classes }: Props) {
             </button>
             <input ref={fileRef} type="file" accept="video/*" className="hidden" onChange={handleFileChange} />
           </div>
-
-          {/* Title */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Título</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Nombre descriptivo del video"
-              disabled={uploading}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:opacity-50"
-            />
-          </div>
-
-          {/* Asignatura selector */}
-          {classes && classes.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Asignatura (opcional)</label>
-              <ClassSearchDropdown
-                classes={classes}
-                value={selectedClassId}
-                onChange={setSelectedClassId}
-                allLabel="Sin asignatura"
-                placeholder="Filtrar por asignatura..."
-                disabled={uploading}
-              />
-            </div>
-          )}
 
           {/* Progress bar */}
           {uploading && (
@@ -159,8 +161,8 @@ export function ArchiveUploadModal({ onClose, onSuccess, classes }: Props) {
           </button>
           <button
             onClick={handleUpload}
-            disabled={!file || uploading}
-            className="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            disabled={!file || uploading || (classes && classes.length > 0 && !selectedClassId)}
+            className="px-4 py-2 text-sm font-medium text-white bg-black rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {uploading && (
               <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">

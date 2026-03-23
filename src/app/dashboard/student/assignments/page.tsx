@@ -166,7 +166,7 @@ export default function StudentAssignments() {
                         <td className="px-6 py-4 whitespace-nowrap text-right">
                           <button
                             onClick={() => { setSelectedAssignment(assignment); setShowQuizModal(true); }}
-                            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors"
+                            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-black text-white hover:bg-gray-800 transition-colors"
                           >
                             {attempted ? 'Ver / Repetir' : 'Realizar'}
                           </button>
