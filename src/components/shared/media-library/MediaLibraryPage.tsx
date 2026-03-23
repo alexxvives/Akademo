@@ -27,7 +27,7 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
   const { activePeriodId, isClassInPeriod } = usePeriod();
-  const { archivedVideos, loadingArchived, showUploadModal, setShowUploadModal, loadArchived, deleteArchived } = useArchivedVideos(role, selectedAcademy);
+  const { archivedVideos, loadingArchived, showUploadModal, setShowUploadModal, loadArchived, deleteArchived } = useArchivedVideos(role, selectedAcademy, selectedClass);
   const [academyName, setAcademyName] = useState('');
 
   // Load academy name for subtitle
@@ -143,7 +143,7 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
     }
   }, [tab, page, selectedClass, debouncedSearch, selectedAcademy, role]);
 
-  // Always keep archive count fresh (backing the tab badge) — runs on mount and on role/academy change
+  // Always keep archive count fresh (backing the tab badge) — runs on mount and on role/academy/class change
   useEffect(() => {
     loadArchived();
   }, [loadArchived]);

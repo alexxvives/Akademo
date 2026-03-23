@@ -39,6 +39,8 @@ export interface ClassOption {
 export interface ArchivedVideoItem {
   id: string;
   academyId: string;
+  classId: string | null;
+  className: string | null;
   title: string;
   fileName: string;
   fileSize: number | null;

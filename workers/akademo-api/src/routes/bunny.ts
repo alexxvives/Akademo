@@ -390,8 +390,18 @@ bunny.put('/archive/upload', async (c) => {
     const uuid = crypto.randomUUID();
     const safeFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
     const { classId } = c.req.query();
-    const storageKey = classId
-      ? `${academyId}/${classId}/${uuid}-${safeFilename}`
+
+    // Resolve class name for folder (use class name, not classId UUID)
+    let resolvedClassName: string | null = null;
+    if (classId) {
+      const cls = await c.env.DB.prepare('SELECT name FROM Class WHERE id = ?').bind(classId).first() as any;
+      resolvedClassName = cls?.name ?? null;
+    }
+    const safeFolderName = resolvedClassName
+      ? resolvedClassName.replace(/[^a-zA-Z0-9._\-\s]/g, '').replace(/\s+/g, '_').slice(0, 80)
+      : null;
+    const storageKey = safeFolderName
+      ? `${academyId}/${safeFolderName}/${uuid}-${safeFilename}`
       : `${academyId}/${uuid}-${safeFilename}`;
     const contentLength = parseInt(c.req.header('Content-Length') || '0', 10);
 
@@ -423,8 +433,8 @@ bunny.put('/archive/upload', async (c) => {
 
     const id = crypto.randomUUID();
     await c.env.DB.prepare(
-      'INSERT INTO ArchivedVideo (id, academyId, title, fileName, fileSize, storageKey, uploadedById) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    ).bind(id, academyId, title || filename, filename, contentLength || null, storageKey, session.id).run();
+      'INSERT INTO ArchivedVideo (id, academyId, classId, className, title, fileName, fileSize, storageKey, uploadedById) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).bind(id, academyId, classId || null, resolvedClassName, title || filename, filename, contentLength || null, storageKey, session.id).run();
 
     return c.json(successResponse({ id, storageKey, title: title || filename }));
   } catch (error: any) {
@@ -457,9 +467,15 @@ bunny.get('/archive', async (c) => {
 
     if (!academyId) return c.json(successResponse({ videos: [], total: 0 }));
 
-    const result = await c.env.DB.prepare(
-      "SELECT av.*, (u.firstName || ' ' || u.lastName) as uploaderName FROM ArchivedVideo av LEFT JOIN User u ON av.uploadedById = u.id WHERE av.academyId = ? ORDER BY av.createdAt DESC"
-    ).bind(academyId).all();
+    const { classId: filterClassId } = c.req.query();
+    let query = "SELECT av.*, (u.firstName || ' ' || u.lastName) as uploaderName FROM ArchivedVideo av LEFT JOIN User u ON av.uploadedById = u.id WHERE av.academyId = ?";
+    const params: any[] = [academyId];
+    if (filterClassId) {
+      query += ' AND av.classId = ?';
+      params.push(filterClassId);
+    }
+    query += ' ORDER BY av.createdAt DESC';
+    const result = await c.env.DB.prepare(query).bind(...params).all();
 
     return c.json(successResponse({ videos: result.results || [], total: result.results?.length || 0 }));
   } catch (error: any) {
