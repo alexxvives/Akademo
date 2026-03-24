@@ -153,6 +153,22 @@ export function ContentExportModal({ onClose, classes, role, selectedAcademy }: 
     try {
       const JSZip = (await import('jszip')).default;
       const zip = new JSZip();
+      const usedNames = new Map<string, number>(); // basename → count
+
+      const uniqueName = (raw: string): string => {
+        const name = raw || 'file';
+        if (!usedNames.has(name)) {
+          usedNames.set(name, 1);
+          return name;
+        }
+        const count = (usedNames.get(name) ?? 1) + 1;
+        usedNames.set(name, count);
+        // Insert counter before the extension: "video.mp4" → "video (2).mp4"
+        const dotIdx = name.lastIndexOf('.');
+        return dotIdx > 0
+          ? `${name.slice(0, dotIdx)} (${count})${name.slice(dotIdx)}`
+          : `${name} (${count})`;
+      };
 
       for (const item of items) {
         try {
@@ -184,7 +200,7 @@ export function ContentExportModal({ onClose, classes, role, selectedAcademy }: 
             filename = item.fileName || `${item.title || item.bunnyGuid}.mp4`;
           }
 
-          if (blob) zip.file(filename, blob);
+          if (blob) zip.file(uniqueName(filename), blob);
         } catch { /* skip failed item */ }
       }
 
