@@ -546,15 +546,17 @@ live.get('/active', async (c) => {
         .bind(academy.id)
         .all();
     } else {
-      // ADMIN — all active streams
+      // ADMIN — all active streams (PAID academies only)
       result = await c.env.DB
         .prepare(`
           SELECT ls.*, c.name as className,
             u.firstName || ' ' || u.lastName as teacherName
           FROM LiveStream ls
           JOIN Class c ON ls.classId = c.id
+          JOIN Academy a ON c.academyId = a.id
           JOIN User u ON ls.teacherId = u.id
           WHERE ls.status = 'active'
+            AND a.paymentStatus = 'PAID'
           ORDER BY ls.createdAt DESC
         `)
         .all();

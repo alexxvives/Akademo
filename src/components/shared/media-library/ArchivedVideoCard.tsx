@@ -54,7 +54,7 @@ export function ArchivedVideoCard({ video, canDelete, onDelete }: Props) {
       {/* Thumbnail area */}
       <div className="relative w-full aspect-video bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
         {video.className && (
-          <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/60 text-white text-xs rounded font-medium truncate max-w-[calc(100%-3rem)] z-10">
+          <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/60 text-white text-xs rounded font-medium truncate max-w-[calc(100%-3rem)] z-10">
             {video.className}
           </div>
         )}
