@@ -10,7 +10,7 @@ export interface BunnyUploadProgress {
 export interface BunnyUploadOptions {
   file: File;
   title: string;
-  collectionName?: string; // Optional: Academy name for organizing videos
+  collectionName?: string; // Optional: "Academy — Class" name for organizing videos in Bunny Stream
   onProgress?: (progress: BunnyUploadProgress) => void;
   signal?: AbortSignal;
 }

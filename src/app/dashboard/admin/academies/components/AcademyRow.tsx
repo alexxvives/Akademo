@@ -1,8 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { DeleteIcon } from '@/components/ui/DeleteIcon';
 import { BillingRow } from './BillingRow';
 import { AddBillingForm } from './AddBillingForm';
+import { ContractModal } from './ContractModal';
 import type { Academy, BillingRecord } from '../types';
 
 interface AcademyRowProps {
@@ -27,6 +29,7 @@ export function AcademyRow({
   onDelete, onMigration, onBillingAdded, onBillingDeleted,
 }: AcademyRowProps) {
   const isExpanded = expandedId === academy.id;
+  const [showContract, setShowContract] = useState(false);
 
   return (
     <>
@@ -111,6 +114,15 @@ export function AcademyRow({
             </button>
             )}
             <button
+              onClick={() => setShowContract(true)}
+              className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Generar contrato PSD"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </button>
+            <button
               onClick={() => onDelete(academy.ownerId, academy.name)}
               disabled={deletingId === academy.ownerId}
               className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
@@ -126,6 +138,12 @@ export function AcademyRow({
         </td>
       </tr>
 
+      {showContract && (
+        <ContractModal
+          academy={{ id: academy.id, name: academy.name, ownerName: academy.ownerName, ownerEmail: academy.ownerEmail }}
+          onClose={() => setShowContract(false)}
+        />
+      )}
       {isExpanded && (
         <tr>
           <td colSpan={9} className="bg-gray-50 px-6 py-4 border-b border-gray-200">
@@ -167,6 +185,12 @@ export function AcademyRow({
             )}
           </td>
         </tr>
+      )}
+      {showContract && (
+        <ContractModal
+          academy={{ id: academy.id, name: academy.name, ownerName: academy.ownerName, ownerEmail: academy.ownerEmail }}
+          onClose={() => setShowContract(false)}
+        />
       )}
     </>
   );

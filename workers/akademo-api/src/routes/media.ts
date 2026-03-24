@@ -210,4 +210,110 @@ media.get('/', async (c) => {
   }
 });
 
+// GET /media/export - Export content list (videos, documents, archived) with date + class filters
+media.get('/export', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    if (!['ACADEMY', 'ADMIN'].includes(session.role)) {
+      return c.json(errorResponse('Not authorized'), 403);
+    }
+
+    const db = c.env.DB;
+    const classId = c.req.query('classId');
+    const startDate = c.req.query('startDate');
+    const endDate = c.req.query('endDate');
+
+    // Build academy scope filter (via Class → Academy join)
+    let academyFilter = '';
+    const baseParams: string[] = [];
+    if (session.role === 'ACADEMY') {
+      academyFilter = 'AND a.ownerId = ?';
+      baseParams.push(session.id);
+    } else {
+      const qAcademyId = c.req.query('academyId');
+      if (qAcademyId) {
+        academyFilter = 'AND c.academyId = ?';
+        baseParams.push(qAcademyId);
+      }
+    }
+
+    const classFilter = classId ? 'AND c.id = ?' : '';
+    const classParams = classId ? [classId] : [];
+    const dateFilter = (startDate && endDate) ? 'AND DATE(? ) >= ? AND DATE(? ) <= ?' : '';
+
+    // Videos (lesson uploads with Bunny Stream)
+    const videoDateFilter = (startDate && endDate) ? 'AND DATE(v.createdAt) BETWEEN ? AND ?' : '';
+    const videoDateParams = (startDate && endDate) ? [startDate, endDate] : [];
+    const videoParams = [...baseParams, ...classParams, ...videoDateParams];
+    const videoRows = await db.prepare(`
+      SELECT v.id, v.title, up.bunnyGuid, up.fileName, v.createdAt,
+             c.id as classId, c.name as className
+      FROM Video v
+      JOIN Upload up ON v.uploadId = up.id
+      JOIN Lesson l ON v.lessonId = l.id
+      JOIN Class c ON l.classId = c.id
+      JOIN Academy a ON c.academyId = a.id
+      WHERE up.bunnyGuid IS NOT NULL
+      ${academyFilter} ${classFilter} ${videoDateFilter}
+      ORDER BY v.createdAt DESC
+    `).bind(...videoParams).all();
+
+    // Documents (R2 storage)
+    const docDateFilter = (startDate && endDate) ? 'AND DATE(d.createdAt) BETWEEN ? AND ?' : '';
+    const docDateParams = (startDate && endDate) ? [startDate, endDate] : [];
+    const docParams = [...baseParams, ...classParams, ...docDateParams];
+    const docRows = await db.prepare(`
+      SELECT d.id, d.title, up.storagePath, up.fileName, up.fileSize, up.mimeType,
+             d.createdAt, c.id as classId, c.name as className
+      FROM Document d
+      JOIN Upload up ON d.uploadId = up.id
+      JOIN Lesson l ON d.lessonId = l.id
+      JOIN Class c ON l.classId = c.id
+      JOIN Academy a ON c.academyId = a.id
+      WHERE 1=1
+      ${academyFilter} ${classFilter} ${docDateFilter}
+      ORDER BY d.createdAt DESC
+    `).bind(...docParams).all();
+
+    // Archived videos (Bunny Storage)
+    let archAcademyFilter = '';
+    const archBaseParams: string[] = [];
+    if (session.role === 'ACADEMY') {
+      const academy = await db.prepare('SELECT id FROM Academy WHERE ownerId = ?').bind(session.id).first() as any;
+      if (academy) {
+        archAcademyFilter = 'AND av.academyId = ?';
+        archBaseParams.push(academy.id);
+      }
+    } else {
+      const qAcademyId = c.req.query('academyId');
+      if (qAcademyId) {
+        archAcademyFilter = 'AND av.academyId = ?';
+        archBaseParams.push(qAcademyId);
+      }
+    }
+    const archClassFilter = classId ? 'AND av.classId = ?' : '';
+    const archClassParams = classId ? [classId] : [];
+    const archDateFilter = (startDate && endDate) ? 'AND DATE(av.createdAt) BETWEEN ? AND ?' : '';
+    const archDateParams = (startDate && endDate) ? [startDate, endDate] : [];
+    const archParams = [...archBaseParams, ...archClassParams, ...archDateParams];
+    const archRows = await db.prepare(`
+      SELECT av.id, av.title, av.fileName, av.fileSize, av.className,
+             av.classId, av.createdAt
+      FROM ArchivedVideo av
+      WHERE 1=1 ${archAcademyFilter} ${archClassFilter} ${archDateFilter}
+      ORDER BY av.createdAt DESC
+    `).bind(...archParams).all();
+
+    return c.json(successResponse({
+      videos: videoRows.results || [],
+      documents: docRows.results || [],
+      archived: archRows.results || [],
+    }));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Media Export Error]', error);
+    return c.json(errorResponse('Failed to export media'), 500);
+  }
+});
+
 export default media;

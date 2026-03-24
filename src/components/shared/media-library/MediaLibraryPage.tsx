@@ -11,6 +11,7 @@ import { SkeletonVideosGrid, VideosGrid } from './VideosGrid';
 import { DocumentsTable } from './DocumentsTable';
 import { ArchivedVideosGrid } from './ArchivedVideosGrid';
 import { ArchiveUploadModal } from './ArchiveUploadModal';
+import { ContentExportModal } from './ContentExportModal';
 import { useArchivedVideos } from '@/hooks/useArchivedVideos';
 
 export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHER' }) {
@@ -29,6 +30,7 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
   const { activePeriodId, isClassInPeriod } = usePeriod();
   const { archivedVideos, loadingArchived, showUploadModal, setShowUploadModal, loadArchived, deleteArchived } = useArchivedVideos(role, selectedAcademy, selectedClass);
   const [academyName, setAcademyName] = useState('');
+  const [showExportModal, setShowExportModal] = useState(false);
 
   // Load academy name for subtitle
   useEffect(() => {
@@ -170,6 +172,15 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
                 Subir video
               </button>
+              {(role === 'ACADEMY' || role === 'ADMIN') && (
+                <button
+                  onClick={() => setShowExportModal(true)}
+                  className="px-4 py-2 bg-white text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 font-medium text-sm transition-all flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                  Exportar
+                </button>
+              )}
             </div>
             <p className="text-gray-600 text-sm mt-1 min-h-[1.25rem]">{academyName}</p>
           </div>
@@ -272,6 +283,14 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
       )}
       {showUploadModal && (
         <ArchiveUploadModal onClose={() => setShowUploadModal(false)} onSuccess={loadArchived} classes={filteredClasses} />
+      )}
+      {showExportModal && (
+        <ContentExportModal
+          onClose={() => setShowExportModal(false)}
+          classes={filteredClasses}
+          role={role}
+          selectedAcademy={selectedAcademy !== 'all' ? selectedAcademy : undefined}
+        />
       )}
     </div>
   );

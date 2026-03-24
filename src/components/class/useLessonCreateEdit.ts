@@ -72,7 +72,9 @@ export function useLessonCreateEdit(s: ClassDetailState) {
 
     try {
       const { videos, documents } = await uploadFilesToServices(
-        s.lessonFormData.videos, s.lessonFormData.documents, s.classData?.academy?.name, tempLessonId,
+        s.lessonFormData.videos, s.lessonFormData.documents,
+        [s.classData?.academy?.name, s.classData?.name].filter(Boolean).join(' — ') || undefined,
+        tempLessonId,
         { onOverallProgress: (p) => s.setUploadProgress(p), onSpeedUpdate: (speed, eta) => { s.setUploadSpeed(speed); s.setUploadETA(eta); },
           onLessonProgress: (id, p) => s.setLessons(prev => prev.map(l => l.id === id ? { ...l, uploadProgress: p } : l)) },
         s.lastProgressRef, abortController.signal,
@@ -150,7 +152,9 @@ export function useLessonCreateEdit(s: ClassDetailState) {
           if (s.lessonFormData.videos.length > 0 || s.lessonFormData.documents.length > 0) {
             s.lastProgressRef.current = { loaded: 0, time: Date.now() };
             const { videos, documents } = await uploadFilesToServices(
-              s.lessonFormData.videos, s.lessonFormData.documents, s.classData?.academy?.name, s.editingLessonId,
+              s.lessonFormData.videos, s.lessonFormData.documents,
+              [s.classData?.academy?.name, s.classData?.name].filter(Boolean).join(' — ') || undefined,
+              s.editingLessonId,
               { onOverallProgress: (p) => s.setUploadProgress(p), onSpeedUpdate: (speed, eta) => { s.setUploadSpeed(speed); s.setUploadETA(eta); },
                 onLessonProgress: () => {} }, s.lastProgressRef, abortController.signal,
             );
