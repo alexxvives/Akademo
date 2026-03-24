@@ -37,6 +37,7 @@ export async function uploadFilesToServices(
   videos: Array<{ file: File; title: string; description: string; duration: number }>,
   documents: Array<{ file: File; title: string; description: string }>,
   collectionName: string | undefined,
+  parentCollectionName: string | undefined,
   tempLessonId: string,
   callbacks: UploadCallbacks,
   lastProgressRef: React.MutableRefObject<{ loaded: number; time: number }>,
@@ -55,6 +56,7 @@ export async function uploadFilesToServices(
       file: video.file,
       title: video.title || video.file.name,
       collectionName,
+      parentCollectionName,
       onProgress: (progress) => {
         const totalUploaded = uploadedSize + progress.loaded;
         const overallProgress = (totalUploaded / totalSize) * 100;

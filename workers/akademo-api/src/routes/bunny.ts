@@ -34,7 +34,7 @@ bunny.post('/video/create', async (c) => {
       return c.json(errorResponse('Not authorized'), 403);
     }
 
-    const { title, collectionName, fileName } = await c.req.json();
+    const { title, collectionName, parentCollectionName, fileName } = await c.req.json();
 
     if (!title) {
       return c.json(errorResponse('title required'), 400);
@@ -43,23 +43,54 @@ bunny.post('/video/create', async (c) => {
     const apiKey = c.env.BUNNY_STREAM_API_KEY;
     const libraryId = c.env.BUNNY_STREAM_LIBRARY_ID;
 
-    // If collectionName provided, get or create the collection
+    // If collectionName provided, get or create the collection (supports nested: parent=academy, child=class)
     let collectionId: string | undefined;
     if (collectionName) {
       try {
-        // Get existing collections
-        const listResponse = await bunnyApi(`/library/${libraryId}/collections`, {}, apiKey) as any;
-        const existing = (listResponse.items || []).find((c: any) => c.name === collectionName);
-        
-        if (existing) {
-          collectionId = existing.guid;
+        // Fetch all existing collections once
+        const listResponse = await bunnyApi(`/library/${libraryId}/collections?itemsPerPage=1000`, {}, apiKey) as any;
+        const allCollections: any[] = listResponse.items || [];
+
+        if (parentCollectionName) {
+          // Two-level nesting: find/create academy (parent) then class (child)
+          const parentExisting = allCollections.find(
+            (col: any) => col.name === parentCollectionName && !col.parentId,
+          );
+          let parentId: string;
+          if (parentExisting) {
+            parentId = parentExisting.guid;
+          } else {
+            const newParent = await bunnyApi(`/library/${libraryId}/collections`, {
+              method: 'POST',
+              body: JSON.stringify({ name: parentCollectionName }),
+            }, apiKey) as any;
+            parentId = newParent.guid;
+          }
+
+          const childExisting = allCollections.find(
+            (col: any) => col.name === collectionName && col.parentId === parentId,
+          );
+          if (childExisting) {
+            collectionId = childExisting.guid;
+          } else {
+            const newChild = await bunnyApi(`/library/${libraryId}/collections`, {
+              method: 'POST',
+              body: JSON.stringify({ name: collectionName, parentId }),
+            }, apiKey) as any;
+            collectionId = newChild.guid;
+          }
         } else {
-          // Create new collection
-          const newCollection = await bunnyApi(`/library/${libraryId}/collections`, {
-            method: 'POST',
-            body: JSON.stringify({ name: collectionName }),
-          }, apiKey) as any;
-          collectionId = newCollection.guid;
+          // Single-level fallback
+          const existing = allCollections.find((col: any) => col.name === collectionName);
+          if (existing) {
+            collectionId = existing.guid;
+          } else {
+            const newCollection = await bunnyApi(`/library/${libraryId}/collections`, {
+              method: 'POST',
+              body: JSON.stringify({ name: collectionName }),
+            }, apiKey) as any;
+            collectionId = newCollection.guid;
+          }
         }
       } catch (error: any) {
         if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;

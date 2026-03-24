@@ -239,41 +239,52 @@ media.get('/export', async (c) => {
 
     const classFilter = classId ? 'AND c.id = ?' : '';
     const classParams = classId ? [classId] : [];
-    const dateFilter = (startDate && endDate) ? 'AND DATE(? ) >= ? AND DATE(? ) <= ?' : '';
 
     // Videos (lesson uploads with Bunny Stream)
-    const videoDateFilter = (startDate && endDate) ? 'AND DATE(v.createdAt) BETWEEN ? AND ?' : '';
+    const videoDateFilter = (startDate && endDate) ? 'AND SUBSTR(v.createdAt, 1, 10) BETWEEN ? AND ?' : '';
     const videoDateParams = (startDate && endDate) ? [startDate, endDate] : [];
     const videoParams = [...baseParams, ...classParams, ...videoDateParams];
-    const videoRows = await db.prepare(`
-      SELECT v.id, v.title, up.bunnyGuid, up.fileName, v.createdAt,
-             c.id as classId, c.name as className
-      FROM Video v
-      JOIN Upload up ON v.uploadId = up.id
-      JOIN Lesson l ON v.lessonId = l.id
-      JOIN Class c ON l.classId = c.id
-      JOIN Academy a ON c.academyId = a.id
-      WHERE up.bunnyGuid IS NOT NULL
-      ${academyFilter} ${classFilter} ${videoDateFilter}
-      ORDER BY v.createdAt DESC
-    `).bind(...videoParams).all();
+    let videoResults: any[] = [];
+    try {
+      const videoRows = await db.prepare(`
+        SELECT v.id, v.title, up.bunnyGuid, up.fileName, v.createdAt,
+               c.id as classId, c.name as className
+        FROM Video v
+        JOIN Upload up ON v.uploadId = up.id
+        JOIN Lesson l ON v.lessonId = l.id
+        JOIN Class c ON l.classId = c.id
+        JOIN Academy a ON c.academyId = a.id
+        WHERE up.bunnyGuid IS NOT NULL
+        ${academyFilter} ${classFilter} ${videoDateFilter}
+        ORDER BY v.createdAt DESC
+      `).bind(...videoParams).all();
+      videoResults = videoRows.results || [];
+    } catch (e: any) {
+      console.error('[Media Export] Video query failed:', e.message);
+    }
 
     // Documents (R2 storage)
-    const docDateFilter = (startDate && endDate) ? 'AND DATE(d.createdAt) BETWEEN ? AND ?' : '';
+    const docDateFilter = (startDate && endDate) ? 'AND SUBSTR(d.createdAt, 1, 10) BETWEEN ? AND ?' : '';
     const docDateParams = (startDate && endDate) ? [startDate, endDate] : [];
     const docParams = [...baseParams, ...classParams, ...docDateParams];
-    const docRows = await db.prepare(`
-      SELECT d.id, d.title, up.storagePath, up.fileName, up.fileSize, up.mimeType,
-             d.createdAt, c.id as classId, c.name as className
-      FROM Document d
-      JOIN Upload up ON d.uploadId = up.id
-      JOIN Lesson l ON d.lessonId = l.id
-      JOIN Class c ON l.classId = c.id
-      JOIN Academy a ON c.academyId = a.id
-      WHERE 1=1
-      ${academyFilter} ${classFilter} ${docDateFilter}
-      ORDER BY d.createdAt DESC
-    `).bind(...docParams).all();
+    let docResults: any[] = [];
+    try {
+      const docRows = await db.prepare(`
+        SELECT d.id, d.title, up.storagePath, up.fileName, up.fileSize, up.mimeType,
+               d.createdAt, c.id as classId, c.name as className
+        FROM Document d
+        JOIN Upload up ON d.uploadId = up.id
+        JOIN Lesson l ON d.lessonId = l.id
+        JOIN Class c ON l.classId = c.id
+        JOIN Academy a ON c.academyId = a.id
+        WHERE 1=1
+        ${academyFilter} ${classFilter} ${docDateFilter}
+        ORDER BY d.createdAt DESC
+      `).bind(...docParams).all();
+      docResults = docRows.results || [];
+    } catch (e: any) {
+      console.error('[Media Export] Document query failed:', e.message);
+    }
 
     // Archived videos (Bunny Storage)
     let archAcademyFilter = '';
@@ -293,21 +304,27 @@ media.get('/export', async (c) => {
     }
     const archClassFilter = classId ? 'AND av.classId = ?' : '';
     const archClassParams = classId ? [classId] : [];
-    const archDateFilter = (startDate && endDate) ? 'AND DATE(av.createdAt) BETWEEN ? AND ?' : '';
+    const archDateFilter = (startDate && endDate) ? 'AND SUBSTR(av.createdAt, 1, 10) BETWEEN ? AND ?' : '';
     const archDateParams = (startDate && endDate) ? [startDate, endDate] : [];
     const archParams = [...archBaseParams, ...archClassParams, ...archDateParams];
-    const archRows = await db.prepare(`
-      SELECT av.id, av.title, av.fileName, av.fileSize, av.className,
-             av.classId, av.createdAt
-      FROM ArchivedVideo av
-      WHERE 1=1 ${archAcademyFilter} ${archClassFilter} ${archDateFilter}
-      ORDER BY av.createdAt DESC
-    `).bind(...archParams).all();
+    let archResults: any[] = [];
+    try {
+      const archRows = await db.prepare(`
+        SELECT av.id, av.title, av.fileName, av.fileSize, av.className,
+               av.classId, av.createdAt
+        FROM ArchivedVideo av
+        WHERE 1=1 ${archAcademyFilter} ${archClassFilter} ${archDateFilter}
+        ORDER BY av.createdAt DESC
+      `).bind(...archParams).all();
+      archResults = archRows.results || [];
+    } catch (e: any) {
+      console.error('[Media Export] ArchivedVideo query failed:', e.message);
+    }
 
     return c.json(successResponse({
-      videos: videoRows.results || [],
-      documents: docRows.results || [],
-      archived: archRows.results || [],
+      videos: videoResults,
+      documents: docResults,
+      archived: archResults,
     }));
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
