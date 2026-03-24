@@ -7,6 +7,8 @@ interface CustomDatePickerProps {
   onChange: (value: string) => void;
   className?: string;
   dropUp?: boolean;
+  minDate?: string; // "YYYY-MM-DD" — days before this are disabled
+  maxDate?: string; // "YYYY-MM-DD" — days after this are disabled
 }
 
 function pad(n: number) {
@@ -19,7 +21,7 @@ const MONTH_NAMES = [
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
 ];
 
-export function CustomDatePicker({ value, onChange, className, dropUp }: CustomDatePickerProps) {
+export function CustomDatePicker({ value, onChange, className, dropUp, minDate, maxDate }: CustomDatePickerProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -132,18 +134,22 @@ export function CustomDatePicker({ value, onChange, className, dropUp }: CustomD
               const dateStr = `${viewYear}-${pad(viewMonth + 1)}-${pad(day)}`;
               const isSelected = dateStr === value;
               const isToday = dateStr === todayStr;
+              const isDisabled = (!!minDate && dateStr < minDate) || (!!maxDate && dateStr > maxDate);
 
               return (
                 <button
                   key={day}
                   type="button"
-                  onClick={() => selectDate(day)}
+                  onClick={() => !isDisabled && selectDate(day)}
+                  disabled={isDisabled}
                   className={`h-8 w-full rounded-lg text-sm transition-colors ${
-                    isSelected
-                      ? 'bg-blue-600 text-white font-semibold'
-                      : isToday
-                        ? 'border-2 border-blue-500 text-blue-600 font-bold bg-white'
-                        : 'text-gray-700 hover:bg-gray-100'
+                    isDisabled
+                      ? 'text-gray-300 cursor-not-allowed'
+                      : isSelected
+                        ? 'bg-blue-600 text-white font-semibold'
+                        : isToday
+                          ? 'border-2 border-blue-500 text-blue-600 font-bold bg-white'
+                          : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   {day}

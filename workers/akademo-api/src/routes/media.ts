@@ -248,7 +248,7 @@ media.get('/export', async (c) => {
     try {
       const videoRows = await db.prepare(`
         SELECT v.id, v.title, up.bunnyGuid, up.fileName, v.createdAt,
-               c.id as classId, c.name as className
+               c.id as classId, c.name as className, 0 as isStream
         FROM Video v
         JOIN Upload up ON v.uploadId = up.id
         JOIN Lesson l ON v.lessonId = l.id
@@ -295,6 +295,12 @@ media.get('/export', async (c) => {
         archAcademyFilter = 'AND av.academyId = ?';
         archBaseParams.push(academy.id);
       }
+    } else if (session.role === 'TEACHER') {
+      const teacher = await db.prepare('SELECT academyId FROM Teacher WHERE userId = ?').bind(session.id).first() as any;
+      if (teacher) {
+        archAcademyFilter = 'AND av.academyId = ?';
+        archBaseParams.push(teacher.academyId);
+      }
     } else {
       const qAcademyId = c.req.query('academyId');
       if (qAcademyId) {
@@ -331,7 +337,7 @@ media.get('/export', async (c) => {
         SELECT ls.id, COALESCE(ls.title, 'Stream') as title,
                ls.recordingId as bunnyGuid, NULL as fileName,
                COALESCE(ls.startedAt, ls.createdAt) as createdAt,
-               c.id as classId, c.name as className
+               c.id as classId, c.name as className, 1 as isStream
         FROM LiveStream ls
         JOIN Class c ON ls.classId = c.id
         JOIN Academy a ON c.academyId = a.id

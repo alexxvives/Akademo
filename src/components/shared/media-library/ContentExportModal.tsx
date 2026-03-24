@@ -14,6 +14,7 @@ interface ExportVideo {
   createdAt: string;
   classId: string;
   className: string;
+  isStream?: number; // 1 = stream recording, 0 = lesson upload
 }
 
 interface ExportDocument {
@@ -61,6 +62,15 @@ export function ContentExportModal({ onClose, classes, role, selectedAcademy }: 
   const [searched, setSearched] = useState(false);
   const [downloading, setDownloading] = useState<Set<string>>(new Set());
   const [bulkDownloading, setBulkDownloading] = useState(false);
+
+  const handleStartDateChange = (v: string) => {
+    setStartDate(v);
+    if (endDate && v > endDate) setEndDate(v);
+  };
+  const handleEndDateChange = (v: string) => {
+    if (startDate && v < startDate) setEndDate(startDate);
+    else setEndDate(v);
+  };
 
   const handleSearch = async () => {
     setLoading(true);
@@ -114,14 +124,23 @@ export function ContentExportModal({ onClose, classes, role, selectedAcademy }: 
         const res = await apiClient(`/bunny/video/${item.bunnyGuid}/download-url`);
         const json = await res.json() as { success: boolean; data: { url: string } };
         if (json.success && json.data?.url) {
-          const a = document.createElement('a');
-          a.href = json.data.url;
-          a.target = '_blank';
-          a.rel = 'noopener noreferrer';
-          a.download = item.fileName || `${item.title}.mp4`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
+          try {
+            // Fetch as blob so browser downloads instead of opening in tab
+            const fileRes = await fetch(json.data.url);
+            if (!fileRes.ok) throw new Error('fetch failed');
+            const blob = await fileRes.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = item.fileName || `${item.title || item.bunnyGuid}.mp4`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(blobUrl);
+          } catch {
+            // CORS fallback
+            window.open(json.data.url, '_blank');
+          }
         }
       }
     } catch { /* ignore */ } finally {
@@ -131,32 +150,85 @@ export function ContentExportModal({ onClose, classes, role, selectedAcademy }: 
 
   const handleDownloadAll = async () => {
     setBulkDownloading(true);
-    for (const item of items) {
-      await downloadItem(item);
-      await new Promise(r => setTimeout(r, 700));
+    try {
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+
+      for (const item of items) {
+        try {
+          let blob: Blob | null = null;
+          let filename = '';
+
+          if (item._type === 'document') {
+            const urlRes = await apiClient(`/storage/signed-url?key=${encodeURIComponent(item.storagePath)}`);
+            if (urlRes.ok) {
+              const j = await urlRes.json() as { success: boolean; data: { token: string; expires: number } };
+              if (j.success) {
+                const encodedKey = item.storagePath.split('/').map(encodeURIComponent).join('/');
+                const fileRes = await fetch(`/api/storage/serve/${encodedKey}?token=${j.data.token}&expires=${j.data.expires}`);
+                if (fileRes.ok) blob = await fileRes.blob();
+              }
+            }
+            filename = item.fileName || item.title;
+          } else if (item._type === 'archived') {
+            const res = await apiClient(`/bunny/archive/${item.id}/download`);
+            if (res.ok) blob = await res.blob();
+            filename = item.fileName || `${item.title}.mp4`;
+          } else if (item._type === 'video') {
+            const urlRes = await apiClient(`/bunny/video/${item.bunnyGuid}/download-url`);
+            const j = await urlRes.json() as { success: boolean; data: { url: string } };
+            if (j.success && j.data?.url) {
+              const fileRes = await fetch(j.data.url);
+              if (fileRes.ok) blob = await fileRes.blob();
+            }
+            filename = item.fileName || `${item.title || item.bunnyGuid}.mp4`;
+          }
+
+          if (blob) zip.file(filename, blob);
+        } catch { /* skip failed item */ }
+      }
+
+      const content = await zip.generateAsync({ type: 'blob', compression: 'STORE' });
+      const url = URL.createObjectURL(content);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `akademo-export-${new Date().toISOString().slice(0, 10)}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch { /* ignore */ } finally {
+      setBulkDownloading(false);
     }
-    setBulkDownloading(false);
   };
 
-  const iconFor = (type: string) => {
-    if (type === 'video') return (
+  const iconFor = (item: FlatItem) => {
+    if (item._type === 'video' && item.isStream) return (
+      <span className="w-7 h-7 rounded-md bg-purple-100 flex items-center justify-center flex-shrink-0">
+        <svg className="w-3.5 h-3.5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.069A1 1 0 0121 8.82v6.362a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z" />
+        </svg>
+      </span>
+    );
+    if (item._type === 'video') return (
       <span className="w-7 h-7 rounded-md bg-blue-100 flex items-center justify-center flex-shrink-0">
         <svg className="w-3.5 h-3.5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
           <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
         </svg>
       </span>
     );
-    if (type === 'document') return (
-      <span className="w-7 h-7 rounded-md bg-green-100 flex items-center justify-center flex-shrink-0">
-        <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    if (item._type === 'document') return (
+      <span className="w-7 h-7 rounded-md bg-gray-900 flex items-center justify-center flex-shrink-0">
+        <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
       </span>
     );
+    // archived
     return (
-      <span className="w-7 h-7 rounded-md bg-purple-100 flex items-center justify-center flex-shrink-0">
-        <svg className="w-3.5 h-3.5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
+      <span className="w-7 h-7 rounded-md bg-gray-100 flex items-center justify-center flex-shrink-0">
+        <svg className="w-3.5 h-3.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
         </svg>
       </span>
     );
@@ -190,7 +262,8 @@ export function ContentExportModal({ onClose, classes, role, selectedAcademy }: 
               <label className="block text-xs font-medium text-gray-600 mb-1">Desde</label>
               <CustomDatePicker
                 value={startDate}
-                onChange={setStartDate}
+                onChange={handleStartDateChange}
+                maxDate={endDate || today}
                 className="w-full"
               />
             </div>
@@ -198,7 +271,9 @@ export function ContentExportModal({ onClose, classes, role, selectedAcademy }: 
               <label className="block text-xs font-medium text-gray-600 mb-1">Hasta</label>
               <CustomDatePicker
                 value={endDate}
-                onChange={setEndDate}
+                onChange={handleEndDateChange}
+                minDate={startDate || undefined}
+                maxDate={today}
                 className="w-full"
               />
             </div>
@@ -269,7 +344,7 @@ export function ContentExportModal({ onClose, classes, role, selectedAcademy }: 
                   return (
                     <div key={key} className="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:bg-gray-50 gap-3">
                       <div className="flex items-center gap-3 min-w-0">
-                        {iconFor(item._type)}
+                        {iconFor(item)}
                         <div className="min-w-0">
                           <p className="text-sm font-medium text-gray-900 truncate">
                             {item.title || ('fileName' in item ? item.fileName : '')}
