@@ -109,8 +109,20 @@ export function ContentExportModal({ onClose, classes, role, selectedAcademy }: 
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+      } else if (item._type === 'video') {
+        const res = await apiClient(`/bunny/video/${item.bunnyGuid}/download-url`);
+        const json = await res.json() as { success: boolean; data: { url: string } };
+        if (json.success && json.data?.url) {
+          const a = document.createElement('a');
+          a.href = json.data.url;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          a.download = item.fileName || `${item.title}.mp4`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        }
       }
-      // Videos: Bunny Stream videos are opened in a new tab (not directly downloaded)
     } catch { /* ignore */ } finally {
       setDownloading(prev => { const next = new Set(prev); next.delete(key); return next; });
     }
@@ -118,8 +130,7 @@ export function ContentExportModal({ onClose, classes, role, selectedAcademy }: 
 
   const handleDownloadAll = async () => {
     setBulkDownloading(true);
-    const downloadable = items.filter(i => i._type !== 'video');
-    for (const item of downloadable) {
+    for (const item of items) {
       await downloadItem(item);
       await new Promise(r => setTimeout(r, 700));
     }
@@ -150,7 +161,7 @@ export function ContentExportModal({ onClose, classes, role, selectedAcademy }: 
     );
   };
 
-  const downloadableCount = items.filter(i => i._type !== 'video').length;
+  const downloadableCount = items.length;
   const videoCount = items.filter(i => i._type === 'video').length;
 
   if (typeof document === 'undefined') return null;
@@ -254,11 +265,6 @@ export function ContentExportModal({ onClose, classes, role, selectedAcademy }: 
             <p className="text-sm text-gray-400 text-center py-10">No se encontró contenido con estos filtros</p>
           ) : (
             <>
-              {videoCount > 0 && (
-                <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3">
-                  Los vídeos de stream ({videoCount}) se abren en el reproductor — no se pueden descargar directamente desde aquí.
-                </p>
-              )}
               <div className="space-y-1.5">
                 {items.map(item => {
                   const key = `${item._type}-${item.id}`;
@@ -277,14 +283,11 @@ export function ContentExportModal({ onClose, classes, role, selectedAcademy }: 
                           </p>
                         </div>
                       </div>
-                      {isVideo ? (
-                        <span className="text-xs text-gray-400 flex-shrink-0">solo stream</span>
-                      ) : (
-                        <button
+                      <button
                           onClick={() => downloadItem(item)}
                           disabled={isDownloading}
                           className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 flex-shrink-0"
-                          title="Descargar"
+                          title={isVideo ? 'Descargar (720p)' : 'Descargar'}
                         >
                           {isDownloading ? (
                             <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -297,7 +300,6 @@ export function ContentExportModal({ onClose, classes, role, selectedAcademy }: 
                             </svg>
                           )}
                         </button>
-                      )}
                     </div>
                   );
                 })}
@@ -311,7 +313,6 @@ export function ContentExportModal({ onClose, classes, role, selectedAcademy }: 
           <div className="px-6 pb-5 pt-3 border-t border-gray-100 flex items-center justify-between">
             <p className="text-sm text-gray-500">
               {items.length} elemento{items.length !== 1 ? 's' : ''}
-              {downloadableCount < items.length && ` · ${downloadableCount} descargable${downloadableCount !== 1 ? 's' : ''}`}
             </p>
             {downloadableCount > 0 && (
               <button

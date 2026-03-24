@@ -556,6 +556,62 @@ bunny.delete('/archive/:id', async (c) => {
   }
 });
 
+// GET /bunny/video/:guid/download-url — return authenticated CDN download URL
+bunny.get('/video/:guid/download-url', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    if (!['ACADEMY', 'TEACHER', 'ADMIN'].includes(session.role)) {
+      return c.json(errorResponse('Not authorized'), 403);
+    }
+
+    const guid = c.req.param('guid');
+    const db = c.env.DB;
+
+    // Verify the video exists and belongs to the user's scope
+    const video = await db.prepare(`
+      SELECT v.id, c.academyId, a.ownerId
+      FROM Video v
+      JOIN Upload up ON v.uploadId = up.id
+      JOIN Lesson l ON v.lessonId = l.id
+      JOIN Class c ON l.classId = c.id
+      JOIN Academy a ON c.academyId = a.id
+      WHERE up.bunnyGuid = ?
+    `).bind(guid).first() as any;
+
+    // Also check stream recordings
+    const recording = !video ? await db.prepare(`
+      SELECT ls.id, c.academyId, a.ownerId
+      FROM LiveStream ls
+      LEFT JOIN Class c ON ls.classId = c.id
+      LEFT JOIN Academy a ON c.academyId = a.id
+      WHERE ls.recordingId = ?
+    `).bind(guid).first() as any : null;
+
+    const item = video || recording;
+    if (!item) return c.json(errorResponse('Video not found'), 404);
+
+    if (session.role === 'ACADEMY' && item.ownerId !== session.id) {
+      return c.json(errorResponse('Forbidden'), 403);
+    }
+    if (session.role === 'TEACHER') {
+      const teacher = await db.prepare('SELECT academyId FROM Teacher WHERE userId = ?').bind(session.id).first() as any;
+      if (!teacher || teacher.academyId !== item.academyId) {
+        return c.json(errorResponse('Forbidden'), 403);
+      }
+    }
+
+    const hostname = c.env.BUNNY_STREAM_CDN_HOSTNAME || 'vz-bb8d111e-8eb.b-cdn.net';
+    // Try 720p; Bunny also serves at /original for the raw upload
+    const url = `https://${hostname}/${guid}/play_720p.mp4`;
+
+    return c.json(successResponse({ url, guid }));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Bunny Download URL] Error:', error);
+    return c.json(errorResponse('Failed to get download URL'), 500);
+  }
+});
+
 // GET /bunny/archive/:id/download — authenticated proxy download
 bunny.get('/archive/:id/download', async (c) => {
   try {
