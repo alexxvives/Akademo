@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { useState, useCallback } from 'react';
 import { apiClient, downloadDocument } from '@/lib/api-client';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
+import { CustomDatePicker } from '@/components/ui/CustomDatePicker';
 
 interface ExportVideo {
   id: string;
@@ -187,23 +188,18 @@ export function ContentExportModal({ onClose, classes, role, selectedAcademy }: 
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Desde</label>
-              <input
-                type="date"
+              <CustomDatePicker
                 value={startDate}
-                max={endDate || today}
-                onChange={e => setStartDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                onChange={setStartDate}
+                className="w-full"
               />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Hasta</label>
-              <input
-                type="date"
+              <CustomDatePicker
                 value={endDate}
-                min={startDate || undefined}
-                max={today}
-                onChange={e => setEndDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                onChange={setEndDate}
+                className="w-full"
               />
             </div>
           </div>

@@ -321,8 +321,31 @@ media.get('/export', async (c) => {
       console.error('[Media Export] ArchivedVideo query failed:', e.message);
     }
 
+    // Stream recordings (LiveStream with a Bunny recording)
+    const streamDateFilter = (startDate && endDate) ? 'AND SUBSTR(COALESCE(ls.startedAt, ls.createdAt), 1, 10) BETWEEN ? AND ?' : '';
+    const streamDateParams = (startDate && endDate) ? [startDate, endDate] : [];
+    const streamParams = [...baseParams, ...classParams, ...streamDateParams];
+    let streamResults: any[] = [];
+    try {
+      const streamRows = await db.prepare(`
+        SELECT ls.id, COALESCE(ls.title, 'Stream') as title,
+               ls.recordingId as bunnyGuid, NULL as fileName,
+               COALESCE(ls.startedAt, ls.createdAt) as createdAt,
+               c.id as classId, c.name as className
+        FROM LiveStream ls
+        JOIN Class c ON ls.classId = c.id
+        JOIN Academy a ON c.academyId = a.id
+        WHERE ls.recordingId IS NOT NULL
+        ${academyFilter} ${classFilter} ${streamDateFilter}
+        ORDER BY ls.startedAt DESC
+      `).bind(...streamParams).all();
+      streamResults = streamRows.results || [];
+    } catch (e: any) {
+      console.error('[Media Export] Stream query failed:', e.message);
+    }
+
     return c.json(successResponse({
-      videos: videoResults,
+      videos: [...videoResults, ...streamResults],
       documents: docResults,
       archived: archResults,
     }));
