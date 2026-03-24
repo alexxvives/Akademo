@@ -61,7 +61,7 @@ export function ArchivedVideoCard({ video, canDelete, onDelete }: Props) {
         {canDelete && (
           <button
             onClick={handleDelete}
-            className="absolute top-2 right-2 p-1.5 bg-black/40 text-white/70 hover:bg-red-600 hover:text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all z-10"
+            className="absolute top-2 left-2 p-1.5 bg-black/40 text-white/70 hover:bg-red-600 hover:text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all z-20"
             title="Eliminar"
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -69,6 +69,23 @@ export function ArchivedVideoCard({ video, canDelete, onDelete }: Props) {
             </svg>
           </button>
         )}
+        <button
+          onClick={handleDownload}
+          disabled={downloading}
+          className="absolute top-2 right-2 p-1.5 bg-black/40 text-white/70 hover:bg-brand-600 hover:text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all z-10 disabled:opacity-50"
+          title="Descargar"
+        >
+          {downloading ? (
+            <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+            </svg>
+          ) : (
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+          )}
+        </button>
         <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
           <svg className="w-6 h-6 text-white/80 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
             <path d="M8 5v14l11-7z" />
@@ -92,27 +109,6 @@ export function ArchivedVideoCard({ video, canDelete, onDelete }: Props) {
           <span>{formatBytes(video.fileSize)}</span>
           <span>{formatDate(video.createdAt)}</span>
         </div>
-
-      {/* Actions */}
-      <div className="pt-1 border-t border-gray-100">
-        <button
-          onClick={handleDownload}
-          disabled={downloading}
-          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-brand-600 text-white text-xs font-medium rounded-lg hover:bg-brand-700 disabled:opacity-50 transition-colors"
-        >
-          {downloading ? (
-            <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-            </svg>
-          ) : (
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-          )}
-          {downloading ? 'Descargando...' : 'Descargar'}
-        </button>
-      </div>
       </div>
     </div>
   );

@@ -44,18 +44,15 @@ app.onError((err, c) => {
   const origin = c.req.header('Origin') || '';
   const allowedOrigins = ['https://akademo-edu.com', 'https://www.akademo-edu.com', 'https://akademo.alexxvives.workers.dev', 'http://localhost:3000'];
   const corsOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
-  const addCors = (res: Response) => {
-    res.headers.set('Access-Control-Allow-Origin', corsOrigin);
-    res.headers.set('Access-Control-Allow-Credentials', 'true');
-    return res;
-  };
+  c.header('Access-Control-Allow-Origin', corsOrigin);
+  c.header('Access-Control-Allow-Credentials', 'true');
   if (err.message === 'Unauthorized') {
-    return addCors(c.json({ success: false, error: 'Unauthorized' }, 401));
+    return c.json({ success: false, error: 'Unauthorized' }, 401);
   }
   if (err.message === 'Forbidden') {
-    return addCors(c.json({ success: false, error: 'Forbidden' }, 403));
+    return c.json({ success: false, error: 'Forbidden' }, 403);
   }
-  return addCors(c.json({ success: false, error: 'Internal server error' }, 500));
+  return c.json({ success: false, error: 'Internal server error' }, 500);
 });
 
 // Middleware

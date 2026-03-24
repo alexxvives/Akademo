@@ -379,6 +379,18 @@ live.get('/history', async (c) => {
       `)
       .run();
 
+    // Auto-expire started streams that have had 0 participants for 2+ hours
+    // (host never actually opened the room, or room was abandoned)
+    await c.env.DB
+      .prepare(`
+        UPDATE LiveStream
+        SET status = 'ended', endedAt = datetime('now')
+        WHERE status = 'started'
+          AND (participantCount = 0 OR participantCount IS NULL)
+          AND createdAt <= datetime('now', '-2 hours')
+      `)
+      .run();
+
     let query = '';
     let params: any[] = [];
 
@@ -445,6 +457,7 @@ live.get('/history', async (c) => {
         LEFT JOIN Class c ON ls.classId = c.id
         LEFT JOIN Academy a ON c.academyId = a.id
         LEFT JOIN User u ON ls.teacherId = u.id
+        WHERE a.paymentStatus = 'PAID'
         ORDER BY ls.createdAt DESC
         LIMIT 100
       `;
