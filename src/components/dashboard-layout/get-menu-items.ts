@@ -28,7 +28,7 @@ export function getMenuItems(config: MenuItemsConfig): MenuItem[] {
         { label: 'Asignaturas', href: '/dashboard/admin/subjects', iconType: 'book' as const, group: 'Contenido' },
         { label: 'Streams', href: '/dashboard/admin/streams', iconType: 'clap' as const, group: 'Contenido', showPulse: activeStreams.length > 0 },
         { label: 'Mediateca', href: '/dashboard/admin/media', iconType: 'folderOpen' as const, group: 'Contenido' },
-        { label: 'Ejercicios', href: '/dashboard/admin/assignments', iconType: 'fileText' as const, group: 'Contenido' },
+        { label: 'Ejercicios', href: '/dashboard/admin/assignments', iconType: 'fileText' as const, badge: ungradedAssignmentsCount > 0 ? ungradedAssignmentsCount : undefined, badgeColor: 'bg-blue-500', group: 'Contenido' },
         { label: 'Calificaciones', href: '/dashboard/admin/grades', iconType: 'star' as const, group: 'Contenido' },
         { label: 'Profesores', href: '/dashboard/admin/teachers', iconType: 'botMessage' as const, group: 'Comunidad' },
         { label: 'Estudiantes', href: '/dashboard/admin/students', iconType: 'users' as const, group: 'Comunidad' },
@@ -41,7 +41,7 @@ export function getMenuItems(config: MenuItemsConfig): MenuItem[] {
           badgeColor: 'bg-blue-500',
           group: 'Comunidad',
         }] : []),
-        { label: 'Pagos', href: '/dashboard/admin/pagos', iconType: 'handCoins' as const, group: 'Gestión' },
+        { label: 'Pagos', href: '/dashboard/admin/pagos', iconType: 'handCoins' as const, badge: pendingPaymentsCount > 0 ? pendingPaymentsCount : undefined, badgeColor: 'bg-blue-500', group: 'Gestión' },
         { label: 'Calendario', href: '/dashboard/admin/calendar', iconType: 'calendar' as const, group: 'Gestión' },
       ];
 

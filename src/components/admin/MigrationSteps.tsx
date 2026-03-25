@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { type ImportRow, type ImportSummary } from './migration-utils';
+import { type ImportRow, type ClassRow, type ImportSummary } from './migration-utils';
 
 interface UploadStepProps {
   fileRef: React.RefObject<HTMLInputElement | null>;
@@ -16,28 +16,55 @@ export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
         <p className="text-xs text-gray-500 mb-3">
           Sube un archivo <span className="font-semibold text-gray-700">.xlsx</span> (Excel) o <span className="font-semibold text-gray-700">.csv</span>. La primera fila debe ser el encabezado. Columnas requeridas en <span className="font-semibold text-gray-700">negrita</span>:
         </p>
-        <table className="text-xs text-gray-500 w-full">
-          <thead>
-            <tr className="text-gray-600">
-              <th className="text-left pr-4 pb-2 font-medium">Columna</th>
-              <th className="text-left pr-4 pb-2 font-medium">Nombres aceptados</th>
-              <th className="text-left pb-2 font-medium">Nota</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td className="pr-4 py-1 font-semibold text-gray-700">Email</td><td className="pr-4">email</td><td>Obligatorio</td></tr>
-            <tr><td className="pr-4 py-1 font-semibold text-gray-700">Nombre</td><td className="pr-4">firstName, nombre</td><td>Obligatorio</td></tr>
-            <tr><td className="pr-4 py-1 font-semibold text-gray-700">Apellido</td><td className="pr-4">lastName, apellido, apellidos</td><td>Obligatorio</td></tr>
-            <tr><td className="pr-4 py-1">Rol</td><td className="pr-4">role, rol</td><td>STUDENT o TEACHER (default: STUDENT)</td></tr>
-            <tr><td className="pr-4 py-1">Clases</td><td className="pr-4">classes, clases, classNames</td><td>Nombres separados por coma (entre comillas)</td></tr>
-          </tbody>
-        </table>
+
+        <div className="space-y-4">
+          <div>
+            <p className="text-xs font-semibold text-gray-600 mb-2">Hoja &ldquo;Usuarios&rdquo; (obligatoria)</p>
+            <table className="text-xs text-gray-500 w-full">
+              <thead>
+                <tr className="text-gray-600">
+                  <th className="text-left pr-4 pb-2 font-medium">Columna</th>
+                  <th className="text-left pr-4 pb-2 font-medium">Nombres aceptados</th>
+                  <th className="text-left pb-2 font-medium">Nota</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Email</td><td className="pr-4">email</td><td>Obligatorio</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Nombre</td><td className="pr-4">firstName, nombre</td><td>Obligatorio</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Apellido</td><td className="pr-4">lastName, apellido, apellidos</td><td>Obligatorio</td></tr>
+                <tr><td className="pr-4 py-1">Rol</td><td className="pr-4">role, rol</td><td>STUDENT o TEACHER (default: STUDENT)</td></tr>
+                <tr><td className="pr-4 py-1">Clases</td><td className="pr-4">classes, clases, classNames</td><td>Nombres separados por coma (entre comillas)</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold text-gray-600 mb-2">Hoja &ldquo;Clases&rdquo; (opcional — crea asignaturas nuevas)</p>
+            <table className="text-xs text-gray-500 w-full">
+              <thead>
+                <tr className="text-gray-600">
+                  <th className="text-left pr-4 pb-2 font-medium">Columna</th>
+                  <th className="text-left pr-4 pb-2 font-medium">Nombres aceptados</th>
+                  <th className="text-left pb-2 font-medium">Nota</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Nombre</td><td className="pr-4">nombre, name, asignatura</td><td>Obligatorio</td></tr>
+                <tr><td className="pr-4 py-1">Precio Mensual</td><td className="pr-4">precioMensual, monthlyPrice, mensual</td><td>Opcional (número)</td></tr>
+                <tr><td className="pr-4 py-1">Pago Único</td><td className="pr-4">pagoUnico, oneTimePrice, unico</td><td>Opcional (número)</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
 
         <div className="mt-4 bg-white rounded-lg border border-gray-200 p-3 font-mono text-xs text-gray-500">
-          <p className="text-gray-400 mb-1"># Ejemplo:</p>
+          <p className="text-gray-400 mb-1"># Hoja Usuarios:</p>
           <p>email,nombre,apellido,rol,clases</p>
           <p>juan@gmail.com,Juan,García,STUDENT,&quot;Matemáticas 1,Inglés B2&quot;</p>
-          <p>maria@gmail.com,María,López,TEACHER,&quot;Matemáticas 1&quot;</p>
+          <p className="mt-2 text-gray-400"># Hoja Clases:</p>
+          <p>nombre,precioMensual,pagoUnico</p>
+          <p>Matemáticas 1,50,</p>
+          <p>Inglés B2,,200</p>
         </div>
       </div>
 
@@ -54,16 +81,43 @@ export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
 
 interface PreviewStepProps {
   preview: ImportRow[];
+  classPreview: ClassRow[];
   importing: boolean;
   reset: () => void;
   handleImport: () => void;
 }
 
-export function PreviewStep({ preview, importing, reset, handleImport }: PreviewStepProps) {
+export function PreviewStep({ preview, classPreview, importing, reset, handleImport }: PreviewStepProps) {
   return (
     <div className="space-y-4">
+      {classPreview.length > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold text-gray-700 mb-2">Asignaturas a crear — {classPreview.length}</h3>
+          <div className="overflow-x-auto border border-gray-200 rounded-xl">
+            <table className="w-full text-sm">
+              <thead className="text-gray-500 text-xs bg-gray-50">
+                <tr>
+                  <th className="text-left px-4 py-2.5">Nombre</th>
+                  <th className="text-left px-4 py-2.5">Precio Mensual</th>
+                  <th className="text-left px-4 py-2.5">Pago Único</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {classPreview.map((cls, i) => (
+                  <tr key={i} className="hover:bg-gray-50">
+                    <td className="px-4 py-2 font-medium text-gray-900">{cls.name}</td>
+                    <td className="px-4 py-2 text-gray-500">{cls.monthlyPrice != null ? `€${cls.monthlyPrice}` : '—'}</td>
+                    <td className="px-4 py-2 text-gray-500">{cls.oneTimePrice != null ? `€${cls.oneTimePrice}` : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-700">Vista previa — {preview.length} filas</h3>
+        <h3 className="text-sm font-semibold text-gray-700">Usuarios — {preview.length} filas</h3>
         <div className="flex gap-2">
           <button onClick={reset} className="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors">
             Cancelar
@@ -73,7 +127,7 @@ export function PreviewStep({ preview, importing, reset, handleImport }: Preview
             disabled={importing}
             className="px-5 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {importing ? 'Importando...' : `Importar ${preview.length} usuarios`}
+            {importing ? 'Importando...' : `Importar ${preview.length} usuarios${classPreview.length > 0 ? ` + ${classPreview.length} clases` : ''}`}
           </button>
         </div>
       </div>

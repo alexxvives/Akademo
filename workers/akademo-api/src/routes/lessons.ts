@@ -1014,8 +1014,23 @@ lessons.get('/ratings/unread-count', async (c) => {
   try {
     const session = await requireAuth(c);
 
-    if (session.role !== 'TEACHER' && session.role !== 'ACADEMY') {
-      return c.json(errorResponse('Only teachers and academy owners can view rating counts'), 403);
+    if (!['TEACHER', 'ACADEMY', 'ADMIN'].includes(session.role)) {
+      return c.json(errorResponse('Only teachers, academy owners and admins can view rating counts'), 403);
+    }
+
+    // ADMIN: return total unread across all PAID academies
+    if (session.role === 'ADMIN') {
+      const result: any = await c.env.DB
+        .prepare(`
+          SELECT COUNT(*) as count
+          FROM LessonRating lr
+          JOIN Lesson l ON lr.lessonId = l.id
+          JOIN Class c ON l.classId = c.id
+          JOIN Academy a ON c.academyId = a.id
+          WHERE lr.isRead = 0 AND a.paymentStatus = 'PAID'
+        `)
+        .first();
+      return c.json(successResponse({ count: result?.count || 0, byClass: {} }));
     }
 
     let classIds: string[] = [];

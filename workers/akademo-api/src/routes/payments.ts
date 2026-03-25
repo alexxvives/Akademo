@@ -480,6 +480,19 @@ payments.get('/pending-count', async (c) => {
         .bind(session.id)
         .first();
       count = result?.count || 0;
+    } else if (session.role === 'ADMIN') {
+      const result: any = await c.env.DB
+        .prepare(`
+          SELECT COUNT(*) as count
+          FROM Payment p
+          JOIN Class c ON p.classId = c.id
+          JOIN Academy a ON c.academyId = a.id
+          WHERE p.status = 'PENDING'
+          AND p.type = 'STUDENT_TO_ACADEMY'
+          AND a.paymentStatus = 'PAID'
+        `)
+        .first();
+      count = result?.count || 0;
     }
 
     return c.json(successResponse(count));

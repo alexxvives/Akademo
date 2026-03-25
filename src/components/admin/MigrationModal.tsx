@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { apiClient } from '@/lib/api-client';
-import { type ImportRow, type ImportSummary, XLSX, normalizeRows, parseCSV } from './migration-utils';
+import { type ImportRow, type ClassRow, type ImportSummary, XLSX, normalizeRows, normalizeClassRows, parseCSV } from './migration-utils';
 import { UploadStep, PreviewStep, ResultsStep } from './MigrationSteps';
 
 interface MigrationModalProps {
@@ -15,6 +15,7 @@ interface MigrationModalProps {
 export function MigrationModal({ academyId, academyName, onClose }: MigrationModalProps) {
   const [importing, setImporting] = useState(false);
   const [preview, setPreview] = useState<ImportRow[]>([]);
+  const [classPreview, setClassPreview] = useState<ClassRow[]>([]);
   const [summary, setSummary] = useState<ImportSummary | null>(null);
   const [error, setError] = useState('');
   const [step, setStep] = useState<'upload' | 'preview' | 'results'>('upload');
@@ -40,12 +41,22 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
     reader.onload = (ev) => {
       const result = ev.target?.result;
       let rows: ImportRow[] = [];
+      let classRows: ClassRow[] = [];
 
       if (isXlsx) {
         const wb = XLSX.read(result, { type: 'array' });
-        const ws = wb.Sheets[wb.SheetNames[0]];
+        // Parse users from first sheet named "Usuarios" or the first sheet
+        const usersSheetName = wb.SheetNames.find(n => n.toLowerCase() === 'usuarios') || wb.SheetNames[0];
+        const ws = wb.Sheets[usersSheetName];
         const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: '' });
         rows = normalizeRows(json);
+        // Parse classes from sheet named "Clases" if present
+        const clasesSheetName = wb.SheetNames.find(n => n.toLowerCase() === 'clases');
+        if (clasesSheetName) {
+          const wsClases = wb.Sheets[clasesSheetName];
+          const jsonClases = XLSX.utils.sheet_to_json<Record<string, unknown>>(wsClases, { defval: '' });
+          classRows = normalizeClassRows(jsonClases);
+        }
       } else {
         rows = parseCSV(result as string);
       }
@@ -55,6 +66,7 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
         return;
       }
       setPreview(rows);
+      setClassPreview(classRows);
       setStep('preview');
     };
 
@@ -72,7 +84,7 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
       const res = await apiClient('/admin/bulk-import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ academyId, users: preview }),
+        body: JSON.stringify({ academyId, users: preview, classes: classPreview }),
       });
       const data = await res.json();
       if (data.success) {
@@ -105,6 +117,7 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
 
   const reset = () => {
     setPreview([]);
+    setClassPreview([]);
     setSummary(null);
     setStep('upload');
     setError('');
@@ -163,7 +176,7 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
           )}
 
           {step === 'upload' && <UploadStep fileRef={fileRef} handleFileUpload={handleFileUpload} />}
-          {step === 'preview' && <PreviewStep preview={preview} importing={importing} reset={reset} handleImport={handleImport} />}
+          {step === 'preview' && <PreviewStep preview={preview} classPreview={classPreview} importing={importing} reset={reset} handleImport={handleImport} />}
           {step === 'results' && summary && <ResultsStep summary={summary} downloadResults={downloadResults} reset={reset} onClose={onClose} onSendEmails={handleSendWelcomeEmails} />}
         </div>
       </div>

@@ -8,6 +8,12 @@ export interface ImportRow {
   classNames: string;
 }
 
+export interface ClassRow {
+  name: string;
+  monthlyPrice?: number;
+  oneTimePrice?: number;
+}
+
 export interface ImportResult {
   row: number;
   email: string;
@@ -84,3 +90,29 @@ export function parseCSV(text: string): ImportRow[] {
 
 // Re-export XLSX utilities needed by the modal
 export { XLSX };
+
+export function normalizeClassRows(rows: Record<string, unknown>[]): ClassRow[] {
+  if (rows.length === 0) return [];
+  const raw = rows[0];
+  const keys = Object.keys(raw).map(k => k.toLowerCase().trim().replace(/\s+/g, ''));
+  const find = (...names: string[]) => keys.findIndex(k => names.includes(k));
+
+  const nameIdx = find('nombre', 'name', 'clase', 'class', 'asignatura');
+  if (nameIdx === -1) return [];
+
+  const monthlyIdx = find('preciomensual', 'monthlyprice', 'mensual', 'monthly');
+  const oneTimeIdx = find('pagounico', 'onetimeprice', 'unico', 'onetime', 'pago');
+
+  const origKeys = Object.keys(raw);
+  return rows.flatMap(row => {
+    const name = String(row[origKeys[nameIdx]] ?? '').trim();
+    if (!name) return [];
+    const monthlyRaw = monthlyIdx !== -1 ? parseFloat(String(row[origKeys[monthlyIdx]] ?? '')) : NaN;
+    const oneTimeRaw = oneTimeIdx !== -1 ? parseFloat(String(row[origKeys[oneTimeIdx]] ?? '')) : NaN;
+    return [{
+      name,
+      monthlyPrice: isNaN(monthlyRaw) ? undefined : monthlyRaw,
+      oneTimePrice: isNaN(oneTimeRaw) ? undefined : oneTimeRaw,
+    }];
+  });
+}

@@ -153,6 +153,18 @@ export function useDashboardBadges() {
     }
   }, []);
 
+  const loadPendingPaymentsCount = useCallback(async () => {
+    try {
+      const res = await apiClient('/payments/pending-count');
+      const result = await res.json();
+      if (result.success && typeof result.data === 'number') {
+        setPendingPaymentsCount(result.data);
+      }
+    } catch (error) {
+      console.error('Failed to load pending payments count:', error);
+    }
+  }, []);
+
   useEffect(() => {
     const handlePaymentChange = () => { loadAcademy(); };
     window.addEventListener('pendingPaymentsChanged', handlePaymentChange);
@@ -215,7 +227,7 @@ export function useDashboardBadges() {
     academyId, academyPaymentStatus, academy,
     loadNotifications, loadActiveStreams, loadAcademy,
     loadUnreadValoraciones, loadUngradedAssignments,
-    loadNewGrades, loadUnpaidClasses, loadStudentPendingPayments,
+    loadNewGrades, loadUnpaidClasses, loadStudentPendingPayments, loadPendingPaymentsCount,
     markNotificationAsRead, joinLiveClass, markAllAsRead,
   };
 }

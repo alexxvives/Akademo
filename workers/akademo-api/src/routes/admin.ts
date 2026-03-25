@@ -747,7 +747,7 @@ admin.post('/bulk-import', async (c) => {
       return c.json(errorResponse('Forbidden'), 403);
     }
 
-    const { academyId, users: rows } = await c.req.json();
+    const { academyId, users: rows, classes: classRows = [] } = await c.req.json();
     if (!academyId || !Array.isArray(rows) || rows.length === 0) {
       return c.json(errorResponse('academyId and users array required'), 400);
     }
@@ -773,6 +773,24 @@ admin.post('/bulk-import', async (c) => {
     const classMap = new Map<string, string>(); // lowercase name -> id
     for (const cls of classes) {
       classMap.set((cls.name as string).toLowerCase().trim(), cls.id as string);
+    }
+
+    // Create any new classes from classRows that don't already exist
+    if (Array.isArray(classRows) && classRows.length > 0) {
+      const now = new Date().toISOString();
+      for (const cr of classRows) {
+        const name = (cr.name || '').trim();
+        if (!name) continue;
+        const key = name.toLowerCase();
+        if (classMap.has(key)) continue; // already exists
+        const classId = crypto.randomUUID();
+        const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        await c.env.DB
+          .prepare('INSERT INTO Class (id, name, slug, academyId, monthlyPrice, oneTimePrice, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)')
+          .bind(classId, name, slug, academyId, cr.monthlyPrice || null, cr.oneTimePrice || null, now)
+          .run();
+        classMap.set(key, classId);
+      }
     }
 
     const results: Array<{

@@ -29,7 +29,7 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
     academyId, academyPaymentStatus, academy,
     loadNotifications, loadActiveStreams, loadAcademy,
     loadUnreadValoraciones, loadUngradedAssignments,
-    loadNewGrades, loadUnpaidClasses, loadStudentPendingPayments,
+    loadNewGrades, loadUnpaidClasses, loadStudentPendingPayments, loadPendingPaymentsCount,
     markNotificationAsRead, joinLiveClass, markAllAsRead,
   } = useDashboardBadges();
 
@@ -92,11 +92,18 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
 
     if (role === 'ADMIN') {
       loadActiveStreams();
-      const adminInterval = setInterval(loadActiveStreams, 15000);
+      loadUnreadValoraciones();
+      loadUngradedAssignments();
+      loadPendingPaymentsCount();
+      const adminInterval = setInterval(() => {
+        loadActiveStreams();
+        loadUnreadValoraciones();
+        loadUngradedAssignments();
+        loadPendingPaymentsCount();
+      }, 15000);
       return () => clearInterval(adminInterval);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [checkAuth, checkSession, role, loadNotifications, loadActiveStreams, loadAcademy, loadUnreadValoraciones, loadUngradedAssignments, loadNewGrades, loadStudentPendingPayments, loadUnpaidClasses]);
+  }, [checkAuth, checkSession, role, loadNotifications, loadActiveStreams, loadAcademy, loadUnreadValoraciones, loadUngradedAssignments, loadNewGrades, loadStudentPendingPayments, loadUnpaidClasses, loadPendingPaymentsCount]);
 
   const copyJoinLink = () => {
     if (!user) return;
