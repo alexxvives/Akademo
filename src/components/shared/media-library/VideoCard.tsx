@@ -6,9 +6,45 @@ import { getBunnyThumbnailUrl, getBunnyEmbedUrl, getBunnyDownloadUrl } from '@/l
 import { formatDuration, formatDate, formatBytes } from '@/lib/formatters';
 import type { VideoItem } from './types';
 
+function VideoPlayerModal({ video, onClose }: { video: VideoItem; onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/85"
+      onClick={onClose}
+    >
+      <div className="relative w-full max-w-4xl mx-4" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-white/80 text-sm truncate flex-1">{video.title}</p>
+          <button
+            onClick={onClose}
+            className="ml-4 text-white/70 hover:text-white transition-colors flex items-center gap-1.5 text-sm flex-shrink-0"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            Cerrar
+          </button>
+        </div>
+        <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+          <iframe
+            src={`${getBunnyEmbedUrl(video.bunnyGuid)}?autoplay=true`}
+            className="absolute inset-0 w-full h-full rounded-xl"
+            allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+        {video.className && (
+          <p className="text-white/50 text-xs mt-2">{video.className}{video.lessonTitle ? ` · ${video.lessonTitle}` : ''}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function VideoCard({ video }: { video: VideoItem }) {
   const [imgError, setImgError] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [showPlayer, setShowPlayer] = useState(false);
   const thumbnailUrl = video.bunnyGuid ? getBunnyThumbnailUrl(video.bunnyGuid) : null;
 
   const handleDownload = async (e: React.MouseEvent) => {
@@ -36,11 +72,13 @@ export function VideoCard({ video }: { video: VideoItem }) {
   };
 
   return (
+    <>
+    {showPlayer && <VideoPlayerModal video={video} onClose={() => setShowPlayer(false)} />}
     <div
       role="button"
       tabIndex={0}
-      onClick={() => { if (video.bunnyGuid) window.open(getBunnyEmbedUrl(video.bunnyGuid), '_blank'); }}
-      onKeyDown={(e) => { if (e.key === 'Enter' && video.bunnyGuid) window.open(getBunnyEmbedUrl(video.bunnyGuid), '_blank'); }}
+      onClick={() => { if (video.bunnyGuid) setShowPlayer(true); }}
+      onKeyDown={(e) => { if (e.key === 'Enter' && video.bunnyGuid) setShowPlayer(true); }}
       className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow group cursor-pointer"
     >
       {/* Thumbnail */}
@@ -123,5 +161,6 @@ export function VideoCard({ video }: { video: VideoItem }) {
         </div>
       </div>
     </div>
+    </>
   );
 }

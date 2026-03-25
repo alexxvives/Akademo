@@ -41,7 +41,7 @@ export function getMenuItems(config: MenuItemsConfig): MenuItem[] {
           badgeColor: 'bg-blue-500',
           group: 'Comunidad',
         }] : []),
-        { label: 'Pagos', href: '/dashboard/admin/pagos', iconType: 'handCoins' as const, badge: pendingPaymentsCount > 0 ? pendingPaymentsCount : undefined, badgeColor: 'bg-blue-500', group: 'Gestión' },
+        { label: 'Pagos', href: '/dashboard/admin/pagos', iconType: 'handCoins' as const, badge: pendingPaymentsCount > 0 ? pendingPaymentsCount : undefined, badgeColor: 'bg-[#b0e788]', group: 'Gestión' },
         { label: 'Calendario', href: '/dashboard/admin/calendar', iconType: 'calendar' as const, group: 'Gestión' },
       ];
 

@@ -24,9 +24,9 @@ const usersData = [
 
 // Example classes — these will be created automatically if they don't exist in the academy
 const classesData = [
-  { nombre: 'Matemáticas 1', precioMensual: '50',  pagoUnico: '' },
-  { nombre: 'Inglés B2',     precioMensual: '',     pagoUnico: '200' },
-  { nombre: 'Ciencias',      precioMensual: '40',   pagoUnico: '' },
+  { nombre: 'Matemáticas 1', fechaInicio: '01/09/2026', precio: '50',  tipoPrecio: 'MENSUAL', profesorEmail: 'miguel.ruiz@ejemplo.com' },
+  { nombre: 'Inglés B2',     fechaInicio: '15/09/2026', precio: '200', tipoPrecio: 'UNICO',   profesorEmail: 'sofia.moreno@ejemplo.com' },
+  { nombre: 'Ciencias',      fechaInicio: '01/09/2026', precio: '40',  tipoPrecio: 'MENSUAL', profesorEmail: 'sofia.moreno@ejemplo.com' },
 ];
 
 const wb = XLSX.utils.book_new();
@@ -46,8 +46,10 @@ XLSX.utils.book_append_sheet(wb, ws, 'Usuarios');
 const wsClases = XLSX.utils.json_to_sheet(classesData);
 wsClases['!cols'] = [
   { wch: 24 }, // nombre
-  { wch: 16 }, // precioMensual
-  { wch: 12 }, // pagoUnico
+  { wch: 14 }, // fechaInicio
+  { wch: 10 }, // precio
+  { wch: 12 }, // tipoPrecio
+  { wch: 30 }, // profesorEmail
 ];
 XLSX.utils.book_append_sheet(wb, wsClases, 'Clases');
 

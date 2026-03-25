@@ -50,8 +50,10 @@ export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
               </thead>
               <tbody>
                 <tr><td className="pr-4 py-1 font-semibold text-gray-700">Nombre</td><td className="pr-4">nombre, name, asignatura</td><td>Obligatorio</td></tr>
-                <tr><td className="pr-4 py-1">Precio Mensual</td><td className="pr-4">precioMensual, monthlyPrice, mensual</td><td>Opcional (número)</td></tr>
-                <tr><td className="pr-4 py-1">Pago Único</td><td className="pr-4">pagoUnico, oneTimePrice, unico</td><td>Opcional (número)</td></tr>
+                <tr><td className="pr-4 py-1">Precio</td><td className="pr-4">precio, price</td><td>Opcional (número)</td></tr>
+                <tr><td className="pr-4 py-1">Tipo Precio</td><td className="pr-4">tipoPrecio, pricetype, tipo</td><td>MENSUAL o UNICO</td></tr>
+                <tr><td className="pr-4 py-1">Fecha Inicio</td><td className="pr-4">fechaInicio, startdate, fecha</td><td>Opcional (ej: 01/09/2026)</td></tr>
+                <tr><td className="pr-4 py-1">Profesor Email</td><td className="pr-4">profesorEmail, teacherEmail</td><td>Opcional (email existente)</td></tr>
               </tbody>
             </table>
           </div>
@@ -62,9 +64,9 @@ export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
           <p>email,nombre,apellido,rol,clases</p>
           <p>juan@gmail.com,Juan,García,STUDENT,&quot;Matemáticas 1,Inglés B2&quot;</p>
           <p className="mt-2 text-gray-400"># Hoja Clases:</p>
-          <p>nombre,precioMensual,pagoUnico</p>
-          <p>Matemáticas 1,50,</p>
-          <p>Inglés B2,,200</p>
+          <p>nombre,fechaInicio,precio,tipoPrecio,profesorEmail</p>
+          <p>Matemáticas 1,01/09/2026,50,MENSUAL,miguel@ejemplo.com</p>
+          <p>Inglés B2,,200,UNICO,sofia@ejemplo.com</p>
         </div>
       </div>
 
@@ -98,16 +100,20 @@ export function PreviewStep({ preview, classPreview, importing, reset, handleImp
               <thead className="text-gray-500 text-xs bg-gray-50">
                 <tr>
                   <th className="text-left px-4 py-2.5">Nombre</th>
-                  <th className="text-left px-4 py-2.5">Precio Mensual</th>
-                  <th className="text-left px-4 py-2.5">Pago Único</th>
+                  <th className="text-left px-4 py-2.5">Precio</th>
+                  <th className="text-left px-4 py-2.5">Inicio</th>
+                  <th className="text-left px-4 py-2.5">Profesor</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {classPreview.map((cls, i) => (
                   <tr key={i} className="hover:bg-gray-50">
                     <td className="px-4 py-2 font-medium text-gray-900">{cls.name}</td>
-                    <td className="px-4 py-2 text-gray-500">{cls.monthlyPrice != null ? `€${cls.monthlyPrice}` : '—'}</td>
-                    <td className="px-4 py-2 text-gray-500">{cls.oneTimePrice != null ? `€${cls.oneTimePrice}` : '—'}</td>
+                    <td className="px-4 py-2 text-gray-500">
+                      {cls.price != null ? `€${cls.price}${cls.priceType === 'MENSUAL' ? '/mes' : cls.priceType === 'UNICO' ? ' único' : ''}` : '—'}
+                    </td>
+                    <td className="px-4 py-2 text-gray-500">{cls.startDate ?? '—'}</td>
+                    <td className="px-4 py-2 text-gray-500 text-xs">{cls.teacherEmail ?? '—'}</td>
                   </tr>
                 ))}
               </tbody>

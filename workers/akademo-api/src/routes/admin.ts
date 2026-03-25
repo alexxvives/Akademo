@@ -778,6 +778,7 @@ admin.post('/bulk-import', async (c) => {
     // Create any new classes from classRows that don't already exist
     if (Array.isArray(classRows) && classRows.length > 0) {
       const now = new Date().toISOString();
+      const classTeacherMap = new Map<string, string>(); // classId → teacherEmail
       for (const cr of classRows) {
         const name = (cr.name || '').trim();
         if (!name) continue;
@@ -785,12 +786,19 @@ admin.post('/bulk-import', async (c) => {
         if (classMap.has(key)) continue; // already exists
         const classId = crypto.randomUUID();
         const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        const price = cr.price ? parseFloat(String(cr.price)) : null;
+        const monthlyPrice = cr.priceType === 'MENSUAL' ? price : null;
+        const oneTimePrice = cr.priceType === 'UNICO' ? price : null;
+        const startDate = cr.startDate || null;
         await c.env.DB
-          .prepare('INSERT INTO Class (id, name, slug, academyId, monthlyPrice, oneTimePrice, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)')
-          .bind(classId, name, slug, academyId, cr.monthlyPrice || null, cr.oneTimePrice || null, now)
+          .prepare('INSERT INTO Class (id, name, slug, academyId, monthlyPrice, oneTimePrice, startDate, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+          .bind(classId, name, slug, academyId, monthlyPrice, oneTimePrice, startDate, now)
           .run();
         classMap.set(key, classId);
+        if (cr.teacherEmail) classTeacherMap.set(classId, cr.teacherEmail.toLowerCase().trim());
       }
+      // Store for teacher assignment after users are processed
+      (c as any)._classTeacherMap = classTeacherMap;
     }
 
     const results: Array<{
@@ -886,6 +894,15 @@ admin.post('/bulk-import', async (c) => {
         results.push({ row: i + 1, email, status: 'created', message: msg, tempPassword: String(tempPassword) });
       } catch (err: any) {
         results.push({ row: i + 1, email, status: 'error', message: err.message || 'Database error' });
+      }
+    }
+
+    // Assign teachers to newly created classes (resolve email → userId)
+    const classTeacherMap: Map<string, string> = (c as any)._classTeacherMap || new Map();
+    for (const [classId, teacherEmail] of classTeacherMap) {
+      const teacher = await c.env.DB.prepare('SELECT id FROM User WHERE LOWER(email) = ?').bind(teacherEmail).first() as any;
+      if (teacher) {
+        await c.env.DB.prepare('UPDATE Class SET teacherId = ? WHERE id = ?').bind(teacher.id, classId).run();
       }
     }
 

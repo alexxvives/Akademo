@@ -10,8 +10,10 @@ export interface ImportRow {
 
 export interface ClassRow {
   name: string;
-  monthlyPrice?: number;
-  oneTimePrice?: number;
+  price?: number;
+  priceType?: 'MENSUAL' | 'UNICO';
+  startDate?: string;
+  teacherEmail?: string;
 }
 
 export interface ImportResult {
@@ -100,19 +102,25 @@ export function normalizeClassRows(rows: Record<string, unknown>[]): ClassRow[] 
   const nameIdx = find('nombre', 'name', 'clase', 'class', 'asignatura');
   if (nameIdx === -1) return [];
 
-  const monthlyIdx = find('preciomensual', 'monthlyprice', 'mensual', 'monthly');
-  const oneTimeIdx = find('pagounico', 'onetimeprice', 'unico', 'onetime', 'pago');
+  const priceIdx = find('precio', 'price');
+  const priceTypeIdx = find('tipoprecio', 'pricetype', 'tipo', 'type', 'modalidad');
+  const startDateIdx = find('fechainicio', 'startdate', 'inicio', 'start', 'fecha');
+  const teacherIdx = find('profesoremail', 'teacheremail', 'emailprofesor', 'emailteacher', 'profesor', 'teacher');
 
   const origKeys = Object.keys(raw);
   return rows.flatMap(row => {
     const name = String(row[origKeys[nameIdx]] ?? '').trim();
     if (!name) return [];
-    const monthlyRaw = monthlyIdx !== -1 ? parseFloat(String(row[origKeys[monthlyIdx]] ?? '')) : NaN;
-    const oneTimeRaw = oneTimeIdx !== -1 ? parseFloat(String(row[origKeys[oneTimeIdx]] ?? '')) : NaN;
+    const priceRaw = priceIdx !== -1 ? parseFloat(String(row[origKeys[priceIdx]] ?? '')) : NaN;
+    const priceTypeRaw = priceTypeIdx !== -1 ? String(row[origKeys[priceTypeIdx]] ?? '').trim().toUpperCase() : '';
+    const startDateRaw = startDateIdx !== -1 ? String(row[origKeys[startDateIdx]] ?? '').trim() : '';
+    const teacherRaw = teacherIdx !== -1 ? String(row[origKeys[teacherIdx]] ?? '').trim().toLowerCase() : '';
     return [{
       name,
-      monthlyPrice: isNaN(monthlyRaw) ? undefined : monthlyRaw,
-      oneTimePrice: isNaN(oneTimeRaw) ? undefined : oneTimeRaw,
+      price: isNaN(priceRaw) ? undefined : priceRaw,
+      priceType: priceTypeRaw === 'MENSUAL' || priceTypeRaw === 'UNICO' ? priceTypeRaw : undefined,
+      startDate: startDateRaw || undefined,
+      teacherEmail: teacherRaw || undefined,
     }];
   });
 }
