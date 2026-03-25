@@ -6,56 +6,68 @@
 
 Hola **[nombre]**,
 
-Para migrar vuestros datos a **AKADEMO**, el proceso es muy sencillo. Vosotros os encargaréis de crear las clases y subir el contenido (vídeos, archivos), y nosotros nos encargamos de importar los profesores y estudiantes.
+Para migrar vuestros datos a **AKADEMO**, el proceso es muy sencillo. Solo necesitáis enviarnos **un archivo Excel** y nosotros importamos profesores, estudiantes y clases automáticamente.
 
 ---
 
 ## Lo que necesitamos de vosotros:
 
-### 1. Que creéis las clases manualmente en AKADEMO
+### Un archivo Excel (.xlsx) con dos pestañas
 
-Entrad en vuestra cuenta de academia y cread cada asignatura/clase con su nombre, descripción y contenido (lecciones, vídeos, documentos). Esto es mejor que lo hagáis vosotros porque conocéis la estructura mejor que nadie.
+Podéis descargar la **plantilla de ejemplo** directamente desde AKADEMO (panel de administración → Importar usuarios → Descargar plantilla).
 
-### 2. Dos archivos CSV (se pueden hacer con Excel → Guardar como CSV)
+---
 
-**Archivo 1: Profesores**
+#### Pestaña 1: **Usuarios** (obligatoria)
 
-| email | nombre | apellido | clases |
-|---|---|---|---|
-| maria.lopez@gmail.com | María | López | "Matemáticas 1,Inglés B2" |
-| pedro.ruiz@gmail.com | Pedro | Ruiz | "Física 2" |
+| email | nombre | apellido | rol | clases |
+|---|---|---|---|---|
+| maria.lopez@gmail.com | María | López | TEACHER | "Matemáticas 1,Inglés B2" |
+| pedro.ruiz@gmail.com | Pedro | Ruiz | TEACHER | "Física 2" |
+| juan.garcia@gmail.com | Juan | García | STUDENT | "Matemáticas 1,Inglés B2" |
+| ana.martinez@gmail.com | Ana | Martínez | STUDENT | "Matemáticas 1" |
 
-**Archivo 2: Estudiantes**
+- **rol**: `STUDENT` o `TEACHER`
+- **clases**: nombres separados por comas. Si está en varias clases, usar comillas: `"Matemáticas 1,Inglés B2"`
 
-| email | nombre | apellido | clases |
-|---|---|---|---|
-| juan.garcia@gmail.com | Juan | García | "Matemáticas 1,Inglés B2" |
-| ana.martinez@gmail.com | Ana | Martínez | "Matemáticas 1" |
+---
+
+#### Pestaña 2: **Clases** (opcional — si queréis que las creemos automáticamente)
+
+| nombre | precioMensual | pagoUnico |
+|---|---|---|
+| Matemáticas 1 | 50 | |
+| Inglés B2 | | 200 |
+| Física 2 | 40 | |
+
+- Si dejáis esta pestaña **vacía o no la incluís**, las clases deben existir ya en AKADEMO antes de importar.
+- Si la incluís, **las clases se crean automáticamente** durante la importación.
+- `precioMensual` y `pagoUnico` son opcionales. Podéis rellenar solo el que aplique.
 
 ---
 
 ## ⚠️ MUY IMPORTANTE:
 
-- Los nombres de las clases en el CSV deben ser **exactamente iguales** a como los creéis en AKADEMO. Si la clase se llama **"Matemáticas 1"** en AKADEMO, en el CSV debe poner **"Matemáticas 1"** (no "mates 1", no "Matemáticas I").
-- Si un alumno o profesor está en varias clases, separad los nombres con comas y poned comillas alrededor: **"Matemáticas 1,Inglés B2"**
-- El email debe ser el **email real** del alumno/profesor, ya que les enviaremos las credenciales por ahí.
+- Los nombres de las clases en la columna **clases** (pestaña Usuarios) deben coincidir **exactamente** con los nombres de la columna **nombre** (pestaña Clases), o con los nombres ya creados en AKADEMO.
+- El email debe ser el **email real** del alumno/profesor, ya que les enviaremos las credenciales.
 - **No incluyáis contraseñas** — nosotros generamos contraseñas temporales automáticamente.
 
 ---
 
 ## Qué pasa después:
 
-1. Nosotros importamos los CSVs
-2. Os devolvemos un archivo con las **contraseñas temporales** de cada usuario
-3. Vosotros envíais a cada alumno/profesor su email y contraseña temporal
-4. Ellos entran, cambian su contraseña (recomendado), y ya tienen acceso a sus clases
+1. Nos enviáis el archivo Excel
+2. Nosotros lo importamos desde el panel de administración
+3. Os devolvemos un archivo con las **contraseñas temporales** de cada usuario
+4. Vosotros envíais a cada alumno/profesor su email y contraseña temporal
+5. Ellos entran, cambian su contraseña (recomendado), y ya tienen acceso a sus clases
 
 ---
 
 ## Preguntas que necesitamos responder:
 
 1. ¿Cuántos alumnos y profesores tenéis aproximadamente?
-2. ¿Cobráis actualmente a los alumnos? ¿Cuánto por clase/mes?
+2. ¿Cobráis actualmente a los alumnos? ¿Cuánto por clase/mes o pago único?
 3. ¿Queréis mantener vuestra web de WordPress o preferís usar las páginas públicas de AKADEMO?
 4. ¿Utilizáis cuestionarios/quizzes en Moodle? ¿Es importante para vosotros?
 

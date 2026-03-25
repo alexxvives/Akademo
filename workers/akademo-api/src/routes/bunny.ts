@@ -491,22 +491,30 @@ bunny.get('/archive', async (c) => {
     } else if (session.role === 'ADMIN') {
       const { academyId: qId } = c.req.query();
       if (qId) academyId = qId;
+      // If no filter, admin sees all (academyId remains null)
     } else {
       const teacher = await c.env.DB.prepare('SELECT academyId FROM Teacher WHERE userId = ?').bind(session.id).first() as any;
       if (teacher) academyId = teacher.academyId;
     }
 
-    if (!academyId) return c.json(successResponse({ videos: [], total: 0 }));
+    // Non-admin must have an academyId resolved
+    if (!academyId && session.role !== 'ADMIN') return c.json(successResponse({ videos: [], total: 0 }));
 
     const { classId: filterClassId } = c.req.query();
-    let query = "SELECT av.*, (u.firstName || ' ' || u.lastName) as uploaderName FROM ArchivedVideo av LEFT JOIN User u ON av.uploadedById = u.id WHERE av.academyId = ?";
-    const params: any[] = [academyId];
+    let query = "SELECT av.*, (u.firstName || ' ' || u.lastName) as uploaderName FROM ArchivedVideo av LEFT JOIN User u ON av.uploadedById = u.id WHERE 1=1";
+    const params: any[] = [];
+    if (academyId) {
+      query += ' AND av.academyId = ?';
+      params.push(academyId);
+    }
     if (filterClassId) {
       query += ' AND av.classId = ?';
       params.push(filterClassId);
     }
     query += ' ORDER BY av.createdAt DESC';
-    const result = await c.env.DB.prepare(query).bind(...params).all();
+    const result = params.length > 0
+      ? await c.env.DB.prepare(query).bind(...params).all()
+      : await c.env.DB.prepare(query).all();
 
     return c.json(successResponse({ videos: result.results || [], total: result.results?.length || 0 }));
   } catch (error: any) {
