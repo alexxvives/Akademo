@@ -61,3 +61,9 @@ XLSX.utils.book_append_sheet(wb, wsClases, 'Clases');
 const outputPath = path.join(outputDir, 'Users_example.xlsx');
 XLSX.writeFile(wb, outputPath);
 console.log('Created:', outputPath);
+
+// Also write to migrations/ so developers have a reference copy alongside the SQL migrations
+const migrationsDir = path.join(__dirname, '..', 'migrations');
+const migrationsPath = path.join(migrationsDir, 'Users_example.xlsx');
+XLSX.writeFile(wb, migrationsPath);
+console.log('Created:', migrationsPath);
