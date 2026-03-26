@@ -15,8 +15,6 @@ export { MediaLibraryPage } from './MediaLibraryPage';
 
 export { GradesPage } from './GradesPage';
 
-export { ReportsPage } from './ReportsPage';
-
 export { TeachersPage } from './TeachersPage';
 
 export { ClassesPage } from './ClassesPage';

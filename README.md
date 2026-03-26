@@ -39,7 +39,7 @@ npm run dev
 
 **Documentation:**
 - [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) - Complete database schema
-- [DEPLOYMENT_CACHE_FIX.md](./DEPLOYMENT_CACHE_FIX.md) - Deployment best practices
+- [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) - Deployment best practices
 - [workers/akademo-api/README.md](./workers/akademo-api/README.md) - API documentation
 
 ## 🔐 Security Features
@@ -64,10 +64,9 @@ All viewing progress saved server-side. Students resume from last position with 
 
 ## 📚 Documentation
 
-- **[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)** - Complete D1 schema (~25 tables)
-- **[PROJECT_DOCUMENTATION.md](./PROJECT_DOCUMENTATION.md)** - Full architecture & API documentation
+- **[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)** - Complete D1 schema (30 tables)
 - **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** - Production deployment guide
-- **[docs/zoom-integration.md](./docs/zoom-integration.md)** - Zoom integration details
+- **[docs/troubleshooting.md](./docs/troubleshooting.md)** - Common issues & fixes
 
 ## 🏗️ Architecture
 
@@ -191,7 +190,7 @@ npx @opennextjs/cloudflare build
 npx wrangler deploy
 ```
 
-See [DEPLOYMENT_CACHE_FIX.md](./DEPLOYMENT_CACHE_FIX.md) for details.
+See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for details.
 
 ### API Worker
 ```bash
@@ -372,11 +371,9 @@ npx wrangler whoami
 
 ## 📚 Documentation Index
 
-- **[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)** - Complete D1 schema (~25 tables)
-- **[PROJECT_DOCUMENTATION.md](./PROJECT_DOCUMENTATION.md)** - Architecture documentation
+- **[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)** - Complete D1 schema (30 tables)
 - **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** - Production deployment
 - **[workers/akademo-api/README.md](./workers/akademo-api/README.md)** - API documentation
-- **[docs/zoom-integration.md](./docs/zoom-integration.md)** - Zoom attendance tracking
 - **[docs/troubleshooting.md](./docs/troubleshooting.md)** - Common issues & fixes
 
 ## 📄 License
