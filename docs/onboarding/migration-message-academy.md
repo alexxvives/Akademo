@@ -1,81 +1,113 @@
 # Mensaje de Migración para la Academia
 
-> **Cómo usar**: Copia y pega este mensaje en un email o WhatsApp. Si necesitas PDF, abre este archivo en VS Code y usa una extensión de Markdown→PDF, o pégalo en Google Docs.
+> **Cómo usar**: Copia y pega el mensaje de abajo en un email. Adjunta `Users_template.xlsx` o `Users_example.xlsx` de esta misma carpeta.
+
+---
+
+**Asunto**: Migración de datos a AKADEMO — plantilla Excel
 
 ---
 
 Hola **[nombre]**,
 
-Para migrar vuestros datos a **AKADEMO**, el proceso es muy sencillo. Solo necesitáis enviarnos **un archivo Excel** y nosotros importamos profesores, estudiantes y clases automáticamente.
+Para migrar vuestros datos a AKADEMO el proceso es muy sencillo. Solo necesitáis enviarnos **un archivo Excel** y nosotros importamos profesores, estudiantes y clases automáticamente.
+
+Os adjunto una plantilla vacía y un archivo de ejemplo para que veáis el formato esperado.
 
 ---
 
-## Lo que necesitamos de vosotros:
+**El Excel tiene dos pestañas:**
 
-### Un archivo Excel (.xlsx) con dos pestañas
-
-Podéis descargar la **plantilla de ejemplo** directamente desde AKADEMO (panel de administración → Importar usuarios → Descargar plantilla).
-
----
-
-#### Pestaña 1: **Usuarios** (obligatoria)
+**Pestaña 1 — Usuarios** (obligatoria)
 
 | email | nombre | apellido | rol | clases |
 |---|---|---|---|---|
 | maria.lopez@gmail.com | María | López | TEACHER | "Matemáticas 1,Inglés B2" |
-| pedro.ruiz@gmail.com | Pedro | Ruiz | TEACHER | "Física 2" |
 | juan.garcia@gmail.com | Juan | García | STUDENT | "Matemáticas 1,Inglés B2" |
 | ana.martinez@gmail.com | Ana | Martínez | STUDENT | "Matemáticas 1" |
 
 - **rol**: `STUDENT` o `TEACHER`
-- **clases**: nombres separados por comas. Si está en varias clases, usar comillas: `"Matemáticas 1,Inglés B2"`
+- **clases**: nombres separados por comas. Si está en varias, usar comillas: `"Matemáticas 1,Inglés B2"`
 
----
-
-#### Pestaña 2: **Clases** (opcional — si queréis que las creemos automáticamente)
+**Pestaña 2 — Clases** (opcional — si queréis que las creemos automáticamente)
 
 | nombre | fechaInicio | precio | tipoPrecio | profesorEmail | descripcion | universidad | carrera | maxEstudiantes | whatsapp |
 |---|---|---|---|---|---|---|---|---|---|
 | Matemáticas 1 | 01/09/2026 | 50 | MENSUAL | maria.lopez@gmail.com | Álgebra y cálculo | UCM | Ingeniería | 30 | |
-| Inglés B2 | 15/09/2026 | 200 | UNICO | pedro.ruiz@gmail.com | Inglés B2 | | | 20 | https://chat.whatsapp.com/EVwr6bNsKng5Rk965ZuM4U |
-| Física 2 | 01/09/2026 | 40 | MENSUAL | pedro.ruiz@gmail.com | | UAM | Física | | |
+| Inglés B2 | 15/09/2026 | 200 | UNICO | pedro.ruiz@gmail.com | | | | 20 | https://chat.whatsapp.com/EVwr6bNsKng5Rk965ZuM4U |
 
-**Solo `nombre` es obligatorio.** El resto de columnas son opcionales — podéis incluir o dejar vacías las que no apliquen:
-- `tipoPrecio`: `MENSUAL` (cobro mensual) o `UNICO` (pago único)
-- `profesorEmail`: debe coincidir con un email de la pestaña Usuarios (rol TEACHER)
-- `maxEstudiantes`: número máximo de alumnos permitidos
-- `whatsapp`: enlace al grupo de WhatsApp de la clase
-- Si dejáis esta pestaña **vacía o no la incluís**, las clases deben existir ya en AKADEMO antes de importar.
-- Si la incluís, **las clases se crean automáticamente** durante la importación.
+Solo `nombre` es obligatorio en la pestaña Clases. El resto podéis dejarlo vacío.
+- `tipoPrecio`: `MENSUAL` o `UNICO`
+- `profesorEmail`: debe coincidir con un email de la pestaña Usuarios
+
+Si no incluís la pestaña Clases las clases deben existir ya en AKADEMO antes de importar.
 
 ---
 
-## ⚠️ MUY IMPORTANTE:
+**Importante:**
+- Los nombres de las clases en la columna **clases** deben coincidir exactamente con los de la columna **nombre** de la pestaña Clases (o con los ya creados en AKADEMO).
+- Usad el email real de cada alumno/profesor — les enviaremos las credenciales a ese correo.
+- No incluyáis contraseñas, las generamos automáticamente.
 
-- Los nombres de las clases en la columna **clases** (pestaña Usuarios) deben coincidir **exactamente** con los nombres de la columna **nombre** (pestaña Clases), o con los nombres ya creados en AKADEMO.
-- El email debe ser el **email real** del alumno/profesor, ya que les enviaremos las credenciales.
-- **No incluyáis contraseñas** — nosotros generamos contraseñas temporales automáticamente.
-
----
-
-## Qué pasa después:
-
-1. Nos enviáis el archivo Excel
-2. Nosotros lo importamos desde el panel de administración
-3. Os devolvemos un archivo con las **contraseñas temporales** de cada usuario
-4. Vosotros envíais a cada alumno/profesor su email y contraseña temporal
-5. Ellos entran, cambian su contraseña (recomendado), y ya tienen acceso a sus clases
-
----
-
-## Preguntas que necesitamos responder:
-
-1. ¿Cuántos alumnos y profesores tenéis aproximadamente?
-2. ¿Cobráis actualmente a los alumnos? ¿Cuánto por clase/mes o pago único?
-3. ¿Queréis mantener vuestra web de WordPress o preferís usar las páginas públicas de AKADEMO?
-4. ¿Utilizáis cuestionarios/quizzes en Moodle? ¿Es importante para vosotros?
+**Qué pasa después:**
+1. Nos enviáis el Excel relleno
+2. Nosotros lo importamos
+3. Os devolvemos las contraseñas temporales de cada usuario
+4. Vosotros las enviáis a cada alumno/profesor
+5. Entran, cambian la contraseña y ya tienen acceso a sus clases
 
 ---
 
 Un saludo,
 **[Tu nombre]**
+
+---
+---
+
+## Referencia técnica (desarrolladores)
+
+### Columnas reconocidas
+
+**Usuarios** — el parser acepta los nombres en minúsculas sin espacios:
+
+| Columna en Excel | Obligatoria | Alias aceptados |
+|---|---|---|
+| `email` | ✅ | — |
+| `nombre` | ✅ | `firstname` |
+| `apellido` | ✅ | `apellidos`, `lastname` |
+| `rol` | ✅ | `role` |
+| `clases` | ✅ | `classes`, `classnames` |
+
+**Clases:**
+
+| Columna | Obligatoria | Alias aceptados |
+|---|---|---|
+| `nombre` | ✅ | `name`, `clase`, `asignatura` |
+| `fechaInicio` | ❌ | `startdate`, `inicio`, `fecha` |
+| `precio` | ❌ | `price` |
+| `tipoPrecio` | ❌ | `pricetype`, `tipo`, `modalidad` |
+| `profesorEmail` | ❌ | `teacheremail`, `profesor` |
+| `descripcion` | ❌ | `description` |
+| `universidad` | ❌ | `university` |
+| `carrera` | ❌ | `degree`, `programa` |
+| `maxEstudiantes` | ❌ | `maxstudents`, `capacidad` |
+| `whatsapp` | ❌ | `whatsapplink` |
+
+El parser strip `(opcional)` de los encabezados antes de hacer matching, por lo que los archivos con ese sufijo también funcionan.
+
+### Entrypoints
+
+| Archivo | Propósito |
+|---|---|
+| [src/components/admin/migration-utils.ts](../../src/components/admin/migration-utils.ts) | `normalizeRows`, `normalizeClassRows`, `parseCSV` |
+| [workers/akademo-api/src/routes/admin.ts](../../workers/akademo-api/src/routes/admin.ts) | `POST /admin/migrate` |
+| [src/components/admin/MigrationSteps.tsx](../../src/components/admin/MigrationSteps.tsx) | UI del wizard de importación |
+
+### Errores comunes
+
+| Error | Causa | Solución |
+|---|---|---|
+| "Class not found" | Nombre de clase no coincide exactamente | Comprobar mayúsculas/espacios |
+| Profesor no asignado | `profesorEmail` no coincide con ningún TEACHER en el Excel | Corregir email o añadir fila del profesor |
+| Fecha inválida | `fechaInicio` no está en formato `DD/MM/YYYY` | Cambiar formato |
+| Duplicate key | El mismo `email` aparece dos veces | Deduplicar filas |

@@ -13,7 +13,7 @@ if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 
 // Column headers — optional fields marked with "(opcional)"
 // The migration parser strips "(opcional)" before matching, so these work as-is.
-const userHeaders    = ['email', 'nombre', 'apellido', 'rol (opcional)', 'clases (opcional)'];
+const userHeaders    = ['email', 'nombre', 'apellido', 'rol', 'clases'];
 const classHeaders   = ['nombre', 'fechaInicio (opcional)', 'precio (opcional)', 'tipoPrecio (opcional)', 'profesorEmail (opcional)', 'descripcion (opcional)', 'universidad (opcional)', 'carrera (opcional)', 'maxEstudiantes (opcional)', 'whatsapp (opcional)'];
 
 // --- EXAMPLE DATA ---
