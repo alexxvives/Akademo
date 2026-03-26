@@ -39,12 +39,12 @@ The importer reads a `.xlsx` file with two sheets:
 ## Processing Logic
 
 ### User creation
-1. `normalizeUserRows()` in [migration-utils.ts](../../workers/akademo-api/src/lib/migration-utils.ts) trims and validates each row
+1. `normalizeUserRows()` in [migration-utils.ts](../../src/components/admin/migration-utils.ts) trims and validates each row
 2. Users are created with `role = row.rol` and a random temporary password
 3. ClassEnrollments are created by matching `clases` column values against class names
 
 ### Class creation
-1. `normalizeClassRows()` reads the Clases sheet (if present)
+1. `normalizeClassRows()` in [migration-utils.ts](../../src/components/admin/migration-utils.ts) reads the Clases sheet (if present)
 2. Classes are upserted by `name` — if a class with that name already exists in the academy it is updated, otherwise created
 3. `tipoPrecio` maps to the DB enum: `MENSUAL` → `monthly`, `UNICO` → `one_time`
 
@@ -54,9 +54,9 @@ The importer reads a `.xlsx` file with two sheets:
 
 | File | Purpose |
 |---|---|
-| [workers/akademo-api/src/lib/migration-utils.ts](../../workers/akademo-api/src/lib/migration-utils.ts) | Row normalization, type definitions |
+| [src/components/admin/migration-utils.ts](../../src/components/admin/migration-utils.ts) | Row normalization, type definitions |
 | [workers/akademo-api/src/routes/admin.ts](../../workers/akademo-api/src/routes/admin.ts) | `/admin/migrate` POST handler |
-| [src/components/shared/MigrationSteps.tsx](../../src/components/shared/MigrationSteps.tsx) | UI showing expected column names |
+| [src/components/admin/MigrationSteps.tsx](../../src/components/admin/MigrationSteps.tsx) | UI showing expected column names |
 
 ---
 

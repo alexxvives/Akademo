@@ -267,10 +267,10 @@ const filtered = lessons.filter(l => l.active);
 ## 📚 MORE DOCUMENTATION
 
 - [DATABASE_SCHEMA.md](../DATABASE_SCHEMA.md) - Complete table definitions
-- [PROJECT_DOCUMENTATION.md](../PROJECT_DOCUMENTATION.md) - Architecture details
 - [DEPLOYMENT_GUIDE.md](../DEPLOYMENT_GUIDE.md) - Production deployment
 - [docs/troubleshooting.md](../docs/troubleshooting.md) - Common problems
-- [docs/zoom-integration.md](../docs/zoom-integration.md) - Zoom API & webhooks
+- [docs/zoom-oauth-quick-reference.md](../docs/zoom-oauth-quick-reference.md) - Zoom OAuth reference
+- [docs/zoom-recording-behavior.md](../docs/zoom-recording-behavior.md) - Zoom recording behavior
 
 ---
 
