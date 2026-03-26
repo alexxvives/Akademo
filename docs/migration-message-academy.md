@@ -34,15 +34,19 @@ Podéis descargar la **plantilla de ejemplo** directamente desde AKADEMO (panel 
 
 #### Pestaña 2: **Clases** (opcional — si queréis que las creemos automáticamente)
 
-| nombre | precioMensual | pagoUnico |
-|---|---|---|
-| Matemáticas 1 | 50 | |
-| Inglés B2 | | 200 |
-| Física 2 | 40 | |
+| nombre | fechaInicio | precio | tipoPrecio | profesorEmail | descripcion | universidad | carrera | maxEstudiantes | whatsapp |
+|---|---|---|---|---|---|---|---|---|---|
+| Matemáticas 1 | 01/09/2026 | 50 | MENSUAL | maria.lopez@gmail.com | Álgebra y cálculo | UCM | Ingeniería | 30 | |
+| Inglés B2 | 15/09/2026 | 200 | UNICO | pedro.ruiz@gmail.com | Inglés B2 | | | 20 | https://chat.whatsapp.com/EVwr6bNsKng5Rk965ZuM4U |
+| Física 2 | 01/09/2026 | 40 | MENSUAL | pedro.ruiz@gmail.com | | UAM | Física | | |
 
+**Solo `nombre` es obligatorio.** El resto de columnas son opcionales — podéis incluir o dejar vacías las que no apliquen:
+- `tipoPrecio`: `MENSUAL` (cobro mensual) o `UNICO` (pago único)
+- `profesorEmail`: debe coincidir con un email de la pestaña Usuarios (rol TEACHER)
+- `maxEstudiantes`: número máximo de alumnos permitidos
+- `whatsapp`: enlace al grupo de WhatsApp de la clase
 - Si dejáis esta pestaña **vacía o no la incluís**, las clases deben existir ya en AKADEMO antes de importar.
 - Si la incluís, **las clases se crean automáticamente** durante la importación.
-- `precioMensual` y `pagoUnico` son opcionales. Podéis rellenar solo el que aplique.
 
 ---
 

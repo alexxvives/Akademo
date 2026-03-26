@@ -25,7 +25,7 @@ const usersData = [
 // Example classes — these will be created automatically if they don't exist in the academy
 const classesData = [
   { nombre: 'Matemáticas 1', fechaInicio: '01/09/2026', precio: '50',  tipoPrecio: 'MENSUAL', profesorEmail: 'miguel.ruiz@ejemplo.com',  descripcion: 'Álgebra y cálculo básico', universidad: 'UCM',  carrera: 'Ingeniería', maxEstudiantes: '30', whatsapp: '' },
-  { nombre: 'Inglés B2',     fechaInicio: '15/09/2026', precio: '200', tipoPrecio: 'UNICO',   profesorEmail: 'sofia.moreno@ejemplo.com', descripcion: 'Inglés nivel B2',          universidad: '',     carrera: '',          maxEstudiantes: '20', whatsapp: 'https://chat.whatsapp.com/ejemplo' },
+  { nombre: 'Inglés B2',     fechaInicio: '15/09/2026', precio: '200', tipoPrecio: 'UNICO',   profesorEmail: 'sofia.moreno@ejemplo.com', descripcion: 'Inglés nivel B2',          universidad: '',     carrera: '',          maxEstudiantes: '20', whatsapp: 'https://chat.whatsapp.com/EVwr6bNsKng5Rk965ZuM4U' },
   { nombre: 'Ciencias',      fechaInicio: '01/09/2026', precio: '40',  tipoPrecio: 'MENSUAL', profesorEmail: 'sofia.moreno@ejemplo.com', descripcion: '',                         universidad: 'UAM',  carrera: 'Biología',  maxEstudiantes: '',   whatsapp: '' },
 ];
 

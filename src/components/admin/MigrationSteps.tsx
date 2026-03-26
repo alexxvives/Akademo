@@ -32,8 +32,8 @@ export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
                 <tr><td className="pr-4 py-1 font-semibold text-gray-700">Email</td><td className="pr-4">email</td><td>Obligatorio</td></tr>
                 <tr><td className="pr-4 py-1 font-semibold text-gray-700">Nombre</td><td className="pr-4">firstName, nombre</td><td>Obligatorio</td></tr>
                 <tr><td className="pr-4 py-1 font-semibold text-gray-700">Apellido</td><td className="pr-4">lastName, apellido, apellidos</td><td>Obligatorio</td></tr>
-                <tr><td className="pr-4 py-1">Rol</td><td className="pr-4">role, rol</td><td>STUDENT o TEACHER (default: STUDENT)</td></tr>
-                <tr><td className="pr-4 py-1">Clases</td><td className="pr-4">classes, clases, classNames</td><td>Nombres separados por coma (entre comillas)</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Rol <span className="text-gray-400">(opcional)</span></td><td className="pr-4">role, rol</td><td>STUDENT o TEACHER (default: STUDENT)</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Clases <span className="text-gray-400">(opcional)</span></td><td className="pr-4">classes, clases, classNames</td><td>Nombres separados por coma (entre comillas)</td></tr>
               </tbody>
             </table>
           </div>
@@ -50,15 +50,15 @@ export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
               </thead>
               <tbody>
                 <tr><td className="pr-4 py-1 font-semibold text-gray-700">Nombre</td><td className="pr-4">nombre, name, asignatura</td><td>Obligatorio</td></tr>
-                <tr><td className="pr-4 py-1">Precio</td><td className="pr-4">precio, price</td><td>Opcional (número)</td></tr>
-                <tr><td className="pr-4 py-1">Tipo Precio</td><td className="pr-4">tipoPrecio, pricetype, tipo</td><td>MENSUAL o UNICO</td></tr>
-                <tr><td className="pr-4 py-1">Fecha Inicio</td><td className="pr-4">fechaInicio, startdate, fecha</td><td>Opcional (ej: 01/09/2026)</td></tr>
-                <tr><td className="pr-4 py-1">Profesor Email</td><td className="pr-4">profesorEmail, teacherEmail</td><td>Opcional (email existente)</td></tr>
-                <tr><td className="pr-4 py-1">Descripción</td><td className="pr-4">descripcion, description</td><td>Opcional</td></tr>
-                <tr><td className="pr-4 py-1">Universidad</td><td className="pr-4">universidad, university</td><td>Opcional</td></tr>
-                <tr><td className="pr-4 py-1">Carrera</td><td className="pr-4">carrera, degree</td><td>Opcional</td></tr>
-                <tr><td className="pr-4 py-1">Máx. Estudiantes</td><td className="pr-4">maxEstudiantes, maxStudents</td><td>Opcional (número)</td></tr>
-                <tr><td className="pr-4 py-1">WhatsApp</td><td className="pr-4">whatsapp, whatsappLink</td><td>Opcional (URL grupo)</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Precio <span>(opcional)</span></td><td className="pr-4">precio, price</td><td>Número (ej: 50)</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Tipo Precio <span>(opcional)</span></td><td className="pr-4">tipoPrecio, pricetype, tipo</td><td>MENSUAL o UNICO</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Fecha Inicio <span>(opcional)</span></td><td className="pr-4">fechaInicio, startdate, fecha</td><td>Ej: 01/09/2026</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Profesor Email <span>(opcional)</span></td><td className="pr-4">profesorEmail, teacherEmail</td><td>Email de un profesor importado</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Descripción <span>(opcional)</span></td><td className="pr-4">descripcion, description</td><td>Texto libre</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Universidad <span>(opcional)</span></td><td className="pr-4">universidad, university</td><td>Nombre de la universidad</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Carrera <span>(opcional)</span></td><td className="pr-4">carrera, degree</td><td>Nombre de la carrera</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Máx. Estudiantes <span>(opcional)</span></td><td className="pr-4">maxEstudiantes, maxStudents</td><td>Número entero</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">WhatsApp <span>(opcional)</span></td><td className="pr-4">whatsapp, whatsappLink</td><td>URL del grupo</td></tr>
               </tbody>
             </table>
           </div>
