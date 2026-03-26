@@ -1,69 +1,76 @@
 #!/usr/bin/env node
-// Generates example Users.xlsx for the bulk import migration tool.
+// Generates example and template Excel files for the bulk import migration tool.
+// Output: docs/onboarding/Users_example.xlsx  — filled with sample data
+//         docs/onboarding/Users_template.xlsx  — empty sheet with headers only
 // Usage: node scripts/generate-example-xlsx.js
 
 const XLSX = require('xlsx');
 const path = require('path');
 const fs = require('fs');
 
-const outputDir = path.join(__dirname, '..', 'public', 'templates');
+const outputDir = path.join(__dirname, '..', 'docs', 'onboarding');
 if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 
-// Example users — class names must match classes in the "Clases" sheet or already created in the academy
-const usersData = [
-  // Header will be auto-generated from the object keys
-  { firstName: 'Juan',    lastName: 'García',   email: 'juan.garcia@ejemplo.com',     role: 'STUDENT', classNames: 'Matemáticas 1,Inglés B2' },
-  { firstName: 'María',   lastName: 'López',    email: 'maria.lopez@ejemplo.com',     role: 'STUDENT', classNames: 'Matemáticas 1' },
-  { firstName: 'Carlos',  lastName: 'Martínez', email: 'carlos.martinez@ejemplo.com', role: 'STUDENT', classNames: 'Inglés B2' },
-  { firstName: 'Ana',     lastName: 'Fernández',email: 'ana.fernandez@ejemplo.com',   role: 'STUDENT', classNames: 'Matemáticas 1,Ciencias' },
-  { firstName: 'Pedro',   lastName: 'Sánchez',  email: 'pedro.sanchez@ejemplo.com',   role: 'STUDENT', classNames: 'Ciencias' },
-  { firstName: 'Laura',   lastName: 'Jiménez',  email: 'laura.jimenez@ejemplo.com',   role: 'STUDENT', classNames: 'Inglés B2,Ciencias' },
-  { firstName: 'Miguel',  lastName: 'Ruiz',     email: 'miguel.ruiz@ejemplo.com',     role: 'TEACHER', classNames: 'Matemáticas 1' },
-  { firstName: 'Sofía',   lastName: 'Moreno',   email: 'sofia.moreno@ejemplo.com',    role: 'TEACHER', classNames: 'Inglés B2,Ciencias' },
+// Column headers — optional fields marked with "(opcional)"
+// The migration parser strips "(opcional)" before matching, so these work as-is.
+const userHeaders    = ['email', 'nombre', 'apellido', 'rol (opcional)', 'clases (opcional)'];
+const classHeaders   = ['nombre', 'fechaInicio (opcional)', 'precio (opcional)', 'tipoPrecio (opcional)', 'profesorEmail (opcional)', 'descripcion (opcional)', 'universidad (opcional)', 'carrera (opcional)', 'maxEstudiantes (opcional)', 'whatsapp (opcional)'];
+
+// --- EXAMPLE DATA ---
+const usersRows = [
+  ['juan.garcia@ejemplo.com',     'Juan',   'García',    'STUDENT', 'Matemáticas 1,Inglés B2'],
+  ['maria.lopez@ejemplo.com',     'María',  'López',     'STUDENT', 'Matemáticas 1'],
+  ['carlos.martinez@ejemplo.com', 'Carlos', 'Martínez',  'STUDENT', 'Inglés B2'],
+  ['ana.fernandez@ejemplo.com',   'Ana',    'Fernández', 'STUDENT', 'Matemáticas 1,Ciencias'],
+  ['pedro.sanchez@ejemplo.com',   'Pedro',  'Sánchez',   'STUDENT', 'Ciencias'],
+  ['laura.jimenez@ejemplo.com',   'Laura',  'Jiménez',   'STUDENT', 'Inglés B2,Ciencias'],
+  ['miguel.ruiz@ejemplo.com',     'Miguel', 'Ruiz',      'TEACHER', 'Matemáticas 1'],
+  ['sofia.moreno@ejemplo.com',    'Sofía',  'Moreno',    'TEACHER', 'Inglés B2,Ciencias'],
 ];
 
-// Example classes — these will be created automatically if they don't exist in the academy
-const classesData = [
-  { nombre: 'Matemáticas 1', fechaInicio: '01/09/2026', precio: '50',  tipoPrecio: 'MENSUAL', profesorEmail: 'miguel.ruiz@ejemplo.com',  descripcion: 'Álgebra y cálculo básico', universidad: 'UCM',  carrera: 'Ingeniería', maxEstudiantes: '30', whatsapp: '' },
-  { nombre: 'Inglés B2',     fechaInicio: '15/09/2026', precio: '200', tipoPrecio: 'UNICO',   profesorEmail: 'sofia.moreno@ejemplo.com', descripcion: 'Inglés nivel B2',          universidad: '',     carrera: '',          maxEstudiantes: '20', whatsapp: 'https://chat.whatsapp.com/EVwr6bNsKng5Rk965ZuM4U' },
-  { nombre: 'Ciencias',      fechaInicio: '01/09/2026', precio: '40',  tipoPrecio: 'MENSUAL', profesorEmail: 'sofia.moreno@ejemplo.com', descripcion: '',                         universidad: 'UAM',  carrera: 'Biología',  maxEstudiantes: '',   whatsapp: '' },
+const classesRows = [
+  ['Matemáticas 1', '01/09/2026', '50',  'MENSUAL', 'miguel.ruiz@ejemplo.com',  'Álgebra y cálculo básico', 'UCM', 'Ingeniería', '30', ''],
+  ['Inglés B2',     '15/09/2026', '200', 'UNICO',   'sofia.moreno@ejemplo.com', 'Inglés nivel B2',          '',    '',           '20', 'https://chat.whatsapp.com/EVwr6bNsKng5Rk965ZuM4U'],
+  ['Ciencias',      '01/09/2026', '40',  'MENSUAL', 'sofia.moreno@ejemplo.com', '',                         'UAM', 'Biología',   '',   ''],
 ];
 
-const wb = XLSX.utils.book_new();
+const userColWidths    = [32, 16, 18, 14, 40];
+const classColWidths   = [24, 18, 10, 16, 32, 36, 16, 16, 16, 44];
 
-// Sheet 1: Usuarios
-const ws = XLSX.utils.json_to_sheet(usersData);
-ws['!cols'] = [
-  { wch: 14 }, // firstName
-  { wch: 16 }, // lastName
-  { wch: 32 }, // email
-  { wch: 10 }, // role
-  { wch: 36 }, // classNames
-];
-XLSX.utils.book_append_sheet(wb, ws, 'Usuarios');
+function makeSheet(headers, rows) {
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+  ws['!cols'] = headers.map((_, i) => ({ wch: (rows.length ? (i < userColWidths.length ? userColWidths[i] : classColWidths[i]) : Math.max(headers[i].length + 2, 16)) }));
+  return ws;
+}
 
-// Sheet 2: Clases (optional — creates classes that don't exist)
-const wsClases = XLSX.utils.json_to_sheet(classesData);
-wsClases['!cols'] = [
-  { wch: 24 }, // nombre
-  { wch: 14 }, // fechaInicio
-  { wch: 10 }, // precio
-  { wch: 12 }, // tipoPrecio
-  { wch: 30 }, // profesorEmail
-  { wch: 36 }, // descripcion
-  { wch: 16 }, // universidad
-  { wch: 16 }, // carrera
-  { wch: 14 }, // maxEstudiantes
-  { wch: 40 }, // whatsapp
-];
-XLSX.utils.book_append_sheet(wb, wsClases, 'Clases');
+function makeColWidths(widths) {
+  return widths.map(w => ({ wch: w }));
+}
 
-const outputPath = path.join(outputDir, 'Users_example.xlsx');
-XLSX.writeFile(wb, outputPath);
-console.log('Created:', outputPath);
+// --- FILE 1: Users_example.xlsx (with sample data) ---
+const wbExample = XLSX.utils.book_new();
+const wsUsersEx = XLSX.utils.aoa_to_sheet([userHeaders, ...usersRows]);
+wsUsersEx['!cols'] = makeColWidths(userColWidths);
+XLSX.utils.book_append_sheet(wbExample, wsUsersEx, 'Usuarios');
 
-// Also write to migrations/ so developers have a reference copy alongside the SQL migrations
-const migrationsDir = path.join(__dirname, '..', 'migrations');
-const migrationsPath = path.join(migrationsDir, 'Users_example.xlsx');
-XLSX.writeFile(wb, migrationsPath);
-console.log('Created:', migrationsPath);
+const wsClasesEx = XLSX.utils.aoa_to_sheet([classHeaders, ...classesRows]);
+wsClasesEx['!cols'] = makeColWidths(classColWidths);
+XLSX.utils.book_append_sheet(wbExample, wsClasesEx, 'Clases');
+
+const examplePath = path.join(outputDir, 'Users_example.xlsx');
+XLSX.writeFile(wbExample, examplePath);
+console.log('Created:', examplePath);
+
+// --- FILE 2: Users_template.xlsx (empty — headers only) ---
+const wbTemplate = XLSX.utils.book_new();
+const wsUsersTpl = XLSX.utils.aoa_to_sheet([userHeaders]);
+wsUsersTpl['!cols'] = makeColWidths(userColWidths);
+XLSX.utils.book_append_sheet(wbTemplate, wsUsersTpl, 'Usuarios');
+
+const wsClasesTpl = XLSX.utils.aoa_to_sheet([classHeaders]);
+wsClasesTpl['!cols'] = makeColWidths(classColWidths);
+XLSX.utils.book_append_sheet(wbTemplate, wsClasesTpl, 'Clases');
+
+const templatePath = path.join(outputDir, 'Users_template.xlsx');
+XLSX.writeFile(wbTemplate, templatePath);
+console.log('Created:', templatePath);

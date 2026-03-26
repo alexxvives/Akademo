@@ -40,7 +40,7 @@ export interface ImportSummary {
 export function normalizeRows(rows: Record<string, unknown>[]): ImportRow[] {
   if (rows.length === 0) return [];
   const raw = rows[0];
-  const keys = Object.keys(raw).map(k => k.toLowerCase().trim());
+  const keys = Object.keys(raw).map(k => k.toLowerCase().trim().replace(/\s*\(opcional\)/gi, '').trim());
   const find = (...names: string[]) => keys.findIndex(k => names.includes(k));
 
   const emailIdx = find('email');
@@ -65,7 +65,7 @@ export function parseCSV(text: string): ImportRow[] {
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
   if (lines.length < 2) return [];
 
-  const header = lines[0].split(',').map(h => h.trim().toLowerCase());
+  const header = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/\s*\(opcional\)/gi, '').trim());
   const emailIdx = header.findIndex(h => h === 'email');
   const firstIdx = header.findIndex(h => h === 'firstname' || h === 'nombre');
   const lastIdx = header.findIndex(h => h === 'lastname' || h === 'apellido' || h === 'apellidos');
@@ -101,7 +101,7 @@ export { XLSX };
 export function normalizeClassRows(rows: Record<string, unknown>[]): ClassRow[] {
   if (rows.length === 0) return [];
   const raw = rows[0];
-  const keys = Object.keys(raw).map(k => k.toLowerCase().trim().replace(/\s+/g, ''));
+  const keys = Object.keys(raw).map(k => k.toLowerCase().trim().replace(/\s*\(opcional\)/gi, '').trim().replace(/\s+/g, ''));
   const find = (...names: string[]) => keys.findIndex(k => names.includes(k));
 
   const nameIdx = find('nombre', 'name', 'clase', 'class', 'asignatura');
