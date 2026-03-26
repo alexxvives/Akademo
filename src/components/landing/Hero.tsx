@@ -96,7 +96,7 @@ export function Hero({ t, isScrolled: _isScrolled, onOpenModal }: HeroProps) {
             {/* Main dashboard image */}
             <div className="relative rounded-xl overflow-hidden border border-gray-800 shadow-2xl shadow-emerald-900/20">
               <Image
-                src="/demo.png"
+                src="/images/demo.png"
                 alt="AKADEMO Dashboard"
                 width={800}
                 height={500}
