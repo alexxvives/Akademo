@@ -24,9 +24,9 @@ const usersData = [
 
 // Example classes — these will be created automatically if they don't exist in the academy
 const classesData = [
-  { nombre: 'Matemáticas 1', fechaInicio: '01/09/2026', precio: '50',  tipoPrecio: 'MENSUAL', profesorEmail: 'miguel.ruiz@ejemplo.com' },
-  { nombre: 'Inglés B2',     fechaInicio: '15/09/2026', precio: '200', tipoPrecio: 'UNICO',   profesorEmail: 'sofia.moreno@ejemplo.com' },
-  { nombre: 'Ciencias',      fechaInicio: '01/09/2026', precio: '40',  tipoPrecio: 'MENSUAL', profesorEmail: 'sofia.moreno@ejemplo.com' },
+  { nombre: 'Matemáticas 1', fechaInicio: '01/09/2026', precio: '50',  tipoPrecio: 'MENSUAL', profesorEmail: 'miguel.ruiz@ejemplo.com',  descripcion: 'Álgebra y cálculo básico', universidad: 'UCM',  carrera: 'Ingeniería', maxEstudiantes: '30', whatsapp: '' },
+  { nombre: 'Inglés B2',     fechaInicio: '15/09/2026', precio: '200', tipoPrecio: 'UNICO',   profesorEmail: 'sofia.moreno@ejemplo.com', descripcion: 'Inglés nivel B2',          universidad: '',     carrera: '',          maxEstudiantes: '20', whatsapp: 'https://chat.whatsapp.com/ejemplo' },
+  { nombre: 'Ciencias',      fechaInicio: '01/09/2026', precio: '40',  tipoPrecio: 'MENSUAL', profesorEmail: 'sofia.moreno@ejemplo.com', descripcion: '',                         universidad: 'UAM',  carrera: 'Biología',  maxEstudiantes: '',   whatsapp: '' },
 ];
 
 const wb = XLSX.utils.book_new();
@@ -50,6 +50,11 @@ wsClases['!cols'] = [
   { wch: 10 }, // precio
   { wch: 12 }, // tipoPrecio
   { wch: 30 }, // profesorEmail
+  { wch: 36 }, // descripcion
+  { wch: 16 }, // universidad
+  { wch: 16 }, // carrera
+  { wch: 14 }, // maxEstudiantes
+  { wch: 40 }, // whatsapp
 ];
 XLSX.utils.book_append_sheet(wb, wsClases, 'Clases');
 

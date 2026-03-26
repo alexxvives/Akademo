@@ -54,6 +54,11 @@ export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
                 <tr><td className="pr-4 py-1">Tipo Precio</td><td className="pr-4">tipoPrecio, pricetype, tipo</td><td>MENSUAL o UNICO</td></tr>
                 <tr><td className="pr-4 py-1">Fecha Inicio</td><td className="pr-4">fechaInicio, startdate, fecha</td><td>Opcional (ej: 01/09/2026)</td></tr>
                 <tr><td className="pr-4 py-1">Profesor Email</td><td className="pr-4">profesorEmail, teacherEmail</td><td>Opcional (email existente)</td></tr>
+                <tr><td className="pr-4 py-1">Descripción</td><td className="pr-4">descripcion, description</td><td>Opcional</td></tr>
+                <tr><td className="pr-4 py-1">Universidad</td><td className="pr-4">universidad, university</td><td>Opcional</td></tr>
+                <tr><td className="pr-4 py-1">Carrera</td><td className="pr-4">carrera, degree</td><td>Opcional</td></tr>
+                <tr><td className="pr-4 py-1">Máx. Estudiantes</td><td className="pr-4">maxEstudiantes, maxStudents</td><td>Opcional (número)</td></tr>
+                <tr><td className="pr-4 py-1">WhatsApp</td><td className="pr-4">whatsapp, whatsappLink</td><td>Opcional (URL grupo)</td></tr>
               </tbody>
             </table>
           </div>
@@ -103,6 +108,9 @@ export function PreviewStep({ preview, classPreview, importing, reset, handleImp
                   <th className="text-left px-4 py-2.5">Precio</th>
                   <th className="text-left px-4 py-2.5">Inicio</th>
                   <th className="text-left px-4 py-2.5">Profesor</th>
+                  <th className="text-left px-4 py-2.5">Universidad</th>
+                  <th className="text-left px-4 py-2.5">Carrera</th>
+                  <th className="text-left px-4 py-2.5">Máx.</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -114,6 +122,9 @@ export function PreviewStep({ preview, classPreview, importing, reset, handleImp
                     </td>
                     <td className="px-4 py-2 text-gray-500">{cls.startDate ?? '—'}</td>
                     <td className="px-4 py-2 text-gray-500 text-xs">{cls.teacherEmail ?? '—'}</td>
+                    <td className="px-4 py-2 text-gray-500 text-xs">{cls.university ?? '—'}</td>
+                    <td className="px-4 py-2 text-gray-500 text-xs">{cls.carrera ?? '—'}</td>
+                    <td className="px-4 py-2 text-gray-500 text-xs">{cls.maxStudents ?? '—'}</td>
                   </tr>
                 ))}
               </tbody>

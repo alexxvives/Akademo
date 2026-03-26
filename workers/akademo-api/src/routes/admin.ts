@@ -790,9 +790,14 @@ admin.post('/bulk-import', async (c) => {
         const monthlyPrice = cr.priceType === 'MENSUAL' ? price : null;
         const oneTimePrice = cr.priceType === 'UNICO' ? price : null;
         const startDate = cr.startDate || null;
+        const description = cr.description || null;
+        const university = cr.university || null;
+        const carrera = cr.carrera || null;
+        const maxStudents = cr.maxStudents ?? null;
+        const whatsappGroupLink = cr.whatsappGroupLink || null;
         await c.env.DB
-          .prepare('INSERT INTO Class (id, name, slug, academyId, monthlyPrice, oneTimePrice, startDate, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-          .bind(classId, name, slug, academyId, monthlyPrice, oneTimePrice, startDate, now)
+          .prepare('INSERT INTO Class (id, name, slug, academyId, monthlyPrice, oneTimePrice, startDate, description, university, carrera, maxStudents, whatsappGroupLink, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+          .bind(classId, name, slug, academyId, monthlyPrice, oneTimePrice, startDate, description, university, carrera, maxStudents, whatsappGroupLink, now)
           .run();
         classMap.set(key, classId);
         if (cr.teacherEmail) classTeacherMap.set(classId, cr.teacherEmail.toLowerCase().trim());

@@ -14,6 +14,11 @@ export interface ClassRow {
   priceType?: 'MENSUAL' | 'UNICO';
   startDate?: string;
   teacherEmail?: string;
+  description?: string;
+  university?: string;
+  carrera?: string;
+  maxStudents?: number;
+  whatsappGroupLink?: string;
 }
 
 export interface ImportResult {
@@ -106,6 +111,11 @@ export function normalizeClassRows(rows: Record<string, unknown>[]): ClassRow[] 
   const priceTypeIdx = find('tipoprecio', 'pricetype', 'tipo', 'type', 'modalidad');
   const startDateIdx = find('fechainicio', 'startdate', 'inicio', 'start', 'fecha');
   const teacherIdx = find('profesoremail', 'teacheremail', 'emailprofesor', 'emailteacher', 'profesor', 'teacher');
+  const descIdx = find('descripcion', 'description', 'desc');
+  const universityIdx = find('universidad', 'university');
+  const carreraIdx = find('carrera', 'degree', 'programa');
+  const maxStudentsIdx = find('maxestudiantes', 'maxstudents', 'maxalumnos', 'capacidad', 'capacity');
+  const whatsappIdx = find('whatsapp', 'whatsapplink', 'whatsappgrouplink', 'grupwhatsapp');
 
   const origKeys = Object.keys(raw);
   return rows.flatMap(row => {
@@ -115,12 +125,22 @@ export function normalizeClassRows(rows: Record<string, unknown>[]): ClassRow[] 
     const priceTypeRaw = priceTypeIdx !== -1 ? String(row[origKeys[priceTypeIdx]] ?? '').trim().toUpperCase() : '';
     const startDateRaw = startDateIdx !== -1 ? String(row[origKeys[startDateIdx]] ?? '').trim() : '';
     const teacherRaw = teacherIdx !== -1 ? String(row[origKeys[teacherIdx]] ?? '').trim().toLowerCase() : '';
+    const descRaw = descIdx !== -1 ? String(row[origKeys[descIdx]] ?? '').trim() : '';
+    const universityRaw = universityIdx !== -1 ? String(row[origKeys[universityIdx]] ?? '').trim() : '';
+    const carreraRaw = carreraIdx !== -1 ? String(row[origKeys[carreraIdx]] ?? '').trim() : '';
+    const maxStudentsRaw = maxStudentsIdx !== -1 ? parseInt(String(row[origKeys[maxStudentsIdx]] ?? ''), 10) : NaN;
+    const whatsappRaw = whatsappIdx !== -1 ? String(row[origKeys[whatsappIdx]] ?? '').trim() : '';
     return [{
       name,
       price: isNaN(priceRaw) ? undefined : priceRaw,
       priceType: priceTypeRaw === 'MENSUAL' || priceTypeRaw === 'UNICO' ? priceTypeRaw : undefined,
       startDate: startDateRaw || undefined,
       teacherEmail: teacherRaw || undefined,
+      description: descRaw || undefined,
+      university: universityRaw || undefined,
+      carrera: carreraRaw || undefined,
+      maxStudents: isNaN(maxStudentsRaw) ? undefined : maxStudentsRaw,
+      whatsappGroupLink: whatsappRaw || undefined,
     }];
   });
 }
