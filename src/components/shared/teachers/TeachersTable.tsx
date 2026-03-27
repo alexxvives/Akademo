@@ -17,7 +17,7 @@ interface TeachersTableProps {
   onToggleExpand: (id: string) => void;
   onCopyJoinLink: (id: string) => void;
   onEdit: (teacher: Teacher) => void;
-  onDelete: (id: string, name: string) => void;
+  onDelete: (id: string, name: string, classes: import('./types').TeacherClass[]) => void;
 }
 
 export function TeachersTable({

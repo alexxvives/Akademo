@@ -834,6 +834,7 @@ admin.post('/bulk-import', async (c) => {
         continue;
       }
 
+      try {
       // Check if user already exists IN THIS ACADEMY
       const existingInAcademy = await c.env.DB
         .prepare(`
@@ -937,9 +938,9 @@ admin.post('/bulk-import', async (c) => {
         : existing ? 'Added to academy' : 'Created successfully';
 
       results.push({ row: i + 1, email, status: 'created', message: msg, tempPassword: tempPassword ? String(tempPassword) : '' });
-    } catch (err: any) {
-      results.push({ row: i + 1, email, status: 'error', message: err.message || 'Database error' });
-    }
+      } catch (err: any) {
+        results.push({ row: i + 1, email, status: 'error', message: err.message || 'Database error' });
+      }
     }
 
     // Assign teachers to newly created classes (resolve email → userId)

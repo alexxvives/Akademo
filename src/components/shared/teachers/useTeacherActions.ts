@@ -1,6 +1,6 @@
 import type { FormEvent } from 'react';
 import { apiClient } from '@/lib/api-client';
-import type { Teacher } from './types';
+import type { Teacher, TeacherClass } from './types';
 
 interface TeacherActionsDeps {
   setDeleting: (id: string | null) => void;
@@ -25,8 +25,11 @@ export function useTeacherActions(deps: TeacherActionsDeps) {
     setCopiedId, loadTeachers, editingTeacher, editFormData,
   } = deps;
 
-  const handleDeleteTeacher = async (teacherId: string, teacherName: string) => {
-    if (!confirm(`¿Estás seguro de que quieres eliminar a ${teacherName}?`)) return;
+  const handleDeleteTeacher = async (teacherId: string, teacherName: string, teacherClasses: TeacherClass[] = []) => {
+    const classWarning = teacherClasses.length > 0
+      ? `\n\nEste profesor está asignado a ${teacherClasses.length} asignatura${teacherClasses.length > 1 ? 's' : ''}: ${teacherClasses.map(c => c.name).join(', ')}.\nLas asignaturas quedarán sin profesor asignado.`
+      : '';
+    if (!confirm(`¿Estás seguro de que quieres eliminar a ${teacherName}?${classWarning}`)) return;
     setDeleting(teacherId);
     try {
       const res = await apiClient(`/users/teacher/${teacherId}`, { method: 'DELETE' });

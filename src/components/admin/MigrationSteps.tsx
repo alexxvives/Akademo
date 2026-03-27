@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import confetti from 'canvas-confetti';
 import { type ImportRow, type ClassRow, type ImportSummary } from './migration-utils';
 
 interface UploadStepProps {
@@ -64,24 +65,17 @@ export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
           </div>
         </div>
 
-        <div className="mt-4 bg-white rounded-lg border border-gray-200 p-3 font-mono text-xs text-gray-500">
-          <p className="text-gray-400 mb-1"># Hoja Usuarios:</p>
-          <p>email,nombre,apellido,rol,clases</p>
-          <p>juan@gmail.com,Juan,García,STUDENT,&quot;Matemáticas 1,Inglés B2&quot;</p>
-          <p className="mt-2 text-gray-400"># Hoja Clases:</p>
-          <p>nombre,fechaInicio,precio,tipoPrecio,profesorEmail</p>
-          <p>Matemáticas 1,01/09/2026,50,MENSUAL,miguel@ejemplo.com</p>
-          <p>Inglés B2,,200,UNICO,sofia@ejemplo.com</p>
-        </div>
       </div>
 
-      <input
-        ref={fileRef as React.RefObject<HTMLInputElement>}
-        type="file"
-        accept=".csv,.xlsx,.xls"
-        onChange={handleFileUpload}
-        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 file:cursor-pointer"
-      />
+      <div className="flex justify-center">
+        <input
+          ref={fileRef as React.RefObject<HTMLInputElement>}
+          type="file"
+          accept=".csv,.xlsx,.xls"
+          onChange={handleFileUpload}
+          className="text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-gray-900 file:text-white hover:file:bg-gray-800 file:cursor-pointer"
+        />
+      </div>
     </div>
   );
 }
@@ -135,6 +129,28 @@ export function PreviewStep({ preview, classPreview, importing, reset, handleImp
 
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-gray-700">Usuarios — {preview.length} filas</h3>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={reset}
+            disabled={importing}
+            className="px-4 py-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleImport}
+            disabled={importing}
+            className="px-5 py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center gap-2"
+          >
+            {importing && (
+              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+              </svg>
+            )}
+            {importing ? 'Importando...' : 'Importar a la base de datos'}
+          </button>
+        </div>
       </div>
 
       <div className="overflow-x-auto max-h-[55vh] overflow-y-auto border border-gray-200 rounded-xl">
@@ -186,6 +202,17 @@ export function ResultsStep({ summary, downloadResults, reset, onClose, onSendEm
   const hasCreated = summary.created > 0;
   const [emailState, setEmailState] = useState<'idle' | 'sending' | 'sent'>('idle');
   const [emailResult, setEmailResult] = useState<{ sent: number; failed: number } | null>(null);
+
+  useEffect(() => {
+    if (summary.created > 0) {
+      const end = Date.now() + 2000;
+      const fire = () => {
+        confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 }, colors: ['#111827', '#6366f1', '#10b981'] });
+        if (Date.now() < end) requestAnimationFrame(fire);
+      };
+      fire();
+    }
+  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSend = async () => {
     setEmailState('sending');

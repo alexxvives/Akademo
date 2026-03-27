@@ -17,7 +17,7 @@ interface TeacherRowProps {
   onToggleExpand: (id: string) => void;
   onCopyJoinLink: (id: string) => void;
   onEdit: (teacher: Teacher) => void;
-  onDelete: (id: string, name: string) => void;
+  onDelete: (id: string, name: string, classes: import('./types').TeacherClass[]) => void;
 }
 
 export function TeacherRow({
@@ -137,7 +137,7 @@ export function TeacherRow({
                 </svg>
               </button>
               <button
-                onClick={(e) => { e.stopPropagation(); onDelete(teacher.id, teacher.name); }}
+                onClick={(e) => { e.stopPropagation(); onDelete(teacher.id, teacher.name, teacher.classes ?? []); }}
                 disabled={deleting === teacher.id || isDemo}
                 className="text-red-600 hover:text-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Eliminar profesor"
