@@ -47,13 +47,12 @@ export const metadata: Metadata = {
     siteName: 'AKADEMO',
     title: "AKADEMO - Software de Gestión para Academias",
     description: "Protege tu contenido educativo, evita cuentas compartidas y gestiona tu academia online desde una sola plataforma.",
-    images: [{ url: '/images/og-image.svg', width: 1200, height: 630, alt: 'AKADEMO - Software de Gestión para Academias' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: "AKADEMO - Software de Gestión para Academias",
     description: "Protege tu contenido educativo, evita cuentas compartidas y gestiona tu academia online.",
-    images: ['/images/og-image.svg'],
+
   },
   robots: {
     index: true,

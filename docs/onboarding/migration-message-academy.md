@@ -29,18 +29,16 @@ Os adjunto una plantilla vacía y un archivo de ejemplo para que veáis el forma
 - **rol**: `STUDENT` o `TEACHER`
 - **clases**: nombres separados por comas. Si está en varias, usar comillas: `"Matemáticas 1,Inglés B2"`
 
-**Pestaña 2 — Clases** (opcional — si queréis que las creemos automáticamente)
+**Pestaña 2 — Clases** (obligatoria)
 
 | nombre | fechaInicio | precio | tipoPrecio | profesorEmail | descripcion | universidad | carrera | maxEstudiantes | whatsapp |
 |---|---|---|---|---|---|---|---|---|---|
 | Matemáticas 1 | 01/09/2026 | 50 | MENSUAL | maria.lopez@gmail.com | Álgebra y cálculo | UCM | Ingeniería | 30 | |
 | Inglés B2 | 15/09/2026 | 200 | UNICO | pedro.ruiz@gmail.com | | | | 20 | https://chat.whatsapp.com/EVwr6bNsKng5Rk965ZuM4U |
 
-Solo `nombre` es obligatorio en la pestaña Clases. El resto podéis dejarlo vacío.
+Solo `nombre` es obligatorio en cada fila. El resto de columnas podéis dejarlo vacío.
 - `tipoPrecio`: `MENSUAL` o `UNICO`
 - `profesorEmail`: debe coincidir con un email de la pestaña Usuarios
-
-Si no incluís la pestaña Clases las clases deben existir ya en AKADEMO antes de importar.
 
 ---
 

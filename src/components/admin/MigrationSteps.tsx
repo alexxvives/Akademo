@@ -135,18 +135,6 @@ export function PreviewStep({ preview, classPreview, importing, reset, handleImp
 
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-gray-700">Usuarios — {preview.length} filas</h3>
-        <div className="flex gap-2">
-          <button onClick={reset} className="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors">
-            Cancelar
-          </button>
-          <button
-            onClick={handleImport}
-            disabled={importing}
-            className="px-5 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {importing ? 'Importando...' : `Importar ${preview.length} usuarios${classPreview.length > 0 ? ` + ${classPreview.length} clases` : ''}`}
-          </button>
-        </div>
       </div>
 
       <div className="overflow-x-auto max-h-[55vh] overflow-y-auto border border-gray-200 rounded-xl">

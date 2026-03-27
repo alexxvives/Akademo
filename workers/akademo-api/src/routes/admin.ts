@@ -834,39 +834,71 @@ admin.post('/bulk-import', async (c) => {
         continue;
       }
 
-      // Check if user already exists
+      // Check if user already exists IN THIS ACADEMY
+      const existingInAcademy = await c.env.DB
+        .prepare(`
+          SELECT u.id FROM User u
+          LEFT JOIN Teacher t ON t.userId = u.id
+          LEFT JOIN ClassEnrollment ce ON ce.userId = u.id
+          LEFT JOIN Class c ON c.id = ce.classId OR c.teacherId = u.id
+          WHERE u.email = ? AND (t.academyId = ? OR c.academyId = ?)
+          LIMIT 1
+        `)
+        .bind(email, academyId, academyId)
+        .first();
+
+      if (existingInAcademy) {
+        results.push({ row: i + 1, email, status: 'skipped', message: 'User already exists in this academy' });
+        continue;
+      }
+
+      // Check if email exists globally (user can be in multiple academies)
       const existing = await c.env.DB
         .prepare('SELECT id, role FROM User WHERE email = ?')
         .bind(email)
         .first();
 
+      let userId: string;
+      let tempPassword: string | undefined;
+
       if (existing) {
-        results.push({ row: i + 1, email, status: 'skipped', message: 'Email already registered' });
-        continue;
-      }
+        // User exists globally but not in this academy - reuse their account
+        userId = String(existing.id);
+        tempPassword = undefined; // Don't generate new password
+      } else {
+        // Generate temp password: first 3 chars of firstName + random 5 digits
+        tempPassword = firstName.slice(0, 3).toLowerCase() + Math.floor(10000 + Math.random() * 90000);
+        const hashedPassword = await hashPassword(String(tempPassword));
+        userId = genId();
 
-      // Generate temp password: first 3 chars of firstName + random 5 digits
-      const tempPassword = firstName.slice(0, 3).toLowerCase() + Math.floor(10000 + Math.random() * 90000);
-      const hashedPassword = await hashPassword(String(tempPassword));
-      const userId = crypto.randomUUID();
-
-      try {
+        // Create new user
         await c.env.DB
-          .prepare('INSERT INTO User (id, email, password, firstName, lastName, role) VALUES (?, ?, ?, ?, ?, ?)')
+          .prepare('INSERT INTO User (id, email, password, firstName, lastName, role, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, datetime("now"), datetime("now"))')
           .bind(userId, email, hashedPassword, firstName, lastName, role)
           .run();
+      }
 
-        // For TEACHER: create Teacher record linking to academy
-        if (role === 'TEACHER') {
-          const teacherId = crypto.randomUUID();
-          const now = new Date().toISOString();
+      // Associate with academy via Teacher or ClassEnrollment
+      // For TEACHER: create Teacher record linking to academy
+      if (role === 'TEACHER') {
+        const teacherId = genId();
+        const now = new Date().toISOString();
+
+        // Only create Teacher record if doesn't exist
+        const teacherExists = await c.env.DB
+          .prepare('SELECT id FROM Teacher WHERE userId = ? AND academyId = ?')
+          .bind(userId, academyId)
+          .first();
+
+        if (!teacherExists) {
           await c.env.DB
             .prepare('INSERT INTO Teacher (id, userId, academyId, createdAt) VALUES (?, ?, ?, ?)')
             .bind(teacherId, userId, academyId, now)
             .run();
+        }
 
-          // Assign teacher to classes by name
-          for (const cn of classNames) {
+        // Assign teacher to classes by name
+        for (const cn of classNames) {
             const classId = classMap.get(cn);
             if (classId) {
               await c.env.DB
@@ -874,15 +906,22 @@ admin.post('/bulk-import', async (c) => {
                 .bind(userId, classId, academyId)
                 .run();
             }
-          }
         }
+      }
 
-        // For STUDENT: enroll in classes by name
-        if (role === 'STUDENT') {
-          for (const cn of classNames) {
-            const classId = classMap.get(cn);
-            if (classId) {
-              const enrollmentId = crypto.randomUUID();
+      // For STUDENT: enroll in classes by name
+      if (role === 'STUDENT') {
+        for (const cn of classNames) {
+          const classId = classMap.get(cn);
+          if (classId) {
+            // Check if already enrolled
+            const enrollmentExists = await c.env.DB
+              .prepare('SELECT id FROM ClassEnrollment WHERE classId = ? AND userId = ?')
+              .bind(classId, userId)
+              .first();
+
+            if (!enrollmentExists) {
+              const enrollmentId = genId();
               await c.env.DB
                 .prepare('INSERT INTO ClassEnrollment (id, classId, userId, status, documentSigned) VALUES (?, ?, ?, ?, ?)')
                 .bind(enrollmentId, classId, userId, 'APPROVED', 0)
@@ -890,16 +929,17 @@ admin.post('/bulk-import', async (c) => {
             }
           }
         }
-
-        const unmatchedClasses = classNames.filter(cn => !classMap.has(cn));
-        const msg = unmatchedClasses.length > 0
-          ? `Created. Unmatched classes: ${unmatchedClasses.join(', ')}`
-          : 'Created successfully';
-
-        results.push({ row: i + 1, email, status: 'created', message: msg, tempPassword: String(tempPassword) });
-      } catch (err: any) {
-        results.push({ row: i + 1, email, status: 'error', message: err.message || 'Database error' });
       }
+
+      const unmatchedClasses = classNames.filter(cn => !classMap.has(cn));
+      const msg = unmatchedClasses.length > 0
+        ? `Created. Unmatched classes: ${unmatchedClasses.join(', ')}`
+        : existing ? 'Added to academy' : 'Created successfully';
+
+      results.push({ row: i + 1, email, status: 'created', message: msg, tempPassword: tempPassword ? String(tempPassword) : '' });
+    } catch (err: any) {
+      results.push({ row: i + 1, email, status: 'error', message: err.message || 'Database error' });
+    }
     }
 
     // Assign teachers to newly created classes (resolve email → userId)
