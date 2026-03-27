@@ -743,7 +743,7 @@ admin.get('/daily-webhook-setup', async (c) => {
 admin.post('/bulk-import', async (c) => {
   try {
     const session = await requireAuth(c);
-    if (session.role !== 'ADMIN') {
+    if (session.role !== 'ADMIN' && session.role !== 'ACADEMY') {
       return c.json(errorResponse('Forbidden'), 403);
     }
 
@@ -755,13 +755,16 @@ admin.post('/bulk-import', async (c) => {
       return c.json(errorResponse('Maximum 500 users per import'), 400);
     }
 
-    // Verify academy exists
+    // Verify academy exists and ACADEMY role owns it
     const academy = await c.env.DB
-      .prepare('SELECT id, name FROM Academy WHERE id = ?')
+      .prepare('SELECT id, name, ownerId FROM Academy WHERE id = ?')
       .bind(academyId)
-      .first();
+      .first() as any;
     if (!academy) {
       return c.json(errorResponse('Academy not found'), 404);
+    }
+    if (session.role === 'ACADEMY' && academy.ownerId !== session.id) {
+      return c.json(errorResponse('Not authorized for this academy'), 403);
     }
 
     // Load all classes for this academy (for matching by name)
@@ -870,7 +873,7 @@ admin.post('/bulk-import', async (c) => {
         // Generate temp password: first 3 chars of firstName + random 5 digits
         tempPassword = firstName.slice(0, 3).toLowerCase() + Math.floor(10000 + Math.random() * 90000);
         const hashedPassword = await hashPassword(String(tempPassword));
-        userId = genId();
+        userId = nanoid();
 
         // Create new user
         await c.env.DB
@@ -882,7 +885,7 @@ admin.post('/bulk-import', async (c) => {
       // Associate with academy via Teacher or ClassEnrollment
       // For TEACHER: create Teacher record linking to academy
       if (role === 'TEACHER') {
-        const teacherId = genId();
+        const teacherId = nanoid();
         const now = new Date().toISOString();
 
         // Only create Teacher record if doesn't exist
@@ -922,7 +925,7 @@ admin.post('/bulk-import', async (c) => {
               .first();
 
             if (!enrollmentExists) {
-              const enrollmentId = genId();
+              const enrollmentId = nanoid();
               await c.env.DB
                 .prepare('INSERT INTO ClassEnrollment (id, classId, userId, status, documentSigned) VALUES (?, ?, ?, ?, ?)')
                 .bind(enrollmentId, classId, userId, 'APPROVED', 0)

@@ -127,31 +127,7 @@ export function PreviewStep({ preview, classPreview, importing, reset, handleImp
         </div>
       )}
 
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-gray-700">Usuarios — {preview.length} filas</h3>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={reset}
-            disabled={importing}
-            className="px-4 py-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors disabled:opacity-50"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleImport}
-            disabled={importing}
-            className="px-5 py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center gap-2"
-          >
-            {importing && (
-              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-              </svg>
-            )}
-            {importing ? 'Importando...' : 'Importar a la base de datos'}
-          </button>
-        </div>
-      </div>
+      <h3 className="text-sm font-semibold text-gray-700">Usuarios — {preview.length} filas</h3>
 
       <div className="overflow-x-auto max-h-[55vh] overflow-y-auto border border-gray-200 rounded-xl">
         <table className="w-full text-sm">
@@ -185,6 +161,29 @@ export function PreviewStep({ preview, classPreview, importing, reset, handleImp
         {preview.length > 100 && (
           <p className="text-xs text-gray-400 px-4 py-2 bg-gray-50">Mostrando 100 de {preview.length} filas</p>
         )}
+      </div>
+
+      <div className="flex justify-center gap-3 pt-2">
+        <button
+          onClick={reset}
+          disabled={importing}
+          className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors disabled:opacity-50"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={handleImport}
+          disabled={importing}
+          className="px-6 py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors disabled:opacity-50 flex items-center gap-2"
+        >
+          {importing && (
+            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+            </svg>
+          )}
+          {importing ? 'Importando...' : 'Importar a la base de datos'}
+        </button>
       </div>
     </div>
   );
@@ -273,30 +272,11 @@ export function ResultsStep({ summary, downloadResults, reset, onClose, onSendEm
         </div>
       )}
 
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          {hasCreated ? (
-            <p className="text-xs text-amber-600 font-medium">
-              Las contraseñas temporales se muestran en la tabla. Descarga el CSV para guardarlas.
-            </p>
-          ) : (
-            <p className="text-xs text-gray-400">No se crearon usuarios nuevos.</p>
-          )}
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {hasCreated && (
-            <button onClick={downloadResults} className="px-4 py-1.5 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors">
-              Descargar CSV
-            </button>
-          )}
-          <button onClick={reset} className="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors">
-            Nueva importación
-          </button>
-          <button onClick={onClose} className="px-4 py-1.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors">
-            Cerrar
-          </button>
-        </div>
-      </div>
+      {hasCreated && (
+        <p className="text-xs text-amber-600 font-medium text-center">
+          Las contraseñas temporales se muestran en la tabla. Descarga el CSV para guardarlas.
+        </p>
+      )}
 
       <div className="overflow-x-auto max-h-60 overflow-y-auto border border-gray-200 rounded-xl">
         <table className="w-full text-sm">
@@ -329,6 +309,20 @@ export function ResultsStep({ summary, downloadResults, reset, onClose, onSendEm
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="flex justify-center gap-3 pt-2">
+        {hasCreated && (
+          <button onClick={downloadResults} className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">
+            Descargar CSV
+          </button>
+        )}
+        <button onClick={reset} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors">
+          Nueva importación
+        </button>
+        <button onClick={onClose} className="px-6 py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors">
+          Cerrar
+        </button>
       </div>
     </div>
   );
