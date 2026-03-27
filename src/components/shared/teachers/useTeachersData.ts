@@ -10,6 +10,7 @@ export function useTeachersData(role: 'ACADEMY' | 'ADMIN') {
   const [expandedTeachers, setExpandedTeachers] = useState<Set<string>>(new Set());
   const [paymentStatus, setPaymentStatus] = useState<string>('NOT PAID');
   const [academyName, setAcademyName] = useState<string>('');
+  const [academyId, setAcademyId] = useState<string>('');
   const [academies, setAcademies] = useState<Academy[]>([]);
   const [selectedAcademy, setSelectedAcademy] = useState<string>('ALL');
   const [classes, setClasses] = useState<ClassSummary[]>([]);
@@ -48,6 +49,7 @@ export function useTeachersData(role: 'ACADEMY' | 'ADMIN') {
         if (academiesJson.success && Array.isArray(academiesJson.data) && academiesJson.data.length > 0) {
           const academy = academiesJson.data[0];
           setAcademyName(academy.name);
+          setAcademyId(academy.id);
           const status = academy.paymentStatus || 'NOT PAID';
           setPaymentStatus(status);
 
@@ -184,7 +186,7 @@ export function useTeachersData(role: 'ACADEMY' | 'ADMIN') {
   }, [teachers, role, selectedAcademy, academies, searchQuery, classes, activePeriodId, isClassInPeriod]);
 
   return {
-    teachers, loading, expandedTeachers, paymentStatus, academyName,
+    teachers, loading, expandedTeachers, paymentStatus, academyName, academyId,
     academies, selectedAcademy, setSelectedAcademy,
     classes, copiedId, setCopiedId,
     showCreateModal, setShowCreateModal,

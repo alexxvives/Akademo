@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { SkeletonTeachers } from '@/components/ui/SkeletonLoader';
 import type { TeachersPageProps } from './types';
 import { useTeachersData } from './useTeachersData';
@@ -9,9 +9,11 @@ import { TeachersHeader } from './TeachersHeader';
 import { TeachersTable } from './TeachersTable';
 import { CreateTeacherModal } from './CreateTeacherModal';
 import { EditTeacherModal } from './EditTeacherModal';
+import { MigrationModal } from '@/components/admin/MigrationModal';
 
 export function TeachersPage({ role }: TeachersPageProps) {
   const data = useTeachersData(role);
+  const [showMigration, setShowMigration] = useState(false);
   const actions = useTeacherActions({
     setDeleting: data.setDeleting,
     setEditingTeacher: data.setEditingTeacher,
@@ -42,6 +44,7 @@ export function TeachersPage({ role }: TeachersPageProps) {
           searchQuery={data.searchQuery}
           onSearchChange={data.setSearchQuery}
           onCreateClick={() => data.setShowCreateModal(true)}
+          onMigrationClick={role === 'ACADEMY' ? () => setShowMigration(true) : undefined}
         />
         <TeachersTable
           role={role}
@@ -86,6 +89,13 @@ export function TeachersPage({ role }: TeachersPageProps) {
             data.setShowEditModal(false);
             data.setEditingTeacher(null);
           }}
+        />
+      )}
+      {role === 'ACADEMY' && showMigration && data.academyId && (
+        <MigrationModal
+          academyId={data.academyId}
+          academyName={data.academyName}
+          onClose={() => setShowMigration(false)}
         />
       )}
     </>
