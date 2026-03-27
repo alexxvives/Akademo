@@ -17,6 +17,8 @@ export function useStudentsData(role: 'TEACHER' | 'ACADEMY' | 'ADMIN') {
   const [academyName, setAcademyName] = useState<string>('');
   const [paymentStatus, setPaymentStatus] = useState<string>('PAID');
   const [userEmail, setUserEmail] = useState<string>('');
+  const [pendingWelcomeStudents, setPendingWelcomeStudents] = useState(0);
+  const [sendingWelcome, setSendingWelcome] = useState(false);
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -177,6 +179,41 @@ export function useStudentsData(role: 'TEACHER' | 'ACADEMY' | 'ADMIN') {
     });
   }, [students, activePeriodId, filteredClasses, isClassInPeriod, selectedAcademy, role, classes]);
 
+  // For ACADEMY role, fetch pending welcome email count
+  const loadPendingWelcome = useCallback(async () => {
+    if (role !== 'ACADEMY') return;
+    try {
+      const res = await apiClient('/academies/welcome-emails/pending');
+      const data = await res.json();
+      if (data.success) {
+        setPendingWelcomeStudents(data.data.students ?? 0);
+      }
+    } catch {
+      // Non-critical — ignore errors
+    }
+  }, [role]);
+
+  useEffect(() => {
+    loadPendingWelcome();
+  }, [loadPendingWelcome]);
+
+  const sendStudentWelcomeEmails = useCallback(async (): Promise<{ sent: number; failed: number }> => {
+    setSendingWelcome(true);
+    try {
+      const res = await apiClient('/academies/welcome-emails', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: 'STUDENT' }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Error sending emails');
+      setPendingWelcomeStudents(0);
+      return data.data;
+    } finally {
+      setSendingWelcome(false);
+    }
+  }, []);
+
   return {
     students: visibleStudents,
     academies,
@@ -194,5 +231,8 @@ export function useStudentsData(role: 'TEACHER' | 'ACADEMY' | 'ADMIN') {
     activePeriodId,
     isClassInPeriod,
     handleBanStudent,
+    pendingWelcomeStudents,
+    sendingWelcome,
+    sendStudentWelcomeEmails,
   };
 }

@@ -875,10 +875,10 @@ admin.post('/bulk-import', async (c) => {
         const hashedPassword = await hashPassword(String(tempPassword));
         userId = nanoid();
 
-        // Create new user
+        // Create new user (store tempPassword in DB for deferred welcome email)
         await c.env.DB
-          .prepare('INSERT INTO User (id, email, password, firstName, lastName, role, createdAt) VALUES (?, ?, ?, ?, ?, ?, datetime("now"))')
-          .bind(userId, email, hashedPassword, firstName, lastName, role)
+          .prepare('INSERT INTO User (id, email, password, firstName, lastName, role, createdAt, tempPassword) VALUES (?, ?, ?, ?, ?, ?, datetime("now"), ?)')
+          .bind(userId, email, hashedPassword, firstName, lastName, role, String(tempPassword))
           .run();
       }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { type ImportRow, type ClassRow, type ImportSummary } from './migration-utils';
 
@@ -197,13 +197,10 @@ interface ResultsStepProps {
   downloadResults: () => void;
   reset: () => void;
   onClose: () => void;
-  onSendEmails: () => Promise<{ sent: number; failed: number }>;
 }
 
-export function ResultsStep({ summary, downloadResults, reset, onClose, onSendEmails }: ResultsStepProps) {
+export function ResultsStep({ summary, downloadResults, reset, onClose }: ResultsStepProps) {
   const hasCreated = summary.created > 0;
-  const [emailState, setEmailState] = useState<'idle' | 'sending' | 'sent'>('idle');
-  const [emailResult, setEmailResult] = useState<{ sent: number; failed: number } | null>(null);
 
   useEffect(() => {
     if (summary.created > 0) {
@@ -215,17 +212,6 @@ export function ResultsStep({ summary, downloadResults, reset, onClose, onSendEm
       fire();
     }
   }, []);  // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleSend = async () => {
-    setEmailState('sending');
-    try {
-      const result = await onSendEmails();
-      setEmailResult(result);
-      setEmailState('sent');
-    } catch {
-      setEmailState('idle');
-    }
-  };
 
   return (
     <div className="space-y-5">
@@ -245,33 +231,11 @@ export function ResultsStep({ summary, downloadResults, reset, onClose, onSendEm
       </div>
 
       {hasCreated && (
-        <div className="rounded-xl border p-4
-          border-amber-200 bg-amber-50
-          data-[sent]:border-green-200 data-[sent]:bg-green-50"
-          {...(emailState === 'sent' ? { 'data-sent': '' } : {})}>
-          {emailState === 'idle' && (
-            <>
-              <p className="text-sm font-semibold text-amber-800 mb-1">Enviar emails de bienvenida</p>
-              <p className="text-xs text-amber-700 mb-3">Cada usuario recibirá su email con contraseña temporal. Solo envía cuando hayas verificado la lista y la academia esté lista para recibir alumnos.</p>
-              <button
-                onClick={handleSend}
-                className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
-              >
-                Enviar emails de bienvenida ({summary.created})
-              </button>
-            </>
-          )}
-          {emailState === 'sending' && (
-            <p className="text-sm text-amber-700 font-medium">Enviando emails...</p>
-          )}
-          {emailState === 'sent' && emailResult && (
-            <>
-              <p className="text-sm font-semibold text-green-800 mb-1">✓ Emails enviados</p>
-              <p className="text-xs text-green-700">
-                {emailResult.sent} enviados correctamente{emailResult.failed > 0 ? ` · ${emailResult.failed} fallaron` : ''}.
-              </p>
-            </>
-          )}
+        <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+          <p className="text-sm font-semibold text-blue-800 mb-1">Emails de bienvenida</p>
+          <p className="text-xs text-blue-700">
+            Los usuarios creados recibirán su email de bienvenida con credenciales desde el panel de la academia. La academia decide cuándo enviarlos.
+          </p>
         </div>
       )}
 

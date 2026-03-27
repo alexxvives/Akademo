@@ -704,4 +704,159 @@ academies.get('/:id/classes', async (c) => {
   }
 });
 
+
+// GET /academies/welcome-emails/pending - Count users with pending welcome emails
+// IMPORTANT: Must come BEFORE /:id routes
+academies.get('/welcome-emails/pending', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    if (session.role !== 'ACADEMY') {
+      return c.json(errorResponse('Only academy owners can access this'), 403);
+    }
+
+    const result = await c.env.DB.prepare(`
+      SELECT
+        SUM(CASE WHEN sub.role = 'STUDENT' THEN 1 ELSE 0 END) as students,
+        SUM(CASE WHEN sub.role = 'TEACHER' THEN 1 ELSE 0 END) as teachers
+      FROM (
+        SELECT DISTINCT u.id, u.role
+        FROM User u
+        JOIN ClassEnrollment ce ON u.id = ce.userId
+        JOIN Class cls ON ce.classId = cls.id
+        JOIN Academy a ON cls.academyId = a.id
+        WHERE u.tempPassword IS NOT NULL AND a.ownerId = ?
+        UNION
+        SELECT DISTINCT u.id, u.role
+        FROM User u
+        JOIN Teacher t ON u.id = t.userId
+        JOIN Academy a ON t.academyId = a.id
+        WHERE u.tempPassword IS NOT NULL AND a.ownerId = ?
+      ) sub
+    `).bind(session.id, session.id).first() as any;
+
+    return c.json(successResponse({
+      students: result?.students ?? 0,
+      teachers: result?.teachers ?? 0,
+      total: (result?.students ?? 0) + (result?.teachers ?? 0),
+    }));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Welcome Emails Pending] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
+
+// POST /academies/welcome-emails - Send welcome emails to pending users
+// IMPORTANT: Must come BEFORE /:id routes
+academies.post('/welcome-emails', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    if (session.role !== 'ACADEMY') {
+      return c.json(errorResponse('Only academy owners can send welcome emails'), 403);
+    }
+
+    const body = await c.req.json().catch(() => ({}));
+    const roleFilter: string | undefined = (body as any).role; // optional: 'STUDENT' | 'TEACHER'
+
+    // Get academy info
+    const academy = await c.env.DB
+      .prepare('SELECT id, name FROM Academy WHERE ownerId = ? LIMIT 1')
+      .bind(session.id)
+      .first() as any;
+    if (!academy) {
+      return c.json(errorResponse('Academy not found'), 404);
+    }
+
+    // Fetch pending users (students)
+    let users: any[] = [];
+    if (!roleFilter || roleFilter === 'STUDENT') {
+      const studentsResult = await c.env.DB.prepare(`
+        SELECT DISTINCT u.id, u.email, u.firstName, u.lastName, u.tempPassword, 'STUDENT' as role
+        FROM User u
+        JOIN ClassEnrollment ce ON u.id = ce.userId
+        JOIN Class cls ON ce.classId = cls.id
+        JOIN Academy a ON cls.academyId = a.id
+        WHERE u.tempPassword IS NOT NULL AND a.ownerId = ?
+        ORDER BY u.firstName, u.lastName
+      `).bind(session.id).all();
+      users = users.concat(studentsResult.results || []);
+    }
+
+    if (!roleFilter || roleFilter === 'TEACHER') {
+      const teachersResult = await c.env.DB.prepare(`
+        SELECT DISTINCT u.id, u.email, u.firstName, u.lastName, u.tempPassword, 'TEACHER' as role
+        FROM User u
+        JOIN Teacher t ON u.id = t.userId
+        JOIN Academy a ON t.academyId = a.id
+        WHERE u.tempPassword IS NOT NULL AND a.ownerId = ?
+        ORDER BY u.firstName, u.lastName
+      `).bind(session.id).all();
+      users = users.concat(teachersResult.results || []);
+    }
+
+    if (users.length === 0) {
+      return c.json(successResponse({ sent: 0, failed: 0, message: 'No pending users found' }));
+    }
+
+    let sent = 0;
+    let failed = 0;
+
+    for (const user of users) {
+      const roleLabel = user.role === 'TEACHER' ? 'profesor' : 'alumno';
+      try {
+        const ok = await sendEmail(c.env, {
+          from: 'AKADEMO <onboarding@akademo-edu.com>',
+          to: user.email,
+          subject: 'Bienvenido a AKADEMO - Tus credenciales de acceso',
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+              <div style="background: linear-gradient(135deg, #b1e787 0%, #8dd65f 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+                <h1 style="color: #1f2937; margin: 0; font-size: 28px;">¡Bienvenido a AKADEMO!</h1>
+              </div>
+              <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+                <p style="color: #374151; font-size: 16px; line-height: 1.6;">Hola <strong>${user.firstName}</strong>,</p>
+                <p style="color: #374151; font-size: 16px; line-height: 1.6;">Has sido dado de alta como ${roleLabel} en <strong>${academy.name}</strong>. A continuación encontrarás tus credenciales de acceso:</p>
+                <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #b1e787;">
+                  <p style="margin: 0 0 10px 0; color: #6b7280; font-size: 14px;">Correo electrónico:</p>
+                  <p style="margin: 0 0 20px 0; color: #1f2937; font-size: 16px; font-weight: 600;">${user.email}</p>
+                  <p style="margin: 0 0 10px 0; color: #6b7280; font-size: 14px;">Contraseña temporal:</p>
+                  <div style="background: #ffffff; padding: 15px; border-radius: 6px; border: 2px dashed #b1e787;">
+                    <p style="margin: 0; color: #1f2937; font-size: 20px; font-weight: 700; letter-spacing: 3px; text-align: center;">${user.tempPassword}</p>
+                  </div>
+                </div>
+                <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
+                  <p style="margin: 0; color: #92400e; font-size: 14px;"><strong>⚠️ Importante:</strong> Por tu seguridad, te recomendamos cambiar esta contraseña después de tu primer inicio de sesión.</p>
+                </div>
+                <div style="text-align: center; margin: 30px 0;">
+                  <a href="https://akademo-edu.com" style="background: #b1e787; color: #1f2937; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block; font-size: 16px;">Iniciar Sesión</a>
+                </div>
+                <p style="color: #6b7280; font-size: 14px; margin-bottom: 0;">Saludos,<br><strong style="color: #1f2937;">El equipo de AKADEMO</strong></p>
+              </div>
+              <div style="text-align: center; padding: 20px 0; color: #9ca3af; font-size: 12px;">
+                <p style="margin: 0;">© 2026 AKADEMO - Plataforma de Educación en Línea</p>
+              </div>
+            </div>
+          `,
+        });
+        if (ok) {
+          // Clear the tempPassword after successful send
+          await c.env.DB.prepare('UPDATE User SET tempPassword = NULL WHERE id = ?').bind(user.id).run();
+          sent++;
+        } else {
+          failed++;
+        }
+      } catch (emailErr) {
+        console.error('[Welcome Emails] Email failed for', user.email, emailErr);
+        failed++;
+      }
+    }
+
+    return c.json(successResponse({ sent, failed, total: users.length }));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Welcome Emails] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
+
 export default academies;

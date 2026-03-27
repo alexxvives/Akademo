@@ -124,29 +124,6 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
     if (fileRef.current) fileRef.current.value = '';
   };
 
-  const handleSendWelcomeEmails = async (): Promise<{ sent: number; failed: number }> => {
-    if (!summary) throw new Error('No summary');
-    const users = summary.results
-      .filter(r => r.status === 'created' && r.tempPassword)
-      .map(r => {
-        const row = preview.find(p => p.email.toLowerCase() === r.email.toLowerCase());
-        return {
-          email: r.email,
-          firstName: row?.firstName || '',
-          role: row?.role || 'STUDENT',
-          tempPassword: r.tempPassword!,
-        };
-      });
-    const res = await apiClient('/admin/send-welcome-emails', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ academyName, users }),
-    });
-    const data = await res.json();
-    if (!data.success) throw new Error(data.error || 'Error sending emails');
-    return data.data;
-  };
-
   if (!mounted) return null;
 
   const maxWidth = step === 'preview' ? 'max-w-5xl' : 'max-w-3xl';
@@ -177,7 +154,7 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
 
           {step === 'upload' && <UploadStep fileRef={fileRef} handleFileUpload={handleFileUpload} />}
           {step === 'preview' && <PreviewStep preview={preview} classPreview={classPreview} importing={importing} reset={reset} handleImport={handleImport} />}
-          {step === 'results' && summary && <ResultsStep summary={summary} downloadResults={downloadResults} reset={reset} onClose={onClose} onSendEmails={handleSendWelcomeEmails} />}
+          {step === 'results' && summary && <ResultsStep summary={summary} downloadResults={downloadResults} reset={reset} onClose={onClose} />}
         </div>
       </div>
     </div>,

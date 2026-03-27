@@ -14,6 +14,7 @@ import { MigrationModal } from '@/components/admin/MigrationModal';
 export function TeachersPage({ role }: TeachersPageProps) {
   const data = useTeachersData(role);
   const [showMigration, setShowMigration] = useState(false);
+  const [teacherWelcomeResult, setTeacherWelcomeResult] = useState<{ sent: number; failed: number } | null>(null);
   const actions = useTeacherActions({
     setDeleting: data.setDeleting,
     setEditingTeacher: data.setEditingTeacher,
@@ -32,6 +33,15 @@ export function TeachersPage({ role }: TeachersPageProps) {
 
   if (data.loading) return <SkeletonTeachers />;
 
+  const handleSendTeacherWelcome = async () => {
+    try {
+      const result = await data.sendTeacherWelcomeEmails();
+      setTeacherWelcomeResult(result);
+    } catch {
+      alert('Error al enviar los emails de bienvenida. Intenta de nuevo.');
+    }
+  };
+
   return (
     <>
       <div className="space-y-6">
@@ -46,6 +56,38 @@ export function TeachersPage({ role }: TeachersPageProps) {
           onCreateClick={() => data.setShowCreateModal(true)}
           onMigrationClick={role === 'ACADEMY' ? () => setShowMigration(true) : undefined}
         />
+
+        {/* Pending Welcome Emails Banner - ACADEMY only */}
+        {role === 'ACADEMY' && data.pendingWelcomeTeachers > 0 && !teacherWelcomeResult && (
+          <div className="flex items-center justify-between gap-4 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+            <div className="flex items-center gap-3">
+              <span className="text-amber-500 text-lg">✉️</span>
+              <div>
+                <p className="text-sm font-semibold text-amber-800">
+                  {data.pendingWelcomeTeachers} {data.pendingWelcomeTeachers === 1 ? 'profesor tiene' : 'profesores tienen'} credenciales pendientes de enviar
+                </p>
+                <p className="text-xs text-amber-700">Estos profesores fueron importados pero aún no han recibido su email de bienvenida con contraseña temporal.</p>
+              </div>
+            </div>
+            <button
+              onClick={handleSendTeacherWelcome}
+              disabled={data.sendingTeacherWelcome}
+              className="flex-shrink-0 px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 disabled:opacity-60 transition-colors"
+            >
+              {data.sendingTeacherWelcome ? 'Enviando...' : 'Enviar bienvenida'}
+            </button>
+          </div>
+        )}
+        {role === 'ACADEMY' && teacherWelcomeResult && (
+          <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+            <span className="text-green-500 text-lg">✓</span>
+            <p className="text-sm font-semibold text-green-800">
+              {teacherWelcomeResult.sent} email{teacherWelcomeResult.sent !== 1 ? 's' : ''} de bienvenida enviado{teacherWelcomeResult.sent !== 1 ? 's' : ''} correctamente
+              {teacherWelcomeResult.failed > 0 && ` · ${teacherWelcomeResult.failed} fallaron`}
+            </p>
+          </div>
+        )}
+
         <TeachersTable
           role={role}
           teachers={data.filteredTeachers}

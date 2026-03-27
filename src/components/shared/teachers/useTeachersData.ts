@@ -24,6 +24,8 @@ export function useTeachersData(role: 'ACADEMY' | 'ADMIN') {
   const [searchQuery, setSearchQuery] = useState('');
   const [editFormData, setEditFormData] = useState({ fullName: '', email: '', classId: '' });
   const [updating, setUpdating] = useState(false);
+  const [pendingWelcomeTeachers, setPendingWelcomeTeachers] = useState(0);
+  const [sendingTeacherWelcome, setSendingTeacherWelcome] = useState(false);
 
   const isDemo = role === 'ACADEMY' && paymentStatus === 'NOT PAID';
   const { activePeriodId, isClassInPeriod } = usePeriod();
@@ -159,6 +161,41 @@ export function useTeachersData(role: 'ACADEMY' | 'ADMIN') {
     if (role === 'ACADEMY') loadClasses();
   }, [loadTeachers, loadClasses, role]);
 
+  // For ACADEMY role, fetch pending welcome email count for teachers
+  const loadPendingWelcomeTeachers = useCallback(async () => {
+    if (role !== 'ACADEMY') return;
+    try {
+      const res = await apiClient('/academies/welcome-emails/pending');
+      const data = await res.json();
+      if (data.success) {
+        setPendingWelcomeTeachers(data.data.teachers ?? 0);
+      }
+    } catch {
+      // Non-critical
+    }
+  }, [role]);
+
+  useEffect(() => {
+    loadPendingWelcomeTeachers();
+  }, [loadPendingWelcomeTeachers]);
+
+  const sendTeacherWelcomeEmails = useCallback(async (): Promise<{ sent: number; failed: number }> => {
+    setSendingTeacherWelcome(true);
+    try {
+      const res = await apiClient('/academies/welcome-emails', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: 'TEACHER' }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Error sending emails');
+      setPendingWelcomeTeachers(0);
+      return data.data;
+    } finally {
+      setSendingTeacherWelcome(false);
+    }
+  }, []);
+
   const filteredTeachers = useMemo(() => {
     let result = teachers;
 
@@ -200,5 +237,6 @@ export function useTeachersData(role: 'ACADEMY' | 'ADMIN') {
     updating, setUpdating,
     isDemo, activePeriodId, isClassInPeriod,
     toggleExpand, loadTeachers, filteredTeachers,
+    pendingWelcomeTeachers, sendingTeacherWelcome, sendTeacherWelcomeEmails,
   };
 }

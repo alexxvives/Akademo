@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { StudentsProgressTable } from '@/components/shared';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 import { AcademySearchDropdown } from '@/components/ui/AcademySearchDropdown';
@@ -26,11 +27,25 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
     activePeriodId,
     isClassInPeriod,
     handleBanStudent,
+    pendingWelcomeStudents,
+    sendingWelcome,
+    sendStudentWelcomeEmails,
   } = useStudentsData(role);
+
+  const [welcomeResult, setWelcomeResult] = useState<{ sent: number; failed: number } | null>(null);
 
   if (loading) {
     return <LoadingSkeleton />;
   }
+
+  const handleSendWelcome = async () => {
+    try {
+      const result = await sendStudentWelcomeEmails();
+      setWelcomeResult(result);
+    } catch {
+      alert('Error al enviar los emails de bienvenida. Intenta de nuevo.');
+    }
+  };
 
   return (
     <div className="space-y-6 pb-8">
@@ -79,6 +94,37 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
           )}
         </div>
       </div>
+
+      {/* Pending Welcome Emails Banner - ACADEMY only */}
+      {role === 'ACADEMY' && pendingWelcomeStudents > 0 && !welcomeResult && (
+        <div className="flex items-center justify-between gap-4 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+          <div className="flex items-center gap-3">
+            <span className="text-amber-500 text-lg">✉️</span>
+            <div>
+              <p className="text-sm font-semibold text-amber-800">
+                {pendingWelcomeStudents} {pendingWelcomeStudents === 1 ? 'estudiante tiene' : 'estudiantes tienen'} credenciales pendientes de enviar
+              </p>
+              <p className="text-xs text-amber-700">Estos estudiantes fueron importados pero aún no han recibido su email de bienvenida con contraseña temporal.</p>
+            </div>
+          </div>
+          <button
+            onClick={handleSendWelcome}
+            disabled={sendingWelcome}
+            className="flex-shrink-0 px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 disabled:opacity-60 transition-colors"
+          >
+            {sendingWelcome ? 'Enviando...' : 'Enviar bienvenida'}
+          </button>
+        </div>
+      )}
+      {role === 'ACADEMY' && welcomeResult && (
+        <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+          <span className="text-green-500 text-lg">✓</span>
+          <p className="text-sm font-semibold text-green-800">
+            {welcomeResult.sent} email{welcomeResult.sent !== 1 ? 's' : ''} de bienvenida enviado{welcomeResult.sent !== 1 ? 's' : ''} correctamente
+            {welcomeResult.failed > 0 && ` · ${welcomeResult.failed} fallaron`}
+          </p>
+        </div>
+      )}
 
       <StudentsProgressTable
         students={students}
