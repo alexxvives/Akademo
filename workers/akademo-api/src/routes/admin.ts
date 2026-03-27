@@ -877,7 +877,7 @@ admin.post('/bulk-import', async (c) => {
 
         // Create new user
         await c.env.DB
-          .prepare('INSERT INTO User (id, email, password, firstName, lastName, role, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, datetime("now"), datetime("now"))')
+          .prepare('INSERT INTO User (id, email, password, firstName, lastName, role, createdAt) VALUES (?, ?, ?, ?, ?, ?, datetime("now"))')
           .bind(userId, email, hashedPassword, firstName, lastName, role)
           .run();
       }
@@ -927,7 +927,7 @@ admin.post('/bulk-import', async (c) => {
             if (!enrollmentExists) {
               const enrollmentId = nanoid();
               await c.env.DB
-                .prepare('INSERT INTO ClassEnrollment (id, classId, userId, status, documentSigned) VALUES (?, ?, ?, ?, ?)')
+                .prepare('INSERT INTO ClassEnrollment (id, classId, userId, status, enrolledAt, documentSigned) VALUES (?, ?, ?, ?, datetime("now"), ?)')
                 .bind(enrollmentId, classId, userId, 'APPROVED', 0)
                 .run();
             }

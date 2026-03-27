@@ -53,7 +53,7 @@ export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
                 <tr><td className="pr-4 py-1 font-semibold text-gray-700">Nombre</td><td className="pr-4">nombre, name, asignatura</td><td>Obligatorio</td></tr>
                 <tr><td className="pr-4 py-1 text-gray-400">Precio <span>(opcional)</span></td><td className="pr-4">precio, price</td><td>Número (ej: 50)</td></tr>
                 <tr><td className="pr-4 py-1 text-gray-400">Tipo Precio <span>(opcional)</span></td><td className="pr-4">tipoPrecio, pricetype, tipo</td><td>MENSUAL o UNICO</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Fecha Inicio <span>(opcional)</span></td><td className="pr-4">fechaInicio, startdate, fecha</td><td>Ej: 01/09/2026</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Fecha Inicio <span>(opcional)</span></td><td className="pr-4">fechaInicio, startdate, fecha</td><td className="text-amber-600 font-medium">Ej: 01/09/2026 — marca el primer día en que los alumnos empezarán a pagar</td></tr>
                 <tr><td className="pr-4 py-1 text-gray-400">Profesor Email <span>(opcional)</span></td><td className="pr-4">profesorEmail, teacherEmail</td><td>Email de un profesor importado</td></tr>
                 <tr><td className="pr-4 py-1 text-gray-400">Descripción <span>(opcional)</span></td><td className="pr-4">descripcion, description</td><td>Texto libre</td></tr>
                 <tr><td className="pr-4 py-1 text-gray-400">Universidad <span>(opcional)</span></td><td className="pr-4">universidad, university</td><td>Nombre de la universidad</td></tr>
@@ -68,13 +68,16 @@ export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
       </div>
 
       <div className="flex justify-center">
-        <input
-          ref={fileRef as React.RefObject<HTMLInputElement>}
-          type="file"
-          accept=".csv,.xlsx,.xls"
-          onChange={handleFileUpload}
-          className="text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-5 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-gray-900 file:text-white hover:file:bg-gray-800 file:cursor-pointer"
-        />
+        <label className="px-6 py-2.5 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors cursor-pointer">
+          Seleccionar archivo
+          <input
+            ref={fileRef as React.RefObject<HTMLInputElement>}
+            type="file"
+            accept=".csv,.xlsx,.xls"
+            onChange={handleFileUpload}
+            className="sr-only"
+          />
+        </label>
       </div>
     </div>
   );
@@ -317,9 +320,6 @@ export function ResultsStep({ summary, downloadResults, reset, onClose, onSendEm
             Descargar CSV
           </button>
         )}
-        <button onClick={reset} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 transition-colors">
-          Nueva importación
-        </button>
         <button onClick={onClose} className="px-6 py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors">
           Cerrar
         </button>
