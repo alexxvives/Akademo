@@ -47,7 +47,6 @@ export interface Bindings {
   GTM_CLIENT_SECRET: string;
   
   // Email
-  RESEND_API_KEY: string;
   MAILEROO_API_KEY: string;
   
   // Stripe
