@@ -18,7 +18,7 @@ export async function sendEmail(
 
   if (env.MAILEROO_API_KEY) {
     try {
-      const res = await fetch('https://smtp.maileroo.com/mail/send', {
+      const res = await fetch('https://smtp.maileroo.com/send', {
         method: 'POST',
         headers: {
           'X-API-Key': env.MAILEROO_API_KEY,
@@ -27,13 +27,15 @@ export async function sendEmail(
         body: JSON.stringify({ from, to: toList.join(', '), subject, html_body: html, plain_body: '' }),
       });
       if (!res.ok) {
-        console.error('[sendEmail] Maileroo error:', await res.text());
-        return false;
+        const errText = await res.text();
+        console.error('[sendEmail] Maileroo error:', errText);
+        // Fall through to Resend if Maileroo fails
+      } else {
+        return true;
       }
-      return true;
     } catch (err) {
       console.error('[sendEmail] Maileroo exception:', err);
-      return false;
+      // Fall through to Resend
     }
   }
 
