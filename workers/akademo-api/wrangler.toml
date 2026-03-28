@@ -51,7 +51,7 @@ crons = ["0 0 1 * *"]  # Run at midnight on 1st of each month
 # DAILY_DOMAIN - Set via: wrangler secret put DAILY_DOMAIN (e.g. "yourapp" for yourapp.daily.co)
 
 # Email verification
-# RESEND_API_KEY - Configured
+# MAILEROO_API_KEY - Configured
 
 # Stripe (for payments)
 # STRIPE_SANDBOX = "true" to use sandbox keys, "false" (or any other value) to use live keys

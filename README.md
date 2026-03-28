@@ -25,7 +25,7 @@ AKADEMO is a complete learning management system (LMS) deployed on Cloudflare's 
 - Database: Cloudflare D1 (SQLite)
 - Storage: Cloudflare R2 + Bunny Stream
 - Live Streaming: Zoom API integration
-- Email: Resend API for verification
+- Email: Maileroo for transactional emails
 
 **Development:**
 ```bash
@@ -76,7 +76,7 @@ All viewing progress saved server-side. Students resume from last position with 
 - **Database:** Cloudflare D1 (SQLite) - `akademo-db`
 - **Storage:** Cloudflare R2 (`akademo-storage`) + Bunny Stream (Library 571240)
 - **Live Streaming:** Zoom API (Server-to-Server OAuth)
-- **Email:** Resend API for verification
+- **Email:** Maileroo for transactional emails
 - **Deployment:** Cloudflare Pages + Workers
 
 ### Project Structure
@@ -210,7 +210,7 @@ npx wrangler d1 execute akademo-db --remote --file=migrations/0079_restore_all_i
 See [workers/akademo-api/README.md](./workers/akademo-api/README.md) for required secrets:
 - Bunny Stream API keys
 - Zoom OAuth credentials
-- Resend API key
+- Maileroo API key
 
 ### Environment Variables
 Configured in `wrangler.toml` files:
@@ -360,7 +360,7 @@ npx wrangler whoami
 ✅ **Cloudflare D1 Database** - SQLite-based, globally distributed  
 ✅ **Bunny Stream CDN** - Fast global video delivery  
 ✅ **Zoom Integration** - Automated live streaming with recording  
-✅ **Email Verification** - Resend API integration  
+✅ **Email Verification** - Maileroo integration  
 ✅ **Role-Based Access** - 4 roles with granular permissions  
 ✅ **Progress Tracking** - Resume video playback  
 ✅ **Live Analytics** - Real-time platform metrics  

@@ -98,7 +98,7 @@ export default function PrivacidadPage() {
             <ul className="list-disc ml-6 mt-3 space-y-2 text-sm">
               <li><strong>Cloudflare, Inc.</strong> (EE.UU.) – infraestructura, CDN y almacenamiento cloud. Transferencia cubierta por cláusulas contractuales tipo de la UE.</li>
               <li><strong>Stripe, Inc.</strong> (EE.UU.) – procesamiento de pagos. Adherido al EU-US Data Privacy Framework.</li>
-              <li><strong>Resend, Inc.</strong> – envío de correos transaccionales.</li>
+              <li><strong>Maileroo</strong> – envío de correos transaccionales.</li>
               <li><strong>Bunny.net</strong> – distribución de contenido audiovisual.</li>
               <li><strong>Zoom Video Communications, Inc.</strong> (EE.UU.) – clases en directo. Transferencia cubierta por cláusulas contractuales tipo.</li>
             </ul>

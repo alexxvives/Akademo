@@ -204,8 +204,8 @@ academies.post('/teachers', async (c) => {
 
     // Get academy ID
     const academyResult = await c.env.DB.prepare(
-      'SELECT id FROM Academy WHERE ownerId = ?'
-    ).bind(session.id).first<{ id: string }>();
+      'SELECT id, name FROM Academy WHERE ownerId = ?'
+    ).bind(session.id).first<{ id: string; name: string }>();
     
     if (!academyResult) {
       return c.json(errorResponse('Academy not found'), 404);
@@ -240,55 +240,39 @@ academies.post('/teachers', async (c) => {
     ).bind(crypto.randomUUID(), userId, academyId).run();
 
     // Send onboarding email
+    const academyNameForEmail = (academyResult as { id: string; name: string }).name;
     await sendEmail(c.env, {
       from: 'AKADEMO <onboarding@akademo-edu.com>',
       to: email,
-      subject: 'Bienvenido a AKADEMO - Tus credenciales de acceso',
+      subject: `Tus credenciales de acceso — ${academyNameForEmail}`,
       html: `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                <div style="background: linear-gradient(135deg, #b1e787 0%, #8dd65f 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-                  <h1 style="color: #1f2937; margin: 0; font-size: 28px;">¡Bienvenido a AKADEMO!</h1>
-                </div>
-                <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
-                  <p style="color: #374151; font-size: 16px; line-height: 1.6;">Hola <strong>${firstName}</strong>,</p>
-                  <p style="color: #374151; font-size: 16px; line-height: 1.6;">Has sido agregado como profesor en AKADEMO. A continuación encontrarás tus credenciales de acceso:</p>
-                  
-                  <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #b1e787;">
-                    <p style="margin: 0 0 10px 0; color: #6b7280; font-size: 14px;">Correo electrónico:</p>
-                    <p style="margin: 0 0 20px 0; color: #1f2937; font-size: 16px; font-weight: 600;">${email}</p>
-                    
-                    <p style="margin: 0 0 10px 0; color: #6b7280; font-size: 14px;">Contraseña temporal:</p>
-                    <div style="background: #ffffff; padding: 15px; border-radius: 6px; border: 2px dashed #b1e787;">
-                      <p style="margin: 0; color: #1f2937; font-size: 20px; font-weight: 700; letter-spacing: 3px; text-align: center;">${password}</p>
-                    </div>
-                  </div>
-
-                  <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
-                    <p style="margin: 0; color: #92400e; font-size: 14px;">
-                      <strong>⚠️ Importante:</strong> Por tu seguridad, te recomendamos cambiar esta contraseña después de tu primer inicio de sesión.
-                    </p>
-                  </div>
-
-                  <div style="text-align: center; margin: 30px 0;">
-                    <a href="https://akademo-edu.com" style="background: #b1e787; color: #1f2937; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block; font-size: 16px;">
-                      Iniciar Sesión
-                    </a>
-                  </div>
-
-                  <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin-top: 30px;">
-                    Si tienes alguna pregunta o necesitas ayuda, no dudes en contactarnos.
-                  </p>
-                  
-                  <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin-bottom: 0;">
-                    Saludos,<br>
-                    <strong style="color: #1f2937;">El equipo de AKADEMO</strong>
-                  </p>
-                </div>
-                <div style="text-align: center; padding: 20px 0; color: #9ca3af; font-size: 12px;">
-                  <p style="margin: 0;">© 2026 AKADEMO - Plataforma de Educación en Línea</p>
-                </div>
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: 0 auto; background-color: #f8fafc; padding: 24px;">
+          <div style="background-color: #0f172a; padding: 32px 40px; border-radius: 12px 12px 0 0;">
+            <p style="color: #94a3b8; margin: 0 0 4px 0; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;">Bienvenido a</p>
+            <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700;">${academyNameForEmail}</h1>
+          </div>
+          <div style="background-color: #ffffff; padding: 40px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
+            <p style="color: #0f172a; font-size: 18px; font-weight: 600; margin: 0 0 8px 0;">Hola, ${firstName}</p>
+            <p style="color: #475569; font-size: 15px; line-height: 1.7; margin: 0 0 28px 0;">Has sido dado de alta como profesor en <strong style="color: #0f172a;">${academyNameForEmail}</strong>. A continuación tienes tus credenciales de acceso.</p>
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 24px; margin-bottom: 24px;">
+              <p style="margin: 0 0 4px 0; color: #94a3b8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px;">Correo electrónico</p>
+              <p style="margin: 0 0 20px 0; color: #0f172a; font-size: 15px; font-weight: 500;">${email}</p>
+              <p style="margin: 0 0 10px 0; color: #94a3b8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px;">Contraseña temporal</p>
+              <div style="background-color: #1e293b; border-radius: 8px; padding: 14px 20px; text-align: center;">
+                <span style="color: #e2e8f0; font-size: 22px; font-weight: 700; letter-spacing: 4px; font-family: 'Courier New', Courier, monospace;">${password}</span>
               </div>
-            `,
+            </div>
+            <div style="background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 14px 18px; margin-bottom: 28px;">
+              <p style="margin: 0; color: #92400e; font-size: 13px; line-height: 1.5;"><strong>Importante:</strong> Cambia tu contraseña al iniciar sesión por primera vez.</p>
+            </div>
+            <div style="text-align: center; margin-bottom: 36px;">
+              <a href="https://akademo-edu.com" style="display: inline-block; background-color: #0f172a; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-size: 15px; font-weight: 600;">Acceder a la plataforma →</a>
+            </div>
+            <p style="color: #94a3b8; font-size: 13px; line-height: 1.6; margin: 0; padding-top: 24px; border-top: 1px solid #f1f5f9;">Saludos,<br><strong style="color: #475569;">Equipo de ${academyNameForEmail}</strong></p>
+          </div>
+          <p style="text-align: center; color: #cbd5e1; font-size: 11px; margin: 16px 0 0 0;">Powered by AKADEMO · akademo-edu.com</p>
+        </div>
+      `,
     });
 
     return c.json(successResponse({ 
@@ -807,34 +791,33 @@ academies.post('/welcome-emails', async (c) => {
         const ok = await sendEmail(c.env, {
           from: 'AKADEMO <onboarding@akademo-edu.com>',
           to: user.email,
-          subject: 'Bienvenido a AKADEMO - Tus credenciales de acceso',
+          subject: `Tus credenciales de acceso — ${academy.name}`,
           html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <div style="background: linear-gradient(135deg, #b1e787 0%, #8dd65f 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
-                <h1 style="color: #1f2937; margin: 0; font-size: 28px;">¡Bienvenido a AKADEMO!</h1>
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: 0 auto; background-color: #f8fafc; padding: 24px;">
+              <div style="background-color: #0f172a; padding: 32px 40px; border-radius: 12px 12px 0 0;">
+                <p style="color: #94a3b8; margin: 0 0 4px 0; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;">Bienvenido a</p>
+                <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700;">${academy.name}</h1>
               </div>
-              <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
-                <p style="color: #374151; font-size: 16px; line-height: 1.6;">Hola <strong>${user.firstName}</strong>,</p>
-                <p style="color: #374151; font-size: 16px; line-height: 1.6;">Has sido dado de alta como ${roleLabel} en <strong>${academy.name}</strong>. A continuación encontrarás tus credenciales de acceso:</p>
-                <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #b1e787;">
-                  <p style="margin: 0 0 10px 0; color: #6b7280; font-size: 14px;">Correo electrónico:</p>
-                  <p style="margin: 0 0 20px 0; color: #1f2937; font-size: 16px; font-weight: 600;">${user.email}</p>
-                  <p style="margin: 0 0 10px 0; color: #6b7280; font-size: 14px;">Contraseña temporal:</p>
-                  <div style="background: #ffffff; padding: 15px; border-radius: 6px; border: 2px dashed #b1e787;">
-                    <p style="margin: 0; color: #1f2937; font-size: 20px; font-weight: 700; letter-spacing: 3px; text-align: center;">${user.tempPassword}</p>
+              <div style="background-color: #ffffff; padding: 40px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
+                <p style="color: #0f172a; font-size: 18px; font-weight: 600; margin: 0 0 8px 0;">Hola, ${user.firstName}</p>
+                <p style="color: #475569; font-size: 15px; line-height: 1.7; margin: 0 0 28px 0;">Has sido dado de alta como ${roleLabel} en <strong style="color: #0f172a;">${academy.name}</strong>. A continuación tienes tus credenciales de acceso.</p>
+                <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 24px; margin-bottom: 24px;">
+                  <p style="margin: 0 0 4px 0; color: #94a3b8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px;">Correo electrónico</p>
+                  <p style="margin: 0 0 20px 0; color: #0f172a; font-size: 15px; font-weight: 500;">${user.email}</p>
+                  <p style="margin: 0 0 10px 0; color: #94a3b8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px;">Contraseña temporal</p>
+                  <div style="background-color: #1e293b; border-radius: 8px; padding: 14px 20px; text-align: center;">
+                    <span style="color: #e2e8f0; font-size: 22px; font-weight: 700; letter-spacing: 4px; font-family: 'Courier New', Courier, monospace;">${user.tempPassword}</span>
                   </div>
                 </div>
-                <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f59e0b;">
-                  <p style="margin: 0; color: #92400e; font-size: 14px;"><strong>⚠️ Importante:</strong> Por tu seguridad, te recomendamos cambiar esta contraseña después de tu primer inicio de sesión.</p>
+                <div style="background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 14px 18px; margin-bottom: 28px;">
+                  <p style="margin: 0; color: #92400e; font-size: 13px; line-height: 1.5;"><strong>Importante:</strong> Cambia tu contraseña al iniciar sesión por primera vez.</p>
                 </div>
-                <div style="text-align: center; margin: 30px 0;">
-                  <a href="https://akademo-edu.com" style="background: #b1e787; color: #1f2937; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block; font-size: 16px;">Iniciar Sesión</a>
+                <div style="text-align: center; margin-bottom: 36px;">
+                  <a href="https://akademo-edu.com" style="display: inline-block; background-color: #0f172a; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-size: 15px; font-weight: 600;">Acceder a la plataforma →</a>
                 </div>
-                <p style="color: #6b7280; font-size: 14px; margin-bottom: 0;">Saludos,<br><strong style="color: #1f2937;">El equipo de AKADEMO</strong></p>
+                <p style="color: #94a3b8; font-size: 13px; line-height: 1.6; margin: 0; padding-top: 24px; border-top: 1px solid #f1f5f9;">Saludos,<br><strong style="color: #475569;">Equipo de ${academy.name}</strong></p>
               </div>
-              <div style="text-align: center; padding: 20px 0; color: #9ca3af; font-size: 12px;">
-                <p style="margin: 0;">© 2026 AKADEMO - Plataforma de Educación en Línea</p>
-              </div>
+              <p style="text-align: center; color: #cbd5e1; font-size: 11px; margin: 16px 0 0 0;">Powered by AKADEMO · akademo-edu.com</p>
             </div>
           `,
         });

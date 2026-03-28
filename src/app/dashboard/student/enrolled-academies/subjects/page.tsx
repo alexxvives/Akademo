@@ -29,6 +29,8 @@ export default function EnrolledAcademiesClassesPage() {
   const [classes, setClasses] = useState<AcademyClass[]>([]);
   const [loading, setLoading] = useState(true);
   const [requesting, setRequesting] = useState<string | null>(null);
+  const [filterUniversity, setFilterUniversity] = useState('');
+  const [filterCarrera, setFilterCarrera] = useState('');
 
   useEffect(() => {
     loadClasses();
@@ -76,9 +78,16 @@ export default function EnrolledAcademiesClassesPage() {
     return <SkeletonClasses />;
   }
 
+  const universities = Array.from(new Set(classes.map(c => c.university).filter(Boolean))) as string[];
+  const carreras = Array.from(new Set(classes.map(c => c.carrera).filter(Boolean))) as string[];
+  const filteredClasses = classes.filter(c =>
+    (!filterUniversity || c.university === filterUniversity) &&
+    (!filterCarrera || c.carrera === filterCarrera)
+  );
+
   return (
     <div className="w-full">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-start justify-between mb-6 gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Unirse a Más Clases</h1>
           <p className="text-gray-600 text-sm mt-1">
@@ -87,6 +96,30 @@ export default function EnrolledAcademiesClassesPage() {
               : 'Clases disponibles en las academias donde ya estás inscrito'}
           </p>
         </div>
+        {(universities.length > 0 || carreras.length > 0) && (
+          <div className="flex items-center gap-2 flex-wrap">
+            {universities.length > 0 && (
+              <select
+                value={filterUniversity}
+                onChange={e => { setFilterUniversity(e.target.value); setFilterCarrera(''); }}
+                className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-300"
+              >
+                <option value="">Todas las universidades</option>
+                {universities.map(u => <option key={u} value={u}>{u}</option>)}
+              </select>
+            )}
+            {carreras.length > 0 && (
+              <select
+                value={filterCarrera}
+                onChange={e => setFilterCarrera(e.target.value)}
+                className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-300"
+              >
+                <option value="">Todas las carreras</option>
+                {carreras.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            )}
+          </div>
+        )}
       </div>
 
       {classes.length === 0 ? (
@@ -101,11 +134,15 @@ export default function EnrolledAcademiesClassesPage() {
             Ya estás inscrito en todas las clases disponibles de tu academia
           </p>
         </div>
+      ) : filteredClasses.length === 0 ? (
+        <div className="p-12 text-center">
+          <p className="text-gray-500">No hay clases que coincidan con los filtros seleccionados.</p>
+        </div>
       ) : (
         <div className="space-y-6">
           {/* Group classes by academy */}
           {Object.entries(
-            classes.reduce((acc, classItem) => {
+            filteredClasses.reduce((acc, classItem) => {
               if (!acc[classItem.academyName]) {
                 acc[classItem.academyName] = [];
               }
