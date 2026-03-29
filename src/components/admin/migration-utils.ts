@@ -6,6 +6,7 @@ export interface ImportRow {
   lastName: string;
   role: string;
   classNames: string;
+  pagado?: boolean; // true = payment already collected (cash/transfer), skip in-app payment prompt
 }
 
 export interface ClassRow {
@@ -48,9 +49,11 @@ export function normalizeRows(rows: Record<string, unknown>[]): ImportRow[] {
   const lastIdx = find('lastname', 'apellido', 'apellidos');
   const roleIdx = find('role', 'rol');
   const classIdx = find('classes', 'clases', 'classnames');
+  const pagadoIdx = find('pagado', 'paid', 'pago recibido', 'ya pagado', 'ya_pagado');
 
   if (emailIdx === -1 || firstIdx === -1 || lastIdx === -1) return [];
 
+  const TRUTHY = ['true', 'sí', 'si', '1', 'yes', 'x'];
   const origKeys = Object.keys(raw);
   return rows.map(row => ({
     email: String(row[origKeys[emailIdx]] ?? '').trim(),
@@ -58,6 +61,7 @@ export function normalizeRows(rows: Record<string, unknown>[]): ImportRow[] {
     lastName: String(row[origKeys[lastIdx]] ?? '').trim(),
     role: roleIdx !== -1 ? String(row[origKeys[roleIdx]] ?? 'STUDENT').trim() : 'STUDENT',
     classNames: classIdx !== -1 ? String(row[origKeys[classIdx]] ?? '').trim() : '',
+    pagado: pagadoIdx !== -1 ? TRUTHY.includes(String(row[origKeys[pagadoIdx]] ?? '').toLowerCase().trim()) : false,
   })).filter(r => r.email);
 }
 
@@ -71,9 +75,11 @@ export function parseCSV(text: string): ImportRow[] {
   const lastIdx = header.findIndex(h => h === 'lastname' || h === 'apellido' || h === 'apellidos');
   const roleIdx = header.findIndex(h => h === 'role' || h === 'rol');
   const classIdx = header.findIndex(h => h === 'classes' || h === 'clases' || h === 'classnames');
+  const pagadoIdx = header.findIndex(h => h === 'pagado' || h === 'paid' || h === 'pago recibido' || h === 'ya pagado');
 
   if (emailIdx === -1 || firstIdx === -1 || lastIdx === -1) return [];
 
+  const TRUTHY = ['true', 'sí', 'si', '1', 'yes', 'x'];
   return lines.slice(1).map(line => {
     const fields: string[] = [];
     let current = '';
@@ -91,6 +97,7 @@ export function parseCSV(text: string): ImportRow[] {
       lastName: fields[lastIdx] || '',
       role: roleIdx !== -1 ? (fields[roleIdx] || 'STUDENT') : 'STUDENT',
       classNames: classIdx !== -1 ? (fields[classIdx] || '') : '',
+      pagado: pagadoIdx !== -1 ? TRUTHY.includes((fields[pagadoIdx] || '').toLowerCase().trim()) : false,
     };
   }).filter(r => r.email);
 }

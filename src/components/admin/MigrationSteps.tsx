@@ -35,6 +35,7 @@ export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
                 <tr><td className="pr-4 py-1 font-semibold text-gray-700">Apellido</td><td className="pr-4">lastName, apellido, apellidos</td><td>Obligatorio</td></tr>
                 <tr><td className="pr-4 py-1 text-gray-400">Rol <span className="text-gray-400">(opcional)</span></td><td className="pr-4">role, rol</td><td>STUDENT o TEACHER (default: STUDENT)</td></tr>
                 <tr><td className="pr-4 py-1 text-gray-400">Clases <span className="text-gray-400">(opcional)</span></td><td className="pr-4">classes, clases, classNames</td><td>Nombres separados por coma (entre comillas)</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Pago recibido <span className="text-gray-400">(opcional)</span></td><td className="pr-4">pagado, paid</td><td className="text-amber-600 font-medium">TRUE si ya se cobró el pago (efectivo, transferencia) — el alumno solo deberá firmar el documento</td></tr>
               </tbody>
             </table>
           </div>

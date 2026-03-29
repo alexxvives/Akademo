@@ -829,6 +829,7 @@ admin.post('/bulk-import', async (c) => {
       const firstName = (row.firstName || '').trim();
       const lastName = (row.lastName || '').trim();
       const role = (row.role || 'STUDENT').toUpperCase().trim();
+      const pagado = row.pagado === true; // payment already collected outside platform
       const classNames: string[] = (row.classNames || '')
         .split(',')
         .map((n: string) => n.trim().toLowerCase())
@@ -935,10 +936,32 @@ admin.post('/bulk-import', async (c) => {
               const classPrice = classPriceMap.get(classId);
               // Use MONTHLY if class only offers monthly pricing; otherwise ONE_TIME
               const paymentFrequency = (classPrice?.monthlyPrice && !classPrice?.oneTimePrice) ? 'MONTHLY' : 'ONE_TIME';
+              const price = classPrice?.oneTimePrice ?? classPrice?.monthlyPrice ?? null;
+
+              // If pagado=true and MONTHLY, pre-set nextPaymentDue to first day of next month
+              let nextPaymentDue: string | null = null;
+              if (pagado && paymentFrequency === 'MONTHLY' && price) {
+                const d = new Date();
+                d.setMonth(d.getMonth() + 1, 1);
+                nextPaymentDue = d.toISOString().split('T')[0];
+              }
+
               await c.env.DB
-                .prepare('INSERT INTO ClassEnrollment (id, classId, userId, status, enrolledAt, documentSigned, paymentFrequency) VALUES (?, ?, ?, ?, datetime("now"), ?, ?)')
-                .bind(enrollmentId, classId, userId, 'APPROVED', 0, paymentFrequency)
+                .prepare('INSERT INTO ClassEnrollment (id, classId, userId, status, enrolledAt, documentSigned, paymentFrequency, nextPaymentDue) VALUES (?, ?, ?, ?, datetime("now"), ?, ?, ?)')
+                .bind(enrollmentId, classId, userId, 'APPROVED', 0, paymentFrequency, nextPaymentDue)
                 .run();
+
+              // If pagado=true and the class has a price: record the cash payment so
+              // the student skips the in-app payment step (only needs to sign the document)
+              if (pagado && price) {
+                const paymentId = nanoid();
+                const fullName = `${firstName} ${lastName}`;
+                await c.env.DB
+                  .prepare(`INSERT INTO Payment (id, classId, payerId, receiverId, amount, status, paymentMethod, type, currency, createdAt, completedAt, payerType, payerName, payerEmail, receiverName, description)
+                    VALUES (?, ?, ?, ?, ?, 'PAID', 'cash', 'STUDENT_TO_ACADEMY', 'EUR', datetime('now'), datetime('now'), 'STUDENT', ?, ?, ?, ?)`)
+                  .bind(paymentId, classId, userId, academyId, price, fullName, email, academy.name, 'Pago registrado en migración CSV')
+                  .run();
+              }
             }
           }
         }
