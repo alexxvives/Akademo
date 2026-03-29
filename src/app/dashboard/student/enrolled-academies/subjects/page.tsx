@@ -1,9 +1,10 @@
 ﻿'use client';
 
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
 import { SkeletonClasses } from '@/components/ui/SkeletonLoader';
+import { CarreraFilterDropdown, buildFilterGroups, matchesFilter } from '@/components/ui/CarreraFilterDropdown';
 
 interface AcademyClass {
   id: string;
@@ -22,138 +23,6 @@ interface AcademyClass {
   whatsappGroupLink?: string | null;
   university?: string | null;
   carrera?: string | null;
-}
-
-const SEP = '|||';
-
-function FilterDropdown({
-  groups,
-  value,
-  onChange,
-}: {
-  groups: Record<string, string[]>;
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [search, setSearch] = useState('');
-  const containerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-        setSearch('');
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
-
-  const displayLabel = useMemo(() => {
-    if (!value) return null;
-    return value.split(SEP)[1];
-  }, [value]);
-
-  const filteredGroups = useMemo(() => {
-    if (!search.trim()) return groups;
-    const q = search.toLowerCase();
-    const result: Record<string, string[]> = {};
-    for (const [uni, carreras] of Object.entries(groups)) {
-      const matchedCarreras = carreras.filter(
-        car => car.toLowerCase().includes(q) || uni.toLowerCase().includes(q)
-      );
-      if (matchedCarreras.length > 0) result[uni] = matchedCarreras;
-    }
-    return result;
-  }, [groups, search]);
-
-  const handleSelect = (key: string) => {
-    onChange(key);
-    setIsOpen(false);
-    setSearch('');
-  };
-
-  const hasResults = Object.values(filteredGroups).some(c => c.length > 0);
-
-  return (
-    <div ref={containerRef} className="relative w-full sm:w-72">
-      <div
-        className={`flex items-center w-full bg-white border rounded-lg text-sm cursor-pointer ${
-          isOpen ? 'ring-2 ring-gray-300 border-transparent' : 'border-gray-200'
-        }`}
-        onClick={() => {
-          setIsOpen(true);
-          setSearch('');
-          setTimeout(() => inputRef.current?.focus(), 0);
-        }}
-      >
-        {isOpen ? (
-          <input
-            ref={inputRef}
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Buscar carrera o universidad..."
-            className="w-full pl-3 pr-8 py-2 bg-transparent text-sm text-gray-700 outline-none rounded-lg"
-            onKeyDown={e => {
-              if (e.key === 'Escape') { setIsOpen(false); setSearch(''); }
-            }}
-          />
-        ) : (
-          <span className={`block w-full pl-3 pr-8 py-2 truncate ${displayLabel ? 'text-gray-700' : 'text-gray-400'}`}>
-            {displayLabel ?? 'Filtrar por carrera'}
-          </span>
-        )}
-        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-gray-400">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </div>
-      </div>
-
-      {isOpen && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-[20rem] overflow-y-auto">
-          <button
-            type="button"
-            onClick={() => handleSelect('')}
-            className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 ${
-              !value ? 'bg-brand-50 text-brand-700 font-medium' : 'text-gray-500'
-            }`}
-          >
-            Todas las carreras
-          </button>
-          {Object.entries(filteredGroups)
-            .sort(([a], [b]) => a.localeCompare(b))
-            .map(([uni, carreras]) => (
-              <div key={uni}>
-                <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 bg-gray-50 uppercase tracking-wide border-t border-gray-100">
-                  {uni}
-                </div>
-                {[...carreras].sort((a, b) => a.localeCompare(b)).map(car => (
-                  <button
-                    key={`${uni}${SEP}${car}`}
-                    type="button"
-                    onClick={() => handleSelect(`${uni}${SEP}${car}`)}
-                    className={`w-full text-left px-3 py-1.5 pl-6 text-sm hover:bg-gray-50 ${
-                      value === `${uni}${SEP}${car}` ? 'bg-brand-50 text-brand-700 font-medium' : 'text-gray-700'
-                    }`}
-                  >
-                    {car}
-                  </button>
-                ))}
-              </div>
-            ))}
-          {!hasResults && (
-            <div className="px-3 py-3 text-sm text-gray-400 text-center">
-              No se encontraron resultados
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
 }
 
 export default function EnrolledAcademiesClassesPage() {
@@ -202,30 +71,9 @@ export default function EnrolledAcademiesClassesPage() {
     }
   };
 
-  // Build grouped options for the filter dropdown
-  const filterGroups = useMemo(() => {
-    const groups: Record<string, string[]> = {};
-    for (const cls of classes) {
-      if (!cls.university && !cls.carrera) continue;
-      const uni = cls.university ?? 'Universidad no asignada';
-      const car = cls.carrera ?? 'Carrera no asignada';
-      if (!groups[uni]) groups[uni] = [];
-      if (!groups[uni].includes(car)) groups[uni].push(car);
-    }
-    return groups;
-  }, [classes]);
-
+  const filterGroups = useMemo(() => buildFilterGroups(classes), [classes]);
   const hasFilter = Object.keys(filterGroups).length > 0;
-
-  const filtered = useMemo(() => {
-    if (!filterKey) return classes;
-    const [uni, car] = filterKey.split(SEP);
-    return classes.filter(
-      c =>
-        (c.university ?? 'Universidad no asignada') === uni &&
-        (c.carrera ?? 'Carrera no asignada') === car
-    );
-  }, [classes, filterKey]);
+  const filtered = useMemo(() => classes.filter(c => matchesFilter(c, filterKey)), [classes, filterKey]);
 
   if (loading) return <SkeletonClasses />;
 
@@ -243,7 +91,7 @@ export default function EnrolledAcademiesClassesPage() {
           <p className="text-gray-600 text-sm mt-1">{academyLabel}</p>
         </div>
         {hasFilter && (
-          <FilterDropdown groups={filterGroups} value={filterKey} onChange={setFilterKey} />
+          <CarreraFilterDropdown groups={filterGroups} value={filterKey} onChange={setFilterKey} />
         )}
       </div>
 

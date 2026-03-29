@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import DocumentSigningModal from '@/components/DocumentSigningModal';
 import PaymentModal from '@/components/PaymentModal';
@@ -7,6 +8,7 @@ import { SkeletonClasses } from '@/components/ui/SkeletonLoader';
 import { useStudentClasses } from './useStudentClasses';
 import EmptyClassesView from './EmptyClassesView';
 import ClassCard from './ClassCard';
+import { CarreraFilterDropdown, buildFilterGroups, matchesFilter } from '@/components/ui/CarreraFilterDropdown';
 
 export default function StudentClassesPage() {
   const {
@@ -25,6 +27,11 @@ export default function StudentClassesPage() {
     handleSign,
     loadData,
   } = useStudentClasses();
+
+  const [filterKey, setFilterKey] = useState('');
+  const filterGroups = useMemo(() => buildFilterGroups(enrolledClasses), [enrolledClasses]);
+  const hasFilter = Object.keys(filterGroups).length > 0;
+  const filtered = useMemo(() => enrolledClasses.filter(c => matchesFilter(c, filterKey)), [enrolledClasses, filterKey]);
 
   if (loading || verifying) {
     return <SkeletonClasses />;
@@ -52,10 +59,13 @@ export default function StudentClassesPage() {
           </div>
           {academyName && <p className="text-sm text-gray-500 mt-1">{academyName}</p>}
         </div>
+        {hasFilter && (
+          <CarreraFilterDropdown groups={filterGroups} value={filterKey} onChange={setFilterKey} />
+        )}
       </div>
 
       <div className="space-y-4">
-        {enrolledClasses.map((classItem) => (
+        {filtered.map((classItem) => (
           <ClassCard
             key={classItem.id}
             classItem={classItem}
