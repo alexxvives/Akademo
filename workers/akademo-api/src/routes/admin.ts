@@ -3,6 +3,7 @@ import { Bindings } from '../types';
 import { requireAuth, hashPassword } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { nanoid } from 'nanoid';
+import { countElapsedCycles } from '../lib/payment-utils';
 import { writeAuditLog } from '../lib/audit';
 import { sendEmail } from '../lib/sendEmail';
 
@@ -769,17 +770,18 @@ admin.post('/bulk-import', async (c) => {
 
     // Load all classes for this academy (for matching by name)
     const classesResult = await c.env.DB
-      .prepare('SELECT id, name, monthlyPrice, oneTimePrice FROM Class WHERE academyId = ?')
+      .prepare('SELECT id, name, monthlyPrice, oneTimePrice, startDate FROM Class WHERE academyId = ?')
       .bind(academyId)
       .all();
     const classes = classesResult.results || [];
     const classMap = new Map<string, string>(); // lowercase name -> id
-    const classPriceMap = new Map<string, { monthlyPrice: number | null; oneTimePrice: number | null }>();
+    const classPriceMap = new Map<string, { monthlyPrice: number | null; oneTimePrice: number | null; startDate: string | null }>();
     for (const cls of classes) {
       classMap.set((cls.name as string).toLowerCase().trim(), cls.id as string);
       classPriceMap.set(cls.id as string, {
         monthlyPrice: cls.monthlyPrice as number | null,
         oneTimePrice: cls.oneTimePrice as number | null,
+        startDate: cls.startDate as string | null,
       });
     }
 
@@ -808,7 +810,7 @@ admin.post('/bulk-import', async (c) => {
           .bind(classId, name, slug, academyId, monthlyPrice, oneTimePrice, startDate, description, university, carrera, maxStudents, whatsappGroupLink, now)
           .run();
         classMap.set(key, classId);
-        classPriceMap.set(classId, { monthlyPrice, oneTimePrice });
+        classPriceMap.set(classId, { monthlyPrice, oneTimePrice, startDate: startDate as string | null });
         if (cr.teacherEmail) classTeacherMap.set(classId, cr.teacherEmail.toLowerCase().trim());
       }
       // Store for teacher assignment after users are processed
@@ -936,30 +938,34 @@ admin.post('/bulk-import', async (c) => {
               const classPrice = classPriceMap.get(classId);
               // Use MONTHLY if class only offers monthly pricing; otherwise ONE_TIME
               const paymentFrequency = (classPrice?.monthlyPrice && !classPrice?.oneTimePrice) ? 'MONTHLY' : 'ONE_TIME';
-              const price = classPrice?.oneTimePrice ?? classPrice?.monthlyPrice ?? null;
 
-              // If pagado=true and MONTHLY, pre-set nextPaymentDue to first day of next month
-              let nextPaymentDue: string | null = null;
-              if (pagado && paymentFrequency === 'MONTHLY' && price) {
-                const d = new Date();
-                d.setMonth(d.getMonth() + 1, 1);
-                nextPaymentDue = d.toISOString().split('T')[0];
+              // Compute the historically-correct PAID amount for pagado=TRUE
+              // For MONTHLY classes: total = elapsedCycles × monthlyPrice (not just one month)
+              let paidAmount: number | null = null;
+              if (pagado && classPrice) {
+                if (paymentFrequency === 'MONTHLY' && classPrice.monthlyPrice) {
+                  const classStart = classPrice.startDate ? new Date(classPrice.startDate) : new Date();
+                  const elapsed = countElapsedCycles(classStart, new Date());
+                  paidAmount = elapsed * classPrice.monthlyPrice;
+                } else if (paymentFrequency === 'ONE_TIME' && classPrice.oneTimePrice) {
+                  paidAmount = classPrice.oneTimePrice;
+                }
               }
 
               await c.env.DB
-                .prepare('INSERT INTO ClassEnrollment (id, classId, userId, status, enrolledAt, documentSigned, paymentFrequency, nextPaymentDue) VALUES (?, ?, ?, ?, datetime("now"), ?, ?, ?)')
-                .bind(enrollmentId, classId, userId, 'APPROVED', 0, paymentFrequency, nextPaymentDue)
+                .prepare('INSERT INTO ClassEnrollment (id, classId, userId, status, enrolledAt, documentSigned, paymentFrequency) VALUES (?, ?, ?, ?, datetime("now"), ?, ?)')
+                .bind(enrollmentId, classId, userId, 'APPROVED', 0, paymentFrequency)
                 .run();
 
-              // If pagado=true and the class has a price: record the cash payment so
-              // the student skips the in-app payment step (only needs to sign the document)
-              if (pagado && price) {
+              // If pagado=true: record the accumulated cash payment so the student skips
+              // the in-app payment step (only needs to sign the document)
+              if (pagado && paidAmount) {
                 const paymentId = nanoid();
                 const fullName = `${firstName} ${lastName}`;
                 await c.env.DB
                   .prepare(`INSERT INTO Payment (id, classId, payerId, receiverId, amount, status, paymentMethod, type, currency, createdAt, completedAt, payerType, payerName, payerEmail, receiverName, description)
                     VALUES (?, ?, ?, ?, ?, 'PAID', 'cash', 'STUDENT_TO_ACADEMY', 'EUR', datetime('now'), datetime('now'), 'STUDENT', ?, ?, ?, ?)`)
-                  .bind(paymentId, classId, userId, academyId, price, fullName, email, academy.name, 'Pago registrado en migración CSV')
+                  .bind(paymentId, classId, userId, academyId, paidAmount, fullName, email, academy.name, 'Pago registrado en migración CSV')
                   .run();
               }
             }

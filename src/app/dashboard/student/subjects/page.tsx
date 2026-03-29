@@ -29,9 +29,14 @@ export default function StudentClassesPage() {
   } = useStudentClasses();
 
   const [filterKey, setFilterKey] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const filterGroups = useMemo(() => buildFilterGroups(enrolledClasses), [enrolledClasses]);
   const hasFilter = Object.keys(filterGroups).length > 0;
-  const filtered = useMemo(() => enrolledClasses.filter(c => matchesFilter(c, filterKey)), [enrolledClasses, filterKey]);
+  const filtered = useMemo(() =>
+    enrolledClasses
+      .filter(c => matchesFilter(c, filterKey))
+      .filter(c => !searchQuery || c.name.toLowerCase().includes(searchQuery.toLowerCase())),
+    [enrolledClasses, filterKey, searchQuery]);
 
   if (loading || verifying) {
     return <SkeletonClasses />;
@@ -62,6 +67,18 @@ export default function StudentClassesPage() {
         {hasFilter && (
           <CarreraFilterDropdown groups={filterGroups} value={filterKey} onChange={setFilterKey} />
         )}
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Buscar asignatura..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent w-52"
+          />
+          <svg className="absolute left-3 top-2.5 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
       </div>
 
       <div className="space-y-4">
