@@ -39,7 +39,7 @@ export default function PasswordInput({
         required={required}
         minLength={minLength}
         autoComplete={autoComplete}
-        className={className}
+        className={`text-gray-900 ${className}`}
       />
       <button
         type="button"

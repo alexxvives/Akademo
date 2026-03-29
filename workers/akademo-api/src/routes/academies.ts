@@ -219,7 +219,7 @@ academies.post('/teachers', async (c) => {
     ).bind(email).first();
 
     if (existingUser) {
-      return c.json(errorResponse('Email already registered'), 400);
+      return c.json(errorResponse('Este email ya está registrado'), 400);
     }
 
     // Hash password using bcrypt (must match login flow)

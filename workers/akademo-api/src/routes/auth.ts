@@ -72,16 +72,16 @@ auth.post('/register', registerRateLimit, validateBody(registerSchema), async (c
     // Zod validates: email format, password min 8, role enum
     // Conditional validations below (cross-field):
     if (role === 'ACADEMY' && !academyName) {
-      return c.json(errorResponse('Academy name is required'), 400);
+      return c.json(errorResponse('El nombre de la academia es obligatorio'), 400);
     }
 
     if ((role === 'STUDENT' || role === 'TEACHER') && (!firstName || firstName.trim() === '')) {
-      return c.json(errorResponse('First name and last name are required'), 400);
+      return c.json(errorResponse('El nombre y apellido son obligatorios'), 400);
     }
 
     // TEACHER self-registration is disabled — teachers are invited directly by academies
     if (role === 'TEACHER') {
-      return c.json(errorResponse('Teachers must be invited directly by an academy'), 400);
+      return c.json(errorResponse('Los profesores deben ser invitados directamente por una academia'), 400);
     }
 
     // V-08: Rate limit ACADEMY self-registration — max 3 per day per IP
@@ -96,7 +96,7 @@ auth.post('/register', registerRateLimit, validateBody(registerSchema), async (c
            RETURNING count`
         ).bind(key, windowStart).first<{ count: number }>();
         if ((rl?.count ?? 1) > 3) {
-          return c.json(errorResponse('Too many academy registrations from this IP. Please try again tomorrow.'), 429);
+          return c.json(errorResponse('Demasiados intentos de registro desde esta conexión. Por favor inténtalo mañana.'), 429);
         }
       } catch {
         // D1 failure — allow registration (fail-open)
@@ -110,7 +110,7 @@ auth.post('/register', registerRateLimit, validateBody(registerSchema), async (c
       .first();
 
     if (existing) {
-      return c.json(errorResponse('Unable to create account. Please try a different email or sign in.'), 400);
+      return c.json(errorResponse('Este email ya está registrado. Intenta con otro o inicia sesión.'), 400);
     }
 
     // Hash password
@@ -199,7 +199,7 @@ auth.post('/register', registerRateLimit, validateBody(registerSchema), async (c
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Register] Error:', error);
-    return c.json(errorResponse('Registration failed'), 500);
+    return c.json(errorResponse('Error al registrar. Por favor inténtalo de nuevo.'), 500);
   }
 });
 
@@ -363,7 +363,7 @@ auth.post('/login', loginRateLimit, validateBody(loginSchema), async (c) => {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Login] Error:', error);
     console.error('[Login] Error stack:', error.stack);
-    return c.json(errorResponse('Login failed'), 500);
+    return c.json(errorResponse('Error al iniciar sesión. Por favor inténtalo de nuevo.'), 500);
   }
 });
 
@@ -412,7 +412,7 @@ auth.post('/check-email', checkEmailRateLimit, async (c) => {
     const { email } = await c.req.json();
 
     if (!email) {
-      return c.json(errorResponse('Email is required'), 400);
+      return c.json(errorResponse('El email es obligatorio'), 400);
     }
 
     // Check if email exists
@@ -427,7 +427,7 @@ auth.post('/check-email', checkEmailRateLimit, async (c) => {
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Check Email] Error:', error);
-    return c.json(errorResponse('Failed to check email'), 500);
+    return c.json(errorResponse('Error al verificar el email'), 500);
   }
 });
 
@@ -437,7 +437,7 @@ auth.post('/send-verification', emailVerificationRateLimit, async (c) => {
     const { email } = await c.req.json();
 
     if (!email) {
-      return c.json(errorResponse('Email is required'), 400);
+      return c.json(errorResponse('El email es obligatorio'), 400);
     }
 
     // Check if email already registered
@@ -447,7 +447,7 @@ auth.post('/send-verification', emailVerificationRateLimit, async (c) => {
       .first();
 
     if (existingUser) {
-      return c.json(errorResponse('Email already registered'), 400);
+      return c.json(errorResponse('Este email ya está registrado'), 400);
     }
 
     // Generate 6-digit code
@@ -487,7 +487,7 @@ auth.post('/send-verification', emailVerificationRateLimit, async (c) => {
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Send Verification] Error:', error);
-    return c.json(errorResponse('Failed to send verification'), 500);
+    return c.json(errorResponse('Error al enviar el código de verificación. Inténtalo de nuevo.'), 500);
   }
 });
 
