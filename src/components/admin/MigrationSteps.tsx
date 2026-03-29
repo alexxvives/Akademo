@@ -310,11 +310,6 @@ export function ResultsStep({ summary, downloadResults, reset, onClose }: Result
       </div>
 
       <div className="flex justify-center gap-3 pt-2">
-        {hasCreated && (
-          <button onClick={downloadResults} className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors">
-            Descargar CSV
-          </button>
-        )}
         <button onClick={handleClose} className="px-6 py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors">
           Cerrar
         </button>
