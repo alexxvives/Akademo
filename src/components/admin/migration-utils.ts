@@ -25,6 +25,7 @@ export interface ClassRow {
 export interface ImportResult {
   row: number;
   email: string;
+  role: string;
   status: 'created' | 'skipped' | 'error';
   message: string;
   tempPassword?: string;
@@ -35,6 +36,7 @@ export interface ImportSummary {
   skipped: number;
   errors: number;
   total: number;
+  classesCreated: number;
   results: ImportResult[];
 }
 

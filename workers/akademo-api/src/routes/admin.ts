@@ -785,6 +785,7 @@ admin.post('/bulk-import', async (c) => {
       });
     }
 
+    let classesCreated = 0;
     // Create any new classes from classRows that don't already exist
     if (Array.isArray(classRows) && classRows.length > 0) {
       const now = new Date().toISOString();
@@ -811,6 +812,7 @@ admin.post('/bulk-import', async (c) => {
           .run();
         classMap.set(key, classId);
         classPriceMap.set(classId, { monthlyPrice, oneTimePrice, startDate: startDate as string | null });
+        classesCreated++;
         if (cr.teacherEmail) classTeacherMap.set(classId, cr.teacherEmail.toLowerCase().trim());
       }
       // Store for teacher assignment after users are processed
@@ -820,6 +822,7 @@ admin.post('/bulk-import', async (c) => {
     const results: Array<{
       row: number;
       email: string;
+      role: string;
       status: 'created' | 'skipped' | 'error';
       message: string;
       tempPassword?: string;
@@ -838,11 +841,11 @@ admin.post('/bulk-import', async (c) => {
         .filter(Boolean);
 
       if (!email || !firstName || !lastName) {
-        results.push({ row: i + 1, email, status: 'error', message: 'Missing email, firstName, or lastName' });
+        results.push({ row: i + 1, email, role, status: 'error', message: 'Missing email, firstName, or lastName' });
         continue;
       }
       if (!['STUDENT', 'TEACHER'].includes(role)) {
-        results.push({ row: i + 1, email, status: 'error', message: `Invalid role: ${role}. Must be STUDENT or TEACHER` });
+        results.push({ row: i + 1, email, role, status: 'error', message: `Invalid role: ${role}. Must be STUDENT or TEACHER` });
         continue;
       }
 
@@ -861,7 +864,7 @@ admin.post('/bulk-import', async (c) => {
         .first();
 
       if (existingInAcademy) {
-        results.push({ row: i + 1, email, status: 'skipped', message: 'User already exists in this academy' });
+        results.push({ row: i + 1, email, role, status: 'skipped', message: 'User already exists in this academy' });
         continue;
       }
 
@@ -978,9 +981,9 @@ admin.post('/bulk-import', async (c) => {
         ? `Created. Unmatched classes: ${unmatchedClasses.join(', ')}`
         : existing ? 'Added to academy' : 'Created successfully';
 
-      results.push({ row: i + 1, email, status: 'created', message: msg, tempPassword: tempPassword ? String(tempPassword) : '' });
+      results.push({ row: i + 1, email, role, status: 'created', message: msg, tempPassword: tempPassword ? String(tempPassword) : '' });
       } catch (err: any) {
-        results.push({ row: i + 1, email, status: 'error', message: err.message || 'Database error' });
+        results.push({ row: i + 1, email, role, status: 'error', message: err.message || 'Database error' });
       }
     }
 
@@ -1005,7 +1008,7 @@ admin.post('/bulk-import', async (c) => {
       details: `Imported ${created} users (${skipped} skipped, ${errors} errors) for academy ${academy.name}`,
     });
 
-    return c.json(successResponse({ created, skipped, errors, total: rows.length, results }));
+    return c.json(successResponse({ created, skipped, errors, total: rows.length, classesCreated, results }));
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Admin Bulk Import] Error:', error);

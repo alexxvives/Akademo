@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { type ImportRow, type ClassRow, type ImportSummary } from './migration-utils';
 
@@ -18,7 +17,7 @@ export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
           Sube un archivo <span className="font-semibold text-gray-700">.xlsx</span> (Excel) o <span className="font-semibold text-gray-700">.csv</span>. La primera fila debe ser el encabezado. Columnas requeridas en <span className="font-semibold text-gray-700">negrita</span>:
         </p>
 
-        <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4 items-start">
           <div>
             <p className="text-xs font-semibold text-gray-600 mb-2">Hoja &ldquo;Usuarios&rdquo; (obligatoria)</p>
             <table className="text-xs text-gray-500 w-full">
@@ -93,8 +92,30 @@ interface PreviewStepProps {
 }
 
 export function PreviewStep({ preview, classPreview, importing, reset, handleImport }: PreviewStepProps) {
+  const classNamesInFile = new Set(classPreview.map(c => c.name.toLowerCase().trim()));
+  const classWarnings = preview
+    .filter(row => row.classNames)
+    .flatMap(row => {
+      const names = row.classNames.split(',').map((n: string) => n.trim().toLowerCase()).filter(Boolean);
+      const unmatched = names.filter((n: string) => !classNamesInFile.has(n));
+      return unmatched.length > 0 ? [{ email: row.email, unmatched }] : [];
+    });
+
   return (
     <div className="space-y-4">
+      {classWarnings.length > 0 && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <p className="text-xs font-semibold text-amber-800 mb-2">
+            ⚠ Asignaturas no encontradas en este archivo ({classWarnings.length} usuario{classWarnings.length !== 1 ? 's' : ''} afectado{classWarnings.length !== 1 ? 's' : ''})
+          </p>
+          <ul className="text-xs text-amber-700 space-y-1 max-h-24 overflow-y-auto">
+            {classWarnings.map((w, i) => (
+              <li key={i}><span className="font-medium">{w.email}</span> → {w.unmatched.join(', ')}</li>
+            ))}
+          </ul>
+          <p className="text-xs text-amber-600 mt-2">Si estas asignaturas ya existen en la base de datos no hay problema. Si no, añádelas a la hoja &ldquo;Clases&rdquo;.</p>
+        </div>
+      )}
       {classPreview.length > 0 && (
         <div>
           <h3 className="text-sm font-semibold text-gray-700 mb-2">Asignaturas a crear — {classPreview.length}</h3>
@@ -202,24 +223,42 @@ interface ResultsStepProps {
 
 export function ResultsStep({ summary, downloadResults, reset, onClose }: ResultsStepProps) {
   const hasCreated = summary.created > 0;
+  const classesCreated = summary.classesCreated ?? 0;
+  const studentsCreated = summary.results.filter(r => r.status === 'created' && r.role === 'STUDENT').length;
+  const teachersCreated = summary.results.filter(r => r.status === 'created' && r.role === 'TEACHER').length;
 
-  useEffect(() => {
-    if (summary.created > 0) {
-      const end = Date.now() + 2000;
+  const handleClose = () => {
+    if (hasCreated) {
+      const end = Date.now() + 3000;
       const fire = () => {
-        confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 }, colors: ['#111827', '#6366f1', '#10b981'] });
+        confetti({ particleCount: 120, spread: 130, origin: { x: 0.2, y: 0.6 }, colors: ['#111827', '#6366f1', '#10b981'] });
+        confetti({ particleCount: 120, spread: 130, origin: { x: 0.8, y: 0.6 }, colors: ['#111827', '#6366f1', '#10b981'] });
         if (Date.now() < end) requestAnimationFrame(fire);
       };
       fire();
     }
-  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
+    onClose();
+  };
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-3 gap-3">
+      <div className={`grid gap-3 ${classesCreated > 0 ? 'grid-cols-4' : 'grid-cols-3'}`}>
+        {classesCreated > 0 && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
+            <p className="text-2xl font-bold text-blue-700">{classesCreated}</p>
+            <p className="text-xs text-blue-600">Asignaturas</p>
+          </div>
+        )}
         <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
           <p className="text-2xl font-bold text-green-700">{summary.created}</p>
           <p className="text-xs text-green-600">Creados</p>
+          {hasCreated && (studentsCreated > 0 || teachersCreated > 0) && (
+            <p className="text-xs text-green-500 mt-1">
+              {studentsCreated > 0 && `${studentsCreated} alum.`}
+              {studentsCreated > 0 && teachersCreated > 0 && ' · '}
+              {teachersCreated > 0 && `${teachersCreated} prof.`}
+            </p>
+          )}
         </div>
         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-center">
           <p className="text-2xl font-bold text-yellow-700">{summary.skipped}</p>
@@ -231,21 +270,6 @@ export function ResultsStep({ summary, downloadResults, reset, onClose }: Result
         </div>
       </div>
 
-      {hasCreated && (
-        <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
-          <p className="text-sm font-semibold text-blue-800 mb-1">Emails de bienvenida</p>
-          <p className="text-xs text-blue-700">
-            Los usuarios creados recibirán su email de bienvenida con credenciales desde el panel de la academia. La academia decide cuándo enviarlos.
-          </p>
-        </div>
-      )}
-
-      {hasCreated && (
-        <p className="text-xs text-amber-600 font-medium text-center">
-          Las contraseñas temporales se muestran en la tabla. Descarga el CSV para guardarlas.
-        </p>
-      )}
-
       <div className="overflow-x-auto max-h-60 overflow-y-auto border border-gray-200 rounded-xl">
         <table className="w-full text-sm">
           <thead className="text-gray-500 text-xs sticky top-0 bg-gray-50">
@@ -253,6 +277,7 @@ export function ResultsStep({ summary, downloadResults, reset, onClose }: Result
               <th className="text-left px-4 py-2.5">#</th>
               <th className="text-left px-4 py-2.5">Email</th>
               <th className="text-left px-4 py-2.5">Estado</th>
+              <th className="text-left px-4 py-2.5">Rol</th>
               <th className="text-left px-4 py-2.5">Contraseña temp.</th>
               <th className="text-left px-4 py-2.5">Mensaje</th>
             </tr>
@@ -271,6 +296,11 @@ export function ResultsStep({ summary, downloadResults, reset, onClose }: Result
                     {r.status === 'created' ? 'Creado' : r.status === 'skipped' ? 'Omitido' : 'Error'}
                   </span>
                 </td>
+                <td className="px-4 py-2">
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${r.role === 'TEACHER' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
+                    {r.role === 'TEACHER' ? 'Profesor' : 'Alumno'}
+                  </span>
+                </td>
                 <td className="px-4 py-2 font-mono text-xs text-gray-500">{r.tempPassword || '—'}</td>
                 <td className="px-4 py-2 text-gray-500 text-xs">{r.message}</td>
               </tr>
@@ -285,7 +315,7 @@ export function ResultsStep({ summary, downloadResults, reset, onClose }: Result
             Descargar CSV
           </button>
         )}
-        <button onClick={onClose} className="px-6 py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors">
+        <button onClick={handleClose} className="px-6 py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors">
           Cerrar
         </button>
       </div>
