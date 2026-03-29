@@ -957,14 +957,14 @@ admin.post('/bulk-import', async (c) => {
                 .bind(enrollmentId, classId, userId, 'APPROVED', 0, paymentFrequency)
                 .run();
 
-              // If pagado=true: record the accumulated cash payment so the student skips
-              // the in-app payment step (only needs to sign the document)
+              // If pagado=true: record a PENDING cash payment so the academy can
+              // confirm it manually (status: PENDING → academy accepts → PAID → student unblocked)
               if (pagado && paidAmount) {
                 const paymentId = nanoid();
                 const fullName = `${firstName} ${lastName}`;
                 await c.env.DB
-                  .prepare(`INSERT INTO Payment (id, classId, payerId, receiverId, amount, status, paymentMethod, type, currency, createdAt, completedAt, payerType, payerName, payerEmail, receiverName, description)
-                    VALUES (?, ?, ?, ?, ?, 'PAID', 'cash', 'STUDENT_TO_ACADEMY', 'EUR', datetime('now'), datetime('now'), 'STUDENT', ?, ?, ?, ?)`)
+                  .prepare(`INSERT INTO Payment (id, classId, payerId, receiverId, amount, status, paymentMethod, type, currency, createdAt, payerType, payerName, payerEmail, receiverName, description)
+                    VALUES (?, ?, ?, ?, ?, 'PENDING', 'cash', 'STUDENT_TO_ACADEMY', 'EUR', datetime('now'), 'STUDENT', ?, ?, ?, ?)`)
                   .bind(paymentId, classId, userId, academyId, paidAmount, fullName, email, academy.name, 'Pago registrado en migración CSV')
                   .run();
               }

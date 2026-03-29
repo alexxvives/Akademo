@@ -139,6 +139,20 @@ function ClassRow({
         <div className="flex-1">
           <div className="flex items-center flex-wrap gap-2 mb-1">
             <h3 className="text-lg sm:text-xl font-bold text-gray-900">{classItem.name}</h3>
+            {(classItem.university || classItem.carrera) && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {classItem.university && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                    {classItem.university}
+                  </span>
+                )}
+                {classItem.carrera && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                    {classItem.carrera}
+                  </span>
+                )}
+              </div>
+            )}
             {classItem.whatsappGroupLink && (
               <a
                 href={classItem.whatsappGroupLink}
@@ -162,20 +176,7 @@ function ClassRow({
             <span className="font-medium">Profesor:</span>
             <span>{classItem.teacherName || 'Sin asignar'}</span>
           </div>
-          {(classItem.university || classItem.carrera) && (
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              {classItem.university && (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
-                  {classItem.university}
-                </span>
-              )}
-              {classItem.carrera && (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700 border border-purple-100">
-                  {classItem.carrera}
-                </span>
-              )}
-            </div>
-          )}
+
         </div>
         <div className="flex-shrink-0 mt-2 sm:mt-0">
           {classItem.enrollmentStatus === 'APPROVED' ? (
