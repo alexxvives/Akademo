@@ -34,7 +34,6 @@ export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
                 <tr><td className="pr-4 py-1 font-semibold text-gray-700">Apellido</td><td className="pr-4">lastName, apellido, apellidos</td><td>Obligatorio</td></tr>
                 <tr><td className="pr-4 py-1 text-gray-400">Rol <span className="text-gray-400">(opcional)</span></td><td className="pr-4">role, rol</td><td>STUDENT o TEACHER (default: STUDENT)</td></tr>
                 <tr><td className="pr-4 py-1 text-gray-400">Clases <span className="text-gray-400">(opcional)</span></td><td className="pr-4">classes, clases, classNames</td><td>Nombres separados por coma (entre comillas)</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Pago recibido <span className="text-gray-400">(opcional)</span></td><td className="pr-4">pagado, paid</td><td className="text-amber-600 font-medium">TRUE si ya se cobró el pago (efectivo, transferencia) — el alumno solo deberá firmar el documento</td></tr>
               </tbody>
             </table>
           </div>
@@ -51,15 +50,15 @@ export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
               </thead>
               <tbody>
                 <tr><td className="pr-4 py-1 font-semibold text-gray-700">Nombre</td><td className="pr-4">nombre, name, asignatura</td><td>Obligatorio</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Precio <span>(opcional)</span></td><td className="pr-4">precio, price</td><td>Número (ej: 50)</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Tipo Precio <span>(opcional)</span></td><td className="pr-4">tipoPrecio, pricetype, tipo</td><td>MENSUAL o UNICO</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Fecha Inicio <span>(opcional)</span></td><td className="pr-4">fechaInicio, startdate, fecha</td><td className="text-amber-600 font-medium">Ej: 01/09/2026 — marca el primer día en que los alumnos empezarán a pagar</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Profesor Email <span>(opcional)</span></td><td className="pr-4">profesorEmail, teacherEmail</td><td>Email de un profesor importado</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Descripción <span>(opcional)</span></td><td className="pr-4">descripcion, description</td><td>Texto libre</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Universidad <span>(opcional)</span></td><td className="pr-4">universidad, university</td><td>Nombre de la universidad</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Carrera <span>(opcional)</span></td><td className="pr-4">carrera, degree</td><td>Nombre de la carrera</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Máx. Estudiantes <span>(opcional)</span></td><td className="pr-4">maxEstudiantes, maxStudents</td><td>Número entero</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">WhatsApp <span>(opcional)</span></td><td className="pr-4">whatsapp, whatsappLink</td><td>URL del grupo</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Precio</td><td className="pr-4">precio, price</td><td>Número (ej: 50)</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Tipo Precio</td><td className="pr-4">tipoPrecio, pricetype, tipo</td><td>MENSUAL o UNICO</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Fecha Inicio</td><td className="pr-4">fechaInicio, startdate, fecha</td><td>Formato DD/MM/YYYY</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Profesor Email</td><td className="pr-4">profesorEmail, teacherEmail</td><td>Email de un profesor importado</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Descripción</td><td className="pr-4">descripcion, description</td><td>Texto libre</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Universidad</td><td className="pr-4">universidad, university</td><td>Nombre de la universidad</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Carrera</td><td className="pr-4">carrera, degree</td><td>Nombre de la carrera</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Máx. Estudiantes</td><td className="pr-4">maxEstudiantes, maxStudents</td><td>Número entero</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">WhatsApp</td><td className="pr-4">whatsapp, whatsappLink</td><td>URL del grupo</td></tr>
               </tbody>
             </table>
           </div>
@@ -240,61 +239,94 @@ export function ResultsStep({ summary, onClose }: ResultsStepProps) {
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-4 gap-3">
-        <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
-          <p className="text-2xl font-bold text-green-700">{summary.created}</p>
-          <p className="text-xs text-green-600">Usuarios creados</p>
+        <div className="border border-gray-200 rounded-xl p-4 text-center bg-white">
+          <p className="text-2xl font-bold text-gray-900">{summary.created}</p>
+          <p className="text-xs text-gray-500 mt-0.5">Usuarios creados</p>
         </div>
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-center">
-          <p className="text-2xl font-bold text-yellow-700">{summary.skipped}</p>
-          <p className="text-xs text-yellow-600">Usuarios omitidos</p>
+        <div className="border border-gray-200 rounded-xl p-4 text-center bg-white">
+          <p className="text-2xl font-bold text-gray-900">{summary.skipped}</p>
+          <p className="text-xs text-gray-500 mt-0.5">Usuarios omitidos</p>
         </div>
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
-          <p className="text-2xl font-bold text-blue-700">{classesCreated}</p>
-          <p className="text-xs text-blue-600">Asignaturas creadas</p>
+        <div className="border border-gray-200 rounded-xl p-4 text-center bg-white">
+          <p className="text-2xl font-bold text-gray-900">{classesCreated}</p>
+          <p className="text-xs text-gray-500 mt-0.5">Asignaturas creadas</p>
         </div>
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
-          <p className="text-2xl font-bold text-amber-700">{classesUnmatched}</p>
-          <p className="text-xs text-amber-600">Sin asignar</p>
+        <div className="border border-gray-200 rounded-xl p-4 text-center bg-white">
+          <p className="text-2xl font-bold text-gray-900">{classesUnmatched}</p>
+          <p className="text-xs text-gray-500 mt-0.5">Sin asignar</p>
         </div>
       </div>
 
-      <div className="overflow-x-auto max-h-60 overflow-y-auto border border-gray-200 rounded-xl">
-        <table className="w-full text-sm">
-          <thead className="text-gray-500 text-xs sticky top-0 bg-gray-50">
-            <tr>
-              <th className="text-left px-4 py-2.5">#</th>
-              <th className="text-left px-4 py-2.5">Email</th>
-              <th className="text-left px-4 py-2.5">Estado</th>
-              <th className="text-left px-4 py-2.5">Rol</th>
-              <th className="text-left px-4 py-2.5">Contraseña temp.</th>
-              <th className="text-left px-4 py-2.5">Mensaje</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {summary.results.map((r, i) => (
-              <tr key={i} className="hover:bg-gray-50">
-                <td className="px-4 py-2 text-gray-400">{r.row}</td>
-                <td className="px-4 py-2 text-gray-900 font-medium">{r.email}</td>
-                <td className="px-4 py-2">
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                    r.status === 'created' ? 'bg-green-100 text-green-700' :
-                    r.status === 'skipped' ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-red-100 text-red-700'
-                  }`}>
-                    {r.status === 'created' ? 'Creado' : r.status === 'skipped' ? 'Omitido' : 'Error'}
-                  </span>
-                </td>
-                <td className="px-4 py-2">
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${r.role === 'TEACHER' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
-                    {r.role === 'TEACHER' ? 'Profesor' : 'Alumno'}
-                  </span>
-                </td>
-                <td className="px-4 py-2 font-mono text-xs text-gray-500">{r.tempPassword || '—'}</td>
-                <td className="px-4 py-2 text-gray-500 text-xs">{r.message}</td>
+      {summary.classResults && summary.classResults.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Asignaturas</p>
+          <div className="overflow-x-auto border border-gray-200 rounded-xl">
+            <table className="w-full text-sm">
+              <thead className="text-gray-500 text-xs bg-gray-50">
+                <tr>
+                  <th className="text-left px-4 py-2.5">Nombre</th>
+                  <th className="text-left px-4 py-2.5">Estado</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {summary.classResults.map((cr, i) => (
+                  <tr key={i} className="hover:bg-gray-50">
+                    <td className="px-4 py-2 text-gray-900 font-medium">{cr.name}</td>
+                    <td className="px-4 py-2">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                        cr.status === 'created' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                      }`}>
+                        {cr.status === 'created' ? 'Creada' : 'Ya existía'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      <div>
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Usuarios</p>
+        <div className="overflow-x-auto max-h-60 overflow-y-auto border border-gray-200 rounded-xl">
+          <table className="w-full text-sm">
+            <thead className="text-gray-500 text-xs sticky top-0 bg-gray-50">
+              <tr>
+                <th className="text-left px-4 py-2.5">#</th>
+                <th className="text-left px-4 py-2.5">Email</th>
+                <th className="text-left px-4 py-2.5">Estado</th>
+                <th className="text-left px-4 py-2.5">Rol</th>
+                <th className="text-left px-4 py-2.5">Contraseña temp.</th>
+                <th className="text-left px-4 py-2.5">Mensaje</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {summary.results.map((r, i) => (
+                <tr key={i} className="hover:bg-gray-50">
+                  <td className="px-4 py-2 text-gray-400">{r.row}</td>
+                  <td className="px-4 py-2 text-gray-900 font-medium">{r.email}</td>
+                  <td className="px-4 py-2">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                      r.status === 'created' ? 'bg-green-100 text-green-700' :
+                      r.status === 'skipped' ? 'bg-yellow-100 text-yellow-700' :
+                      'bg-red-100 text-red-700'
+                    }`}>
+                      {r.status === 'created' ? 'Creado' : r.status === 'skipped' ? 'Omitido' : 'Error'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2">
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${r.role === 'TEACHER' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
+                      {r.role === 'TEACHER' ? 'Profesor' : 'Alumno'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2 font-mono text-xs text-gray-500">{r.tempPassword || '—'}</td>
+                  <td className="px-4 py-2 text-gray-500 text-xs">{r.message}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div className="flex justify-center gap-3 pt-2">

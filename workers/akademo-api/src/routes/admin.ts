@@ -787,6 +787,7 @@ admin.post('/bulk-import', async (c) => {
 
     let classesCreated = 0;
     const unmatchedClassNames = new Set<string>();
+    const classResults: Array<{ name: string; status: 'created' | 'existed' }> = [];
     // Create any new classes from classRows that don't already exist
     if (Array.isArray(classRows) && classRows.length > 0) {
       const now = new Date().toISOString();
@@ -795,7 +796,10 @@ admin.post('/bulk-import', async (c) => {
         const name = (cr.name || '').trim();
         if (!name) continue;
         const key = name.toLowerCase();
-        if (classMap.has(key)) continue; // already exists
+        if (classMap.has(key)) {
+          classResults.push({ name, status: 'existed' });
+          continue; // already exists
+        }
         const classId = crypto.randomUUID();
         const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
         const price = cr.price ? parseFloat(String(cr.price)) : null;
@@ -814,6 +818,7 @@ admin.post('/bulk-import', async (c) => {
         classMap.set(key, classId);
         classPriceMap.set(classId, { monthlyPrice, oneTimePrice, startDate: startDate as string | null });
         classesCreated++;
+        classResults.push({ name, status: 'created' });
         if (cr.teacherEmail) classTeacherMap.set(classId, cr.teacherEmail.toLowerCase().trim());
       }
       // Store for teacher assignment after users are processed
@@ -1010,7 +1015,7 @@ admin.post('/bulk-import', async (c) => {
       details: `Imported ${created} users (${skipped} skipped, ${errors} errors) for academy ${academy.name}`,
     });
 
-    return c.json(successResponse({ created, skipped, errors, total: rows.length, classesCreated, classesUnmatched: unmatchedClassNames.size, results }));
+    return c.json(successResponse({ created, skipped, errors, total: rows.length, classesCreated, classesUnmatched: unmatchedClassNames.size, classResults, results }));
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Admin Bulk Import] Error:', error);

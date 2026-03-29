@@ -38,6 +38,7 @@ export interface ImportSummary {
   total: number;
   classesCreated: number;
   classesUnmatched: number;
+  classResults?: { name: string; status: 'created' | 'existed' }[];
   results: ImportResult[];
 }
 
