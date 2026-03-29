@@ -118,7 +118,7 @@ export function PreviewStep({ preview, classPreview, importing, reset, handleImp
       )}
       {classPreview.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-2">Asignaturas a crear — {classPreview.length}</h3>
+          <h3 className="text-sm font-semibold text-gray-700 mb-2">Asignaturas ({classPreview.length})</h3>
           <div className="overflow-x-auto border border-gray-200 rounded-xl">
             <table className="w-full text-sm">
               <thead className="text-gray-500 text-xs bg-gray-50">
@@ -152,7 +152,7 @@ export function PreviewStep({ preview, classPreview, importing, reset, handleImp
         </div>
       )}
 
-      <h3 className="text-sm font-semibold text-gray-700">Usuarios — {preview.length} filas</h3>
+      <h3 className="text-sm font-semibold text-gray-700">Usuarios ({preview.length})</h3>
 
       <div className="overflow-x-auto max-h-[55vh] overflow-y-auto border border-gray-200 rounded-xl">
         <table className="w-full text-sm">
@@ -216,16 +216,13 @@ export function PreviewStep({ preview, classPreview, importing, reset, handleImp
 
 interface ResultsStepProps {
   summary: ImportSummary;
-  downloadResults: () => void;
-  reset: () => void;
   onClose: () => void;
 }
 
-export function ResultsStep({ summary, downloadResults, reset, onClose }: ResultsStepProps) {
+export function ResultsStep({ summary, onClose }: ResultsStepProps) {
   const hasCreated = summary.created > 0;
   const classesCreated = summary.classesCreated ?? 0;
-  const studentsCreated = summary.results.filter(r => r.status === 'created' && r.role === 'STUDENT').length;
-  const teachersCreated = summary.results.filter(r => r.status === 'created' && r.role === 'TEACHER').length;
+  const classesUnmatched = summary.classesUnmatched ?? 0;
 
   const handleClose = () => {
     if (hasCreated) {
@@ -242,31 +239,22 @@ export function ResultsStep({ summary, downloadResults, reset, onClose }: Result
 
   return (
     <div className="space-y-5">
-      <div className={`grid gap-3 ${classesCreated > 0 ? 'grid-cols-4' : 'grid-cols-3'}`}>
-        {classesCreated > 0 && (
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
-            <p className="text-2xl font-bold text-blue-700">{classesCreated}</p>
-            <p className="text-xs text-blue-600">Asignaturas</p>
-          </div>
-        )}
+      <div className="grid grid-cols-4 gap-3">
         <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
           <p className="text-2xl font-bold text-green-700">{summary.created}</p>
-          <p className="text-xs text-green-600">Creados</p>
-          {hasCreated && (studentsCreated > 0 || teachersCreated > 0) && (
-            <p className="text-xs text-green-500 mt-1">
-              {studentsCreated > 0 && `${studentsCreated} alum.`}
-              {studentsCreated > 0 && teachersCreated > 0 && ' · '}
-              {teachersCreated > 0 && `${teachersCreated} prof.`}
-            </p>
-          )}
+          <p className="text-xs text-green-600">Usuarios creados</p>
         </div>
         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-center">
           <p className="text-2xl font-bold text-yellow-700">{summary.skipped}</p>
-          <p className="text-xs text-yellow-600">Omitidos</p>
+          <p className="text-xs text-yellow-600">Usuarios omitidos</p>
         </div>
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
-          <p className="text-2xl font-bold text-red-700">{summary.errors}</p>
-          <p className="text-xs text-red-600">Errores</p>
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-center">
+          <p className="text-2xl font-bold text-blue-700">{classesCreated}</p>
+          <p className="text-xs text-blue-600">Asignaturas creadas</p>
+        </div>
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-center">
+          <p className="text-2xl font-bold text-amber-700">{classesUnmatched}</p>
+          <p className="text-xs text-amber-600">Sin asignar</p>
         </div>
       </div>
 

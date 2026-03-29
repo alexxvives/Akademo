@@ -786,6 +786,7 @@ admin.post('/bulk-import', async (c) => {
     }
 
     let classesCreated = 0;
+    const unmatchedClassNames = new Set<string>();
     // Create any new classes from classRows that don't already exist
     if (Array.isArray(classRows) && classRows.length > 0) {
       const now = new Date().toISOString();
@@ -977,6 +978,7 @@ admin.post('/bulk-import', async (c) => {
       }
 
       const unmatchedClasses = classNames.filter(cn => !classMap.has(cn));
+      for (const cn of unmatchedClasses) { unmatchedClassNames.add(cn); }
       const msg = unmatchedClasses.length > 0
         ? `Created. Unmatched classes: ${unmatchedClasses.join(', ')}`
         : existing ? 'Added to academy' : 'Created successfully';
@@ -1008,7 +1010,7 @@ admin.post('/bulk-import', async (c) => {
       details: `Imported ${created} users (${skipped} skipped, ${errors} errors) for academy ${academy.name}`,
     });
 
-    return c.json(successResponse({ created, skipped, errors, total: rows.length, classesCreated, results }));
+    return c.json(successResponse({ created, skipped, errors, total: rows.length, classesCreated, classesUnmatched: unmatchedClassNames.size, results }));
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Admin Bulk Import] Error:', error);

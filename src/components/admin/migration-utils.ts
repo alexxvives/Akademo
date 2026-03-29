@@ -37,6 +37,7 @@ export interface ImportSummary {
   errors: number;
   total: number;
   classesCreated: number;
+  classesUnmatched: number;
   results: ImportResult[];
 }
 

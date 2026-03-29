@@ -126,7 +126,7 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
 
   if (!mounted) return null;
 
-  const maxWidth = step === 'preview' ? 'max-w-5xl' : 'max-w-3xl';
+  const maxWidth = step === 'preview' ? 'max-w-6xl' : 'max-w-5xl';
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={onClose}>
@@ -154,7 +154,7 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
 
           {step === 'upload' && <UploadStep fileRef={fileRef} handleFileUpload={handleFileUpload} />}
           {step === 'preview' && <PreviewStep preview={preview} classPreview={classPreview} importing={importing} reset={reset} handleImport={handleImport} />}
-          {step === 'results' && summary && <ResultsStep summary={summary} downloadResults={downloadResults} reset={reset} onClose={onClose} />}
+          {step === 'results' && summary && <ResultsStep summary={summary} onClose={onClose} />}
         </div>
       </div>
     </div>,
