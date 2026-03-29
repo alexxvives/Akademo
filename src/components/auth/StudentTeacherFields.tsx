@@ -140,7 +140,7 @@ export function StudentTeacherFields({
       {/* Academy Selection */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1.5">
-          Academia {academies.length > 0 && <span className="text-gray-500">({academies.length} disponibles)</span>}
+          Academia{role === 'STUDENT' && <span className="text-red-500 ml-0.5">*</span>} {academies.length > 0 && <span className="text-gray-500">({academies.length} disponibles)</span>}
         </label>
         <FormSelect
           options={academyOptions}

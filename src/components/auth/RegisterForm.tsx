@@ -127,6 +127,13 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, onClose, defaultRole 
     setError('');
 
     try {
+      // Validate academy selection for students before proceeding
+      if (formData.role === 'STUDENT' && !formData.academyId) {
+        setError('Debes seleccionar una academia para continuar');
+        setLoading(false);
+        return;
+      }
+
       // Email verification required for all registrations (only STUDENT and ACADEMY allowed)
       if (!showVerification && !verificationSuccess) {
         try {
