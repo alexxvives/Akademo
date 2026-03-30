@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Montserrat } from 'next/font/google';
+import Script from 'next/script';
 import "./globals.css";
 
 const montserrat = Montserrat({ 
@@ -18,6 +19,8 @@ export const metadata: Metadata = {
     'software para academias',
     'plataforma educativa',
     'gestión de academias',
+    'seguridad academia online',
+    'plataforma segura para academias',
     'protección de contenido educativo',
     'marca de agua vídeos',
     'anti-piratería educación',
@@ -27,12 +30,16 @@ export const metadata: Metadata = {
     'software centros de formación',
     'LMS seguro',
     'academia online',
+    'evitar piratería academias',
+    'control acceso estudiantes',
+    'seguridad plataforma educativa',
+    'software seguro academia',
+    'proteger vídeos educativos',
   ],
   alternates: {
     canonical: 'https://akademo-edu.com',
     languages: {
       'es': 'https://akademo-edu.com',
-      'en': 'https://akademo-edu.com',
     },
   },
   icons: {
@@ -45,15 +52,28 @@ export const metadata: Metadata = {
     locale: 'es_ES',
     url: 'https://akademo-edu.com',
     siteName: 'AKADEMO',
-    title: "AKADEMO - Software de Gestión para Academias",
+    title: "AKADEMO - Software de Gestión para Academias | Protección de Contenido",
     description: "Protege tu contenido educativo, evita cuentas compartidas y gestiona tu academia online desde una sola plataforma.",
+    images: [
+      {
+        url: '/logo/og-image.svg',
+        width: 1200,
+        height: 630,
+        alt: 'AKADEMO - Software de Gestión para Academias',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: "AKADEMO - Software de Gestión para Academias",
     description: "Protege tu contenido educativo, evita cuentas compartidas y gestiona tu academia online.",
-
+    images: ['/logo/og-image.svg'],
   },
+  ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION && {
+    verification: {
+      google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+    },
+  }),
   robots: {
     index: true,
     follow: true,
@@ -155,6 +175,17 @@ export default function RootLayout({
       </head>
       <body className="antialiased overflow-x-hidden">
         <main>{children}</main>
+        {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="google-analytics" strategy="afterInteractive">
+              {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID}');`}
+            </Script>
+          </>
+        )}
       </body>
     </html>
   );
