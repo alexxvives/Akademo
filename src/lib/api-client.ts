@@ -9,6 +9,8 @@ export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://akademo-
 
 export interface ApiClientOptions extends RequestInit {
   skipCredentials?: boolean;
+  /** When true, a 401 response will NOT trigger the global redirect-to-login. The caller handles auth errors itself. */
+  skipAutoRedirect?: boolean;
 }
 
 /**
@@ -21,7 +23,7 @@ export async function apiClient(
   path: string,
   options: ApiClientOptions = {}
 ): Promise<Response> {
-  const { skipCredentials, ...fetchOptions } = options;
+  const { skipCredentials, skipAutoRedirect, ...fetchOptions } = options;
   
   const url = `${API_BASE_URL}${path}`;
   
@@ -45,7 +47,7 @@ export async function apiClient(
 
   // Global 401 handler: redirect to login on expired/invalid session
   // Skip for auth endpoints to avoid redirect loops
-  if (response.status === 401 && typeof window !== 'undefined') {
+  if (response.status === 401 && typeof window !== 'undefined' && !skipAutoRedirect) {
     const isAuthEndpoint = path.startsWith('/auth/');
     if (!isAuthEndpoint) {
       localStorage.removeItem('auth_token');

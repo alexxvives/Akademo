@@ -24,16 +24,15 @@ export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
               <thead>
                 <tr className="text-gray-600">
                   <th className="text-left pr-4 pb-2 font-medium">Columna</th>
-                  <th className="text-left pr-4 pb-2 font-medium">Nombres aceptados</th>
                   <th className="text-left pb-2 font-medium">Nota</th>
                 </tr>
               </thead>
               <tbody>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Email</td><td className="pr-4">email</td><td></td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Nombre</td><td className="pr-4">nombre</td><td></td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Apellido</td><td className="pr-4">apellido, apellidos</td><td></td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Rol</td><td className="pr-4">rol</td><td>STUDENT o TEACHER</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Asignaturas <span className="text-gray-400">(opcional)</span></td><td className="pr-4">asignaturas</td><td>Nombres separados por coma (entre comillas)</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Email</td><td><em className="text-gray-300 not-italic">Sin nota</em></td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Nombre</td><td><em className="text-gray-300 not-italic">Sin nota</em></td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Apellido</td><td><em className="text-gray-300 not-italic">Sin nota</em></td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Rol</td><td>STUDENT o TEACHER</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Asignaturas <span className="text-gray-400">(opcional)</span></td><td>Nombres separados por coma (entre comillas)</td></tr>
               </tbody>
             </table>
           </div>
@@ -44,21 +43,20 @@ export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
               <thead>
                 <tr className="text-gray-600">
                   <th className="text-left pr-4 pb-2 font-medium">Columna</th>
-                  <th className="text-left pr-4 pb-2 font-medium">Nombres aceptados</th>
                   <th className="text-left pb-2 font-medium">Nota</th>
                 </tr>
               </thead>
               <tbody>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Nombre</td><td className="pr-4">nombre, asignatura</td><td></td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Precio</td><td className="pr-4">precio</td><td>Número (ej: 50)</td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Tipo Precio</td><td className="pr-4">tipoPrecio, tipo</td><td>MENSUAL o UNICO</td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Fecha Inicio</td><td className="pr-4">fechaInicio, fecha</td><td>Formato DD/MM/YYYY</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Profesor Email</td><td className="pr-4">profesorEmail</td><td>Email de un profesor importado</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Descripción</td><td className="pr-4">descripcion</td><td>Texto libre</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Universidad</td><td className="pr-4">universidad</td><td>Nombre de la universidad</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Carrera</td><td className="pr-4">carrera</td><td>Nombre de la carrera</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Máx. Estudiantes</td><td className="pr-4">maxEstudiantes</td><td>Número entero</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">WhatsApp</td><td className="pr-4">whatsapp</td><td>URL del grupo</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Nombre</td><td><em className="text-gray-300 not-italic">Sin nota</em></td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Precio</td><td>Número (ej: 50)</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Tipo Precio</td><td>MENSUAL o UNICO</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Fecha Inicio</td><td>Formato DD/MM/YYYY</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Profesor Email</td><td>Email de un profesor importado</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Descripción</td><td>Texto libre</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Universidad</td><td>Nombre de la universidad</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Carrera</td><td>Nombre de la carrera</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Máx. Estudiantes</td><td>Número entero</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">WhatsApp</td><td>URL del grupo</td></tr>
               </tbody>
             </table>
           </div>

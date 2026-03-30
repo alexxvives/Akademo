@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, API_BASE_URL } from '@/lib/api-client';
 import { type ImportRow, type ClassRow, type ImportSummary, XLSX, normalizeRows, normalizeClassRows, parseCSV } from './migration-utils';
 import { UploadStep, PreviewStep, ResultsStep } from './MigrationSteps';
 
@@ -80,16 +80,23 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
   const handleImport = async () => {
     setImporting(true);
     setError('');
+
+    // Warmup: wake the Worker before the real request so it doesn't cold-start mid-import
+    await fetch(`${API_BASE_URL}/`, { method: 'GET', credentials: 'omit' }).catch(() => {});
+
     try {
       const res = await apiClient('/admin/bulk-import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ academyId, users: preview, classes: classPreview }),
+        skipAutoRedirect: true,
       });
       const data = await res.json();
       if (data.success) {
         setSummary(data.data);
         setStep('results');
+      } else if (res.status === 401) {
+        setError('Tu sesión ha expirado. Recarga la página e inténtalo de nuevo.');
       } else {
         setError(data.error || 'Error en la importación');
       }
