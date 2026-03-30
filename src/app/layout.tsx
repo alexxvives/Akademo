@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Montserrat } from 'next/font/google';
-import Script from 'next/script';
 import "./globals.css";
 
 const montserrat = Montserrat({ 
@@ -90,6 +89,13 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://api.akademo-edu.com" />
+        {/* Google Analytics 4 — must be in <head> for detection */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-74CPSDQFN9" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-74CPSDQFN9');`,
+          }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -165,13 +171,6 @@ export default function RootLayout({
       </head>
       <body className="antialiased overflow-x-hidden">
         <main>{children}</main>
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-74CPSDQFN9"
-          strategy="afterInteractive"
-        />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-74CPSDQFN9');`}
-        </Script>
       </body>
     </html>
   );
