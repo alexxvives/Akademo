@@ -32,14 +32,14 @@ export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
                 <tr><td className="pr-4 py-1 font-semibold text-gray-700">Email</td><td className="pr-4">email</td><td>Obligatorio</td></tr>
                 <tr><td className="pr-4 py-1 font-semibold text-gray-700">Nombre</td><td className="pr-4">firstName, nombre</td><td>Obligatorio</td></tr>
                 <tr><td className="pr-4 py-1 font-semibold text-gray-700">Apellido</td><td className="pr-4">lastName, apellido, apellidos</td><td>Obligatorio</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Rol <span className="text-gray-400">(opcional)</span></td><td className="pr-4">role, rol</td><td>STUDENT o TEACHER (default: STUDENT)</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Clases <span className="text-gray-400">(opcional)</span></td><td className="pr-4">classes, clases, classNames</td><td>Nombres separados por coma (entre comillas)</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Rol</td><td className="pr-4">role, rol</td><td>Obligatorio — STUDENT o TEACHER</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Asignaturas <span className="text-gray-400">(opcional)</span></td><td className="pr-4">asignaturas, clases, classes</td><td>Nombres separados por coma (entre comillas)</td></tr>
               </tbody>
             </table>
           </div>
 
           <div>
-            <p className="text-xs font-semibold text-gray-600 mb-2">Hoja &ldquo;Clases&rdquo; (opcional — crea asignaturas nuevas)</p>
+            <p className="text-xs font-semibold text-gray-600 mb-2">Hoja &ldquo;Asignaturas&rdquo; (opcional — crea asignaturas nuevas)</p>
             <table className="text-xs text-gray-500 w-full">
               <thead>
                 <tr className="text-gray-600">
@@ -50,9 +50,9 @@ export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
               </thead>
               <tbody>
                 <tr><td className="pr-4 py-1 font-semibold text-gray-700">Nombre</td><td className="pr-4">nombre, name, asignatura</td><td>Obligatorio</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Precio</td><td className="pr-4">precio, price</td><td>Número (ej: 50)</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Tipo Precio</td><td className="pr-4">tipoPrecio, pricetype, tipo</td><td>MENSUAL o UNICO</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Fecha Inicio</td><td className="pr-4">fechaInicio, startdate, fecha</td><td>Formato DD/MM/YYYY</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Precio</td><td className="pr-4">precio, price</td><td>Obligatorio — Número (ej: 50)</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Tipo Precio</td><td className="pr-4">tipoPrecio, pricetype, tipo</td><td>Obligatorio — MENSUAL o UNICO</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Fecha Inicio</td><td className="pr-4">fechaInicio, startdate, fecha</td><td>Obligatorio — Formato DD/MM/YYYY</td></tr>
                 <tr><td className="pr-4 py-1 text-gray-400">Profesor Email</td><td className="pr-4">profesorEmail, teacherEmail</td><td>Email de un profesor importado</td></tr>
                 <tr><td className="pr-4 py-1 text-gray-400">Descripción</td><td className="pr-4">descripcion, description</td><td>Texto libre</td></tr>
                 <tr><td className="pr-4 py-1 text-gray-400">Universidad</td><td className="pr-4">universidad, university</td><td>Nombre de la universidad</td></tr>
@@ -238,22 +238,32 @@ export function ResultsStep({ summary, onClose }: ResultsStepProps) {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-4 gap-3">
-        <div className="border border-gray-200 rounded-xl p-4 text-center bg-white">
-          <p className="text-2xl font-bold text-gray-900">{summary.created}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Usuarios creados</p>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="border border-gray-200 rounded-xl p-4">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Usuarios</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-gray-900">{summary.created}</p>
+              <p className="text-xs text-gray-500 mt-0.5">Creados</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-gray-900">{summary.skipped}</p>
+              <p className="text-xs text-gray-500 mt-0.5">Omitidos</p>
+            </div>
+          </div>
         </div>
-        <div className="border border-gray-200 rounded-xl p-4 text-center bg-white">
-          <p className="text-2xl font-bold text-gray-900">{summary.skipped}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Usuarios omitidos</p>
-        </div>
-        <div className="border border-gray-200 rounded-xl p-4 text-center bg-white">
-          <p className="text-2xl font-bold text-gray-900">{classesCreated}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Asignaturas creadas</p>
-        </div>
-        <div className="border border-gray-200 rounded-xl p-4 text-center bg-white">
-          <p className="text-2xl font-bold text-gray-900">{classesUnmatched}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Sin asignar</p>
+        <div className="border border-gray-200 rounded-xl p-4">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Asignaturas</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-gray-900">{classesCreated}</p>
+              <p className="text-xs text-gray-500 mt-0.5">Creadas</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-gray-900">{classesUnmatched}</p>
+              <p className="text-xs text-gray-500 mt-0.5">Sin asignar</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -266,6 +276,7 @@ export function ResultsStep({ summary, onClose }: ResultsStepProps) {
                 <tr>
                   <th className="text-left px-4 py-2.5">Nombre</th>
                   <th className="text-left px-4 py-2.5">Estado</th>
+                  <th className="text-left px-4 py-2.5">Mensaje</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -274,11 +285,14 @@ export function ResultsStep({ summary, onClose }: ResultsStepProps) {
                     <td className="px-4 py-2 text-gray-900 font-medium">{cr.name}</td>
                     <td className="px-4 py-2">
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                        cr.status === 'created' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                        cr.status === 'created' ? 'bg-green-100 text-green-700' :
+                        cr.status === 'error' ? 'bg-red-100 text-red-700' :
+                        'bg-gray-100 text-gray-500'
                       }`}>
-                        {cr.status === 'created' ? 'Creada' : 'Ya existía'}
+                        {cr.status === 'created' ? 'Creada' : cr.status === 'error' ? 'Error' : 'Ya existía'}
                       </span>
                     </td>
+                    {cr.message && <td className="px-4 py-2 text-xs text-gray-500">{cr.message}</td>}
                   </tr>
                 ))}
               </tbody>

@@ -38,7 +38,7 @@ export interface ImportSummary {
   total: number;
   classesCreated: number;
   classesUnmatched: number;
-  classResults?: { name: string; status: 'created' | 'existed' }[];
+  classResults?: { name: string; status: 'created' | 'existed' | 'error'; message?: string }[];
   results: ImportResult[];
 }
 
@@ -52,7 +52,7 @@ export function normalizeRows(rows: Record<string, unknown>[]): ImportRow[] {
   const firstIdx = find('firstname', 'nombre');
   const lastIdx = find('lastname', 'apellido', 'apellidos');
   const roleIdx = find('role', 'rol');
-  const classIdx = find('classes', 'clases', 'classnames');
+  const classIdx = find('classes', 'clases', 'classnames', 'asignaturas', 'asignatura');
   const pagadoIdx = find('pagado', 'paid', 'pago recibido', 'ya pagado', 'ya_pagado');
 
   if (emailIdx === -1 || firstIdx === -1 || lastIdx === -1) return [];
@@ -78,7 +78,7 @@ export function parseCSV(text: string): ImportRow[] {
   const firstIdx = header.findIndex(h => h === 'firstname' || h === 'nombre');
   const lastIdx = header.findIndex(h => h === 'lastname' || h === 'apellido' || h === 'apellidos');
   const roleIdx = header.findIndex(h => h === 'role' || h === 'rol');
-  const classIdx = header.findIndex(h => h === 'classes' || h === 'clases' || h === 'classnames');
+  const classIdx = header.findIndex(h => ['classes', 'clases', 'classnames', 'asignaturas', 'asignatura'].includes(h));
   const pagadoIdx = header.findIndex(h => h === 'pagado' || h === 'paid' || h === 'pago recibido' || h === 'ya pagado');
 
   if (emailIdx === -1 || firstIdx === -1 || lastIdx === -1) return [];

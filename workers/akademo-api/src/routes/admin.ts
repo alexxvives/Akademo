@@ -800,12 +800,16 @@ admin.post('/bulk-import', async (c) => {
           classResults.push({ name, status: 'existed' });
           continue; // already exists
         }
+        if (!cr.price || !cr.priceType || !cr.startDate) {
+          classResults.push({ name, status: 'error' as any, message: `Missing required fields: ${[!cr.price && 'precio', !cr.priceType && 'tipoPrecio', !cr.startDate && 'fechaInicio'].filter(Boolean).join(', ')}` });
+          continue;
+        }
         const classId = crypto.randomUUID();
         const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-        const price = cr.price ? parseFloat(String(cr.price)) : null;
+        const price = parseFloat(String(cr.price));
         const monthlyPrice = cr.priceType === 'MENSUAL' ? price : null;
         const oneTimePrice = cr.priceType === 'UNICO' ? price : null;
-        const startDate = cr.startDate || null;
+        const startDate = cr.startDate;
         const description = cr.description || null;
         const university = cr.university || null;
         const carrera = cr.carrera || null;

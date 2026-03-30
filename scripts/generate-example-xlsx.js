@@ -13,8 +13,8 @@ if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 
 // Column headers — optional fields marked with "(opcional)"
 // The migration parser strips "(opcional)" before matching, so these work as-is.
-const userHeaders    = ['email', 'nombre', 'apellido', 'rol', 'clases'];
-const classHeaders   = ['nombre', 'fechaInicio (opcional)', 'precio (opcional)', 'tipoPrecio (opcional)', 'profesorEmail (opcional)', 'descripcion (opcional)', 'universidad (opcional)', 'carrera (opcional)', 'maxEstudiantes (opcional)', 'whatsapp (opcional)'];
+const userHeaders    = ['email', 'nombre', 'apellido', 'rol', 'asignaturas'];
+const classHeaders   = ['nombre', 'precio', 'tipoPrecio', 'fechaInicio', 'profesorEmail (opcional)', 'descripcion (opcional)', 'universidad (opcional)', 'carrera (opcional)', 'maxEstudiantes (opcional)', 'whatsapp (opcional)'];
 
 // --- EXAMPLE DATA ---
 const usersRows = [
@@ -29,9 +29,9 @@ const usersRows = [
 ];
 
 const classesRows = [
-  ['Matemáticas 1', '01/09/2026', '50',  'MENSUAL', 'miguel.ruiz@ejemplo.com',  'Álgebra y cálculo básico', 'UCM', 'Ingeniería', '30', ''],
-  ['Inglés B2',     '15/09/2026', '200', 'UNICO',   'sofia.moreno@ejemplo.com', 'Inglés nivel B2',          '',    '',           '20', 'https://chat.whatsapp.com/EVwr6bNsKng5Rk965ZuM4U'],
-  ['Ciencias',      '01/09/2026', '40',  'MENSUAL', 'sofia.moreno@ejemplo.com', '',                         'UAM', 'Biología',   '',   ''],
+  ['Matemáticas 1', '50',  'MENSUAL', '01/09/2026', 'miguel.ruiz@ejemplo.com',  'Álgebra y cálculo básico', 'UCM', 'Ingeniería', '30', ''],
+  ['Inglés B2',     '200', 'UNICO',   '15/09/2026', 'sofia.moreno@ejemplo.com', 'Inglés nivel B2',          '',    '',           '20', 'https://chat.whatsapp.com/EVwr6bNsKng5Rk965ZuM4U'],
+  ['Ciencias',      '40',  'MENSUAL', '01/09/2026', 'sofia.moreno@ejemplo.com', '',                         'UAM', 'Biología',   '',   ''],
 ];
 
 const userColWidths    = [32, 16, 18, 14, 40];
@@ -55,7 +55,7 @@ XLSX.utils.book_append_sheet(wbExample, wsUsersEx, 'Usuarios');
 
 const wsClasesEx = XLSX.utils.aoa_to_sheet([classHeaders, ...classesRows]);
 wsClasesEx['!cols'] = makeColWidths(classColWidths);
-XLSX.utils.book_append_sheet(wbExample, wsClasesEx, 'Clases');
+XLSX.utils.book_append_sheet(wbExample, wsClasesEx, 'Asignaturas');
 
 const examplePath = path.join(outputDir, 'Users_example.xlsx');
 XLSX.writeFile(wbExample, examplePath);
@@ -69,7 +69,7 @@ XLSX.utils.book_append_sheet(wbTemplate, wsUsersTpl, 'Usuarios');
 
 const wsClasesTpl = XLSX.utils.aoa_to_sheet([classHeaders]);
 wsClasesTpl['!cols'] = makeColWidths(classColWidths);
-XLSX.utils.book_append_sheet(wbTemplate, wsClasesTpl, 'Clases');
+XLSX.utils.book_append_sheet(wbTemplate, wsClasesTpl, 'Asignaturas');
 
 const templatePath = path.join(outputDir, 'Users_template.xlsx');
 XLSX.writeFile(wbTemplate, templatePath);

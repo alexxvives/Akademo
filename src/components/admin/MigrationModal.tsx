@@ -50,8 +50,8 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
         const ws = wb.Sheets[usersSheetName];
         const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: '' });
         rows = normalizeRows(json);
-        // Parse classes from sheet named "Clases" if present
-        const clasesSheetName = wb.SheetNames.find(n => n.toLowerCase() === 'clases');
+        // Parse classes from sheet named "Asignaturas" or "Clases" if present
+        const clasesSheetName = wb.SheetNames.find(n => ['asignaturas', 'asignatura', 'clases', 'classes'].includes(n.toLowerCase()));
         if (clasesSheetName) {
           const wsClases = wb.Sheets[clasesSheetName];
           const jsonClases = XLSX.utils.sheet_to_json<Record<string, unknown>>(wsClases, { defval: '' });
