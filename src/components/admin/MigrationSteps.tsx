@@ -223,8 +223,15 @@ export function ResultsStep({ summary, onClose }: ResultsStepProps) {
 
   const handleClose = () => {
     if (hasCreated) {
-      confetti({ particleCount: 80, angle: 60, spread: 70, origin: { x: 0, y: 0.7 }, colors: ['#111827', '#6366f1', '#10b981'] });
-      confetti({ particleCount: 80, angle: 120, spread: 70, origin: { x: 1, y: 0.7 }, colors: ['#111827', '#6366f1', '#10b981'] });
+      const end = Date.now() + 3 * 1000;
+      const colors = ["#a786ff", "#fd8bbc", "#eca184", "#f8deb1"];
+      const frame = () => {
+        if (Date.now() > end) return;
+        confetti({ particleCount: 2, angle: 60, spread: 55, startVelocity: 60, origin: { x: 0, y: 0.5 }, colors });
+        confetti({ particleCount: 2, angle: 120, spread: 55, startVelocity: 60, origin: { x: 1, y: 0.5 }, colors });
+        requestAnimationFrame(frame);
+      };
+      frame();
     }
     onClose();
   };
@@ -254,7 +261,7 @@ export function ResultsStep({ summary, onClose }: ResultsStepProps) {
             </div>
             <div className="text-center">
               <p className="text-2xl font-bold text-gray-900">{classesUnmatched}</p>
-              <p className="text-xs text-gray-500 mt-0.5">Sin asignar</p>
+              <p className="text-xs text-gray-500 mt-0.5">Omitidas</p>
             </div>
           </div>
         </div>

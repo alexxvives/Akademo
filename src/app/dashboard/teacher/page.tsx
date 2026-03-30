@@ -37,9 +37,15 @@ export default function TeacherDashboard() {
     if (sessionStorage.getItem('akademo_new_user')) {
       sessionStorage.removeItem('akademo_new_user');
       setTimeout(() => {
-        confetti({ particleCount: 180, spread: 100, origin: { y: 0.55 } });
-        setTimeout(() => confetti({ particleCount: 80, spread: 120, origin: { x: 0.1, y: 0.6 } }), 200);
-        setTimeout(() => confetti({ particleCount: 80, spread: 120, origin: { x: 0.9, y: 0.6 } }), 400);
+        const end = Date.now() + 3 * 1000;
+        const colors = ["#a786ff", "#fd8bbc", "#eca184", "#f8deb1"];
+        const frame = () => {
+          if (Date.now() > end) return;
+          confetti({ particleCount: 2, angle: 60, spread: 55, startVelocity: 60, origin: { x: 0, y: 0.5 }, colors });
+          confetti({ particleCount: 2, angle: 120, spread: 55, startVelocity: 60, origin: { x: 1, y: 0.5 }, colors });
+          requestAnimationFrame(frame);
+        };
+        frame();
       }, 600);
     }
   }, []);

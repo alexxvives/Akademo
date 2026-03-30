@@ -3,7 +3,7 @@ import { Bindings } from '../types';
 import { requireAuth, hashPassword } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { nanoid } from 'nanoid';
-import { countElapsedCycles } from '../lib/payment-utils';
+import { countElapsedCycles, autoCreatePendingPayments } from '../lib/payment-utils';
 import { writeAuditLog } from '../lib/audit';
 import { sendEmail } from '../lib/sendEmail';
 
@@ -837,6 +837,7 @@ admin.post('/bulk-import', async (c) => {
       message: string;
       tempPassword?: string;
     }> = [];
+    const enrolledStudentIds: string[] = [];
 
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
@@ -992,6 +993,7 @@ admin.post('/bulk-import', async (c) => {
         ? `Created. Unmatched classes: ${unmatchedClasses.join(', ')}`
         : existing ? 'Added to academy' : 'Created successfully';
 
+      if (role === 'STUDENT') enrolledStudentIds.push(userId);
       results.push({ row: i + 1, email, role, status: 'created', message: msg, tempPassword: tempPassword ? String(tempPassword) : '' });
       } catch (err: any) {
         results.push({ row: i + 1, email, role, status: 'error', message: err.message || 'Database error' });
@@ -1005,6 +1007,11 @@ admin.post('/bulk-import', async (c) => {
       if (teacher) {
         await c.env.DB.prepare('UPDATE Class SET teacherId = ? WHERE id = ?').bind(teacher.id, classId).run();
       }
+    }
+
+    // Sync billing state for all newly enrolled students so pending Payment rows exist immediately
+    for (const uid of enrolledStudentIds) {
+      await autoCreatePendingPayments(c.env.DB, uid);
     }
 
     const created = results.filter(r => r.status === 'created').length;
