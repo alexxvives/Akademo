@@ -28,12 +28,7 @@ export const metadata: Metadata = {
       },
     ],
   },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Precios | AKADEMO - Software para Academias Online',
-    description: 'Planes y precios de AKADEMO. Empieza gratis y escala según el número de matriculaciones.',
-    images: ['/logo/og-image.svg'],
-  },
+  // Instagram uses OpenGraph tags — no separate Twitter card needed
 };
 
 export default function PricingLayout({ children }: { children: React.ReactNode }) {
