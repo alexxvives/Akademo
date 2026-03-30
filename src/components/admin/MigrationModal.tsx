@@ -94,7 +94,7 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
         setError(data.error || 'Error en la importación');
       }
     } catch {
-      setError('Error de red durante la importación');
+      setError('Error de red. Si era tu primer intento, puede que los datos ya se hayan guardado — comprueba la lista de usuarios antes de volver a importar.');
     } finally {
       setImporting(false);
     }

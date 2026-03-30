@@ -29,11 +29,11 @@ export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
                 </tr>
               </thead>
               <tbody>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Email</td><td className="pr-4">email</td><td>Obligatorio</td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Nombre</td><td className="pr-4">firstName, nombre</td><td>Obligatorio</td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Apellido</td><td className="pr-4">lastName, apellido, apellidos</td><td>Obligatorio</td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Rol</td><td className="pr-4">role, rol</td><td>Obligatorio — STUDENT o TEACHER</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Asignaturas <span className="text-gray-400">(opcional)</span></td><td className="pr-4">asignaturas, clases, classes</td><td>Nombres separados por coma (entre comillas)</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Email</td><td className="pr-4">email</td><td></td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Nombre</td><td className="pr-4">nombre</td><td></td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Apellido</td><td className="pr-4">apellido, apellidos</td><td></td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Rol</td><td className="pr-4">rol</td><td>STUDENT o TEACHER</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Asignaturas <span className="text-gray-400">(opcional)</span></td><td className="pr-4">asignaturas</td><td>Nombres separados por coma (entre comillas)</td></tr>
               </tbody>
             </table>
           </div>
@@ -49,16 +49,16 @@ export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
                 </tr>
               </thead>
               <tbody>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Nombre</td><td className="pr-4">nombre, name, asignatura</td><td>Obligatorio</td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Precio</td><td className="pr-4">precio, price</td><td>Obligatorio — Número (ej: 50)</td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Tipo Precio</td><td className="pr-4">tipoPrecio, pricetype, tipo</td><td>Obligatorio — MENSUAL o UNICO</td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Fecha Inicio</td><td className="pr-4">fechaInicio, startdate, fecha</td><td>Obligatorio — Formato DD/MM/YYYY</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Profesor Email</td><td className="pr-4">profesorEmail, teacherEmail</td><td>Email de un profesor importado</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Descripción</td><td className="pr-4">descripcion, description</td><td>Texto libre</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Universidad</td><td className="pr-4">universidad, university</td><td>Nombre de la universidad</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Carrera</td><td className="pr-4">carrera, degree</td><td>Nombre de la carrera</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Máx. Estudiantes</td><td className="pr-4">maxEstudiantes, maxStudents</td><td>Número entero</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">WhatsApp</td><td className="pr-4">whatsapp, whatsappLink</td><td>URL del grupo</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Nombre</td><td className="pr-4">nombre, asignatura</td><td></td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Precio</td><td className="pr-4">precio</td><td>Número (ej: 50)</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Tipo Precio</td><td className="pr-4">tipoPrecio, tipo</td><td>MENSUAL o UNICO</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Fecha Inicio</td><td className="pr-4">fechaInicio, fecha</td><td>Formato DD/MM/YYYY</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Profesor Email</td><td className="pr-4">profesorEmail</td><td>Email de un profesor importado</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Descripción</td><td className="pr-4">descripcion</td><td>Texto libre</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Universidad</td><td className="pr-4">universidad</td><td>Nombre de la universidad</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Carrera</td><td className="pr-4">carrera</td><td>Nombre de la carrera</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Máx. Estudiantes</td><td className="pr-4">maxEstudiantes</td><td>Número entero</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">WhatsApp</td><td className="pr-4">whatsapp</td><td>URL del grupo</td></tr>
               </tbody>
             </table>
           </div>
@@ -225,13 +225,8 @@ export function ResultsStep({ summary, onClose }: ResultsStepProps) {
 
   const handleClose = () => {
     if (hasCreated) {
-      const end = Date.now() + 3000;
-      const fire = () => {
-        confetti({ particleCount: 120, spread: 130, origin: { x: 0.2, y: 0.6 }, colors: ['#111827', '#6366f1', '#10b981'] });
-        confetti({ particleCount: 120, spread: 130, origin: { x: 0.8, y: 0.6 }, colors: ['#111827', '#6366f1', '#10b981'] });
-        if (Date.now() < end) requestAnimationFrame(fire);
-      };
-      fire();
+      confetti({ particleCount: 80, angle: 60, spread: 70, origin: { x: 0, y: 0.7 }, colors: ['#111827', '#6366f1', '#10b981'] });
+      confetti({ particleCount: 80, angle: 120, spread: 70, origin: { x: 1, y: 0.7 }, colors: ['#111827', '#6366f1', '#10b981'] });
     }
     onClose();
   };
@@ -240,7 +235,7 @@ export function ResultsStep({ summary, onClose }: ResultsStepProps) {
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-4">
         <div className="border border-gray-200 rounded-xl p-4">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Usuarios</p>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 text-center">Usuarios</p>
           <div className="grid grid-cols-2 gap-3">
             <div className="text-center">
               <p className="text-2xl font-bold text-gray-900">{summary.created}</p>
@@ -253,7 +248,7 @@ export function ResultsStep({ summary, onClose }: ResultsStepProps) {
           </div>
         </div>
         <div className="border border-gray-200 rounded-xl p-4">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Asignaturas</p>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 text-center">Asignaturas</p>
           <div className="grid grid-cols-2 gap-3">
             <div className="text-center">
               <p className="text-2xl font-bold text-gray-900">{classesCreated}</p>
