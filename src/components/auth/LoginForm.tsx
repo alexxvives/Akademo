@@ -146,7 +146,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister, onForgotPassword, onC
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm transition-all"
+            className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm text-gray-900 bg-white transition-all"
             placeholder="you@example.com"
           />
         </div>

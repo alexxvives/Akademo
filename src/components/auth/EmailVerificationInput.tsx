@@ -14,6 +14,8 @@ export function EmailVerificationInput({ email, onVerified, onChangeEmail }: Ema
   const [verifyingCode, setVerifyingCode] = useState(false);
   const [verificationSuccess, setVerificationSuccess] = useState(false);
   const [verificationError, setVerificationError] = useState(false);
+  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const [resendError, setResendError] = useState('');
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
@@ -105,6 +107,20 @@ export function EmailVerificationInput({ email, onVerified, onChangeEmail }: Ema
     }
   };
 
+  const handleResend = async () => {
+    setResendState('sending');
+    setResendError('');
+    try {
+      await sendVerificationCode();
+      setResendState('sent');
+      setTimeout(() => setResendState('idle'), 3000);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Error al reenviar';
+      setResendError(message);
+      setResendState('error');
+    }
+  };
+
   return (
     <div>
       <div className="relative">
@@ -139,7 +155,7 @@ export function EmailVerificationInput({ email, onVerified, onChangeEmail }: Ema
                     ? 'border-red-400 bg-red-50 text-red-600 focus:ring-red-400' 
                     : verificationSuccess 
                       ? 'border-green-400 bg-green-50 text-green-600' 
-                      : 'border-gray-300 focus:ring-brand-500 focus:border-brand-500'
+                      : 'border-gray-300 text-gray-900 bg-white focus:ring-brand-500 focus:border-brand-500'
                 }`}
               />
             ))}
@@ -171,10 +187,23 @@ export function EmailVerificationInput({ email, onVerified, onChangeEmail }: Ema
       {!verificationSuccess && (
         <button
           type="button"
-          onClick={sendVerificationCode}
-          className="mt-2 w-full py-2 text-sm text-gray-600 hover:text-gray-900 font-medium"
+          onClick={handleResend}
+          disabled={resendState === 'sending' || resendState === 'sent'}
+          className={`mt-2 w-full py-2 text-sm font-medium transition-all disabled:cursor-not-allowed ${
+            resendState === 'sent'
+              ? 'text-green-600'
+              : resendState === 'error'
+                ? 'text-red-500'
+                : 'text-gray-600 hover:text-gray-900'
+          }`}
         >
-          Resend code
+          {resendState === 'sending'
+            ? 'Enviando...'
+            : resendState === 'sent'
+              ? '✓ Código enviado'
+              : resendState === 'error'
+                ? (resendError || 'Error al reenviar. Intenta de nuevo.')
+                : 'Reenviar código'}
         </button>
       )}
     </div>
