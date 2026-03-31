@@ -48,8 +48,8 @@ export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
               </thead>
               <tbody>
                 <tr><td className="pr-4 py-1 font-semibold text-gray-700">Nombre</td><td><em className="text-gray-300 not-italic">Sin nota</em></td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Precio</td><td>Número (ej: 50)</td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Tipo Precio</td><td>MENSUAL o UNICO</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Precio</td><td>Precio total (ej: 500)</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Cuotas <span className="text-gray-400">(opcional)</span></td><td>Nº de cuotas mensuales. Si vacío → pago único</td></tr>
                 <tr><td className="pr-4 py-1 font-semibold text-gray-700">Fecha Inicio</td><td>Formato DD/MM/YYYY</td></tr>
                 <tr><td className="pr-4 py-1 text-gray-400">Profesor Email</td><td>Email de un profesor importado</td></tr>
                 <tr><td className="pr-4 py-1 text-gray-400">Descripción</td><td>Texto libre</td></tr>

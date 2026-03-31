@@ -14,7 +14,8 @@ export function PagosPendingTable({ state, actions, hasHistory = false }: PagosP
     isAdmin, isAcademy, filteredPendingPayments, processingIds,
     paymentStatus, pendingPaymentsCollapsed, setPendingPaymentsCollapsed,
   } = state;
-  const { formatCurrency, showStudentPaymentHistory, handleApprove } = actions;
+  const { formatCurrency, showStudentPaymentHistory, handleApprove, handleDeletePayment } = actions;
+  const { deletingPaymentId } = state;
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
@@ -97,24 +98,43 @@ export function PagosPendingTable({ state, actions, hasHistory = false }: PagosP
                         </svg>
                       </button>
                       {(isAcademy || isAdmin) && payment.paymentMethod !== 'stripe' && (
-                        <button
-                          onClick={(e) => {
-                            if (paymentStatus === 'NOT PAID') { e.preventDefault(); e.stopPropagation(); return; }
-                            e.stopPropagation();
-                            handleApprove(payment.enrollmentId);
-                          }}
-                          disabled={processingIds.has(payment.enrollmentId) || paymentStatus === 'NOT PAID'}
-                          className="p-1.5 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50"
-                          title={paymentStatus === 'NOT PAID' ? 'Disponible solo en academias activadas' : 'Confirmar pago'}
-                        >
-                          {processingIds.has(payment.enrollmentId) ? (
-                            <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
-                          ) : (
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                          )}
-                        </button>
+                        <>
+                          <button
+                            onClick={(e) => {
+                              if (paymentStatus === 'NOT PAID') { e.preventDefault(); e.stopPropagation(); return; }
+                              e.stopPropagation();
+                              handleApprove(payment.enrollmentId);
+                            }}
+                            disabled={processingIds.has(payment.enrollmentId) || paymentStatus === 'NOT PAID'}
+                            className="p-1.5 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                            title={paymentStatus === 'NOT PAID' ? 'Disponible solo en academias activadas' : 'Confirmar pago'}
+                          >
+                            {processingIds.has(payment.enrollmentId) ? (
+                              <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+                            ) : (
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleDeletePayment(payment.enrollmentId); }}
+                            disabled={deletingPaymentId === payment.enrollmentId || paymentStatus === 'NOT PAID'}
+                            className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                            title={paymentStatus === 'NOT PAID' ? 'Disponible solo en academias activadas' : 'Eliminar pago pendiente'}
+                          >
+                            {deletingPaymentId === payment.enrollmentId ? (
+                              <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                            ) : (
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            )}
+                          </button>
+                        </>
                       )}
                     </div>
                   </td>
