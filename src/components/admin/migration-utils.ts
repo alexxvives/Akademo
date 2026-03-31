@@ -12,7 +12,7 @@ export interface ImportRow {
 export interface ClassRow {
   name: string;
   price?: number;
-  priceType?: 'MENSUAL' | 'UNICO';
+  cuotas?: number;
   startDate?: string;
   teacherEmail?: string;
   description?: string;
@@ -119,7 +119,7 @@ export function normalizeClassRows(rows: Record<string, unknown>[]): ClassRow[] 
   if (nameIdx === -1) return [];
 
   const priceIdx = find('precio', 'price');
-  const priceTypeIdx = find('tipoprecio', 'pricetype', 'tipo', 'type', 'modalidad');
+  const cuotasIdx = find('cuotas', 'numcuotas', 'installments', 'numpagos', 'pagos');
   const startDateIdx = find('fechainicio', 'startdate', 'inicio', 'start', 'fecha');
   const teacherIdx = find('profesoremail', 'teacheremail', 'emailprofesor', 'emailteacher', 'profesor', 'teacher');
   const descIdx = find('descripcion', 'description', 'desc');
@@ -133,7 +133,7 @@ export function normalizeClassRows(rows: Record<string, unknown>[]): ClassRow[] 
     const name = String(row[origKeys[nameIdx]] ?? '').trim();
     if (!name) return [];
     const priceRaw = priceIdx !== -1 ? parseFloat(String(row[origKeys[priceIdx]] ?? '')) : NaN;
-    const priceTypeRaw = priceTypeIdx !== -1 ? String(row[origKeys[priceTypeIdx]] ?? '').trim().toUpperCase() : '';
+    const cuotasRaw = cuotasIdx !== -1 ? parseInt(String(row[origKeys[cuotasIdx]] ?? ''), 10) : NaN;
     const startDateRaw = startDateIdx !== -1 ? String(row[origKeys[startDateIdx]] ?? '').trim() : '';
     const teacherRaw = teacherIdx !== -1 ? String(row[origKeys[teacherIdx]] ?? '').trim().toLowerCase() : '';
     const descRaw = descIdx !== -1 ? String(row[origKeys[descIdx]] ?? '').trim() : '';
@@ -144,7 +144,7 @@ export function normalizeClassRows(rows: Record<string, unknown>[]): ClassRow[] 
     return [{
       name,
       price: isNaN(priceRaw) ? undefined : priceRaw,
-      priceType: priceTypeRaw === 'MENSUAL' || priceTypeRaw === 'UNICO' ? priceTypeRaw : undefined,
+      cuotas: isNaN(cuotasRaw) || cuotasRaw <= 0 ? undefined : cuotasRaw,
       startDate: startDateRaw || undefined,
       teacherEmail: teacherRaw || undefined,
       description: descRaw || undefined,

@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { requireAuth, getSession } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
-import { isPaymentOverdue } from '../lib/payment-utils';
+import { isAccessBlocked } from '../lib/payment-utils';
 
 const bunny = new Hono<{ Bindings: Bindings }>();
 
@@ -294,9 +294,9 @@ bunny.get('/video/:guid/stream', async (c) => {
         return c.json(errorResponse('Not enrolled in this class'), 403);
       }
 
-      // Block overdue students from streaming
-      if (await isPaymentOverdue(c.env.DB, session.id, upload.classId)) {
-        return c.json(errorResponse('Acceso bloqueado por pago pendiente.'), 403);
+      // Block students without signed document or with overdue payments
+      if (await isAccessBlocked(c.env.DB, session.id, upload.classId)) {
+        return c.json(errorResponse('Acceso bloqueado. Firma el documento y regulariza tu situación de pago.'), 403);
       }
     }
 

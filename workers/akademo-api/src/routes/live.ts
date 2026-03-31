@@ -3,7 +3,7 @@ import { Bindings } from '../types';
 import { requireAuth } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { createZoomMeeting, getZoomRecording, getZoomRecordingDownloadUrl } from '../lib/zoom';
-import { isPaymentOverdue } from '../lib/payment-utils';
+import { isAccessBlocked } from '../lib/payment-utils';
 
 const live = new Hono<{ Bindings: Bindings }>();
 
@@ -33,9 +33,9 @@ live.get('/', async (c) => {
         return c.json(errorResponse('Acceso restringido: debes estar matriculado en esta asignatura'), 403);
       }
 
-      // Check Payment table directly — ClassEnrollment.nextPaymentDue is unreliable for Stripe users
-      if (await isPaymentOverdue(c.env.DB, session.id, classId)) {
-        return c.json(errorResponse('Acceso restringido: tienes un pago pendiente en esta asignatura'), 403);
+      // Check documentSigned + payment status
+      if (await isAccessBlocked(c.env.DB, session.id, classId)) {
+        return c.json(errorResponse('Acceso restringido: firma el documento o regulariza tu pago'), 403);
       }
     }
 

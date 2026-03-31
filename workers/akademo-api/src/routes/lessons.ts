@@ -3,7 +3,7 @@ import { Bindings } from '../types';
 import { requireAuth } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { validateBody, createLessonSchema, updateLessonSchema, createRatingSchema } from '../lib/validation';
-import { isPaymentOverdue } from '../lib/payment-utils';
+import { isAccessBlocked } from '../lib/payment-utils';
 
 const lessons = new Hono<{ Bindings: Bindings }>();
 
@@ -47,9 +47,9 @@ lessons.get('/', async (c) => {
       `).bind(session.id, classId).first();
       hasAccess = !!enrollment;
 
-      // Block students with overdue payments (server-side enforcement of accessLocked)
-      if (hasAccess && await isPaymentOverdue(c.env.DB, session.id, classId)) {
-        return c.json(errorResponse('Acceso bloqueado por pago pendiente. Por favor, regulariza tu situación de pago.'), 403);
+      // Block students without signed document or with overdue payments
+      if (hasAccess && await isAccessBlocked(c.env.DB, session.id, classId)) {
+        return c.json(errorResponse('Acceso bloqueado. Firma el documento y regulariza tu situación de pago.'), 403);
       }
     }
 
@@ -263,9 +263,9 @@ lessons.get('/:id', async (c) => {
       if (!enrollment) {
         return c.json(errorResponse('Not enrolled in this class'), 403);
       }
-      // Block students with overdue payments
-      if (await isPaymentOverdue(c.env.DB, session.id, lesson.classId as string)) {
-        return c.json(errorResponse('Acceso bloqueado por pago pendiente. Por favor, regulariza tu situación de pago.'), 403);
+      // Block students without signed document or with overdue payments
+      if (await isAccessBlocked(c.env.DB, session.id, lesson.classId as string)) {
+        return c.json(errorResponse('Acceso bloqueado. Firma el documento y regulariza tu situación de pago.'), 403);
       }
       // Block access if lesson is scheduled for the future
       if (lesson.releaseDate && new Date(lesson.releaseDate as string) > new Date()) {

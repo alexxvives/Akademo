@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { requireAuth, getSession } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
-import { isPaymentOverdue } from '../lib/payment-utils';
+import { isAccessBlocked } from '../lib/payment-utils';
 
 // ============ Upload Security ============
 
@@ -521,11 +521,11 @@ storage.get('/serve/*', async (c) => {
                   }
                 }
 
-                // Block overdue students from downloading documents/assignments
+                // Block students without signed document or with overdue payments
                 if (hasAccess) {
                   const classIdToCheck = enrollment?.classId || (upload.storagePath.startsWith('assignment/') ? upload.storagePath : null);
-                  if (classIdToCheck && enrollment && await isPaymentOverdue(c.env.DB, session.id, enrollment.classId)) {
-                    return c.json(errorResponse('Acceso bloqueado por pago pendiente.'), 403);
+                  if (classIdToCheck && enrollment && await isAccessBlocked(c.env.DB, session.id, enrollment.classId)) {
+                    return c.json(errorResponse('Acceso bloqueado. Firma el documento y regulariza tu situación de pago.'), 403);
                   }
                 }
               } else if (session.role === 'TEACHER') {

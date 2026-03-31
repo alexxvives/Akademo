@@ -3,7 +3,7 @@ import { Bindings } from '../types';
 import { requireAuth } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { validateBody, createClassSchema, updateClassSchema } from '../lib/validation';
-import { autoCreatePendingPayments, parseDateString } from '../lib/payment-utils';
+import { autoCreatePendingPayments, parseDateString, isAccessBlocked } from '../lib/payment-utils';
 
 const classes = new Hono<{ Bindings: Bindings }>();
 
@@ -369,14 +369,11 @@ classes.get('/:id', async (c) => {
           (classRecord as any).documentSigned = enrollment.documentSigned;
           (classRecord as any).paymentFrequency = enrollment.paymentFrequency;
           (classRecord as any).nextPaymentDue = enrollment.nextPaymentDue;
-          // Calculate if student is behind on payments (monthly only)
-          if (enrollment.paymentFrequency === 'MONTHLY' && (classRecord as any).monthlyPrice > 0) {
-            const isAccessLocked = enrollment.nextPaymentDue
-              ? new Date(enrollment.nextPaymentDue as string) < new Date()
-              : false;
-            (classRecord as any).accessLocked = isAccessLocked;
+          // Check access: documentSigned + payment status (both MONTHLY and ONE_TIME)
+          if (enrollment.status === 'APPROVED') {
+            (classRecord as any).accessLocked = await isAccessBlocked(c.env.DB, session.id, classRecord.id as string);
           } else {
-            (classRecord as any).accessLocked = false;
+            (classRecord as any).accessLocked = true;
           }
         } else {
           // Student is not enrolled - mark as such

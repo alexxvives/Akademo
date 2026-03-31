@@ -4,7 +4,7 @@ import { requireAuth } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { validateBody, videoProgressSchema } from '../lib/validation';
 import { rateLimit } from '../lib/rate-limit';
-import { isPaymentOverdue } from '../lib/payment-utils';
+import { isAccessBlocked } from '../lib/payment-utils';
 
 // Rate limiter for progress resets: 3 resets per hour per student
 const progressResetRateLimit = rateLimit({
@@ -51,9 +51,9 @@ videos.post('/progress', validateBody(videoProgressSchema), async (c) => {
       return c.json(errorResponse('Not enrolled in this class'), 403);
     }
 
-    // Block overdue students from accumulating watch time
-    if (await isPaymentOverdue(c.env.DB, session.id, video.classId as string)) {
-      return c.json(errorResponse('Acceso bloqueado por pago pendiente.'), 403);
+    // Block students without signed document or with overdue payments
+    if (await isAccessBlocked(c.env.DB, session.id, video.classId as string)) {
+      return c.json(errorResponse('Acceso bloqueado. Firma el documento y regulariza tu situación de pago.'), 403);
     }
 
     // Check if play state exists
@@ -426,9 +426,9 @@ videos.get('/:id', async (c) => {
         return c.json(errorResponse('Not enrolled'), 403);
       }
 
-      // Block overdue students
-      if (await isPaymentOverdue(c.env.DB, session.id, video.classId as string)) {
-        return c.json(errorResponse('Acceso bloqueado por pago pendiente.'), 403);
+      // Block students without signed document or with overdue payments
+      if (await isAccessBlocked(c.env.DB, session.id, video.classId as string)) {
+        return c.json(errorResponse('Acceso bloqueado. Firma el documento y regulariza tu situación de pago.'), 403);
       }
 
       // Get play state

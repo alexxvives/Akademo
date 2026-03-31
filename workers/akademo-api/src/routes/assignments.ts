@@ -4,7 +4,7 @@ import { requireAuth } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { nanoid } from 'nanoid';
 import { validateBody, createAssignmentSchema, gradeSubmissionSchema } from '../lib/validation';
-import { isPaymentOverdue } from '../lib/payment-utils';
+import { isAccessBlocked } from '../lib/payment-utils';
 
 const assignments = new Hono<{ Bindings: Bindings }>();
 
@@ -140,7 +140,7 @@ assignments.get('/', async (c) => {
       for (const row of (result.results || []) as any[]) {
         const cId = row.enrolledClassId || row.classId;
         if (!overdueCache.has(cId)) {
-          overdueCache.set(cId, await isPaymentOverdue(c.env.DB, session.id, cId));
+          overdueCache.set(cId, await isAccessBlocked(c.env.DB, session.id, cId));
         }
         if (!overdueCache.get(cId)) {
           filtered.push(row);
@@ -207,9 +207,9 @@ assignments.get('/', async (c) => {
         return c.json(errorResponse('No estás matriculado en esta clase'), 403);
       }
 
-      // Block students with overdue payments
-      if (await isPaymentOverdue(c.env.DB, session.id, classId)) {
-        return c.json(errorResponse('Acceso bloqueado por pago pendiente.'), 403);
+      // Block students without signed document or with overdue payments
+      if (await isAccessBlocked(c.env.DB, session.id, classId)) {
+        return c.json(errorResponse('Acceso bloqueado. Firma el documento y regulariza tu situación de pago.'), 403);
       }
 
       // Students see assignments with their submission status for specific class
@@ -513,8 +513,8 @@ assignments.get('/:id', async (c) => {
       if (!enrollment) {
         return c.json(errorResponse('No estás matriculado en esta clase'), 403);
       }
-      if (await isPaymentOverdue(c.env.DB, session.id, assignment.classId as string)) {
-        return c.json(errorResponse('Acceso bloqueado por pago pendiente.'), 403);
+      if (await isAccessBlocked(c.env.DB, session.id, assignment.classId as string)) {
+        return c.json(errorResponse('Acceso bloqueado. Firma el documento y regulariza tu situación de pago.'), 403);
       }
 
       const submission = await c.env.DB.prepare(`
@@ -579,9 +579,9 @@ assignments.post('/:id/submit', async (c) => {
       return c.json(errorResponse('You are not enrolled in this class'), 403);
     }
 
-    // Block overdue students from submitting assignments
-    if (await isPaymentOverdue(c.env.DB, session.id, assignment.classId as string)) {
-      return c.json(errorResponse('Acceso bloqueado por pago pendiente.'), 403);
+    // Block students without signed document or with overdue payments
+    if (await isAccessBlocked(c.env.DB, session.id, assignment.classId as string)) {
+      return c.json(errorResponse('Acceso bloqueado. Firma el documento y regulariza tu situación de pago.'), 403);
     }
 
     // Delete any existing submission (resubmit replaces previous)
@@ -1014,8 +1014,8 @@ assignments.get('/:id/questions', async (c) => {
         "SELECT id FROM ClassEnrollment WHERE userId = ? AND classId = ? AND status = 'APPROVED'"
       ).bind(session.id, assignment.classId).first();
       if (!enrollment) return c.json(errorResponse('No estás matriculado en esta clase'), 403);
-      if (await isPaymentOverdue(c.env.DB, session.id, assignment.classId)) {
-        return c.json(errorResponse('Acceso bloqueado por pago pendiente.'), 403);
+      if (await isAccessBlocked(c.env.DB, session.id, assignment.classId)) {
+        return c.json(errorResponse('Acceso bloqueado. Firma el documento y regulariza tu situación de pago.'), 403);
       }
     }
 
@@ -1082,8 +1082,8 @@ assignments.post('/:id/quiz-submit', async (c) => {
     ).bind(session.id, assignment.classId).first();
     if (!enrollment) return c.json(errorResponse('No estás matriculado en esta clase'), 403);
 
-    if (await isPaymentOverdue(c.env.DB, session.id, assignment.classId)) {
-      return c.json(errorResponse('Acceso bloqueado por pago pendiente.'), 403);
+    if (await isAccessBlocked(c.env.DB, session.id, assignment.classId)) {
+      return c.json(errorResponse('Acceso bloqueado. Firma el documento y regulariza tu situación de pago.'), 403);
     }
 
     // Check if already attempted (first attempt only counts for grade)

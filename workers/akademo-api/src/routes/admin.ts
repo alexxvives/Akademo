@@ -800,8 +800,8 @@ admin.post('/bulk-import', async (c) => {
           classResults.push({ name, status: 'existed' });
           continue; // already exists
         }
-        if (!cr.price || !cr.priceType || !cr.startDate) {
-          classResults.push({ name, status: 'error' as any, message: `Missing required fields: ${[!cr.price && 'precio', !cr.priceType && 'tipoPrecio', !cr.startDate && 'fechaInicio'].filter(Boolean).join(', ')}` });
+        if (!cr.price || !cr.startDate) {
+          classResults.push({ name, status: 'error' as any, message: `Missing required fields: ${[!cr.price && 'precio', !cr.startDate && 'fechaInicio'].filter(Boolean).join(', ')}` });
           continue;
         }
         const classId = crypto.randomUUID();
@@ -815,8 +815,11 @@ admin.post('/bulk-import', async (c) => {
           slug = `${baseSlug}-${slugCounter++}`;
         }
         const price = parseFloat(String(cr.price));
-        const monthlyPrice = cr.priceType === 'MENSUAL' ? price : null;
-        const oneTimePrice = cr.priceType === 'UNICO' ? price : null;
+        const cuotas = cr.cuotas ? parseInt(String(cr.cuotas), 10) : 0;
+        // If cuotas provided → monthlyPrice = price / cuotas, oneTimePrice = price (both options)
+        // If no cuotas → oneTimePrice = price, monthlyPrice = null (pure one-time)
+        const monthlyPrice = cuotas > 0 ? Math.round((price / cuotas) * 100) / 100 : null;
+        const oneTimePrice = price;
         const startDate = normalizeDateForStorage(cr.startDate);
         const description = cr.description || null;
         const university = cr.university || null;

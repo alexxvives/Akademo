@@ -27,7 +27,7 @@ export function normalizeDateForStorage(str: string): string {
   return s;
 }
 
-type BillingEnrollmentRow = {
+export type BillingEnrollmentRow = {
   enrollmentId: string;
   studentId: string;
   classId: string;
@@ -45,7 +45,7 @@ type BillingEnrollmentRow = {
   totalPaid: number | null;
 };
 
-type DerivedBillingState = {
+export type DerivedBillingState = {
   amountOwed: number;
   description: string;
   monthsOwed: number;
@@ -84,7 +84,7 @@ export function countElapsedCycles(classStart: Date, today: Date): number {
   return months + 1;
 }
 
-function deriveBillingState(enrollment: BillingEnrollmentRow, today = new Date()): DerivedBillingState {
+export function deriveBillingState(enrollment: BillingEnrollmentRow, today = new Date()): DerivedBillingState {
   const totalPaid = Number(enrollment.totalPaid) || 0;
   const isMonthly = enrollment.paymentFrequency === 'MONTHLY';
   const monthlyPrice = Number(enrollment.monthlyPrice) || 0;
@@ -123,6 +123,7 @@ function deriveBillingState(enrollment: BillingEnrollmentRow, today = new Date()
     if (totalPaid < oneTimePrice) {
       amountOwed = oneTimePrice - totalPaid;
       description = 'Pago único pendiente';
+      isOverdue = true;
     }
   }
 
@@ -334,6 +335,40 @@ export async function isPaymentOverdue(db: D1Database, userId: string, classId: 
   }
 
   return deriveBillingState(enrollment).isOverdue;
+}
+
+/**
+ * Check if a student should be BLOCKED from accessing class content.
+ * Combines documentSigned + payment overdue checks (three-gate model).
+ * Returns true if access should be DENIED.
+ */
+export async function isAccessBlocked(db: D1Database, userId: string, classId: string): Promise<boolean> {
+  // Check documentSigned flag on enrollment
+  const enrollment = await db
+    .prepare(`
+      SELECT documentSigned, status, stripeSubscriptionId
+      FROM ClassEnrollment
+      WHERE userId = ? AND classId = ? AND status = 'APPROVED'
+      LIMIT 1
+    `)
+    .bind(userId, classId)
+    .first<{ documentSigned: number | null; status: string; stripeSubscriptionId: string | null }>();
+
+  if (!enrollment) {
+    return true; // Not enrolled or not approved → blocked
+  }
+
+  // Gate 1: Document must be signed
+  if (!enrollment.documentSigned) {
+    return true;
+  }
+
+  // Gate 2: Payment must not be overdue (skip for Stripe-managed subscriptions)
+  if (!enrollment.stripeSubscriptionId) {
+    return await isPaymentOverdue(db, userId, classId);
+  }
+
+  return false;
 }
 
 // Auto-create or update PENDING Payment records for a student's approved enrollments.

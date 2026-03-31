@@ -134,7 +134,7 @@ export function PreviewStep({ preview, classPreview, importing, reset, handleImp
                   <tr key={i} className="hover:bg-gray-50">
                     <td className="px-4 py-2 font-medium text-gray-900">{cls.name}</td>
                     <td className="px-4 py-2 text-gray-500">
-                      {cls.price != null ? `€${cls.price}${cls.priceType === 'MENSUAL' ? '/mes' : cls.priceType === 'UNICO' ? ' único' : ''}` : '—'}
+                      {cls.price != null ? (cls.cuotas ? `€${cls.price} (${cls.cuotas} cuotas × €${Math.round((cls.price / cls.cuotas) * 100) / 100}/mes)` : `€${cls.price} único`) : '—'}
                     </td>
                     <td className="px-4 py-2 text-gray-500">{cls.startDate ?? '—'}</td>
                     <td className="px-4 py-2 text-gray-500 text-xs">{cls.teacherEmail ?? '—'}</td>

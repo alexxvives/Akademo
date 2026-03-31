@@ -3,7 +3,8 @@ import { Bindings } from '../types';
 import { requireAuth, requireRole } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { initiatePaymentSchema } from '../lib/validation';
-import { autoCreatePendingPayments, addMonths, countElapsedCycles, parseDateString } from '../lib/payment-utils';
+import { autoCreatePendingPayments, parseDateString, deriveBillingState } from '../lib/payment-utils';
+import type { BillingEnrollmentRow } from '../lib/payment-utils';
 import { rateLimit } from '../lib/rate-limit';
 import { sendEmail } from '../lib/sendEmail';
 
@@ -15,56 +16,6 @@ function getStripeKeys(env: Bindings): { secretKey: string; webhookSecret: strin
   return {
     secretKey: sandbox ? env.STRIPE_SECRET_KEY_SANDBOX : (env.STRIPE_SECRET_KEY ?? env.STRIPE_SECRET_KEY_SANDBOX),
     webhookSecret: sandbox ? env.STRIPE_WEBHOOK_SECRET_SANDBOX : (env.STRIPE_WEBHOOK_SECRET ?? env.STRIPE_WEBHOOK_SECRET_SANDBOX),
-  };
-}
-
-// Helper function to calculate billing cycles based on class start date
-// Returns: amount to charge (including catch-up cycles) + billing cycle info + missed cycles count
-function calculateBillingCycle(classStartDate: string, _enrollmentDate: string, isMonthly: boolean, monthlyPrice: number) {
-  const classStart = parseDateString(classStartDate);
-  const today = new Date();
-
-  // For one-time payments, no next payment
-  if (!isMonthly) {
-    return {
-      billingCycleStart: null,
-      billingCycleEnd: null,
-      nextPaymentDue: null,
-      missedCycles: 0,
-      catchUpAmount: 0,
-      totalAmount: monthlyPrice // Just regular price for one-time
-    };
-  }
-
-  // If class hasn't started yet (early joiner)
-  if (today < classStart) {
-    const cycleEnd = addMonths(classStart, 1);
-    return {
-      billingCycleStart: classStart.toISOString(),
-      billingCycleEnd: cycleEnd.toISOString(),
-      nextPaymentDue: cycleEnd.toISOString(),
-      missedCycles: 0,
-      catchUpAmount: 0,
-      totalAmount: monthlyPrice // Just one cycle
-    };
-  }
-
-  // Class has already started — charge for all elapsed cycles (calendar-month based)
-  const elapsedCycles = countElapsedCycles(classStart, today);
-
-  // Current cycle boundaries
-  const currentCycleStart = addMonths(classStart, elapsedCycles - 1);
-  const currentCycleEnd   = addMonths(classStart, elapsedCycles);
-
-  const catchUpAmount = elapsedCycles * monthlyPrice;
-
-  return {
-    billingCycleStart: classStart.toISOString(),
-    billingCycleEnd: currentCycleEnd.toISOString(),
-    nextPaymentDue: currentCycleEnd.toISOString(),
-    missedCycles: elapsedCycles,
-    catchUpAmount: catchUpAmount,
-    totalAmount: catchUpAmount // Total to charge NOW (all elapsed cycles)
   };
 }
 
@@ -126,17 +77,7 @@ payments.post('/initiate', paymentInitiateRateLimit, async (c) => {
       return c.json(errorResponse(`${paymentFrequency === 'monthly' ? 'Monthly' : 'One-time'} payment not available for this class`), 400);
     }
 
-    // Calculate billing cycle for monthly payments (includes catch-up for late joiners)
     const isMonthly = paymentFrequency === 'monthly';
-    const billingCycle = calculateBillingCycle(
-      classData.startDate || new Date().toISOString(),
-      new Date().toISOString(),
-      isMonthly,
-      price // Pass monthly price for catch-up calculation
-    );
-    
-    // Use totalAmount from billing cycle (includes catch-up cycles if late joiner)
-    const finalAmount = billingCycle.totalAmount;
 
     // Check if enrollment exists
     const enrollment: any = await c.env.DB
@@ -162,15 +103,35 @@ payments.post('/initiate', paymentInitiateRateLimit, async (c) => {
       }
     }
 
-    // For one-time classes: block re-submission if the full amount is already paid
-    if (paymentFrequency === 'one-time' && classData.oneTimePrice > 0) {
-      const paidRow = await c.env.DB
-        .prepare(`SELECT COALESCE(SUM(amount), 0) as totalPaid FROM Payment WHERE payerId = ? AND classId = ? AND status IN ('PAID', 'COMPLETED') AND type = 'STUDENT_TO_ACADEMY'`)
-        .bind(session.id, classId)
-        .first<{ totalPaid: number }>();
-      if ((paidRow?.totalPaid ?? 0) >= classData.oneTimePrice) {
-        return c.json(errorResponse('El pago único de esta clase ya ha sido completado'), 400);
-      }
+    // Derive billing state using unified calculator
+    const totalPaidRow = await c.env.DB
+      .prepare(`SELECT COALESCE(SUM(amount), 0) as totalPaid FROM Payment WHERE payerId = ? AND classId = ? AND status IN ('PAID', 'COMPLETED') AND type = 'STUDENT_TO_ACADEMY'`)
+      .bind(session.id, classId)
+      .first<{ totalPaid: number }>();
+    const totalPaid = totalPaidRow?.totalPaid ?? 0;
+
+    const billingRow: BillingEnrollmentRow = {
+      enrollmentId: enrollment.id,
+      studentId: session.id,
+      classId,
+      enrolledAt: new Date().toISOString(),
+      paymentFrequency: isMonthly ? 'MONTHLY' : 'ONE_TIME',
+      paymentMethod: paymentMethod,
+      monthlyPrice: classData.monthlyPrice,
+      oneTimePrice: classData.oneTimePrice,
+      classStartDate: classData.startDate,
+      firstName: session.firstName,
+      lastName: session.lastName,
+      email: session.email,
+      academyId: classData.academyId,
+      academyName: classData.name,
+      totalPaid,
+    };
+    const billingState = deriveBillingState(billingRow);
+    const finalAmount = billingState.amountOwed;
+
+    if (finalAmount <= 0) {
+      return c.json(errorResponse('No hay importe pendiente para esta clase'), 400);
     }
 
     // Check if payment already exists
@@ -193,20 +154,19 @@ payments.post('/initiate', paymentInitiateRateLimit, async (c) => {
           WHERE id = ?
         `).bind(
           paymentMethod,
-          finalAmount, // Use total amount including catch-up
+          finalAmount,
           JSON.stringify({
             payerName: `${session.firstName} ${session.lastName}`,
             payerEmail: session.email,
             className: classData.name,
             paymentFrequency: paymentFrequency,
-            missedCycles: billingCycle.missedCycles,
-            catchUpAmount: billingCycle.catchUpAmount,
+            monthsOwed: billingState.monthsOwed,
             regularPrice: price,
-            note: billingCycle.missedCycles > 0 ? `Incluye ${billingCycle.missedCycles} ciclo(s) pendiente(s). Próximos pagos serán de ${price}€/mes.` : null,
+            note: billingState.monthsOwed > 1 ? `Incluye ${billingState.monthsOwed} ciclo(s) pendiente(s). Próximos pagos serán de ${price}€/mes.` : null,
             studentSubmitted: true
           }),
-          billingCycle.nextPaymentDue,
-          billingCycle.billingCycleEnd,
+          billingState.nextPaymentDue,
+          billingState.billingCycleEnd,
           existingPayment.id
         ),
         c.env.DB.prepare('UPDATE ClassEnrollment SET paymentFrequency = ? WHERE userId = ? AND classId = ?')
@@ -214,8 +174,8 @@ payments.post('/initiate', paymentInitiateRateLimit, async (c) => {
       ]);
 
       // Format next payment due date for display
-      const formattedNextDue = billingCycle.nextPaymentDue 
-        ? new Date(billingCycle.nextPaymentDue).toLocaleDateString('es-ES', { 
+      const formattedNextDue = billingState.nextPaymentDue 
+        ? new Date(billingState.nextPaymentDue).toLocaleDateString('es-ES', { 
             day: '2-digit', 
             month: '2-digit', 
             year: 'numeric' 
@@ -232,8 +192,8 @@ payments.post('/initiate', paymentInitiateRateLimit, async (c) => {
         status: 'PENDING',
         paymentId: existingPayment.id,
         updated: true,
-        missedCycles: billingCycle.missedCycles,
-        catchUpAmount: billingCycle.catchUpAmount,
+        monthsOwed: billingState.monthsOwed,
+        amountOwed: billingState.amountOwed,
       }));
     }
 
@@ -263,22 +223,21 @@ payments.post('/initiate', paymentInitiateRateLimit, async (c) => {
           payerEmail: session.email,
           className: classData.name,
           paymentFrequency: paymentFrequency,
-          missedCycles: billingCycle.missedCycles,
-          catchUpAmount: billingCycle.catchUpAmount,
+          monthsOwed: billingState.monthsOwed,
           regularPrice: price,
-          note: billingCycle.missedCycles > 0 ? `Incluye ${billingCycle.missedCycles} ciclo(s) pendiente(s). Próximos pagos serán de ${price}€/mes.` : null,
+          note: billingState.monthsOwed > 1 ? `Incluye ${billingState.monthsOwed} ciclo(s) pendiente(s). Próximos pagos serán de ${price}€/mes.` : null,
           studentSubmitted: true
         }),
-        billingCycle.nextPaymentDue,
-        billingCycle.billingCycleEnd
+        billingState.nextPaymentDue,
+        billingState.billingCycleEnd
       ),
       c.env.DB.prepare('UPDATE ClassEnrollment SET paymentFrequency = ? WHERE userId = ? AND classId = ?')
         .bind(isMonthly ? 'MONTHLY' : 'ONE_TIME', session.id, classId)
     ]);
 
     // Format next payment due date for display
-    const formattedNextDue = billingCycle.nextPaymentDue 
-      ? new Date(billingCycle.nextPaymentDue).toLocaleDateString('es-ES', { 
+    const formattedNextDue = billingState.nextPaymentDue 
+      ? new Date(billingState.nextPaymentDue).toLocaleDateString('es-ES', { 
           day: '2-digit', 
           month: '2-digit', 
           year: 'numeric' 
@@ -294,8 +253,8 @@ payments.post('/initiate', paymentInitiateRateLimit, async (c) => {
       message,
       status: 'PENDING',
       paymentId: paymentId,
-      missedCycles: billingCycle.missedCycles,
-      catchUpAmount: billingCycle.catchUpAmount,
+      monthsOwed: billingState.monthsOwed,
+      amountOwed: billingState.amountOwed,
     }));
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
