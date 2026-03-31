@@ -3,7 +3,7 @@ import { Bindings } from '../types';
 import { requireAuth, hashPassword } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { nanoid } from 'nanoid';
-import { countElapsedCycles, autoCreatePendingPayments } from '../lib/payment-utils';
+import { autoCreatePendingPayments } from '../lib/payment-utils';
 import { writeAuditLog } from '../lib/audit';
 import { sendEmail } from '../lib/sendEmail';
 
@@ -845,7 +845,6 @@ admin.post('/bulk-import', async (c) => {
       const firstName = (row.firstName || '').trim();
       const lastName = (row.lastName || '').trim();
       const role = (row.role || 'STUDENT').toUpperCase().trim();
-      const pagado = row.pagado === true; // payment already collected outside platform
       const classNames: string[] = (row.classNames || '')
         .split(',')
         .map((n: string) => n.trim().toLowerCase())
@@ -953,35 +952,10 @@ admin.post('/bulk-import', async (c) => {
               // Use MONTHLY if class only offers monthly pricing; otherwise ONE_TIME
               const paymentFrequency = (classPrice?.monthlyPrice && !classPrice?.oneTimePrice) ? 'MONTHLY' : 'ONE_TIME';
 
-              // Compute the historically-correct PAID amount for pagado=TRUE
-              // For MONTHLY classes: total = elapsedCycles × monthlyPrice (not just one month)
-              let paidAmount: number | null = null;
-              if (pagado && classPrice) {
-                if (paymentFrequency === 'MONTHLY' && classPrice.monthlyPrice) {
-                  const classStart = classPrice.startDate ? new Date(classPrice.startDate) : new Date();
-                  const elapsed = countElapsedCycles(classStart, new Date());
-                  paidAmount = elapsed * classPrice.monthlyPrice;
-                } else if (paymentFrequency === 'ONE_TIME' && classPrice.oneTimePrice) {
-                  paidAmount = classPrice.oneTimePrice;
-                }
-              }
-
               await c.env.DB
                 .prepare('INSERT INTO ClassEnrollment (id, classId, userId, status, enrolledAt, documentSigned, paymentFrequency) VALUES (?, ?, ?, ?, datetime("now"), ?, ?)')
                 .bind(enrollmentId, classId, userId, 'APPROVED', 0, paymentFrequency)
                 .run();
-
-              // If pagado=true: record a PENDING cash payment so the academy can
-              // manually confirm it. Tagged fromMigration so it doesn't trigger "atrasado".
-              if (pagado && paidAmount) {
-                const paymentId = nanoid();
-                const fullName = `${firstName} ${lastName}`;
-                await c.env.DB
-                  .prepare(`INSERT INTO Payment (id, classId, payerId, receiverId, amount, status, paymentMethod, type, currency, createdAt, payerType, payerName, payerEmail, receiverName, description, metadata)
-                    VALUES (?, ?, ?, ?, ?, 'PENDING', 'cash', 'STUDENT_TO_ACADEMY', 'EUR', datetime('now'), 'STUDENT', ?, ?, ?, ?, ?)`)
-                  .bind(paymentId, classId, userId, academyId, paidAmount, fullName, email, academy.name, 'Pago registrado en migración CSV', JSON.stringify({ fromMigration: true }))
-                  .run();
-              }
             }
           }
         }
