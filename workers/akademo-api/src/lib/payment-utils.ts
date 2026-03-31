@@ -18,12 +18,13 @@ export function parseDateString(str: string): Date {
  * Convert DD/MM/YYYY → YYYY-MM-DD for storage. Passes through other formats.
  */
 export function normalizeDateForStorage(str: string): string {
-  const ddmmyyyy = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  const s = String(str || '');
+  const ddmmyyyy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (ddmmyyyy) {
     const [, day, month, year] = ddmmyyyy;
     return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
   }
-  return str;
+  return s;
 }
 
 type BillingEnrollmentRow = {
