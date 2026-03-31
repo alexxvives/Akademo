@@ -64,8 +64,40 @@ app.use('*', async (c, next) => {
   return runWithEnv(c.env as unknown as CloudflareEnv, () => next());
 });
 
+// Outermost CORS safety-net: ensures Access-Control-Allow-Origin is always
+// present on every response for allowed origins, even if an inner middleware
+// short-circuits or the worker throws before the cors() middleware can add it.
+const CORS_ALLOWED_ORIGINS = [
+  'https://akademo-edu.com',
+  'https://www.akademo-edu.com',
+  'https://akademo.alexxvives.workers.dev',
+  'http://localhost:3000',
+];
+app.use('*', async (c, next) => {
+  const origin = c.req.header('Origin') || '';
+  if (c.req.method === 'OPTIONS') {
+    if (CORS_ALLOWED_ORIGINS.includes(origin)) {
+      return new Response(null, {
+        status: 204,
+        headers: {
+          'Access-Control-Allow-Origin': origin,
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization, Cookie, Cache-Control, Pragma, X-Requested-With',
+          'Access-Control-Allow-Credentials': 'true',
+          'Access-Control-Max-Age': '86400',
+        },
+      });
+    }
+  }
+  await next();
+  if (CORS_ALLOWED_ORIGINS.includes(origin)) {
+    c.res.headers.set('Access-Control-Allow-Origin', origin);
+    c.res.headers.set('Access-Control-Allow-Credentials', 'true');
+  }
+});
+
 app.use('*', cors({
-  origin: ['https://akademo-edu.com', 'https://www.akademo-edu.com', 'https://akademo.alexxvives.workers.dev', 'http://localhost:3000'],
+  origin: (origin) => CORS_ALLOWED_ORIGINS.includes(origin) ? origin : null,
   credentials: true,
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization', 'Cookie', 'Cache-Control', 'Pragma', 'X-Requested-With'],

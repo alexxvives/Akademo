@@ -102,9 +102,15 @@ export function useProfileData() {
     const params = new URLSearchParams(window.location.search);
     const connected = params.get('zoom') === 'connected' || params.get('gtm') === 'connected';
     if (!connected) return;
-    confetti({ particleCount: 180, spread: 100, origin: { y: 0.55 } });
-    setTimeout(() => confetti({ particleCount: 80, spread: 120, origin: { x: 0.1, y: 0.6 } }), 200);
-    setTimeout(() => confetti({ particleCount: 80, spread: 120, origin: { x: 0.9, y: 0.6 } }), 400);
+    const _end = Date.now() + 3 * 1000;
+    const _colors = ["#a786ff", "#fd8bbc", "#eca184", "#f8deb1"];
+    const _frame = () => {
+      if (Date.now() > _end) return;
+      confetti({ particleCount: 2, angle: 60, spread: 55, startVelocity: 60, origin: { x: 0, y: 0.5 }, colors: _colors });
+      confetti({ particleCount: 2, angle: 120, spread: 55, startVelocity: 60, origin: { x: 1, y: 0.5 }, colors: _colors });
+      requestAnimationFrame(_frame);
+    };
+    _frame();
     const cleanUrl = new URL(window.location.href);
     cleanUrl.searchParams.delete('zoom'); cleanUrl.searchParams.delete('gtm');
     window.history.replaceState({}, '', cleanUrl.toString());
@@ -117,9 +123,15 @@ export function useProfileData() {
     const stripeParam = params.get('stripe');
     if (!stripeParam) return;
     if (stripeParam === 'complete') {
-      confetti({ particleCount: 180, spread: 100, origin: { y: 0.55 } });
-      setTimeout(() => confetti({ particleCount: 80, spread: 120, origin: { x: 0.1, y: 0.6 } }), 200);
-      setTimeout(() => confetti({ particleCount: 80, spread: 120, origin: { x: 0.9, y: 0.6 } }), 400);
+      const _end2 = Date.now() + 3 * 1000;
+      const _colors2 = ["#a786ff", "#fd8bbc", "#eca184", "#f8deb1"];
+      const _frame2 = () => {
+        if (Date.now() > _end2) return;
+        confetti({ particleCount: 2, angle: 60, spread: 55, startVelocity: 60, origin: { x: 0, y: 0.5 }, colors: _colors2 });
+        confetti({ particleCount: 2, angle: 120, spread: 55, startVelocity: 60, origin: { x: 1, y: 0.5 }, colors: _colors2 });
+        requestAnimationFrame(_frame2);
+      };
+      _frame2();
     }
     loadData();
     const cleanUrl = new URL(window.location.href);

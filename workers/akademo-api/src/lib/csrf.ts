@@ -27,6 +27,13 @@ const ALLOWED_ORIGINS = new Set([
   'http://localhost:3000',
 ]);
 
+function setCorsHeaders(c: Context<{ Bindings: Bindings }>, origin: string) {
+  if (ALLOWED_ORIGINS.has(origin)) {
+    c.header('Access-Control-Allow-Origin', origin);
+    c.header('Access-Control-Allow-Credentials', 'true');
+  }
+}
+
 /**
  * CSRF middleware — checks Origin + X-Requested-With on state-changing requests.
  */
@@ -47,6 +54,7 @@ export function csrfProtection() {
     if (origin) {
       if (!ALLOWED_ORIGINS.has(origin)) {
         console.error(`[CSRF] Blocked request from disallowed origin: ${origin}`);
+        setCorsHeaders(c, origin);
         return c.json(errorResponse('Forbidden — origin not allowed'), 403);
       }
     } else if (referer) {
@@ -55,6 +63,7 @@ export function csrfProtection() {
         const refOrigin = new URL(referer).origin;
         if (!ALLOWED_ORIGINS.has(refOrigin)) {
           console.error(`[CSRF] Blocked request from disallowed referer: ${refOrigin}`);
+          setCorsHeaders(c, refOrigin);
           return c.json(errorResponse('Forbidden — origin not allowed'), 403);
         }
       } catch {
@@ -82,6 +91,7 @@ export function csrfProtection() {
     // for simple content types.
     if (isSimpleContentType && !xRequestedWith) {
       console.error('[CSRF] Blocked form-like request without X-Requested-With header');
+      setCorsHeaders(c, origin || '');
       return c.json(errorResponse('Forbidden — custom header required'), 403);
     }
 
