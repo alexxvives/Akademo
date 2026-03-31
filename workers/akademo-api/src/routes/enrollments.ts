@@ -789,17 +789,24 @@ enrollments.get('/payment-status', async (c) => {
           alDia++;
         }
       } else if (enrollment.paymentFrequency === 'ONE_TIME') {
-        // One-time payment: check if there's a completed payment
+        // One-time payment: alDia if completed/paid, OR if pending but tagged as fromMigration
+        // (migration payments stay PENDING while academy manually confirms them)
         const payment = await c.env.DB
           .prepare(`
-            SELECT id FROM Payment 
-            WHERE payerId = ? AND classId = ? AND (status = 'COMPLETED' OR status = 'PAID')
-            LIMIT 1
+            SELECT id, status, metadata FROM Payment 
+            WHERE payerId = ? AND classId = ? AND type = 'STUDENT_TO_ACADEMY'
+            ORDER BY createdAt DESC LIMIT 1
           `)
           .bind(enrollment.userId, enrollment.classId)
-          .first();
-        
-        if (payment) {
+          .first() as { id: string; status: string; metadata: string | null } | null;
+
+        const isAlDia = !!payment && (
+          payment.status === 'COMPLETED' ||
+          payment.status === 'PAID' ||
+          (() => { try { return JSON.parse(payment.metadata || '{}').fromMigration === true; } catch { return false; } })()
+        );
+
+        if (isAlDia) {
           alDia++;
         } else {
           atrasados++;
