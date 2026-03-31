@@ -7,6 +7,7 @@ import LessonContentView from './components/LessonContentView';
 import { AccessLockedView, ClassNotStartedView } from './components/AccessBlockedViews';
 import { useClassPageData } from './components/useClassPageData';
 import { useClassPageActions } from './components/useClassPageActions';
+import { parseDateString } from '@/lib/formatters';
 
 export default function ClassPage() {
   const data = useClassPageData();
@@ -34,7 +35,7 @@ export default function ClassPage() {
   if (data.accessLocked) return <AccessLockedView classData={data.classData} />;
 
   if (data.classData?.startDate) {
-    const startDate = new Date(data.classData.startDate);
+    const startDate = parseDateString(data.classData.startDate);
     if (startDate > new Date()) return <ClassNotStartedView classData={data.classData} />;
   }
 

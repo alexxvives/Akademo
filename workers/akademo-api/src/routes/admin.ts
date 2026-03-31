@@ -3,7 +3,7 @@ import { Bindings } from '../types';
 import { requireAuth, hashPassword } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { nanoid } from 'nanoid';
-import { autoCreatePendingPayments } from '../lib/payment-utils';
+import { autoCreatePendingPayments, normalizeDateForStorage } from '../lib/payment-utils';
 import { writeAuditLog } from '../lib/audit';
 import { sendEmail } from '../lib/sendEmail';
 
@@ -809,7 +809,7 @@ admin.post('/bulk-import', async (c) => {
         const price = parseFloat(String(cr.price));
         const monthlyPrice = cr.priceType === 'MENSUAL' ? price : null;
         const oneTimePrice = cr.priceType === 'UNICO' ? price : null;
-        const startDate = cr.startDate;
+        const startDate = normalizeDateForStorage(cr.startDate);
         const description = cr.description || null;
         const university = cr.university || null;
         const carrera = cr.carrera || null;

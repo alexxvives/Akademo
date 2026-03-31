@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { parseDateString } from '@/lib/formatters';
 import type { ClassData } from './types';
 
 export function AccessLockedView({ classData }: { classData: ClassData | null }) {
@@ -26,7 +27,7 @@ export function AccessLockedView({ classData }: { classData: ClassData | null })
 }
 
 export function ClassNotStartedView({ classData }: { classData: ClassData }) {
-  const startDate = new Date(classData.startDate!);
+  const startDate = parseDateString(classData.startDate!);
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
       <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mb-6">

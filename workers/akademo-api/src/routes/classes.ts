@@ -3,7 +3,7 @@ import { Bindings } from '../types';
 import { requireAuth } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { validateBody, createClassSchema, updateClassSchema } from '../lib/validation';
-import { autoCreatePendingPayments } from '../lib/payment-utils';
+import { autoCreatePendingPayments, parseDateString } from '../lib/payment-utils';
 
 const classes = new Hono<{ Bindings: Bindings }>();
 
@@ -159,7 +159,7 @@ classes.get('/', async (c) => {
                                 && classData.startDate;
         
         if (needsBillingCalc) {
-          const classStart = new Date(classData.startDate);
+          const classStart = parseDateString(classData.startDate);
           const today = new Date();
           
           // Calculate elapsed cycles (same logic as in payments.ts)

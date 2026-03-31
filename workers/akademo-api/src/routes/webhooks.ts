@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { successResponse, errorResponse } from '../lib/utils';
 import { refreshZoomToken } from './zoom-accounts';
-import { addMonths } from '../lib/payment-utils';
+import { addMonths, parseDateString } from '../lib/payment-utils';
 
 const webhooks = new Hono<{ Bindings: Bindings }>();
 
@@ -16,7 +16,7 @@ function getStripeKeys(env: Bindings): { secretKey: string; webhookSecret: strin
 
 // Helper function to calculate billing cycles based on class start date (webhook variant — dates only)
 function calculateBillingCycle(classStartDate: string, _enrollmentDate: string, isMonthly: boolean) {
-  const classStart = new Date(classStartDate);
+  const classStart = parseDateString(classStartDate);
   const today = new Date();
 
   // For one-time payments, no next payment

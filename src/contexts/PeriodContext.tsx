@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { apiClient } from '@/lib/api-client';
+import { parseDateString } from '@/lib/formatters';
 
 export interface AcademicPeriod {
   id: string;
@@ -78,7 +79,7 @@ export function PeriodProvider({
   const isClassInPeriod = (date: string | null | undefined): boolean => {
     if (activePeriodId === 'all' || !activePeriod) return true;
     if (!date) return false;
-    const d = new Date(date);
+    const d = parseDateString(date);
     const start = new Date(activePeriod.startDate);
     if (d < start) return false;
     if (activePeriod.endDate) {

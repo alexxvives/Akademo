@@ -3,7 +3,7 @@ import { Bindings } from '../types';
 import { requireAuth, requireRole } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { initiatePaymentSchema } from '../lib/validation';
-import { autoCreatePendingPayments, addMonths, countElapsedCycles } from '../lib/payment-utils';
+import { autoCreatePendingPayments, addMonths, countElapsedCycles, parseDateString } from '../lib/payment-utils';
 import { rateLimit } from '../lib/rate-limit';
 import { sendEmail } from '../lib/sendEmail';
 
@@ -21,7 +21,7 @@ function getStripeKeys(env: Bindings): { secretKey: string; webhookSecret: strin
 // Helper function to calculate billing cycles based on class start date
 // Returns: amount to charge (including catch-up cycles) + billing cycle info + missed cycles count
 function calculateBillingCycle(classStartDate: string, _enrollmentDate: string, isMonthly: boolean, monthlyPrice: number) {
-  const classStart = new Date(classStartDate);
+  const classStart = parseDateString(classStartDate);
   const today = new Date();
 
   // For one-time payments, no next payment
@@ -589,7 +589,7 @@ payments.post('/stripe-session', async (c) => {
     // Calculate missed billing cycles for late-joining monthly students
     let missedCycles = 1;
     if (isRecurring && classData.startDate) {
-      const classStart = new Date(classData.startDate);
+      const classStart = parseDateString(classData.startDate);
       const today = new Date();
       if (today >= classStart) {
         let months = (today.getFullYear() - classStart.getFullYear()) * 12

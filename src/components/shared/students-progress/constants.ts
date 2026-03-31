@@ -1,4 +1,5 @@
 import type { Class } from './types';
+import { parseDateString } from '@/lib/formatters';
 
 export const DEMO_CLASS_NAME_TO_ID: Record<string, string> = {
   'Programación Web': 'demo-c1',
@@ -44,7 +45,7 @@ export function computePaymentStatus(
       const monthsBehind = paid < monthlyPrice ? 1 : 0;
       return { status: paid >= monthlyPrice ? 'UP_TO_DATE' : 'BEHIND', monthsBehind };
     }
-    const start = new Date(startStr);
+    const start = parseDateString(startStr);
     const now = new Date();
     let monthsDiff = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
     // Adjust for day-of-month: if we haven't reached the billing day yet, subtract a month

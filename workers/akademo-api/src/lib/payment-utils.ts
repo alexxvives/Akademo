@@ -1,5 +1,31 @@
 // Shared billing helpers used by both routes/payments.ts and routes/classes.ts
 
+/**
+ * Parse a date string that may be DD/MM/YYYY, YYYY-MM-DD, or ISO format.
+ * DD/MM/YYYY is the format used in CSV imports (Spanish locale).
+ */
+export function parseDateString(str: string): Date {
+  const ddmmyyyy = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (ddmmyyyy) {
+    const [, day, month, year] = ddmmyyyy;
+    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+  }
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? new Date() : d;
+}
+
+/**
+ * Convert DD/MM/YYYY → YYYY-MM-DD for storage. Passes through other formats.
+ */
+export function normalizeDateForStorage(str: string): string {
+  const ddmmyyyy = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (ddmmyyyy) {
+    const [, day, month, year] = ddmmyyyy;
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+  return str;
+}
+
 type BillingEnrollmentRow = {
   enrollmentId: string;
   studentId: string;
@@ -71,7 +97,7 @@ function deriveBillingState(enrollment: BillingEnrollmentRow, today = new Date()
   let isOverdue = false;
 
   if (isMonthly && monthlyPrice > 0) {
-    const classStart = new Date(enrollment.classStartDate || enrollment.enrolledAt);
+    const classStart = parseDateString(enrollment.classStartDate || enrollment.enrolledAt);
     if (today >= classStart) {
       const elapsedCycles = countElapsedCycles(classStart, today);
       const maxCycles = oneTimePrice > 0 ? Math.ceil(oneTimePrice / monthlyPrice) : 9999;

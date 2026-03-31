@@ -4,6 +4,20 @@
  */
 
 /**
+ * Parse a date string that may be DD/MM/YYYY, YYYY-MM-DD, or ISO format.
+ * DD/MM/YYYY is the format used in CSV imports (Spanish locale).
+ */
+export function parseDateString(str: string): Date {
+  const ddmmyyyy = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (ddmmyyyy) {
+    const [, day, month, year] = ddmmyyyy;
+    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+  }
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? new Date() : d;
+}
+
+/**
  * Formats a duration in seconds to a human-readable string.
  * @param seconds - Duration in seconds
  * @returns Formatted string like "2h 30m" or "45m"
