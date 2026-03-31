@@ -787,7 +787,7 @@ admin.post('/bulk-import', async (c) => {
 
     let classesCreated = 0;
     const unmatchedClassNames = new Set<string>();
-    const classResults: Array<{ name: string; status: 'created' | 'existed' }> = [];
+    const classResults: Array<{ name: string; status: 'created' | 'existed' | 'error'; message?: string }> = [];
     // Create any new classes from classRows that don't already exist
     if (Array.isArray(classRows) && classRows.length > 0) {
       const now = new Date().toISOString();
@@ -805,7 +805,15 @@ admin.post('/bulk-import', async (c) => {
           continue;
         }
         const classId = crypto.randomUUID();
-        const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        const baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        // Resolve slug collisions (slug is globally unique across all academies)
+        let slug = baseSlug;
+        let slugCounter = 1;
+        while (true) {
+          const existing = await c.env.DB.prepare('SELECT id FROM Class WHERE slug = ?').bind(slug).first();
+          if (!existing) break;
+          slug = `${baseSlug}-${slugCounter++}`;
+        }
         const price = parseFloat(String(cr.price));
         const monthlyPrice = cr.priceType === 'MENSUAL' ? price : null;
         const oneTimePrice = cr.priceType === 'UNICO' ? price : null;
@@ -950,7 +958,7 @@ admin.post('/bulk-import', async (c) => {
               const enrollmentId = nanoid();
               const classPrice = classPriceMap.get(classId);
               // Use MONTHLY if class only offers monthly pricing; otherwise ONE_TIME
-              const paymentFrequency = (classPrice?.monthlyPrice && !classPrice?.oneTimePrice) ? 'MONTHLY' : 'ONE_TIME';
+              const paymentFrequency = classPrice?.monthlyPrice ? 'MONTHLY' : 'ONE_TIME';
 
               await c.env.DB
                 .prepare('INSERT INTO ClassEnrollment (id, classId, userId, status, enrolledAt, documentSigned, paymentFrequency) VALUES (?, ?, ?, ?, datetime("now"), ?, ?)')
@@ -993,18 +1001,20 @@ admin.post('/bulk-import', async (c) => {
     const errors = results.filter(r => r.status === 'error').length;
 
     await writeAuditLog(c.env.DB, {
-      userId: session.id,
-      action: 'BULK_IMPORT',
-      resourceType: 'User',
-      resourceId: academyId,
-      details: `Imported ${created} users (${skipped} skipped, ${errors} errors) for academy ${academy.name}`,
+      actorId: session.id,
+      actorRole: session.role,
+      action: 'ADMIN_BULK_IMPORT',
+      targetType: 'User',
+      targetId: academyId,
+      meta: { created, skipped, errors, academyName: academy.name },
     });
 
     return c.json(successResponse({ created, skipped, errors, total: rows.length, classesCreated, classesUnmatched: unmatchedClassNames.size, classResults, results }));
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
-    console.error('[Admin Bulk Import] Error:', error);
-    return c.json(errorResponse('Internal server error'), 500);
+    const msg = error?.message || String(error);
+    console.error('[Admin Bulk Import] Error:', msg, error?.stack || '');
+    return c.json(errorResponse(`Error: ${msg}`), 500);
   }
 });
 

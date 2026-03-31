@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
-import confetti from 'canvas-confetti';
+
 import { type ImportRow, type ClassRow, type ImportSummary } from './migration-utils';
 
 interface UploadStepProps {
@@ -222,20 +221,6 @@ export function ResultsStep({ summary, onClose }: ResultsStepProps) {
   const classesCreated = summary.classesCreated ?? 0;
   const classesExisted = (summary.classResults || []).filter(r => r.status === 'existed').length;
 
-  // Fire side-cannon confetti as soon as results appear
-  useEffect(() => {
-    if (!hasCreated) return;
-    const end = Date.now() + 3 * 1000;
-    const colors = ["#a786ff", "#fd8bbc", "#eca184", "#f8deb1"];
-    const frame = () => {
-      if (Date.now() > end) return;
-      confetti({ particleCount: 2, angle: 60, spread: 55, startVelocity: 60, origin: { x: 0, y: 0.5 }, colors });
-      confetti({ particleCount: 2, angle: 120, spread: 55, startVelocity: 60, origin: { x: 1, y: 0.5 }, colors });
-      requestAnimationFrame(frame);
-    };
-    frame();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   return (
     <div className="space-y-5">
