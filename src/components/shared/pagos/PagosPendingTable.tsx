@@ -6,9 +6,10 @@ import type { PagosActions } from './usePagosActions';
 interface PagosPendingTableProps {
   state: PagosState;
   actions: PagosActions;
+  hasHistory?: boolean;
 }
 
-export function PagosPendingTable({ state, actions }: PagosPendingTableProps) {
+export function PagosPendingTable({ state, actions, hasHistory = false }: PagosPendingTableProps) {
   const {
     isAdmin, isAcademy, filteredPendingPayments, processingIds,
     paymentStatus, pendingPaymentsCollapsed, setPendingPaymentsCollapsed,
@@ -37,7 +38,7 @@ export function PagosPendingTable({ state, actions }: PagosPendingTableProps) {
         </svg>
       </button>
       {!pendingPaymentsCollapsed && (
-        <div className="max-h-[250px] overflow-y-auto overflow-x-auto">
+        <div className={`${hasHistory ? 'max-h-[250px]' : 'max-h-[calc(100vh-320px)]'} overflow-y-auto overflow-x-auto`}>
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
               <tr>

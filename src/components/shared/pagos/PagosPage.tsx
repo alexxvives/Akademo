@@ -36,7 +36,7 @@ export function PagosPage({ role }: PagosPageProps) {
           </div>
         )}
         {state.filteredPendingPayments.length > 0 && (
-          <PagosPendingTable state={state} actions={actions} />
+          <PagosPendingTable state={state} actions={actions} hasHistory={state.filteredPaymentHistory.length > 0} />
         )}
         {state.filteredPaymentHistory.length > 0 && (
           <PagosHistoryTable state={state} actions={actions} />

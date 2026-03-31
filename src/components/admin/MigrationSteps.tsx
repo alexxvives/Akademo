@@ -262,7 +262,6 @@ export function ResultsStep({ summary, onClose }: ResultsStepProps) {
                 <tr>
                   <th className="text-left px-4 py-2.5">Nombre</th>
                   <th className="text-left px-4 py-2.5">Estado</th>
-                  <th className="text-left px-4 py-2.5">Mensaje</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -278,7 +277,6 @@ export function ResultsStep({ summary, onClose }: ResultsStepProps) {
                         {cr.status === 'created' ? 'Creada' : cr.status === 'error' ? 'Error' : 'Ya existía'}
                       </span>
                     </td>
-                    {cr.message && <td className="px-4 py-2 text-xs text-gray-500">{cr.message}</td>}
                   </tr>
                 ))}
               </tbody>
@@ -298,7 +296,6 @@ export function ResultsStep({ summary, onClose }: ResultsStepProps) {
                 <th className="text-left px-4 py-2.5">Estado</th>
                 <th className="text-left px-4 py-2.5">Rol</th>
                 <th className="text-left px-4 py-2.5">Contraseña temp.</th>
-                <th className="text-left px-4 py-2.5">Mensaje</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -321,7 +318,6 @@ export function ResultsStep({ summary, onClose }: ResultsStepProps) {
                     </span>
                   </td>
                   <td className="px-4 py-2 font-mono text-xs text-gray-500">{r.tempPassword || '—'}</td>
-                  <td className="px-4 py-2 text-gray-500 text-xs">{r.message}</td>
                 </tr>
               ))}
             </tbody>

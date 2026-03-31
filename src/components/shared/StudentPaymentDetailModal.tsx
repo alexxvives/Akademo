@@ -190,15 +190,7 @@ export function StudentPaymentDetailModal({
                   <PaymentListContent isFilterChanging={isFilterChanging} filteredPayments={filteredPayments} />
                 </div>
 
-                {/* Footer */}
-                <div className="bg-gray-50 px-6 py-4 flex justify-end border-t border-gray-200">
-                  <button
-                    onClick={onClose}
-                    className="px-5 py-2.5 bg-gray-800 text-white rounded-lg hover:bg-gray-900 font-medium text-sm transition-colors shadow-sm"
-                  >
-                    Cerrar
-                  </button>
-                </div>
+
               </Dialog.Panel>
             </Transition.Child>
           </div>
