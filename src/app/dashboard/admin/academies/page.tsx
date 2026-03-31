@@ -11,6 +11,7 @@ export default function AdminAcademies() {
     expandedId, billingByAcademy, migrationAcademy,
     setMigrationAcademy, handleToggleExpand, handleTogglePayment,
     handleToggleDaily, handleDelete, handleBillingAdded, handleBillingDeleted,
+    refetchAcademies,
   } = useAcademies();
 
   if (loading) return <SkeletonTable rows={10} cols={8} />;
@@ -33,7 +34,7 @@ export default function AdminAcademies() {
               <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Academia</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clases</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asignaturas</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Profesores</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estudiantes</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Matrículas</th>
@@ -72,7 +73,7 @@ export default function AdminAcademies() {
         <MigrationModal
           academyId={migrationAcademy.id}
           academyName={migrationAcademy.name}
-          onClose={() => setMigrationAcademy(null)}
+          onClose={() => { setMigrationAcademy(null); refetchAcademies(); }}
         />
       )}
     </div>

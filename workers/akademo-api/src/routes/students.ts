@@ -1,4 +1,4 @@
-import { Hono } from 'hono';
+﻿import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { requireAuth, requireRole } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
@@ -25,7 +25,7 @@ students.get('/progress', async (c) => {
           u.firstName,
           u.lastName,
           u.email,
-          COALESCE(u.lastLoginAt, u.createdAt) as lastActive,
+          u.lastLoginAt as lastActive,
           u.suspicionCount,
           c.name as className,
           c.id as classId,
@@ -69,7 +69,7 @@ students.get('/progress', async (c) => {
           u.firstName,
           u.lastName,
           u.email,
-          COALESCE(u.lastLoginAt, u.createdAt) as lastActive,
+          u.lastLoginAt as lastActive,
           u.suspicionCount,
           c.name as className,
           c.id as classId,
@@ -110,7 +110,7 @@ students.get('/progress', async (c) => {
           u.firstName,
           u.lastName,
           u.email,
-          COALESCE(u.lastLoginAt, u.createdAt) as lastActive,
+          u.lastLoginAt as lastActive,
           u.suspicionCount,
           c.name as className,
           c.id as classId,
@@ -158,7 +158,7 @@ students.get('/progress', async (c) => {
   }
 });
 
-// PATCH /students/:id/warn — send suspicion warning to student (shown on their next login)
+// PATCH /students/:id/warn â€” send suspicion warning to student (shown on their next login)
 students.patch('/:id/warn', async (c) => {
   try {
     const session = await requireAuth(c);
@@ -199,3 +199,4 @@ students.patch('/:id/warn', async (c) => {
 });
 
 export default students;
+

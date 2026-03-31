@@ -14,15 +14,15 @@ export function useAcademies() {
   const [billingByAcademy, setBillingByAcademy] = useState<Record<string, BillingRecord[]>>({});
   const [migrationAcademy, setMigrationAcademy] = useState<{ id: string; name: string } | null>(null);
 
-  const loadAcademies = async () => {
+  const loadAcademies = useCallback(async () => {
     try {
       const res = await apiClient('/admin/academies');
       const result = await res.json();
       if (result.success) setAcademies(result.data || []);
     } catch { /* skip */ } finally { setLoading(false); }
-  };
+  }, []);
 
-  useEffect(() => { loadAcademies(); }, []);
+  useEffect(() => { loadAcademies(); }, [loadAcademies]);
 
   const loadBilling = useCallback(async (academyId: string) => {
     if (billingByAcademy[academyId]) return;
@@ -103,5 +103,6 @@ export function useAcademies() {
     expandedId, billingByAcademy, migrationAcademy,
     setMigrationAcademy, handleToggleExpand, handleTogglePayment,
     handleToggleDaily, handleDelete, handleBillingAdded, handleBillingDeleted,
+    refetchAcademies: loadAcademies,
   };
 }
