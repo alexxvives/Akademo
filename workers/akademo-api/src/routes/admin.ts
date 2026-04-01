@@ -850,6 +850,8 @@ admin.post('/bulk-import', async (c) => {
     }> = [];
     // Track pagado enrollments: create COMPLETED payments before auto-sync so those students are never shown as pending
     const pagadoEnrollments: Array<{ userId: string; classId: string }> = [];
+    // Track non-pagado enrollments: batch-create PENDING payments so they appear immediately in the academy dashboard
+    const pendingEnrollments: Array<{ userId: string; classId: string; firstName: string; lastName: string; email: string }> = [];
 
     // Pre-batch existence checks to reduce sequential DB round-trips (saves ~2N queries)
     const uniqueEmails: string[] = [];
@@ -997,6 +999,9 @@ admin.post('/bulk-import', async (c) => {
 
               if (row.pagado) {
                 pagadoEnrollments.push({ userId, classId });
+              } else {
+                // Track for pending payment creation
+                pendingEnrollments.push({ userId, classId, firstName, lastName, email });
               }
             }
           }
@@ -1070,9 +1075,44 @@ admin.post('/bulk-import', async (c) => {
       if (pagadoStatements.length > 0) await c.env.DB.batch(pagadoStatements);
     }
 
-    // NOTE: autoCreatePendingPayments is NOT called here to avoid Worker timeout.
-    // Pending payments are created lazily when students or academy owners view
-    // the payments/classes pages (called in GET /classes and GET /payments/my-payments).
+    // Create PENDING payment records for non-pagado students so they appear immediately in the dashboard
+    if (pendingEnrollments.length > 0) {
+      const pendingStatements = [];
+      for (const { userId, classId, firstName, lastName, email } of pendingEnrollments) {
+        const classPrice = classPriceMap.get(classId);
+        if (!classPrice) continue;
+        const paymentFrequency = classPrice.monthlyPrice ? 'MONTHLY' : 'ONE_TIME';
+        const dummyRow: BillingEnrollmentRow = {
+          enrollmentId: '', studentId: userId, classId,
+          enrolledAt: new Date().toISOString(), paymentFrequency, paymentMethod: null,
+          monthlyPrice: classPrice.monthlyPrice, oneTimePrice: classPrice.oneTimePrice,
+          classStartDate: classPrice.startDate,
+          firstName, lastName, email,
+          academyId: academy.id, academyName: academy.name,
+          totalPaid: 0,
+        };
+        const derived = deriveBillingState(dummyRow);
+        if (derived.amountOwed > 0) {
+          pendingStatements.push(
+            c.env.DB
+              .prepare(`INSERT INTO Payment (id, type, payerId, payerType, payerName, payerEmail, receiverId, receiverName, amount, currency, status, paymentMethod, classId, description, metadata, nextPaymentDue, billingCycleEnd, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`)
+              .bind(
+                crypto.randomUUID(), 'STUDENT_TO_ACADEMY', userId, 'STUDENT',
+                `${firstName} ${lastName}`, email,
+                academy.id, academy.name,
+                derived.amountOwed, 'EUR', 'PENDING', 'cash', classId,
+                derived.description,
+                JSON.stringify({ autoCreated: true, source: 'bulk-import', monthsOwed: derived.monthsOwed }),
+                derived.nextPaymentDue, derived.billingCycleEnd,
+              )
+          );
+        }
+      }
+      if (pendingStatements.length > 0) await c.env.DB.batch(pendingStatements);
+    }
+
+    // Pending payments are batch-inserted above. The lazy sync in GET /classes
+    // and GET /payments/my-payments will reconcile amounts if billing state changes later.
 
     const created = results.filter(r => r.status === 'created').length;
     const skipped = results.filter(r => r.status === 'skipped').length;
