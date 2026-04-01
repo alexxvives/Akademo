@@ -848,9 +848,50 @@ admin.post('/bulk-import', async (c) => {
       message: string;
       tempPassword?: string;
     }> = [];
-    const enrolledStudentIds: string[] = [];
     // Track pagado enrollments: create COMPLETED payments before auto-sync so those students are never shown as pending
     const pagadoEnrollments: Array<{ userId: string; classId: string }> = [];
+
+    // Pre-batch existence checks to reduce sequential DB round-trips (saves ~2N queries)
+    const uniqueEmails: string[] = [];
+    const emailSet = new Set<string>();
+    for (const row of rows) {
+      const email = (row.email || '').toLowerCase().trim();
+      if (email && !emailSet.has(email)) {
+        emailSet.add(email);
+        uniqueEmails.push(email);
+      }
+    }
+
+    const existsInAcademySet = new Set<string>();
+    const existingUserMap = new Map<string, { id: string; role: string }>();
+
+    if (uniqueEmails.length > 0) {
+      const [academyCheckResults, globalCheckResults] = await Promise.all([
+        c.env.DB.batch(
+          uniqueEmails.map(email =>
+            c.env.DB.prepare(`
+              SELECT u.id FROM User u
+              LEFT JOIN Teacher t ON t.userId = u.id
+              LEFT JOIN ClassEnrollment ce ON ce.userId = u.id
+              LEFT JOIN Class c ON c.id = ce.classId OR c.teacherId = u.id
+              WHERE u.email = ? AND (t.academyId = ? OR c.academyId = ?)
+              LIMIT 1
+            `).bind(email, academyId, academyId)
+          )
+        ),
+        c.env.DB.batch(
+          uniqueEmails.map(email =>
+            c.env.DB.prepare('SELECT id, role FROM User WHERE email = ?').bind(email)
+          )
+        ),
+      ]);
+
+      for (let i = 0; i < uniqueEmails.length; i++) {
+        if ((academyCheckResults[i] as any)?.results?.[0]) existsInAcademySet.add(uniqueEmails[i]);
+        const row = (globalCheckResults[i] as any)?.results?.[0];
+        if (row) existingUserMap.set(uniqueEmails[i], { id: String(row.id), role: String(row.role) });
+      }
+    }
 
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
@@ -873,29 +914,13 @@ admin.post('/bulk-import', async (c) => {
       }
 
       try {
-      // Check if user already exists IN THIS ACADEMY
-      const existingInAcademy = await c.env.DB
-        .prepare(`
-          SELECT u.id FROM User u
-          LEFT JOIN Teacher t ON t.userId = u.id
-          LEFT JOIN ClassEnrollment ce ON ce.userId = u.id
-          LEFT JOIN Class c ON c.id = ce.classId OR c.teacherId = u.id
-          WHERE u.email = ? AND (t.academyId = ? OR c.academyId = ?)
-          LIMIT 1
-        `)
-        .bind(email, academyId, academyId)
-        .first();
-
-      if (existingInAcademy) {
+      // Use pre-batched results instead of individual queries
+      if (existsInAcademySet.has(email)) {
         results.push({ row: i + 1, email, role, status: 'skipped', message: 'User already exists in this academy' });
         continue;
       }
 
-      // Check if email exists globally (user can be in multiple academies)
-      const existing = await c.env.DB
-        .prepare('SELECT id, role FROM User WHERE email = ?')
-        .bind(email)
-        .first();
+      const existing = existingUserMap.get(email) || null;
 
       let userId: string;
       let tempPassword: string | undefined;
@@ -984,7 +1009,6 @@ admin.post('/bulk-import', async (c) => {
         ? `Created. Unmatched classes: ${unmatchedClasses.join(', ')}`
         : existing ? 'Added to academy' : 'Created successfully';
 
-      if (role === 'STUDENT') enrolledStudentIds.push(userId);
       results.push({ row: i + 1, email, role, status: 'created', message: msg, tempPassword: tempPassword ? String(tempPassword) : '' });
       } catch (err: any) {
         results.push({ row: i + 1, email, role, status: 'error', message: err.message || 'Database error' });
@@ -992,47 +1016,63 @@ admin.post('/bulk-import', async (c) => {
     }
 
     // Assign teachers to newly created classes (resolve email → userId)
+    // Batch: collect all teacher assignments, resolve emails, then batch-update
     const classTeacherMap: Map<string, string> = (c as any)._classTeacherMap || new Map();
-    for (const [classId, teacherEmail] of classTeacherMap) {
-      const teacher = await c.env.DB.prepare('SELECT id FROM User WHERE LOWER(email) = ?').bind(teacherEmail).first() as any;
-      if (teacher) {
-        await c.env.DB.prepare('UPDATE Class SET teacherId = ? WHERE id = ?').bind(teacher.id, classId).run();
+    if (classTeacherMap.size > 0) {
+      const teacherEmails = [...new Set(classTeacherMap.values())];
+      const teacherLookups = await c.env.DB.batch(
+        teacherEmails.map(e => c.env.DB.prepare('SELECT id, LOWER(email) as email FROM User WHERE LOWER(email) = ?').bind(e))
+      );
+      const emailToId = new Map<string, string>();
+      for (const r of teacherLookups) {
+        const row = r.results?.[0] as any;
+        if (row) emailToId.set(row.email, row.id);
       }
+      const teacherUpdates = [];
+      for (const [classId, teacherEmail] of classTeacherMap) {
+        const teacherId = emailToId.get(teacherEmail);
+        if (teacherId) {
+          teacherUpdates.push(c.env.DB.prepare('UPDATE Class SET teacherId = ? WHERE id = ?').bind(teacherId, classId));
+        }
+      }
+      if (teacherUpdates.length > 0) await c.env.DB.batch(teacherUpdates);
     }
 
-    // Create COMPLETED payment records for pagado students (pre-emptively marks them as paid
-    // so that autoCreatePendingPayments sees totalPaid >= amountOwed and skips the PENDING row)
-    const now = new Date().toISOString();
-    for (const { userId, classId } of pagadoEnrollments) {
-      const classPrice = classPriceMap.get(classId);
-      if (!classPrice) continue;
-      const paymentFrequency = classPrice.monthlyPrice ? 'MONTHLY' : 'ONE_TIME';
-      const dummyRow: BillingEnrollmentRow = {
-        enrollmentId: '', studentId: userId, classId,
-        enrolledAt: now, paymentFrequency, paymentMethod: null,
-        monthlyPrice: classPrice.monthlyPrice, oneTimePrice: classPrice.oneTimePrice,
-        classStartDate: classPrice.startDate,
-        firstName: '', lastName: '', email: '',
-        academyId: academy.id, academyName: academy.name,
-        totalPaid: 0,
-      };
-      const derived = deriveBillingState(dummyRow);
-      if (derived.amountOwed > 0) {
-        await c.env.DB
-          .prepare(`INSERT INTO Payment (id, type, payerId, receiverId, amount, currency, status, paymentMethod, classId, metadata, completedAt, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`)
-          .bind(
-            crypto.randomUUID(), 'STUDENT_TO_ACADEMY', userId, academy.id,
-            derived.amountOwed, 'EUR', 'COMPLETED', 'cash', classId,
-            JSON.stringify({ source: 'bulk-import', pagado: true }),
-          )
-          .run();
+    // Create COMPLETED payment records for pagado students — batch insert
+    if (pagadoEnrollments.length > 0) {
+      const pagadoStatements = [];
+      for (const { userId, classId } of pagadoEnrollments) {
+        const classPrice = classPriceMap.get(classId);
+        if (!classPrice) continue;
+        const paymentFrequency = classPrice.monthlyPrice ? 'MONTHLY' : 'ONE_TIME';
+        const dummyRow: BillingEnrollmentRow = {
+          enrollmentId: '', studentId: userId, classId,
+          enrolledAt: new Date().toISOString(), paymentFrequency, paymentMethod: null,
+          monthlyPrice: classPrice.monthlyPrice, oneTimePrice: classPrice.oneTimePrice,
+          classStartDate: classPrice.startDate,
+          firstName: '', lastName: '', email: '',
+          academyId: academy.id, academyName: academy.name,
+          totalPaid: 0,
+        };
+        const derived = deriveBillingState(dummyRow);
+        if (derived.amountOwed > 0) {
+          pagadoStatements.push(
+            c.env.DB
+              .prepare(`INSERT INTO Payment (id, type, payerId, receiverId, amount, currency, status, paymentMethod, classId, metadata, completedAt, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`)
+              .bind(
+                crypto.randomUUID(), 'STUDENT_TO_ACADEMY', userId, academy.id,
+                derived.amountOwed, 'EUR', 'COMPLETED', 'cash', classId,
+                JSON.stringify({ source: 'bulk-import', pagado: true }),
+              )
+          );
+        }
       }
+      if (pagadoStatements.length > 0) await c.env.DB.batch(pagadoStatements);
     }
 
-    // Sync billing state for all newly enrolled students so pending Payment rows exist immediately
-    for (const uid of enrolledStudentIds) {
-      await autoCreatePendingPayments(c.env.DB, uid);
-    }
+    // NOTE: autoCreatePendingPayments is NOT called here to avoid Worker timeout.
+    // Pending payments are created lazily when students or academy owners view
+    // the payments/classes pages (called in GET /classes and GET /payments/my-payments).
 
     const created = results.filter(r => r.status === 'created').length;
     const skipped = results.filter(r => r.status === 'skipped').length;
