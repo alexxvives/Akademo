@@ -31,13 +31,14 @@ Os adjunto una plantilla vacía y un archivo de ejemplo para que veáis el forma
 
 **Pestaña 2 — Clases** (obligatoria)
 
-| nombre | fechaInicio | precio | tipoPrecio | profesorEmail | descripcion | universidad | carrera | maxEstudiantes | whatsapp |
+| nombre | fechaInicio | precio | cuotas (opcional) | profesorEmail | descripcion | universidad | carrera | maxEstudiantes | whatsapp |
 |---|---|---|---|---|---|---|---|---|---|
-| Matemáticas 1 | 01/09/2026 | 50 | MENSUAL | maria.lopez@gmail.com | Álgebra y cálculo | UCM | Ingeniería | 30 | |
-| Inglés B2 | 15/09/2026 | 200 | UNICO | pedro.ruiz@gmail.com | | | | 20 | https://chat.whatsapp.com/EVwr6bNsKng5Rk965ZuM4U |
+| Matemáticas 1 | 01/09/2026 | 500 | 10 | maria.lopez@gmail.com | Álgebra y cálculo | UCM | Ingeniería | 30 | |
+| Inglés B2 | 15/09/2026 | 200 | | pedro.ruiz@gmail.com | | | | 20 | https://chat.whatsapp.com/EVwr6bNsKng5Rk965ZuM4U |
 
 Solo `nombre` es obligatorio en cada fila. El resto de columnas podéis dejarlo vacío.
-- `tipoPrecio`: `MENSUAL` o `UNICO`
+- `precio`: precio **total** del curso (ej: 500 = 500€ en total)
+- `cuotas`: número de cuotas mensuales. Si vacío o ausente → pago único. Si 10 → el alumno paga 500/10 = 50€/mes
 - `profesorEmail`: debe coincidir con un email de la pestaña Usuarios
 
 ---
@@ -75,15 +76,18 @@ Un saludo,
 | `apellido` | ✅ | `apellidos`, `lastname` |
 | `rol` | ✅ | `role` |
 | `clases` | ✅ | `classes`, `classnames` |
+| `pagado` | ❌ | `paid`, `pago recibido`, `ya pagado` |
+
+> `pagado = true/sí/1/x`: indica que el alumno ya pagó fuera del sistema (efectivo, transferencia). Se crea automáticamente un pago COMPLETADO por el importe adeudado, por lo que no aparecerá como pendiente de cobro.
 
 **Clases:**
 
 | Columna | Obligatoria | Alias aceptados |
 |---|---|---|
 | `nombre` | ✅ | `name`, `clase`, `asignatura` |
-| `fechaInicio` | ❌ | `startdate`, `inicio`, `fecha` |
-| `precio` | ❌ | `price` |
-| `tipoPrecio` | ❌ | `pricetype`, `tipo`, `modalidad` |
+| `precio` | ✅ | `price` |
+| `fechaInicio` | ✅ | `startdate`, `inicio`, `fecha` |
+| `cuotas` | ❌ | `numcuotas`, `installments`, `numpagos`, `pagos` |
 | `profesorEmail` | ❌ | `teacheremail`, `profesor` |
 | `descripcion` | ❌ | `description` |
 | `universidad` | ❌ | `university` |
@@ -91,7 +95,18 @@ Un saludo,
 | `maxEstudiantes` | ❌ | `maxstudents`, `capacidad` |
 | `whatsapp` | ❌ | `whatsapplink` |
 
+> `precio` y `fechaInicio` son obligatorios para crear una clase nueva. `cuotas` es opcional: si vacío → pago único; si número → `monthlyPrice = precio/cuotas`, `oneTimePrice = precio`.
+
 El parser strip `(opcional)` de los encabezados antes de hacer matching, por lo que los archivos con ese sufijo también funcionan.
+
+### Lógica de precios al importar una clase
+
+| `precio` | `cuotas` | `monthlyPrice` | `oneTimePrice` | Resultado |
+|---|---|---|---|---|
+| 500 | 10 | 50€ | 500€ | Puede pagar mensual (50€/mes × 10) o único (500€) |
+| 200 | vacío / 0 | null | 200€ | Solo pago único |
+
+Los alumnos son enrolados con `paymentFrequency = 'MONTHLY'` si la clase tiene `monthlyPrice`, sino `ONE_TIME`.
 
 ### Entrypoints
 

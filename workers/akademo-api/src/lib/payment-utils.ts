@@ -157,7 +157,7 @@ async function syncPendingPaymentForEnrollment(db: D1Database, enrollment: Billi
     return;
   }
 
-  const paymentMethod = enrollment.paymentMethod || 'cash';
+  const paymentMethod = (enrollment.paymentMethod && enrollment.paymentMethod !== 'stripe') ? enrollment.paymentMethod : 'cash';
 
   if (!existingPayment) {
     const paymentId = `payment-${Date.now()}-${Math.random().toString(36).substring(7)}`;

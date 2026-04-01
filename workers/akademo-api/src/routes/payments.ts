@@ -297,6 +297,7 @@ payments.get('/pending-cash', async (c) => {
         LEFT JOIN User teacher ON c.teacherId = teacher.id
         WHERE a.ownerId = ? 
         AND p.status = 'PENDING'
+        AND p.paymentMethod != 'stripe'
         AND p.type = 'STUDENT_TO_ACADEMY'
         ORDER BY p.createdAt DESC
       `;
@@ -325,6 +326,7 @@ payments.get('/pending-cash', async (c) => {
         JOIN User u ON p.payerId = u.id
         WHERE c.teacherId = ? 
         AND p.status = 'PENDING'
+        AND p.paymentMethod != 'stripe'
         AND p.type = 'STUDENT_TO_ACADEMY'
         ORDER BY p.createdAt DESC
       `;
@@ -356,6 +358,7 @@ payments.get('/pending-cash', async (c) => {
           LEFT JOIN User teacher ON c.teacherId = teacher.id
           WHERE a.id = ?
           AND p.status = 'PENDING'
+          AND p.paymentMethod != 'stripe'
           AND p.type = 'STUDENT_TO_ACADEMY'
           ORDER BY p.createdAt DESC
         `;
@@ -384,6 +387,7 @@ payments.get('/pending-cash', async (c) => {
           JOIN User u ON p.payerId = u.id
           LEFT JOIN User teacher ON c.teacherId = teacher.id
           WHERE p.status = 'PENDING'
+          AND p.paymentMethod != 'stripe'
           AND p.type = 'STUDENT_TO_ACADEMY'
           ORDER BY p.createdAt DESC
         `;
@@ -421,6 +425,7 @@ payments.get('/pending-count', async (c) => {
           JOIN Academy a ON c.academyId = a.id
           WHERE a.ownerId = ? 
           AND p.status = 'PENDING'
+          AND p.paymentMethod != 'stripe'
           AND p.type = 'STUDENT_TO_ACADEMY'
         `)
         .bind(session.id)
@@ -434,6 +439,7 @@ payments.get('/pending-count', async (c) => {
           JOIN Class c ON p.classId = c.id
           WHERE c.teacherId = ?
           AND p.status = 'PENDING'
+          AND p.paymentMethod != 'stripe'
           AND p.type = 'STUDENT_TO_ACADEMY'
         `)
         .bind(session.id)
@@ -447,6 +453,7 @@ payments.get('/pending-count', async (c) => {
           JOIN Class c ON p.classId = c.id
           JOIN Academy a ON c.academyId = a.id
           WHERE p.status = 'PENDING'
+          AND p.paymentMethod != 'stripe'
           AND p.type = 'STUDENT_TO_ACADEMY'
           AND a.paymentStatus = 'PAID'
         `)

@@ -3,7 +3,7 @@ import { Bindings } from '../types';
 import { requireAuth, hashPassword } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { nanoid } from 'nanoid';
-import { autoCreatePendingPayments, normalizeDateForStorage } from '../lib/payment-utils';
+import { autoCreatePendingPayments, normalizeDateForStorage, deriveBillingState, BillingEnrollmentRow } from '../lib/payment-utils';
 import { writeAuditLog } from '../lib/audit';
 import { sendEmail } from '../lib/sendEmail';
 
@@ -849,6 +849,8 @@ admin.post('/bulk-import', async (c) => {
       tempPassword?: string;
     }> = [];
     const enrolledStudentIds: string[] = [];
+    // Track pagado enrollments: create COMPLETED payments before auto-sync so those students are never shown as pending
+    const pagadoEnrollments: Array<{ userId: string; classId: string }> = [];
 
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
@@ -967,6 +969,10 @@ admin.post('/bulk-import', async (c) => {
                 .prepare('INSERT INTO ClassEnrollment (id, classId, userId, status, enrolledAt, documentSigned, paymentFrequency) VALUES (?, ?, ?, ?, datetime("now"), ?, ?)')
                 .bind(enrollmentId, classId, userId, 'APPROVED', 0, paymentFrequency)
                 .run();
+
+              if (row.pagado) {
+                pagadoEnrollments.push({ userId, classId });
+              }
             }
           }
         }
@@ -991,6 +997,35 @@ admin.post('/bulk-import', async (c) => {
       const teacher = await c.env.DB.prepare('SELECT id FROM User WHERE LOWER(email) = ?').bind(teacherEmail).first() as any;
       if (teacher) {
         await c.env.DB.prepare('UPDATE Class SET teacherId = ? WHERE id = ?').bind(teacher.id, classId).run();
+      }
+    }
+
+    // Create COMPLETED payment records for pagado students (pre-emptively marks them as paid
+    // so that autoCreatePendingPayments sees totalPaid >= amountOwed and skips the PENDING row)
+    const now = new Date().toISOString();
+    for (const { userId, classId } of pagadoEnrollments) {
+      const classPrice = classPriceMap.get(classId);
+      if (!classPrice) continue;
+      const paymentFrequency = classPrice.monthlyPrice ? 'MONTHLY' : 'ONE_TIME';
+      const dummyRow: BillingEnrollmentRow = {
+        enrollmentId: '', studentId: userId, classId,
+        enrolledAt: now, paymentFrequency, paymentMethod: null,
+        monthlyPrice: classPrice.monthlyPrice, oneTimePrice: classPrice.oneTimePrice,
+        classStartDate: classPrice.startDate,
+        firstName: '', lastName: '', email: '',
+        academyId: academy.id, academyName: academy.name,
+        totalPaid: 0,
+      };
+      const derived = deriveBillingState(dummyRow);
+      if (derived.amountOwed > 0) {
+        await c.env.DB
+          .prepare(`INSERT INTO Payment (id, type, payerId, receiverId, amount, currency, status, paymentMethod, classId, metadata, completedAt, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`)
+          .bind(
+            crypto.randomUUID(), 'STUDENT_TO_ACADEMY', userId, academy.id,
+            derived.amountOwed, 'EUR', 'COMPLETED', 'cash', classId,
+            JSON.stringify({ source: 'bulk-import', pagado: true }),
+          )
+          .run();
       }
     }
 

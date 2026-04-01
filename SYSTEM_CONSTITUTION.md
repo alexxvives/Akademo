@@ -671,4 +671,91 @@ No reverse transitions.
 
 ---
 
+## 18. Domain 13: Bulk Import / Migration
+
+### Overview
+The bulk-import system allows an ACADEMY or ADMIN to onboard teachers and students from an Excel (.xlsx) file in one shot.
+
+### Excel File Structure
+
+**Sheet 1 — "Usuarios"** (required)
+
+| Column | Required | Aliases |
+|--------|----------|---------|
+| `email` | ✅ | — |
+| `nombre` | ✅ | `firstname` |
+| `apellido` | ✅ | `apellidos`, `lastname` |
+| `rol` | ✅ | `role` → `STUDENT` or `TEACHER` |
+| `clases` | ✅ | `classes`, `classnames` — comma-separated class names |
+| `pagado` | ❌ | `paid`, `ya pagado` — `true/sí/1/x` = already paid offline |
+
+**Sheet 2 — "Clases"** (required if creating new classes)
+
+| Column | Required | Notes |
+|--------|----------|-------|
+| `nombre` | ✅ | Class name — must match exactly in the Usuarios sheet |
+| `precio` | ✅ | Total price (e.g., 500 = 500€ total) |
+| `fechaInicio` | ✅ | Format: `DD/MM/YYYY` |
+| `cuotas` | ❌ | Number of monthly installments. Empty/0 → one-time. 10 → 50€/month × 10 |
+| `profesorEmail` | ❌ | Must match an email in the Usuarios sheet |
+
+### Pricing Logic
+
+| `precio` | `cuotas` | `monthlyPrice` | `oneTimePrice` |
+|---------|----------|----------------|----------------|
+| 500 | 10 | 50€ | 500€ |
+| 200 | empty | null | 200€ |
+
+A class with `monthlyPrice` enrolls students as `MONTHLY`; without it, `ONE_TIME`.
+
+### Import Flow (API: `POST /admin/bulk-import`)
+
+```
+1. Validate academy ownership
+2. Load existing classes → classMap (name → id)
+3. For each ClassRow:
+   - Skip if name already exists in academy
+   - Require price + startDate or skip with error
+   - Compute monthlyPrice = price/cuotas (null if no cuotas)
+   - oneTimePrice = price (always)
+   - INSERT Class; resolve teacher assignment after user loop
+4. For each UserRow:
+   - Skip if email already in this academy
+   - Reuse existing User if email exists globally
+   - Create User with temp password (firstName[0:3] + 5 random digits)
+   - TEACHER → INSERT Teacher record; assign to named classes via UPDATE teacherId
+   - STUDENT → INSERT ClassEnrollment (status=APPROVED, documentSigned=0, paymentFrequency based on class)
+     - If pagado=true: record enrollment for COMPLETED payment creation
+5. Assign teacher emails to newly created classes
+6. Create COMPLETED payments for pagado enrollments (so they don't show as pending)
+7. Run autoCreatePendingPayments for all new students (creates PENDING rows for unpaid)
+8. Return results CSV with temp passwords
+```
+
+### Invariants
+
+| ID | Invariant |
+|----|-----------|
+| INV-13.1 | Enrollment is created immediately as `status=APPROVED` (skips the academy approval flow) |
+| INV-13.2 | `documentSigned = 0` always — student must sign doc on first login |
+| INV-13.3 | `pagado = true` → one COMPLETED payment created covering all months owed at time of import |
+| INV-13.4 | Class names in the Usuarios "clases" column must match exactly (case-insensitive) the class names in the Clases sheet |
+| INV-13.5 | `precio` and `fechaInicio` are REQUIRED in the Clases sheet for new class creation |
+| INV-13.6 | Max 500 users per import batch |
+| INV-13.7 | Temp passwords stored in `User.tempPassword` for deferred welcome emails |
+| INV-13.8 | If a user email already exists globally (other academy), the existing User account is reused — no new password generated |
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `src/components/admin/migration-utils.ts` | `normalizeRows`, `normalizeClassRows`, `parseCSV` — frontend parsers |
+| `src/components/admin/MigrationModal.tsx` | 3-step wizard UI (upload → preview → results) |
+| `src/components/admin/MigrationSteps.tsx` | Upload instructions and column format UI |
+| `workers/akademo-api/src/routes/admin.ts` | `POST /admin/bulk-import` — actual import logic |
+| `scripts/generate-example-xlsx.js` | Regenerates `docs/onboarding/Users_example.xlsx` and `Users_template.xlsx` |
+| `docs/onboarding/migration-message-academy.md` | Copy-paste email template to send to academies |
+
+---
+
 *End of System Constitution.*
