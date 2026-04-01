@@ -1,6 +1,8 @@
 import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { requireAuth, hashPassword } from '../lib/auth';
+import bcrypt from 'bcryptjs';
+import type { D1PreparedStatement } from '../lib/cloudflare';
 import { successResponse, errorResponse } from '../lib/utils';
 import { nanoid } from 'nanoid';
 import { autoCreatePendingPayments, normalizeDateForStorage, deriveBillingState, BillingEnrollmentRow } from '../lib/payment-utils';
@@ -895,6 +897,15 @@ admin.post('/bulk-import', async (c) => {
       }
     }
 
+    // ── Phase 1: Validate all rows and plan operations (no DB writes, no async) ──
+    type UserPlan = {
+      i: number; email: string; firstName: string; lastName: string; role: string;
+      classIds: string[]; existingId: string | null; tempPassword: string | null;
+      pagado: boolean; unmatchedClasses: string[];
+    };
+    const plans: UserPlan[] = [];
+    const newUsersToHash: Array<{ plan: UserPlan; raw: string }> = [];
+
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
       const email = (row.email || '').toLowerCase().trim();
@@ -902,9 +913,7 @@ admin.post('/bulk-import', async (c) => {
       const lastName = (row.lastName || '').trim();
       const role = (row.role || 'STUDENT').toUpperCase().trim();
       const classNames: string[] = (row.classNames || '')
-        .split(',')
-        .map((n: string) => n.trim().toLowerCase())
-        .filter(Boolean);
+        .split(',').map((n: string) => n.trim().toLowerCase()).filter(Boolean);
 
       if (!email || !firstName || !lastName) {
         results.push({ row: i + 1, email, role, status: 'error', message: 'Missing email, firstName, or lastName' });
@@ -914,109 +923,95 @@ admin.post('/bulk-import', async (c) => {
         results.push({ row: i + 1, email, role, status: 'error', message: `Invalid role: ${role}. Must be STUDENT or TEACHER` });
         continue;
       }
-
-      try {
-      // Use pre-batched results instead of individual queries
       if (existsInAcademySet.has(email)) {
         results.push({ row: i + 1, email, role, status: 'skipped', message: 'User already exists in this academy' });
         continue;
       }
 
       const existing = existingUserMap.get(email) || null;
+      const classIds = classNames.map(cn => classMap.get(cn)).filter(Boolean) as string[];
+      const unmatchedClasses = classNames.filter(cn => !classMap.has(cn));
+      const tempPassword = existing ? null : (firstName.slice(0, 3).toLowerCase() + Math.floor(10000 + Math.random() * 90000));
 
-      let userId: string;
-      let tempPassword: string | undefined;
+      const plan: UserPlan = {
+        i, email, firstName, lastName, role, classIds,
+        existingId: existing ? String(existing.id) : null,
+        tempPassword, pagado: !!row.pagado, unmatchedClasses,
+      };
+      plans.push(plan);
+      if (!existing && tempPassword) newUsersToHash.push({ plan, raw: tempPassword });
+    }
 
-      if (existing) {
-        // User exists globally but not in this academy - reuse their account
-        userId = String(existing.id);
-        tempPassword = undefined; // Don't generate new password
-      } else {
-        // Generate temp password: first 3 chars of firstName + random 5 digits
-        tempPassword = firstName.slice(0, 3).toLowerCase() + Math.floor(10000 + Math.random() * 90000);
-        const hashedPassword = await hashPassword(String(tempPassword));
-        userId = nanoid();
+    // ── Phase 2: Hash all new-user passwords in parallel (cost 8 — temp pwd, meant to be changed) ──
+    const hashedPasswords = new Map<string, string>();
+    await Promise.all(
+      newUsersToHash.map(async ({ plan, raw }) => {
+        const hashed = await bcrypt.hash(raw, 8);
+        hashedPasswords.set(plan.email, hashed);
+      })
+    );
 
-        // Create new user (store tempPassword in DB for deferred welcome email)
-        await c.env.DB
-          .prepare('INSERT INTO User (id, email, password, firstName, lastName, role, createdAt, tempPassword) VALUES (?, ?, ?, ?, ?, ?, datetime("now"), ?)')
-          .bind(userId, email, hashedPassword, firstName, lastName, role, String(tempPassword))
-          .run();
+    // ── Phase 3: Build DB statements and collect tracking data (no sequential awaits) ──
+    const dbStatements: D1PreparedStatement[] = [];
+    const now = new Date().toISOString();
+
+    for (const plan of plans) {
+      const { email, firstName, lastName, role, classIds, existingId, tempPassword, pagado, unmatchedClasses } = plan;
+      const userId = existingId ?? nanoid();
+
+      // New user INSERT
+      if (!existingId) {
+        const hashed = hashedPasswords.get(email)!;
+        dbStatements.push(
+          c.env.DB.prepare('INSERT INTO User (id, email, password, firstName, lastName, role, createdAt, tempPassword) VALUES (?, ?, ?, ?, ?, ?, datetime("now"), ?)')
+            .bind(userId, email, hashed, firstName, lastName, role, tempPassword)
+        );
       }
 
-      // Associate with academy via Teacher or ClassEnrollment
-      // For TEACHER: create Teacher record linking to academy
       if (role === 'TEACHER') {
-        const teacherId = nanoid();
-        const now = new Date().toISOString();
-
-        // Only create Teacher record if doesn't exist
-        const teacherExists = await c.env.DB
-          .prepare('SELECT id FROM Teacher WHERE userId = ? AND academyId = ?')
-          .bind(userId, academyId)
-          .first();
-
-        if (!teacherExists) {
-          await c.env.DB
-            .prepare('INSERT INTO Teacher (id, userId, academyId, createdAt) VALUES (?, ?, ?, ?)')
-            .bind(teacherId, userId, academyId, now)
-            .run();
-        }
-
-        // Assign teacher to classes by name
-        for (const cn of classNames) {
-            const classId = classMap.get(cn);
-            if (classId) {
-              await c.env.DB
-                .prepare('UPDATE Class SET teacherId = ? WHERE id = ? AND academyId = ?')
-                .bind(userId, classId, academyId)
-                .run();
-            }
+        // Teacher record
+        dbStatements.push(
+          c.env.DB.prepare('INSERT INTO Teacher (id, userId, academyId, createdAt) VALUES (?, ?, ?, ?)')
+            .bind(nanoid(), userId, academyId, now)
+        );
+        // Assign to classes
+        for (const classId of classIds) {
+          dbStatements.push(
+            c.env.DB.prepare('UPDATE Class SET teacherId = ? WHERE id = ? AND academyId = ?')
+              .bind(userId, classId, academyId)
+          );
         }
       }
 
-      // For STUDENT: enroll in classes by name
       if (role === 'STUDENT') {
-        for (const cn of classNames) {
-          const classId = classMap.get(cn);
-          if (classId) {
-            // Check if already enrolled
-            const enrollmentExists = await c.env.DB
-              .prepare('SELECT id FROM ClassEnrollment WHERE classId = ? AND userId = ?')
-              .bind(classId, userId)
-              .first();
-
-            if (!enrollmentExists) {
-              const enrollmentId = nanoid();
-              const classPrice = classPriceMap.get(classId);
-              // Use MONTHLY if class only offers monthly pricing; otherwise ONE_TIME
-              const paymentFrequency = classPrice?.monthlyPrice ? 'MONTHLY' : 'ONE_TIME';
-
-              await c.env.DB
-                .prepare('INSERT INTO ClassEnrollment (id, classId, userId, status, enrolledAt, documentSigned, paymentFrequency) VALUES (?, ?, ?, ?, datetime("now"), ?, ?)')
-                .bind(enrollmentId, classId, userId, 'APPROVED', 0, paymentFrequency)
-                .run();
-
-              if (row.pagado) {
-                pagadoEnrollments.push({ userId, classId });
-              } else {
-                // Track for pending payment creation
-                pendingEnrollments.push({ userId, classId, firstName, lastName, email });
-              }
-            }
+        for (const classId of classIds) {
+          const enrollmentId = nanoid();
+          const classPrice = classPriceMap.get(classId);
+          const paymentFrequency = classPrice?.monthlyPrice ? 'MONTHLY' : 'ONE_TIME';
+          dbStatements.push(
+            c.env.DB.prepare('INSERT INTO ClassEnrollment (id, classId, userId, status, enrolledAt, documentSigned, paymentFrequency) VALUES (?, ?, ?, ?, datetime("now"), ?, ?)')
+              .bind(enrollmentId, classId, userId, 'APPROVED', 0, paymentFrequency)
+          );
+          if (pagado) {
+            pagadoEnrollments.push({ userId, classId });
+          } else {
+            pendingEnrollments.push({ userId, classId, firstName, lastName, email });
           }
         }
       }
 
-      const unmatchedClasses = classNames.filter(cn => !classMap.has(cn));
       for (const cn of unmatchedClasses) { unmatchedClassNames.add(cn); }
       const msg = unmatchedClasses.length > 0
         ? `Created. Unmatched classes: ${unmatchedClasses.join(', ')}`
-        : existing ? 'Added to academy' : 'Created successfully';
+        : existingId ? 'Added to academy' : 'Created successfully';
+      results.push({ row: plan.i + 1, email, role, status: 'created', message: msg, tempPassword: tempPassword ?? '' });
+    }
 
-      results.push({ row: i + 1, email, role, status: 'created', message: msg, tempPassword: tempPassword ? String(tempPassword) : '' });
-      } catch (err: any) {
-        results.push({ row: i + 1, email, role, status: 'error', message: err.message || 'Database error' });
+    // ── Phase 4: Execute all user/teacher/enrollment inserts in one batch ──
+    if (dbStatements.length > 0) {
+      // D1 batch limit is 100 statements — chunk if needed
+      for (let s = 0; s < dbStatements.length; s += 100) {
+        await c.env.DB.batch(dbStatements.slice(s, s + 100));
       }
     }
 
