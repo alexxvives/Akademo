@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs';
 import type { D1PreparedStatement } from '../lib/cloudflare';
 import { successResponse, errorResponse } from '../lib/utils';
 import { nanoid } from 'nanoid';
-import { autoCreatePendingPayments, normalizeDateForStorage, deriveBillingState, BillingEnrollmentRow } from '../lib/payment-utils';
+import { autoCreatePendingPayments, normalizeDateForStorage } from '../lib/payment-utils';
 import { writeAuditLog } from '../lib/audit';
 import { sendEmail } from '../lib/sendEmail';
 
@@ -1047,25 +1047,16 @@ admin.post('/bulk-import', async (c) => {
       for (const { userId, classId } of pagadoEnrollments) {
         const classPrice = classPriceMap.get(classId);
         if (!classPrice) continue;
-        const paymentFrequency = classPrice.monthlyPrice ? 'MONTHLY' : 'ONE_TIME';
-        const dummyRow: BillingEnrollmentRow = {
-          enrollmentId: '', studentId: userId, classId,
-          enrolledAt: new Date().toISOString(), paymentFrequency, paymentMethod: null,
-          monthlyPrice: classPrice.monthlyPrice, oneTimePrice: classPrice.oneTimePrice,
-          classStartDate: classPrice.startDate,
-          firstName: '', lastName: '', email: '',
-          academyId: academy.id, academyName: academy.name,
-          totalPaid: 0,
-          cuotas: classPrice.cuotas,
-        };
-        const derived = deriveBillingState(dummyRow);
-        if (derived.amountOwed > 0) {
+        // For migrations, always create a completed payment regardless of class start date.
+        // Use per-installment amount (monthlyPrice) or full one-time amount.
+        const amount = classPrice.monthlyPrice ?? classPrice.oneTimePrice;
+        if (amount && amount > 0) {
           pagadoStatements.push(
             c.env.DB
               .prepare(`INSERT INTO Payment (id, type, payerId, receiverId, amount, currency, status, paymentMethod, classId, metadata, completedAt, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`)
               .bind(
                 crypto.randomUUID(), 'STUDENT_TO_ACADEMY', userId, academy.id,
-                derived.amountOwed, 'EUR', 'COMPLETED', 'cash', classId,
+                amount, 'EUR', 'COMPLETED', 'cash', classId,
                 JSON.stringify({ source: 'bulk-import', pagado: true }),
               )
           );
@@ -1080,21 +1071,11 @@ admin.post('/bulk-import', async (c) => {
       for (const { userId, classId, firstName, lastName, email } of pendingEnrollments) {
         const classPrice = classPriceMap.get(classId);
         if (!classPrice) continue;
-        const paymentFrequency = classPrice.monthlyPrice ? 'MONTHLY' : 'ONE_TIME';
-        const dummyRow: BillingEnrollmentRow = {
-          enrollmentId: '', studentId: userId, classId,
-          enrolledAt: new Date().toISOString(), paymentFrequency, paymentMethod: null,
-          monthlyPrice: classPrice.monthlyPrice, oneTimePrice: classPrice.oneTimePrice,
-          classStartDate: classPrice.startDate,
-          firstName, lastName, email,
-          academyId: academy.id, academyName: academy.name,
-          totalPaid: 0,
-          cuotas: classPrice.cuotas,
-        };
-        const derived = deriveBillingState(dummyRow);
-        const amount = derived.amountOwed;
-        const description = derived.description;
-        if (amount > 0) {
+        // For migrations, always create a pending payment regardless of class start date.
+        // Use per-installment amount (monthlyPrice) or full one-time amount.
+        const amount = classPrice.monthlyPrice ?? classPrice.oneTimePrice;
+        const description = classPrice.monthlyPrice ? 'Pago pendiente mensual' : 'Pago único pendiente';
+        if (amount && amount > 0) {
           pendingStatements.push(
             c.env.DB
               .prepare(`INSERT INTO Payment (id, type, payerId, payerType, payerName, payerEmail, receiverId, receiverName, amount, currency, status, paymentMethod, classId, description, metadata, nextPaymentDue, billingCycleEnd, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`)
@@ -1104,8 +1085,8 @@ admin.post('/bulk-import', async (c) => {
                 academy.id, academy.name,
                 amount, 'EUR', 'PENDING', 'cash', classId,
                 description,
-                JSON.stringify({ autoCreated: true, source: 'bulk-import', monthsOwed: derived.monthsOwed || 1 }),
-                derived.nextPaymentDue || classPrice.startDate, derived.billingCycleEnd,
+                JSON.stringify({ autoCreated: true, source: 'bulk-import', monthsOwed: 1 }),
+                classPrice.startDate, null,
               )
           );
         }
