@@ -193,6 +193,34 @@ export function usePagosActions(state: PagosState) {
     }
   };
 
+  const handleApproveAll = async (enrollmentIds: string[]) => {
+    if (isAdmin || enrollmentIds.length === 0) return;
+    const idSet = new Set(enrollmentIds);
+    setProcessingIds(prev => new Set([...Array.from(prev), ...enrollmentIds]));
+    try {
+      const results = await Promise.all(
+        enrollmentIds.map(id =>
+          apiClient(`/payments/${id}/approve-payment`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ approved: true }),
+          }).then(r => r.json()).catch(() => ({ success: false }))
+        )
+      );
+      const failed = results.filter(r => !r.success).length;
+      if (failed > 0) alert(`${failed} pago(s) no se pudieron confirmar`);
+      await loadData();
+      setPendingPayments(prev => prev.filter(p => !idSet.has(p.enrollmentId)));
+      window.dispatchEvent(new CustomEvent('pendingPaymentsChanged'));
+    } finally {
+      setProcessingIds(prev => {
+        const next = new Set(prev);
+        enrollmentIds.forEach(id => next.delete(id));
+        return next;
+      });
+    }
+  };
+
   const handleDeletePayment = async (paymentId: string | undefined) => {
     if (paymentStatus === 'NOT PAID') return;
     if (!confirm('¿Estás seguro de que quieres eliminar este pago? Esta acción no se puede deshacer.')) return;
@@ -216,6 +244,7 @@ export function usePagosActions(state: PagosState) {
     formatCurrency,
     showStudentPaymentHistory,
     handleApprove,
+    handleApproveAll,
     handleRegisterPayment,
     handleEditPayment,
     handleReversePayment,

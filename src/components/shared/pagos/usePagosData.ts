@@ -17,9 +17,15 @@ export function usePagosData(role: 'ACADEMY' | 'ADMIN') {
   const [pendingPayments, setPendingPayments] = useState<PendingPayment[]>([]);
   const [paymentHistory, setPaymentHistory] = useState<PaymentHistory[]>([]);
   const [classes, setClasses] = useState<{ id: string; name: string; startDate?: string }[]>([]);
-  const [selectedClass, setSelectedClass] = useState('all');
+  const [selectedClass, setSelectedClass] = useState(() => {
+    if (typeof window === 'undefined') return 'all';
+    return sessionStorage.getItem('pagos_selectedClass') || 'all';
+  });
   const [academyName, setAcademyName] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(() => {
+    if (typeof window === 'undefined') return '';
+    return sessionStorage.getItem('pagos_searchQuery') || '';
+  });
   const [loading, setLoading] = useState(true);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
   const [paymentStatus, setPaymentStatus] = useState('PAID');
@@ -40,7 +46,15 @@ export function usePagosData(role: 'ACADEMY' | 'ADMIN') {
     return sessionStorage.getItem('pagos_pending_collapsed') === 'true';
   });
   const [academies, setAcademies] = useState<Academy[]>([]);
-  const [selectedAcademy, setSelectedAcademy] = useState('all');
+  const [selectedAcademy, setSelectedAcademy] = useState(() => {
+    if (typeof window === 'undefined') return 'all';
+    return sessionStorage.getItem('pagos_selectedAcademy') || 'all';
+  });
+
+  // Persist filter state to sessionStorage
+  useEffect(() => { if (typeof window !== 'undefined') sessionStorage.setItem('pagos_selectedClass', selectedClass); }, [selectedClass]);
+  useEffect(() => { if (typeof window !== 'undefined') sessionStorage.setItem('pagos_searchQuery', searchQuery); }, [searchQuery]);
+  useEffect(() => { if (typeof window !== 'undefined') sessionStorage.setItem('pagos_selectedAcademy', selectedAcademy); }, [selectedAcademy]);
 
   const loadData = useCallback(async () => {
     const addToMap = (map: { [k: string]: { classId: string; className: string }[] }, sId: string, cId: string, cName: string) => {

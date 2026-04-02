@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PagosState } from './usePagosData';
 import type { PagosActions } from './usePagosActions';
 
@@ -14,8 +15,31 @@ export function PagosPendingTable({ state, actions, hasHistory = false }: PagosP
     isAdmin, isAcademy, filteredPendingPayments, processingIds,
     paymentStatus, pendingPaymentsCollapsed, setPendingPaymentsCollapsed,
   } = state;
-  const { formatCurrency, showStudentPaymentHistory, handleApprove, handleDeletePayment } = actions;
+  const { formatCurrency, showStudentPaymentHistory, handleApprove, handleApproveAll, handleDeletePayment } = actions;
   const { deletingPaymentId } = state;
+
+  const [acceptAllIds, setAcceptAllIds] = useState<string[] | null>(null);
+  const acceptAllTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const UNDO_DELAY = 5000;
+
+  const startAcceptAll = useCallback(() => {
+    const ids = filteredPendingPayments
+      .filter(p => p.paymentMethod !== 'stripe')
+      .map(p => p.enrollmentId);
+    if (ids.length === 0) return;
+    setAcceptAllIds(ids);
+    acceptAllTimer.current = setTimeout(() => {
+      setAcceptAllIds(null);
+      handleApproveAll(ids);
+    }, UNDO_DELAY);
+  }, [filteredPendingPayments, handleApproveAll]);
+
+  const undoAcceptAll = useCallback(() => {
+    if (acceptAllTimer.current) clearTimeout(acceptAllTimer.current);
+    setAcceptAllIds(null);
+  }, []);
+
+  useEffect(() => () => { if (acceptAllTimer.current) clearTimeout(acceptAllTimer.current); }, []);
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
@@ -30,6 +54,23 @@ export function PagosPendingTable({ state, actions, hasHistory = false }: PagosP
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-yellow-800">Pendiente de pago</span>
           <span className="text-xs bg-yellow-200 text-yellow-700 px-2 py-0.5 rounded-full font-medium">{filteredPendingPayments.length}</span>
+          {isAcademy && filteredPendingPayments.length > 0 && paymentStatus !== 'NOT PAID' && (
+            acceptAllIds ? (
+              <button
+                onClick={(e) => { e.stopPropagation(); undoAcceptAll(); }}
+                className="ml-2 text-xs font-medium px-3 py-1 rounded-full bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
+              >
+                Deshacer ({acceptAllIds.length})
+              </button>
+            ) : (
+              <button
+                onClick={(e) => { e.stopPropagation(); startAcceptAll(); }}
+                className="ml-2 text-xs font-medium px-3 py-1 rounded-full bg-green-100 text-green-700 hover:bg-green-200 transition-colors"
+              >
+                Aceptar todos
+              </button>
+            )
+          )}
         </div>
         <svg
           className={`w-4 h-4 text-yellow-600 transition-transform ${pendingPaymentsCollapsed ? '' : 'rotate-90'}`}

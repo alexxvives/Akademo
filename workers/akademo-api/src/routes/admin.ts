@@ -1088,20 +1088,8 @@ admin.post('/bulk-import', async (c) => {
           totalPaid: 0,
         };
         const derived = deriveBillingState(dummyRow);
-        // For future-start classes deriveBillingState returns amountOwed=0
-        // but we still want a pending payment row so the academy sees it in the dashboard.
-        // Use the first month's price or one-time price as the initial amount.
-        let amount = derived.amountOwed;
-        let description = derived.description;
-        if (amount <= 0) {
-          if (classPrice.monthlyPrice) {
-            amount = classPrice.monthlyPrice;
-            description = 'Pago pendiente mensual';
-          } else if (classPrice.oneTimePrice) {
-            amount = classPrice.oneTimePrice;
-            description = 'Pago único pendiente';
-          }
-        }
+        const amount = derived.amountOwed;
+        const description = derived.description;
         if (amount > 0) {
           pendingStatements.push(
             c.env.DB
