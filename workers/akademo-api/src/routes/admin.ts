@@ -819,9 +819,10 @@ admin.post('/bulk-import', async (c) => {
         const price = parseFloat(String(cr.price));
         const cuotas = cr.cuotas ? parseInt(String(cr.cuotas), 10) : 0;
         // If cuotas provided → monthlyPrice = price / cuotas, oneTimePrice = price (both options)
-        // If no cuotas → oneTimePrice = price, monthlyPrice = null (pure one-time)
+        // If cuotas → monthlyPrice only (pure monthly billing)
+        // If no cuotas → oneTimePrice only (pure one-time)
         const monthlyPrice = cuotas > 0 ? Math.round((price / cuotas) * 100) / 100 : null;
-        const oneTimePrice = price;
+        const oneTimePrice = cuotas > 0 ? null : price;
         const startDate = normalizeDateForStorage(cr.startDate);
         const description = cr.description || null;
         const university = cr.university || null;
@@ -1087,7 +1088,21 @@ admin.post('/bulk-import', async (c) => {
           totalPaid: 0,
         };
         const derived = deriveBillingState(dummyRow);
-        if (derived.amountOwed > 0) {
+        // For future-start classes deriveBillingState returns amountOwed=0
+        // but we still want a pending payment row so the academy sees it in the dashboard.
+        // Use the first month's price or one-time price as the initial amount.
+        let amount = derived.amountOwed;
+        let description = derived.description;
+        if (amount <= 0) {
+          if (classPrice.monthlyPrice) {
+            amount = classPrice.monthlyPrice;
+            description = 'Pago pendiente mensual';
+          } else if (classPrice.oneTimePrice) {
+            amount = classPrice.oneTimePrice;
+            description = 'Pago único pendiente';
+          }
+        }
+        if (amount > 0) {
           pendingStatements.push(
             c.env.DB
               .prepare(`INSERT INTO Payment (id, type, payerId, payerType, payerName, payerEmail, receiverId, receiverName, amount, currency, status, paymentMethod, classId, description, metadata, nextPaymentDue, billingCycleEnd, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`)
@@ -1095,10 +1110,10 @@ admin.post('/bulk-import', async (c) => {
                 crypto.randomUUID(), 'STUDENT_TO_ACADEMY', userId, 'STUDENT',
                 `${firstName} ${lastName}`, email,
                 academy.id, academy.name,
-                derived.amountOwed, 'EUR', 'PENDING', 'cash', classId,
-                derived.description,
-                JSON.stringify({ autoCreated: true, source: 'bulk-import', monthsOwed: derived.monthsOwed }),
-                derived.nextPaymentDue, derived.billingCycleEnd,
+                amount, 'EUR', 'PENDING', 'cash', classId,
+                description,
+                JSON.stringify({ autoCreated: true, source: 'bulk-import', monthsOwed: derived.monthsOwed || 1 }),
+                derived.nextPaymentDue || classPrice.startDate, derived.billingCycleEnd,
               )
           );
         }
