@@ -62,7 +62,7 @@ payments.post('/initiate', paymentInitiateRateLimit, async (c) => {
 
     // Get class details including price and startDate
     const classData: any = await c.env.DB
-      .prepare('SELECT id, name, monthlyPrice, oneTimePrice, academyId, startDate FROM Class WHERE id = ?')
+      .prepare('SELECT id, name, monthlyPrice, oneTimePrice, academyId, startDate, cuotas FROM Class WHERE id = ?')
       .bind(classId)
       .first();
 
@@ -126,6 +126,7 @@ payments.post('/initiate', paymentInitiateRateLimit, async (c) => {
       academyId: classData.academyId,
       academyName: classData.name,
       totalPaid,
+      cuotas: classData.cuotas,
     };
     const billingState = deriveBillingState(billingRow);
     const finalAmount = billingState.amountOwed;

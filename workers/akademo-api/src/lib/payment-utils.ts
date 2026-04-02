@@ -43,6 +43,7 @@ export type BillingEnrollmentRow = {
   academyId: string;
   academyName: string;
   totalPaid: number | null;
+  cuotas?: number | null;
 };
 
 export type DerivedBillingState = {
@@ -101,7 +102,8 @@ export function deriveBillingState(enrollment: BillingEnrollmentRow, today = new
     const classStart = parseDateString(enrollment.classStartDate || enrollment.enrolledAt);
     if (today >= classStart) {
       const elapsedCycles = countElapsedCycles(classStart, today);
-      const maxCycles = oneTimePrice > 0 ? Math.ceil(oneTimePrice / monthlyPrice) : 9999;
+      const cuotasCount = Number(enrollment.cuotas) || 0;
+      const maxCycles = cuotasCount > 0 ? cuotasCount : (oneTimePrice > 0 ? Math.ceil(oneTimePrice / monthlyPrice) : 9999);
       const cappedCycles = Math.min(elapsedCycles, maxCycles);
       const totalExpected = cappedCycles * monthlyPrice;
 
@@ -120,7 +122,8 @@ export function deriveBillingState(enrollment: BillingEnrollmentRow, today = new
       }
     }
   } else if (!isMonthly && oneTimePrice > 0) {
-    if (totalPaid < oneTimePrice) {
+    const classStart = parseDateString(enrollment.classStartDate || enrollment.enrolledAt);
+    if (today >= classStart && totalPaid < oneTimePrice) {
       amountOwed = oneTimePrice - totalPaid;
       description = 'Pago único pendiente';
       isOverdue = true;
@@ -263,6 +266,7 @@ async function syncDerivedPendingPayments(db: D1Database, scope: BillingSyncScop
         c.monthlyPrice,
         c.oneTimePrice,
         c.startDate as classStartDate,
+        c.cuotas,
         u.firstName,
         u.lastName,
         u.email,
@@ -307,6 +311,7 @@ export async function isPaymentOverdue(db: D1Database, userId: string, classId: 
         c.monthlyPrice,
         c.oneTimePrice,
         c.startDate as classStartDate,
+        c.cuotas,
         u.firstName,
         u.lastName,
         u.email,

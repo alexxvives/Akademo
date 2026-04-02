@@ -772,18 +772,19 @@ admin.post('/bulk-import', async (c) => {
 
     // Load all classes for this academy (for matching by name)
     const classesResult = await c.env.DB
-      .prepare('SELECT id, name, monthlyPrice, oneTimePrice, startDate FROM Class WHERE academyId = ?')
+      .prepare('SELECT id, name, monthlyPrice, oneTimePrice, startDate, cuotas FROM Class WHERE academyId = ?')
       .bind(academyId)
       .all();
     const classes = classesResult.results || [];
     const classMap = new Map<string, string>(); // lowercase name -> id
-    const classPriceMap = new Map<string, { monthlyPrice: number | null; oneTimePrice: number | null; startDate: string | null }>();
+    const classPriceMap = new Map<string, { monthlyPrice: number | null; oneTimePrice: number | null; startDate: string | null; cuotas: number | null }>();
     for (const cls of classes) {
       classMap.set((cls.name as string).toLowerCase().trim(), cls.id as string);
       classPriceMap.set(cls.id as string, {
         monthlyPrice: cls.monthlyPrice as number | null,
         oneTimePrice: cls.oneTimePrice as number | null,
         startDate: cls.startDate as string | null,
+        cuotas: cls.cuotas as number | null,
       });
     }
 
@@ -818,11 +819,12 @@ admin.post('/bulk-import', async (c) => {
         }
         const price = parseFloat(String(cr.price));
         const cuotas = cr.cuotas ? parseInt(String(cr.cuotas), 10) : 0;
-        // If cuotas provided → monthlyPrice = price / cuotas, oneTimePrice = price (both options)
-        // If cuotas → monthlyPrice only (pure monthly billing)
-        // If no cuotas → oneTimePrice only (pure one-time)
-        const monthlyPrice = cuotas > 0 ? Math.round((price / cuotas) * 100) / 100 : null;
+        // precio in the Excel = per-installment monthly price (not total)
+        // If cuotas → monthlyPrice = price (per-installment), oneTimePrice = null
+        // If no cuotas → oneTimePrice = price (single one-time payment)
+        const monthlyPrice = cuotas > 0 ? price : null;
         const oneTimePrice = cuotas > 0 ? null : price;
+        const cuotasValue = cuotas > 0 ? cuotas : null;
         const startDate = normalizeDateForStorage(cr.startDate);
         const description = cr.description || null;
         const university = cr.university || null;
@@ -830,11 +832,11 @@ admin.post('/bulk-import', async (c) => {
         const maxStudents = cr.maxStudents ?? null;
         const whatsappGroupLink = cr.whatsappGroupLink || null;
         await c.env.DB
-          .prepare('INSERT INTO Class (id, name, slug, academyId, monthlyPrice, oneTimePrice, startDate, description, university, carrera, maxStudents, whatsappGroupLink, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-          .bind(classId, name, slug, academyId, monthlyPrice, oneTimePrice, startDate, description, university, carrera, maxStudents, whatsappGroupLink, now)
+          .prepare('INSERT INTO Class (id, name, slug, academyId, monthlyPrice, oneTimePrice, startDate, description, university, carrera, maxStudents, whatsappGroupLink, cuotas, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+          .bind(classId, name, slug, academyId, monthlyPrice, oneTimePrice, startDate, description, university, carrera, maxStudents, whatsappGroupLink, cuotasValue, now)
           .run();
         classMap.set(key, classId);
-        classPriceMap.set(classId, { monthlyPrice, oneTimePrice, startDate: startDate as string | null });
+        classPriceMap.set(classId, { monthlyPrice, oneTimePrice, startDate: startDate as string | null, cuotas: cuotasValue });
         classesCreated++;
         classResults.push({ name, status: 'created' });
         if (cr.teacherEmail) classTeacherMap.set(classId, cr.teacherEmail.toLowerCase().trim());
@@ -1054,6 +1056,7 @@ admin.post('/bulk-import', async (c) => {
           firstName: '', lastName: '', email: '',
           academyId: academy.id, academyName: academy.name,
           totalPaid: 0,
+          cuotas: classPrice.cuotas,
         };
         const derived = deriveBillingState(dummyRow);
         if (derived.amountOwed > 0) {
@@ -1086,6 +1089,7 @@ admin.post('/bulk-import', async (c) => {
           firstName, lastName, email,
           academyId: academy.id, academyName: academy.name,
           totalPaid: 0,
+          cuotas: classPrice.cuotas,
         };
         const derived = deriveBillingState(dummyRow);
         const amount = derived.amountOwed;
