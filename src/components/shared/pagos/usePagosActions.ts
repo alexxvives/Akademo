@@ -193,8 +193,8 @@ export function usePagosActions(state: PagosState) {
     }
   };
 
-  const handleApproveAll = async (enrollmentIds: string[]) => {
-    if (isAdmin || enrollmentIds.length === 0) return;
+  const handleApproveAll = async (enrollmentIds: string[]): Promise<string[]> => {
+    if (isAdmin || enrollmentIds.length === 0) return [];
     const idSet = new Set(enrollmentIds);
     setProcessingIds(prev => new Set([...Array.from(prev), ...enrollmentIds]));
     try {
@@ -204,14 +204,16 @@ export function usePagosActions(state: PagosState) {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ approved: true }),
-          }).then(r => r.json()).catch(() => ({ success: false }))
+          }).then(r => r.json().then(d => ({ success: d.success, id }))).catch(() => ({ success: false, id }))
         )
       );
-      const failed = results.filter(r => !r.success).length;
+      const approved = results.filter(r => r.success).map(r => r.id);
+      const failed = enrollmentIds.length - approved.length;
       if (failed > 0) alert(`${failed} pago(s) no se pudieron confirmar`);
       await loadData();
       setPendingPayments(prev => prev.filter(p => !idSet.has(p.enrollmentId)));
       window.dispatchEvent(new CustomEvent('pendingPaymentsChanged'));
+      return approved;
     } finally {
       setProcessingIds(prev => {
         const next = new Set(prev);
@@ -219,6 +221,17 @@ export function usePagosActions(state: PagosState) {
         return next;
       });
     }
+  };
+
+  const handleUndoApproveAll = async (paymentIds: string[]) => {
+    if (paymentIds.length === 0) return;
+    await Promise.all(
+      paymentIds.map(id =>
+        apiClient(`/payments/history/${id}/reverse`, { method: 'PUT' }).catch(() => null)
+      )
+    );
+    await loadData();
+    window.dispatchEvent(new CustomEvent('pendingPaymentsChanged'));
   };
 
   const handleDeletePayment = async (paymentId: string | undefined) => {
@@ -245,6 +258,7 @@ export function usePagosActions(state: PagosState) {
     showStudentPaymentHistory,
     handleApprove,
     handleApproveAll,
+    handleUndoApproveAll,
     handleRegisterPayment,
     handleEditPayment,
     handleReversePayment,

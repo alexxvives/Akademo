@@ -15,31 +15,39 @@ export function PagosPendingTable({ state, actions, hasHistory = false }: PagosP
     isAdmin, isAcademy, filteredPendingPayments, processingIds,
     paymentStatus, pendingPaymentsCollapsed, setPendingPaymentsCollapsed,
   } = state;
-  const { formatCurrency, showStudentPaymentHistory, handleApprove, handleApproveAll, handleDeletePayment } = actions;
+  const { formatCurrency, showStudentPaymentHistory, handleApprove, handleApproveAll, handleUndoApproveAll, handleDeletePayment } = actions;
   const { deletingPaymentId } = state;
 
-  const [acceptAllIds, setAcceptAllIds] = useState<string[] | null>(null);
-  const acceptAllTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const UNDO_DELAY = 5000;
+  const [justApprovedIds, setJustApprovedIds] = useState<string[] | null>(null);
+  const [approving, setApproving] = useState(false);
+  const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const UNDO_WINDOW = 15000;
 
-  const startAcceptAll = useCallback(() => {
+  const startAcceptAll = useCallback(async () => {
     const ids = filteredPendingPayments
       .filter(p => p.paymentMethod !== 'stripe')
       .map(p => p.enrollmentId);
     if (ids.length === 0) return;
-    setAcceptAllIds(ids);
-    acceptAllTimer.current = setTimeout(() => {
-      setAcceptAllIds(null);
-      handleApproveAll(ids);
-    }, UNDO_DELAY);
+    setApproving(true);
+    try {
+      const approved = await handleApproveAll(ids);
+      if (approved.length > 0) {
+        setJustApprovedIds(approved);
+        undoTimer.current = setTimeout(() => setJustApprovedIds(null), UNDO_WINDOW);
+      }
+    } finally {
+      setApproving(false);
+    }
   }, [filteredPendingPayments, handleApproveAll]);
 
-  const undoAcceptAll = useCallback(() => {
-    if (acceptAllTimer.current) clearTimeout(acceptAllTimer.current);
-    setAcceptAllIds(null);
-  }, []);
+  const doUndo = useCallback(async () => {
+    if (!justApprovedIds) return;
+    if (undoTimer.current) clearTimeout(undoTimer.current);
+    setJustApprovedIds(null);
+    await handleUndoApproveAll(justApprovedIds);
+  }, [justApprovedIds, handleUndoApproveAll]);
 
-  useEffect(() => () => { if (acceptAllTimer.current) clearTimeout(acceptAllTimer.current); }, []);
+  useEffect(() => () => { if (undoTimer.current) clearTimeout(undoTimer.current); }, []);
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
@@ -54,22 +62,23 @@ export function PagosPendingTable({ state, actions, hasHistory = false }: PagosP
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-yellow-800">Pendiente de pago</span>
           <span className="text-xs bg-yellow-200 text-yellow-700 px-2 py-0.5 rounded-full font-medium">{filteredPendingPayments.length}</span>
-          {isAcademy && filteredPendingPayments.length > 0 && paymentStatus !== 'NOT PAID' && (
-            acceptAllIds ? (
+          {isAcademy && paymentStatus !== 'NOT PAID' && (
+            justApprovedIds ? (
               <button
-                onClick={(e) => { e.stopPropagation(); undoAcceptAll(); }}
+                onClick={(e) => { e.stopPropagation(); void doUndo(); }}
                 className="ml-2 text-xs font-medium px-3 py-1 rounded-full bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
               >
-                Deshacer ({acceptAllIds.length})
+                Deshacer ({justApprovedIds.length})
               </button>
-            ) : (
+            ) : filteredPendingPayments.length > 0 ? (
               <button
-                onClick={(e) => { e.stopPropagation(); startAcceptAll(); }}
-                className="ml-2 text-xs font-medium px-3 py-1 rounded-full bg-green-100 text-green-700 hover:bg-green-200 transition-colors"
+                onClick={(e) => { e.stopPropagation(); void startAcceptAll(); }}
+                disabled={approving}
+                className="ml-2 text-xs font-medium px-3 py-1 rounded-full bg-green-100 text-green-700 hover:bg-green-200 transition-colors disabled:opacity-50"
               >
-                Aceptar todos
+                {approving ? 'Procesando…' : 'Aceptar todos'}
               </button>
-            )
+            ) : null
           )}
         </div>
         <svg
