@@ -37,13 +37,13 @@ export interface D1PreparedStatement {
 
 export interface D1Result<T = unknown> {
   results?: T[];
-  success: boolean;
+  success: true;
   error?: string;
   meta: {
     duration: number;
     changes: number;
     last_row_id: number;
-    served_by: string;
+    served_by?: string;
     internal_stats?: unknown;
   };
 }

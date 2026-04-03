@@ -2,8 +2,8 @@
 
 import { useEffect } from 'react';
 import { apiClient } from '@/lib/api-client';
-import { uploadFilesToServices, createVideoFormEntry } from './class-upload-utils';
-import type { Lesson, LessonDetailResponse, StreamRecording } from './types';
+import { createVideoFormEntry } from './class-upload-utils';
+import type { Lesson, StreamRecording } from './types';
 import type { ClassDetailState } from './useClassDetail';
 
 export function useClassActions(s: ClassDetailState) {
@@ -57,6 +57,7 @@ export function useClassActions(s: ClassDetailState) {
     const highlightParam = s.searchParams.get('highlight');
     if (!highlightParam || s.lessons.length === 0) return;
     if (s.lessons.find(l => l.id === highlightParam)) s.setHighlightLessonId(highlightParam);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [s.searchParams, s.lessons, s.setHighlightLessonId]);
 
   useEffect(() => {

@@ -7,8 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUploadWarning } from '@/hooks/useUploadWarning';
 import { useTranscodingPoll } from '@/hooks/useTranscodingPoll';
 import { loadDemoClassData } from './class-demo-loader';
-import { uploadFilesToServices, createVideoFormEntry } from './class-upload-utils';
-import type { Topic, Lesson, LessonDetail, LessonDetailResponse, LessonVideo, PendingEnrollment, LiveClass, StreamRecording, AnalyticsData, ClassData, LessonFeedback } from './types';
+import type { Topic, Lesson, LessonDetail, LessonVideo, PendingEnrollment, LiveClass, StreamRecording, AnalyticsData, ClassData, LessonFeedback } from './types';
 
 const DEFAULT_FORM_DATA = () => ({
   title: '', description: '', externalUrl: '',

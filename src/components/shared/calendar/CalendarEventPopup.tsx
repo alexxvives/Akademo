@@ -1,6 +1,6 @@
 'use client';
 
-import type { CalendarEvent, EventType } from './calendar-types';
+import type { CalendarEvent } from './calendar-types';
 import { EVENT_COLORS, EVENT_LABELS } from './calendar-types';
 
 interface CalendarEventPopupProps {

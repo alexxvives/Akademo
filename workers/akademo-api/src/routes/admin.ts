@@ -2,7 +2,6 @@ import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { requireAuth, hashPassword } from '../lib/auth';
 import bcrypt from 'bcryptjs';
-import type { D1PreparedStatement } from '../lib/cloudflare';
 import { successResponse, errorResponse, escapeHtml } from '../lib/utils';
 import { nanoid } from 'nanoid';
 import { autoCreatePendingPayments, normalizeDateForStorage } from '../lib/payment-utils';

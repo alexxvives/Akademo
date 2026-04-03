@@ -62,6 +62,10 @@ export interface Bindings {
   // Session
   SESSION_SECRET: string;
   
+  // Daily.co
+  DAILY_API_KEY?: string;
+  DAILY_WEBHOOK_SECRET?: string;
+
   // Frontend
   FRONTEND_URL: string;
 }

@@ -19,7 +19,7 @@ interface StreamsTableProps {
 }
 
 export function StreamsTable({
-  streams, role, dashboardBase, isDemo,
+  streams, role, dashboardBase, isDemo: _isDemo,
   editingTitleId, editingTitleValue, setEditingTitleValue,
   deletingStreamId, glowId, highlightRef,
   onEditTitle, onSaveTitle, onCancelEdit, onDeleteStream,

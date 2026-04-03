@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { Bindings } from '../types';
-import { getSession } from '../lib/auth';
+import { getSession, requireAuth } from '../lib/auth';
 import { errorResponse, successResponse } from '../lib/utils';
 import type { Context } from 'hono';
 
@@ -39,8 +39,8 @@ zoomAccounts.get('/', async (c) => {
     );
 
     return c.json({ success: true, data: accountsWithClasses });
-  } catch (error) {
-    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+  } catch (error: unknown) {
+    if (error instanceof Error && (error.message === 'Unauthorized' || error.message === 'Forbidden')) throw error;
     console.error('Error fetching Zoom accounts:', error);
     return c.json(errorResponse('Failed to fetch Zoom accounts'), 500);
   }
@@ -80,8 +80,8 @@ zoomAccounts.delete('/:id', async (c) => {
     ).bind(accountId).run();
 
     return c.json({ success: true });
-  } catch (error) {
-    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+  } catch (error: unknown) {
+    if (error instanceof Error && (error.message === 'Unauthorized' || error.message === 'Forbidden')) throw error;
     console.error('Error deleting Zoom account:', error);
     return c.json(errorResponse('Failed to delete Zoom account'), 500);
   }
@@ -175,8 +175,8 @@ zoomAccounts.post('/oauth/callback', async (c) => {
       
       return c.json({ success: true, data: { id: newAccountId } });
     }
-  } catch (error) {
-    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+  } catch (error: unknown) {
+    if (error instanceof Error && (error.message === 'Unauthorized' || error.message === 'Forbidden')) throw error;
     console.error('OAuth callback error:', error);
     return c.json(errorResponse('OAuth callback failed'), 500);
   }
@@ -225,8 +225,8 @@ async function refreshZoomToken(c: Context<{ Bindings: Bindings }>, accountId: s
     `).bind(tokens.access_token, tokens.refresh_token, newExpiresAt, accountId).run();
 
     return tokens.access_token;
-  } catch (error) {
-    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+  } catch (error: unknown) {
+    if (error instanceof Error && (error.message === 'Unauthorized' || error.message === 'Forbidden')) throw error;
     console.error('Error refreshing token:', error);
     return null;
   }

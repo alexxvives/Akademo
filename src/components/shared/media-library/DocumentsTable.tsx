@@ -2,7 +2,7 @@ import { openDocument, downloadDocument } from '@/lib/api-client';
 import { formatDate, formatBytes } from '@/lib/formatters';
 import type { DocumentItem } from './types';
 
-function getDocIcon(mimeType: string) {
+function _getDocIcon(mimeType: string) {
   if (mimeType?.includes('pdf')) return '📄';
   if (mimeType?.includes('word') || mimeType?.includes('document')) return '📝';
   if (mimeType?.includes('sheet') || mimeType?.includes('excel')) return '📊';

@@ -29,7 +29,7 @@ export function useClassPageActions(deps: ActionDeps) {
     setLessons, setSelectedLesson, setSelectedVideo,
     setLessonRating, setExpandedTopics,
     setShowRatingSuccess, setTempRating, setFeedbackText,
-    showRatingSuccess, feedbackText, tempRating,
+    showRatingSuccess, feedbackText, tempRating: _tempRating,
   } = deps;
 
   const selectLesson = async (lesson: Lesson) => {

@@ -2,7 +2,6 @@
 
 import Image from 'next/image';
 import { refreshAcademyLogo } from '@/hooks/useAcademyLogo';
-import { apiClient } from '@/lib/api-client';
 import { normalizeAllowedPaymentMethods } from './profile-types';
 import type { ProfileState } from './useProfileData';
 import type { ProfileActions } from './useProfileActions';

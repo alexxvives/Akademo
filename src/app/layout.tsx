@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Montserrat } from 'next/font/google';
+import Script from 'next/script';
 import "./globals.css";
 
 const montserrat = Montserrat({ 
@@ -91,13 +92,11 @@ export default function RootLayout({
         <link rel="preconnect" href="https://api.akademo-edu.com" />
         {/* Umami Analytics */}
         <script defer src="https://cloud.umami.is/script.js" data-website-id="14b7af67-ac84-4dcf-84d3-3bd8520826c1" />
-        {/* Google Analytics 4 — must be in <head> for detection */}
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-74CPSDQFN9" />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-74CPSDQFN9');`,
-          }}
-        />
+        {/* Google Analytics 4 */}
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-74CPSDQFN9" strategy="afterInteractive" />
+        <Script id="gtag-init" strategy="afterInteractive">
+          {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-74CPSDQFN9');`}
+        </Script>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

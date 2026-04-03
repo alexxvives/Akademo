@@ -1,6 +1,6 @@
 'use client';
 
-import type { CalendarPageProps, EventType, ViewMode } from './calendar-types';
+import type { CalendarPageProps, EventType } from './calendar-types';
 import { EVENT_COLORS, WEEKDAYS, VIEW_LABELS } from './calendar-types';
 import { useCalendarData } from './useCalendarData';
 import { useCalendarActions } from './useCalendarActions';

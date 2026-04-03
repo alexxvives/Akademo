@@ -110,4 +110,12 @@ module.exports = withSentryConfig(nextConfig, {
   disableServerWebpackPlugin: true,
   // Only upload source maps if SENTRY_AUTH_TOKEN is available
   authToken: process.env.SENTRY_AUTH_TOKEN,
+  // Tree-shake unused Sentry features (no Session Replay, no debug logging)
+  bundleSizeOptimizations: {
+    excludeDebugStatements: true,
+    excludeReplayIframe: true,
+    excludeReplayShadowDom: true,
+    excludeReplayCanvas: true,
+    excludeReplayWorker: true,
+  },
 });

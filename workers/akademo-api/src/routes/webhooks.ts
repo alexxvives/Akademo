@@ -1134,7 +1134,7 @@ webhooks.post('/daily', async (c) => {
 
       const liveStream = await c.env.DB.prepare(
         "SELECT id, status, recordingId FROM LiveStream WHERE dailyRoomName = ?"
-      ).bind(room_name).first<{ id: string; status: string }>();
+      ).bind(room_name).first<{ id: string; status: string; recordingId?: string }>();
 
       if (!testRoom && !liveStream) {
         console.log(`[Daily Webhook] No room/stream found for roomName: ${room_name}`);

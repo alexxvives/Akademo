@@ -73,6 +73,7 @@ export function useStreamsData(role: 'ACADEMY' | 'ADMIN' | 'TEACHER') {
       setClasses(filteredClasses);
       setLoading(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isTeacher]);
 
   const loadData = useCallback(async () => {

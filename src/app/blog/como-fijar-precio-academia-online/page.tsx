@@ -1,7 +1,6 @@
 import { getBlogPost, getBlogMetadata } from '@/lib/blog-data';
 import { BlogLayout } from '@/components/blog/BlogLayout';
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
 
 const post = getBlogPost('como-fijar-precio-academia-online');
 if (!post) notFound();

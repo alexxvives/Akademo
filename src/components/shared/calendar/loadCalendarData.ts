@@ -15,7 +15,7 @@ export async function loadCalendarData(
   isStudent: boolean,
 ): Promise<LoadDataResult> {
   let academyName = '';
-  let isDemo = false;
+  const isDemo = false;
 
   if (role === 'ACADEMY' || role === 'TEACHER') {
     try {

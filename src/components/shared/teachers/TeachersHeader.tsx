@@ -18,7 +18,7 @@ interface TeachersHeaderProps {
 
 export function TeachersHeader({
   role, academyName, academies, selectedAcademy,
-  onSelectAcademy, searchQuery, onSearchChange, onCreateClick, onMigrationClick,
+  onSelectAcademy, searchQuery, onSearchChange, onCreateClick, onMigrationClick: _onMigrationClick,
 }: TeachersHeaderProps) {
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

@@ -107,7 +107,7 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
     }
   };
 
-  const downloadResults = () => {
+  const _downloadResults = () => {
     if (!summary) return;
     const header = 'Row,Email,Status,Message,Temp Password\n';
     const csv = summary.results

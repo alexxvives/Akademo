@@ -19,7 +19,7 @@ export default function TeacherLivePage() {
   const [error, setError] = useState<string | null>(null);
   const [ended] = useState(false);
   const [recordingReady] = useState(false);
-  const [showWhiteboard, setShowWhiteboard] = useState(false);
+  const [showWhiteboard, _setShowWhiteboard] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const recordingStartedRef = useRef(false);
 

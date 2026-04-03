@@ -104,7 +104,7 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
       }, 15000);
       return () => { cleanup(); clearInterval(adminInterval); };
     }
-  }, [checkAuth, checkSession, role, loadNotifications, loadActiveStreams, loadAcademy, loadUnreadValoraciones, loadUngradedAssignments, loadNewGrades, loadStudentPendingPayments, loadUnpaidClasses, loadPendingPaymentsCount, cleanup]);
+  }, [checkAuth, checkSession, role, loadNotifications, loadActiveStreams, loadAcademy, loadUnreadValoraciones, loadUngradedAssignments, loadNewGrades, loadStudentPendingPayments, loadUnpaidClasses, loadPendingPaymentsCount, cleanup, setShowSuspicionWarning]);
 
   const copyJoinLink = () => {
     if (!user) return;

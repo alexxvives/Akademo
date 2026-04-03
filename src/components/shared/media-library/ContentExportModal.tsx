@@ -251,7 +251,7 @@ export function ContentExportModal({ onClose, classes, role, selectedAcademy }: 
   };
 
   const downloadableCount = items.length;
-  const videoCount = items.filter(i => i._type === 'video').length;
+  const _videoCount = items.filter(i => i._type === 'video').length;
 
   if (typeof document === 'undefined') return null;
   return createPortal(

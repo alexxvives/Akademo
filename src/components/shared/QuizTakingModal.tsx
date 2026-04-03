@@ -174,7 +174,7 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
     const pct = result.maxScore > 0 ? (displayScore / result.maxScore) * 100 : 0;
     const officialPct = result.maxScore > 0 ? (officialScore / result.maxScore) * 100 : 0;
     const scoreColor = pct <= 50 ? 'text-red-600' : pct <= 69 ? 'text-orange-500' : pct <= 90 ? 'text-green-500' : 'text-green-700';
-    const officialScoreColor = officialPct <= 50 ? 'text-red-600' : officialPct <= 69 ? 'text-orange-500' : officialPct <= 90 ? 'text-green-500' : 'text-green-700';
+    const _officialScoreColor = officialPct <= 50 ? 'text-red-600' : officialPct <= 69 ? 'text-orange-500' : officialPct <= 90 ? 'text-green-500' : 'text-green-700';
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

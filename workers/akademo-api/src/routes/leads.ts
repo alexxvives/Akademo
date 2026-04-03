@@ -73,7 +73,7 @@ leads.post('/', async (c) => {
 
     return c.json(successResponse({ id }), 201);
   } catch (error: unknown) {
-    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    if (error instanceof Error && (error.message === 'Unauthorized' || error.message === 'Forbidden')) throw error;
     console.error('[Leads] Create error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -106,7 +106,7 @@ leads.get('/', async (c) => {
 
     return c.json(successResponse(result.results || []));
   } catch (error: unknown) {
-    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    if (error instanceof Error && (error.message === 'Unauthorized' || error.message === 'Forbidden')) throw error;
     console.error('[Leads] List error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -161,7 +161,7 @@ leads.patch('/:id', async (c) => {
 
     return c.json(successResponse(updated));
   } catch (error: unknown) {
-    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    if (error instanceof Error && (error.message === 'Unauthorized' || error.message === 'Forbidden')) throw error;
     console.error('[Leads] Update error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
@@ -186,7 +186,7 @@ leads.delete('/:id', async (c) => {
 
     return c.json(successResponse({ deleted: true }));
   } catch (error: unknown) {
-    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    if (error instanceof Error && (error.message === 'Unauthorized' || error.message === 'Forbidden')) throw error;
     console.error('[Leads] Delete error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }

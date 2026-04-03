@@ -12,7 +12,7 @@ interface MobileHeaderProps {
 }
 
 export function MobileHeader({
-  role, unreadCount, showNotifications, onToggleNotifications, onOpenMenu,
+  role, unreadCount, showNotifications: _showNotifications, onToggleNotifications, onOpenMenu,
 }: MobileHeaderProps) {
   return (
     <header className="lg:hidden flex items-center justify-between h-14 px-4 bg-white border-b border-gray-200 flex-shrink-0">

@@ -217,7 +217,7 @@ interface ResultsStepProps {
 }
 
 export function ResultsStep({ summary, onClose }: ResultsStepProps) {
-  const hasCreated = summary.created > 0;
+  const _hasCreated = summary.created > 0;
   const classesCreated = summary.classesCreated ?? 0;
   const classesExisted = (summary.classResults || []).filter(r => r.status === 'existed').length;
 

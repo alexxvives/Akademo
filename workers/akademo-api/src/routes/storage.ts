@@ -97,8 +97,8 @@ storage.post('/upload', async (c) => {
     let session;
     try {
       session = await requireAuth(c);
-    } catch (error) {
-      if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    } catch (error: unknown) {
+      if (error instanceof Error && (error.message === 'Unauthorized' || error.message === 'Forbidden')) throw error;
       console.error('[Upload] Auth error:', error);
       return c.json(errorResponse('Error de autenticación. Intenta cerrar sesión y volver a iniciar.'), 401);
     }
@@ -467,6 +467,9 @@ storage.get('/serve/*', async (c) => {
         });
       }
 
+      // At this point session must be non-null (null+!signedUrl returned 401, signedUrl+null returned early)
+      if (!session) return c.json(errorResponse('Authentication required'), 401);
+
       // ADMIN can access everything
       if (session.role !== 'ADMIN') {
         // For assignment/ and document/ paths, verify the user has a relationship to the file
@@ -655,7 +658,7 @@ storage.get('/signed-url', async (c) => {
 
     return c.json(successResponse({ token, expires }));
   } catch (error: unknown) {
-    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    if (error instanceof Error && (error.message === 'Unauthorized' || error.message === 'Forbidden')) throw error;
     console.error('[Signed URL] Error:', error);
     return c.json(errorResponse('Failed to generate signed URL'), 500);
   }
