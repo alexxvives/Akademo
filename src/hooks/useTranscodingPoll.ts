@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { apiClient } from '@/lib/api-client';
 
 /**
@@ -20,11 +20,17 @@ export function useTranscodingPoll(
   setLessons: React.Dispatch<React.SetStateAction<any[]>>,
   pollInterval = 10000
 ) {
+  // Use a ref to track transcoding state without causing effect re-runs
+  const hasTranscoding = lessons.some(l => l.isTranscoding === 1);
+  const hasTranscodingRef = useRef(hasTranscoding);
+  hasTranscodingRef.current = hasTranscoding;
+
   useEffect(() => {
-    const hasTranscoding = lessons.some(l => l.isTranscoding === 1);
     if (!hasTranscoding || !classId) return;
 
     const interval = setInterval(async () => {
+      // Check ref in case transcoding finished between interval ticks
+      if (!hasTranscodingRef.current) return;
       try {
         const lessonsRes = await apiClient(`/lessons?classId=${classId}&checkTranscoding=true`);
         const lessonsResult = await lessonsRes.json();
@@ -50,5 +56,7 @@ export function useTranscodingPoll(
     }, pollInterval);
 
     return () => clearInterval(interval);
-  }, [lessons, classId, setLessons, pollInterval]);
+    // Only re-create interval when transcoding state changes, classId changes, or interval changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasTranscoding, classId, pollInterval]);
 }

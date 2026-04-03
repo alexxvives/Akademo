@@ -1,3 +1,5 @@
+const { withSentryConfig } = require('@sentry/nextjs');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
@@ -100,4 +102,12 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+module.exports = withSentryConfig(nextConfig, {
+  org: 'akademo',
+  project: 'node-cloudflare-workers',
+  silent: true,
+  // Disable server-side Sentry instrumentation (not compatible with Cloudflare edge)
+  disableServerWebpackPlugin: true,
+  // Only upload source maps if SENTRY_AUTH_TOKEN is available
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+});

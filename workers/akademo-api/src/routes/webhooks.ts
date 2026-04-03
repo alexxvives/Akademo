@@ -3,16 +3,9 @@ import { Bindings } from '../types';
 import { successResponse, errorResponse } from '../lib/utils';
 import { refreshZoomToken } from './zoom-accounts';
 import { addMonths, parseDateString } from '../lib/payment-utils';
+import { getStripeKeys } from '../lib/stripe-keys';
 
 const webhooks = new Hono<{ Bindings: Bindings }>();
-
-function getStripeKeys(env: Bindings): { secretKey: string; webhookSecret: string } {
-  const sandbox = env.STRIPE_SANDBOX === 'true';
-  return {
-    secretKey: sandbox ? env.STRIPE_SECRET_KEY_SANDBOX : (env.STRIPE_SECRET_KEY ?? env.STRIPE_SECRET_KEY_SANDBOX),
-    webhookSecret: sandbox ? env.STRIPE_WEBHOOK_SECRET_SANDBOX : (env.STRIPE_WEBHOOK_SECRET ?? env.STRIPE_WEBHOOK_SECRET_SANDBOX),
-  };
-}
 
 // Helper function to calculate billing cycles based on class start date (webhook variant — dates only)
 function calculateBillingCycle(classStartDate: string, _enrollmentDate: string, isMonthly: boolean) {

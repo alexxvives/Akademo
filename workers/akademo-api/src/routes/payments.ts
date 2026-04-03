@@ -1,23 +1,15 @@
 import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { requireAuth, requireRole } from '../lib/auth';
-import { successResponse, errorResponse } from '../lib/utils';
+import { successResponse, errorResponse, escapeHtml } from '../lib/utils';
 import { initiatePaymentSchema } from '../lib/validation';
-import { autoCreatePendingPayments, parseDateString, deriveBillingState } from '../lib/payment-utils';
+import { autoCreatePendingPayments, parseDateString, deriveBillingState, addMonths } from '../lib/payment-utils';
 import type { BillingEnrollmentRow } from '../lib/payment-utils';
+import { getStripeKeys } from '../lib/stripe-keys';
 import { rateLimit } from '../lib/rate-limit';
 import { sendEmail } from '../lib/sendEmail';
 
 const payments = new Hono<{ Bindings: Bindings }>();
-
-/** Returns the correct Stripe secret key and webhook secret based on the STRIPE_SANDBOX flag. */
-function getStripeKeys(env: Bindings): { secretKey: string; webhookSecret: string } {
-  const sandbox = env.STRIPE_SANDBOX === 'true';
-  return {
-    secretKey: sandbox ? env.STRIPE_SECRET_KEY_SANDBOX : (env.STRIPE_SECRET_KEY ?? env.STRIPE_SECRET_KEY_SANDBOX),
-    webhookSecret: sandbox ? env.STRIPE_WEBHOOK_SECRET_SANDBOX : (env.STRIPE_WEBHOOK_SECRET ?? env.STRIPE_WEBHOOK_SECRET_SANDBOX),
-  };
-}
 
 function getStoredPaymentFrequency(payment: { metadata?: string | null }, fallback?: string | null): 'MONTHLY' | 'ONE_TIME' {
   try {
@@ -301,6 +293,7 @@ payments.get('/pending-cash', async (c) => {
         AND p.paymentMethod != 'stripe'
         AND p.type = 'STUDENT_TO_ACADEMY'
         ORDER BY p.createdAt DESC
+        LIMIT 500
       `;
       params = [session.id];
     } else if (session.role === 'TEACHER') {
@@ -330,6 +323,7 @@ payments.get('/pending-cash', async (c) => {
         AND p.paymentMethod != 'stripe'
         AND p.type = 'STUDENT_TO_ACADEMY'
         ORDER BY p.createdAt DESC
+        LIMIT 500
       `;
       params = [session.id];
     } else if (session.role === 'ADMIN') {
@@ -362,6 +356,7 @@ payments.get('/pending-cash', async (c) => {
           AND p.paymentMethod != 'stripe'
           AND p.type = 'STUDENT_TO_ACADEMY'
           ORDER BY p.createdAt DESC
+          LIMIT 500
         `;
         params = [academyId];
       } else {
@@ -391,6 +386,7 @@ payments.get('/pending-cash', async (c) => {
           AND p.paymentMethod != 'stripe'
           AND p.type = 'STUDENT_TO_ACADEMY'
           ORDER BY p.createdAt DESC
+          LIMIT 500
         `;
       }
     } else {
@@ -734,10 +730,26 @@ payments.get('/stripe-verify', async (c) => {
     const amountTotal = checkoutSession.amount_total ? checkoutSession.amount_total / 100 : 0;
     const subscription = checkoutSession.subscription || null;
 
-    const billingCycle = {
-      nextPaymentDue: isMonthly ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() : null,
-      billingCycleEnd: isMonthly ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() : null,
-    };
+    // Compute billing cycle using calendar-month arithmetic (same as webhook handler)
+    let billingCycleNextPaymentDue: string | null = null;
+    let billingCycleEnd: string | null = null;
+    if (isMonthly) {
+      const classStart = parseDateString(enrollment.startDate || new Date().toISOString());
+      const today = new Date();
+      if (today < classStart) {
+        const cycleEnd = addMonths(classStart, 1);
+        billingCycleEnd = cycleEnd.toISOString();
+        billingCycleNextPaymentDue = addMonths(classStart, 2).toISOString();
+      } else {
+        let months = (today.getFullYear() - classStart.getFullYear()) * 12
+                   + (today.getMonth() - classStart.getMonth());
+        if (today.getDate() < classStart.getDate()) months = Math.max(0, months - 1);
+        const elapsedCycles = months + 1;
+        billingCycleEnd = addMonths(classStart, elapsedCycles).toISOString();
+        billingCycleNextPaymentDue = addMonths(classStart, elapsedCycles + 1).toISOString();
+      }
+    }
+    const billingCycle = { nextPaymentDue: billingCycleNextPaymentDue, billingCycleEnd };
 
     await c.env.DB.batch([
       c.env.DB.prepare(`
@@ -817,6 +829,7 @@ payments.get('/my-payments', async (c) => {
         JOIN Academy a ON p.receiverId = a.id
         WHERE p.payerId = ? AND p.type = 'STUDENT_TO_ACADEMY'
         ORDER BY p.createdAt DESC
+        LIMIT 200
       `)
       .bind(session.id)
       .all();
@@ -941,9 +954,9 @@ payments.patch('/:id/approve-payment', async (c) => {
                     <img src="https://akademo-edu.com/logo/akademo-icon.png" alt="AKADEMO" style="height: 40px;" />
                   </div>
                   <h2 style="color: #111; margin-bottom: 8px;">¡Pago aprobado! 🎉</h2>
-                  <p style="color: #555; margin-bottom: 24px;">Hola <strong>${studentName}</strong>, tu pago ha sido aprobado por la academia.</p>
+                  <p style="color: #555; margin-bottom: 24px;">Hola <strong>${escapeHtml(studentName)}</strong>, tu pago ha sido aprobado por la academia.</p>
                   <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
-                    <p style="margin: 0 0 8px 0;"><strong>Asignatura:</strong> ${studentInfo.className}</p>
+                    <p style="margin: 0 0 8px 0;"><strong>Asignatura:</strong> ${escapeHtml(studentInfo.className || '')}</p>
                     ${amountDisplay ? `<p style="margin: 0;"><strong>Importe:</strong> ${amountDisplay}</p>` : ''}
                   </div>
                   <p style="color: #555;">Ya puedes acceder a todo el contenido de la clase. ¡Buena suerte con tus estudios!</p>

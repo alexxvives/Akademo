@@ -89,6 +89,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://api.akademo-edu.com" />
+        {/* Umami Analytics */}
+        <script defer src="https://cloud.umami.is/script.js" data-website-id="14b7af67-ac84-4dcf-84d3-3bd8520826c1" />
         {/* Google Analytics 4 — must be in <head> for detection */}
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-74CPSDQFN9" />
         <script

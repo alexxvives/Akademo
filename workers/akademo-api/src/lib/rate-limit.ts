@@ -169,3 +169,9 @@ export const academyRegisterRateLimit = rateLimit({
   windowSec: 86400,        // 24 hours
   maxRequests: 3,          // Max 3 new academies per day per IP
 });
+
+export const createUserRateLimit = rateLimit({
+  prefix: 'create-user',
+  windowSec: 60,           // 1 minute
+  maxRequests: 30,         // 30 user creations per minute per IP (batch imports)
+});

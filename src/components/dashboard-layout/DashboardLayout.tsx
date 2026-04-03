@@ -30,7 +30,7 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
     loadNotifications, loadActiveStreams, loadAcademy,
     loadUnreadValoraciones, loadUngradedAssignments,
     loadNewGrades, loadUnpaidClasses, loadStudentPendingPayments, loadPendingPaymentsCount,
-    markNotificationAsRead, joinLiveClass, markAllAsRead,
+    markNotificationAsRead, joinLiveClass, markAllAsRead, cleanup,
   } = useDashboardBadges();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -55,6 +55,7 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
       loadStudentPendingPayments();
       const paymentsInterval = setInterval(loadStudentPendingPayments, 15000);
       return () => {
+        cleanup();
         clearInterval(interval);
         clearInterval(streamInterval);
         clearInterval(gradesInterval);
@@ -75,7 +76,7 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
         });
         loadActiveStreams();
       }, 15000);
-      return () => clearInterval(academyInterval);
+      return () => { cleanup(); clearInterval(academyInterval); };
     }
 
     if (role === 'TEACHER') {
@@ -87,7 +88,7 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
         loadUngradedAssignments();
         loadActiveStreams();
       }, 15000);
-      return () => clearInterval(teacherInterval);
+      return () => { cleanup(); clearInterval(teacherInterval); };
     }
 
     if (role === 'ADMIN') {
@@ -101,9 +102,9 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
         loadUngradedAssignments();
         loadPendingPaymentsCount();
       }, 15000);
-      return () => clearInterval(adminInterval);
+      return () => { cleanup(); clearInterval(adminInterval); };
     }
-  }, [checkAuth, checkSession, role, loadNotifications, loadActiveStreams, loadAcademy, loadUnreadValoraciones, loadUngradedAssignments, loadNewGrades, loadStudentPendingPayments, loadUnpaidClasses, loadPendingPaymentsCount]);
+  }, [checkAuth, checkSession, role, loadNotifications, loadActiveStreams, loadAcademy, loadUnreadValoraciones, loadUngradedAssignments, loadNewGrades, loadStudentPendingPayments, loadUnpaidClasses, loadPendingPaymentsCount, cleanup]);
 
   const copyJoinLink = () => {
     if (!user) return;

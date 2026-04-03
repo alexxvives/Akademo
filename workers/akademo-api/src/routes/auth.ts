@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 import { Bindings } from '../types';
 import { getSession, createSignedSession, hashPassword } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
-import { loginSchema, registerSchema, validateBody } from '../lib/validation';
+import { loginSchema, registerSchema, forgotPasswordSchema, validateBody } from '../lib/validation';
 import { loginRateLimit, registerRateLimit, checkEmailRateLimit, emailVerificationRateLimit, forgotPasswordRateLimit, resetPasswordRateLimit, joinRateLimit, academyRegisterRateLimit } from '../lib/rate-limit';
 import { sendEmail } from '../lib/sendEmail';
 
@@ -678,10 +678,9 @@ auth.get('/join/academy/:academyId', joinRateLimit, async (c) => {
 });
 
 // POST /auth/forgot-password
-auth.post('/forgot-password', forgotPasswordRateLimit, async (c) => {
+auth.post('/forgot-password', forgotPasswordRateLimit, validateBody(forgotPasswordSchema), async (c) => {
   try {
     const { email } = await c.req.json();
-    if (!email) return c.json(errorResponse('Email is required'), 400);
 
     // Look up user — always return generic success to prevent email enumeration
     const user = await c.env.DB

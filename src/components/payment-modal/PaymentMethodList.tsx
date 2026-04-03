@@ -79,6 +79,7 @@ export function PaymentMethodList({
         {/* Transferencia */}
         <div
           role="button"
+          aria-label="Pagar con transferencia bancaria"
           tabIndex={!processing && !!paymentFrequency && transferenciaAvailable ? 0 : -1}
           onClick={!processing && !!paymentFrequency && transferenciaAvailable ? handleTransferenciaPayment : undefined}
           onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && !processing && !!paymentFrequency && transferenciaAvailable) handleTransferenciaPayment(); }}
@@ -143,6 +144,7 @@ export function PaymentMethodList({
         {/* Bizum */}
         <div
           role="button"
+          aria-label="Pagar con Bizum"
           tabIndex={!processing && !!paymentFrequency && bizumAvailable ? 0 : -1}
           onClick={!processing && !!paymentFrequency && bizumAvailable ? handleBizumPayment : undefined}
           onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && !processing && !!paymentFrequency && bizumAvailable) handleBizumPayment(); }}

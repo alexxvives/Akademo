@@ -40,6 +40,29 @@ export const changePasswordSchema = z.object({
   newPassword: z.string().min(8, 'New password must be at least 8 characters'),
 });
 
+// ============ User Creation Schemas ============
+
+export const createStudentSchema = z.object({
+  email: z.string().email('Invalid email format').max(255),
+  password: z.string().min(8, 'Password must be at least 8 characters').max(128),
+  firstName: z.string().min(1, 'First name is required').max(100),
+  lastName: z.string().min(1, 'Last name is required').max(100),
+  classId: z.string().uuid().optional(),
+});
+
+export const createTeacherSchema = z.object({
+  email: z.string().email('Invalid email format').max(255),
+  password: z.string().min(8, 'Password must be at least 8 characters').max(128),
+  firstName: z.string().min(1, 'First name is required').max(100),
+  lastName: z.string().min(1, 'Last name is required').max(100),
+  academyId: z.string().uuid().optional(),
+  classId: z.string().uuid().optional(),
+});
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email('Invalid email format'),
+});
+
 // ============ Academy Schemas ============
 
 export const createAcademySchema = z.object({
@@ -219,6 +242,7 @@ export const videoCompletionSchema = z.object({
 // ============ Validation Helper ============
 
 import type { Context, Next } from 'hono';
+import { errorResponse } from './utils';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyMiddleware = (c: any, next: Next) => Promise<Response | void>;
@@ -239,19 +263,12 @@ export function validateBody<T extends z.ZodSchema>(schema: T): AnyMiddleware {
           field: e.path.join('.'),
           message: e.message,
         }));
-        return c.json({
-          success: false,
-          error: 'Validation failed',
-          details: errors,
-        }, 400);
+        return c.json(errorResponse('Validation failed', errors), 400);
       }
       
       await next();
     } catch {
-      return c.json({
-        success: false,
-        error: 'Invalid JSON body',
-      }, 400);
+      return c.json(errorResponse('Invalid JSON body'), 400);
     }
   };
 }
@@ -269,11 +286,7 @@ export function validateQuery<T extends z.ZodSchema>(schema: T): AnyMiddleware {
         field: e.path.join('.'),
         message: e.message,
       }));
-      return c.json({
-        success: false,
-        error: 'Invalid query parameters',
-        details: errors,
-      }, 400);
+      return c.json(errorResponse('Invalid query parameters', errors), 400);
     }
     
     c.set('validatedQuery' as never, result.data as never);
@@ -294,11 +307,7 @@ export function validateParams<T extends z.ZodSchema>(schema: T): AnyMiddleware 
         field: e.path.join('.'),
         message: e.message,
       }));
-      return c.json({
-        success: false,
-        error: 'Invalid URL parameters',
-        details: errors,
-      }, 400);
+      return c.json(errorResponse('Invalid URL parameters', errors), 400);
     }
     
     c.set('validatedParams' as never, result.data as never);

@@ -104,6 +104,7 @@ lessons.get('/', async (c) => {
       LEFT JOIN Topic t ON l.topicId = t.id
       WHERE l.classId = ?
       ORDER BY l.releaseDate DESC, l.createdAt DESC
+      LIMIT 500
     `;
     
     bindParams.push(classId);

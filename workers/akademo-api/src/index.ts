@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/cloudflare';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
@@ -248,9 +249,16 @@ async function handleOrphanCleanup(env: Bindings) {
 }
 
 // Export handler that supports both HTTP requests and scheduled events
-export default {
-  fetch: app.fetch,
-  scheduled: async (_event: unknown, env: Bindings, ctx: ExecutionContext) => {
-    ctx.waitUntil(handleOrphanCleanup(env));
-  },
-};
+export default Sentry.withSentry(
+  (env: Bindings) => ({
+    dsn: 'https://37deb84c09ff2d19b29fe83a83fc8088@o4511153106190336.ingest.de.sentry.io/4511153109729360',
+    tracesSampleRate: 0.1,
+    sendDefaultPii: false,
+  }),
+  {
+    fetch: app.fetch,
+    scheduled: async (_event: unknown, env: Bindings, ctx: ExecutionContext) => {
+      ctx.waitUntil(handleOrphanCleanup(env));
+    },
+  } satisfies ExportedHandler<Bindings>,
+);

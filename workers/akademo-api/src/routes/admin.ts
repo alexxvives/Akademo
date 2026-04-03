@@ -3,7 +3,7 @@ import { Bindings } from '../types';
 import { requireAuth, hashPassword } from '../lib/auth';
 import bcrypt from 'bcryptjs';
 import type { D1PreparedStatement } from '../lib/cloudflare';
-import { successResponse, errorResponse } from '../lib/utils';
+import { successResponse, errorResponse, escapeHtml } from '../lib/utils';
 import { nanoid } from 'nanoid';
 import { autoCreatePendingPayments, normalizeDateForStorage } from '../lib/payment-utils';
 import { writeAuditLog } from '../lib/audit';
@@ -1142,6 +1142,10 @@ admin.post('/send-welcome-emails', async (c) => {
       const { email, firstName, role, tempPassword } = user;
       if (!email || !firstName || !tempPassword) { failed++; continue; }
       const roleLabel = role === 'TEACHER' ? 'profesor' : 'alumno';
+      const safeName = escapeHtml(academyName);
+      const safeFirst = escapeHtml(firstName);
+      const safeEmail = escapeHtml(email);
+      const safePwd = escapeHtml(tempPassword);
       try {
         const ok = await sendEmail(c.env, {
           from: 'AKADEMO <onboarding@akademo-edu.com>',
@@ -1151,17 +1155,17 @@ admin.post('/send-welcome-emails', async (c) => {
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: 0 auto; background-color: #f8fafc; padding: 24px;">
               <div style="background-color: #0f172a; padding: 32px 40px; border-radius: 12px 12px 0 0;">
                 <p style="color: #94a3b8; margin: 0 0 4px 0; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;">Bienvenido a</p>
-                <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700;">${academyName}</h1>
+                <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700;">${safeName}</h1>
               </div>
               <div style="background-color: #ffffff; padding: 40px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
-                <p style="color: #0f172a; font-size: 18px; font-weight: 600; margin: 0 0 8px 0;">Hola, ${firstName}</p>
-                <p style="color: #475569; font-size: 15px; line-height: 1.7; margin: 0 0 28px 0;">Has sido dado de alta como ${roleLabel} en <strong style="color: #0f172a;">${academyName}</strong>. A continuación tienes tus credenciales de acceso.</p>
+                <p style="color: #0f172a; font-size: 18px; font-weight: 600; margin: 0 0 8px 0;">Hola, ${safeFirst}</p>
+                <p style="color: #475569; font-size: 15px; line-height: 1.7; margin: 0 0 28px 0;">Has sido dado de alta como ${roleLabel} en <strong style="color: #0f172a;">${safeName}</strong>. A continuación tienes tus credenciales de acceso.</p>
                 <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 24px; margin-bottom: 24px;">
                   <p style="margin: 0 0 4px 0; color: #94a3b8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px;">Correo electrónico</p>
-                  <p style="margin: 0 0 20px 0; color: #0f172a; font-size: 15px; font-weight: 500;">${email}</p>
+                  <p style="margin: 0 0 20px 0; color: #0f172a; font-size: 15px; font-weight: 500;">${safeEmail}</p>
                   <p style="margin: 0 0 10px 0; color: #94a3b8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px;">Contraseña temporal</p>
                   <div style="background-color: #1e293b; border-radius: 8px; padding: 14px 20px; text-align: center;">
-                    <span style="color: #e2e8f0; font-size: 22px; font-weight: 700; letter-spacing: 4px; font-family: 'Courier New', Courier, monospace;">${tempPassword}</span>
+                    <span style="color: #e2e8f0; font-size: 22px; font-weight: 700; letter-spacing: 4px; font-family: 'Courier New', Courier, monospace;">${safePwd}</span>
                   </div>
                 </div>
                 <div style="background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 14px 18px; margin-bottom: 28px;">
@@ -1170,7 +1174,7 @@ admin.post('/send-welcome-emails', async (c) => {
                 <div style="text-align: center; margin-bottom: 36px;">
                   <a href="https://akademo-edu.com" style="display: inline-block; background-color: #0f172a; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-size: 15px; font-weight: 600;">Acceder a la plataforma →</a>
                 </div>
-                <p style="color: #94a3b8; font-size: 13px; line-height: 1.6; margin: 0; padding-top: 24px; border-top: 1px solid #f1f5f9;">Saludos,<br><strong style="color: #475569;">Equipo de ${academyName}</strong></p>
+                <p style="color: #94a3b8; font-size: 13px; line-height: 1.6; margin: 0; padding-top: 24px; border-top: 1px solid #f1f5f9;">Saludos,<br><strong style="color: #475569;">Equipo de ${safeName}</strong></p>
               </div>
               <p style="text-align: center; color: #cbd5e1; font-size: 11px; margin: 16px 0 0 0;">Powered by AKADEMO · akademo-edu.com</p>
             </div>

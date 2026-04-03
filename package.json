@@ -26,6 +26,7 @@
     "@daily-co/daily-js": "^0.89.0",
     "@headlessui/react": "^2.2.9",
     "@opennextjs/cloudflare": "1.14.0",
+    "@sentry/nextjs": "^10.47.0",
     "@stripe/stripe-js": "^8.6.1",
     "@types/canvas-confetti": "^1.9.0",
     "@types/jszip": "^3.4.0",

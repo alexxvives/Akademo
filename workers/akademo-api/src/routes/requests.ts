@@ -81,15 +81,35 @@ requests.post('/student', async (c) => {
     const enrollmentId = crypto.randomUUID();
     const now = new Date().toISOString();
     const classPrice = classRecord.price || 0;
-    
-    await c.env.DB
-      .prepare(`
-        INSERT INTO ClassEnrollment 
-        (id, classId, userId, status, documentSigned, enrolledAt, approvedAt) 
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `)
-      .bind(enrollmentId, classId, session.id, 'APPROVED', 0, now, now)
-      .run();
+
+    // Atomic insert with maxStudents guard to prevent race conditions
+    if (classRecord.maxStudents !== null && classRecord.maxStudents > 0) {
+      const result = await c.env.DB
+        .prepare(`
+          INSERT INTO ClassEnrollment 
+          (id, classId, userId, status, documentSigned, enrolledAt, approvedAt)
+          SELECT ?, ?, ?, 'APPROVED', 0, ?, ?
+          WHERE (SELECT COUNT(*) FROM ClassEnrollment WHERE classId = ? AND status = 'APPROVED') < ?
+        `)
+        .bind(enrollmentId, classId, session.id, now, now, classId, classRecord.maxStudents)
+        .run();
+
+      if (!result.meta.changes) {
+        return c.json(errorResponse(
+          `Esta clase ha alcanzado su límite de ${classRecord.maxStudents} estudiantes. ` +
+          `Puedes contactar a la academia en ${classRecord.academyEmail} para solicitar más cupos.`
+        ), 400);
+      }
+    } else {
+      await c.env.DB
+        .prepare(`
+          INSERT INTO ClassEnrollment 
+          (id, classId, userId, status, documentSigned, enrolledAt, approvedAt) 
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `)
+        .bind(enrollmentId, classId, session.id, 'APPROVED', 0, now, now)
+        .run();
+    }
 
     return c.json(successResponse({ 
       message: classPrice > 0 

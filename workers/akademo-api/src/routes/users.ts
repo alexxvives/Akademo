@@ -2,11 +2,13 @@ import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { requireAuth, hashPassword } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
+import { validateBody, createStudentSchema, createTeacherSchema } from '../lib/validation';
+import { createUserRateLimit } from '../lib/rate-limit';
 
 const users = new Hono<{ Bindings: Bindings }>();
 
 // POST /users/create-student - Create student account
-users.post('/create-student', async (c) => {
+users.post('/create-student', createUserRateLimit, validateBody(createStudentSchema), async (c) => {
   try {
     const session = await requireAuth(c);
 
@@ -15,10 +17,6 @@ users.post('/create-student', async (c) => {
     }
 
     const { email, password, firstName, lastName, classId } = await c.req.json();
-
-    if (!email || !password || !firstName || !lastName) {
-      return c.json(errorResponse('All fields required'), 400);
-    }
 
     // Check if user exists
     const existing = await c.env.DB
@@ -84,7 +82,7 @@ users.post('/create-student', async (c) => {
 });
 
 // POST /users/create-teacher - Create teacher account
-users.post('/create-teacher', async (c) => {
+users.post('/create-teacher', createUserRateLimit, validateBody(createTeacherSchema), async (c) => {
   try {
     const session = await requireAuth(c);
 
@@ -93,10 +91,6 @@ users.post('/create-teacher', async (c) => {
     }
 
     const { email, password, firstName, lastName, academyId, classId } = await c.req.json();
-
-    if (!email || !password || !firstName || !lastName) {
-      return c.json(errorResponse('All fields required'), 400);
-    }
 
     // Check if user exists
     const existing = await c.env.DB
@@ -295,16 +289,20 @@ users.delete('/delete-account', async (c) => {
 
     // Perform different cleanup based on role
     if (session.role === 'STUDENT') {
-      // Delete student enrollments and ratings
-      await c.env.DB.prepare('DELETE FROM ClassEnrollment WHERE userId = ?').bind(userId).run();
-      await c.env.DB.prepare('DELETE FROM LessonRating WHERE studentId = ?').bind(userId).run();
-      await c.env.DB.prepare('DELETE FROM VideoPlayState WHERE studentId = ?').bind(userId).run();
+      // Delete student enrollments and ratings (atomic)
+      await c.env.DB.batch([
+        c.env.DB.prepare('DELETE FROM ClassEnrollment WHERE userId = ?').bind(userId),
+        c.env.DB.prepare('DELETE FROM LessonRating WHERE studentId = ?').bind(userId),
+        c.env.DB.prepare('DELETE FROM VideoPlayState WHERE studentId = ?').bind(userId),
+      ]);
       
     } else if (session.role === 'TEACHER') {
-      // Unassign from classes and delete teacher records
-      await c.env.DB.prepare('UPDATE Class SET teacherId = NULL WHERE teacherId = ?').bind(userId).run();
-      await c.env.DB.prepare('DELETE FROM Teacher WHERE userId = ?').bind(userId).run();
-      await c.env.DB.prepare('DELETE FROM LiveStream WHERE teacherId = ?').bind(userId).run();
+      // Unassign from classes and delete teacher records (atomic)
+      await c.env.DB.batch([
+        c.env.DB.prepare('UPDATE Class SET teacherId = NULL WHERE teacherId = ?').bind(userId),
+        c.env.DB.prepare('DELETE FROM Teacher WHERE userId = ?').bind(userId),
+        c.env.DB.prepare('DELETE FROM LiveStream WHERE teacherId = ?').bind(userId),
+      ]);
       
     } else if (session.role === 'ACADEMY') {
       // Delete academy and all related data using batch subquery DELETEs (no N+1)

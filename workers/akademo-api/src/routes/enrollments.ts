@@ -61,6 +61,7 @@ enrollments.get('/', async (c) => {
           JOIN Class c ON e.classId = c.id
           WHERE e.classId = ? AND e.status = 'APPROVED'
           ORDER BY e.enrolledAt DESC
+          LIMIT 500
         `)
         .bind(classId)
         .all();
@@ -104,6 +105,7 @@ enrollments.get('/', async (c) => {
         JOIN Academy a ON c.academyId = a.id
         WHERE e.userId = ?
         ORDER BY e.enrolledAt DESC
+        LIMIT 200
       `)
       .bind(session.id)
       .all();
@@ -183,6 +185,7 @@ enrollments.get('/pending', async (c) => {
         LEFT JOIN User teacher ON c.teacherId = teacher.id
         WHERE e.status = 'PENDING'
         ORDER BY e.enrolledAt DESC
+        LIMIT 500
       `;
       params = [];
     } else if (session.role === 'ACADEMY') {
@@ -214,6 +217,7 @@ enrollments.get('/pending', async (c) => {
         LEFT JOIN User teacher ON c.teacherId = teacher.id
         WHERE a.ownerId = ? AND e.status = 'PENDING'
         ORDER BY e.enrolledAt DESC
+        LIMIT 500
       `;
       params = [session.id];
     } else if (session.role === 'TEACHER') {
@@ -245,6 +249,7 @@ enrollments.get('/pending', async (c) => {
         LEFT JOIN User teacher ON c.teacherId = teacher.id
         WHERE c.teacherId = ? AND e.status = 'PENDING'
         ORDER BY e.enrolledAt DESC
+        LIMIT 500
       `;
       params = [session.id];
     } else {

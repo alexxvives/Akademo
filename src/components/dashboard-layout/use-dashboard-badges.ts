@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { generateDemoPendingPayments } from '@/lib/demo-data';
 import type { Notification, ActiveStream, Academy } from './types';
@@ -20,9 +20,11 @@ export function useDashboardBadges() {
   const [academyPaymentStatus, setAcademyPaymentStatus] = useState<string | null>(null);
   const [academy, setAcademy] = useState<Academy | null>(null);
 
+  const controllerRef = useRef<AbortController>(new AbortController());
+
   const loadNotifications = useCallback(async () => {
     try {
-      const response = await apiClient('/notifications?unread=true');
+      const response = await apiClient('/notifications?unread=true', { signal: controllerRef.current.signal });
       const result = await response.json();
       if (result.success && Array.isArray(result.data)) {
         setNotifications(result.data);
@@ -30,25 +32,27 @@ export function useDashboardBadges() {
         setUnreadCount(newCount);
       }
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
       console.error('Failed to load notifications:', error);
     }
   }, []);
 
   const loadActiveStreams = useCallback(async () => {
     try {
-      const response = await apiClient('/live/active');
+      const response = await apiClient('/live/active', { signal: controllerRef.current.signal });
       const result = await response.json();
       if (result.success && Array.isArray(result.data)) {
         setActiveStreams(result.data);
       }
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
       console.error('Failed to load active streams:', error);
     }
   }, []);
 
   const loadAcademy = useCallback(async (): Promise<string> => {
     try {
-      const academyResponse = await apiClient('/academies');
+      const academyResponse = await apiClient('/academies', { signal: controllerRef.current.signal });
       const result = await academyResponse.json();
       if (result.success && Array.isArray(result.data) && result.data.length > 0) {
         const academyData: Academy = result.data[0];
@@ -59,7 +63,7 @@ export function useDashboardBadges() {
         if (paymentStatus === 'NOT PAID') {
           setPendingPaymentsCount(generateDemoPendingPayments().length);
         } else {
-          const pendingRes = await apiClient('/payments/pending-count');
+          const pendingRes = await apiClient('/payments/pending-count', { signal: controllerRef.current.signal });
           const pendingResult = await pendingRes.json();
           if (pendingResult.success && typeof pendingResult.data === 'number') {
             setPendingPaymentsCount(pendingResult.data);
@@ -68,6 +72,7 @@ export function useDashboardBadges() {
         return paymentStatus;
       }
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return 'PAID';
       console.error('Failed to load academy:', error);
     }
     return 'PAID';
@@ -80,12 +85,13 @@ export function useDashboardBadges() {
         setUnreadValoracionesCount(12);
         return;
       }
-      const response = await apiClient('/lessons/ratings/unread-count');
+      const response = await apiClient('/lessons/ratings/unread-count', { signal: controllerRef.current.signal });
       const result = await response.json();
       if (result.success && result.data) {
         setUnreadValoracionesCount(result.data.count || 0);
       }
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
       console.error('Failed to load unread valoraciones:', error);
     }
   }, [academyPaymentStatus]);
@@ -101,31 +107,33 @@ export function useDashboardBadges() {
         setUngradedAssignmentsCount(ungradedCount);
         return;
       }
-      const response = await apiClient('/assignments/ungraded-count');
+      const response = await apiClient('/assignments/ungraded-count', { signal: controllerRef.current.signal });
       const result = await response.json();
       if (result.success && typeof result.data === 'number') {
         setUngradedAssignmentsCount(result.data);
       }
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
       console.error('Failed to load ungraded assignments:', error);
     }
   }, [academyPaymentStatus]);
 
   const loadNewGrades = useCallback(async () => {
     try {
-      const response = await apiClient('/assignments/new-grades-count');
+      const response = await apiClient('/assignments/new-grades-count', { signal: controllerRef.current.signal });
       const result = await response.json();
       if (result.success && typeof result.data === 'number') {
         setNewGradesCount(result.data);
       }
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
       console.error('Failed to load new grades:', error);
     }
   }, []);
 
   const loadUnpaidClasses = useCallback(async () => {
     try {
-      const response = await apiClient('/classes');
+      const response = await apiClient('/classes', { signal: controllerRef.current.signal });
       const result = await response.json();
       if (result.success && Array.isArray(result.data)) {
         const needsAction = result.data.filter((c: { paymentStatus?: string | null }) =>
@@ -134,13 +142,14 @@ export function useDashboardBadges() {
         setUnpaidClassesCount(needsAction.length);
       }
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
       console.error('Failed to load unpaid classes:', error);
     }
   }, []);
 
   const loadStudentPendingPayments = useCallback(async () => {
     try {
-      const res = await apiClient('/payments/my-payments');
+      const res = await apiClient('/payments/my-payments', { signal: controllerRef.current.signal });
       const json = await res.json() as { success: boolean; data: Array<{ paymentStatus: string }> };
       if (json?.success && Array.isArray(json.data)) {
         const count = json.data.filter(p =>
@@ -149,18 +158,20 @@ export function useDashboardBadges() {
         setStudentPendingPaymentsCount(count);
       }
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
       console.error('Failed to load student pending payments:', error);
     }
   }, []);
 
   const loadPendingPaymentsCount = useCallback(async () => {
     try {
-      const res = await apiClient('/payments/pending-count');
+      const res = await apiClient('/payments/pending-count', { signal: controllerRef.current.signal });
       const result = await res.json();
       if (result.success && typeof result.data === 'number') {
         setPendingPaymentsCount(result.data);
       }
     } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return;
       console.error('Failed to load pending payments count:', error);
     }
   }, []);
@@ -185,11 +196,12 @@ export function useDashboardBadges() {
 
   const markNotificationAsRead = async (notificationId: string) => {
     try {
-      await apiClient('/notifications', {
+      const res = await apiClient('/notifications', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ notificationIds: [notificationId] }),
       });
+      if (!res.ok) return;
       setNotifications(prev => prev.map(n =>
         n.id === notificationId ? { ...n, isRead: true } : n
       ));
@@ -208,11 +220,12 @@ export function useDashboardBadges() {
 
   const markAllAsRead = async () => {
     try {
-      await apiClient('/notifications', {
+      const res = await apiClient('/notifications', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ markAll: true }),
       });
+      if (!res.ok) return;
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       setUnreadCount(0);
     } catch (error) {
@@ -228,6 +241,11 @@ export function useDashboardBadges() {
     loadNotifications, loadActiveStreams, loadAcademy,
     loadUnreadValoraciones, loadUngradedAssignments,
     loadNewGrades, loadUnpaidClasses, loadStudentPendingPayments, loadPendingPaymentsCount,
-    markNotificationAsRead, joinLiveClass, markAllAsRead,
+    markNotificationAsRead, joinLiveClass, markAllAsRead, cleanup,
   };
+
+  function cleanup() {
+    controllerRef.current.abort();
+    controllerRef.current = new AbortController();
+  }
 }
