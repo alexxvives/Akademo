@@ -154,9 +154,23 @@ export function useProfileActions(s: ProfileState) {
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (s.passwordData.newPassword !== s.passwordData.confirmPassword) { alert('Las contraseñas no coinciden'); return; }
-    alert('Funcionalidad en desarrollo');
-    setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-    setShowPasswordForm(false);
+    if (s.passwordData.newPassword.length < 8) { alert('La nueva contraseña debe tener al menos 8 caracteres'); return; }
+    try {
+      const res = await apiClient('/auth/change-password', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword: s.passwordData.currentPassword, newPassword: s.passwordData.newPassword }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        alert('Contraseña actualizada correctamente');
+        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        setShowPasswordForm(false);
+      } else {
+        alert(result.error || 'Error al cambiar la contraseña');
+      }
+    } catch {
+      alert('Error al cambiar la contraseña');
+    }
   };
 
   const toggleAllowedPaymentMethod = async (method: 'stripe' | 'cash' | 'transferencia' | 'bizum') => {
