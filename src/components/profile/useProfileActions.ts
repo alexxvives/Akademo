@@ -7,7 +7,7 @@ type SettingField = keyof ProfileState['formData'];
 type SettingValue = string | number | boolean | string[];
 
 export function useProfileActions(s: ProfileState) {
-  const { academy, formData, setFormData, stripeStatus, expandedPaymentMethod, setExpandedPaymentMethod, setSaving, setEditing, setUploadingLogo, loadData, setPasswordData, setShowPasswordForm } = s;
+  const { academy, formData, setFormData, stripeStatus, expandedPaymentMethod, setExpandedPaymentMethod, setSaving, setEditing, setUploadingLogo, loadData, setPasswordData, setShowPasswordForm, setEmailChangeStep, setPendingEmailChange, emailChangeCode, setEmailChangeCode } = s;
 
   const handleSettingChange = async (field: SettingField, value: SettingValue) => {
     if (!academy) return;
@@ -16,7 +16,7 @@ export function useProfileActions(s: ProfileState) {
     setFormData(newFormData);
     try {
       const body = {
-        name: newFormData.name, address: newFormData.address, phone: newFormData.phone, email: newFormData.email,
+        name: newFormData.name, address: newFormData.address, phone: newFormData.phone,
         feedbackEnabled: field === 'feedbackEnabled' ? value : (newFormData.feedbackEnabled ? 1 : 0),
         defaultWatermarkIntervalMins: newFormData.defaultWatermarkIntervalMins,
         defaultMaxWatchTimeMultiplier: newFormData.defaultMaxWatchTimeMultiplier,
@@ -51,7 +51,7 @@ export function useProfileActions(s: ProfileState) {
       const response = await apiClient(`/academies/${academy.id}`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: formData.name, address: formData.address, phone: formData.phone, email: formData.email,
+          name: formData.name, address: formData.address, phone: formData.phone,
           feedbackEnabled: formData.feedbackEnabled ? 1 : 0,
           defaultWatermarkIntervalMins: formData.defaultWatermarkIntervalMins,
           defaultMaxWatchTimeMultiplier: formData.defaultMaxWatchTimeMultiplier,
@@ -67,6 +67,57 @@ export function useProfileActions(s: ProfileState) {
       console.error('Error saving profile:', error);
       alert('Error al guardar los cambios');
     } finally { setSaving(false); }
+  };
+
+  const handleRequestEmailChange = async (newEmail: string) => {
+    setEmailChangeStep('sending');
+    try {
+      const res = await apiClient('/auth/request-email-change', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newEmail }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setPendingEmailChange(newEmail);
+        setEmailChangeStep('confirming');
+      } else {
+        alert(result.error || 'Error al enviar el código de verificación');
+        setEmailChangeStep('idle');
+      }
+    } catch {
+      alert('Error al enviar el código de verificación');
+      setEmailChangeStep('idle');
+    }
+  };
+
+  const handleConfirmEmailChange = async () => {
+    const { pendingEmailChange: newEmail } = s;
+    if (!newEmail || !emailChangeCode) return;
+    try {
+      const res = await apiClient('/auth/confirm-email-change', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newEmail, code: emailChangeCode }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setEmailChangeStep('idle');
+        setPendingEmailChange(null);
+        setEmailChangeCode('');
+        await loadData();
+      } else {
+        alert(result.error || 'Código incorrecto');
+      }
+    } catch {
+      alert('Error al confirmar el cambio de email');
+    }
+  };
+
+  const handleCancelEmailChange = () => {
+    setEmailChangeStep('idle');
+    setPendingEmailChange(null);
+    setEmailChangeCode('');
+    // Reset form email to current server email
+    if (s.user?.email) setFormData((prev) => ({ ...prev, email: s.user!.email }));
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -156,7 +207,7 @@ export function useProfileActions(s: ProfileState) {
     }
   };
 
-  return { handleSettingChange, handleSaveProfile, handleLogoUpload, handleChangePassword, toggleAllowedPaymentMethod, saveTransferenciaSetup, saveBizumSetup };
+  return { handleSettingChange, handleSaveProfile, handleLogoUpload, handleChangePassword, toggleAllowedPaymentMethod, saveTransferenciaSetup, saveBizumSetup, handleRequestEmailChange, handleConfirmEmailChange, handleCancelEmailChange };
 }
 
 export type ProfileActions = ReturnType<typeof useProfileActions>;

@@ -766,4 +766,131 @@ auth.post('/reset-password', resetPasswordRateLimit, async (c) => {
   }
 });
 
+// POST /auth/request-email-change - Send verification code to new email (authenticated)
+auth.post('/request-email-change', emailVerificationRateLimit, async (c) => {
+  try {
+    const session = await getSession(c);
+    if (!session) return c.json(errorResponse('Not authenticated'), 401);
+
+    const { newEmail } = await c.req.json();
+    if (!newEmail || typeof newEmail !== 'string') {
+      return c.json(errorResponse('newEmail is required'), 400);
+    }
+    const normalized = newEmail.toLowerCase().trim();
+
+    // Must be a different email
+    if (normalized === session.email?.toLowerCase()) {
+      return c.json(errorResponse('New email must be different from current email'), 400);
+    }
+
+    // Check if already taken by another user
+    const existing = await c.env.DB
+      .prepare('SELECT id FROM User WHERE email = ? AND id != ?')
+      .bind(normalized, session.id)
+      .first();
+    if (existing) {
+      return c.json(errorResponse('Este email ya está en uso'), 400);
+    }
+
+    // Generate 6-digit code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 min
+
+    await c.env.DB
+      .prepare('INSERT OR REPLACE INTO VerificationCode (email, code, expiresAt) VALUES (?, ?, ?)')
+      .bind(normalized, code, expiresAt)
+      .run();
+
+    await sendEmail(c.env, {
+      from: 'AKADEMO <onboarding@akademo-edu.com>',
+      to: normalized,
+      subject: 'Confirma tu nuevo email - AKADEMO',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #2563eb;">Confirma tu nuevo email</h2>
+          <p>Has solicitado cambiar tu email a esta dirección. Tu código de confirmación es:</p>
+          <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
+            <h1 style="color: #1f2937; letter-spacing: 8px; margin: 0;">${code}</h1>
+          </div>
+          <p style="color: #6b7280;">Este código expirará en 10 minutos.</p>
+          <p style="color: #6b7280;">Si no solicitaste este cambio, puedes ignorar este mensaje.</p>
+        </div>
+      `,
+    });
+
+    return c.json(successResponse({ message: 'Verification code sent to new email' }));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Request Email Change] Error:', error);
+    return c.json(errorResponse('Error al enviar el código de verificación'), 500);
+  }
+});
+
+// POST /auth/confirm-email-change - Verify code and update email (authenticated)
+auth.post('/confirm-email-change', emailVerificationRateLimit, async (c) => {
+  try {
+    const session = await getSession(c);
+    if (!session) return c.json(errorResponse('Not authenticated'), 401);
+
+    const { newEmail, code } = await c.req.json();
+    if (!newEmail || !code) {
+      return c.json(errorResponse('newEmail and code are required'), 400);
+    }
+    const normalized = newEmail.toLowerCase().trim();
+
+    // Verify code
+    const stored = await c.env.DB
+      .prepare('SELECT code, expiresAt, attempts FROM VerificationCode WHERE email = ?')
+      .bind(normalized)
+      .first() as { code: string; expiresAt: string; attempts: number | null } | null;
+
+    if (!stored) {
+      return c.json(errorResponse('No hay código de verificación activo. Solicita uno nuevo.'), 400);
+    }
+
+    if (Date.now() > new Date(stored.expiresAt).getTime()) {
+      await c.env.DB.prepare('DELETE FROM VerificationCode WHERE email = ?').bind(normalized).run();
+      return c.json(errorResponse('El código ha expirado. Solicita uno nuevo.'), 400);
+    }
+
+    const attempts = stored.attempts || 0;
+    if (attempts >= 5) {
+      await c.env.DB.prepare('DELETE FROM VerificationCode WHERE email = ?').bind(normalized).run();
+      return c.json(errorResponse('Demasiados intentos fallidos. Solicita un nuevo código.'), 429);
+    }
+
+    if (stored.code !== code) {
+      await c.env.DB
+        .prepare('UPDATE VerificationCode SET attempts = ? WHERE email = ?')
+        .bind(attempts + 1, normalized)
+        .run();
+      return c.json(errorResponse('Código incorrecto'), 400);
+    }
+
+    // Code is valid — check email still available
+    const taken = await c.env.DB
+      .prepare('SELECT id FROM User WHERE email = ? AND id != ?')
+      .bind(normalized, session.id)
+      .first();
+    if (taken) {
+      await c.env.DB.prepare('DELETE FROM VerificationCode WHERE email = ?').bind(normalized).run();
+      return c.json(errorResponse('Este email ya está en uso'), 400);
+    }
+
+    // Update the user's email
+    await c.env.DB
+      .prepare('UPDATE User SET email = ? WHERE id = ?')
+      .bind(normalized, session.id)
+      .run();
+
+    await c.env.DB.prepare('DELETE FROM VerificationCode WHERE email = ?').bind(normalized).run();
+
+    return c.json(successResponse({ message: 'Email actualizado correctamente', email: normalized }));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Confirm Email Change] Error:', error);
+    return c.json(errorResponse('Error al confirmar el cambio de email'), 500);
+  }
+});
+
 export default auth;

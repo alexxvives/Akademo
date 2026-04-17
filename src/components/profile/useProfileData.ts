@@ -35,6 +35,9 @@ export function useProfileData() {
   const [connectingStripe, setConnectingStripe] = useState(false);
   const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [emailChangeStep, setEmailChangeStep] = useState<'idle' | 'sending' | 'confirming'>('idle');
+  const [pendingEmailChange, setPendingEmailChange] = useState<string | null>(null);
+  const [emailChangeCode, setEmailChangeCode] = useState('');
   const [formData, setFormData] = useState<ProfileFormData>({
     name: '', address: '', phone: '', email: '',
     feedbackEnabled: true, defaultWatermarkIntervalMins: 5, defaultMaxWatchTimeMultiplier: 2.0,
@@ -68,7 +71,7 @@ export function useProfileData() {
         }
         setFormData({
           name: d.name || '', address: d.address || '', phone: d.phone || '',
-          email: d.email || user?.email || '',
+          email: user?.email || '',
           feedbackEnabled: d.feedbackEnabled !== 0,
           defaultWatermarkIntervalMins: d.defaultWatermarkIntervalMins ?? 5,
           defaultMaxWatchTimeMultiplier: d.defaultMaxWatchTimeMultiplier ?? 2.0,
@@ -160,6 +163,8 @@ export function useProfileData() {
     expandedPaymentMethod, setExpandedPaymentMethod,
     uploadingLogo, setUploadingLogo, connectingStripe, setConnectingStripe,
     passwordData, setPasswordData, showPasswordForm, setShowPasswordForm,
+    emailChangeStep, setEmailChangeStep, pendingEmailChange, setPendingEmailChange,
+    emailChangeCode, setEmailChangeCode,
     formData, setFormData, loadData,
     activePeriodId, setActivePeriodId, isClassInPeriod,
   };

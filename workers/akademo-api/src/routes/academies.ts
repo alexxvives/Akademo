@@ -500,7 +500,7 @@ academies.get('/:id', async (c) => {
     const academyId = c.req.param('id');
 
     const academy: any = await c.env.DB
-      .prepare('SELECT * FROM Academy WHERE id = ?')
+      .prepare('SELECT a.*, u.email as ownerEmail FROM Academy a JOIN User u ON a.ownerId = u.id WHERE a.id = ?')
       .bind(academyId)
       .first();
 
@@ -529,7 +529,7 @@ academies.get('/:id', async (c) => {
       logoUrl: academy.logoUrl,
       address: academy.address,
       phone: academy.phone,
-      email: academy.email,
+      email: academy.ownerEmail,
       createdAt: academy.createdAt,
       feedbackEnabled: academy.feedbackEnabled,
       requireGrading: academy.requireGrading,
@@ -601,8 +601,8 @@ academies.patch('/:id', async (c) => {
       values.push(body.phone || null);
     }
     if (body.email !== undefined) {
-      updates.push('email = ?');
-      values.push(body.email || null);
+      // Email changes go through POST /auth/confirm-email-change (verified flow)
+      // Direct PATCH no longer allowed to prevent unverified email changes
     }
     if (body.feedbackEnabled !== undefined) {
       updates.push('feedbackEnabled = ?');

@@ -21,9 +21,10 @@ requests.post('/student', async (c) => {
     // Check if class exists and get details
     const classRecord: any = await c.env.DB
       .prepare(`
-        SELECT c.id, c.name, c.monthlyPrice, c.oneTimePrice, c.maxStudents, c.academyId, a.email as academyEmail
+        SELECT c.id, c.name, c.monthlyPrice, c.oneTimePrice, c.maxStudents, c.academyId, u.email as academyEmail
         FROM Class c
         JOIN Academy a ON c.academyId = a.id
+        JOIN User u ON a.ownerId = u.id
         WHERE c.id = ?
       `)
       .bind(classId)

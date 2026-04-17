@@ -802,8 +802,8 @@ admin.post('/bulk-import', async (c) => {
           classResults.push({ name, status: 'existed' });
           continue; // already exists
         }
-        if (!cr.price || !cr.startDate) {
-          classResults.push({ name, status: 'error' as any, message: `Missing required fields: ${[!cr.price && 'precio', !cr.startDate && 'fechaInicio'].filter(Boolean).join(', ')}` });
+        if (!cr.startDate) {
+          classResults.push({ name, status: 'error' as any, message: 'Missing required field: fechaInicio' });
           continue;
         }
         const classId = crypto.randomUUID();
@@ -816,14 +816,18 @@ admin.post('/bulk-import', async (c) => {
           if (!existing) break;
           slug = `${baseSlug}-${slugCounter++}`;
         }
-        const price = parseFloat(String(cr.price));
+        // If no price is provided the class is created unpublished (isPublished=0).
+        // The academy must set a price before students can enroll or see the class.
+        const hasPrice = !!cr.price;
+        const price = hasPrice ? parseFloat(String(cr.price)) : null;
         const cuotas = cr.cuotas ? parseInt(String(cr.cuotas), 10) : 0;
         // precio in the Excel = per-installment monthly price (not total)
         // If cuotas → monthlyPrice = price (per-installment), oneTimePrice = null
         // If no cuotas → oneTimePrice = price (single one-time payment)
-        const monthlyPrice = cuotas > 0 ? price : null;
-        const oneTimePrice = cuotas > 0 ? null : price;
+        const monthlyPrice = (price !== null && cuotas > 0) ? price : null;
+        const oneTimePrice = (price !== null && cuotas === 0) ? price : null;
         const cuotasValue = cuotas > 0 ? cuotas : null;
+        const isPublished = hasPrice ? 1 : 0;
         const startDate = normalizeDateForStorage(cr.startDate);
         const description = cr.description || null;
         const university = cr.university || null;
@@ -831,12 +835,13 @@ admin.post('/bulk-import', async (c) => {
         const maxStudents = cr.maxStudents ?? null;
         const whatsappGroupLink = cr.whatsappGroupLink || null;
         await c.env.DB
-          .prepare('INSERT INTO Class (id, name, slug, academyId, monthlyPrice, oneTimePrice, startDate, description, university, carrera, maxStudents, whatsappGroupLink, cuotas, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
-          .bind(classId, name, slug, academyId, monthlyPrice, oneTimePrice, startDate, description, university, carrera, maxStudents, whatsappGroupLink, cuotasValue, now)
+          .prepare('INSERT INTO Class (id, name, slug, academyId, monthlyPrice, oneTimePrice, startDate, description, university, carrera, maxStudents, whatsappGroupLink, cuotas, isPublished, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+          .bind(classId, name, slug, academyId, monthlyPrice, oneTimePrice, startDate, description, university, carrera, maxStudents, whatsappGroupLink, cuotasValue, isPublished, now)
           .run();
         classMap.set(key, classId);
         classPriceMap.set(classId, { monthlyPrice, oneTimePrice, startDate: startDate as string | null, cuotas: cuotasValue });
         classesCreated++;
+        // Note: isPublished=0 classes are created but won't be visible until the academy adds a price
         classResults.push({ name, status: 'created' });
         if (cr.teacherEmail) classTeacherMap.set(classId, cr.teacherEmail.toLowerCase().trim());
       }

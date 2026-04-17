@@ -109,7 +109,6 @@ Class
 | stripeAccountId | TEXT | YES | NULL | Stripe Connect account |
 | address | TEXT | YES | NULL | |
 | phone | TEXT | YES | NULL | |
-| email | TEXT | YES | NULL | |
 | logoUrl | TEXT | YES | NULL | |
 | defaultWatermarkIntervalMins | INTEGER | YES | 5 | |
 | defaultMaxWatchTimeMultiplier | REAL | YES | 2.0 | |
