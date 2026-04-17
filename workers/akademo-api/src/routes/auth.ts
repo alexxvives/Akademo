@@ -893,4 +893,79 @@ auth.post('/confirm-email-change', emailVerificationRateLimit, async (c) => {
   }
 });
 
+// PATCH /auth/profile - Update first/last name (authenticated)
+auth.patch('/profile', async (c) => {
+  try {
+    const session = await getSession(c);
+    if (!session) return c.json(errorResponse('Not authenticated'), 401);
+
+    const body = await c.req.json();
+    const firstName = (body.firstName || '').trim();
+    const lastName = (body.lastName || '').trim();
+
+    if (!firstName || !lastName) {
+      return c.json(errorResponse('firstName and lastName are required'), 400);
+    }
+    if (firstName.length > 100 || lastName.length > 100) {
+      return c.json(errorResponse('Name fields too long'), 400);
+    }
+
+    await c.env.DB
+      .prepare('UPDATE User SET firstName = ?, lastName = ? WHERE id = ?')
+      .bind(firstName, lastName, session.id)
+      .run();
+
+    return c.json(successResponse({ message: 'Perfil actualizado correctamente' }));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Update Profile] Error:', error);
+    return c.json(errorResponse('Error al actualizar el perfil'), 500);
+  }
+});
+
+// POST /auth/change-password - Change password with current password verification (authenticated)
+auth.post('/change-password', async (c) => {
+  try {
+    const session = await getSession(c);
+    if (!session) return c.json(errorResponse('Not authenticated'), 401);
+
+    const body = await c.req.json();
+    const { currentPassword, newPassword } = body;
+
+    if (!currentPassword || !newPassword) {
+      return c.json(errorResponse('currentPassword and newPassword are required'), 400);
+    }
+    if (newPassword.length < 8) {
+      return c.json(errorResponse('La nueva contraseña debe tener al menos 8 caracteres'), 400);
+    }
+    if (newPassword.length > 128) {
+      return c.json(errorResponse('Contraseña demasiado larga'), 400);
+    }
+
+    const user = await c.env.DB
+      .prepare('SELECT password FROM User WHERE id = ?')
+      .bind(session.id)
+      .first<{ password: string }>();
+
+    if (!user) return c.json(errorResponse('User not found'), 404);
+
+    const isValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isValid) {
+      return c.json(errorResponse('Contraseña actual incorrecta'), 401);
+    }
+
+    const hashed = await hashPassword(newPassword);
+    await c.env.DB
+      .prepare('UPDATE User SET password = ? WHERE id = ?')
+      .bind(hashed, session.id)
+      .run();
+
+    return c.json(successResponse({ message: 'Contraseña actualizada correctamente' }));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Change Password] Error:', error);
+    return c.json(errorResponse('Error al cambiar la contraseña'), 500);
+  }
+});
+
 export default auth;

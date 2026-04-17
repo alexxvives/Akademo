@@ -61,8 +61,23 @@ export function useTeacherProfile() {
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert('Funcionalidad en desarrollo');
-    setIsEditing(false);
+    try {
+      const res = await apiClient('/auth/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ firstName: formData.firstName, lastName: formData.lastName }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        await loadProfile();
+        setIsEditing(false);
+      } else {
+        alert(result.error || 'Error al guardar el perfil');
+      }
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      alert('Error al guardar el perfil');
+    }
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
@@ -71,9 +86,24 @@ export function useTeacherProfile() {
       alert('Las contraseñas no coinciden');
       return;
     }
-    alert('Funcionalidad en desarrollo');
-    setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-    setShowPasswordForm(false);
+    try {
+      const res = await apiClient('/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword: passwordData.currentPassword, newPassword: passwordData.newPassword }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        alert('Contraseña actualizada correctamente');
+        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        setShowPasswordForm(false);
+      } else {
+        alert(result.error || 'Error al cambiar la contraseña');
+      }
+    } catch (error) {
+      console.error('Error changing password:', error);
+      alert('Error al cambiar la contraseña');
+    }
   };
 
   return {
