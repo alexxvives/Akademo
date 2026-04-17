@@ -11,6 +11,7 @@ on:
       - 'next.config.js'
       - 'tailwind.config.ts'
       - 'wrangler.toml'
+      - '.github/workflows/deploy-frontend.yml'
   workflow_dispatch:
 
 jobs:
