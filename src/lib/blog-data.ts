@@ -11,7 +11,7 @@ export function getBlogPost(slug: string): BlogPost | undefined {
 }
 
 export function getBlogMetadata(post: BlogPost): Metadata {
-  const ogImage = `https://akademo-edu.com/api/og?title=${encodeURIComponent(post.title)}&category=${encodeURIComponent(post.category)}`;
+  const ogImage = 'https://akademo-edu.com/images/og-image.svg';
   return {
     title: `${post.title} | AKADEMO Blog`,
     description: post.description,

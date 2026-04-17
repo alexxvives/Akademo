@@ -25,7 +25,7 @@ function TableOfContents({ items }: { items: { id: string; label: string }[] }) 
 }
 
 export function BlogLayout({ post, children }: { post: BlogPost; children: React.ReactNode }) {
-  const ogImage = `/api/og?title=${encodeURIComponent(post.title)}&category=${encodeURIComponent(post.category)}`;
+  const ogImage = '/images/og-image.svg';
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',

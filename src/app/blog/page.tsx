@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { blogPosts } from '@/lib/blog-data';
 
-const ogBlogImage = 'https://akademo-edu.com/api/og?title=Blog%20%E2%80%94%20Recursos%20para%20academias%20online&category=';
+const ogBlogImage = 'https://akademo-edu.com/images/og-image.svg';
 
 export const metadata: Metadata = {
   title: 'Blog | AKADEMO - Recursos para Academias Online',
