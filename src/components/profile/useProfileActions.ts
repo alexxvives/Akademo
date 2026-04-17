@@ -117,8 +117,7 @@ export function useProfileActions(s: ProfileState) {
     setEmailChangeStep('idle');
     setPendingEmailChange(null);
     setEmailChangeCode('');
-    // Reset form email to current server email (from academy response which joins User)
-    if (academy?.email) setFormData((prev) => ({ ...prev, email: academy.email as string }));
+    setFormData((prev) => ({ ...prev, email: s.originalEmail }));
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

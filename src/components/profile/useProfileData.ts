@@ -38,6 +38,8 @@ export function useProfileData() {
   const [emailChangeStep, setEmailChangeStep] = useState<'idle' | 'sending' | 'confirming'>('idle');
   const [pendingEmailChange, setPendingEmailChange] = useState<string | null>(null);
   const [emailChangeCode, setEmailChangeCode] = useState('');
+  const [originalEmail, setOriginalEmail] = useState('');
+  const [originalEmail, setOriginalEmail] = useState('');
   const [formData, setFormData] = useState<ProfileFormData>({
     name: '', address: '', phone: '', email: '',
     feedbackEnabled: true, defaultWatermarkIntervalMins: 5, defaultMaxWatchTimeMultiplier: 2.0,
@@ -80,6 +82,7 @@ export function useProfileData() {
           requireGrading: d.requireGrading !== 0,
           hiddenMenuItems: (() => { try { return JSON.parse(d.hiddenMenuItems || '[]'); } catch { return []; } })(),
         });
+        setOriginalEmail((d.email as string | undefined) || user?.email || '');
       }
       if (zoomResult.success) setZoomAccounts(zoomResult.data || []);
       if (stripeResult.success) setStripeStatus(stripeResult.data);
@@ -164,7 +167,7 @@ export function useProfileData() {
     uploadingLogo, setUploadingLogo, connectingStripe, setConnectingStripe,
     passwordData, setPasswordData, showPasswordForm, setShowPasswordForm,
     emailChangeStep, setEmailChangeStep, pendingEmailChange, setPendingEmailChange,
-    emailChangeCode, setEmailChangeCode,
+    emailChangeCode, setEmailChangeCode, originalEmail, setOriginalEmail, originalEmail, setOriginalEmail,
     formData, setFormData, loadData, refetchUser,
     activePeriodId, setActivePeriodId, isClassInPeriod,
   };

@@ -48,9 +48,11 @@ academies.get('/', async (c) => {
       query = `
         SELECT 
           a.*,
+          u.email as email,
           COUNT(DISTINCT c.id) as classCount,
           COUNT(DISTINCT t.id) as teacherCount
         FROM Academy a
+        JOIN User u ON a.ownerId = u.id
         LEFT JOIN Class c ON a.id = c.academyId
         LEFT JOIN Teacher t ON a.id = t.academyId
         WHERE a.ownerId = ?

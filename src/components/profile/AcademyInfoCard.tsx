@@ -7,7 +7,7 @@ import type { ProfileState } from './useProfileData';
 import type { ProfileActions } from './useProfileActions';
 
 export function AcademyInfoCard({ s, actions }: { s: ProfileState; actions: ProfileActions }) {
-  const { academy, setAcademy, formData, setFormData, editing, setEditing, saving, uploadingLogo, user, emailChangeStep, pendingEmailChange, emailChangeCode, setEmailChangeCode } = s;
+  const { academy, setAcademy, formData, setFormData, editing, setEditing, saving, uploadingLogo, user, emailChangeStep, pendingEmailChange, emailChangeCode, setEmailChangeCode, originalEmail } = s;
   if (!academy) return null;
 
   return (
@@ -129,7 +129,7 @@ export function AcademyInfoCard({ s, actions }: { s: ProfileState; actions: Prof
             ) : editing ? (
               <div className="flex gap-2">
                 <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all text-sm" placeholder="contacto@academia.com" />
-                {formData.email && formData.email !== (academy.email as string | undefined) && (
+                {formData.email && formData.email !== originalEmail && (
                   <button
                     onClick={() => actions.handleRequestEmailChange(formData.email)}
                     disabled={emailChangeStep === 'sending'}
