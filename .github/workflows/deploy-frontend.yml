@@ -48,11 +48,8 @@ jobs:
       
       - name: Deploy Worker
         run: |
-          for i in 1 2 3; do
-            npx wrangler deploy && break
-            echo "Deploy attempt $i failed, retrying in 30s..."
-            sleep 30
-          done
+          set -e
+          npx wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
