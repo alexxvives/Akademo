@@ -30,7 +30,7 @@ export function AcademyInfoCard({ s, actions }: { s: ProfileState; actions: Prof
                   setEditing(false);
                   setFormData({
                     name: academy.name || '', address: academy.address || '', phone: academy.phone || '',
-                    email: user?.email || '',
+                    email: (academy.email as string | undefined) || user?.email || '',
                     feedbackEnabled: academy.feedbackEnabled !== 0,
                     defaultWatermarkIntervalMins: academy.defaultWatermarkIntervalMins ?? 5,
                     defaultMaxWatchTimeMultiplier: academy.defaultMaxWatchTimeMultiplier ?? 2.0,
@@ -129,7 +129,7 @@ export function AcademyInfoCard({ s, actions }: { s: ProfileState; actions: Prof
             ) : editing ? (
               <div className="flex gap-2">
                 <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all text-sm" placeholder="contacto@academia.com" />
-                {formData.email && formData.email !== user?.email && (
+                {formData.email && formData.email !== (academy.email as string | undefined) && (
                   <button
                     onClick={() => actions.handleRequestEmailChange(formData.email)}
                     disabled={emailChangeStep === 'sending'}

@@ -7,7 +7,7 @@ type SettingField = keyof ProfileState['formData'];
 type SettingValue = string | number | boolean | string[];
 
 export function useProfileActions(s: ProfileState) {
-  const { academy, formData, setFormData, stripeStatus, expandedPaymentMethod, setExpandedPaymentMethod, setSaving, setEditing, setUploadingLogo, loadData, setPasswordData, setShowPasswordForm, setEmailChangeStep, setPendingEmailChange, emailChangeCode, setEmailChangeCode } = s;
+  const { academy, formData, setFormData, stripeStatus, expandedPaymentMethod, setExpandedPaymentMethod, setSaving, setEditing, setUploadingLogo, loadData, setPasswordData, setShowPasswordForm, setEmailChangeStep, setPendingEmailChange, emailChangeCode, setEmailChangeCode, refetchUser } = s;
 
   const handleSettingChange = async (field: SettingField, value: SettingValue) => {
     if (!academy) return;
@@ -103,6 +103,7 @@ export function useProfileActions(s: ProfileState) {
         setEmailChangeStep('idle');
         setPendingEmailChange(null);
         setEmailChangeCode('');
+        await refetchUser();
         await loadData();
       } else {
         alert(result.error || 'Código incorrecto');
@@ -116,8 +117,8 @@ export function useProfileActions(s: ProfileState) {
     setEmailChangeStep('idle');
     setPendingEmailChange(null);
     setEmailChangeCode('');
-    // Reset form email to current server email
-    if (s.user?.email) setFormData((prev) => ({ ...prev, email: s.user!.email }));
+    // Reset form email to current server email (from academy response which joins User)
+    if (academy?.email) setFormData((prev) => ({ ...prev, email: academy.email as string }));
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {

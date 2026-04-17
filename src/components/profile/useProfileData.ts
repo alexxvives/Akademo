@@ -12,7 +12,7 @@ import {
 } from './profile-types';
 
 export function useProfileData() {
-  const { user } = useAuth();
+  const { user, refetch: refetchUser } = useAuth();
   const { activePeriodId, setActivePeriodId, isClassInPeriod } = usePeriod();
   const [academy, setAcademy] = useState<Academy | null>(null);
   const [zoomAccounts, setZoomAccounts] = useState<ZoomAccount[]>([]);
@@ -71,7 +71,7 @@ export function useProfileData() {
         }
         setFormData({
           name: d.name || '', address: d.address || '', phone: d.phone || '',
-          email: user?.email || '',
+          email: (d.email as string | undefined) || user?.email || '',
           feedbackEnabled: d.feedbackEnabled !== 0,
           defaultWatermarkIntervalMins: d.defaultWatermarkIntervalMins ?? 5,
           defaultMaxWatchTimeMultiplier: d.defaultMaxWatchTimeMultiplier ?? 2.0,
@@ -165,7 +165,7 @@ export function useProfileData() {
     passwordData, setPasswordData, showPasswordForm, setShowPasswordForm,
     emailChangeStep, setEmailChangeStep, pendingEmailChange, setPendingEmailChange,
     emailChangeCode, setEmailChangeCode,
-    formData, setFormData, loadData,
+    formData, setFormData, loadData, refetchUser,
     activePeriodId, setActivePeriodId, isClassInPeriod,
   };
 }
