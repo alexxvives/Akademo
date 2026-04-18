@@ -13,10 +13,13 @@
 | Adding / changing DB schema | [MODEL_KNOWLEDGE/skills/add-migration.md](../MODEL_KNOWLEDGE/skills/add-migration.md) |
 | Adding a dashboard page or feature | [MODEL_KNOWLEDGE/skills/add-dashboard-feature.md](../MODEL_KNOWLEDGE/skills/add-dashboard-feature.md) |
 | TypeScript / React / API patterns | [MODEL_KNOWLEDGE/conventions.md](../MODEL_KNOWLEDGE/conventions.md) |
-| Database tables and relationships | [DATABASE_SCHEMA.md](../DATABASE_SCHEMA.md) |
-| Deployment process | [DEPLOYMENT_GUIDE.md](../DEPLOYMENT_GUIDE.md) |
-| Errors / unexpected behavior | [docs/troubleshooting.md](../docs/troubleshooting.md) |
-| Zoom integration | [docs/zoom-oauth-quick-reference.md](../docs/zoom-oauth-quick-reference.md) |
+| Database tables and relationships | [docs/DATABASE_SCHEMA.md](../docs/DATABASE_SCHEMA.md) |
+| Deployment process | [docs/DEPLOYMENT_GUIDE.md](../docs/DEPLOYMENT_GUIDE.md) |
+| Errors / unexpected behavior | [MODEL_KNOWLEDGE/skills/debug-production.md](../MODEL_KNOWLEDGE/skills/debug-production.md) |
+| Deploying to production | [MODEL_KNOWLEDGE/skills/deployment.md](../MODEL_KNOWLEDGE/skills/deployment.md) |
+| Zoom integration | [MODEL_KNOWLEDGE/skills/zoom-integration.md](../MODEL_KNOWLEDGE/skills/zoom-integration.md) |
+| Stripe / payments | [MODEL_KNOWLEDGE/skills/stripe-payments.md](../MODEL_KNOWLEDGE/skills/stripe-payments.md) |
+| Video upload / playback | [MODEL_KNOWLEDGE/skills/video-upload.md](../MODEL_KNOWLEDGE/skills/video-upload.md) |
 
 ---
 
@@ -44,24 +47,17 @@ MODEL_KNOWLEDGE/                # Skills and conventions for this AI agent
 
 ---
 
-**Version**: 4.0 (Resolver pattern, April 2026)
-
-
-### Changes Don't Appear
-**Cause**: Cache not cleared  
-**Fix**: Force clean build, then hard refresh browser (`Ctrl+Shift+R`)
-
----
-
 ## 📚 MORE DOCUMENTATION
 
-- [DATABASE_SCHEMA.md](../DATABASE_SCHEMA.md) - Complete table definitions
-- [DEPLOYMENT_GUIDE.md](../DEPLOYMENT_GUIDE.md) - Production deployment
+- [docs/DATABASE_SCHEMA.md](../docs/DATABASE_SCHEMA.md) - Complete table definitions
+- [docs/DEPLOYMENT_GUIDE.md](../docs/DEPLOYMENT_GUIDE.md) - Production deployment
+- [docs/LOCAL_DEV_GUIDE.md](../docs/LOCAL_DEV_GUIDE.md) - Local development setup
 - [docs/troubleshooting.md](../docs/troubleshooting.md) - Common problems
 - [docs/zoom-oauth-quick-reference.md](../docs/zoom-oauth-quick-reference.md) - Zoom OAuth reference
 - [docs/zoom-recording-behavior.md](../docs/zoom-recording-behavior.md) - Zoom recording behavior
+- [MODEL_KNOWLEDGE/SYSTEM_CONSTITUTION.md](../MODEL_KNOWLEDGE/SYSTEM_CONSTITUTION.md) - System design principles
 
 ---
 
-**Version**: 3.0 (Simplified 2026)  
+**Version**: 4.0 (Resolver pattern, April 2026)
 **Maintainer**: AKADEMO Development Team
