@@ -11,6 +11,10 @@ export function useStudentProfile() {
   const [formData, setFormData] = useState<ProfileFormData>({ firstName: '', lastName: '', email: '' });
   const [passwordData, setPasswordData] = useState<PasswordFormData>({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [emailChangeStep, setEmailChangeStep] = useState<'idle' | 'sending' | 'confirming'>('idle');
+  const [pendingEmailChange, setPendingEmailChange] = useState<string | null>(null);
+  const [emailChangeCode, setEmailChangeCode] = useState('');
+  const [originalEmail, setOriginalEmail] = useState('');
 
   useEffect(() => {
     loadProfile();
@@ -27,6 +31,7 @@ export function useStudentProfile() {
           lastName: result.data.lastName,
           email: result.data.email,
         });
+        setOriginalEmail(result.data.email);
       }
     } catch (error) {
       console.error('Error loading profile:', error);
@@ -82,6 +87,58 @@ export function useStudentProfile() {
     }
   };
 
+  const handleRequestEmailChange = async (newEmail: string) => {
+    setEmailChangeStep('sending');
+    try {
+      const res = await apiClient('/auth/request-email-change', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newEmail }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setPendingEmailChange(newEmail);
+        setEmailChangeStep('confirming');
+      } else {
+        alert(result.error || 'Error al enviar el código de verificación');
+        setEmailChangeStep('idle');
+      }
+    } catch {
+      alert('Error al enviar el código de verificación');
+      setEmailChangeStep('idle');
+    }
+  };
+
+  const handleConfirmEmailChange = async () => {
+    if (!pendingEmailChange || !emailChangeCode) return;
+    try {
+      const res = await apiClient('/auth/confirm-email-change', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newEmail: pendingEmailChange, code: emailChangeCode }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setEmailChangeStep('idle');
+        setPendingEmailChange(null);
+        setEmailChangeCode('');
+        await loadProfile();
+        setIsEditing(false);
+      } else {
+        alert(result.error || 'Código incorrecto');
+      }
+    } catch {
+      alert('Error al confirmar el cambio de email');
+    }
+  };
+
+  const handleCancelEmailChange = () => {
+    setEmailChangeStep('idle');
+    setPendingEmailChange(null);
+    setEmailChangeCode('');
+    setFormData((prev) => ({ ...prev, email: originalEmail }));
+  };
+
   return {
     user,
     loading,
@@ -93,7 +150,15 @@ export function useStudentProfile() {
     setPasswordData,
     showPasswordForm,
     setShowPasswordForm,
+    emailChangeStep,
+    pendingEmailChange,
+    emailChangeCode,
+    setEmailChangeCode,
+    originalEmail,
     handleSaveProfile,
     handleChangePassword,
+    handleRequestEmailChange,
+    handleConfirmEmailChange,
+    handleCancelEmailChange,
   };
 }
