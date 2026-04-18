@@ -19,7 +19,7 @@ import { MobileHeader } from './MobileHeader';
 export default function DashboardLayout({ children, role }: DashboardLayoutProps) {
   const {
     user, loading, showSuspicionWarning, setShowSuspicionWarning,
-    handleLogout, checkSession, checkAuth,
+    handleLogout, checkAuth,
   } = useDashboardAuth(role);
 
   const {
@@ -46,20 +46,14 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
         setShowSuspicionWarning(true);
       }
       apiClient('/auth/session/check', { method: 'POST' });
-      const interval = setInterval(checkSession, 60000);
       loadActiveStreams();
       const streamInterval = setInterval(loadActiveStreams, 30000);
       loadNewGrades();
-      const gradesInterval = setInterval(loadNewGrades, 60000);
       loadUnpaidClasses();
       loadStudentPendingPayments();
-      const paymentsInterval = setInterval(loadStudentPendingPayments, 60000);
       return () => {
         cleanup();
-        clearInterval(interval);
         clearInterval(streamInterval);
-        clearInterval(gradesInterval);
-        clearInterval(paymentsInterval);
       };
     }
 
@@ -69,26 +63,16 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
         loadUngradedAssignments(status);
       });
       loadActiveStreams();
-      const academyInterval = setInterval(() => {
-        loadAcademy().then((status) => {
-          loadUnreadValoraciones(status);
-          loadUngradedAssignments(status);
-        });
-        loadActiveStreams();
-      }, 60000);
-      return () => { cleanup(); clearInterval(academyInterval); };
+      const streamInterval = setInterval(loadActiveStreams, 30000);
+      return () => { cleanup(); clearInterval(streamInterval); };
     }
 
     if (role === 'TEACHER') {
       loadUnreadValoraciones();
       loadUngradedAssignments();
       loadActiveStreams();
-      const teacherInterval = setInterval(() => {
-        loadUnreadValoraciones();
-        loadUngradedAssignments();
-        loadActiveStreams();
-      }, 60000);
-      return () => { cleanup(); clearInterval(teacherInterval); };
+      const streamInterval = setInterval(loadActiveStreams, 30000);
+      return () => { cleanup(); clearInterval(streamInterval); };
     }
 
     if (role === 'ADMIN') {
@@ -96,15 +80,10 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
       loadUnreadValoraciones();
       loadUngradedAssignments();
       loadPendingPaymentsCount();
-      const adminInterval = setInterval(() => {
-        loadActiveStreams();
-        loadUnreadValoraciones();
-        loadUngradedAssignments();
-        loadPendingPaymentsCount();
-      }, 60000);
-      return () => { cleanup(); clearInterval(adminInterval); };
+      const streamInterval = setInterval(loadActiveStreams, 30000);
+      return () => { cleanup(); clearInterval(streamInterval); };
     }
-  }, [checkAuth, checkSession, role, loadNotifications, loadActiveStreams, loadAcademy, loadUnreadValoraciones, loadUngradedAssignments, loadNewGrades, loadStudentPendingPayments, loadUnpaidClasses, loadPendingPaymentsCount, cleanup, setShowSuspicionWarning]);
+  }, [checkAuth, role, loadActiveStreams, loadAcademy, loadUnreadValoraciones, loadUngradedAssignments, loadNewGrades, loadStudentPendingPayments, loadUnpaidClasses, loadPendingPaymentsCount, cleanup, setShowSuspicionWarning]);
 
   const copyJoinLink = () => {
     if (!user) return;
