@@ -24,13 +24,19 @@ export function useTranscodingPoll(
   const hasTranscoding = lessons.some(l => l.isTranscoding === 1);
   const hasTranscodingRef = useRef(hasTranscoding);
   hasTranscodingRef.current = hasTranscoding;
+  const pollCountRef = useRef(0);
 
   useEffect(() => {
     if (!hasTranscoding || !classId) return;
+    pollCountRef.current = 0;
 
     const interval = setInterval(async () => {
-      // Check ref in case transcoding finished between interval ticks
-      if (!hasTranscodingRef.current) return;
+      // Hard stop after 60 polls (~10 minutes) to prevent infinite polling if DB gets stuck
+      if (!hasTranscodingRef.current || pollCountRef.current >= 60) {
+        clearInterval(interval);
+        return;
+      }
+      pollCountRef.current += 1;
       try {
         const lessonsRes = await apiClient(`/lessons?classId=${classId}&checkTranscoding=true`);
         const lessonsResult = await lessonsRes.json();

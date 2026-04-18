@@ -46,14 +46,14 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
         setShowSuspicionWarning(true);
       }
       apiClient('/auth/session/check', { method: 'POST' });
-      const interval = setInterval(checkSession, 3000);
+      const interval = setInterval(checkSession, 60000);
       loadActiveStreams();
-      const streamInterval = setInterval(loadActiveStreams, 10000);
+      const streamInterval = setInterval(loadActiveStreams, 30000);
       loadNewGrades();
-      const gradesInterval = setInterval(loadNewGrades, 15000);
+      const gradesInterval = setInterval(loadNewGrades, 60000);
       loadUnpaidClasses();
       loadStudentPendingPayments();
-      const paymentsInterval = setInterval(loadStudentPendingPayments, 15000);
+      const paymentsInterval = setInterval(loadStudentPendingPayments, 60000);
       return () => {
         cleanup();
         clearInterval(interval);
@@ -75,7 +75,7 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
           loadUngradedAssignments(status);
         });
         loadActiveStreams();
-      }, 15000);
+      }, 60000);
       return () => { cleanup(); clearInterval(academyInterval); };
     }
 
@@ -87,7 +87,7 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
         loadUnreadValoraciones();
         loadUngradedAssignments();
         loadActiveStreams();
-      }, 15000);
+      }, 60000);
       return () => { cleanup(); clearInterval(teacherInterval); };
     }
 
@@ -101,7 +101,7 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
         loadUnreadValoraciones();
         loadUngradedAssignments();
         loadPendingPaymentsCount();
-      }, 15000);
+      }, 60000);
       return () => { cleanup(); clearInterval(adminInterval); };
     }
   }, [checkAuth, checkSession, role, loadNotifications, loadActiveStreams, loadAcademy, loadUnreadValoraciones, loadUngradedAssignments, loadNewGrades, loadStudentPendingPayments, loadUnpaidClasses, loadPendingPaymentsCount, cleanup, setShowSuspicionWarning]);

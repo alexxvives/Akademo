@@ -70,7 +70,7 @@ export function useStudentClasses() {
     };
 
     pollActiveStreams();
-    const interval = setInterval(pollActiveStreams, 10000);
+    const interval = setInterval(pollActiveStreams, 60000);
     return () => clearInterval(interval);
   }, []);
 

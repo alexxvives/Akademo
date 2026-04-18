@@ -134,7 +134,7 @@ export function useClassPageData() {
       }
     };
     checkStream();
-    const interval = setInterval(checkStream, 10000);
+    const interval = setInterval(checkStream, 30000);
     return () => clearInterval(interval);
   }, [classData?.id]);
 
