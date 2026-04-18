@@ -18,8 +18,16 @@ export default function TeacherProfile() {
     showPasswordForm,
     setShowPasswordForm,
     academyName,
+    emailChangeStep,
+    pendingEmailChange,
+    emailChangeCode,
+    setEmailChangeCode,
+    originalEmail,
     handleSaveProfile,
     handleChangePassword,
+    handleRequestEmailChange,
+    handleConfirmEmailChange,
+    handleCancelEmailChange,
   } = useTeacherProfile();
 
   if (loading) {
@@ -45,6 +53,14 @@ export default function TeacherProfile() {
         formData={formData}
         setFormData={setFormData}
         handleSaveProfile={handleSaveProfile}
+        emailChangeStep={emailChangeStep}
+        pendingEmailChange={pendingEmailChange}
+        emailChangeCode={emailChangeCode}
+        setEmailChangeCode={setEmailChangeCode}
+        originalEmail={originalEmail}
+        handleRequestEmailChange={handleRequestEmailChange}
+        handleConfirmEmailChange={handleConfirmEmailChange}
+        handleCancelEmailChange={handleCancelEmailChange}
       />
 
       <PasswordChangeCard
