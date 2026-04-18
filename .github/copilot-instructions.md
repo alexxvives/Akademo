@@ -1,262 +1,51 @@
-# GitHub Copilot Instructions - AKADEMO
+# AKADEMO — Agent Instructions
 
 **Stack**: Next.js 14 + Cloudflare Workers + D1 + Hono + TypeScript  
 **Architecture**: Two-worker system (Frontend `akademo` + API `akademo-api`)
 
 ---
 
-## 🚀 QUICK REFERENCE
+## Context Resolver — Load These First
 
-### Deployment - AUTOMATIC via GitHub Actions ✨
-```powershell
-# PRIMARY METHOD - Just push to main!
-git add .
-git commit -m "Your changes"
-git push
+| Task | Read Before Starting |
+|------|---------------------|
+| Adding / changing an API route | [MODEL_KNOWLEDGE/skills/add-api-route.md](../MODEL_KNOWLEDGE/skills/add-api-route.md) |
+| Adding / changing DB schema | [MODEL_KNOWLEDGE/skills/add-migration.md](../MODEL_KNOWLEDGE/skills/add-migration.md) |
+| Adding a dashboard page or feature | [MODEL_KNOWLEDGE/skills/add-dashboard-feature.md](../MODEL_KNOWLEDGE/skills/add-dashboard-feature.md) |
+| TypeScript / React / API patterns | [MODEL_KNOWLEDGE/conventions.md](../MODEL_KNOWLEDGE/conventions.md) |
+| Database tables and relationships | [DATABASE_SCHEMA.md](../DATABASE_SCHEMA.md) |
+| Deployment process | [DEPLOYMENT_GUIDE.md](../DEPLOYMENT_GUIDE.md) |
+| Errors / unexpected behavior | [docs/troubleshooting.md](../docs/troubleshooting.md) |
+| Zoom integration | [docs/zoom-oauth-quick-reference.md](../docs/zoom-oauth-quick-reference.md) |
 
-# GitHub Actions automatically:
-# - Detects which worker(s) changed
-# - Builds and deploys them
-# - Shows status at: https://github.com/alexxvives/Akademo/actions
+---
+
+## Always-On Rules
+
+1. **Build before commit** — `npx @opennextjs/cloudflare build` catches TypeScript errors that `wrangler deploy` misses
+2. **Then push** — GitHub Actions auto-deploys; only manually deploy for hotfixes
+3. **Never run** `npx wrangler d1 migrations apply akademo-db --remote` — runs ALL migrations, breaks DB; run specific files only
+4. **No `any` types**, no SQL string interpolation, no files > 250 lines
+5. **Deploy API worker before frontend** if both changed
+6. **TEACHER ≠ ACADEMY**: `Academy.ownerId` = ACADEMY role, `Teacher.userId` = TEACHER role
+
+---
+
+## Project Structure
+
 ```
-
-### Manual Deployment (Backup Method - RARELY NEEDED)
-```powershell
-# ⚠️ IMPORTANT: Always run from project root directory
-# Check location first: Get-Location should show .../AKADEMO
-
-# API Worker
-cd workers/akademo-api
-npx wrangler deploy
-cd ../..
-
-# Frontend Worker (MUST be in root directory)
-npx @opennextjs/cloudflare build
-npx wrangler deploy
-
-# ❌ NEVER run build commands from subdirectories
-# ❌ NEVER manually deploy if you can just git push
-```
-
-### Database Commands
-```powershell
-# Query remote D1
-npx wrangler d1 execute akademo-db --remote --command "SELECT * FROM User LIMIT 10"
-
-# ⚠️ CRITICAL: Run ONLY specific new migration files
-# ❌ NEVER run: npx wrangler d1 migrations apply akademo-db --remote
-# ❌ This applies ALL 50+ migrations and breaks the database!
-# ✅ ALWAYS run specific files:
-npx wrangler d1 execute akademo-db --remote --file=migrations/0034_example.sql
-
-# Check schema
-npx wrangler d1 execute akademo-db --remote --command "SELECT sql FROM sqlite_master WHERE type='table' AND name='User'"
-```
-
-### Check Logs
-```powershell
-npx wrangler tail akademo --format pretty
+src/app/dashboard/[role]/       # Role dashboards: student, teacher, academy, admin
+src/components/                 # Shared UI components
+src/hooks/                      # Custom React hooks
+workers/akademo-api/src/        # Hono API routes
+migrations/                     # D1 SQL migrations (run individually, never batch)
+MODEL_KNOWLEDGE/                # Skills and conventions for this AI agent
 ```
 
 ---
 
-## ⚡ CORE RULES
+**Version**: 4.0 (Resolver pattern, April 2026)
 
-### 0. DEPLOYMENT WORKFLOW
-**CRITICAL**: We are NOT working locally - changes only work after deployment!
-
-**ALWAYS TEST BEFORE COMMITTING**:
-```powershell
-# 1. FIRST - Full build to catch ALL errors (TypeScript, syntax, etc.)
-npx @opennextjs/cloudflare build
-
-# 2. ONLY THEN - Commit and push if build succeeds
-git add .
-git commit -m "Description"
-git push
-```
-
-**Why this order?**
-- Full build includes Next.js TypeScript type checking that catches errors
-- `npx wrangler deploy` only redeploys pre-built code without type checking
-- Prevents failed GitHub Actions runs
-- Saves time by catching issues locally
-
-**PRIMARY METHOD (after testing)**:
-```powershell
-git add .
-git commit -m "Description"
-git push
-```
-- GitHub Actions auto-deploys changed workers
-- Check status: https://github.com/alexxvives/Akademo/actions
-
-**ONLY manually deploy if**:
-- GitHub Actions fails
-- Need immediate hotfix
-- Testing deployment process
-
-**COMMON MISTAKES TO AVOID**:
-- ❌ Using `npx wrangler deploy` for testing (doesn't run TypeScript checks!)
-- ❌ Running `npx @opennextjs/cloudflare build` from subdirectories
-- ❌ Manually deploying when git push would work
-- ❌ Not checking current directory before build commands
-- ❌ **Committing before testing with `npx @opennextjs/cloudflare build`** (catches type errors!)
-
-### 1. Search Before You Code
-
-**ALWAYS**:
-- Ensure every function, if/else, and block has a matching closing brace before commit (use editor bracket highlighting, folding, or block selection)
-- Run `npm run lint` and `npm run format` before every commit and push
-- Fix all linter and formatter errors before pushing
-- Use a code editor with bracket matching/highlighting enabled
-- If you see a JSX or parse error, review the last 20 lines above and below the error for missing/extra braces or parentheses
-- Never commit code with a known syntax error or failed build
-
-### 1. Search Before You Code
-
-Always verify current state before changes:
-- Use `grep_search` or `semantic_search` to find existing patterns
-- Check file size: `(Get-Content path/to/file.tsx).Count`
-- Query schema before writing API code
-
-### 2. Component Size: 250 Lines Max
-**HARD LIMIT**: No component/file > 250 lines
-- If exceeds → Extract to `/components/[feature]/` or `/hooks/`
-- Page components orchestrate, don't implement
-
-### 3. Schema-First Protocol
-Before API changes:
-1. Query D1 to verify table structure
-2. Create migration if schema needs changes
-3. Test query before deploying
-
-### 4. Two-Worker Architecture
-- **Frontend** (`akademo`): Next.js app in `src/`
-- **API** (`akademo-api`): Hono routes in `workers/akademo-api/src/`
-- Deploy API **before** frontend if both changed
----
-
-## 🚫 NEVER DO THIS
-
-❌ Use `any` type → Define explicit interfaces  
-❌ Deploy without clean build → Use deployment commands above  
-❌ Ignore TypeScript errors → Fix before deploying  
-❌ Create files >250 lines → Refactor immediately  
-❌ Use `localStorage` for sessions → Use `academy_session` cookie  
-❌ Hardcode secrets → Use `c.env.VAR` (Hono) or `process.env.NEXT_PUBLIC_*` (Next.js)  
-❌ Return generic errors → Include context: `errorResponse(\`User ${id} not found\`, 404)`  
-❌ Assume database data exists → Query first  
-❌ Use index as React key → Use stable IDs: `key={item.id}`  
-❌ Chain async in loops → Use `Promise.all()`  
-❌ Forget null safety → Use `(data || []).filter()`  
-❌ Use Teacher table for ACADEMY role → ACADEMY = `Academy.ownerId`, TEACHER = `Teacher.userId`  
-❌ Keep backup files in src/ → Use git history instead  
-
----
-
-## 🗄️ DATABASE SCHEMA
-
-See [DATABASE_SCHEMA.md](../DATABASE_SCHEMA.md) for complete reference.
-
-**Key Tables**: User, Academy, Teacher, Class, ClassEnrollment, Lesson, VideoResource, LiveStream, Notification
-
-**Important Relationships**:
-- `Academy.ownerId` → User.id (ACADEMY role - owner)
-- `Teacher.userId` → User.id (TEACHER role - works in academy)
-- `Class.teacherId` → User.id (assigned teacher)
-- `ClassEnrollment.userId` → User.id (STUDENT role)
-
-**Creating Migrations**:
-```sql
--- migrations/0017_example.sql
-ALTER TABLE User ADD COLUMN preferences TEXT DEFAULT '{}';
-```
-
-Apply with: `npx wrangler d1 execute akademo-db --remote --file=migrations/0017_example.sql`
-
----
-
-## 📂 PROJECT STRUCTURE
-
-```
-src/
-├── app/                    # Next.js pages (<200 lines each)
-│   ├── dashboard/[role]/  # Role-based dashboards
-│   └── api/               # Next.js API routes (AVOID - use akademo-api worker)
-├── components/            # Feature-organized components
-│   ├── ui/               # Primitives (<100 lines)
-│   ├── shared/           # Cross-role components
-│   └── [feature]/        # Feature-specific
-├── hooks/                 # Custom React hooks (<80 lines)
-├── lib/                   # Utilities (<150 lines)
-└── types/                 # TypeScript definitions
-
-workers/akademo-api/src/   # Hono API routes
-```
-
----
-
-## 💻 CODING STANDARDS
-
-### API Responses (Required Format)
-```typescript
-// ✅ CORRECT
-return c.json({ success: true, data: user });
-return errorResponse(`User ${id} not found`, 404);
-
-// ❌ WRONG
-return c.json({ user });
-return c.json({ error: 'Not found' }, 404);
-```
-
-### TypeScript
-```typescript
-// ✅ CORRECT
-interface LessonResponse {
-  id: string;
-  title: string;
-  videos: Video[];
-}
-
-const loadLessons = async (classId: string): Promise<void> => {
-  const res = await apiClient<ApiResponse<Lesson[]>>(`/lessons?classId=${classId}`);
-};
-
-// ❌ WRONG
-const loadLessons = async (classId: any): Promise<any> => { /* ... */ };
-```
-
-### Database Queries
-```typescript
-// ✅ CORRECT - Prepared statements
-const user = await db.prepare('SELECT * FROM User WHERE id = ?').bind(userId).first();
-
-// ❌ WRONG - SQL injection risk
-const user = await db.prepare(`SELECT * FROM User WHERE id = '${userId}'`).first();
-```
-
-### React Performance
-```typescript
-// ✅ CORRECT - Memoization
-const filtered = useMemo(() => lessons.filter(l => l.active), [lessons]);
-const handleSubmit = useCallback((data) => { /* ... */ }, [deps]);
-
-// ❌ WRONG - Recreates every render
-const filtered = lessons.filter(l => l.active);
-```
-
----
-
-## 🐛 COMMON ISSUES
-
-### `.open-next/worker.js not found`
-**Cause**: Build failed but deployment continued  
-**Fix**: Clean build with deployment command above
-
-### D1 Timeout (30s limit)
-**Cause**: Operation too slow (usually video uploads)  
-**Fix**: Two-step process - upload to Bunny first, then save metadata to D1
 
 ### Changes Don't Appear
 **Cause**: Cache not cleared  
