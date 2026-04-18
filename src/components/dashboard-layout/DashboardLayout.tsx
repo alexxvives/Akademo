@@ -47,14 +47,12 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
       }
       apiClient('/auth/session/check', { method: 'POST' });
       loadActiveStreams();
-      const streamInterval = setInterval(loadActiveStreams, 30000);
       loadNewGrades();
       loadUnpaidClasses();
       loadStudentPendingPayments();
-      return () => {
-        cleanup();
-        clearInterval(streamInterval);
-      };
+      const onVisible = () => { if (document.visibilityState === 'visible') loadActiveStreams(); };
+      document.addEventListener('visibilitychange', onVisible);
+      return () => { cleanup(); document.removeEventListener('visibilitychange', onVisible); };
     }
 
     if (role === 'ACADEMY') {
@@ -63,16 +61,18 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
         loadUngradedAssignments(status);
       });
       loadActiveStreams();
-      const streamInterval = setInterval(loadActiveStreams, 30000);
-      return () => { cleanup(); clearInterval(streamInterval); };
+      const onVisible = () => { if (document.visibilityState === 'visible') loadActiveStreams(); };
+      document.addEventListener('visibilitychange', onVisible);
+      return () => { cleanup(); document.removeEventListener('visibilitychange', onVisible); };
     }
 
     if (role === 'TEACHER') {
       loadUnreadValoraciones();
       loadUngradedAssignments();
       loadActiveStreams();
-      const streamInterval = setInterval(loadActiveStreams, 30000);
-      return () => { cleanup(); clearInterval(streamInterval); };
+      const onVisible = () => { if (document.visibilityState === 'visible') loadActiveStreams(); };
+      document.addEventListener('visibilitychange', onVisible);
+      return () => { cleanup(); document.removeEventListener('visibilitychange', onVisible); };
     }
 
     if (role === 'ADMIN') {
@@ -80,8 +80,9 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
       loadUnreadValoraciones();
       loadUngradedAssignments();
       loadPendingPaymentsCount();
-      const streamInterval = setInterval(loadActiveStreams, 30000);
-      return () => { cleanup(); clearInterval(streamInterval); };
+      const onVisible = () => { if (document.visibilityState === 'visible') loadActiveStreams(); };
+      document.addEventListener('visibilitychange', onVisible);
+      return () => { cleanup(); document.removeEventListener('visibilitychange', onVisible); };
     }
   }, [checkAuth, role, loadActiveStreams, loadAcademy, loadUnreadValoraciones, loadUngradedAssignments, loadNewGrades, loadStudentPendingPayments, loadUnpaidClasses, loadPendingPaymentsCount, cleanup, setShowSuspicionWarning]);
 
