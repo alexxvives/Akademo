@@ -71,7 +71,13 @@ export function ProfileInfoCard({
                 Cancelar
               </button>
               <button
-                onClick={handleSaveProfile}
+                onClick={(e) => {
+                  if (formData.email !== originalEmail) {
+                    alert('Debes verificar el nuevo email antes de guardar. Haz clic en "Verificar".');
+                    return;
+                  }
+                  handleSaveProfile(e);
+                }}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-all font-medium text-sm"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

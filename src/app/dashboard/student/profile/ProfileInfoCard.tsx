@@ -10,9 +10,17 @@ interface ProfileInfoCardProps {
   formData: ProfileFormData;
   setFormData: Dispatch<SetStateAction<ProfileFormData>>;
   handleSaveProfile: (e: React.FormEvent) => Promise<void>;
+  emailChangeStep: 'idle' | 'sending' | 'confirming';
+  pendingEmailChange: string | null;
+  emailChangeCode: string;
+  setEmailChangeCode: Dispatch<SetStateAction<string>>;
+  originalEmail: string;
+  handleRequestEmailChange: (newEmail: string) => Promise<void>;
+  handleConfirmEmailChange: () => Promise<void>;
+  handleCancelEmailChange: () => void;
 }
 
-export function ProfileInfoCard({ user, isEditing, setIsEditing, formData, setFormData, handleSaveProfile }: ProfileInfoCardProps) {
+export function ProfileInfoCard({ user, isEditing, setIsEditing, formData, setFormData, handleSaveProfile, emailChangeStep, pendingEmailChange, emailChangeCode, setEmailChangeCode, originalEmail, handleRequestEmailChange, handleConfirmEmailChange, handleCancelEmailChange }: ProfileInfoCardProps) {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
       <div className="px-4 sm:px-8 py-4 sm:py-6 bg-gray-50 border-b border-gray-200">
@@ -47,7 +55,13 @@ export function ProfileInfoCard({ user, isEditing, setIsEditing, formData, setFo
                 Cancelar
               </button>
               <button
-                onClick={handleSaveProfile}
+                onClick={(e) => {
+                  if (formData.email !== originalEmail) {
+                    alert('Debes verificar el nuevo email antes de guardar. Haz clic en "Verificar".');
+                    return;
+                  }
+                  handleSaveProfile(e);
+                }}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-all font-medium text-sm"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -105,14 +119,42 @@ export function ProfileInfoCard({ user, isEditing, setIsEditing, formData, setFo
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Email <span className="text-red-500">*</span>
           </label>
-          {isEditing ? (
-            <input
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
-              required
-            />
+          {emailChangeStep === 'confirming' ? (
+            <div className="space-y-2">
+              <p className="text-xs text-gray-500">Código enviado a <strong>{pendingEmailChange}</strong></p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={emailChangeCode}
+                  onChange={(e) => setEmailChangeCode(e.target.value.replace(/\D/g, ''))}
+                  placeholder="000000"
+                  className="w-28 px-3 py-2 border border-gray-300 rounded-lg text-sm text-center tracking-widest focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+                <button onClick={handleConfirmEmailChange} disabled={emailChangeCode.length !== 6} className="px-3 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 disabled:opacity-40">Confirmar</button>
+                <button onClick={handleCancelEmailChange} className="px-3 py-2 border border-gray-300 text-gray-600 rounded-lg text-sm hover:bg-gray-50">Cancelar</button>
+              </div>
+            </div>
+          ) : isEditing ? (
+            <div className="flex gap-2">
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
+                required
+              />
+              {formData.email && formData.email !== originalEmail && (
+                <button
+                  onClick={() => handleRequestEmailChange(formData.email)}
+                  disabled={emailChangeStep === 'sending'}
+                  className="flex-shrink-0 px-3 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 disabled:opacity-40 whitespace-nowrap"
+                >
+                  {emailChangeStep === 'sending' ? 'Enviando…' : 'Verificar'}
+                </button>
+              )}
+            </div>
           ) : (
             <div className="flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-lg">
               <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
