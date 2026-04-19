@@ -8,40 +8,38 @@ import type { ProfileActions } from './useProfileActions';
 
 export function AcademyInfoCard({ s, actions }: { s: ProfileState; actions: ProfileActions }) {
   const { academy, setAcademy, formData, setFormData, uploadingLogo, user, emailChangeStep, pendingEmailChange, emailChangeCode, setEmailChangeCode, originalEmail } = s;
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saved' | 'error'>('idle');
+  const [saveStatus, setSaveStatus] = useState<{ field: string | null; status: 'idle' | 'saved' | 'error' }>({ field: null, status: 'idle' });
   if (!academy) return null;
 
-  const handleBlur = async () => {
+  const handleBlur = async (field: string) => {
     const ok = await actions.handleBlurSave();
-    setSaveStatus(ok ? 'saved' : 'error');
-    setTimeout(() => setSaveStatus('idle'), 2000);
+    setSaveStatus({ field, status: ok ? 'saved' : 'error' });
+    setTimeout(() => setSaveStatus({ field: null, status: 'idle' }), 2000);
+  };
+
+  const SavedIndicator = ({ field }: { field: string }) => {
+    if (saveStatus.field !== field) return null;
+    if (saveStatus.status === 'saved') return <span className="ml-2 inline-flex items-center gap-1 text-xs text-green-600 font-medium"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>Guardado</span>;
+    if (saveStatus.status === 'error') return <span className="ml-2 text-xs text-red-500 font-medium">Error al guardar</span>;
+    return null;
   };
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
       <div className="px-4 sm:px-8 py-4 sm:py-6 bg-gray-50 border-b border-gray-200">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <div>
             <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Información General</h2>
             <p className="text-sm text-gray-600 mt-1">Datos principales de tu academia</p>
           </div>
-          {saveStatus === 'saved' && (
-            <span className="inline-flex items-center gap-1.5 text-sm text-green-600 font-medium">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-              Guardado
-            </span>
-          )}
-          {saveStatus === 'error' && (
-            <span className="text-sm text-red-500 font-medium">Error al guardar</span>
-          )}
         </div>
       </div>
 
       <div className="px-4 sm:px-8 py-4 sm:py-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 pb-6 border-b border-gray-200">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Nombre de la academia</label>
-            <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} onBlur={handleBlur} className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all" placeholder="Ej: Academia de Matemáticas Avanzadas" />
+            <label className="block text-sm font-medium text-gray-700 mb-2">Nombre de la academia<SavedIndicator field="name" /></label>
+            <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} onBlur={() => handleBlur('name')} className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all" placeholder="Ej: Academia de Matemáticas Avanzadas" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2 text-center">Logo de la academia</label>
@@ -121,13 +119,13 @@ export function AcademyInfoCard({ s, actions }: { s: ProfileState; actions: Prof
             )}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Teléfono</label>
-            <input type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} onBlur={handleBlur} className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all text-sm" placeholder="+34 123 456 789" />
+            <label className="block text-sm font-medium text-gray-700 mb-2">Teléfono<SavedIndicator field="phone" /></label>
+            <input type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} onBlur={() => handleBlur('phone')} className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all text-sm" placeholder="+34 123 456 789" />
           </div>
           <div className="lg:col-span-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Dirección</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Dirección<SavedIndicator field="address" /></label>
             <div className="relative">
-              <input type="text" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} onBlur={handleBlur} className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all text-sm" placeholder="Calle Principal 123" />
+              <input type="text" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} onBlur={() => handleBlur('address')} className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all text-sm" placeholder="Calle Principal 123" />
             </div>
           </div>
         </div>

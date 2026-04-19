@@ -468,16 +468,20 @@ admin.delete('/users/:id', async (c) => {
 
     // Role-specific deletion logic (same as the user self-delete endpoint)
     if (user.role === 'STUDENT') {
-      // Delete student-specific data
-      await c.env.DB.prepare('DELETE FROM ClassEnrollment WHERE userId = ?').bind(userId).run();
-      await c.env.DB.prepare('DELETE FROM LessonRating WHERE studentId = ?').bind(userId).run();
-      await c.env.DB.prepare('DELETE FROM VideoPlayState WHERE studentId = ?').bind(userId).run();
+      // Delete student-specific data — atomic batch
+      await c.env.DB.batch([
+        c.env.DB.prepare('DELETE FROM ClassEnrollment WHERE userId = ?').bind(userId),
+        c.env.DB.prepare('DELETE FROM LessonRating WHERE studentId = ?').bind(userId),
+        c.env.DB.prepare('DELETE FROM VideoPlayState WHERE studentId = ?').bind(userId),
+      ]);
       
     } else if (user.role === 'TEACHER') {
-      // Unassign teacher from classes
-      await c.env.DB.prepare('UPDATE Class SET teacherId = NULL WHERE teacherId = ?').bind(userId).run();
-      await c.env.DB.prepare('DELETE FROM Teacher WHERE userId = ?').bind(userId).run();
-      await c.env.DB.prepare('DELETE FROM LiveStream WHERE teacherId = ?').bind(userId).run();
+      // Unassign teacher from classes — atomic batch
+      await c.env.DB.batch([
+        c.env.DB.prepare('UPDATE Class SET teacherId = NULL WHERE teacherId = ?').bind(userId),
+        c.env.DB.prepare('DELETE FROM Teacher WHERE userId = ?').bind(userId),
+        c.env.DB.prepare('DELETE FROM LiveStream WHERE teacherId = ?').bind(userId),
+      ]);
       
     } else if (user.role === 'ACADEMY') {
       // CASCADE DELETE: Delete entire academy using subquery DELETEs (no N+1)
@@ -507,11 +511,11 @@ admin.delete('/users/:id', async (c) => {
       
     }
 
-    // Delete device sessions
-    await c.env.DB.prepare('DELETE FROM DeviceSession WHERE userId = ?').bind(userId).run();
-    
-    // Finally, delete the user
-    await c.env.DB.prepare('DELETE FROM User WHERE id = ?').bind(userId).run();
+    // Delete device sessions and user — atomic batch
+    await c.env.DB.batch([
+      c.env.DB.prepare('DELETE FROM DeviceSession WHERE userId = ?').bind(userId),
+      c.env.DB.prepare('DELETE FROM User WHERE id = ?').bind(userId),
+    ]);
 
     void writeAuditLog(c.env.DB, {
       actorId: session.id,
@@ -976,9 +980,9 @@ admin.post('/bulk-import', async (c) => {
       }
 
       if (role === 'TEACHER') {
-        // Teacher record
+        // Teacher record — ON CONFLICT to handle re-imports safely
         dbStatements.push(
-          c.env.DB.prepare('INSERT INTO Teacher (id, userId, academyId, createdAt) VALUES (?, ?, ?, ?)')
+          c.env.DB.prepare('INSERT INTO Teacher (id, userId, academyId, createdAt) VALUES (?, ?, ?, ?) ON CONFLICT(userId, academyId) DO NOTHING')
             .bind(nanoid(), userId, academyId, now)
         );
         // Assign to classes
@@ -996,8 +1000,8 @@ admin.post('/bulk-import', async (c) => {
           const classPrice = classPriceMap.get(classId);
           const paymentFrequency = classPrice?.monthlyPrice ? 'MONTHLY' : 'ONE_TIME';
           dbStatements.push(
-            c.env.DB.prepare('INSERT INTO ClassEnrollment (id, classId, userId, status, enrolledAt, documentSigned, paymentFrequency) VALUES (?, ?, ?, ?, datetime("now"), ?, ?)')
-              .bind(enrollmentId, classId, userId, 'APPROVED', 0, paymentFrequency)
+            c.env.DB.prepare('INSERT INTO ClassEnrollment (id, classId, userId, status, enrolledAt, documentSigned, paymentFrequency) VALUES (?, ?, ?, ?, datetime("now"), ?, ?) ON CONFLICT(classId, userId) DO UPDATE SET status = ?')
+              .bind(enrollmentId, classId, userId, 'APPROVED', 0, paymentFrequency, 'APPROVED')
           );
           if (pagado) {
             pagadoEnrollments.push({ userId, classId });

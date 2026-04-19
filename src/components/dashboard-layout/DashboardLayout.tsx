@@ -3,7 +3,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { MobileSidebar } from '@/components/layout/MobileSidebar';
-import { NotificationPanel } from '@/components/layout/NotificationPanel';
 import { DemoDataBanner } from '@/components/academy/DemoDataBanner';
 import { DemoBanner } from '@/components/shared/DemoBanner';
 import { PeriodProvider } from '@/contexts/PeriodContext';
@@ -23,19 +22,18 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
   } = useDashboardAuth(role);
 
   const {
-    notifications, unreadCount, activeStreams,
+    activeStreams,
     pendingPaymentsCount, unreadValoracionesCount, ungradedAssignmentsCount,
     newSubmissionsCount, newGradesCount, unpaidClassesCount, studentPendingPaymentsCount,
     academyId, academyPaymentStatus, academy,
-    loadNotifications, loadActiveStreams, loadAcademy,
+    loadActiveStreams, loadAcademy,
     loadUnreadValoraciones, loadUngradedAssignments,
     loadNewGrades, loadUnpaidClasses, loadStudentPendingPayments, loadPendingPaymentsCount,
-    markNotificationAsRead, joinLiveClass, markAllAsRead, cleanup,
+    cleanup,
   } = useDashboardBadges();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
     checkAuth();

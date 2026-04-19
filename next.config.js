@@ -6,34 +6,6 @@ const nextConfig = {
     // Disable ESLint during builds
     ignoreDuringBuilds: true,
   },
-  async headers() {
-    return [
-      {
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
-              "worker-src blob: 'self'",
-              "style-src 'self' 'unsafe-inline' https:",
-              "img-src 'self' data: blob: https:",
-              "connect-src 'self' https: wss:",
-              "font-src 'self' https: data:",
-              "frame-src 'self' https:",
-              "media-src 'self' blob: https:",
-            ].join('; '),
-          },
-          {
-            // Allow camera/mic/screen-share inside cross-origin iframes (Daily.co)
-            key: 'Permissions-Policy',
-            value: 'camera=*, microphone=*, display-capture=*, fullscreen=*',
-          },
-        ],
-      },
-    ];
-  },
   experimental: {
     serverActions: {
       bodySizeLimit: '500mb',

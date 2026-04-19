@@ -313,31 +313,35 @@ assignments.post('/', async (c) => {
 
     const assignmentId = nanoid();
 
-    // Create Assignment record
-    await c.env.DB.prepare(`
-      INSERT INTO Assignment (id, classId, teacherId, title, description, dueDate, maxScore, uploadId, attachmentIds, type)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      assignmentId,
-      classId,
-      session.id,
-      title,
-      description || null,
-      dueDate || null,
-      maxScore || 100,
-      allUploadIds.length > 0 ? allUploadIds[0] : null,
-      '[]',
-      type || 'file'
-    ).run();
+    // Build all statements for atomic batch insert
+    const statements: D1PreparedStatement[] = [
+      c.env.DB.prepare(`
+        INSERT INTO Assignment (id, classId, teacherId, title, description, dueDate, maxScore, uploadId, attachmentIds, type)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        assignmentId,
+        classId,
+        session.id,
+        title,
+        description || null,
+        dueDate || null,
+        maxScore || 100,
+        allUploadIds.length > 0 ? allUploadIds[0] : null,
+        '[]',
+        type || 'file'
+      ),
+    ];
 
     // Create AssignmentAttachment records for file type
     if (type !== 'quiz') {
       for (const uploadId of allUploadIds) {
         const attachmentId = nanoid();
-        await c.env.DB.prepare(`
-          INSERT INTO AssignmentAttachment (id, assignmentId, uploadId)
-          VALUES (?, ?, ?)
-        `).bind(attachmentId, assignmentId, uploadId).run();
+        statements.push(
+          c.env.DB.prepare(`
+            INSERT INTO AssignmentAttachment (id, assignmentId, uploadId)
+            VALUES (?, ?, ?)
+          `).bind(attachmentId, assignmentId, uploadId)
+        );
       }
     }
 
@@ -346,20 +350,25 @@ assignments.post('/', async (c) => {
       for (let i = 0; i < questions.length; i++) {
         const q = questions[i];
         const questionId = nanoid();
-        await c.env.DB.prepare(`
-          INSERT INTO QuizQuestion (id, assignmentId, questionText, questionOrder, options, correctOptionId, explanation)
-          VALUES (?, ?, ?, ?, ?, ?, ?)
-        `).bind(
-          questionId,
-          assignmentId,
-          q.questionText,
-          i,
-          JSON.stringify(q.options),
-          JSON.stringify(q.correctOptionIds),
-          q.explanation || null
-        ).run();
+        statements.push(
+          c.env.DB.prepare(`
+            INSERT INTO QuizQuestion (id, assignmentId, questionText, questionOrder, options, correctOptionId, explanation)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+          `).bind(
+            questionId,
+            assignmentId,
+            q.questionText,
+            i,
+            JSON.stringify(q.options),
+            JSON.stringify(q.correctOptionIds),
+            q.explanation || null
+          )
+        );
       }
     }
+
+    // Execute all inserts atomically
+    await c.env.DB.batch(statements);
 
     const assignment = await c.env.DB.prepare(`
       SELECT * FROM Assignment WHERE id = ?
@@ -584,21 +593,22 @@ assignments.post('/:id/submit', async (c) => {
       return c.json(errorResponse('Acceso bloqueado. Firma el documento y regulariza tu situación de pago.'), 403);
     }
 
-    // Delete any existing submission (resubmit replaces previous)
-    await c.env.DB.prepare(`
-      DELETE FROM AssignmentSubmission WHERE assignmentId = ? AND studentId = ?
-    `).bind(assignmentId, session.id).run();
-
+    // Delete any existing submission and create new one — atomic batch
     const submissionId = nanoid();
 
     // Store first file as uploadId for backwards compatibility
     const primaryUploadId = fileIds[0];
 
-    // Create the submission (always version 1 since we replace)
-    await c.env.DB.prepare(`
-      INSERT INTO AssignmentSubmission (id, assignmentId, studentId, uploadId, version)
-      VALUES (?, ?, ?, ?, 1)
-    `).bind(submissionId, assignmentId, session.id, primaryUploadId).run();
+    // Atomic: delete old + insert new in one batch
+    await c.env.DB.batch([
+      c.env.DB.prepare(`
+        DELETE FROM AssignmentSubmission WHERE assignmentId = ? AND studentId = ?
+      `).bind(assignmentId, session.id),
+      c.env.DB.prepare(`
+        INSERT INTO AssignmentSubmission (id, assignmentId, studentId, uploadId, version)
+        VALUES (?, ?, ?, ?, 1)
+      `).bind(submissionId, assignmentId, session.id, primaryUploadId),
+    ]);
 
     const submission = await c.env.DB.prepare(`
       SELECT * FROM AssignmentSubmission WHERE id = ?

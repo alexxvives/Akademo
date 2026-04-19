@@ -191,7 +191,7 @@ payments.post('/initiate', paymentInitiateRateLimit, async (c) => {
     }
 
     // Create Payment record with billing cycle info
-    const paymentId = `payment-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const paymentId = crypto.randomUUID();
 
     // Atomic batch: insert payment + sync enrollment payment settings
     await c.env.DB.batch([

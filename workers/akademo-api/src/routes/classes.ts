@@ -260,6 +260,12 @@ classes.post('/', async (c) => {
       
       slug = `${baseSlug}-${counter}`;
       counter++;
+
+      // Safety valve: avoid infinite loops
+      if (counter > 100) {
+        slug = `${baseSlug}-${crypto.randomUUID().slice(0, 8)}`;
+        break;
+      }
     }
 
     // Create the class

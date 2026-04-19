@@ -90,11 +90,24 @@ zoomAccounts.delete('/:id', async (c) => {
 // OAuth callback handler
 zoomAccounts.post('/oauth/callback', async (c) => {
   try {
+    const session = await requireAuth(c);
+    if (session.role !== 'ACADEMY') {
+      return c.json(errorResponse('Only academy owners can connect Zoom accounts'), 403);
+    }
+
     const { code, state } = await c.req.json();
     const academyId = state;
 
     if (!code || !academyId) {
       return c.json(errorResponse('Missing required parameters'), 400);
+    }
+
+    // Verify the caller owns this academy
+    const ownsAcademy = await c.env.DB.prepare(
+      'SELECT id FROM Academy WHERE id = ? AND ownerId = ?'
+    ).bind(academyId, session.id).first();
+    if (!ownsAcademy) {
+      return c.json(errorResponse('You do not own this academy'), 403);
     }
 
     // Exchange code for tokens

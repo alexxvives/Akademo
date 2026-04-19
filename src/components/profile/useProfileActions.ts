@@ -70,11 +70,13 @@ export function useProfileActions(s: ProfileState) {
   };
 
   // Silent auto-save used by onBlur on text fields. Returns true on success.
+  // Uses skipAutoRedirect to prevent global 401 handler from kicking the user out on session expiry.
   const handleBlurSave = async (): Promise<boolean> => {
     if (!academy) return false;
     try {
       const response = await apiClient(`/academies/${academy.id}`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        skipAutoRedirect: true,
         body: JSON.stringify({
           name: formData.name, address: formData.address, phone: formData.phone,
           feedbackEnabled: formData.feedbackEnabled ? 1 : 0,
@@ -85,6 +87,7 @@ export function useProfileActions(s: ProfileState) {
           requireGrading: formData.requireGrading ? 1 : 0, hiddenMenuItems: JSON.stringify(formData.hiddenMenuItems),
         }),
       });
+      if (response.status === 401) return false;
       const result = await response.json();
       return result.success === true;
     } catch (error) {

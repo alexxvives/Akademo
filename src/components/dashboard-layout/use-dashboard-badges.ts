@@ -3,11 +3,9 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { apiClient } from '@/lib/api-client';
 import { generateDemoPendingPayments } from '@/lib/demo-data';
-import type { Notification, ActiveStream, Academy } from './types';
+import type { ActiveStream, Academy } from './types';
 
 export function useDashboardBadges() {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [activeStreams, setActiveStreams] = useState<ActiveStream[]>([]);
   const [pendingPaymentsCount, setPendingPaymentsCount] = useState(0);
   const [unreadValoracionesCount, setUnreadValoracionesCount] = useState(0);
@@ -23,21 +21,6 @@ export function useDashboardBadges() {
   const controllerRef = useRef<AbortController>(new AbortController());
   // Throttle: don't re-fetch active streams more than once per 60 seconds
   const lastActiveStreamsFetchRef = useRef<number>(0);
-
-  const loadNotifications = useCallback(async () => {
-    try {
-      const response = await apiClient('/notifications?unread=true', { signal: controllerRef.current.signal });
-      const result = await response.json();
-      if (result.success && Array.isArray(result.data)) {
-        setNotifications(result.data);
-        const newCount = result.data.filter((n: Notification) => !n.isRead).length;
-        setUnreadCount(newCount);
-      }
-    } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') return;
-      console.error('Failed to load notifications:', error);
-    }
-  }, []);
 
   const loadActiveStreams = useCallback(async (force = false) => {
     const now = Date.now();
@@ -199,54 +182,15 @@ export function useDashboardBadges() {
     return () => window.removeEventListener('unreadReviewsChanged', handleUnreadReviewsChanged);
   }, [loadUnreadValoraciones]);
 
-  const markNotificationAsRead = async (notificationId: string) => {
-    try {
-      const res = await apiClient('/notifications', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notificationIds: [notificationId] }),
-      });
-      if (!res.ok) return;
-      setNotifications(prev => prev.map(n =>
-        n.id === notificationId ? { ...n, isRead: true } : n
-      ));
-      setUnreadCount(prev => Math.max(0, prev - 1));
-    } catch (error) {
-      console.error('Failed to mark notification as read:', error);
-    }
-  };
-
-  const joinLiveClass = (notification: Notification) => {
-    if (notification.data?.zoomLink) {
-      markNotificationAsRead(notification.id);
-      window.open(notification.data.zoomLink, '_blank');
-    }
-  };
-
-  const markAllAsRead = async () => {
-    try {
-      const res = await apiClient('/notifications', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ markAll: true }),
-      });
-      if (!res.ok) return;
-      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-      setUnreadCount(0);
-    } catch (error) {
-      console.error('Failed to mark all as read:', error);
-    }
-  };
-
   return {
-    notifications, unreadCount, activeStreams,
+    activeStreams,
     pendingPaymentsCount, unreadValoracionesCount, ungradedAssignmentsCount,
     newSubmissionsCount, newGradesCount, unpaidClassesCount, studentPendingPaymentsCount,
     academyId, academyPaymentStatus, academy,
-    loadNotifications, loadActiveStreams, loadAcademy,
+    loadActiveStreams, loadAcademy,
     loadUnreadValoraciones, loadUngradedAssignments,
     loadNewGrades, loadUnpaidClasses, loadStudentPendingPayments, loadPendingPaymentsCount,
-    markNotificationAsRead, joinLiveClass, markAllAsRead, cleanup,
+    cleanup,
   };
 
   function cleanup() {
