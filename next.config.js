@@ -38,64 +38,59 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: '500mb',
     },
-
+    // Tree-shake barrel-export packages so webpack doesn't create dozens of
+    // tiny chunks for every named import (major source of chunk explosion).
+    optimizePackageImports: [
+      '@headlessui/react',
+      'recharts',
+      'date-fns',
+      'framer-motion',
+      'motion',
+    ],
   },
   // Enable compression and optimize images
   compress: true,
   poweredByHeader: false,
-  // Optimize chunk splitting for faster initial loads
   webpack: (config, { isServer }) => {
     config.externals.push({
       'utf-8-validate': 'commonjs utf-8-validate',
       'bufferutil': 'commonjs bufferutil',
     });
-    
-    // Split large chunks for better caching
+
     if (!isServer) {
       config.optimization = {
         ...config.optimization,
         splitChunks: {
           chunks: 'all',
+          // Keep parallel requests low — ERR_INSUFFICIENT_RESOURCES happens
+          // when the browser opens too many file handles at once.
+          maxInitialRequests: 15,
+          minSize: 20000,
           cacheGroups: {
             default: false,
             vendors: false,
-            // Split React and React-DOM into separate chunk
+            // React core — tiny, always needed, long-lived cache.
             framework: {
               name: 'framework',
               chunks: 'all',
-              test: /(?<!node_modules.*)[\\/]node_modules[\\/](react|react-dom|scheduler|prop-types|use-subscription)[\\/]/,
+              test: /[\\/]node_modules[\\/](react|react-dom|scheduler|prop-types|use-subscription)[\\/]/,
               priority: 40,
               enforce: true,
             },
-            // Split large libraries
-            lib: {
-              test(module) {
-                return (
-                  module.size() > 160000 &&
-                  /node_modules[/\\]/.test(module.identifier())
-                );
-              },
-              name(module) {
-                const hash = require('crypto').createHash('sha1');
-                hash.update(module.identifier());
-                return hash.digest('hex').substring(0, 8);
-              },
-              priority: 30,
-              minChunks: 1,
-              reuseExistingChunk: true,
-            },
+            // Modules shared by 2+ pages → single "commons" chunk.
+            // (Removed the per-module hash "lib" group — that was the
+            //  main culprit, creating 10-15 extra chunks per page load.)
             commons: {
               name: 'commons',
               minChunks: 2,
               priority: 20,
+              reuseExistingChunk: true,
             },
           },
-          maxInitialRequests: 25,
-          minSize: 20000,
         },
       };
     }
-    
+
     return config;
   },
 };

@@ -86,16 +86,6 @@ export function useProfileData() {
       if (zoomResult.success) setZoomAccounts(zoomResult.data || []);
       if (stripeResult.success) setStripeStatus(stripeResult.data);
       if (yearsResult.success) setAcademicYears(yearsResult.data || []);
-
-      if (user?.email?.toLowerCase().includes('demo')) {
-        setStripeStatus({ connected: true, charges_enabled: true, details_submitted: true, accountId: 'acct_1ABCdemoAkademo', email: 'demo@akademo.io' });
-        if (!zoomResult.data || zoomResult.data.length === 0) {
-          setZoomAccounts([{ id: 'zoom-demo-1', accountName: 'Academia Demo', accountId: 'demo_zoom_001', createdAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(), classes: [] }]);
-        }
-        if (!yearsResult.data || yearsResult.data.length === 0) {
-          setAcademicYears([{ id: 'year-demo-1', academyId: 'demo', name: '2024-2025', startDate: '2024-09-01', endDate: '2025-06-30', isCurrent: 1, createdAt: new Date(Date.now() - 200 * 24 * 60 * 60 * 1000).toISOString() }]);
-        }
-      }
     } catch (error) {
       console.error('Error loading profile:', error);
     } finally {

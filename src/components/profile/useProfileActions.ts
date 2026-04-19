@@ -69,6 +69,30 @@ export function useProfileActions(s: ProfileState) {
     } finally { setSaving(false); }
   };
 
+  // Silent auto-save used by onBlur on text fields. Returns true on success.
+  const handleBlurSave = async (): Promise<boolean> => {
+    if (!academy) return false;
+    try {
+      const response = await apiClient(`/academies/${academy.id}`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name, address: formData.address, phone: formData.phone,
+          feedbackEnabled: formData.feedbackEnabled ? 1 : 0,
+          defaultWatermarkIntervalMins: formData.defaultWatermarkIntervalMins,
+          defaultMaxWatchTimeMultiplier: formData.defaultMaxWatchTimeMultiplier,
+          allowedPaymentMethods: JSON.stringify(formData.allowedPaymentMethods),
+          transferenciaIban: formData.transferenciaIban, bizumPhone: formData.bizumPhone,
+          requireGrading: formData.requireGrading ? 1 : 0, hiddenMenuItems: JSON.stringify(formData.hiddenMenuItems),
+        }),
+      });
+      const result = await response.json();
+      return result.success === true;
+    } catch (error) {
+      console.error('Error auto-saving profile:', error);
+      return false;
+    }
+  };
+
   const handleRequestEmailChange = async (newEmail: string) => {
     setEmailChangeStep('sending');
     try {
@@ -221,7 +245,7 @@ export function useProfileActions(s: ProfileState) {
     }
   };
 
-  return { handleSettingChange, handleSaveProfile, handleLogoUpload, handleChangePassword, toggleAllowedPaymentMethod, saveTransferenciaSetup, saveBizumSetup, handleRequestEmailChange, handleConfirmEmailChange, handleCancelEmailChange };
+  return { handleSettingChange, handleSaveProfile, handleBlurSave, handleLogoUpload, handleChangePassword, toggleAllowedPaymentMethod, saveTransferenciaSetup, saveBizumSetup, handleRequestEmailChange, handleConfirmEmailChange, handleCancelEmailChange };
 }
 
 export type ProfileActions = ReturnType<typeof useProfileActions>;

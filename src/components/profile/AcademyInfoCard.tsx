@@ -1,13 +1,21 @@
 'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
 import { refreshAcademyLogo } from '@/hooks/useAcademyLogo';
 import type { ProfileState } from './useProfileData';
 import type { ProfileActions } from './useProfileActions';
 
 export function AcademyInfoCard({ s, actions }: { s: ProfileState; actions: ProfileActions }) {
-  const { academy, setAcademy, formData, setFormData, saving, uploadingLogo, user, emailChangeStep, pendingEmailChange, emailChangeCode, setEmailChangeCode, originalEmail } = s;
+  const { academy, setAcademy, formData, setFormData, uploadingLogo, user, emailChangeStep, pendingEmailChange, emailChangeCode, setEmailChangeCode, originalEmail } = s;
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saved' | 'error'>('idle');
   if (!academy) return null;
+
+  const handleBlur = async () => {
+    const ok = await actions.handleBlurSave();
+    setSaveStatus(ok ? 'saved' : 'error');
+    setTimeout(() => setSaveStatus('idle'), 2000);
+  };
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
@@ -17,9 +25,15 @@ export function AcademyInfoCard({ s, actions }: { s: ProfileState; actions: Prof
             <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Información General</h2>
             <p className="text-sm text-gray-600 mt-1">Datos principales de tu academia</p>
           </div>
-          <button onClick={actions.handleSaveProfile} disabled={saving} className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-all font-medium text-sm disabled:opacity-50">
-            {saving ? (<><div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>Guardando...</>) : (<><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>Guardar cambios</>)}
-          </button>
+          {saveStatus === 'saved' && (
+            <span className="inline-flex items-center gap-1.5 text-sm text-green-600 font-medium">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+              Guardado
+            </span>
+          )}
+          {saveStatus === 'error' && (
+            <span className="text-sm text-red-500 font-medium">Error al guardar</span>
+          )}
         </div>
       </div>
 
@@ -27,7 +41,7 @@ export function AcademyInfoCard({ s, actions }: { s: ProfileState; actions: Prof
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 pb-6 border-b border-gray-200">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Nombre de la academia</label>
-            <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all" placeholder="Ej: Academia de Matemáticas Avanzadas" />
+            <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} onBlur={handleBlur} className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all" placeholder="Ej: Academia de Matemáticas Avanzadas" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2 text-center">Logo de la academia</label>
@@ -108,12 +122,12 @@ export function AcademyInfoCard({ s, actions }: { s: ProfileState; actions: Prof
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Teléfono</label>
-            <input type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all text-sm" placeholder="+34 123 456 789" />
+            <input type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} onBlur={handleBlur} className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all text-sm" placeholder="+34 123 456 789" />
           </div>
           <div className="lg:col-span-1">
             <label className="block text-sm font-medium text-gray-700 mb-2">Dirección</label>
             <div className="relative">
-              <input type="text" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all text-sm" placeholder="Calle Principal 123" />
+              <input type="text" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} onBlur={handleBlur} className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all text-sm" placeholder="Calle Principal 123" />
             </div>
           </div>
         </div>
