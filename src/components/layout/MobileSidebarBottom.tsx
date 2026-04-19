@@ -120,7 +120,7 @@ export function MobileSidebarBottom({
             onMouseEnter={() => linkIconRef.current?.startAnimation()}
             onMouseLeave={() => linkIconRef.current?.stopAnimation()}
             title={linkCopied ? '¡Enlace copiado!' : 'Copiar enlace de invitación'}
-            className={`p-2 rounded-lg flex-shrink-0 transition-colors ${linkCopied ? 'text-green-600' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
+            className={`p-1 rounded-lg flex-shrink-0 transition-colors ${linkCopied ? 'text-green-600' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
           >
             <LinkIcon ref={linkIconRef} size={18} />
           </button>

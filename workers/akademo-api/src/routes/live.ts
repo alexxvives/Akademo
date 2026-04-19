@@ -41,70 +41,8 @@ live.get('/', async (c) => {
 
     const isHost = ['TEACHER', 'ACADEMY', 'ADMIN'].includes(session.role);
 
-    // Auto-end GTM streams that have exceeded their 2-hour scheduled meeting window.
-    // When we create a GTM meeting we schedule it for 2 hours; after that, GTM treats it
-    // as ended. Sync our DB so the banner disappears for the host automatically.
-    await c.env.DB
-      .prepare(`
-        UPDATE LiveStream
-        SET status = 'ended', endedAt = datetime('now')
-        WHERE classId = ?
-          AND zoomMeetingId IS NOT NULL
-          AND dailyRoomName IS NULL
-          AND status IN ('active', 'scheduled')
-          AND createdAt <= datetime('now', '-2 hours')
-      `)
-      .bind(classId)
-      .run();
-
-    // Auto-expire "Preparado" (scheduled) streams that have sat idle for 30+ minutes
-    // without being started. This prevents stale scheduled streams from lingering.
-    await c.env.DB
-      .prepare(`
-        UPDATE LiveStream
-        SET status = 'ended', endedAt = datetime('now')
-        WHERE classId = ?
-          AND status = 'scheduled'
-          AND createdAt <= datetime('now', '-30 minutes')
-      `)
-      .bind(classId)
-      .run();
-
-    // Also auto-end GTM streams whose startToken JWT has already expired.
-    // The token embedded in zoomStartUrl has ~1hr TTL but the 2hr SQL rule above
-    // runs too late. Parse exp from the JWT and end early if it has passed.
-    if (isHost) {
-      const gtmCandidates = await c.env.DB
-        .prepare(`
-          SELECT id, zoomStartUrl FROM LiveStream
-          WHERE classId = ? AND zoomMeetingId IS NOT NULL AND dailyRoomName IS NULL
-            AND status IN ('active', 'scheduled')
-        `)
-        .bind(classId)
-        .all<{ id: string; zoomStartUrl: string | null }>();
-      for (const row of (gtmCandidates.results ?? [])) {
-        const url = row.zoomStartUrl;
-        if (!url) continue;
-        // startToken is a JWT — grab its payload (second segment)
-        const tokenMatch = url.match(/[?&]startToken=([^&]+)/);
-        if (!tokenMatch) continue;
-        const segments = tokenMatch[1].split('.');
-        if (segments.length < 2) continue;
-        try {
-          const payload = JSON.parse(
-            atob(segments[1].replace(/-/g, '+').replace(/_/g, '/'))
-          ) as { exp?: number };
-          if (payload.exp && payload.exp * 1000 < Date.now()) {
-            await c.env.DB
-              .prepare(`UPDATE LiveStream SET status = 'ended', endedAt = datetime('now') WHERE id = ?`)
-              .bind(row.id)
-              .run();
-          }
-        } catch {
-          // malformed JWT — skip
-        }
-      }
-    }
+    // Note: stale stream cleanup (auto-end GTM/scheduled streams) is handled
+    // by the cron job every 5 minutes instead of on every page load.
 
     const result = await c.env.DB
       .prepare(`
@@ -562,7 +500,9 @@ live.get('/active', async (c) => {
         .all();
     }
 
-    return c.json(successResponse(result.results || []));
+    return c.json(successResponse(result.results || []), 200, {
+      'Cache-Control': 'private, max-age=15, stale-while-revalidate=30',
+    });
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Active Streams] Error:', error);

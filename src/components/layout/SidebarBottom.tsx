@@ -99,7 +99,7 @@ export function SidebarBottom({
           {/* User profile */}
           {role === 'ADMIN' ? (
             <div className="flex items-center gap-3 mb-1 p-2 -m-2">
-              <div className="w-10 h-10 bg-[#b1e787] rounded-xl flex items-center justify-center text-sm font-bold text-gray-900 flex-shrink-0 shadow-lg">
+              <div className="w-8 h-8 bg-[#b1e787] rounded-xl flex items-center justify-center text-xs font-bold text-gray-900 flex-shrink-0 shadow-lg">
                 {user.firstName[0]}{user.lastName[0]}
               </div>
               <div className="flex-1 min-w-0">
@@ -115,7 +115,7 @@ export function SidebarBottom({
                 href={`/dashboard/${role.toLowerCase()}/profile`}
                 className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer hover:bg-gray-800/30 rounded-xl p-2 transition-colors group"
               >
-                <div className="w-10 h-10 bg-[#b1e787] rounded-xl flex items-center justify-center text-sm font-bold text-gray-900 flex-shrink-0 shadow-lg">
+                <div className="w-8 h-8 bg-[#b1e787] rounded-xl flex items-center justify-center text-xs font-bold text-gray-900 flex-shrink-0 shadow-lg">
                   {user.firstName[0]}{user.lastName[0]}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -131,7 +131,7 @@ export function SidebarBottom({
                   onMouseEnter={() => { if (linkIconRef.current && typeof linkIconRef.current.startAnimation === 'function') linkIconRef.current.startAnimation(); }}
                   onMouseLeave={() => { if (linkIconRef.current && typeof linkIconRef.current.stopAnimation === 'function') linkIconRef.current.stopAnimation(); }}
                   title={linkCopied ? '¡Enlace copiado!' : 'Copiar enlace de invitación'}
-                  className={`p-2 rounded-xl flex-shrink-0 transition-colors ${linkCopied ? 'text-[#b1e787]' : 'text-gray-500 hover:text-white hover:bg-gray-800/50'}`}
+                  className={`p-1 rounded-xl flex-shrink-0 transition-colors ${linkCopied ? 'text-[#b1e787]' : 'text-gray-500 hover:text-white hover:bg-gray-800/50'}`}
                 >
                   <LinkIcon ref={linkIconRef} size={18} />
                 </button>

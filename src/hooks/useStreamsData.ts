@@ -102,13 +102,7 @@ export function useStreamsData() {
     loadStreams();
     loadAcademyName();
     loadClasses();
-    
-    const pollInterval = setInterval(() => {
-      loadStreams();
-      checkRecordingAvailability();
-    }, 10000);
-    
-    return () => clearInterval(pollInterval);
+    // No polling — data loads once on mount and on manual page refresh.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

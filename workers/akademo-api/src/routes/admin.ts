@@ -1053,18 +1053,18 @@ admin.post('/bulk-import', async (c) => {
         if (!classPrice) continue;
         // For migrations, always create a completed payment regardless of class start date.
         // Use per-installment amount (monthlyPrice) or full one-time amount.
-        const amount = classPrice.monthlyPrice ?? classPrice.oneTimePrice;
-        if (amount && amount > 0) {
-          pagadoStatements.push(
-            c.env.DB
-              .prepare(`INSERT INTO Payment (id, type, payerId, receiverId, amount, currency, status, paymentMethod, classId, metadata, completedAt, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`)
-              .bind(
-                crypto.randomUUID(), 'STUDENT_TO_ACADEMY', userId, academy.id,
-                amount, 'EUR', 'COMPLETED', 'cash', classId,
-                JSON.stringify({ source: 'bulk-import', pagado: true }),
-              )
-          );
-        }
+        // For legacy migrations the class may have no price yet — still create a $0 completed payment
+        // so the student is never shown as "pending payment" in the academy dashboard.
+        const amount = classPrice.monthlyPrice ?? classPrice.oneTimePrice ?? 0;
+        pagadoStatements.push(
+          c.env.DB
+            .prepare(`INSERT INTO Payment (id, type, payerId, receiverId, amount, currency, status, paymentMethod, classId, metadata, completedAt, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`)
+            .bind(
+              crypto.randomUUID(), 'STUDENT_TO_ACADEMY', userId, academy.id,
+              amount, 'EUR', 'COMPLETED', 'migration', classId,
+              JSON.stringify({ source: 'bulk-import', pagado: true }),
+            )
+        );
       }
       if (pagadoStatements.length > 0) await c.env.DB.batch(pagadoStatements);
     }

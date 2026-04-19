@@ -21,6 +21,8 @@ export function useDashboardBadges() {
   const [academy, setAcademy] = useState<Academy | null>(null);
 
   const controllerRef = useRef<AbortController>(new AbortController());
+  // Throttle: don't re-fetch active streams more than once per 60 seconds
+  const lastActiveStreamsFetchRef = useRef<number>(0);
 
   const loadNotifications = useCallback(async () => {
     try {
@@ -37,7 +39,10 @@ export function useDashboardBadges() {
     }
   }, []);
 
-  const loadActiveStreams = useCallback(async () => {
+  const loadActiveStreams = useCallback(async (force = false) => {
+    const now = Date.now();
+    if (!force && now - lastActiveStreamsFetchRef.current < 60_000) return;
+    lastActiveStreamsFetchRef.current = now;
     try {
       const response = await apiClient('/live/active', { signal: controllerRef.current.signal });
       const result = await response.json();

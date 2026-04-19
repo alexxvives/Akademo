@@ -48,8 +48,6 @@ export default function TeacherProfile() {
 
       <ProfileInfoCard
         user={user}
-        isEditing={isEditing}
-        setIsEditing={setIsEditing}
         formData={formData}
         setFormData={setFormData}
         handleSaveProfile={handleSaveProfile}

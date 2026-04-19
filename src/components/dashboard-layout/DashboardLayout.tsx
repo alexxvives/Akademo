@@ -46,7 +46,7 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
         setShowSuspicionWarning(true);
       }
       apiClient('/auth/session/check', { method: 'POST' });
-      loadActiveStreams();
+      loadActiveStreams(true);
       loadNewGrades();
       loadUnpaidClasses();
       loadStudentPendingPayments();
@@ -60,7 +60,7 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
         loadUnreadValoraciones(status);
         loadUngradedAssignments(status);
       });
-      loadActiveStreams();
+      loadActiveStreams(true);
       const onVisible = () => { if (document.visibilityState === 'visible') loadActiveStreams(); };
       document.addEventListener('visibilitychange', onVisible);
       return () => { cleanup(); document.removeEventListener('visibilitychange', onVisible); };
@@ -69,14 +69,14 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
     if (role === 'TEACHER') {
       loadUnreadValoraciones();
       loadUngradedAssignments();
-      loadActiveStreams();
+      loadActiveStreams(true);
       const onVisible = () => { if (document.visibilityState === 'visible') loadActiveStreams(); };
       document.addEventListener('visibilitychange', onVisible);
       return () => { cleanup(); document.removeEventListener('visibilitychange', onVisible); };
     }
 
     if (role === 'ADMIN') {
-      loadActiveStreams();
+      loadActiveStreams(true);
       loadUnreadValoraciones();
       loadUngradedAssignments();
       loadPendingPaymentsCount();
