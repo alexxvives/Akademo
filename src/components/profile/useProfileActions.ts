@@ -27,7 +27,7 @@ export function useProfileActions(s: ProfileState) {
         hiddenMenuItems: field === 'hiddenMenuItems' ? JSON.stringify(value) : JSON.stringify(newFormData.hiddenMenuItems),
       };
       const response = await apiClient(`/academies/${academy.id}`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, skipAutoRedirect: true, body: JSON.stringify(body),
       });
       const result = await response.json();
       if (result.success) {

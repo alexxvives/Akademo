@@ -147,21 +147,8 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <MobileHeader
           role={role}
-          unreadCount={unreadCount}
-          showNotifications={showNotifications}
-          onToggleNotifications={() => setShowNotifications(!showNotifications)}
           onOpenMenu={() => setMobileMenuOpen(true)}
         />
-        {role === 'STUDENT' && showNotifications && (
-          <NotificationPanel
-            notifications={notifications}
-            unreadCount={unreadCount}
-            onClose={() => setShowNotifications(false)}
-            onMarkAsRead={markNotificationAsRead}
-            onMarkAllAsRead={markAllAsRead}
-            onJoinLiveClass={joinLiveClass}
-          />
-        )}
         <main className="flex-1 overflow-y-auto bg-gray-100 overscroll-contain">
           <div className="pt-4 pb-2 px-4 md:py-8 md:px-10 lg:py-12 lg:pl-20 lg:pr-20">
             {children}

@@ -34,22 +34,6 @@ export interface MenuItem {
   group?: string;
 }
 
-export interface Notification {
-  id: string;
-  type: string;
-  title: string;
-  message: string;
-  data: {
-    classId?: string;
-    liveStreamId?: string;
-    zoomLink?: string;
-    className?: string;
-    teacherName?: string;
-  } | null;
-  isRead: boolean;
-  createdAt: string;
-}
-
 export interface ActiveStream {
   id: string;
   classId: string;

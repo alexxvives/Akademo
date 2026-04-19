@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUploadWarning } from '@/hooks/useUploadWarning';
 import { useTranscodingPoll } from '@/hooks/useTranscodingPoll';
 import { loadDemoClassData } from './class-demo-loader';
-import type { Topic, Lesson, LessonDetail, LessonVideo, PendingEnrollment, LiveClass, StreamRecording, AnalyticsData, ClassData, LessonFeedback } from './types';
+import type { Topic, Lesson, LessonDetail, LessonVideo, PendingEnrollment, LiveClass, StreamRecording, ClassData, LessonFeedback } from './types';
 
 const DEFAULT_FORM_DATA = () => ({
   title: '', description: '', externalUrl: '',
@@ -67,8 +67,6 @@ export function useClassDetail(role: 'academy' | 'teacher' | 'admin') {
   });
   const [showPendingRequests, setShowPendingRequests] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
-  const [showAnalytics, _setShowAnalytics] = useState(false);
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
 
   // Data state
   const [pendingEnrollments, setPendingEnrollments] = useState<PendingEnrollment[]>([]);
@@ -237,7 +235,7 @@ export function useClassDetail(role: 'academy' | 'teacher' | 'admin') {
     showRescheduleModal, setShowRescheduleModal, reschedulingLesson, setReschedulingLesson,
     rescheduleDate, setRescheduleDate, rescheduleTime, setRescheduleTime,
     expandTopicId, setExpandTopicId, showPendingRequests, setShowPendingRequests,
-    copiedLink, setCopiedLink, showAnalytics, analyticsData, setAnalyticsData,
+    copiedLink, setCopiedLink,
     pendingEnrollments, setPendingEnrollments, liveClasses, setLiveClasses,
     creatingStream, setCreatingStream, paymentStatus, setPaymentStatus,
     feedbackEnabled, academyDefaults, availableStreamRecordings, setAvailableStreamRecordings,

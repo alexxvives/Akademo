@@ -49,8 +49,8 @@ export function useProfileData() {
   const loadData = useCallback(async () => {
     try {
       const [academyRes, zoomRes, stripeRes, yearsRes] = await Promise.all([
-        apiClient('/academies'), apiClient('/zoom-accounts'),
-        apiClient('/payments/stripe-status'), apiClient('/academic-years'),
+        apiClient('/academies', { skipAutoRedirect: true }), apiClient('/zoom-accounts', { skipAutoRedirect: true }),
+        apiClient('/payments/stripe-status', { skipAutoRedirect: true }), apiClient('/academic-years', { skipAutoRedirect: true }),
       ]);
       const [academyResult, zoomResult, stripeResult, yearsResult] = await Promise.all([
         academyRes.json(), zoomRes.json(), stripeRes.json(), yearsRes.json(),
@@ -67,6 +67,7 @@ export function useProfileData() {
         if (cleanedMethods.length !== allowedMethods.length || cleanedMethods.some((m, i) => m !== allowedMethods[i])) {
           apiClient(`/academies/${d.id}`, {
             method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+            skipAutoRedirect: true,
             body: JSON.stringify({ allowedPaymentMethods: JSON.stringify(cleanedMethods) }),
           }).catch(() => {});
         }

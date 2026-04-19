@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { SkeletonClassDetail } from '@/components/ui/SkeletonLoader';
-import { formatDuration } from '@/lib/formatters';
 import { ClassHeader, PendingEnrollments, TopicsLessonsList } from '@/components/class';
 import LessonFormModal from '@/components/class/LessonFormModal';
 import LessonDetailView from '@/components/class/LessonDetailView';
@@ -31,7 +30,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
     showRescheduleModal, setShowRescheduleModal, reschedulingLesson, setReschedulingLesson,
     rescheduleDate, setRescheduleDate, rescheduleTime, setRescheduleTime,
     expandTopicId, showPendingRequests, setShowPendingRequests,
-    copiedLink, setCopiedLink, showAnalytics, analyticsData,
+    copiedLink, setCopiedLink,
     pendingEnrollments, liveClasses, creatingStream, paymentStatus,
     feedbackEnabled, availableStreamRecordings,
     loadData, setTopics, setLessons,
@@ -132,32 +131,6 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
               onAddVideo={addVideoToForm}
               onAddDocument={addDocumentToForm}
             />
-          )}
-
-          {showAnalytics && (
-            <div className="bg-white rounded-xl border border-gray-200 p-5">
-              <h3 className="font-semibold text-gray-900 mb-4">📊 Class Analytics</h3>
-              {analyticsData ? (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-                  <div className="bg-blue-50 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-blue-900">{analyticsData.videos?.length || 0}</div>
-                    <div className="text-sm text-blue-600">Videos</div>
-                  </div>
-                  <div className="bg-green-50 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-green-900">{analyticsData.studentEngagement?.length || 0}</div>
-                    <div className="text-sm text-green-600">Active Students</div>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-4 text-center">
-                    <div className="text-2xl font-bold text-gray-900">
-                      {formatDuration(analyticsData.studentEngagement?.reduce((sum, entry) => sum + (entry.totalWatchTime || 0), 0) || 0)}
-                    </div>
-                    <div className="text-sm text-gray-600">Total Watch Time</div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">Loading analytics...</div>
-              )}
-            </div>
           )}
 
           <TopicsLessonsList
