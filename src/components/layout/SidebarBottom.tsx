@@ -106,7 +106,7 @@ export function SidebarBottom({
                 <p className="text-sm font-semibold text-white truncate">
                   {user.firstName} {user.lastName}
                 </p>
-                <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                <p className="text-[11.4px] text-gray-400 truncate">{user.email}</p>
               </div>
             </div>
           ) : (
@@ -122,7 +122,7 @@ export function SidebarBottom({
                   <p className="text-sm font-semibold text-white truncate">
                     {user.firstName} {user.lastName}
                   </p>
-                  <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                  <p className="text-[11.4px] text-gray-400 truncate">{user.email}</p>
                 </div>
               </Link>
               {(role === 'ACADEMY' || role === 'TEACHER') && (

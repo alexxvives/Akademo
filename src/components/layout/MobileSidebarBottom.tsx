@@ -98,7 +98,7 @@ export function MobileSidebarBottom({
               <p className="text-sm font-medium text-gray-900 truncate">
                 {user.firstName} {user.lastName}
               </p>
-              <p className="text-xs text-gray-500 truncate">{user.email}</p>
+              <p className="text-[11.4px] text-gray-500 truncate">{user.email}</p>
             </div>
           </Link>
         ) : (
@@ -110,7 +110,7 @@ export function MobileSidebarBottom({
               <p className="text-sm font-medium text-gray-900 truncate">
                 {user.firstName} {user.lastName}
               </p>
-              <p className="text-xs text-gray-500 truncate">{user.email}</p>
+              <p className="text-[11.4px] text-gray-500 truncate">{user.email}</p>
             </div>
           </div>
         )}

@@ -24,6 +24,10 @@ yarn-error.log*
 # local env files
 .env*.local
 .env
+# scripts migration env + temp files
+scripts/.env
+scripts/_pdf_tmp/
+scripts/_pdf_progress.json
 # vercel
 .vercel
 # cloudflare
