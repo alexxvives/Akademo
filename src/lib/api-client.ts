@@ -11,7 +11,39 @@ export interface ApiClientOptions extends RequestInit {
   skipCredentials?: boolean;
   /** When true, a 401 response will NOT trigger the global redirect-to-login. The caller handles auth errors itself. */
   skipAutoRedirect?: boolean;
+  /** Internal: set on retried requests after a silent refresh to prevent infinite loops. */
+  _isRetry?: boolean;
 }
+
+// ─── Silent token refresh with mutex ─────────────────────────────────────────
+// Only one refresh in-flight at a time. Concurrent 401s all wait for the same
+// refresh promise so we don't rotate the refresh token multiple times.
+let _refreshPromise: Promise<boolean> | null = null;
+
+async function _doRefresh(): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+    });
+    if (!res.ok) return false;
+    const data = await res.json() as { success: boolean; data: { token: string } };
+    if (!data.success || !data.data?.token) return false;
+    localStorage.setItem('auth_token', data.data.token);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function attemptSilentRefresh(): Promise<boolean> {
+  if (!_refreshPromise) {
+    _refreshPromise = _doRefresh().finally(() => { _refreshPromise = null; });
+  }
+  return _refreshPromise;
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * Make an API request to the Hono worker
@@ -23,7 +55,7 @@ export async function apiClient(
   path: string,
   options: ApiClientOptions = {}
 ): Promise<Response> {
-  const { skipCredentials, skipAutoRedirect, ...fetchOptions } = options;
+  const { skipCredentials, skipAutoRedirect, _isRetry, ...fetchOptions } = options;
   
   const url = `${API_BASE_URL}${path}`;
   
@@ -45,14 +77,19 @@ export async function apiClient(
     },
   });
 
-  // Global 401 handler: redirect to login on expired/invalid session
-  // Skip for auth endpoints to avoid redirect loops
-  if (response.status === 401 && typeof window !== 'undefined' && !skipAutoRedirect) {
+  // Global 401 handler: attempt silent token refresh first, then redirect if that fails.
+  // Skip for: auth endpoints (avoid loops), skipAutoRedirect callers, retried requests.
+  if (response.status === 401 && typeof window !== 'undefined' && !skipAutoRedirect && !_isRetry) {
     const isAuthEndpoint = path.startsWith('/auth/');
     if (!isAuthEndpoint) {
+      const refreshed = await attemptSilentRefresh();
+      if (refreshed) {
+        // Token renewed — retry the original request once with the new token
+        return apiClient(path, { ...options, _isRetry: true });
+      }
+      // Refresh failed — session truly expired, send to login
       localStorage.removeItem('auth_token');
       window.location.href = '/?modal=login&expired=1';
-      // Return the response so callers don't throw before redirect completes
       return response;
     }
   }

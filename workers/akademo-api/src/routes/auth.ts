@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
-import { setCookie } from 'hono/cookie';
+import { setCookie, getCookie } from 'hono/cookie';
 import bcrypt from 'bcryptjs';
 import { Bindings } from '../types';
-import { getSession, createSignedSession, hashPassword } from '../lib/auth';
+import { getSession, createSignedSession, hashPassword, hashRefreshToken, generateRefreshToken, ACCESS_TOKEN_MAX_AGE, REFRESH_TOKEN_MAX_AGE } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { loginSchema, registerSchema, forgotPasswordSchema, validateBody } from '../lib/validation';
 import { loginRateLimit, registerRateLimit, checkEmailRateLimit, emailVerificationRateLimit, forgotPasswordRateLimit, resetPasswordRateLimit, joinRateLimit, academyRegisterRateLimit } from '../lib/rate-limit';
@@ -172,16 +172,33 @@ auth.post('/register', registerRateLimit, validateBody(registerSchema), async (c
         .run();
     }
 
-    // Create signed session token with deviceSessionId + issued-at for expiry
-    const sessionData = JSON.stringify({ userId, deviceSessionId, iat: Math.floor(Date.now() / 1000) });
+    // Create short-lived access token (15 min) with embedded exp
+    const iat = Math.floor(Date.now() / 1000);
+    const sessionData = JSON.stringify({ userId, deviceSessionId, iat, exp: iat + ACCESS_TOKEN_MAX_AGE });
     const sessionId = await createSignedSession(sessionData, c.env);
     setCookie(c, 'academy_session', sessionId, {
       httpOnly: true,
       secure: true,
       sameSite: 'Lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 60 * 60 * 24 * 7,
       path: '/',
       domain: '.akademo-edu.com',
+    });
+
+    // Issue refresh token (30 days) — scoped to API domain, SameSite=None for cross-origin
+    const refreshToken = generateRefreshToken();
+    const refreshTokenHash = await hashRefreshToken(refreshToken);
+    const refreshTokenExpiresAt = new Date(Date.now() + REFRESH_TOKEN_MAX_AGE * 1000).toISOString();
+    await c.env.DB
+      .prepare('UPDATE DeviceSession SET refreshTokenHash = ?, refreshTokenExpiresAt = ? WHERE id = ?')
+      .bind(refreshTokenHash, refreshTokenExpiresAt, deviceSessionId)
+      .run();
+    setCookie(c, 'akademo_rt', refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'None',
+      maxAge: REFRESH_TOKEN_MAX_AGE,
+      path: '/',
     });
 
     // SECURITY NOTE: Token is returned in the JSON body because the httpOnly cookie
@@ -316,17 +333,35 @@ auth.post('/login', loginRateLimit, validateBody(loginSchema), async (c) => {
         .run();
     }
     
-    // Create signed session token with deviceSessionId + issued-at for expiry
-    const sessionData = JSON.stringify({ userId: user.id, deviceSessionId, iat: Math.floor(Date.now() / 1000) });
+    // Create short-lived access token (15 min) with embedded exp
+    const iat = Math.floor(Date.now() / 1000);
+    const sessionData = JSON.stringify({ userId: user.id, deviceSessionId, iat, exp: iat + ACCESS_TOKEN_MAX_AGE });
     const sessionId = await createSignedSession(sessionData, c.env);
-    
+
+    // Legacy same-site cookie (used by Next.js middleware for role checks)
     setCookie(c, 'academy_session', sessionId, {
       httpOnly: true,
       secure: true,
       sameSite: 'Lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 60 * 60 * 24 * 7, // 7 days (middleware only, not auth)
       path: '/',
-      domain: '.akademo-edu.com', // Share cookie with frontend
+      domain: '.akademo-edu.com',
+    });
+
+    // Issue refresh token (30 days) — scoped to API domain, SameSite=None for cross-origin
+    const refreshToken = generateRefreshToken();
+    const refreshTokenHash = await hashRefreshToken(refreshToken);
+    const refreshTokenExpiresAt = new Date(Date.now() + REFRESH_TOKEN_MAX_AGE * 1000).toISOString();
+    await c.env.DB
+      .prepare('UPDATE DeviceSession SET refreshTokenHash = ?, refreshTokenExpiresAt = ? WHERE id = ?')
+      .bind(refreshTokenHash, refreshTokenExpiresAt, deviceSessionId)
+      .run();
+    setCookie(c, 'akademo_rt', refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'None',
+      maxAge: REFRESH_TOKEN_MAX_AGE,
+      path: '/',
     });
 
     // Re-read suspicionCount and suspicionWarning after possible updates
@@ -367,6 +402,68 @@ auth.post('/login', loginRateLimit, validateBody(loginSchema), async (c) => {
   }
 });
 
+// POST /auth/refresh — silently mint a new short-lived access token using the refresh cookie
+// The refresh token cookie (akademo_rt) is HttpOnly, SameSite=None, scoped to the API domain.
+// On success: returns a new access token + rotates the refresh token (prevents replay attacks).
+auth.post('/refresh', async (c) => {
+  try {
+    // CSRF protection: require the custom header set by api-client.ts
+    if (!c.req.header('X-Requested-With')) {
+      return c.json(errorResponse('Forbidden'), 403);
+    }
+
+    const rawRefreshToken = getCookie(c, 'akademo_rt');
+    if (!rawRefreshToken) {
+      return c.json(errorResponse('No refresh token'), 401);
+    }
+
+    const tokenHash = await hashRefreshToken(rawRefreshToken);
+    const session = await c.env.DB
+      .prepare(`SELECT id, userId, isActive, refreshTokenExpiresAt FROM DeviceSession
+                WHERE refreshTokenHash = ? AND isActive = 1 LIMIT 1`)
+      .bind(tokenHash)
+      .first<{ id: string; userId: string; isActive: number; refreshTokenExpiresAt: string | null }>();
+
+    if (!session) {
+      // Token not found or already revoked — clear the cookie
+      setCookie(c, 'akademo_rt', '', { httpOnly: true, secure: true, sameSite: 'None', maxAge: 0, path: '/' });
+      return c.json(errorResponse('Invalid refresh token'), 401);
+    }
+
+    if (session.refreshTokenExpiresAt && new Date(session.refreshTokenExpiresAt) < new Date()) {
+      setCookie(c, 'akademo_rt', '', { httpOnly: true, secure: true, sameSite: 'None', maxAge: 0, path: '/' });
+      return c.json(errorResponse('Refresh token expired'), 401);
+    }
+
+    // Issue new short-lived access token
+    const iat = Math.floor(Date.now() / 1000);
+    const newSessionData = JSON.stringify({ userId: session.userId, deviceSessionId: session.id, iat, exp: iat + ACCESS_TOKEN_MAX_AGE });
+    const newAccessToken = await createSignedSession(newSessionData, c.env);
+
+    // Rotate refresh token (old hash is replaced — replay of the old cookie fails)
+    const newRefreshToken = generateRefreshToken();
+    const newRefreshHash = await hashRefreshToken(newRefreshToken);
+    const newRefreshExpiry = new Date(Date.now() + REFRESH_TOKEN_MAX_AGE * 1000).toISOString();
+    await c.env.DB
+      .prepare('UPDATE DeviceSession SET refreshTokenHash = ?, refreshTokenExpiresAt = ?, lastActiveAt = ? WHERE id = ?')
+      .bind(newRefreshHash, newRefreshExpiry, new Date().toISOString(), session.id)
+      .run();
+
+    setCookie(c, 'akademo_rt', newRefreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'None',
+      maxAge: REFRESH_TOKEN_MAX_AGE,
+      path: '/',
+    });
+
+    return c.json(successResponse({ token: newAccessToken }));
+  } catch (error) {
+    console.error('[Refresh] Error:', error);
+    return c.json(errorResponse('Error al renovar la sesión'), 500);
+  }
+});
+
 // POST /auth/logout
 auth.post('/logout', async (c) => {
   try {
@@ -378,10 +475,10 @@ auth.post('/logout', async (c) => {
       const session = await getSession(c);
       const userId = session?.id;
       
-      // Deactivate all device sessions for this user
+      // Deactivate all device sessions for this user (also clears refresh tokens)
       if (userId) {
         await c.env.DB
-          .prepare('UPDATE DeviceSession SET isActive = 0 WHERE userId = ? AND isActive = 1')
+          .prepare('UPDATE DeviceSession SET isActive = 0, refreshTokenHash = NULL, refreshTokenExpiresAt = NULL WHERE userId = ? AND isActive = 1')
           .bind(userId)
           .run();
       }
@@ -401,6 +498,15 @@ auth.post('/logout', async (c) => {
     maxAge: 0,
     path: '/',
     domain: '.akademo-edu.com',
+  });
+
+  // Clear refresh token cookie (API domain, SameSite=None)
+  setCookie(c, 'akademo_rt', '', {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'None',
+    maxAge: 0,
+    path: '/',
   });
 
   return c.json(successResponse({ message: 'Logged out successfully' }));

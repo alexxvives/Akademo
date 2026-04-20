@@ -14,7 +14,9 @@ interface UserRow {
 }
 
 const SESSION_COOKIE_NAME = 'academy_session';
-const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days
+const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days — kept for legacy token back-compat
+export const ACCESS_TOKEN_MAX_AGE = 60 * 15; // 15 minutes (new tokens embed exp field)
+export const REFRESH_TOKEN_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 const SESSION_SIGNING_ALG = { name: 'HMAC', hash: 'SHA-256' };
 
 export interface SessionUser {
@@ -65,7 +67,7 @@ async function signToken(payload: string, env: Bindings): Promise<string> {
 
 /**
  * Verify a signed token and return the payload, or null if invalid.
- * Enforces token expiry (SESSION_MAX_AGE from issued-at time).
+ * New tokens embed an `exp` field; legacy tokens fall back to SESSION_MAX_AGE.
  */
 async function verifyToken(token: string, env: Bindings): Promise<string | null> {
   const parts = token.split('.');
@@ -86,18 +88,21 @@ async function verifyToken(token: string, env: Bindings): Promise<string | null>
     const valid = await crypto.subtle.verify('HMAC', key, sigArray, encoder.encode(payload));
     if (!valid) return null;
 
-    // Check expiry — tokens must have iat and must not exceed SESSION_MAX_AGE
+    // Check expiry
     try {
       const parsed = JSON.parse(payload);
-      if (!parsed.iat) {
-        return null; // Legacy tokens without iat are no longer accepted
-      }
-      const age = Math.floor(Date.now() / 1000) - parsed.iat;
-      if (age > SESSION_MAX_AGE) {
-        return null; // Token expired
+      const now = Math.floor(Date.now() / 1000);
+      if (parsed.exp) {
+        // New-style token: explicit exp field
+        if (now > parsed.exp) return null;
+      } else if (parsed.iat) {
+        // Legacy token: iat + SESSION_MAX_AGE window
+        if (now - parsed.iat > SESSION_MAX_AGE) return null;
+      } else {
+        return null; // No timing info — reject
       }
     } catch {
-      // Non-JSON payload has no expiry — reject it
+      // Non-JSON payload — reject
       return null;
     }
 
@@ -105,6 +110,24 @@ async function verifyToken(token: string, env: Bindings): Promise<string | null>
   } catch {
     return null;
   }
+}
+
+/**
+ * Hash a refresh token with SHA-256 for safe DB storage.
+ * The plain token is stored in the HttpOnly cookie; only the hash lives in the DB.
+ */
+export async function hashRefreshToken(token: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const hash = await crypto.subtle.digest('SHA-256', encoder.encode(token));
+  return btoa(String.fromCharCode(...new Uint8Array(hash)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+/**
+ * Generate a cryptographically random refresh token (256-bit entropy).
+ */
+export function generateRefreshToken(): string {
+  return `${crypto.randomUUID()}-${crypto.randomUUID()}`;
 }
 
 export async function createSignedSession(data: string, env: Bindings): Promise<string> {
