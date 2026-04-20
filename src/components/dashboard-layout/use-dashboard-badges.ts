@@ -182,6 +182,11 @@ export function useDashboardBadges() {
     return () => window.removeEventListener('unreadReviewsChanged', handleUnreadReviewsChanged);
   }, [loadUnreadValoraciones]);
 
+  const cleanup = useCallback(() => {
+    controllerRef.current.abort();
+    controllerRef.current = new AbortController();
+  }, []);
+
   return {
     activeStreams,
     pendingPaymentsCount, unreadValoracionesCount, ungradedAssignmentsCount,
@@ -192,9 +197,4 @@ export function useDashboardBadges() {
     loadNewGrades, loadUnpaidClasses, loadStudentPendingPayments, loadPendingPaymentsCount,
     cleanup,
   };
-
-  function cleanup() {
-    controllerRef.current.abort();
-    controllerRef.current = new AbortController();
-  }
 }
