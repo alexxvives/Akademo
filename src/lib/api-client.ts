@@ -77,9 +77,11 @@ export async function apiClient(
     },
   });
 
-  // Global 401 handler: attempt silent token refresh first, then redirect if that fails.
-  // Skip for: auth endpoints (avoid loops), skipAutoRedirect callers, retried requests.
-  if (response.status === 401 && typeof window !== 'undefined' && !skipAutoRedirect && !_isRetry) {
+  // Global 401 handler: attempt silent token refresh first, then decide what to do on failure.
+  // Skip for: auth endpoints (avoid loops), retried requests.
+  // `skipAutoRedirect` only controls whether a failed refresh redirects to login — it no longer
+  // prevents the refresh attempt itself, so background calls also benefit from token renewal.
+  if (response.status === 401 && typeof window !== 'undefined' && !_isRetry) {
     const isAuthEndpoint = path.startsWith('/auth/');
     if (!isAuthEndpoint) {
       const refreshed = await attemptSilentRefresh();
@@ -87,9 +89,11 @@ export async function apiClient(
         // Token renewed — retry the original request once with the new token
         return apiClient(path, { ...options, _isRetry: true });
       }
-      // Refresh failed — session truly expired, send to login
-      localStorage.removeItem('auth_token');
-      window.location.href = '/?modal=login&expired=1';
+      // Refresh failed — session truly expired
+      if (!skipAutoRedirect) {
+        localStorage.removeItem('auth_token');
+        window.location.href = '/?modal=login&expired=1';
+      }
       return response;
     }
   }
