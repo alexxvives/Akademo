@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { MobileSidebar } from '@/components/layout/MobileSidebar';
 import { DemoDataBanner } from '@/components/academy/DemoDataBanner';
@@ -35,54 +35,75 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
 
+  // Store latest callbacks in refs so the mount-only effect never re-fires
+  // when a callback reference changes (e.g. loadUnreadValoraciones depends on
+  // academyPaymentStatus state — its ref changes after loadAcademy runs).
+  const loadersRef = useRef({
+    checkAuth, loadActiveStreams, loadAcademy,
+    loadUnreadValoraciones, loadUngradedAssignments,
+    loadNewGrades, loadUnpaidClasses, loadStudentPendingPayments,
+    loadPendingPaymentsCount, cleanup, setShowSuspicionWarning,
+  });
   useEffect(() => {
-    checkAuth();
+    loadersRef.current = {
+      checkAuth, loadActiveStreams, loadAcademy,
+      loadUnreadValoraciones, loadUngradedAssignments,
+      loadNewGrades, loadUnpaidClasses, loadStudentPendingPayments,
+      loadPendingPaymentsCount, cleanup, setShowSuspicionWarning,
+    };
+  });
+
+  // Runs exactly once per mount (or when role changes). No callback deps.
+  useEffect(() => {
+    const L = loadersRef.current;
+    L.checkAuth();
 
     if (role === 'STUDENT') {
       if (sessionStorage.getItem('akademo_suspicion_warning')) {
         sessionStorage.removeItem('akademo_suspicion_warning');
-        setShowSuspicionWarning(true);
+        L.setShowSuspicionWarning(true);
       }
       apiClient('/auth/session/check', { method: 'POST' });
-      loadActiveStreams(true);
-      loadNewGrades();
-      loadUnpaidClasses();
-      loadStudentPendingPayments();
-      const onVisible = () => { if (document.visibilityState === 'visible') loadActiveStreams(); };
+      L.loadActiveStreams(true);
+      L.loadNewGrades();
+      L.loadUnpaidClasses();
+      L.loadStudentPendingPayments();
+      const onVisible = () => { if (document.visibilityState === 'visible') loadersRef.current.loadActiveStreams(); };
       document.addEventListener('visibilitychange', onVisible);
-      return () => { cleanup(); document.removeEventListener('visibilitychange', onVisible); };
+      return () => { loadersRef.current.cleanup(); document.removeEventListener('visibilitychange', onVisible); };
     }
 
     if (role === 'ACADEMY') {
-      loadAcademy().then((status) => {
-        loadUnreadValoraciones(status);
-        loadUngradedAssignments(status);
+      L.loadAcademy().then((status) => {
+        loadersRef.current.loadUnreadValoraciones(status);
+        loadersRef.current.loadUngradedAssignments(status);
       });
-      loadActiveStreams(true);
-      const onVisible = () => { if (document.visibilityState === 'visible') loadActiveStreams(); };
+      L.loadActiveStreams(true);
+      const onVisible = () => { if (document.visibilityState === 'visible') loadersRef.current.loadActiveStreams(); };
       document.addEventListener('visibilitychange', onVisible);
-      return () => { cleanup(); document.removeEventListener('visibilitychange', onVisible); };
+      return () => { loadersRef.current.cleanup(); document.removeEventListener('visibilitychange', onVisible); };
     }
 
     if (role === 'TEACHER') {
-      loadUnreadValoraciones();
-      loadUngradedAssignments();
-      loadActiveStreams(true);
-      const onVisible = () => { if (document.visibilityState === 'visible') loadActiveStreams(); };
+      L.loadUnreadValoraciones();
+      L.loadUngradedAssignments();
+      L.loadActiveStreams(true);
+      const onVisible = () => { if (document.visibilityState === 'visible') loadersRef.current.loadActiveStreams(); };
       document.addEventListener('visibilitychange', onVisible);
-      return () => { cleanup(); document.removeEventListener('visibilitychange', onVisible); };
+      return () => { loadersRef.current.cleanup(); document.removeEventListener('visibilitychange', onVisible); };
     }
 
     if (role === 'ADMIN') {
-      loadActiveStreams(true);
-      loadUnreadValoraciones();
-      loadUngradedAssignments();
-      loadPendingPaymentsCount();
-      const onVisible = () => { if (document.visibilityState === 'visible') loadActiveStreams(); };
+      L.loadActiveStreams(true);
+      L.loadUnreadValoraciones();
+      L.loadUngradedAssignments();
+      L.loadPendingPaymentsCount();
+      const onVisible = () => { if (document.visibilityState === 'visible') loadersRef.current.loadActiveStreams(); };
       document.addEventListener('visibilitychange', onVisible);
-      return () => { cleanup(); document.removeEventListener('visibilitychange', onVisible); };
+      return () => { loadersRef.current.cleanup(); document.removeEventListener('visibilitychange', onVisible); };
     }
-  }, [checkAuth, role, loadActiveStreams, loadAcademy, loadUnreadValoraciones, loadUngradedAssignments, loadNewGrades, loadStudentPendingPayments, loadUnpaidClasses, loadPendingPaymentsCount, cleanup, setShowSuspicionWarning]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [role]);
 
   const copyJoinLink = () => {
     if (!user) return;

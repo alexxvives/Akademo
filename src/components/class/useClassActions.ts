@@ -21,16 +21,20 @@ export function useClassActions(s: ClassDetailState) {
   useEffect(() => {
     if (!s.classData?.id) return;
     let timeoutId: ReturnType<typeof setTimeout>;
+    let pollCount = 0;
+    const MAX_POLLS = 120; // Cap at ~1 hour
     const pollLiveStreams = async () => {
+      if (pollCount >= MAX_POLLS) return;
+      pollCount++;
       try {
         const res = await apiClient(`/live?classId=${s.classData!.id}`);
         const result = await res.json();
         if (result.success) {
           const filtered = (result.data || []).filter((st: { status: string }) => st.status === 'active' || st.status === 'scheduled');
           s.setLiveClasses(filtered);
-          timeoutId = setTimeout(pollLiveStreams, filtered.some((st: { status: string }) => st.status === 'active') ? 2000 : 10000);
-        } else { timeoutId = setTimeout(pollLiveStreams, 10000); }
-      } catch { timeoutId = setTimeout(pollLiveStreams, 10000); }
+          timeoutId = setTimeout(pollLiveStreams, filtered.some((st: { status: string }) => st.status === 'active') ? 15000 : 30000);
+        } else { timeoutId = setTimeout(pollLiveStreams, 30000); }
+      } catch { timeoutId = setTimeout(pollLiveStreams, 30000); }
     };
     pollLiveStreams();
     return () => clearTimeout(timeoutId);

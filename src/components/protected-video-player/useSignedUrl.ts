@@ -5,6 +5,7 @@ import { apiClient } from '@/lib/api-client';
 
 export function useSignedUrl(bunnyGuid?: string) {
   const transcodingPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollCountRef = useRef(0);
   const [signedHlsUrl, setSignedHlsUrl] = useState<string | null>(null);
   const [transcodingStatus, setTranscodingStatus] = useState<string | null>(null);
 
@@ -24,8 +25,15 @@ export function useSignedUrl(bunnyGuid?: string) {
             setTranscodingStatus('finished');
           } else if (statusData.success && statusData.data?.status === 3) {
             setTranscodingStatus('processing');
-            // Poll for status updates every 5 seconds
+            // Poll for status updates every 10 seconds, max 30 polls (~5 min)
+            pollCountRef.current = 0;
             transcodingPollRef.current = setInterval(async () => {
+              pollCountRef.current++;
+              if (pollCountRef.current >= 30) {
+                if (transcodingPollRef.current) clearInterval(transcodingPollRef.current);
+                transcodingPollRef.current = null;
+                return;
+              }
               const pollResponse = await apiClient(`/bunny/video/${bunnyGuid}/status`);
               if (pollResponse.ok) {
                 const pollData = await pollResponse.json();
@@ -33,10 +41,10 @@ export function useSignedUrl(bunnyGuid?: string) {
                   setTranscodingStatus('finished');
                   if (transcodingPollRef.current) clearInterval(transcodingPollRef.current);
                   transcodingPollRef.current = null;
-                  window.location.reload(); // Reload to load the video
+                  window.location.reload();
                 }
               }
-            }, 5000);
+            }, 10000);
             return;
           }
         }

@@ -18,7 +18,7 @@ export default function StudentLivePage() {
 
   useEffect(() => {
     loadActiveStreams();
-    const interval = setInterval(loadActiveStreams, 10000); // Poll every 10s
+    const interval = setInterval(loadActiveStreams, 30000); // Poll every 30s
     return () => clearInterval(interval);
   }, []);
 

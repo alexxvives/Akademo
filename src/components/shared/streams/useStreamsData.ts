@@ -128,8 +128,8 @@ export function useStreamsData(role: 'ACADEMY' | 'ADMIN' | 'TEACHER') {
 
   useEffect(() => {
     loadData();
-    const pollInterval = setInterval(loadData, 10000);
-    return () => clearInterval(pollInterval);
+    // No polling — this is a history page, not real-time monitoring.
+    // Data refreshes on navigation or manual action (edit/delete).
   }, [loadData, role]);
 
   const filteredStreams = useMemo(() => {
