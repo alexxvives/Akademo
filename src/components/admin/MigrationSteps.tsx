@@ -1,7 +1,7 @@
 'use client';
 
 
-import { type ImportRow, type ClassRow, type ImportSummary } from './migration-utils';
+import { type ImportRow, type ClassRow, type QuizRow, type QuestionRow, type FileRow, type ImportSummary } from './migration-utils';
 
 interface UploadStepProps {
   fileRef: React.RefObject<HTMLInputElement | null>;
@@ -14,7 +14,7 @@ export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
       <div className="bg-gray-50 rounded-xl p-5 border border-gray-200">
         <h3 className="text-sm font-semibold text-gray-700 mb-3">Formato del archivo (CSV o Excel)</h3>
         <p className="text-xs text-gray-500 mb-3">
-          Sube un archivo <span className="font-semibold text-gray-700">.xlsx</span> (Excel) o <span className="font-semibold text-gray-700">.csv</span>. La primera fila debe ser el encabezado. Columnas requeridas en <span className="font-semibold text-gray-700">negrita</span>:
+          Sube un archivo <span className="font-semibold text-gray-700">.xlsx</span> con hojas separadas, o <span className="font-semibold text-gray-700">varios archivos .csv</span> (se detectan automáticamente por columnas).
         </p>
 
         <div className="grid grid-cols-2 gap-4 items-start">
@@ -38,7 +38,7 @@ export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
           </div>
 
           <div>
-            <p className="text-xs font-semibold text-gray-600 mb-2">Hoja &ldquo;Asignaturas&rdquo; (opcional — crea asignaturas nuevas)</p>
+            <p className="text-xs font-semibold text-gray-600 mb-2">Hoja &ldquo;Asignaturas&rdquo; (opcional)</p>
             <table className="text-xs text-gray-500 w-full">
               <thead>
                 <tr className="text-gray-600">
@@ -48,29 +48,83 @@ export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
               </thead>
               <tbody>
                 <tr><td className="pr-4 py-1 font-semibold text-gray-700">Nombre</td><td><em className="text-gray-300 not-italic">Sin nota</em></td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Precio</td><td>Precio total (ej: 500)</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Cuotas <span className="text-gray-400">(opcional)</span></td><td>Nº de cuotas mensuales. Si vacío → pago único</td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Fecha Inicio</td><td>Formato DD/MM/YYYY</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Profesor Email</td><td>Email de un profesor importado</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Descripción</td><td>Texto libre</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Universidad</td><td>Nombre de la universidad</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Carrera</td><td>Nombre de la carrera</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Máx. Estudiantes</td><td>Número entero</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">WhatsApp</td><td>URL del grupo</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Precio</td><td>€ por cuota o total</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Cuotas</td><td>Nº de meses</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Fecha Inicio</td><td>DD/MM/YYYY</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">Profesor Email</td><td>Email del profesor</td></tr>
               </tbody>
             </table>
           </div>
         </div>
 
+        <div className="grid grid-cols-3 gap-4 items-start mt-4 pt-4 border-t border-gray-200">
+          <div>
+            <p className="text-xs font-semibold text-gray-600 mb-2">Hoja &ldquo;Quizzes&rdquo; (opcional)</p>
+            <table className="text-xs text-gray-500 w-full">
+              <thead>
+                <tr className="text-gray-600">
+                  <th className="text-left pr-4 pb-2 font-medium">Columna</th>
+                  <th className="text-left pb-2 font-medium">Nota</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">course_name</td><td>Nombre de asignatura</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">quiz_id</td><td>ID del quiz (Moodle)</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">quiz_name</td><td>Título del quiz</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">quiz_description</td><td>Descripción (HTML OK)</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold text-gray-600 mb-2">Hoja &ldquo;Questions&rdquo; (opcional)</p>
+            <table className="text-xs text-gray-500 w-full">
+              <thead>
+                <tr className="text-gray-600">
+                  <th className="text-left pr-4 pb-2 font-medium">Columna</th>
+                  <th className="text-left pb-2 font-medium">Nota</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">quiz_id</td><td>Enlaza con Quizzes</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">question_id</td><td>ID de pregunta</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">question_text</td><td>Texto (HTML OK)</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">answer_id</td><td>ID de respuesta</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">answer_text</td><td>Texto respuesta</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">is_correct</td><td>1.0 = correcta</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold text-gray-600 mb-2">Hoja &ldquo;Files&rdquo; (opcional — manifiesto PDF)</p>
+            <table className="text-xs text-gray-500 w-full">
+              <thead>
+                <tr className="text-gray-600">
+                  <th className="text-left pr-4 pb-2 font-medium">Columna</th>
+                  <th className="text-left pb-2 font-medium">Nota</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">file_title</td><td>Nombre del PDF</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">course_name</td><td>Asignatura</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">filename</td><td>Nombre de archivo</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">filesize</td><td>Bytes</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">file_path</td><td>Ruta en SiteGround</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       <div className="flex justify-center">
         <label className="px-6 py-2.5 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors cursor-pointer">
-          Seleccionar archivo
+          Seleccionar archivo(s)
           <input
             ref={fileRef as React.RefObject<HTMLInputElement>}
             type="file"
             accept=".csv,.xlsx,.xls"
+            multiple
             onChange={handleFileUpload}
             className="sr-only"
           />
@@ -83,12 +137,15 @@ export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
 interface PreviewStepProps {
   preview: ImportRow[];
   classPreview: ClassRow[];
+  quizPreview: QuizRow[];
+  questionPreview: QuestionRow[];
+  filePreview: FileRow[];
   importing: boolean;
   reset: () => void;
   handleImport: () => void;
 }
 
-export function PreviewStep({ preview, classPreview, importing, reset, handleImport }: PreviewStepProps) {
+export function PreviewStep({ preview, classPreview, quizPreview, questionPreview, filePreview, importing, reset, handleImport }: PreviewStepProps) {
   const classNamesInFile = new Set(classPreview.map(c => c.name.toLowerCase().trim()));
   const classWarnings = preview
     .filter(row => row.classNames)
@@ -185,6 +242,65 @@ export function PreviewStep({ preview, classPreview, importing, reset, handleImp
         )}
       </div>
 
+      {quizPreview.length > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold text-gray-700 mb-2">Cuestionarios ({quizPreview.length})</h3>
+          <div className="overflow-x-auto max-h-40 overflow-y-auto border border-gray-200 rounded-xl">
+            <table className="w-full text-sm">
+              <thead className="text-gray-500 text-xs sticky top-0 bg-gray-50">
+                <tr>
+                  <th className="text-left px-4 py-2.5">Quiz ID</th>
+                  <th className="text-left px-4 py-2.5">Nombre</th>
+                  <th className="text-left px-4 py-2.5">Asignatura</th>
+                  <th className="text-left px-4 py-2.5">Preguntas</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {quizPreview.map((q, i) => (
+                  <tr key={i} className="hover:bg-gray-50">
+                    <td className="px-4 py-2 text-gray-400 font-mono text-xs">{q.quizId}</td>
+                    <td className="px-4 py-2 text-gray-900 font-medium">{q.quizName}</td>
+                    <td className="px-4 py-2 text-gray-500">{q.courseName}</td>
+                    <td className="px-4 py-2 text-gray-500">
+                      {questionPreview.filter(qr => qr.quizId === q.quizId).reduce((set, qr) => set.add(qr.questionId), new Set<string>()).size}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {filePreview.length > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold text-gray-700 mb-2">Archivos PDF ({filePreview.length})</h3>
+          <div className="overflow-x-auto max-h-40 overflow-y-auto border border-gray-200 rounded-xl">
+            <table className="w-full text-sm">
+              <thead className="text-gray-500 text-xs sticky top-0 bg-gray-50">
+                <tr>
+                  <th className="text-left px-4 py-2.5">Título</th>
+                  <th className="text-left px-4 py-2.5">Asignatura</th>
+                  <th className="text-left px-4 py-2.5">Archivo</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {filePreview.slice(0, 50).map((f, i) => (
+                  <tr key={i} className="hover:bg-gray-50">
+                    <td className="px-4 py-2 text-gray-900 font-medium text-xs">{f.fileTitle}</td>
+                    <td className="px-4 py-2 text-gray-500 text-xs">{f.courseName}</td>
+                    <td className="px-4 py-2 text-gray-500 text-xs">{f.filename}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {filePreview.length > 50 && (
+              <p className="text-xs text-gray-400 px-4 py-2 bg-gray-50">Mostrando 50 de {filePreview.length} archivos</p>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-center gap-3 pt-2">
         <button
           onClick={reset}
@@ -220,6 +336,8 @@ export function ResultsStep({ summary, onClose }: ResultsStepProps) {
   const _hasCreated = summary.created > 0;
   const classesCreated = summary.classesCreated ?? 0;
   const classesExisted = (summary.classResults || []).filter(r => r.status === 'existed').length;
+  const quizzesCreated = summary.quizzesCreated ?? 0;
+  const questionsCreated = summary.questionsCreated ?? 0;
 
 
   return (
@@ -324,6 +442,89 @@ export function ResultsStep({ summary, onClose }: ResultsStepProps) {
           </table>
         </div>
       </div>
+
+      {(quizzesCreated > 0 || questionsCreated > 0) && (
+        <div className="border border-gray-200 rounded-xl p-4">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 text-center">Cuestionarios</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-gray-900">{quizzesCreated}</p>
+              <p className="text-xs text-gray-500 mt-0.5">Quizzes creados</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-gray-900">{questionsCreated}</p>
+              <p className="text-xs text-gray-500 mt-0.5">Preguntas creadas</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {summary.quizResults && summary.quizResults.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Detalle cuestionarios</p>
+          <div className="overflow-x-auto max-h-48 overflow-y-auto border border-gray-200 rounded-xl">
+            <table className="w-full text-sm">
+              <thead className="text-gray-500 text-xs sticky top-0 bg-gray-50">
+                <tr>
+                  <th className="text-left px-4 py-2.5">Quiz</th>
+                  <th className="text-left px-4 py-2.5">Asignatura</th>
+                  <th className="text-left px-4 py-2.5">Preguntas</th>
+                  <th className="text-left px-4 py-2.5">Estado</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {summary.quizResults.map((qr, i) => (
+                  <tr key={i} className="hover:bg-gray-50">
+                    <td className="px-4 py-2 text-gray-900 font-medium">{qr.quizName}</td>
+                    <td className="px-4 py-2 text-gray-500">{qr.courseName}</td>
+                    <td className="px-4 py-2 text-gray-500">{qr.questionsCount}</td>
+                    <td className="px-4 py-2">
+                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                        qr.status === 'created' ? 'bg-green-100 text-green-700' :
+                        qr.status === 'error' ? 'bg-red-100 text-red-700' :
+                        'bg-gray-100 text-gray-500'
+                      }`}>
+                        {qr.status === 'created' ? 'Creado' : qr.status === 'error' ? 'Error' : 'Omitido'}
+                        {qr.message ? ` — ${qr.message}` : ''}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {summary.pdfManifest && summary.pdfManifest.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Manifiesto PDF — descarga manual desde SiteGround</p>
+          <div className="overflow-x-auto max-h-60 overflow-y-auto border border-gray-200 rounded-xl">
+            <table className="w-full text-sm">
+              <thead className="text-gray-500 text-xs sticky top-0 bg-gray-50">
+                <tr>
+                  <th className="text-left px-4 py-2.5">Título</th>
+                  <th className="text-left px-4 py-2.5">Asignatura</th>
+                  <th className="text-left px-4 py-2.5">Archivo</th>
+                  <th className="text-left px-4 py-2.5">Tamaño</th>
+                  <th className="text-left px-4 py-2.5">Ruta SiteGround</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {summary.pdfManifest.map((f, i) => (
+                  <tr key={i} className="hover:bg-gray-50">
+                    <td className="px-4 py-2 text-gray-900 font-medium text-xs">{f.fileTitle}</td>
+                    <td className="px-4 py-2 text-gray-500 text-xs">{f.courseName}</td>
+                    <td className="px-4 py-2 text-gray-500 text-xs">{f.filename}</td>
+                    <td className="px-4 py-2 text-gray-500 text-xs">{f.fileSizeKB} KB</td>
+                    <td className="px-4 py-2 font-mono text-xs text-gray-400 break-all">{f.sitegroundPath}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       <div className="flex justify-center gap-3 pt-2">
         <button onClick={onClose} className="px-6 py-2 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors">

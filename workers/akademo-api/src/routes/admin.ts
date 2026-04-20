@@ -753,7 +753,7 @@ admin.post('/bulk-import', async (c) => {
       return c.json(errorResponse('Forbidden'), 403);
     }
 
-    const { academyId, users: rows, classes: classRows = [] } = await c.req.json();
+    const { academyId, users: rows, classes: classRows = [], quizzes: quizRows = [], questions: questionRows = [], files: fileRows = [] } = await c.req.json();
     if (!academyId || !Array.isArray(rows) || rows.length === 0) {
       return c.json(errorResponse('academyId and users array required'), 400);
     }
@@ -1105,6 +1105,148 @@ admin.post('/bulk-import', async (c) => {
     // Pending payments are batch-inserted above. The lazy sync in GET /classes
     // and GET /payments/my-payments will reconcile amounts if billing state changes later.
 
+    // ── Quiz & Question import ──────────────────────────────────────────────────
+    const MOODLE_DATA_ROOT = '/home/customer/www/maximoexponente.es/campus/moodledata/filedir';
+    let quizzesCreated = 0;
+    let questionsCreatedCount = 0;
+    const quizResultsList: Array<{ quizName: string; courseName: string; questionsCount: number; status: 'created' | 'skipped' | 'error'; message?: string }> = [];
+    const pdfManifest: Array<{ fileTitle: string; courseName: string; filename: string; fileSizeKB: number; sitegroundPath: string }> = [];
+
+    if (Array.isArray(quizRows) && quizRows.length > 0 && Array.isArray(questionRows)) {
+      // Helper: strip HTML tags and decode entities
+      const stripHtml = (str: string) => String(str || '')
+        .replace(/<br\s*\/?>/gi, ' ')
+        .replace(/<[^>]+>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      // Build quiz map: quizId → { quizName, courseName, description }
+      const quizMap = new Map<string, { quizName: string; courseName: string; description: string }>();
+      for (const row of quizRows) {
+        const quizId = String(row.quizId || '').trim();
+        if (!quizId) continue;
+        quizMap.set(quizId, {
+          quizName: stripHtml(row.quizName || ''),
+          courseName: String(row.courseName || '').trim(),
+          description: stripHtml(row.quizDescription || ''),
+        });
+      }
+
+      // Build questions grouped by quizId → questionId → { text, answers[] }
+      const questionsByQuiz = new Map<string, Map<string, { text: string; answers: Array<{ id: string; text: string; correct: boolean }> }>>();
+      for (const row of questionRows) {
+        const quizId = String(row.quizId || '').trim();
+        const qId = String(row.questionId || '').trim();
+        if (!quizId || !qId) continue;
+
+        if (!questionsByQuiz.has(quizId)) questionsByQuiz.set(quizId, new Map());
+        const qMap = questionsByQuiz.get(quizId)!;
+
+        if (!qMap.has(qId)) {
+          qMap.set(qId, { text: stripHtml(row.questionText || ''), answers: [] });
+        }
+        qMap.get(qId)!.answers.push({
+          id: String(row.answerId || '').trim(),
+          text: stripHtml(row.answerText || ''),
+          correct: parseFloat(String(row.isCorrect || '0')) === 1,
+        });
+      }
+
+      // Create Assignment + QuizQuestion records
+      const quizStatements: D1PreparedStatement[] = [];
+      const now = new Date().toISOString();
+
+      for (const [moodleQuizId, quiz] of quizMap.entries()) {
+        const questions = questionsByQuiz.get(moodleQuizId);
+        if (!questions || questions.size === 0) {
+          quizResultsList.push({ quizName: quiz.quizName, courseName: quiz.courseName, questionsCount: 0, status: 'skipped', message: 'Sin preguntas' });
+          continue;
+        }
+
+        // Resolve class by course name
+        const classId = classMap.get(quiz.courseName.toLowerCase().trim());
+        if (!classId) {
+          quizResultsList.push({ quizName: quiz.quizName, courseName: quiz.courseName, questionsCount: questions.size, status: 'error', message: 'Asignatura no encontrada' });
+          continue;
+        }
+
+        // Check if quiz already exists in this class
+        const existing = await c.env.DB
+          .prepare('SELECT id FROM Assignment WHERE classId = ? AND title = ? AND type = ?')
+          .bind(classId, quiz.quizName || `Quiz ${moodleQuizId}`, 'quiz')
+          .first();
+        if (existing) {
+          quizResultsList.push({ quizName: quiz.quizName, courseName: quiz.courseName, questionsCount: questions.size, status: 'skipped', message: 'Ya existe' });
+          continue;
+        }
+
+        const assignmentId = crypto.randomUUID();
+
+        // Get teacher for this class (or academy owner)
+        const classInfo = await c.env.DB
+          .prepare('SELECT teacherId, academyId FROM Class WHERE id = ?')
+          .bind(classId)
+          .first() as { teacherId: string | null; academyId: string } | null;
+        const teacherId = classInfo?.teacherId || academy.ownerId;
+
+        quizStatements.push(
+          c.env.DB.prepare(
+            'INSERT INTO Assignment (id, classId, teacherId, title, description, type, maxScore, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+          ).bind(assignmentId, classId, teacherId, quiz.quizName || `Quiz ${moodleQuizId}`, quiz.description || null, 'quiz', 100, now, now)
+        );
+        quizzesCreated++;
+
+        let questionOrder = 0;
+        for (const [, question] of questions.entries()) {
+          const correctAnswer = question.answers.find(a => a.correct);
+          if (!correctAnswer) continue;
+
+          const questionId = crypto.randomUUID();
+          const options = question.answers.map(a => ({ id: a.id, text: a.text }));
+          const optionsJson = JSON.stringify(options);
+
+          quizStatements.push(
+            c.env.DB.prepare(
+              'INSERT INTO QuizQuestion (id, assignmentId, questionText, questionOrder, options, correctOptionId, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)'
+            ).bind(questionId, assignmentId, question.text, questionOrder, optionsJson, correctAnswer.id, now)
+          );
+          questionOrder++;
+          questionsCreatedCount++;
+        }
+
+        quizResultsList.push({ quizName: quiz.quizName, courseName: quiz.courseName, questionsCount: questionOrder, status: 'created' });
+      }
+
+      // Execute quiz statements in batches
+      if (quizStatements.length > 0) {
+        for (let s = 0; s < quizStatements.length; s += 100) {
+          await c.env.DB.batch(quizStatements.slice(s, s + 100));
+        }
+      }
+    }
+
+    // ── PDF Manifest (files are NOT stored in DB, just returned for manual download) ──
+    if (Array.isArray(fileRows) && fileRows.length > 0) {
+      const seen = new Set<string>();
+      for (const row of fileRows) {
+        const filePath = String(row.filePath || '').trim();
+        if (!filePath || seen.has(filePath)) continue;
+        seen.add(filePath);
+        pdfManifest.push({
+          fileTitle: String(row.fileTitle || '').trim(),
+          courseName: String(row.courseName || '').trim(),
+          filename: String(row.filename || '').trim(),
+          fileSizeKB: Math.round(parseInt(String(row.filesize || '0'), 10) / 1024),
+          sitegroundPath: `${MOODLE_DATA_ROOT}/${filePath}`,
+        });
+      }
+    }
+
     const created = results.filter(r => r.status === 'created').length;
     const skipped = results.filter(r => r.status === 'skipped').length;
     const errors = results.filter(r => r.status === 'error').length;
@@ -1115,10 +1257,10 @@ admin.post('/bulk-import', async (c) => {
       action: 'ADMIN_BULK_IMPORT',
       targetType: 'User',
       targetId: academyId,
-      meta: { created, skipped, errors, academyName: academy.name },
+      meta: { created, skipped, errors, quizzesCreated, questionsCreated: questionsCreatedCount, academyName: academy.name },
     });
 
-    return c.json(successResponse({ created, skipped, errors, total: rows.length, classesCreated, classesUnmatched: unmatchedClassNames.size, classResults, results }));
+    return c.json(successResponse({ created, skipped, errors, total: rows.length, classesCreated, classesUnmatched: unmatchedClassNames.size, classResults, results, quizzesCreated, questionsCreated: questionsCreatedCount, quizResults: quizResultsList, pdfManifest }));
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     const msg = error?.message || String(error);

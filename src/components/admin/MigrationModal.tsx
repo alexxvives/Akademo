@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { apiClient, API_BASE_URL } from '@/lib/api-client';
-import { type ImportRow, type ClassRow, type ImportSummary, XLSX, normalizeRows, normalizeClassRows, parseCSV } from './migration-utils';
+import { type ImportRow, type ClassRow, type QuizRow, type QuestionRow, type FileRow, type ImportSummary, XLSX, normalizeRows, normalizeClassRows, normalizeQuizRows, normalizeQuestionRows, normalizeFileRows, parseCSV } from './migration-utils';
 import { UploadStep, PreviewStep, ResultsStep } from './MigrationSteps';
 
 interface MigrationModalProps {
@@ -16,6 +16,9 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
   const [importing, setImporting] = useState(false);
   const [preview, setPreview] = useState<ImportRow[]>([]);
   const [classPreview, setClassPreview] = useState<ClassRow[]>([]);
+  const [quizPreview, setQuizPreview] = useState<QuizRow[]>([]);
+  const [questionPreview, setQuestionPreview] = useState<QuestionRow[]>([]);
+  const [filePreview, setFilePreview] = useState<FileRow[]>([]);
   const [summary, setSummary] = useState<ImportSummary | null>(null);
   const [error, setError] = useState('');
   const [step, setStep] = useState<'upload' | 'preview' | 'results'>('upload');
@@ -27,53 +30,126 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     setError('');
     setSummary(null);
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-    const isXlsx = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
-    const isCsv = file.name.endsWith('.csv');
-    if (!isXlsx && !isCsv) {
-      setError('Solo se aceptan archivos .xlsx o .csv');
+    // Single xlsx = all sheets in one file
+    const firstFile = files[0];
+    const isXlsx = firstFile.name.endsWith('.xlsx') || firstFile.name.endsWith('.xls');
+    const allCsv = Array.from(files).every(f => f.name.endsWith('.csv'));
+    if (!isXlsx && !allCsv) {
+      setError('Sube un archivo .xlsx (con hojas) o varios archivos .csv');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const result = ev.target?.result;
-      let rows: ImportRow[] = [];
-      let classRows: ClassRow[] = [];
-
-      if (isXlsx) {
+    if (isXlsx) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const result = ev.target?.result;
         const wb = XLSX.read(result, { type: 'array' });
-        // Parse users from first sheet named "Usuarios" or the first sheet
+        let rows: ImportRow[] = [];
+        let classRows: ClassRow[] = [];
+        let quizRows: QuizRow[] = [];
+        let questionRows: QuestionRow[] = [];
+        let fileRows: FileRow[] = [];
+
         const usersSheetName = wb.SheetNames.find(n => n.toLowerCase() === 'usuarios') || wb.SheetNames[0];
         const ws = wb.Sheets[usersSheetName];
         const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: '' });
         rows = normalizeRows(json);
-        // Parse classes from sheet named "Asignaturas" or "Clases" if present
+
         const clasesSheetName = wb.SheetNames.find(n => ['asignaturas', 'asignatura', 'clases', 'classes'].includes(n.toLowerCase()));
         if (clasesSheetName) {
           const wsClases = wb.Sheets[clasesSheetName];
-          const jsonClases = XLSX.utils.sheet_to_json<Record<string, unknown>>(wsClases, { defval: '' });
-          classRows = normalizeClassRows(jsonClases);
+          classRows = normalizeClassRows(XLSX.utils.sheet_to_json<Record<string, unknown>>(wsClases, { defval: '' }));
         }
-      } else {
-        rows = parseCSV(result as string);
-      }
+        const quizzesSheetName = wb.SheetNames.find(n => ['quizzes', 'cuestionarios', 'quiz'].includes(n.toLowerCase()));
+        if (quizzesSheetName) {
+          const wsQuiz = wb.Sheets[quizzesSheetName];
+          quizRows = normalizeQuizRows(XLSX.utils.sheet_to_json<Record<string, unknown>>(wsQuiz, { defval: '' }));
+        }
+        const questionsSheetName = wb.SheetNames.find(n => ['questions', 'preguntas'].includes(n.toLowerCase()));
+        if (questionsSheetName) {
+          const wsQ = wb.Sheets[questionsSheetName];
+          questionRows = normalizeQuestionRows(XLSX.utils.sheet_to_json<Record<string, unknown>>(wsQ, { defval: '' }));
+        }
+        const filesSheetName = wb.SheetNames.find(n => ['files', 'archivos', 'pdfs', 'documentos'].includes(n.toLowerCase()));
+        if (filesSheetName) {
+          const wsF = wb.Sheets[filesSheetName];
+          fileRows = normalizeFileRows(XLSX.utils.sheet_to_json<Record<string, unknown>>(wsF, { defval: '' }));
+        }
 
-      if (rows.length === 0) {
-        setError('No se pudo leer el archivo. Columnas requeridas: email, firstName (o nombre), lastName (o apellido). Opcionales: role, classes.');
-        return;
-      }
-      setPreview(rows);
-      setClassPreview(classRows);
-      setStep('preview');
-    };
-
-    if (isXlsx) {
-      reader.readAsArrayBuffer(file);
+        if (rows.length === 0 && classRows.length === 0 && quizRows.length === 0) {
+          setError('No se pudo leer el archivo. Asegúrate de que las hojas tengan las columnas correctas.');
+          return;
+        }
+        setPreview(rows);
+        setClassPreview(classRows);
+        setQuizPreview(quizRows);
+        setQuestionPreview(questionRows);
+        setFilePreview(fileRows);
+        setStep('preview');
+      };
+      reader.readAsArrayBuffer(firstFile);
     } else {
-      reader.readAsText(file);
+      // Multiple CSVs: auto-detect by filename or column headers
+      let rows: ImportRow[] = [];
+      let classRows: ClassRow[] = [];
+      let quizRows: QuizRow[] = [];
+      let questionRows: QuestionRow[] = [];
+      let fileRows: FileRow[] = [];
+      let filesRead = 0;
+      const totalFiles = files.length;
+
+      Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const text = ev.target?.result as string;
+          const parsed = parseCSV(text);
+          if (parsed.length > 0) {
+            const generic = parsed as unknown as Record<string, unknown>[];
+            const headers = Object.keys(parsed[0]).map(h => h.toLowerCase().trim().replace(/\s+/g, '').replace(/_/g, ''));
+            // Auto-detect CSV type by column headers
+            if (headers.some(h => h.includes('quizid')) && headers.some(h => h.includes('questionid') || h.includes('answerid'))) {
+              questionRows = normalizeQuestionRows(generic);
+            } else if (headers.some(h => h.includes('quizid')) && headers.some(h => h.includes('quizname') || h.includes('coursename'))) {
+              quizRows = normalizeQuizRows(generic);
+            } else if (headers.some(h => h.includes('filepath') || h.includes('filePath')) && headers.some(h => h.includes('filename'))) {
+              fileRows = normalizeFileRows(generic);
+            } else if (headers.some(h => h === 'email' || h === 'nombre' || h === 'firstname')) {
+              rows = normalizeRows(generic);
+            } else if (headers.some(h => h.includes('fechainicio') || h.includes('startdate') || h.includes('precio') || h.includes('price'))) {
+              classRows = normalizeClassRows(generic);
+            } else {
+              // Fallback: try all parsers, use the one that returns results
+              const tryUsers = normalizeRows(generic);
+              const tryClasses = normalizeClassRows(generic);
+              const tryQuizzes = normalizeQuizRows(generic);
+              const tryQuestions = normalizeQuestionRows(generic);
+              const tryFiles = normalizeFileRows(generic);
+              if (tryQuestions.length > 0) questionRows = tryQuestions;
+              else if (tryQuizzes.length > 0) quizRows = tryQuizzes;
+              else if (tryFiles.length > 0) fileRows = tryFiles;
+              else if (tryClasses.length > 0) classRows = tryClasses;
+              else if (tryUsers.length > 0) rows = tryUsers;
+            }
+          }
+          filesRead++;
+          if (filesRead === totalFiles) {
+            if (rows.length === 0 && classRows.length === 0 && quizRows.length === 0) {
+              setError('No se pudieron leer los archivos CSV. Comprueba que las columnas sean correctas.');
+              return;
+            }
+            setPreview(rows);
+            setClassPreview(classRows);
+            setQuizPreview(quizRows);
+            setQuestionPreview(questionRows);
+            setFilePreview(fileRows);
+            setStep('preview');
+          }
+        };
+        reader.readAsText(file);
+      });
     }
   };
 
@@ -88,7 +164,7 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
       const res = await apiClient('/admin/bulk-import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ academyId, users: preview, classes: classPreview }),
+        body: JSON.stringify({ academyId, users: preview, classes: classPreview, quizzes: quizPreview, questions: questionPreview, files: filePreview }),
         skipAutoRedirect: true,
       });
       const data = await res.json();
@@ -125,6 +201,9 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
   const reset = () => {
     setPreview([]);
     setClassPreview([]);
+    setQuizPreview([]);
+    setQuestionPreview([]);
+    setFilePreview([]);
     setSummary(null);
     setStep('upload');
     setError('');
@@ -160,7 +239,7 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
           )}
 
           {step === 'upload' && <UploadStep fileRef={fileRef} handleFileUpload={handleFileUpload} />}
-          {step === 'preview' && <PreviewStep preview={preview} classPreview={classPreview} importing={importing} reset={reset} handleImport={handleImport} />}
+          {step === 'preview' && <PreviewStep preview={preview} classPreview={classPreview} quizPreview={quizPreview} questionPreview={questionPreview} filePreview={filePreview} importing={importing} reset={reset} handleImport={handleImport} />}
           {step === 'results' && summary && <ResultsStep summary={summary} onClose={onClose} />}
         </div>
       </div>

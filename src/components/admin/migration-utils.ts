@@ -40,6 +40,42 @@ export interface ImportSummary {
   classesUnmatched: number;
   classResults?: { name: string; status: 'created' | 'existed' | 'error'; message?: string }[];
   results: ImportResult[];
+  quizzesCreated?: number;
+  questionsCreated?: number;
+  quizResults?: { quizName: string; courseName: string; questionsCount: number; status: 'created' | 'skipped' | 'error'; message?: string }[];
+  pdfManifest?: PdfManifestEntry[];
+}
+
+export interface QuizRow {
+  courseName: string;
+  quizId: string;
+  quizName: string;
+  quizDescription: string;
+}
+
+export interface QuestionRow {
+  quizId: string;
+  questionId: string;
+  questionText: string;
+  answerId: string;
+  answerText: string;
+  isCorrect: number;
+}
+
+export interface FileRow {
+  fileTitle: string;
+  courseName: string;
+  filename: string;
+  filesize: string;
+  filePath: string;
+}
+
+export interface PdfManifestEntry {
+  fileTitle: string;
+  courseName: string;
+  filename: string;
+  fileSizeKB: number;
+  sitegroundPath: string;
 }
 
 export function normalizeRows(rows: Record<string, unknown>[]): ImportRow[] {
@@ -152,6 +188,110 @@ export function normalizeClassRows(rows: Record<string, unknown>[]): ClassRow[] 
       carrera: carreraRaw || undefined,
       maxStudents: isNaN(maxStudentsRaw) ? undefined : maxStudentsRaw,
       whatsappGroupLink: whatsappRaw || undefined,
+    }];
+  });
+}
+
+/** Strip HTML tags and decode basic entities */
+function stripHtml(str: string): string {
+  return String(str || '')
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export function normalizeQuizRows(rows: Record<string, unknown>[]): QuizRow[] {
+  if (rows.length === 0) return [];
+  const raw = rows[0];
+  const keys = Object.keys(raw).map(k => k.toLowerCase().trim().replace(/\s+/g, '').replace(/_/g, ''));
+  const find = (...names: string[]) => keys.findIndex(k => names.includes(k));
+
+  const courseIdx = find('coursename', 'curso', 'asignatura', 'course');
+  const quizIdIdx = find('quizid', 'id');
+  const quizNameIdx = find('quizname', 'nombre', 'name');
+  const descIdx = find('quizdescription', 'description', 'descripcion');
+
+  if (courseIdx === -1 || quizIdIdx === -1 || quizNameIdx === -1) return [];
+
+  const origKeys = Object.keys(raw);
+  return rows.flatMap(row => {
+    const courseName = String(row[origKeys[courseIdx]] ?? '').trim();
+    const quizId = String(row[origKeys[quizIdIdx]] ?? '').trim();
+    const quizName = stripHtml(String(row[origKeys[quizNameIdx]] ?? '').trim());
+    if (!courseName || !quizId || !quizName) return [];
+    return [{
+      courseName,
+      quizId,
+      quizName,
+      quizDescription: descIdx !== -1 ? stripHtml(String(row[origKeys[descIdx]] ?? '')) : '',
+    }];
+  });
+}
+
+export function normalizeQuestionRows(rows: Record<string, unknown>[]): QuestionRow[] {
+  if (rows.length === 0) return [];
+  const raw = rows[0];
+  const keys = Object.keys(raw).map(k => k.toLowerCase().trim().replace(/\s+/g, '').replace(/_/g, ''));
+  const find = (...names: string[]) => keys.findIndex(k => names.includes(k));
+
+  const quizIdIdx = find('quizid');
+  const qIdIdx = find('questionid');
+  const qTextIdx = find('questiontext', 'pregunta');
+  const aIdIdx = find('answerid', 'respuestaid');
+  const aTextIdx = find('answertext', 'respuesta');
+  const correctIdx = find('iscorrect', 'correcta', 'correct');
+
+  if (quizIdIdx === -1 || qIdIdx === -1 || qTextIdx === -1 || aIdIdx === -1 || aTextIdx === -1 || correctIdx === -1) return [];
+
+  const origKeys = Object.keys(raw);
+  return rows.flatMap(row => {
+    const quizId = String(row[origKeys[quizIdIdx]] ?? '').trim();
+    const questionId = String(row[origKeys[qIdIdx]] ?? '').trim();
+    if (!quizId || !questionId) return [];
+    return [{
+      quizId,
+      questionId,
+      questionText: stripHtml(String(row[origKeys[qTextIdx]] ?? '')),
+      answerId: String(row[origKeys[aIdIdx]] ?? '').trim(),
+      answerText: stripHtml(String(row[origKeys[aTextIdx]] ?? '')),
+      isCorrect: parseFloat(String(row[origKeys[correctIdx]] ?? '0')),
+    }];
+  });
+}
+
+export function normalizeFileRows(rows: Record<string, unknown>[]): FileRow[] {
+  if (rows.length === 0) return [];
+  const raw = rows[0];
+  const keys = Object.keys(raw).map(k => k.toLowerCase().trim().replace(/\s+/g, '').replace(/_/g, ''));
+  const find = (...names: string[]) => keys.findIndex(k => names.includes(k));
+
+  const titleIdx = find('filetitle', 'titulo', 'title', 'nombre', 'name');
+  const courseIdx = find('coursename', 'curso', 'asignatura', 'course');
+  const filenameIdx = find('filename', 'archivo', 'file');
+  const sizeIdx = find('filesize', 'tamano', 'size');
+  const pathIdx = find('filepath', 'path', 'ruta');
+
+  if (titleIdx === -1 || courseIdx === -1 || filenameIdx === -1 || pathIdx === -1) return [];
+
+  const origKeys = Object.keys(raw);
+  return rows.flatMap(row => {
+    const fileTitle = String(row[origKeys[titleIdx]] ?? '').trim();
+    const courseName = String(row[origKeys[courseIdx]] ?? '').trim();
+    const filename = String(row[origKeys[filenameIdx]] ?? '').trim();
+    const filePath = String(row[origKeys[pathIdx]] ?? '').trim();
+    if (!fileTitle || !courseName || !filename || !filePath) return [];
+    return [{
+      fileTitle,
+      courseName,
+      filename,
+      filesize: String(row[origKeys[sizeIdx]] ?? '0'),
+      filePath,
     }];
   });
 }
