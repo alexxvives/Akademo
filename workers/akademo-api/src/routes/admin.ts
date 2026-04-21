@@ -773,16 +773,22 @@ admin.post('/bulk-import', async (c) => {
       return c.json(errorResponse('Not authorized for this academy'), 403);
     }
 
+    const t0 = Date.now();
+    const log = (msg: string) => console.log(`[bulk-import +${Date.now() - t0}ms] ${msg}`);
+    log(`start — users=${rows.length}, classes=${classRows.length}, quizzes=${quizRows.length}, questions=${questionRows.length}, files=${fileRows.length}`);
+
     // Load all classes for this academy (for matching by name)
     const classesResult = await c.env.DB
-      .prepare('SELECT id, name, monthlyPrice, oneTimePrice, startDate, cuotas FROM Class WHERE academyId = ?')
+      .prepare('SELECT id, name, monthlyPrice, oneTimePrice, startDate, cuotas, teacherId FROM Class WHERE academyId = ?')
       .bind(academyId)
       .all();
     const classes = classesResult.results || [];
     const classMap = new Map<string, string>(); // lowercase name -> id
+    const classTeacherIdMap = new Map<string, string | null>(); // classId -> teacherId
     const classPriceMap = new Map<string, { monthlyPrice: number | null; oneTimePrice: number | null; startDate: string | null; cuotas: number | null }>();
     for (const cls of classes) {
       classMap.set((cls.name as string).toLowerCase().trim(), cls.id as string);
+      classTeacherIdMap.set(cls.id as string, cls.teacherId as string | null);
       classPriceMap.set(cls.id as string, {
         monthlyPrice: cls.monthlyPrice as number | null,
         oneTimePrice: cls.oneTimePrice as number | null,
@@ -790,6 +796,7 @@ admin.post('/bulk-import', async (c) => {
         cuotas: cls.cuotas as number | null,
       });
     }
+    log(`loaded ${classes.length} existing classes`);
 
     let classesCreated = 0;
     const unmatchedClassNames = new Set<string>();
@@ -1175,9 +1182,34 @@ admin.post('/bulk-import', async (c) => {
         });
       }
 
-      // Create Assignment + QuizQuestion records
-      const quizStatements: D1PreparedStatement[] = [];
+      // Create Assignment + QuizQuestion records — flush incrementally to avoid OOM (30K+ statements)
+      let pendingQuizStatements: D1PreparedStatement[] = [];
+      const FLUSH_AT = 100; // D1 batch limit
+      const flushQuizStatements = async () => {
+        if (pendingQuizStatements.length === 0) return;
+        await c.env.DB.batch(pendingQuizStatements);
+        pendingQuizStatements = [];
+      };
       const now = new Date().toISOString();
+
+      // Batch-load all existing quiz assignments for this academy in one query (avoids 258 sequential SELECTs)
+      const classIdsArr = Array.from(classMap.values());
+      const existingAssignmentTitles = new Set<string>(); // key: `${classId}::${title}`
+      if (classIdsArr.length > 0) {
+        // SQL has a hard limit on placeholder count (~999) — chunk the IN clause if needed
+        for (let s = 0; s < classIdsArr.length; s += 200) {
+          const slice = classIdsArr.slice(s, s + 200);
+          const placeholders = slice.map(() => '?').join(',');
+          const existingRes = await c.env.DB
+            .prepare(`SELECT classId, title FROM Assignment WHERE type = 'quiz' AND classId IN (${placeholders})`)
+            .bind(...slice)
+            .all();
+          for (const r of (existingRes.results || []) as Array<{ classId: string; title: string }>) {
+            existingAssignmentTitles.add(`${r.classId}::${r.title}`);
+          }
+        }
+      }
+      log(`pre-loaded ${existingAssignmentTitles.size} existing quiz assignments`);
 
       for (const [moodleQuizId, quiz] of quizMap.entries()) {
         const questions = questionsByQuiz.get(moodleQuizId);
@@ -1193,30 +1225,23 @@ admin.post('/bulk-import', async (c) => {
           continue;
         }
 
-        // Check if quiz already exists in this class
-        const existing = await c.env.DB
-          .prepare('SELECT id FROM Assignment WHERE classId = ? AND title = ? AND type = ?')
-          .bind(classId, quiz.quizName || `Quiz ${moodleQuizId}`, 'quiz')
-          .first();
-        if (existing) {
+        const title = quiz.quizName || `Quiz ${moodleQuizId}`;
+        if (existingAssignmentTitles.has(`${classId}::${title}`)) {
           quizResultsList.push({ quizName: quiz.quizName, courseName: quiz.courseName, questionsCount: questions.size, status: 'skipped', message: 'Ya existe' });
           continue;
         }
 
         const assignmentId = crypto.randomUUID();
 
-        // Get teacher for this class (or academy owner)
-        const classInfo = await c.env.DB
-          .prepare('SELECT teacherId, academyId FROM Class WHERE id = ?')
-          .bind(classId)
-          .first() as { teacherId: string | null; academyId: string } | null;
-        const teacherId = classInfo?.teacherId || academy.ownerId;
+        // Get teacher for this class from in-memory map (avoids per-quiz DB query)
+        const teacherId = classTeacherIdMap.get(classId) || academy.ownerId;
 
-        quizStatements.push(
+        pendingQuizStatements.push(
           c.env.DB.prepare(
             'INSERT INTO Assignment (id, classId, teacherId, title, description, type, maxScore, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-          ).bind(assignmentId, classId, teacherId, quiz.quizName || `Quiz ${moodleQuizId}`, quiz.description || null, 'quiz', 100, now, now)
+          ).bind(assignmentId, classId, teacherId, title, quiz.description || null, 'quiz', 100, now, now)
         );
+        if (pendingQuizStatements.length >= FLUSH_AT) await flushQuizStatements();
         quizzesCreated++;
 
         let questionOrder = 0;
@@ -1228,24 +1253,21 @@ admin.post('/bulk-import', async (c) => {
           const options = question.answers.map(a => ({ id: a.id, text: a.text }));
           const optionsJson = JSON.stringify(options);
 
-          quizStatements.push(
+          pendingQuizStatements.push(
             c.env.DB.prepare(
               'INSERT INTO QuizQuestion (id, assignmentId, questionText, questionOrder, options, correctOptionId, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)'
             ).bind(questionId, assignmentId, question.text, questionOrder, optionsJson, correctAnswer.id, now)
           );
+          if (pendingQuizStatements.length >= FLUSH_AT) await flushQuizStatements();
           questionOrder++;
           questionsCreatedCount++;
         }
 
         quizResultsList.push({ quizName: quiz.quizName, courseName: quiz.courseName, questionsCount: questionOrder, status: 'created' });
       }
-
-      // Execute quiz statements in batches
-      if (quizStatements.length > 0) {
-        for (let s = 0; s < quizStatements.length; s += 100) {
-          await c.env.DB.batch(quizStatements.slice(s, s + 100));
-        }
-      }
+      // Flush any remaining statements
+      await flushQuizStatements();
+      log(`quiz import done: ${quizzesCreated} quizzes, ${questionsCreatedCount} questions`);
     }
 
     // ── PDF Manifest (files are NOT stored in DB, just returned for manual download) ──
