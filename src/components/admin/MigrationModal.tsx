@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { apiClient, API_BASE_URL } from '@/lib/api-client';
-import { type ImportRow, type ClassRow, type QuizRow, type QuestionRow, type FileRow, type ImportSummary, XLSX, normalizeRows, normalizeClassRows, normalizeQuizRows, normalizeQuestionRows, normalizeFileRows, parseCSV } from './migration-utils';
+import { type ImportRow, type ClassRow, type QuizRow, type QuestionRow, type FileRow, type ImportSummary, XLSX, normalizeRows, normalizeClassRows, normalizeQuizRows, normalizeQuestionRows, normalizeFileRows, parseCSV, parseCSVGeneric } from './migration-utils';
 import { UploadStep, PreviewStep, ResultsStep } from './MigrationSteps';
 
 interface MigrationModalProps {
@@ -105,28 +105,27 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
         const reader = new FileReader();
         reader.onload = (ev) => {
           const text = ev.target?.result as string;
-          const parsed = parseCSV(text);
-          if (parsed.length > 0) {
-            const generic = parsed as unknown as Record<string, unknown>[];
-            const headers = Object.keys(parsed[0]).map(h => h.toLowerCase().trim().replace(/\s+/g, '').replace(/_/g, ''));
+          const generic = parseCSVGeneric(text);
+          if (generic.length > 0) {
+            const headers = Object.keys(generic[0]).map(h => h.toLowerCase().trim().replace(/\s+/g, '').replace(/_/g, ''));
             // Auto-detect CSV type by column headers
             if (headers.some(h => h.includes('quizid')) && headers.some(h => h.includes('questionid') || h.includes('answerid'))) {
               questionRows = normalizeQuestionRows(generic);
             } else if (headers.some(h => h.includes('quizid')) && headers.some(h => h.includes('quizname') || h.includes('coursename'))) {
               quizRows = normalizeQuizRows(generic);
-            } else if (headers.some(h => h.includes('filepath') || h.includes('filePath')) && headers.some(h => h.includes('filename'))) {
+            } else if (headers.some(h => h.includes('filepath')) && headers.some(h => h.includes('filename'))) {
               fileRows = normalizeFileRows(generic);
-            } else if (headers.some(h => h === 'email' || h === 'nombre' || h === 'firstname')) {
-              rows = normalizeRows(generic);
             } else if (headers.some(h => h.includes('fechainicio') || h.includes('startdate') || h.includes('precio') || h.includes('price'))) {
               classRows = normalizeClassRows(generic);
+            } else if (headers.some(h => h === 'email')) {
+              rows = normalizeRows(generic);
             } else {
               // Fallback: try all parsers, use the one that returns results
-              const tryUsers = normalizeRows(generic);
-              const tryClasses = normalizeClassRows(generic);
-              const tryQuizzes = normalizeQuizRows(generic);
               const tryQuestions = normalizeQuestionRows(generic);
+              const tryQuizzes = normalizeQuizRows(generic);
               const tryFiles = normalizeFileRows(generic);
+              const tryClasses = normalizeClassRows(generic);
+              const tryUsers = normalizeRows(generic);
               if (tryQuestions.length > 0) questionRows = tryQuestions;
               else if (tryQuizzes.length > 0) quizRows = tryQuizzes;
               else if (tryFiles.length > 0) fileRows = tryFiles;
@@ -136,7 +135,7 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
           }
           filesRead++;
           if (filesRead === totalFiles) {
-            if (rows.length === 0 && classRows.length === 0 && quizRows.length === 0) {
+            if (rows.length === 0 && classRows.length === 0 && quizRows.length === 0 && questionRows.length === 0 && fileRows.length === 0) {
               setError('No se pudieron leer los archivos CSV. Comprueba que las columnas sean correctas.');
               return;
             }

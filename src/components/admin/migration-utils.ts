@@ -87,7 +87,7 @@ export function normalizeRows(rows: Record<string, unknown>[]): ImportRow[] {
   const emailIdx = find('email');
   const firstIdx = find('firstname', 'nombre');
   const lastIdx = find('lastname', 'apellido', 'apellidos');
-  const roleIdx = find('role', 'rol');
+  const roleIdx = find('role', 'rol', 'moodle_rol');
   const classIdx = find('classes', 'clases', 'classnames', 'asignaturas', 'asignatura');
   const pagadoIdx = find('pagado', 'paid', 'pago recibido', 'ya pagado', 'ya_pagado');
 
@@ -103,6 +103,32 @@ export function normalizeRows(rows: Record<string, unknown>[]): ImportRow[] {
     classNames: classIdx !== -1 ? String(row[origKeys[classIdx]] ?? '').trim() : '',
     pagado: pagadoIdx !== -1 ? TRUTHY.includes(String(row[origKeys[pagadoIdx]] ?? '').toLowerCase().trim()) : false,
   })).filter(r => r.email);
+}
+
+/** Generic CSV parser — returns every row as a plain object keyed by header names. */
+export function parseCSVGeneric(text: string): Record<string, unknown>[] {
+  const splitLine = (line: string): string[] => {
+    const fields: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    for (const ch of line) {
+      if (ch === '"') { inQuotes = !inQuotes; continue; }
+      if (ch === ',' && !inQuotes) { fields.push(current.trim()); current = ''; continue; }
+      current += ch;
+    }
+    fields.push(current.trim());
+    return fields;
+  };
+
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  if (lines.length < 2) return [];
+  const headers = splitLine(lines[0]);
+  return lines.slice(1).map(line => {
+    const fields = splitLine(line);
+    const obj: Record<string, unknown> = {};
+    headers.forEach((h, i) => { obj[h] = fields[i] ?? ''; });
+    return obj;
+  });
 }
 
 export function parseCSV(text: string): ImportRow[] {
