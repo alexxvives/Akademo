@@ -28,11 +28,11 @@ export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
                 </tr>
               </thead>
               <tbody>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Email</td><td><em className="text-gray-300 not-italic">Sin nota</em></td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Nombre</td><td><em className="text-gray-300 not-italic">Sin nota</em></td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Apellido</td><td><em className="text-gray-300 not-italic">Sin nota</em></td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Rol</td><td>STUDENT o TEACHER</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Asignaturas <span className="text-gray-400">(opcional)</span></td><td>Nombres separados por coma (entre comillas)</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">email</td><td><em className="text-gray-300 not-italic">Sin nota</em></td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">nombre</td><td><em className="text-gray-300 not-italic">Sin nota</em></td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">apellido</td><td><em className="text-gray-300 not-italic">Sin nota</em></td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">moodle_rol</td><td>student / editingteacher</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">asignatura</td><td>Nombre del curso</td></tr>
               </tbody>
             </table>
           </div>
@@ -47,11 +47,10 @@ export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
                 </tr>
               </thead>
               <tbody>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Nombre</td><td><em className="text-gray-300 not-italic">Sin nota</em></td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Precio</td><td>€ por cuota o total</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Cuotas</td><td>Nº de meses</td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">Fecha Inicio</td><td>DD/MM/YYYY</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">Profesor Email</td><td>Email del profesor</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">nombre</td><td><em className="text-gray-300 not-italic">Sin nota</em></td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">fechaInicio <span className="text-gray-300">(opcional)</span></td><td>DD/MM/YYYY</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">precio <span className="text-gray-300">(opcional)</span></td><td>€ por cuota o total</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">cuotas <span className="text-gray-300">(opcional)</span></td><td>Nº de meses</td></tr>
               </tbody>
             </table>
           </div>
