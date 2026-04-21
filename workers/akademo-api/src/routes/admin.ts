@@ -964,14 +964,13 @@ admin.post('/bulk-import', async (c) => {
       if (!existing && tempPassword) newUsersToHash.push({ plan, raw: tempPassword });
     }
 
-    // ── Phase 2: Hash all new-user passwords in parallel (cost 4 — temp pwd, meant to be changed immediately) ──
+    // ── Phase 2: Hash all new-user passwords sequentially (cost 4 — temp pwd, changed on first login) ──
+    // Sequential to avoid saturating Worker CPU with many parallel bcrypt operations
     const hashedPasswords = new Map<string, string>();
-    await Promise.all(
-      newUsersToHash.map(async ({ plan, raw }) => {
-        const hashed = await bcrypt.hash(raw, 4);
-        hashedPasswords.set(plan.email, hashed);
-      })
-    );
+    for (const { plan, raw } of newUsersToHash) {
+      const hashed = await bcrypt.hash(raw, 4);
+      hashedPasswords.set(plan.email, hashed);
+    }
 
     // ── Phase 3: Build DB statements and collect tracking data (no sequential awaits) ──
     const dbStatements: D1PreparedStatement[] = [];
@@ -1081,7 +1080,11 @@ admin.post('/bulk-import', async (c) => {
             )
         );
       }
-      if (pagadoStatements.length > 0) await c.env.DB.batch(pagadoStatements);
+      if (pagadoStatements.length > 0) {
+        for (let s = 0; s < pagadoStatements.length; s += 100) {
+          await c.env.DB.batch(pagadoStatements.slice(s, s + 100));
+        }
+      }
     }
 
     // Create PENDING payment records for non-pagado students so they appear immediately in the dashboard
@@ -1110,7 +1113,11 @@ admin.post('/bulk-import', async (c) => {
           );
         }
       }
-      if (pendingStatements.length > 0) await c.env.DB.batch(pendingStatements);
+      if (pendingStatements.length > 0) {
+        for (let s = 0; s < pendingStatements.length; s += 100) {
+          await c.env.DB.batch(pendingStatements.slice(s, s + 100));
+        }
+      }
     }
 
     // Pending payments are batch-inserted above. The lazy sync in GET /classes
