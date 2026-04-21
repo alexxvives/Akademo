@@ -881,25 +881,34 @@ admin.post('/bulk-import', async (c) => {
     const existingUserMap = new Map<string, { id: string; role: string }>();
 
     if (uniqueEmails.length > 0) {
-      const [academyCheckResults, globalCheckResults] = await Promise.all([
-        c.env.DB.batch(
-          uniqueEmails.map(email =>
-            c.env.DB.prepare(`
-              SELECT u.id FROM User u
-              LEFT JOIN Teacher t ON t.userId = u.id
-              LEFT JOIN ClassEnrollment ce ON ce.userId = u.id
-              LEFT JOIN Class c ON c.id = ce.classId OR c.teacherId = u.id
-              WHERE u.email = ? AND (t.academyId = ? OR c.academyId = ?)
-              LIMIT 1
-            `).bind(email, academyId, academyId)
-          )
-        ),
-        c.env.DB.batch(
-          uniqueEmails.map(email =>
-            c.env.DB.prepare('SELECT id, role FROM User WHERE email = ?').bind(email)
-          )
-        ),
-      ]);
+      // D1 batch limit is 100 statements — chunk pre-checks to avoid runtime crash on large imports
+      const D1_CHUNK = 100;
+      const academyCheckResults: any[] = [];
+      const globalCheckResults: any[] = [];
+      for (let s = 0; s < uniqueEmails.length; s += D1_CHUNK) {
+        const slice = uniqueEmails.slice(s, s + D1_CHUNK);
+        const [aBatch, gBatch] = await Promise.all([
+          c.env.DB.batch(
+            slice.map(email =>
+              c.env.DB.prepare(`
+                SELECT u.id FROM User u
+                LEFT JOIN Teacher t ON t.userId = u.id
+                LEFT JOIN ClassEnrollment ce ON ce.userId = u.id
+                LEFT JOIN Class c ON c.id = ce.classId OR c.teacherId = u.id
+                WHERE u.email = ? AND (t.academyId = ? OR c.academyId = ?)
+                LIMIT 1
+              `).bind(email, academyId, academyId)
+            )
+          ),
+          c.env.DB.batch(
+            slice.map(email =>
+              c.env.DB.prepare('SELECT id, role FROM User WHERE email = ?').bind(email)
+            )
+          ),
+        ]);
+        academyCheckResults.push(...aBatch);
+        globalCheckResults.push(...gBatch);
+      }
 
       for (let i = 0; i < uniqueEmails.length; i++) {
         if ((academyCheckResults[i] as any)?.results?.[0]) existsInAcademySet.add(uniqueEmails[i]);
@@ -955,11 +964,11 @@ admin.post('/bulk-import', async (c) => {
       if (!existing && tempPassword) newUsersToHash.push({ plan, raw: tempPassword });
     }
 
-    // ── Phase 2: Hash all new-user passwords in parallel (cost 8 — temp pwd, meant to be changed) ──
+    // ── Phase 2: Hash all new-user passwords in parallel (cost 4 — temp pwd, meant to be changed immediately) ──
     const hashedPasswords = new Map<string, string>();
     await Promise.all(
       newUsersToHash.map(async ({ plan, raw }) => {
-        const hashed = await bcrypt.hash(raw, 8);
+        const hashed = await bcrypt.hash(raw, 4);
         hashedPasswords.set(plan.email, hashed);
       })
     );
