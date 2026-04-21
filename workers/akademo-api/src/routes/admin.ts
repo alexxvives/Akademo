@@ -922,7 +922,9 @@ admin.post('/bulk-import', async (c) => {
       const email = (row.email || '').toLowerCase().trim();
       const firstName = (row.firstName || '').trim();
       const lastName = (row.lastName || '').trim();
-      const role = (row.role || 'STUDENT').toUpperCase().trim();
+      const rawRole = (row.role || 'STUDENT').toUpperCase().trim();
+      // Moodle exports 'editingteacher' — normalise to TEACHER
+      const role = rawRole === 'EDITINGTEACHER' ? 'TEACHER' : rawRole;
       const classNames: string[] = (row.classNames || '')
         .split(',').map((n: string) => n.trim().toLowerCase()).filter(Boolean);
 
