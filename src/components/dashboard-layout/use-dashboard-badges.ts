@@ -27,7 +27,7 @@ export function useDashboardBadges() {
     if (!force && now - lastActiveStreamsFetchRef.current < 60_000) return;
     lastActiveStreamsFetchRef.current = now;
     try {
-      const response = await apiClient('/live/active', { signal: controllerRef.current.signal, skipAutoRedirect: true });
+      const response = await apiClient('/live/active', { signal: controllerRef.current.signal, });
       const result = await response.json();
       if (result.success && Array.isArray(result.data)) {
         setActiveStreams(result.data);
@@ -40,7 +40,7 @@ export function useDashboardBadges() {
 
   const loadAcademy = useCallback(async (): Promise<string> => {
     try {
-      const academyResponse = await apiClient('/academies', { signal: controllerRef.current.signal, skipAutoRedirect: true });
+      const academyResponse = await apiClient('/academies', { signal: controllerRef.current.signal, });
       const result = await academyResponse.json();
       if (result.success && Array.isArray(result.data) && result.data.length > 0) {
         const academyData: Academy = result.data[0];
@@ -51,7 +51,7 @@ export function useDashboardBadges() {
         if (paymentStatus === 'NOT PAID') {
           setPendingPaymentsCount(generateDemoPendingPayments().length);
         } else {
-          const pendingRes = await apiClient('/payments/pending-count', { signal: controllerRef.current.signal, skipAutoRedirect: true });
+          const pendingRes = await apiClient('/payments/pending-count', { signal: controllerRef.current.signal, });
           const pendingResult = await pendingRes.json();
           if (pendingResult.success && typeof pendingResult.data === 'number') {
             setPendingPaymentsCount(pendingResult.data);
@@ -73,7 +73,7 @@ export function useDashboardBadges() {
         setUnreadValoracionesCount(12);
         return;
       }
-      const response = await apiClient('/lessons/ratings/unread-count', { signal: controllerRef.current.signal, skipAutoRedirect: true });
+      const response = await apiClient('/lessons/ratings/unread-count', { signal: controllerRef.current.signal, });
       const result = await response.json();
       if (result.success && result.data) {
         setUnreadValoracionesCount(result.data.count || 0);
@@ -95,7 +95,7 @@ export function useDashboardBadges() {
         setUngradedAssignmentsCount(ungradedCount);
         return;
       }
-      const response = await apiClient('/assignments/ungraded-count', { signal: controllerRef.current.signal, skipAutoRedirect: true });
+      const response = await apiClient('/assignments/ungraded-count', { signal: controllerRef.current.signal, });
       const result = await response.json();
       if (result.success && typeof result.data === 'number') {
         setUngradedAssignmentsCount(result.data);
@@ -108,7 +108,7 @@ export function useDashboardBadges() {
 
   const loadNewGrades = useCallback(async () => {
     try {
-      const response = await apiClient('/assignments/new-grades-count', { signal: controllerRef.current.signal, skipAutoRedirect: true });
+      const response = await apiClient('/assignments/new-grades-count', { signal: controllerRef.current.signal, });
       const result = await response.json();
       if (result.success && typeof result.data === 'number') {
         setNewGradesCount(result.data);
@@ -121,7 +121,7 @@ export function useDashboardBadges() {
 
   const loadUnpaidClasses = useCallback(async () => {
     try {
-      const response = await apiClient('/classes', { signal: controllerRef.current.signal, skipAutoRedirect: true });
+      const response = await apiClient('/classes', { signal: controllerRef.current.signal, });
       const result = await response.json();
       if (result.success && Array.isArray(result.data)) {
         const needsAction = result.data.filter((c: { paymentStatus?: string | null }) =>
@@ -137,7 +137,7 @@ export function useDashboardBadges() {
 
   const loadStudentPendingPayments = useCallback(async () => {
     try {
-      const res = await apiClient('/payments/my-payments', { signal: controllerRef.current.signal, skipAutoRedirect: true });
+      const res = await apiClient('/payments/my-payments', { signal: controllerRef.current.signal, });
       const json = await res.json() as { success: boolean; data: Array<{ paymentStatus: string }> };
       if (json?.success && Array.isArray(json.data)) {
         const count = json.data.filter(p =>
@@ -153,7 +153,7 @@ export function useDashboardBadges() {
 
   const loadPendingPaymentsCount = useCallback(async () => {
     try {
-      const res = await apiClient('/payments/pending-count', { signal: controllerRef.current.signal, skipAutoRedirect: true });
+      const res = await apiClient('/payments/pending-count', { signal: controllerRef.current.signal, });
       const result = await res.json();
       if (result.success && typeof result.data === 'number') {
         setPendingPaymentsCount(result.data);
