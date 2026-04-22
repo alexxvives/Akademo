@@ -152,33 +152,31 @@ export function TeacherRow({
           </td>
         )}
       </tr>
-      {expandedClasses.map((cls, idx) => (
-        <tr key={`${teacher.id}-cls-${idx}`} className="bg-gray-50/70">
-          <td className="px-3 sm:px-6 py-3" colSpan={role === 'ADMIN' ? 2 : 1}></td>
-          <td className="px-3 sm:px-6 py-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500">↳</span>
-              <span className="text-xs font-medium text-indigo-600">{cls.name}</span>
+      {expandedClasses.length > 0 && (
+        <tr key={`${teacher.id}-expanded`} className="bg-gray-50/70">
+          <td
+            colSpan={role === 'ADMIN' ? 8 : 7}
+            className="px-0 py-0"
+          >
+            <div className="max-h-60 overflow-y-auto divide-y divide-gray-100">
+              {expandedClasses.map((cls, idx) => (
+                <div key={`${teacher.id}-cls-${idx}`} className="flex items-center gap-4 px-3 sm:px-6 py-2">
+                  <span className="text-xs text-gray-400 flex-shrink-0">↳</span>
+                  <span className="text-xs font-medium text-indigo-600 flex-1 min-w-0 truncate">{cls.name}</span>
+                  <span className="text-xs text-gray-600 flex-shrink-0">
+                    {cls.studentCount ?? 0} alumnos
+                  </span>
+                  {(role === 'ACADEMY' || role === 'ADMIN') && (
+                    <span className="text-xs font-medium text-gray-700 flex-shrink-0 w-24 text-right">
+                      {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(cls.revenue || 0)}
+                    </span>
+                  )}
+                </div>
+              ))}
             </div>
           </td>
-          <td className="px-3 sm:px-6 py-3">
-            {cls.studentCount !== undefined && (
-              <span className="text-xs text-gray-700">{cls.studentCount}</span>
-            )}
-          </td>
-          {(role === 'ACADEMY' || role === 'ADMIN') && (
-            <td className="px-3 sm:px-6 py-3">
-              <span className="text-xs font-medium text-gray-700">
-                {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(cls.revenue || 0)}
-              </span>
-            </td>
-          )}
-          <td
-            className="px-3 sm:px-6 py-3"
-            colSpan={(role === 'ACADEMY' || role === 'ADMIN') ? 3 : 1}
-          ></td>
         </tr>
-      ))}
+      )}
     </React.Fragment>
   );
 }

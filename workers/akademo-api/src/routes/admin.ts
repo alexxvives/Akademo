@@ -860,6 +860,64 @@ admin.post('/bulk-import', async (c) => {
       (c as any)._classTeacherMap = classTeacherMap;
     }
 
+    // Auto-create AcademicYear periods for each distinct calendar year found in class start dates
+    {
+      const allYears = new Set<number>();
+      // Collect from existing DB classes
+      for (const cls of classes) {
+        if (cls.startDate) {
+          const y = new Date(cls.startDate as string).getFullYear();
+          if (!isNaN(y)) allYears.add(y);
+        }
+      }
+      // Collect from newly imported classRows
+      for (const cr of classRows) {
+        if (cr.startDate) {
+          const normalised = normalizeDateForStorage(cr.startDate);
+          if (normalised) {
+            const y = new Date(normalised as string).getFullYear();
+            if (!isNaN(y)) allYears.add(y);
+          }
+        }
+      }
+      if (allYears.size > 0) {
+        const existingPeriods = await c.env.DB
+          .prepare('SELECT id, startDate, isCurrent FROM AcademicYear WHERE academyId = ?')
+          .bind(academyId)
+          .all();
+        const existingYears = new Set<number>();
+        for (const ep of (existingPeriods.results || [])) {
+          if (ep.startDate) existingYears.add(new Date(ep.startDate as string).getFullYear());
+        }
+        const hasCurrentPeriod = (existingPeriods.results || []).some(ep => (ep.isCurrent as number) === 1);
+        const sortedYears = Array.from(allYears).sort((a, b) => b - a);
+        const periodsToCreate: Array<{ id: string; name: string; startDate: string; endDate: string; isCurrent: number }> = [];
+        for (const year of sortedYears) {
+          if (existingYears.has(year)) continue;
+          const isCurrent = (!hasCurrentPeriod && year === sortedYears[0]) ? 1 : 0;
+          periodsToCreate.push({
+            id: crypto.randomUUID(),
+            name: `Año ${year}`,
+            startDate: `${year}-01-01`,
+            endDate: `${year}-12-31`,
+            isCurrent,
+          });
+        }
+        if (periodsToCreate.length > 0) {
+          if (periodsToCreate.some(p => p.isCurrent === 1)) {
+            await c.env.DB.prepare('UPDATE AcademicYear SET isCurrent = 0 WHERE academyId = ?').bind(academyId).run();
+          }
+          for (const p of periodsToCreate) {
+            await c.env.DB
+              .prepare(`INSERT INTO AcademicYear (id, academyId, name, startDate, endDate, isCurrent, createdAt) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`)
+              .bind(p.id, academyId, p.name, p.startDate, p.endDate, p.isCurrent)
+              .run();
+          }
+          log(`created ${periodsToCreate.length} academic year periods: ${periodsToCreate.map(p => p.name).join(', ')}`);
+        }
+      }
+    }
+
     const results: Array<{
       row: number;
       email: string;
@@ -982,13 +1040,23 @@ admin.post('/bulk-import', async (c) => {
     // ── Phase 3: Build DB statements and collect tracking data (no sequential awaits) ──
     const dbStatements: D1PreparedStatement[] = [];
     const now = new Date().toISOString();
+    // Track newly created users in this import: email → userId
+    // Prevents duplicate INSERTs when the same student appears on multiple rows (one row per enrollment)
+    const newUserIdMap = new Map<string, string>();
 
     for (const plan of plans) {
       const { email, firstName, lastName, role, classIds, existingId, tempPassword, pagado, unmatchedClasses } = plan;
-      const userId = existingId ?? nanoid();
 
-      // New user INSERT
-      if (!existingId) {
+      // Resolve userId: existing DB user > already-planned new user > brand new
+      let userId: string;
+      if (existingId) {
+        userId = existingId;
+      } else if (newUserIdMap.has(email)) {
+        userId = newUserIdMap.get(email)!;
+        // User INSERT already queued for this email — skip to enrollments below
+      } else {
+        userId = nanoid();
+        newUserIdMap.set(email, userId);
         const hashed = hashedPasswords.get(email)!;
         dbStatements.push(
           c.env.DB.prepare('INSERT INTO User (id, email, password, firstName, lastName, role, createdAt, tempPassword) VALUES (?, ?, ?, ?, ?, ?, datetime("now"), ?)')
@@ -1147,6 +1215,41 @@ admin.post('/bulk-import', async (c) => {
         .replace(/&lt;/g, '<')
         .replace(/&gt;/g, '>')
         .replace(/&quot;/g, '"')
+        .replace(/&apos;/g, "'")
+        // Spanish and common accented characters
+        .replace(/&aacute;/g, 'á').replace(/&Aacute;/g, 'Á')
+        .replace(/&eacute;/g, 'é').replace(/&Eacute;/g, 'É')
+        .replace(/&iacute;/g, 'í').replace(/&Iacute;/g, 'Í')
+        .replace(/&oacute;/g, 'ó').replace(/&Oacute;/g, 'Ó')
+        .replace(/&uacute;/g, 'ú').replace(/&Uacute;/g, 'Ú')
+        .replace(/&ntilde;/g, 'ñ').replace(/&Ntilde;/g, 'Ñ')
+        .replace(/&uuml;/g, 'ü').replace(/&Uuml;/g, 'Ü')
+        .replace(/&agrave;/g, 'à').replace(/&Agrave;/g, 'À')
+        .replace(/&egrave;/g, 'è').replace(/&Egrave;/g, 'È')
+        .replace(/&igrave;/g, 'ì').replace(/&Igrave;/g, 'Ì')
+        .replace(/&ograve;/g, 'ò').replace(/&Ograve;/g, 'Ò')
+        .replace(/&ugrave;/g, 'ù').replace(/&Ugrave;/g, 'Ù')
+        .replace(/&auml;/g, 'ä').replace(/&Auml;/g, 'Ä')
+        .replace(/&euml;/g, 'ë').replace(/&Euml;/g, 'Ë')
+        .replace(/&iuml;/g, 'ï').replace(/&Iuml;/g, 'Ï')
+        .replace(/&ouml;/g, 'ö').replace(/&Ouml;/g, 'Ö')
+        .replace(/&acirc;/g, 'â').replace(/&Acirc;/g, 'Â')
+        .replace(/&ecirc;/g, 'ê').replace(/&Ecirc;/g, 'Ê')
+        .replace(/&icirc;/g, 'î').replace(/&Icirc;/g, 'Î')
+        .replace(/&ocirc;/g, 'ô').replace(/&Ocirc;/g, 'Ô')
+        .replace(/&ucirc;/g, 'û').replace(/&Ucirc;/g, 'Û')
+        .replace(/&ccedil;/g, 'ç').replace(/&Ccedil;/g, 'Ç')
+        .replace(/&iexcl;/g, '¡').replace(/&iquest;/g, '¿')
+        .replace(/&laquo;/g, '«').replace(/&raquo;/g, '»')
+        .replace(/&mdash;/g, '\u2014').replace(/&ndash;/g, '\u2013')
+        .replace(/&ldquo;/g, '\u201C').replace(/&rdquo;/g, '\u201D')
+        .replace(/&lsquo;/g, '\u2018').replace(/&rsquo;/g, '\u2019')
+        .replace(/&hellip;/g, '\u2026').replace(/&bull;/g, '\u2022')
+        .replace(/&deg;/g, '°').replace(/&plusmn;/g, '±')
+        .replace(/&times;/g, '×').replace(/&divide;/g, '÷')
+        // Numeric decimal and hex entities
+        .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(parseInt(n, 10)))
+        .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCharCode(parseInt(h, 16)))
         .replace(/\s+/g, ' ')
         .trim();
 
