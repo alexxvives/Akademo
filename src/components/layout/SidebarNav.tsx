@@ -94,7 +94,7 @@ export function SidebarNav({ menuItems, role, pathname, collapsed: sidebarCollap
   }
 
   return (
-    <nav className={sidebarCollapsed ? 'px-1 pb-6' : 'px-3 pb-6'}>
+    <nav className={sidebarCollapsed ? 'px-1 pb-3' : 'px-1.5 pb-3'}>
       {groups.map((group, gi) => {
         const isCollapsed = group.label ? collapsedGroups.has(group.label) : false;
         return (
@@ -109,6 +109,9 @@ export function SidebarNav({ menuItems, role, pathname, collapsed: sidebarCollap
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
+            )}
+            {sidebarCollapsed && gi > 0 && (
+              <div className="mx-2 my-1 border-t border-gray-700/40" />
             )}
             {(!isCollapsed || sidebarCollapsed) && (
               <div className="space-y-0">

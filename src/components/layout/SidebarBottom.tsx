@@ -52,23 +52,7 @@ export function SidebarBottom({
           </div>
         )}
         {user && (
-          <div className="flex flex-col items-center gap-1 py-3">
-            {role !== 'ADMIN' ? (
-              <Link
-                href={`/dashboard/${role.toLowerCase()}/profile`}
-                title={`${user.firstName} ${user.lastName}`}
-                className="w-8 h-8 bg-[#b1e787] hover:bg-[#9dd46f] rounded-xl flex items-center justify-center text-xs font-bold text-gray-900 flex-shrink-0 shadow-lg transition-colors"
-              >
-                {user.firstName[0]}{user.lastName[0]}
-              </Link>
-            ) : (
-              <div
-                title={`${user.firstName} ${user.lastName}`}
-                className="w-8 h-8 bg-[#b1e787] rounded-xl flex items-center justify-center text-xs font-bold text-gray-900 flex-shrink-0 shadow-lg"
-              >
-                {user.firstName[0]}{user.lastName[0]}
-              </div>
-            )}
+          <div className="flex flex-col items-center py-3">
             <button
               onClick={onLogout}
               title="Cerrar Sesión"

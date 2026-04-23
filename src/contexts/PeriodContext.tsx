@@ -50,19 +50,21 @@ export function PeriodProvider({
       .then((result: { success: boolean; data?: AcademicPeriod[] }) => {
         if (!result.success || !Array.isArray(result.data)) return;
         const data = result.data;
+        // Sort by startDate descending so data[0] is always the most recent period
+        data.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
         setPeriods(data);
 
-        // Restore saved preference, fall back to DB-active period, then 'all'
+        // Restore saved preference only if it's a valid period ID (not 'all')
+        // — always default to the most recent period otherwise
         try {
           const saved = localStorage.getItem(LS_KEY);
-          if (saved === 'all' || data.find((p) => p.id === saved)) {
-            setActivePeriodIdState(saved!);
+          if (saved && saved !== 'all' && data.find((p) => p.id === saved)) {
+            setActivePeriodIdState(saved);
             return;
           }
         } catch { /* ignore */ }
 
-        const current = data.find((p) => p.isCurrent === 1);
-        const defaultId = current ? current.id : 'all';
+        const defaultId = data.length > 0 ? data[0].id : 'all';
         setActivePeriodIdState(defaultId);
         try { localStorage.setItem(LS_KEY, defaultId); } catch { /* ignore */ }
       })
