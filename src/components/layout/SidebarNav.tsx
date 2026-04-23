@@ -25,9 +25,10 @@ interface SidebarNavProps {
   menuItems: MenuItem[];
   role: string;
   pathname: string;
+  collapsed?: boolean;
 }
 
-export function SidebarNav({ menuItems, role, pathname }: SidebarNavProps) {
+export function SidebarNav({ menuItems, role, pathname, collapsed: sidebarCollapsed = false }: SidebarNavProps) {
   const iconRefs = useRef<Record<string, { current: IconHandle | null }>>({});
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
@@ -93,12 +94,12 @@ export function SidebarNav({ menuItems, role, pathname }: SidebarNavProps) {
   }
 
   return (
-    <nav className="px-3 pb-6">
+    <nav className={sidebarCollapsed ? 'px-1 pb-6' : 'px-3 pb-6'}>
       {groups.map((group, gi) => {
         const isCollapsed = group.label ? collapsedGroups.has(group.label) : false;
         return (
           <div key={gi}>
-            {group.label && (
+            {group.label && !sidebarCollapsed && (
               <button
                 onClick={() => toggleGroup(group.label!)}
                 className={`w-full flex items-center justify-between px-3 pb-1 text-[10px] font-semibold tracking-widest text-gray-500 hover:text-gray-300 uppercase transition-colors ${gi > 0 ? 'pt-4' : 'pt-0'}`}
@@ -109,7 +110,7 @@ export function SidebarNav({ menuItems, role, pathname }: SidebarNavProps) {
                 </svg>
               </button>
             )}
-            {!isCollapsed && (
+            {(!isCollapsed || sidebarCollapsed) && (
               <div className="space-y-0">
                 {group.items.map((item) => {
                   const isDashboardRoute = item.href === `/dashboard/${role.toLowerCase()}`;
@@ -137,11 +138,14 @@ export function SidebarNav({ menuItems, role, pathname }: SidebarNavProps) {
                     <Link
                       key={item.href}
                       href={item.href}
-                      className={`relative flex items-center gap-3 px-3 py-3 rounded-xl transition-all group ${
+                      className={`relative flex items-center rounded-xl transition-all group ${
+                        sidebarCollapsed ? 'justify-center px-0 py-3' : 'gap-3 px-3 py-3'
+                      } ${
                         isActive
                           ? 'bg-gray-800/50 text-white'
                           : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'
                       }`}
+                      title={sidebarCollapsed ? item.label : undefined}
                       onMouseEnter={handleMouseEnter}
                       onMouseLeave={handleMouseLeave}
                     >
@@ -153,14 +157,17 @@ export function SidebarNav({ menuItems, role, pathname }: SidebarNavProps) {
                       }`}>
                         {renderIcon(item)}
                       </span>
-                      <span className="text-sm font-medium">{item.label}</span>
-                      {showPulse && (
+                      {!sidebarCollapsed && <span className="text-sm font-medium">{item.label}</span>}
+                      {!sidebarCollapsed && showPulse && (
                         <span className="ml-auto w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
                       )}
-                      {!showPulse && item.badge !== undefined && item.badge > 0 && (
+                      {!sidebarCollapsed && !showPulse && item.badge !== undefined && item.badge > 0 && (
                         <span className={`ml-auto ${item.badgeColor || 'bg-[#b2e788]'} text-[#1a1c29] text-xs font-bold px-2.5 py-1 rounded-full shadow-sm`}>
                           {item.badge}
                         </span>
+                      )}
+                      {sidebarCollapsed && showPulse && (
+                        <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
                       )}
                     </Link>
                   );

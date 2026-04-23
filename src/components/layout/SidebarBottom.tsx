@@ -18,6 +18,7 @@ interface SidebarBottomProps {
   onCopyJoinLink: () => void;
   onCopyAcademyLink: () => void;
   onLogout: () => void;
+  collapsed?: boolean;
 }
 
 export function SidebarBottom({
@@ -27,11 +28,59 @@ export function SidebarBottom({
   onCopyJoinLink,
   onCopyAcademyLink,
   onLogout,
+  collapsed = false,
 }: SidebarBottomProps) {
   const logoutIconRef = useRef<IconHandle | null>(null);
   const linkIconRef = useRef<IconHandle | null>(null);
   const { periods, activePeriodId, activePeriod, setActivePeriodId } = usePeriod();
   const [periodDropdownOpen, setPeriodDropdownOpen] = useState(false);
+
+  if (collapsed) {
+    return (
+      <div className="flex-shrink-0 border-t border-gray-800/50">
+        {role === 'STUDENT' && (
+          <div className="py-2 flex justify-center">
+            <Link
+              href="/dashboard/student/enrolled-academies/subjects"
+              title="Explorar Clases"
+              className="w-9 h-9 flex items-center justify-center rounded-xl bg-[#b1e787] hover:bg-[#9dd46f] text-gray-900 transition-colors shadow-lg"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            </Link>
+          </div>
+        )}
+        {user && (
+          <div className="flex flex-col items-center gap-1 py-3">
+            {role !== 'ADMIN' ? (
+              <Link
+                href={`/dashboard/${role.toLowerCase()}/profile`}
+                title={`${user.firstName} ${user.lastName}`}
+                className="w-8 h-8 bg-[#b1e787] hover:bg-[#9dd46f] rounded-xl flex items-center justify-center text-xs font-bold text-gray-900 flex-shrink-0 shadow-lg transition-colors"
+              >
+                {user.firstName[0]}{user.lastName[0]}
+              </Link>
+            ) : (
+              <div
+                title={`${user.firstName} ${user.lastName}`}
+                className="w-8 h-8 bg-[#b1e787] rounded-xl flex items-center justify-center text-xs font-bold text-gray-900 flex-shrink-0 shadow-lg"
+              >
+                {user.firstName[0]}{user.lastName[0]}
+              </div>
+            )}
+            <button
+              onClick={onLogout}
+              title="Cerrar Sesión"
+              className="w-8 h-8 flex items-center justify-center rounded-xl text-gray-500 hover:text-white hover:bg-gray-800/50 transition-colors"
+            >
+              <LogoutIcon ref={logoutIconRef} size={16} />
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="flex-shrink-0">
