@@ -259,18 +259,22 @@ async function main() {
   // ── Generate SQL ─────────────────────────────────────────────────────────────
   console.log('📝  Generating import-documents.sql...');
 
-  // Group rows by course, then by file_title within each course
-  // course_name → Map<file_title → [{ filename, file_path }]>
+  // Group rows by course → section → file_title
+  // course_name → Map<section_number, { sectionName, files: Map<file_title → [rows]> }>
   const byCourse = new Map();
   for (const row of rows) {
-    const course = (row.course_name || '').trim();
-    const title  = (row.file_title  || '').trim();
-    const fp     = (row.file_path   || '').trim();
+    const course      = (row.course_name    || '').trim();
+    const title       = (row.file_title     || '').trim();
+    const fp          = (row.file_path      || '').trim();
+    const secNum      = parseInt(row.section_number, 10) || 0;
+    const secName     = (row.section_name   || '').trim() || `Tema ${secNum}`;
     if (!course || !title || !fp) continue;
     if (!byCourse.has(course)) byCourse.set(course, new Map());
-    const byTitle = byCourse.get(course);
-    if (!byTitle.has(title)) byTitle.set(title, []);
-    byTitle.get(title).push(row);
+    const bySec = byCourse.get(course);
+    if (!bySec.has(secNum)) bySec.set(secNum, { sectionName: secName, files: new Map() });
+    const sec = bySec.get(secNum);
+    if (!sec.files.has(title)) sec.files.set(title, []);
+    sec.files.get(title).push(row);
   }
 
   const lines = [];
@@ -281,51 +285,58 @@ async function main() {
   lines.push('-- ============================================================');
   lines.push('');
 
-  for (const [courseName, byTitle] of byCourse) {
-    const topicId = uuid();
+  for (const [courseName, bySec] of byCourse) {
     lines.push(`-- ── Course: ${courseName} ──────────────────────────────────`);
-    lines.push(`INSERT INTO Topic (id, classId, name, orderIndex, createdAt)`);
-    lines.push(`SELECT ${sqlStr(topicId)}, id, 'Documentos', 1, datetime('now')`);
-    lines.push(`FROM Class WHERE name = ${sqlStr(courseName)} AND academyId = ${sqlStr(ACADEMY_ID)};`);
-    lines.push('');
 
-    let lessonPos = 1;
-    for (const [fileTitle, fileRows] of byTitle) {
-      const lessonId = uuid();
-      lines.push(`INSERT INTO Lesson (id, topicId, classId, title, createdAt)`);
-      lines.push(`SELECT ${sqlStr(lessonId)}, ${sqlStr(topicId)}, classId, ${sqlStr(fileTitle)}, datetime('now')`);
-      lines.push(`FROM Topic WHERE id = ${sqlStr(topicId)};`);
+    // Sort sections by section number
+    const sortedSections = [...bySec.entries()].sort(([a], [b]) => a - b);
+
+    for (const [secNum, { sectionName, files: byTitle }] of sortedSections) {
+      const topicId = uuid();
+      lines.push(`-- Section ${secNum}: ${sectionName}`);
+      lines.push(`INSERT INTO Topic (id, classId, name, orderIndex, createdAt)`);
+      lines.push(`SELECT ${sqlStr(topicId)}, id, ${sqlStr(sectionName)}, ${secNum + 1}, datetime('now')`);
+      lines.push(`FROM Class WHERE name = ${sqlStr(courseName)} AND academyId = ${sqlStr(ACADEMY_ID)};`);
       lines.push('');
 
-      // Deduplicate files within this title group (same file_path appears multiple times)
-      const seenPaths = new Set();
-      for (const row of fileRows) {
-        const fp = (row.file_path || '').trim();
-        if (seenPaths.has(fp)) continue;
-        seenPaths.add(fp);
+      let lessonPos = 1;
+      for (const [fileTitle, fileRows] of byTitle) {
+        const lessonId = uuid();
+        lines.push(`INSERT INTO Lesson (id, topicId, classId, title, createdAt)`);
+        lines.push(`SELECT ${sqlStr(lessonId)}, ${sqlStr(topicId)}, classId, ${sqlStr(fileTitle)}, datetime('now')`);
+        lines.push(`FROM Topic WHERE id = ${sqlStr(topicId)};`);
+        lines.push('');
 
-        const info = progress[fp];
-        if (!info) {
-          lines.push(`-- ⚠️  SKIPPED (upload failed): ${fp}`);
-          continue;
+        // Deduplicate files within this title group (same file_path appears multiple times)
+        const seenPaths = new Set();
+        for (const row of fileRows) {
+          const fp = (row.file_path || '').trim();
+          if (seenPaths.has(fp)) continue;
+          seenPaths.add(fp);
+
+          const info = progress[fp];
+          if (!info) {
+            lines.push(`-- ⚠️  SKIPPED (upload failed): ${fp}`);
+            continue;
+          }
+
+          const uploadId   = info.uploadId;
+          const filename   = info.filename || row.filename || 'document';
+          const filesize   = info.filesize  || parseInt(row.filesize, 10) || 0;
+          const contentType = info.contentType || mimeFromFilename(filename);
+          const r2Key      = info.r2Key;
+
+          lines.push(`INSERT OR IGNORE INTO Upload (id, fileName, fileSize, mimeType, storagePath, uploadedById, storageType, createdAt)`);
+          lines.push(`VALUES (${sqlStr(uploadId)}, ${sqlStr(filename)}, ${filesize}, ${sqlStr(contentType)}, ${sqlStr(r2Key)}, ${sqlStr(OWNER_ID)}, 'r2', datetime('now'));`);
+          lines.push('');
+
+          const docId = uuid();
+          lines.push(`INSERT INTO Document (id, title, lessonId, uploadId, createdAt)`);
+          lines.push(`VALUES (${sqlStr(docId)}, ${sqlStr(fileTitle)}, ${sqlStr(lessonId)}, ${sqlStr(uploadId)}, datetime('now'));`);
+          lines.push('');
         }
-
-        const uploadId   = info.uploadId;
-        const filename   = info.filename || row.filename || 'document';
-        const filesize   = info.filesize  || parseInt(row.filesize, 10) || 0;
-        const contentType = info.contentType || mimeFromFilename(filename);
-        const r2Key      = info.r2Key;
-
-        lines.push(`INSERT OR IGNORE INTO Upload (id, fileName, fileSize, mimeType, storagePath, uploadedById, storageType, createdAt)`);
-        lines.push(`VALUES (${sqlStr(uploadId)}, ${sqlStr(filename)}, ${filesize}, ${sqlStr(contentType)}, ${sqlStr(r2Key)}, ${sqlStr(OWNER_ID)}, 'r2', datetime('now'));`);
-        lines.push('');
-
-        const docId = uuid();
-        lines.push(`INSERT INTO Document (id, title, lessonId, uploadId, createdAt)`);
-        lines.push(`VALUES (${sqlStr(docId)}, ${sqlStr(fileTitle)}, ${sqlStr(lessonId)}, ${sqlStr(uploadId)}, datetime('now'));`);
-        lines.push('');
+        lessonPos++;
       }
-      lessonPos++;
     }
   }
 

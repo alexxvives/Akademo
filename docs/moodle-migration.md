@@ -82,6 +82,8 @@ ORDER BY qs.quizid, qu.id, qa.fraction DESC;
 SELECT
   r.name AS file_title,
   c.fullname AS course_name,
+  cs.section AS section_number,
+  COALESCE(NULLIF(TRIM(cs.name), ''), CONCAT('Tema ', cs.section)) AS section_name,
   f.filename,
   f.filesize,
   CONCAT(LEFT(f.contenthash,2), '/', MID(f.contenthash,3,2), '/', f.contenthash) AS file_path
@@ -89,31 +91,16 @@ FROM {PREFIX}_files f
 JOIN {PREFIX}_context ctx ON ctx.id = f.contextid AND ctx.contextlevel = 70
 JOIN {PREFIX}_course_modules cm ON cm.id = ctx.instanceid
 JOIN {PREFIX}_course c ON c.id = cm.course
+JOIN {PREFIX}_course_sections cs ON cs.id = cm.section
 JOIN {PREFIX}_resource r ON cm.instance = r.id
 WHERE f.component = 'mod_resource'
   AND f.filearea = 'content'
   AND f.filename != '.'
   AND f.filesize > 0
-ORDER BY c.fullname, r.name;
+ORDER BY c.fullname, cs.section, r.name;
 ```
 
-### `sections.csv` (optional — topic/section names within each course)
-```sql
-SELECT
-  c.fullname  AS asignatura,
-  cs.section  AS numero,
-  cs.name     AS nombre_tema
-FROM {PREFIX}_course_sections cs
-JOIN {PREFIX}_course c ON c.id = cs.course
-WHERE c.id > 1
-  AND cs.name IS NOT NULL
-  AND cs.name != ''
-ORDER BY c.fullname, cs.section;
-```
-
-> **Note on sections**: `ftp-to-r2.js` auto-creates one "Documentos" topic per class. The `sections.csv` is only needed if you want to preserve Moodle's original topic names/structure — there is currently no automated importer for this.
-
-> **Note**: Replace `{PREFIX}` with the actual prefix found in Step 0.
+> **Note**: Replace `{PREFIX}` with the actual prefix found in Step 0. The `files.csv` query now includes `section_number` and `section_name` directly — `ftp-to-r2.js` uses these to create one topic per Moodle section instead of a single "Documentos" topic. Sections without a custom name fall back to `Tema N`.
 
 ---
 
@@ -213,7 +200,7 @@ GROUP BY a.id;
 | Moodle concept | Moodle table(s) | AKADEMO table | Script/step |
 |---|---|---|---|
 | Course | `{PREFIX}_course` | `Class` | Step 3 (Admin UI) |
-| Course sections (topics) | `{PREFIX}_course_sections` | `Topic` | Step 5 (ftp-to-r2.js auto-creates one topic per class) |
+| Course sections (topics) | `{PREFIX}_course_sections` | `Topic` | Step 4 (ftp-to-r2.js, one topic per section, name from `section_name` col in files.csv) |
 | Student enrollment | `{PREFIX}_user_enrolments` + `{PREFIX}_enrol` | `ClassEnrollment` | Step 3 (Admin UI) |
 | User account | `{PREFIX}_user` | `User` | Step 3 (Admin UI) |
 | PDF/file resource | `{PREFIX}_files` + `{PREFIX}_resource` | `Upload` + `Document` + `Lesson` | Step 5 (ftp-to-r2.js) |
@@ -226,5 +213,5 @@ GROUP BY a.id;
 | URL resources | `{PREFIX}_url` | **no equivalent** | — |
 | Labels/HTML content | `{PREFIX}_label` | **no equivalent** | — |
 
-**What we migrate**: Users, course list, student enrollments, PDF files, quizzes + questions.  
-**What we skip**: Videos (need re-upload to Bunny), forum posts, grades, quiz attempts, HTML labels. Topic/section names are auto-created by `ftp-to-r2.js` (one "Documentos" topic per class). If you want the original Moodle topic names, export `sections.csv` in Step 1.
+**What we migrate**: Users, course list, student enrollments, PDF files (grouped by Moodle section), quizzes + questions.  
+**What we skip**: Videos (need re-upload to Bunny), forum posts, grades, quiz attempts, HTML labels. Topic names come from Moodle section names (`section_name` column in `files.csv`); sections without a custom name become `Tema N`.
