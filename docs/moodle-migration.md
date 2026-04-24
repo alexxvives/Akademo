@@ -139,32 +139,24 @@ In the AKADEMO admin panel:
 
 ---
 
-## Step 4 — Generate quiz SQL + PDF manifest
+## Step 4 — Upload PDFs to R2 (CLI only)
 
-```powershell
-node scripts/generate-quiz-sql.js
-```
+> **Why CLI?** This step downloads hundreds of files from SiteGround via FTP and uploads them to Cloudflare R2. It takes several minutes and requires credentials that can't be stored in the UI.
 
-Outputs:
-- `quiz-import.sql` — creates `Assignment` (type=quiz) + `QuizQuestion` records
-- `pdf-manifest.txt` — list of PDFs with their SiteGround paths
-
-```powershell
-npx wrangler d1 execute akademo-db --remote --file=quiz-import.sql
-```
-
----
-
-## Step 5 — Download and upload PDFs (ftp-to-r2.js)
-
-1. Make sure FTP credentials and `ACADEMY_ID` / `OWNER_ID` are set at the top of `scripts/ftp-to-r2.js`
+1. Set credentials at the top of `scripts/ftp-to-r2.js` (or via env vars)
 2. Run:
 
 ```powershell
 node scripts/ftp-to-r2.js
 ```
 
-This downloads every PDF from SiteGround via FTP, uploads to R2, generates `scripts/moodle-import/import-documents.sql`, and **automatically applies it** to the remote D1 DB.
+This:
+- Downloads every PDF from SiteGround FTP
+- Uploads to R2 bucket `akademo-storage`
+- Generates `scripts/moodle-import/import-documents.sql`
+- **Automatically applies it** to the remote D1 DB
+
+> **Quizzes are already done.** If you uploaded `quizzes.csv` + `questions.csv` in Step 3, the quiz assignments and questions are already imported — `generate-quiz-sql.js` is not needed.
 
 ---
 
@@ -225,8 +217,8 @@ GROUP BY a.id;
 | Student enrollment | `{PREFIX}_user_enrolments` + `{PREFIX}_enrol` | `ClassEnrollment` | Step 3 (Admin UI) |
 | User account | `{PREFIX}_user` | `User` | Step 3 (Admin UI) |
 | PDF/file resource | `{PREFIX}_files` + `{PREFIX}_resource` | `Upload` + `Document` + `Lesson` | Step 5 (ftp-to-r2.js) |
-| Quiz | `{PREFIX}_quiz` | `Assignment` (type=quiz) | Step 4 |
-| Quiz questions | `{PREFIX}_question` | `QuizQuestion` | Step 7 |
+| Quiz | `{PREFIX}_quiz` | `Assignment` (type=quiz) | Step 3 (Admin UI) |
+| Quiz questions | `{PREFIX}_question` | `QuizQuestion` | Step 3 (Admin UI) |
 | Quiz attempts | `{PREFIX}_quiz_attempts` | **not migrated** (historical) | — |
 | Forum (feedback) | `{PREFIX}_forum` | **no equivalent** | — |
 | Grades | `{PREFIX}_grade_items` + `{PREFIX}_grade_grades` | **no equivalent** | — |
