@@ -15,7 +15,7 @@ interface UserRow {
 
 const SESSION_COOKIE_NAME = 'academy_session';
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days — kept for legacy token back-compat
-export const ACCESS_TOKEN_MAX_AGE = 60 * 15; // 15 minutes (new tokens embed exp field)
+export const ACCESS_TOKEN_MAX_AGE = 60 * 60 * 8; // 8 hours (new tokens embed exp field)
 export const REFRESH_TOKEN_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 const SESSION_SIGNING_ALG = { name: 'HMAC', hash: 'SHA-256' };
 

@@ -113,6 +113,24 @@ export function useDashboardData(role: 'ACADEMY' | 'ADMIN') {
       try {
         const data = isAcademy ? await fetchAcademyData() : await fetchAdminData();
         applyResult(data);
+        // If a period is already selected, the summary endpoint returns unfiltered payment
+        // status. Re-fetch immediately with the period filter so the numbers are correct
+        // from the very first render instead of only after the user changes the selector.
+        if (isAcademy && data.paymentStatus !== 'NOT PAID' && activePeriodId !== 'all') {
+          const periodIds = data.classes
+            .filter(c => isClassInPeriod(c.startDate))
+            .map(c => c.id);
+          if (periodIds.length > 0) {
+            apiClient(`/enrollments/payment-status?classIds=${periodIds.join(',')}`)
+              .then(r => r.json())
+              .then(result => {
+                if (result.success && result.data) setStudentPaymentStatus(result.data);
+              })
+              .catch(() => {/* silent */});
+          } else {
+            setStudentPaymentStatus({ alDia: 0, atrasados: 0, total: 0, uniqueAlDia: 0, uniqueAtrasados: 0, uniqueTotal: 0 });
+          }
+        }
         if (!isAcademy) paymentStatusInitRef.current = true;
       } catch (error) {
         console.error('❌ Failed to load data:', error);

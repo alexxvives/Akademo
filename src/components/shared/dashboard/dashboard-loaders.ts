@@ -5,8 +5,7 @@ import {
 } from '@/lib/demo-data';
 import type {
   Academy, Class, EnrolledStudent, PendingEnrollment, RatingsData,
-  StreamRecord, ProgressRecord, PaymentHistoryItem, StudentPaymentStatus,
-  EnrollmentRecord,
+  StreamRecord, PaymentHistoryItem, StudentPaymentStatus,
 } from './types';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -89,103 +88,49 @@ function buildDemoState(): Partial<DashboardLoadResult> {
 
 export async function fetchAcademyData(): Promise<DashboardLoadResult> {
   const result: DashboardLoadResult = { ...defaultResult };
-  const [academiesResult, classesResult, pendingResult, ratingsResult, rejectedResult, streamsResult, progressResult, paymentsResult, paymentStatusResult] = await Promise.all([
-    safeFetch('/academies'), safeFetch('/academies/classes'), safeFetch('/enrollments/pending'),
-    safeFetch('/ratings'), safeFetch('/enrollments/rejected'), safeFetch('/live/history'),
-    safeFetch('/students/progress'), safeFetch('/payments/history'), safeFetch('/enrollments/payment-status'),
-  ]);
-  if (academiesResult.success && Array.isArray(academiesResult.data) && academiesResult.data.length > 0) {
-    const academy = academiesResult.data[0];
-    result.academyInfo = academy;
-    result.paymentStatus = academy.paymentStatus || 'NOT PAID';
-    if (academy.paymentStatus === 'NOT PAID') {
+  const summaryResult = await safeFetch('/dashboard/summary');
+
+  // If the academy hasn't paid, fall back to demo data
+  if (summaryResult.success && summaryResult.data) {
+    const data = summaryResult.data;
+    if (data.paymentStatus === 'NOT PAID') {
+      result.academyInfo = data.academyInfo ?? null;
+      result.paymentStatus = 'NOT PAID';
       return { ...result, ...buildDemoState() };
     }
-  }
-  if (rejectedResult.success && rejectedResult.data) result.rejectedCount = rejectedResult.data.count || 0;
-  if (paymentsResult.success && Array.isArray(paymentsResult.data)) {
-    result.allCompletedPayments = (paymentsResult.data as PaymentHistoryItem[]).filter(p => p.paymentStatus === 'COMPLETED' || p.paymentStatus === 'PAID');
-  }
-  if (paymentStatusResult.success && paymentStatusResult.data) {
-    result.studentPaymentStatus = paymentStatusResult.data as StudentPaymentStatus;
-  }
-  if (streamsResult.success && Array.isArray(streamsResult.data)) result.allStreams = streamsResult.data;
-  if (progressResult.success && Array.isArray(progressResult.data)) {
-    const totalSeconds = (progressResult.data as ProgressRecord[]).reduce((sum, s) => sum + (s.totalWatchTime ?? 0), 0);
-    const totalMin = Math.floor(totalSeconds / 60);
-    result.classWatchTime = { hours: Math.floor(totalMin / 60), minutes: totalMin % 60 };
-  }
-  if (pendingResult.success && Array.isArray(pendingResult.data)) result.pendingEnrollments = pendingResult.data;
-  if (ratingsResult.success) result.ratingsData = ratingsResult.data;
-  if (classesResult.success && Array.isArray(classesResult.data)) {
-    result.classes = classesResult.data;
-    if (progressResult.success && Array.isArray(progressResult.data)) {
-      result.enrolledStudents = (progressResult.data as ProgressRecord[]).map(s => ({
-        id: s.id, name: `${s.firstName} ${s.lastName}`, email: s.email,
-        classId: s.classId, className: s.className,
-        lessonsCompleted: s.lessonsCompleted ?? 0, totalLessons: s.totalLessons ?? 0, lastActive: s.lastActive,
-      }));
-    } else {
-      const responses = await Promise.all(classesResult.data.map((cls: Class) =>
-        apiClient(`/enrollments?classId=${cls.id}`).then(r => r.json())
-      ));
-      const all: EnrolledStudent[] = [];
-      classesResult.data.forEach((cls: Class, i: number) => {
-        const d = responses[i] as { success?: boolean; data?: EnrollmentRecord[] };
-        if (d.success && Array.isArray(d.data)) {
-          all.push(...d.data.map(e => ({
-            id: e.student.id, name: `${e.student.firstName} ${e.student.lastName}`,
-            email: e.student.email, classId: cls.id, className: cls.name,
-            lessonsCompleted: 0, totalLessons: 0, lastActive: null,
-          })));
-        }
-      });
-      result.enrolledStudents = all;
-    }
+    result.academyInfo = data.academyInfo ?? null;
+    result.paymentStatus = data.paymentStatus || 'NOT PAID';
+    result.classes = data.classes || [];
+    result.enrolledStudents = data.enrolledStudents || [];
+    result.pendingEnrollments = data.pendingEnrollments || [];
+    result.ratingsData = data.ratingsData ?? null;
+    result.rejectedCount = data.rejectedCount || 0;
+    result.allStreams = data.allStreams || [];
+    result.classWatchTime = data.classWatchTime || { hours: 0, minutes: 0 };
+    result.allCompletedPayments = data.allCompletedPayments || [];
+    result.studentPaymentStatus = data.studentPaymentStatus || defaultResult.studentPaymentStatus;
   }
   return result;
 }
 
 export async function fetchAdminData(): Promise<DashboardLoadResult> {
   const result: DashboardLoadResult = { ...defaultResult, paymentStatus: 'PAID' };
-  const [academiesResult, classesResult, pendingResult, ratingsResult, rejectedResult, streamsResult, progressResult, paymentStatusResult, adminPaymentsResult] = await Promise.all([
-    safeFetch('/admin/academies'), safeFetch('/admin/classes'), safeFetch('/enrollments/pending'),
-    safeFetch('/ratings'), safeFetch('/enrollments/rejected'), safeFetch('/live/history'),
-    safeFetch('/students/progress'), safeFetch('/enrollments/payment-status'), safeFetch('/admin/payments'),
-  ]);
-  const paidAcademies = academiesResult.success && Array.isArray(academiesResult.data)
-    ? academiesResult.data.filter((a: { paymentStatus?: string }) => a.paymentStatus === 'PAID')
-    : [];
-  if (paidAcademies.length > 0) result.academies = paidAcademies;
-  const paidAcademyIds = new Set(paidAcademies.map((a: { id: string }) => a.id));
-  if (rejectedResult.success && rejectedResult.data) result.rejectedCount = rejectedResult.data.count || 0;
-  if (streamsResult.success && Array.isArray(streamsResult.data)) {
-    result.allStreams = (streamsResult.data as { academyId?: string }[]).filter(s => !s.academyId || paidAcademyIds.has(s.academyId));
-  }
-  if (progressResult.success && Array.isArray(progressResult.data)) {
-    const paidProgress = (progressResult.data as ProgressRecord[]).filter(s => !s.academyId || paidAcademyIds.has(s.academyId));
-    const totalSeconds = paidProgress.reduce((sum, s) => sum + (s.totalWatchTime ?? 0), 0);
-    const totalMin = Math.floor(totalSeconds / 60);
-    result.classWatchTime = { hours: Math.floor(totalMin / 60), minutes: totalMin % 60 };
-  }
-  if (pendingResult.success && Array.isArray(pendingResult.data)) result.pendingEnrollments = pendingResult.data;
-  if (ratingsResult.success) result.ratingsData = ratingsResult.data;
-  if (classesResult.success && Array.isArray(classesResult.data)) result.classes = classesResult.data;
-  if (progressResult.success && Array.isArray(progressResult.data)) {
-    const paidProgress = (progressResult.data as ProgressRecord[]).filter(s => !s.academyId || paidAcademyIds.has(s.academyId));
-    result.enrolledStudents = paidProgress.map(s => ({
-      id: s.id, name: `${s.firstName} ${s.lastName}`, email: s.email,
-      classId: s.classId, className: s.className || 'Sin clase', academyId: s.academyId,
-      lessonsCompleted: s.lessonsCompleted ?? 0, totalLessons: s.totalLessons ?? 0, lastActive: s.lastActive,
-    }));
-  }
-  if (paymentStatusResult.success && paymentStatusResult.data) {
-    result.studentPaymentStatus = paymentStatusResult.data as StudentPaymentStatus;
-  }
-  if (adminPaymentsResult.success && Array.isArray(adminPaymentsResult.data)) {
-    result.allCompletedPayments = (adminPaymentsResult.data as { status?: string; amount?: number; paymentMethod?: string; classId?: string }[])
-      .filter(p => p.status === 'COMPLETED' || p.status === 'PAID')
-      .map(p => ({ paymentStatus: p.status || 'COMPLETED', paymentAmount: p.amount ?? 0, paymentMethod: p.paymentMethod, classId: p.classId }));
+  const summaryResult = await safeFetch('/dashboard/summary');
+
+  if (summaryResult.success && summaryResult.data) {
+    const data = summaryResult.data;
+    result.classes = data.classes || [];
+    result.enrolledStudents = data.enrolledStudents || [];
+    result.pendingEnrollments = data.pendingEnrollments || [];
+    result.ratingsData = data.ratingsData ?? null;
+    result.rejectedCount = data.rejectedCount || 0;
+    result.allStreams = data.allStreams || [];
+    result.classWatchTime = data.classWatchTime || { hours: 0, minutes: 0 };
+    result.allCompletedPayments = data.allCompletedPayments || [];
+    result.studentPaymentStatus = data.studentPaymentStatus || defaultResult.studentPaymentStatus;
+    if (Array.isArray(data.academies) && data.academies.length > 0) {
+      result.academies = data.academies;
+    }
   }
   return result;
 }

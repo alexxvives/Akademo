@@ -1,8 +1,14 @@
 import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { requireAuth, getSession } from '../lib/auth';
+import type { SessionUser } from '../lib/auth';
 import { successResponse, errorResponse } from '../lib/utils';
 import { isAccessBlocked } from '../lib/payment-utils';
+import {
+  PDF_WATERMARK_SIZE_LIMIT,
+  addWatermarkToPdf,
+  getAcademyInfoForSession,
+} from '../lib/watermark-pdf';
 
 // ============ Upload Security ============
 
@@ -381,6 +387,78 @@ storage.post('/multipart/abort', async (c) => {
   }
 });
 
+/** Build a Response for an R2 object, applying a PDF watermark when eligible. */
+async function buildFileResponse(
+  object: { body: ReadableStream; httpMetadata?: { contentType?: string }; size: number; arrayBuffer(): Promise<ArrayBuffer> },
+  opts: {
+    cacheControl: string;
+    session: SessionUser | null;
+    env: Bindings;
+    /** Pre-resolved watermark data (used for signed-URL path where session may not exist). */
+    overrideWatermark?: { fullName: string; email: string; academyName?: string; logoBytes?: ArrayBuffer; logoMime?: string };
+  },
+): Promise<Response> {
+  const contentType = object.httpMetadata?.contentType || 'application/octet-stream';
+  const isPdf = contentType === 'application/pdf';
+  const { session, env } = opts;
+
+  const wmData = opts.overrideWatermark ?? null;
+  const shouldWatermark = isPdf && object.size <= PDF_WATERMARK_SIZE_LIMIT && (wmData !== null || session !== null);
+
+  if (shouldWatermark) {
+    try {
+      let fullName: string;
+      let email: string;
+      let academyName: string | undefined;
+      let logoBytes: ArrayBuffer | undefined;
+      let logoMime: string | undefined;
+
+      if (wmData) {
+        // Pre-resolved identity (signed-URL path)
+        fullName = wmData.fullName;
+        email = wmData.email;
+        academyName = wmData.academyName;
+        logoBytes = wmData.logoBytes;
+        logoMime = wmData.logoMime;
+      } else {
+        // Session path — look up academy info from DB
+        const academyInfo = await getAcademyInfoForSession(env.DB, session!);
+        fullName = `${session!.firstName} ${session!.lastName}`;
+        email = session!.email;
+        academyName = academyInfo?.name;
+        if (academyInfo?.logoUrl) {
+          const logoObj = await env.STORAGE.get(academyInfo.logoUrl);
+          if (logoObj) {
+            logoBytes = await logoObj.arrayBuffer();
+            logoMime = logoObj.httpMetadata?.contentType;
+          }
+        }
+      }
+
+      const pdfBytes = await object.arrayBuffer();
+      const watermarked = await addWatermarkToPdf(pdfBytes, { fullName, email, academyName, logoBytes, logoMime });
+
+      return new Response(watermarked, {
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Length': watermarked.byteLength.toString(),
+          'Cache-Control': 'private, no-store',
+        },
+      });
+    } catch {
+      // Watermarking failed — fall through and serve the original file
+    }
+  }
+
+  return new Response(object.body as ReadableStream, {
+    headers: {
+      'Content-Type': contentType,
+      'Content-Length': object.size.toString(),
+      'Cache-Control': opts.cacheControl,
+    },
+  });
+}
+
 // GET /storage/serve/:key - Serve file from R2
 // Requires either: (1) valid session cookie, or (2) signed token query param for public assets (logos, avatars)
 storage.get('/serve/*', async (c) => {
@@ -414,12 +492,19 @@ storage.get('/serve/*', async (c) => {
     const publicFolders = ['logo/', 'avatar/', 'academy-logo/', 'academy-logos/'];
     const isPublicAsset = publicFolders.some(folder => key.startsWith(folder));
 
+    // Hoisted so it is in scope at the final return (needed for watermarking)
+    let session: SessionUser | null = null;
+
     if (isPublicAsset) {
       // No auth needed — fall through to serve the file below
     } else {
       // Check for pre-signed URL token (used when browser navigates directly — no JS auth headers)
       const tokenParam = c.req.query('token');
       const expiresParam = c.req.query('expires');
+      // User identity fields embedded in the signed URL (for watermarking)
+      const signedName = c.req.query('name') ?? '';
+      const signedEmail = c.req.query('email') ?? '';
+      const signedAcademyName = c.req.query('academyName') ?? '';
       let signedUrlValid = false;
       if (tokenParam && expiresParam) {
         const expires = parseInt(expiresParam, 10);
@@ -435,9 +520,20 @@ storage.get('/serve/*', async (c) => {
               const tokenBytes = new Uint8Array(
                 tokenParam.match(/.{1,2}/g)!.map(b => parseInt(b, 16))
               );
+              // New format: pipe-delimited b64url-encoded fields
+              const b64url = (s: string) => btoa(unescape(encodeURIComponent(s)))
+                .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+              const newPayload = [key, String(expires), signedName, signedEmail, signedAcademyName]
+                .map(b64url).join('|');
               signedUrlValid = await crypto.subtle.verify(
-                'HMAC', hmacKey, tokenBytes, encoder.encode(`${key}:${expires}`)
+                'HMAC', hmacKey, tokenBytes, encoder.encode(newPayload)
               );
+              // Fallback: verify against legacy format (key:expires) for old URLs still in-flight
+              if (!signedUrlValid) {
+                signedUrlValid = await crypto.subtle.verify(
+                  'HMAC', hmacKey, tokenBytes, encoder.encode(`${key}:${expires}`)
+                );
+              }
             } catch {
               signedUrlValid = false;
             }
@@ -446,17 +542,45 @@ storage.get('/serve/*', async (c) => {
       }
 
       // Private assets: require authenticated session OR valid signed URL
-      const session = await getSession(c);
+      session = await getSession(c);
       if (!session && !signedUrlValid) {
         return c.json(errorResponse('Authentication required'), 401);
       }
 
-      // If signed URL is valid but no session, skip the ownership checks and go directly to R2
+      // If signed URL is valid but no session, watermark using the embedded identity then serve
       if (signedUrlValid && !session) {
         const object = await c.env.STORAGE.get(key);
         if (!object) {
           console.error('[Serve File] File not found in R2 via signed URL. Key:', key);
           return c.json(errorResponse('File not found'), 404);
+        }
+        // Apply watermark if user identity is available (new-format signed URLs)
+        if (signedName && signedEmail) {
+          let logoBytes: ArrayBuffer | undefined;
+          let logoMime: string | undefined;
+          // Look up academy logo from DB by name
+          if (signedAcademyName) {
+            try {
+              const academyRow = await c.env.DB.prepare(
+                'SELECT logoUrl FROM Academy WHERE name = ? LIMIT 1',
+              ).bind(signedAcademyName).first<{ logoUrl: string | null }>();
+              if (academyRow?.logoUrl) {
+                const logoObj = await c.env.STORAGE.get(academyRow.logoUrl);
+                if (logoObj) {
+                  logoBytes = await logoObj.arrayBuffer();
+                  logoMime = logoObj.httpMetadata?.contentType;
+                }
+              }
+            } catch {
+              // Skip logo on error — text watermark still applies
+            }
+          }
+          return buildFileResponse(object, {
+            cacheControl: 'private, no-store',
+            session: null,
+            env: c.env,
+            overrideWatermark: { fullName: signedName, email: signedEmail, academyName: signedAcademyName, logoBytes, logoMime },
+          });
         }
         return new Response(object.body, {
           headers: {
@@ -609,24 +733,20 @@ storage.get('/serve/*', async (c) => {
       // Try raw key as fallback just in case
       const rawObject = await c.env.STORAGE.get(rawKey);
       if (rawObject) {
-         return new Response(rawObject.body, {
-          headers: {
-            'Content-Type': rawObject.httpMetadata?.contentType || 'application/octet-stream',
-            'Content-Length': rawObject.size.toString(),
-            'Cache-Control': isPublicAsset ? 'public, max-age=31536000, immutable' : 'private, max-age=3600',
-          },
+        return buildFileResponse(rawObject, {
+          cacheControl: isPublicAsset ? 'public, max-age=31536000, immutable' : 'private, max-age=3600',
+          session: isPublicAsset ? null : (session ?? null),
+          env: c.env,
         });
       }
       console.error('[Serve File] File not found in R2. Key:', key);
       return c.json(errorResponse('File not found'), 404);
     }
 
-    return new Response(object.body, {
-      headers: {
-        'Content-Type': object.httpMetadata?.contentType || 'application/octet-stream',
-        'Content-Length': object.size.toString(),
-        'Cache-Control': isPublicAsset ? 'public, max-age=31536000, immutable' : 'private, max-age=3600',
-      },
+    return buildFileResponse(object, {
+      cacheControl: isPublicAsset ? 'public, max-age=31536000, immutable' : 'private, max-age=3600',
+      session: isPublicAsset ? null : (session ?? null),
+      env: c.env,
     });
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
@@ -638,7 +758,7 @@ storage.get('/serve/*', async (c) => {
 // GET /storage/signed-url - Generate a signed URL for a public asset
 storage.get('/signed-url', async (c) => {
   try {
-    await requireAuth(c);
+    const session = await requireAuth(c);
     const key = c.req.query('key');
     if (!key) {
       return c.json(errorResponse('key query parameter required'), 400);
@@ -648,15 +768,28 @@ storage.get('/signed-url', async (c) => {
     if (!secret) {
       return c.json(errorResponse('Server configuration error'), 500);
     }
+
+    // Gather user identity for watermarking
+    const fullName = `${session.firstName} ${session.lastName}`;
+    const email = session.email;
+    const academyInfo = await getAcademyInfoForSession(c.env.DB, session);
+    const academyName = academyInfo?.name ?? '';
+
+    // Sign key + expires + user identity together so params cannot be tampered with.
+    // Format: key|expires|name|email|academyName  (pipe-delimited, each field b64url-encoded)
+    const b64url = (s: string) => btoa(unescape(encodeURIComponent(s)))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    const payload = [key, String(expires), fullName, email, academyName].map(b64url).join('|');
+
     const encoder = new TextEncoder();
     const hmacKey = await crypto.subtle.importKey(
       'raw', encoder.encode(secret),
       { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
     );
-    const sig = await crypto.subtle.sign('HMAC', hmacKey, encoder.encode(`${key}:${expires}`));
+    const sig = await crypto.subtle.sign('HMAC', hmacKey, encoder.encode(payload));
     const token = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
 
-    return c.json(successResponse({ token, expires }));
+    return c.json(successResponse({ token, expires, name: fullName, email, academyName }));
   } catch (error: unknown) {
     if (error instanceof Error && (error.message === 'Unauthorized' || error.message === 'Forbidden')) throw error;
     console.error('[Signed URL] Error:', error);

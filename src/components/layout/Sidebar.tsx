@@ -45,7 +45,7 @@ export function Sidebar({
         {!collapsed && (
           <Link
             href={`/dashboard/${role.toLowerCase()}`}
-            className="flex items-center gap-2 flex-1 min-w-0"
+            className="flex items-center gap-2 flex-1 min-w-0 self-center"
           >
             {logoUrl ? (
               <>
@@ -90,7 +90,7 @@ export function Sidebar({
         <button
           onClick={toggleCollapsed}
           title={collapsed ? 'Expandir menú' : 'Colapsar menú'}
-          className={`flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-gray-500 hover:text-white hover:bg-gray-700/60 transition-colors ${collapsed ? 'mx-auto' : ''}`}
+          className={`flex-shrink-0 self-center w-7 h-7 flex items-center justify-center rounded-lg text-gray-500 hover:text-white hover:bg-gray-700/60 transition-colors ${collapsed ? 'mx-auto' : 'ml-auto'}`}
         >
           {collapsed ? (
             /* panel-right-open: expand */

@@ -137,7 +137,7 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
   return (
     <PeriodProvider role={role}>
     <div className="h-[100dvh] flex flex-col bg-gray-50">
-      {role !== 'ADMIN' && <DemoBanner userEmail={user?.email} />}
+      {role !== 'ADMIN' && <DemoBanner userEmail={user?.email} academyPaymentStatus={academyPaymentStatus} />}
       {(role === 'ACADEMY' && academyPaymentStatus === 'NOT PAID' && !user?.email?.toLowerCase().includes("demo")) && (
         <DemoDataBanner />
       )}

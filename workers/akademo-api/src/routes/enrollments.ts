@@ -728,106 +728,94 @@ enrollments.get('/payment-status', async (c) => {
     const classIdFilter = c.req.query('classId') || null;
     // classIds = comma-separated list of IDs for period-based filtering
     const classIdsParam = c.req.query('classIds') || null;
-    const classIdsSet = classIdsParam ? new Set(classIdsParam.split(',').filter(Boolean)) : null;
-    const now = new Date().toISOString();
-    let query = '';
-    let params: string[] = [];
+
+    // Build scope filter (which enrollments this role can see)
+    let scopeJoin = '';
+    let scopeWhere = '';
+    const scopeParams: string[] = [];
 
     if (session.role === 'TEACHER') {
-      query = `
-        SELECT 
-          e.id, e.userId, e.classId, e.paymentFrequency, e.nextPaymentDue,
-          c.name as className
-        FROM ClassEnrollment e
-        JOIN Class c ON e.classId = c.id
-        WHERE c.teacherId = ? AND e.status = 'APPROVED'${classIdFilter ? ' AND e.classId = ?' : ''}
-      `;
-      params = classIdFilter ? [session.id, classIdFilter] : [session.id];
+      scopeJoin = 'JOIN Class c ON e.classId = c.id';
+      scopeWhere = 'c.teacherId = ?';
+      scopeParams.push(session.id);
     } else if (session.role === 'ACADEMY') {
-      query = `
-        SELECT 
-          e.id, e.userId, e.classId, e.paymentFrequency, e.nextPaymentDue,
-          c.name as className
-        FROM ClassEnrollment e
-        JOIN Class c ON e.classId = c.id
-        JOIN Academy a ON c.academyId = a.id
-        WHERE a.ownerId = ? AND e.status = 'APPROVED'${classIdFilter ? ' AND e.classId = ?' : ''}
-      `;
-      params = classIdFilter ? [session.id, classIdFilter] : [session.id];
+      scopeJoin = 'JOIN Class c ON e.classId = c.id JOIN Academy a ON c.academyId = a.id';
+      scopeWhere = 'a.ownerId = ?';
+      scopeParams.push(session.id);
     } else {
-      // ADMIN
-      query = `
-        SELECT 
-          e.id, e.userId, e.classId, e.paymentFrequency, e.nextPaymentDue,
-          c.name as className
-        FROM ClassEnrollment e
-        JOIN Class c ON e.classId = c.id
-        WHERE e.status = 'APPROVED'${classIdFilter ? ' AND e.classId = ?' : ''}
-      `;
-      params = classIdFilter ? [classIdFilter] : [];
+      // ADMIN — no extra join needed
+      scopeJoin = 'JOIN Class c ON e.classId = c.id';
+      scopeWhere = '1=1';
     }
 
-    const result = await c.env.DB
-      .prepare(query)
-      .bind(...params)
-      .all();
+    // Build class filter
+    let classFilterClause = '';
+    if (classIdFilter) {
+      classFilterClause = 'AND e.classId = ?';
+      scopeParams.push(classIdFilter);
+    } else if (classIdsParam) {
+      // D1/SQLite doesn't support dynamic IN lists with bound params, so we embed
+      // the UUIDs directly. Validate each to prevent injection.
+      const ids = classIdsParam.split(',').filter(id => /^[0-9a-f-]{36}$/i.test(id));
+      if (ids.length === 0) {
+        return c.json(successResponse({ alDia: 0, atrasados: 0, total: 0, uniqueAlDia: 0, uniqueAtrasados: 0, uniqueTotal: 0 }));
+      }
+      classFilterClause = `AND e.classId IN (${ids.map(() => '?').join(',')})`;
+      scopeParams.push(...ids);
+    }
 
-    // Filter by classIds set if period-based multi-class filter was provided
-    const enrollments_data = (classIdsSet
-      ? (result.results || []).filter((e: any) => classIdsSet.has(e.classId))
-      : result.results || []) as any[];
-    
+    // Single CTE-based query — no N+1 loops
+    const cteSql = `
+      WITH paid_once AS (
+        SELECT payerId, classId
+        FROM Payment
+        WHERE status IN ('PAID', 'COMPLETED')
+          AND type = 'STUDENT_TO_ACADEMY'
+        GROUP BY payerId, classId
+      )
+      SELECT
+        e.userId,
+        CASE
+          WHEN e.paymentFrequency = 'MONTHLY'
+            AND e.nextPaymentDue IS NOT NULL
+            AND e.nextPaymentDue < datetime('now') THEN 'atrasado'
+          WHEN e.paymentFrequency = 'ONE_TIME'
+            AND po.payerId IS NULL THEN 'atrasado'
+          ELSE 'alDia'
+        END AS status
+      FROM ClassEnrollment e
+      ${scopeJoin}
+      LEFT JOIN paid_once po ON po.payerId = e.userId AND po.classId = e.classId
+      WHERE e.status = 'APPROVED'
+        AND ${scopeWhere}
+        ${classFilterClause}
+    `;
+
+    const result = await c.env.DB.prepare(cteSql).bind(...scopeParams).all();
+    const rows = (result.results || []) as any[];
+
     let alDia = 0;
     let atrasados = 0;
-    // Track per-student status: a student is "atrasado" if ANY enrollment is atrasado
     const studentStatus: Record<string, 'alDia' | 'atrasado'> = {};
 
-    for (const enrollment of enrollments_data) {
-      let isAtrasado = false;
-
-      if (enrollment.paymentFrequency === 'MONTHLY' && enrollment.nextPaymentDue) {
-        // Monthly payment: check if next payment is overdue
-        if (new Date(enrollment.nextPaymentDue) < new Date(now)) {
-          atrasados++;
-          isAtrasado = true;
-        } else {
-          alDia++;
-        }
-      } else if (enrollment.paymentFrequency === 'ONE_TIME') {
-        // One-time payment: alDia if there's a completed payment
-        const payment = await c.env.DB
-          .prepare(`
-            SELECT id FROM Payment 
-            WHERE payerId = ? AND classId = ? AND (status = 'COMPLETED' OR status = 'PAID')
-            LIMIT 1
-          `)
-          .bind(enrollment.userId, enrollment.classId)
-          .first();
-
-        if (payment) {
-          alDia++;
-        } else {
-          atrasados++;
-          isAtrasado = true;
-        }
-      } else {
-        // No payment frequency set or unknown, assume al dia
-        alDia++;
-      }
-
-      // Track per-student: once atrasado in any class, student stays atrasado
-      const uid = enrollment.userId as string;
-      if (isAtrasado) {
+    for (const row of rows) {
+      const uid = row.userId as string;
+      if (row.status === 'atrasado') {
+        atrasados++;
         studentStatus[uid] = 'atrasado';
-      } else if (!studentStatus[uid]) {
-        studentStatus[uid] = 'alDia';
+      } else {
+        alDia++;
+        if (!studentStatus[uid]) studentStatus[uid] = 'alDia';
       }
     }
 
     const uniqueAlDia = Object.values(studentStatus).filter(s => s === 'alDia').length;
     const uniqueAtrasados = Object.values(studentStatus).filter(s => s === 'atrasado').length;
 
-    return c.json(successResponse({ alDia, atrasados, total: enrollments_data.length, uniqueAlDia, uniqueAtrasados, uniqueTotal: Object.keys(studentStatus).length }));
+    return c.json(successResponse({
+      alDia, atrasados, total: rows.length,
+      uniqueAlDia, uniqueAtrasados, uniqueTotal: Object.keys(studentStatus).length,
+    }));
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Payment Status] Error:', error);

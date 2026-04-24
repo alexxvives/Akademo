@@ -97,64 +97,49 @@ WHERE f.component = 'mod_resource'
 ORDER BY c.fullname, r.name;
 ```
 
+### `sections.csv` (optional — topic/section names within each course)
+```sql
+SELECT
+  c.fullname  AS asignatura,
+  cs.section  AS numero,
+  cs.name     AS nombre_tema
+FROM {PREFIX}_course_sections cs
+JOIN {PREFIX}_course c ON c.id = cs.course
+WHERE c.id > 1
+  AND cs.name IS NOT NULL
+  AND cs.name != ''
+ORDER BY c.fullname, cs.section;
+```
+
+> **Note on sections**: `ftp-to-r2.js` auto-creates one "Documentos" topic per class. The `sections.csv` is only needed if you want to preserve Moodle's original topic names/structure — there is currently no automated importer for this.
+
 > **Note**: Replace `{PREFIX}` with the actual prefix found in Step 0.
 
 ---
 
-## Step 2 — Apply DB migration
-
-Before importing, make sure the schema is up to date:
-
-```powershell
-npx wrangler d1 execute akademo-db --remote --file=migrations/0009_class_published.sql
-```
-
----
-
-## Step 3 — Generate Excel + post-import SQL
-
-```powershell
-node scripts/moodle-to-excel.js
-```
-
-Outputs:
-- `moodle-migration.xlsx` — import-ready Excel (Usuarios + Asignaturas tabs)
-- `post-import.sql` — approves enrollments + marks legacy courses as paid
-
-**Before importing**: Open `moodle-migration.xlsx` and fill in the `precio` column in the Asignaturas tab.  
-Leave blank → class is created as `isPublished=0` (invisible until academy sets a price).
-
----
-
-## Step 4 — Create the academy account
+## Step 2 — Create the academy account
 
 1. Register the academy via the AKADEMO admin panel with a temporary email
 2. Note the academy ID from the URL or DB: `SELECT id FROM Academy WHERE name = '...'`
 
 ---
 
-## Step 5 — Import the Excel
+## Step 3 — Import CSVs in Admin UI
 
 In the AKADEMO admin panel:
 - Admin → Academias → [academy] → Importar usuarios
-- Upload `moodle-migration.xlsx`
+- Upload all CSVs at once (`enrollments.csv`, `courses.csv`, `quizzes.csv`, `questions.csv`, `files.csv`)
+- Check **"Marcar todos como pagados"** for legacy academies (students already paid in Moodle)
+- The import creates users, classes, enrollments, quizzes, questions, and COMPLETED payment records in one step
 - Note any errors (unmatched class names, missing fields)
 
----
+> **Note**: Classes with no `precio` in `courses.csv` are created as `isPublished=0` — invisible until the academy sets a price manually.
 
-## Step 6 — Run post-import SQL
-
-```powershell
-npx wrangler d1 execute akademo-db --remote --file=post-import.sql
-```
-
-This:
-- Sets all legacy enrollment statuses to `APPROVED`
-- Creates `COMPLETED` payment records (`amount=0`, `method='migration'`) so students don't appear as pending
+> **Legacy note**: `node scripts/moodle-to-excel.js` can still generate a `moodle-migration.xlsx` if you prefer to review data in Excel before uploading. The UI accepts both `.xlsx` and raw CSVs. The separate `post-import.sql` step is no longer needed — payment records are created inline by the UI when "Marcar todos como pagados" is checked.
 
 ---
 
-## Step 7 — Generate quiz SQL + PDF manifest
+## Step 4 — Generate quiz SQL + PDF manifest
 
 ```powershell
 node scripts/generate-quiz-sql.js
@@ -170,14 +155,16 @@ npx wrangler d1 execute akademo-db --remote --file=quiz-import.sql
 
 ---
 
-## Step 8 — Download and upload PDFs
+## Step 5 — Download and upload PDFs (ftp-to-r2.js)
 
-1. Open `pdf-manifest.txt` — it lists every PDF with its full SiteGround path
-2. Go to **SiteGround → Sitio Web → Gestor archivos**
-3. Navigate to `/home/customer/www/{domain}/campus/moodledata/filedir/`
-4. Download each file listed in the manifest
-5. Upload via AKADEMO dashboard → Clases → [class] → Lecciones → Nueva lección → Añadir documento
-   - Assign each PDF to the correct class as shown in the manifest
+1. Make sure FTP credentials and `ACADEMY_ID` / `OWNER_ID` are set at the top of `scripts/ftp-to-r2.js`
+2. Run:
+
+```powershell
+node scripts/ftp-to-r2.js
+```
+
+This downloads every PDF from SiteGround via FTP, uploads to R2, generates `scripts/moodle-import/import-documents.sql`, and **automatically applies it** to the remote D1 DB.
 
 ---
 
@@ -226,3 +213,26 @@ GROUP BY a.id;
 - **Moodle-only question types** (drag & drop, matching, etc.) are skipped — only `multichoice` is supported.
 - **Duplicate questions**: Moodle reuses questions across quizzes via a question bank. Each quiz gets its own copy in AKADEMO.
 - **Content hash deduplication**: Moodle stores files by SHA1 hash. The PDF manifest deduplicates so the same file isn't downloaded twice.
+
+---
+
+## Full Moodle → AKADEMO data mapping
+
+| Moodle concept | Moodle table(s) | AKADEMO table | Script/step |
+|---|---|---|---|
+| Course | `{PREFIX}_course` | `Class` | Step 3 (Admin UI) |
+| Course sections (topics) | `{PREFIX}_course_sections` | `Topic` | Step 5 (ftp-to-r2.js auto-creates one topic per class) |
+| Student enrollment | `{PREFIX}_user_enrolments` + `{PREFIX}_enrol` | `ClassEnrollment` | Step 3 (Admin UI) |
+| User account | `{PREFIX}_user` | `User` | Step 3 (Admin UI) |
+| PDF/file resource | `{PREFIX}_files` + `{PREFIX}_resource` | `Upload` + `Document` + `Lesson` | Step 5 (ftp-to-r2.js) |
+| Quiz | `{PREFIX}_quiz` | `Assignment` (type=quiz) | Step 4 |
+| Quiz questions | `{PREFIX}_question` | `QuizQuestion` | Step 7 |
+| Quiz attempts | `{PREFIX}_quiz_attempts` | **not migrated** (historical) | — |
+| Forum (feedback) | `{PREFIX}_forum` | **no equivalent** | — |
+| Grades | `{PREFIX}_grade_items` + `{PREFIX}_grade_grades` | **no equivalent** | — |
+| Calendar events | `{PREFIX}_event` | `CalendarScheduledEvent` (manual) | — |
+| URL resources | `{PREFIX}_url` | **no equivalent** | — |
+| Labels/HTML content | `{PREFIX}_label` | **no equivalent** | — |
+
+**What we migrate**: Users, course list, student enrollments, PDF files, quizzes + questions.  
+**What we skip**: Videos (need re-upload to Bunny), forum posts, grades, quiz attempts, HTML labels. Topic/section names are auto-created by `ftp-to-r2.js` (one "Documentos" topic per class). If you want the original Moodle topic names, export `sections.csv` in Step 1.

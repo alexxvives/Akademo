@@ -18,9 +18,31 @@ students.get('/progress', async (c) => {
     let params: any[] = [];
 
     if (session.role === 'ADMIN') {
-      // Get ALL student progress across platform
+      // Get ALL student progress across platform — using CTEs to avoid N×5 correlated subqueries
       query = `
-        SELECT 
+        WITH lesson_progress AS (
+          SELECT
+            vps.studentId,
+            l.classId,
+            COUNT(DISTINCT v.lessonId) AS lessonsCompleted,
+            SUM(vps.totalWatchTimeSeconds) AS totalWatchTime
+          FROM VideoPlayState vps
+          JOIN Video v ON v.id = vps.videoId
+          JOIN Lesson l ON l.id = v.lessonId
+          GROUP BY vps.studentId, l.classId
+        ),
+        lesson_counts AS (
+          SELECT classId, COUNT(*) AS totalLessons
+          FROM Lesson
+          GROUP BY classId
+        ),
+        payments_agg AS (
+          SELECT payerId, classId, SUM(amount) AS totalPaid
+          FROM Payment
+          WHERE status IN ('PAID', 'COMPLETED')
+          GROUP BY payerId, classId
+        )
+        SELECT
           u.id,
           u.firstName,
           u.lastName,
@@ -37,15 +59,18 @@ students.get('/progress', async (c) => {
           c.oneTimePrice,
           c.startDate as classStartDate,
           e.enrolledAt,
-          (SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.payerId = u.id AND p.classId = c.id AND p.status IN ('PAID', 'COMPLETED')) as totalPaid,
-          (SELECT COUNT(DISTINCT v2.lessonId) FROM VideoPlayState vps2 JOIN Video v2 ON v2.id = vps2.videoId JOIN Lesson l2 ON l2.id = v2.lessonId WHERE vps2.studentId = u.id AND l2.classId = c.id) as lessonsCompleted,
-          (SELECT COUNT(*) FROM Lesson l3 WHERE l3.classId = c.id) as totalLessons,
-          (SELECT COALESCE(SUM(vps3.totalWatchTimeSeconds), 0) FROM VideoPlayState vps3 JOIN Video v3 ON v3.id = vps3.videoId JOIN Lesson l3b ON l3b.id = v3.lessonId WHERE vps3.studentId = u.id AND l3b.classId = c.id) as totalWatchTime,
-          (SELECT COALESCE(AVG(lr.rating), 0) FROM LessonRating lr JOIN Lesson lrl ON lrl.id = lr.lessonId WHERE lr.studentId = u.id AND lrl.classId = c.id) as averageRating
+          COALESCE(pa.totalPaid, 0) as totalPaid,
+          COALESCE(lp.lessonsCompleted, 0) as lessonsCompleted,
+          COALESCE(lc.totalLessons, 0) as totalLessons,
+          COALESCE(lp.totalWatchTime, 0) as totalWatchTime,
+          0 as averageRating
         FROM User u
         JOIN ClassEnrollment e ON e.userId = u.id AND e.status = 'APPROVED'
         JOIN Class c ON e.classId = c.id
         LEFT JOIN User ut ON c.teacherId = ut.id
+        LEFT JOIN lesson_progress lp ON lp.studentId = u.id AND lp.classId = c.id
+        LEFT JOIN lesson_counts lc ON lc.classId = c.id
+        LEFT JOIN payments_agg pa ON pa.payerId = u.id AND pa.classId = c.id
         ORDER BY u.lastName, u.firstName, c.name
       `;
       params = [];
@@ -79,9 +104,40 @@ students.get('/progress', async (c) => {
       `;
       params = [session.id];
     } else if (session.role === 'ACADEMY') {
-      // Get progress for each student-class combination (one row per student per class)
+      // Get progress for each student-class combination — using CTEs to avoid N×5 correlated subqueries
       query = `
-        SELECT 
+        WITH academy_classes AS (
+          SELECT c.id as classId
+          FROM Class c
+          JOIN Academy a ON c.academyId = a.id
+          WHERE a.ownerId = ?
+        ),
+        lesson_progress AS (
+          SELECT
+            vps.studentId,
+            l.classId,
+            COUNT(DISTINCT v.lessonId) AS lessonsCompleted,
+            SUM(vps.totalWatchTimeSeconds) AS totalWatchTime
+          FROM VideoPlayState vps
+          JOIN Video v ON v.id = vps.videoId
+          JOIN Lesson l ON l.id = v.lessonId
+          WHERE l.classId IN (SELECT classId FROM academy_classes)
+          GROUP BY vps.studentId, l.classId
+        ),
+        lesson_counts AS (
+          SELECT classId, COUNT(*) AS totalLessons
+          FROM Lesson
+          WHERE classId IN (SELECT classId FROM academy_classes)
+          GROUP BY classId
+        ),
+        payments_agg AS (
+          SELECT payerId, classId, SUM(amount) AS totalPaid
+          FROM Payment
+          WHERE status IN ('PAID', 'COMPLETED')
+            AND classId IN (SELECT classId FROM academy_classes)
+          GROUP BY payerId, classId
+        )
+        SELECT
           u.id,
           u.firstName,
           u.lastName,
@@ -97,19 +153,22 @@ students.get('/progress', async (c) => {
           c.oneTimePrice,
           c.startDate as classStartDate,
           e.enrolledAt,
-          (SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.payerId = u.id AND p.classId = c.id AND p.status IN ('PAID', 'COMPLETED')) as totalPaid,
-          (SELECT COUNT(DISTINCT v2.lessonId) FROM VideoPlayState vps2 JOIN Video v2 ON v2.id = vps2.videoId JOIN Lesson l2 ON l2.id = v2.lessonId WHERE vps2.studentId = u.id AND l2.classId = c.id) as lessonsCompleted,
-          (SELECT COUNT(*) FROM Lesson l3 WHERE l3.classId = c.id) as totalLessons,
-          (SELECT COALESCE(SUM(vps3.totalWatchTimeSeconds), 0) FROM VideoPlayState vps3 JOIN Video v3 ON v3.id = vps3.videoId JOIN Lesson l3b ON l3b.id = v3.lessonId WHERE vps3.studentId = u.id AND l3b.classId = c.id) as totalWatchTime,
-          (SELECT COALESCE(AVG(lr.rating), 0) FROM LessonRating lr JOIN Lesson lrl ON lrl.id = lr.lessonId WHERE lr.studentId = u.id AND lrl.classId = c.id) as averageRating
+          COALESCE(pa.totalPaid, 0) as totalPaid,
+          COALESCE(lp.lessonsCompleted, 0) as lessonsCompleted,
+          COALESCE(lc.totalLessons, 0) as totalLessons,
+          COALESCE(lp.totalWatchTime, 0) as totalWatchTime,
+          0 as averageRating
         FROM User u
         JOIN ClassEnrollment e ON e.userId = u.id AND e.status = 'APPROVED'
         JOIN Class c ON e.classId = c.id
         JOIN Academy a ON c.academyId = a.id AND a.ownerId = ?
         LEFT JOIN User ut ON c.teacherId = ut.id
+        LEFT JOIN lesson_progress lp ON lp.studentId = u.id AND lp.classId = c.id
+        LEFT JOIN lesson_counts lc ON lc.classId = c.id
+        LEFT JOIN payments_agg pa ON pa.payerId = u.id AND pa.classId = c.id
         ORDER BY u.lastName, u.firstName, c.name
       `;
-      params = [session.id];
+      params = [session.id, session.id];
     }
 
     const result = await c.env.DB.prepare(query).bind(...params).all();

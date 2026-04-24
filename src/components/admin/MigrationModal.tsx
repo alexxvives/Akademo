@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { apiClient, API_BASE_URL } from '@/lib/api-client';
-import { type ImportRow, type ClassRow, type QuizRow, type QuestionRow, type FileRow, type ImportSummary, XLSX, normalizeRows, normalizeClassRows, normalizeQuizRows, normalizeQuestionRows, normalizeFileRows, parseCSV, parseCSVGeneric } from './migration-utils';
+import { type ImportRow, type ClassRow, type QuizRow, type QuestionRow, type FileRow, type DocumentManifestEntry, type ImportSummary, XLSX, normalizeRows, normalizeClassRows, normalizeQuizRows, normalizeQuestionRows, normalizeFileRows, parseCSV, parseCSVGeneric } from './migration-utils';
 import { UploadStep, PreviewStep, ResultsStep } from './MigrationSteps';
 
 interface MigrationModalProps {
@@ -19,13 +19,32 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
   const [quizPreview, setQuizPreview] = useState<QuizRow[]>([]);
   const [questionPreview, setQuestionPreview] = useState<QuestionRow[]>([]);
   const [filePreview, setFilePreview] = useState<FileRow[]>([]);
+  const [documentManifest, setDocumentManifest] = useState<DocumentManifestEntry[]>([]);
+  const [approveAll, setApproveAll] = useState(false);
   const [summary, setSummary] = useState<ImportSummary | null>(null);
   const [error, setError] = useState('');
   const [step, setStep] = useState<'upload' | 'preview' | 'results'>('upload');
   const [mounted, setMounted] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const manifestRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => setMounted(true), []);
+
+  const handleManifestUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const parsed = JSON.parse(ev.target?.result as string) as DocumentManifestEntry[];
+        if (!Array.isArray(parsed)) throw new Error('Not an array');
+        setDocumentManifest(parsed);
+      } catch {
+        setError('El archivo de documentos no es un JSON válido.');
+      }
+    };
+    reader.readAsText(file);
+  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     setError('');
@@ -163,7 +182,7 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
       const res = await apiClient('/admin/bulk-import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ academyId, users: preview, classes: classPreview, quizzes: quizPreview, questions: questionPreview, files: filePreview }),
+        body: JSON.stringify({ academyId, users: preview, classes: classPreview, quizzes: quizPreview, questions: questionPreview, files: filePreview, documents: documentManifest, approveAll }),
         skipAutoRedirect: true,
       });
       const data = await res.json();
@@ -203,10 +222,13 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
     setQuizPreview([]);
     setQuestionPreview([]);
     setFilePreview([]);
+    setDocumentManifest([]);
+    setApproveAll(false);
     setSummary(null);
     setStep('upload');
     setError('');
     if (fileRef.current) fileRef.current.value = '';
+    if (manifestRef.current) manifestRef.current.value = '';
   };
 
   if (!mounted) return null;
@@ -237,7 +259,7 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
             </div>
           )}
 
-          {step === 'upload' && <UploadStep fileRef={fileRef} handleFileUpload={handleFileUpload} />}
+          {step === 'upload' && <UploadStep fileRef={fileRef} handleFileUpload={handleFileUpload} manifestRef={manifestRef} handleManifestUpload={handleManifestUpload} manifestLoaded={documentManifest.length > 0} approveAll={approveAll} onApproveAllChange={setApproveAll} />}
           {step === 'preview' && <PreviewStep preview={preview} classPreview={classPreview} quizPreview={quizPreview} questionPreview={questionPreview} filePreview={filePreview} importing={importing} reset={reset} handleImport={handleImport} />}
           {step === 'results' && summary && <ResultsStep summary={summary} onClose={onClose} />}
         </div>

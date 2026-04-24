@@ -111,11 +111,12 @@ export async function apiClient(
 export async function openDocument(storagePath: string): Promise<void> {
   const res = await apiClient(`/storage/signed-url?key=${encodeURIComponent(storagePath)}`);
   if (!res.ok) throw new Error('Failed to get signed URL');
-  const json = await res.json() as { success: boolean; data: { token: string; expires: number } };
+  const json = await res.json() as { success: boolean; data: { token: string; expires: number; name: string; email: string; academyName: string } };
   if (!json.success) throw new Error('Failed to get signed URL');
-  const { token, expires } = json.data;
+  const { token, expires, name, email, academyName } = json.data;
   const encodedKey = storagePath.split('/').map(encodeURIComponent).join('/');
-  window.open(`/api/storage/serve/${encodedKey}?token=${token}&expires=${expires}`, '_blank');
+  const qs = new URLSearchParams({ token, expires: String(expires), name: name ?? '', email: email ?? '', academyName: academyName ?? '' });
+  window.open(`/api/storage/serve/${encodedKey}?${qs}`, '_blank');
 }
 
 /**
@@ -124,11 +125,12 @@ export async function openDocument(storagePath: string): Promise<void> {
 export async function downloadDocument(storagePath: string, fileName: string): Promise<void> {
   const res = await apiClient(`/storage/signed-url?key=${encodeURIComponent(storagePath)}`);
   if (!res.ok) throw new Error('Failed to get signed URL');
-  const json = await res.json() as { success: boolean; data: { token: string; expires: number } };
+  const json = await res.json() as { success: boolean; data: { token: string; expires: number; name: string; email: string; academyName: string } };
   if (!json.success) throw new Error('Failed to get signed URL');
-  const { token, expires } = json.data;
+  const { token, expires, name, email, academyName } = json.data;
   const encodedKey = storagePath.split('/').map(encodeURIComponent).join('/');
-  const url = `/api/storage/serve/${encodedKey}?token=${token}&expires=${expires}`;
+  const qs = new URLSearchParams({ token, expires: String(expires), name: name ?? '', email: email ?? '', academyName: academyName ?? '' });
+  const url = `/api/storage/serve/${encodedKey}?${qs}`;
   const a = document.createElement('a');
   a.href = url;
   a.download = fileName;

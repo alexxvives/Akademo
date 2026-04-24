@@ -3,14 +3,12 @@
 
 interface DemoBannerProps {
   userEmail?: string | null;
+  /** Academy payment status — banner shows only when NOT 'PAID' */
+  academyPaymentStatus?: string | null;
 }
 
-export function DemoBanner({ userEmail }: DemoBannerProps) {
-  // Show for all demo% accounts (regardless of payment status)
-  // Demo% users never see DemoDataBanner
-  if (!userEmail?.toLowerCase().includes("demo")) {
-    return null;
-  }
+export function DemoBanner({ userEmail: _userEmail, academyPaymentStatus }: DemoBannerProps) {
+  if (academyPaymentStatus === 'PAID') return null;
 
   return (
     <div className="bg-red-600 text-white px-4 py-2 text-center text-sm font-medium flex items-center justify-center gap-2">

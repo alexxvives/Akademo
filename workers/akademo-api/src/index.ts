@@ -29,6 +29,7 @@ import calendarEventsRoutes from './routes/calendar-events';
 import academicYearsRoutes from './routes/academic-years';
 import leadsRoutes from './routes/leads';
 import mediaRoutes from './routes/media';
+import dashboardRoutes from './routes/dashboard';
 import { Bindings } from './types';
 
 import { requireAuth } from './lib/auth';
@@ -145,6 +146,7 @@ app.route('/zoom', zoomRoutes);
 app.route('/academic-years', academicYearsRoutes);
 app.route('/leads', leadsRoutes);
 app.route('/media', mediaRoutes);
+app.route('/dashboard', dashboardRoutes);
 
 // GET /teacher/academy - Get teacher's academy with paymentStatus (for demo mode detection)
 app.get('/teacher/academy', async (c) => {
