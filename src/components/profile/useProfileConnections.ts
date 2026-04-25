@@ -83,12 +83,14 @@ export function useProfileConnections(s: ProfileState) {
   };
 
   const handleSetCurrentPeriod = async (periodId: string) => {
+    setActivePeriodId(periodId); // optimistic — mirrors sidebar behaviour
     try {
       const res = await apiClient(`/academic-years/${periodId}`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ isCurrent: 1 }),
       });
       const result = await res.json();
-      if (result.success) { setAcademicYears(result.data || []); setActivePeriodId(periodId); }
+      if (result.success) { setAcademicYears(result.data || []); }
+      else console.error('Failed to persist active period to DB:', result.error);
     } catch (e) { console.error('Error switching period:', e); }
   };
 

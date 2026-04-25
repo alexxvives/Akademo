@@ -54,11 +54,14 @@ export function PeriodProvider({
         data.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
         setPeriods(data);
 
-        // Restore saved preference only if it's a valid period ID (not 'all')
-        // — always default to the most recent period otherwise
+        // Restore saved preference — including 'all'
         try {
           const saved = localStorage.getItem(LS_KEY);
-          if (saved && saved !== 'all' && data.find((p) => p.id === saved)) {
+          if (saved === 'all') {
+            setActivePeriodIdState('all');
+            return;
+          }
+          if (saved && data.find((p) => p.id === saved)) {
             setActivePeriodIdState(saved);
             return;
           }
