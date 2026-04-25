@@ -154,8 +154,19 @@ export function PreviewStep({ preview, classPreview, quizPreview, questionPrevie
       return unmatched.length > 0 ? [{ email: row.email, unmatched }] : [];
     });
 
+  const teacherCount = preview.filter(r => r.role === 'TEACHER').length;
+  const studentCount = preview.filter(r => r.role === 'STUDENT').length;
+
   return (
     <div className="space-y-4">
+      {/* Detected summary */}
+      <div className="flex flex-wrap gap-2">
+        {classPreview.length > 0 && <span className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-semibold">{classPreview.length} asignaturas</span>}
+        {teacherCount > 0 && <span className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-semibold">{teacherCount} profesores</span>}
+        {studentCount > 0 && <span className="px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-xs font-semibold">{studentCount} alumnos</span>}
+        {quizPreview.length > 0 && <span className="px-3 py-1.5 bg-purple-50 text-purple-700 rounded-lg text-xs font-semibold">{quizPreview.length} cuestionarios</span>}
+        {filePreview.length > 0 && <span className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs font-semibold">{filePreview.length} PDFs</span>}
+      </div>
       {classWarnings.length > 0 && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
           <p className="text-xs font-semibold text-amber-800 mb-2">
@@ -332,44 +343,46 @@ interface ResultsStepProps {
 }
 
 export function ResultsStep({ summary, onClose }: ResultsStepProps) {
-  const _hasCreated = summary.created > 0;
   const classesCreated = summary.classesCreated ?? 0;
-  const classesExisted = (summary.classResults || []).filter(r => r.status === 'existed').length;
   const quizzesCreated = summary.quizzesCreated ?? 0;
   const questionsCreated = summary.questionsCreated ?? 0;
   const documentsCreated = summary.documentsCreated ?? 0;
-
+  const teachersCreated = (summary.results || []).filter(r => r.status === 'created' && r.role === 'TEACHER').length;
+  const studentsCreated = (summary.results || []).filter(r => r.status === 'created' && r.role === 'STUDENT').length;
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="border border-gray-200 rounded-xl p-4">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 text-center">Usuarios</p>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900">{summary.created}</p>
-              <p className="text-xs text-gray-500 mt-0.5">Creados</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900">{summary.skipped}</p>
-              <p className="text-xs text-gray-500 mt-0.5">Omitidos</p>
-            </div>
-          </div>
+      <div className="grid grid-cols-3 gap-3">
+        <div className="border border-gray-200 rounded-xl p-4 text-center">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Profesores</p>
+          <p className="text-2xl font-bold text-gray-900">{teachersCreated}</p>
+          <p className="text-xs text-gray-500 mt-0.5">Creados</p>
         </div>
-        <div className="border border-gray-200 rounded-xl p-4">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 text-center">Asignaturas</p>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900">{classesCreated}</p>
-              <p className="text-xs text-gray-500 mt-0.5">Creadas</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900">{classesExisted}</p>
-              <p className="text-xs text-gray-500 mt-0.5">Omitidas</p>
-            </div>
-          </div>
+        <div className="border border-gray-200 rounded-xl p-4 text-center">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Alumnos</p>
+          <p className="text-2xl font-bold text-gray-900">{studentsCreated}</p>
+          <p className="text-xs text-gray-500 mt-0.5">Creados</p>
+        </div>
+        <div className="border border-gray-200 rounded-xl p-4 text-center">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Asignaturas</p>
+          <p className="text-2xl font-bold text-gray-900">{classesCreated}</p>
+          <p className="text-xs text-gray-500 mt-0.5">Creadas</p>
         </div>
       </div>
+      {(quizzesCreated > 0 || questionsCreated > 0) && (
+        <div className="grid grid-cols-2 gap-3">
+          <div className="border border-gray-200 rounded-xl p-4 text-center">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Cuestionarios</p>
+            <p className="text-2xl font-bold text-gray-900">{quizzesCreated}</p>
+            <p className="text-xs text-gray-500 mt-0.5">Creados</p>
+          </div>
+          <div className="border border-gray-200 rounded-xl p-4 text-center">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Preguntas</p>
+            <p className="text-2xl font-bold text-gray-900">{questionsCreated}</p>
+            <p className="text-xs text-gray-500 mt-0.5">Creadas</p>
+          </div>
+        </div>
+      )}
 
       {summary.classResults && summary.classResults.length > 0 && (
         <div>
@@ -443,21 +456,7 @@ export function ResultsStep({ summary, onClose }: ResultsStepProps) {
         </div>
       </div>
 
-      {(quizzesCreated > 0 || questionsCreated > 0) && (
-        <div className="border border-gray-200 rounded-xl p-4">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 text-center">Cuestionarios</p>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900">{quizzesCreated}</p>
-              <p className="text-xs text-gray-500 mt-0.5">Quizzes creados</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900">{questionsCreated}</p>
-              <p className="text-xs text-gray-500 mt-0.5">Preguntas creadas</p>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {documentsCreated > 0 && (
         <div className="border border-gray-200 rounded-xl p-4 text-center">

@@ -41,11 +41,11 @@ export function Sidebar({
   return (
     <aside className={`hidden lg:flex flex-col bg-[#1a1d29] h-full overflow-hidden transition-[width] duration-300 ease-in-out ${collapsed ? 'w-[72px]' : 'w-[340px]'}`}>
       {/* Logo + collapse toggle */}
-      <div className="flex-shrink-0 h-20 flex items-center px-3 gap-2">
+      <div className="flex-shrink-0 h-20 relative flex items-center justify-center px-3">
         {!collapsed && (
           <Link
             href={`/dashboard/${role.toLowerCase()}`}
-            className="flex items-center gap-2 flex-1 min-w-0 self-center"
+            className="flex items-center gap-2 max-w-[calc(100%-40px)]"
           >
             {logoUrl ? (
               <>
@@ -90,7 +90,7 @@ export function Sidebar({
         <button
           onClick={toggleCollapsed}
           title={collapsed ? 'Expandir menú' : 'Colapsar menú'}
-          className={`flex-shrink-0 self-center w-7 h-7 flex items-center justify-center rounded-lg text-gray-500 hover:text-white hover:bg-gray-700/60 transition-colors ${collapsed ? 'mx-auto' : 'ml-auto'}`}
+          className={`flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-gray-500 hover:text-white hover:bg-gray-700/60 transition-colors ${collapsed ? '' : 'absolute right-3'}`}
         >
           {collapsed ? (
             /* panel-right-open: expand */
