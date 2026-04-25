@@ -40,6 +40,8 @@ ORDER BY u.email;
 ```
 
 ### `asignaturas.csv`
+> **This is the list of Asignaturas (Classes), not lessons.** Lessons are created later from `files.csv` via `ftp-to-r2.js` (Step 4).
+
 ```sql
 SELECT
   fullname AS nombre,

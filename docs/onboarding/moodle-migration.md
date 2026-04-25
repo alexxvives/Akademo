@@ -39,7 +39,9 @@ WHERE u.deleted = 0 AND u.suspended = 0
 ORDER BY u.email;
 ```
 
-### `courses.csv`
+### `asignaturas.csv`
+> **This is the list of Asignaturas (Classes), not lessons.** Lessons are created later from `files.csv` via `ftp-to-r2.js`.
+
 ```sql
 SELECT
   fullname AS nombre,
@@ -115,7 +117,7 @@ ORDER BY c.fullname, cs.section, r.name;
 
 In the AKADEMO admin panel:
 - Admin → Academias → [academy] → Importar usuarios
-- Upload all CSVs at once (`enrollments.csv`, `courses.csv`, `quizzes.csv`, `questions.csv`, `files.csv`)
+- Upload all CSVs at once (`enrollments.csv`, `asignaturas.csv`, `quizzes.csv`, `questions.csv`, `files.csv`)
 - Check **"Marcar todos como pagados"** for legacy academies (students already paid in Moodle)
 - The import creates users, classes, enrollments, quizzes, questions, and COMPLETED payment records in one step
 - Note any errors (unmatched class names, missing fields)

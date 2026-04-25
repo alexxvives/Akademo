@@ -28,7 +28,7 @@
  *   AND r.shortname IN ('student','editingteacher')
  * ORDER BY u.email;
  *
- * ── courses.csv ─────────────────────────────────────────────────────────────
+ * ── asignaturas.csv (also accepted: courses.csv) ──────────────────────────
  * SELECT
  *   fullname AS nombre,
  *   FROM_UNIXTIME(startdate, '%d/%m/%Y') AS fechaInicio
@@ -57,7 +57,10 @@ const TODAY_DDMMYYYy = TODAY_ISO.split('-').reverse().join('/');
 // CSVs live in the project root (one level up from scripts/)
 const ROOT = path.join(__dirname, '..');
 const ENROLLMENTS_CSV = path.join(ROOT, 'enrollments.csv');
-const COURSES_CSV     = path.join(ROOT, 'courses.csv');
+// Accept both asignaturas.csv (preferred) and courses.csv (legacy)
+const COURSES_CSV = fs.existsSync(path.join(ROOT, 'asignaturas.csv'))
+  ? path.join(ROOT, 'asignaturas.csv')
+  : path.join(ROOT, 'courses.csv');
 const OUTPUT_XLSX     = path.join(ROOT, 'moodle-migration.xlsx');
 
 // Moodle roles that map to AKADEMO TEACHER
@@ -81,8 +84,8 @@ if (!fs.existsSync(ENROLLMENTS_CSV)) {
   process.exit(1);
 }
 if (!fs.existsSync(COURSES_CSV)) {
-  console.error(`❌  Missing file: ${COURSES_CSV}`);
-  console.error('    Export the courses query from phpMyAdmin as CSV first.');
+  console.error('❌  Missing file: asignaturas.csv (or courses.csv)');
+  console.error('    Export the courses query from phpMyAdmin as CSV and save as asignaturas.csv');
   process.exit(1);
 }
 
