@@ -8,7 +8,7 @@ interface DemoBannerProps {
 }
 
 export function DemoBanner({ userEmail: _userEmail, academyPaymentStatus }: DemoBannerProps) {
-  if (academyPaymentStatus === 'PAID') return null;
+  if (!academyPaymentStatus || academyPaymentStatus === 'PAID') return null;
 
   return (
     <div className="bg-red-600 text-white px-4 py-2 text-center text-sm font-medium flex items-center justify-center gap-2">

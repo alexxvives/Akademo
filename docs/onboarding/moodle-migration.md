@@ -39,7 +39,7 @@ WHERE u.deleted = 0 AND u.suspended = 0
 ORDER BY u.email;
 ```
 
-### `asignaturas.csv`
+### `courses.csv`
 ```sql
 SELECT
   fullname AS nombre,
@@ -115,12 +115,12 @@ ORDER BY c.fullname, cs.section, r.name;
 
 In the AKADEMO admin panel:
 - Admin → Academias → [academy] → Importar usuarios
-- Upload all CSVs at once (`enrollments.csv`, `asignaturas.csv`, `quizzes.csv`, `questions.csv`, `files.csv`)
+- Upload all CSVs at once (`enrollments.csv`, `courses.csv`, `quizzes.csv`, `questions.csv`, `files.csv`)
 - Check **"Marcar todos como pagados"** for legacy academies (students already paid in Moodle)
 - The import creates users, classes, enrollments, quizzes, questions, and COMPLETED payment records in one step
 - Note any errors (unmatched class names, missing fields)
 
-> **Note**: Classes with no `precio` in `asignaturas.csv` are created as `isPublished=0` — invisible until the academy sets a price manually.
+> **Note**: Classes with no `precio` in `courses.csv` are created as `isPublished=0` — invisible until the academy sets a price manually.
 
 > **Legacy note**: `node scripts/moodle-to-excel.js` can still generate a `moodle-migration.xlsx` if you prefer to review data in Excel before uploading. The UI accepts both `.xlsx` and raw CSVs. The separate `post-import.sql` step is no longer needed — payment records are created inline by the UI when "Marcar todos como pagados" is checked.
 
@@ -212,8 +212,6 @@ GROUP BY a.id;
 | Calendar events | `{PREFIX}_event` | `CalendarScheduledEvent` (manual) | — |
 | URL resources | `{PREFIX}_url` | **no equivalent** | — |
 | Labels/HTML content | `{PREFIX}_label` | **no equivalent** | — |
-
-**CSV files**: `asignaturas.csv` (courses), `enrollments.csv`, `files.csv`, `quizzes.csv`, `questions.csv`. All live in `docs/onboarding/maximoexponente/`.
 
 **What we migrate**: Users, course list, student enrollments, PDF files (grouped by Moodle section), quizzes + questions.  
 **What we skip**: Videos (need re-upload to Bunny), forum posts, grades, quiz attempts, HTML labels. Topic names come from Moodle section names (`section_name` column in `files.csv`); sections without a custom name become `Tema N`.

@@ -6,14 +6,9 @@ import { type ImportRow, type ClassRow, type QuizRow, type QuestionRow, type Fil
 interface UploadStepProps {
   fileRef: React.RefObject<HTMLInputElement | null>;
   handleFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  manifestRef: React.RefObject<HTMLInputElement | null>;
-  handleManifestUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  manifestLoaded: boolean;
-  approveAll: boolean;
-  onApproveAllChange: (v: boolean) => void;
 }
 
-export function UploadStep({ fileRef, handleFileUpload, manifestRef, handleManifestUpload, manifestLoaded, approveAll, onApproveAllChange }: UploadStepProps) {
+export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
   return (
     <div className="space-y-5">
       <div className="bg-gray-50 rounded-xl p-5 border border-gray-200">
@@ -121,38 +116,17 @@ export function UploadStep({ fileRef, handleFileUpload, manifestRef, handleManif
         </div>
       </div>
 
-      <div className="flex flex-col items-center gap-3">
-        <div className="flex items-center gap-3">
-          <label className="px-6 py-2.5 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors cursor-pointer">
-            Seleccionar Excel / CSV
-            <input
-              ref={fileRef as React.RefObject<HTMLInputElement>}
-              type="file"
-              accept=".csv,.xlsx,.xls"
-              multiple
-              onChange={handleFileUpload}
-              className="sr-only"
-            />
-          </label>
-          <label className={`px-5 py-2.5 text-sm font-semibold rounded-xl border transition-colors cursor-pointer ${manifestLoaded ? 'bg-green-600 text-white border-green-600 hover:bg-green-700' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
-            {manifestLoaded ? '✓ Documentos cargados' : 'Subir documentos (.json)'}
-            <input
-              ref={manifestRef as React.RefObject<HTMLInputElement>}
-              type="file"
-              accept=".json"
-              onChange={handleManifestUpload}
-              className="sr-only"
-            />
-          </label>
-        </div>
-        <label className="flex items-center gap-2 cursor-pointer select-none">
+      <div className="flex items-center justify-center">
+        <label className="px-6 py-2.5 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors cursor-pointer">
+          Seleccionar Excel / CSV
           <input
-            type="checkbox"
-            checked={approveAll}
-            onChange={e => onApproveAllChange(e.target.checked)}
-            className="w-4 h-4 rounded border-gray-300 text-gray-900 cursor-pointer"
+            ref={fileRef as React.RefObject<HTMLInputElement>}
+            type="file"
+            accept=".csv,.xlsx,.xls"
+            multiple
+            onChange={handleFileUpload}
+            className="sr-only"
           />
-          <span className="text-xs text-gray-600">Migración histórica — marcar todos los estudiantes como pagados</span>
         </label>
       </div>
     </div>

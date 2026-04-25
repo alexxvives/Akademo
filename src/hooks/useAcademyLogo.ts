@@ -46,9 +46,12 @@ export function useAcademyLogo() {
   };
 
   const cached = getCachedLogo();
-  const [logoUrl, setLogoUrl] = useState<string | null>(cached?.logoUrl || null);
+  // Only skip loading state when cache has a confirmed non-null logoUrl.
+  // If cache has logoUrl=null, keep loading=true to avoid flashing the AKADEMO fallback logo.
+  const hasCachedLogo = !!(cached?.logoUrl);
+  const [logoUrl, setLogoUrl] = useState<string | null>(hasCachedLogo ? cached!.logoUrl : null);
   const [academyName, setAcademyName] = useState<string | null>(cached?.academyName || null);
-  const [loading, setLoading] = useState(!cached);
+  const [loading, setLoading] = useState(!hasCachedLogo);
 
   // Register this instance as a listener for global refresh events
   const triggerRefresh = useCallback(() => {

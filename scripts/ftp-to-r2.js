@@ -48,10 +48,10 @@ const CF_ACCOUNT_ID = process.env.R2_ACCOUNT_ID || '53808754f4bd94365d6e31351aa4
 const ACADEMY_ID    = '93ab97cf-271b-48de-924b-10fb7eab0a38';
 const OWNER_ID      = '3d26da5d-c5b6-4c49-ae62-d4687c44cfd7'; // academy owner user
 
-const FILES_CSV     = path.join(__dirname, 'moodle-import', 'files.csv');
-const OUT_SQL       = path.join(__dirname, 'moodle-import', 'import-documents.sql');
-const OUT_MANIFEST  = path.join(__dirname, 'moodle-import', 'documents-manifest.json');
-const PROGRESS_JSON = path.join(__dirname, 'moodle-import', 'ftp-progress.json');
+const FILES_CSV     = path.join(__dirname, '..', 'docs', 'onboarding', 'maximoexponente', 'files.csv');
+const OUT_SQL       = path.join(__dirname, '..', 'docs', 'onboarding', 'maximoexponente', 'import-documents.sql');
+const OUT_MANIFEST  = path.join(__dirname, '..', 'docs', 'onboarding', 'maximoexponente', 'documents-manifest.json');
+const PROGRESS_JSON = path.join(__dirname, '..', 'docs', 'onboarding', 'maximoexponente', 'ftp-progress.json');
 
 // Candidate moodledata paths to try in order
 const MOODLE_DATA_CANDIDATES = [
@@ -382,7 +382,7 @@ async function main() {
     console.log('    Documents are now visible in Mediateca → Documentos.');
   } catch (execErr) {
     console.error('❌  Failed to apply import-documents.sql automatically.');
-    console.error('    Run manually: npx wrangler d1 execute akademo-db --remote --file=scripts/moodle-import/import-documents.sql');
+    console.error('    Run manually: npx wrangler d1 execute akademo-db --remote --file=docs/onboarding/maximoexponente/import-documents.sql');
   }
   console.log('');
   console.log('Migration complete. Verify in AKADEMO → Mediateca → Documentos.');
