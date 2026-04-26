@@ -36,6 +36,7 @@ JOIN {PREFIX}_role r  ON r.id  = ra.roleid
 JOIN {PREFIX}_user u  ON u.id  = ue.userid
 WHERE u.deleted = 0 AND u.suspended = 0
   AND r.shortname IN ('student','editingteacher')
+  AND c.visible = 1
 ORDER BY u.email;
 ```
 
@@ -48,6 +49,7 @@ SELECT
   FROM_UNIXTIME(startdate, '%d/%m/%Y') AS fechaInicio
 FROM {PREFIX}_course
 WHERE id > 1
+  AND visible = 1
 ORDER BY fullname;
 ```
 
@@ -99,6 +101,7 @@ WHERE f.component = 'mod_resource'
   AND f.filearea = 'content'
   AND f.filename != '.'
   AND f.filesize > 0
+  AND c.visible = 1
 ORDER BY c.fullname, cs.section, r.name;
 ```
 
