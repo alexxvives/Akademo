@@ -90,7 +90,8 @@ SELECT
   COALESCE(NULLIF(TRIM(cs.name), ''), CONCAT('Tema ', cs.section)) AS section_name,
   f.filename,
   f.filesize,
-  CONCAT(LEFT(f.contenthash,2), '/', MID(f.contenthash,3,2), '/', f.contenthash) AS file_path
+  CONCAT(LEFT(f.contenthash,2), '/', MID(f.contenthash,3,2), '/', f.contenthash) AS file_path,
+  f.timecreated AS file_timestamp
 FROM {PREFIX}_files f
 JOIN {PREFIX}_context ctx ON ctx.id = f.contextid AND ctx.contextlevel = 70
 JOIN {PREFIX}_course_modules cm ON cm.id = ctx.instanceid

@@ -277,6 +277,14 @@ async function main() {
     sec.files.get(title).push(row);
   }
 
+  // Helper: convert a Moodle unix timestamp to a SQLite datetime literal.
+  // Falls back to datetime('now') if no timestamp is available (old CSV without file_timestamp col).
+  function moodleDatetime(ts) {
+    const n = parseInt(ts, 10);
+    if (!n || n <= 0) return "datetime('now')";
+    return `datetime(${n}, 'unixepoch')`;
+  }
+
   const lines = [];
   lines.push('-- ============================================================');
   lines.push('-- Import Moodle documents into AKADEMO');
@@ -292,18 +300,36 @@ async function main() {
     const sortedSections = [...bySec.entries()].sort(([a], [b]) => a - b);
 
     for (const [secNum, { sectionName, files: byTitle }] of sortedSections) {
+      // Earliest file timestamp in this section (for Topic/Lesson createdAt)
+      let sectionTs = 0;
+      for (const fileRows of byTitle.values()) {
+        for (const r of fileRows) {
+          const t = parseInt(r.file_timestamp, 10) || 0;
+          if (t > 0 && (sectionTs === 0 || t < sectionTs)) sectionTs = t;
+        }
+      }
+      const topicCreatedAt = moodleDatetime(sectionTs);
+
       const topicId = uuid();
       lines.push(`-- Section ${secNum}: ${sectionName}`);
       lines.push(`INSERT INTO Topic (id, classId, name, orderIndex, createdAt)`);
-      lines.push(`SELECT ${sqlStr(topicId)}, id, ${sqlStr(sectionName)}, ${secNum + 1}, datetime('now')`);
+      lines.push(`SELECT ${sqlStr(topicId)}, id, ${sqlStr(sectionName)}, ${secNum + 1}, ${topicCreatedAt}`);
       lines.push(`FROM Class WHERE name = ${sqlStr(courseName)} AND academyId = ${sqlStr(ACADEMY_ID)};`);
       lines.push('');
 
       let lessonPos = 1;
       for (const [fileTitle, fileRows] of byTitle) {
+        // Earliest timestamp for this lesson
+        let lessonTs = 0;
+        for (const r of fileRows) {
+          const t = parseInt(r.file_timestamp, 10) || 0;
+          if (t > 0 && (lessonTs === 0 || t < lessonTs)) lessonTs = t;
+        }
+        const lessonCreatedAt = moodleDatetime(lessonTs);
+
         const lessonId = uuid();
         lines.push(`INSERT INTO Lesson (id, topicId, classId, title, createdAt)`);
-        lines.push(`SELECT ${sqlStr(lessonId)}, ${sqlStr(topicId)}, classId, ${sqlStr(fileTitle)}, datetime('now')`);
+        lines.push(`SELECT ${sqlStr(lessonId)}, ${sqlStr(topicId)}, classId, ${sqlStr(fileTitle)}, ${lessonCreatedAt}`);
         lines.push(`FROM Topic WHERE id = ${sqlStr(topicId)};`);
         lines.push('');
 
@@ -320,6 +346,7 @@ async function main() {
             continue;
           }
 
+          const fileTs = moodleDatetime(row.file_timestamp);
           const uploadId   = info.uploadId;
           const filename   = info.filename || row.filename || 'document';
           const filesize   = info.filesize  || parseInt(row.filesize, 10) || 0;
@@ -327,12 +354,12 @@ async function main() {
           const r2Key      = info.r2Key;
 
           lines.push(`INSERT OR IGNORE INTO Upload (id, fileName, fileSize, mimeType, storagePath, uploadedById, storageType, createdAt)`);
-          lines.push(`VALUES (${sqlStr(uploadId)}, ${sqlStr(filename)}, ${filesize}, ${sqlStr(contentType)}, ${sqlStr(r2Key)}, ${sqlStr(OWNER_ID)}, 'r2', datetime('now'));`);
+          lines.push(`VALUES (${sqlStr(uploadId)}, ${sqlStr(filename)}, ${filesize}, ${sqlStr(contentType)}, ${sqlStr(r2Key)}, ${sqlStr(OWNER_ID)}, 'r2', ${fileTs});`);
           lines.push('');
 
           const docId = uuid();
           lines.push(`INSERT INTO Document (id, title, lessonId, uploadId, createdAt)`);
-          lines.push(`VALUES (${sqlStr(docId)}, ${sqlStr(fileTitle)}, ${sqlStr(lessonId)}, ${sqlStr(uploadId)}, datetime('now'));`);
+          lines.push(`VALUES (${sqlStr(docId)}, ${sqlStr(fileTitle)}, ${sqlStr(lessonId)}, ${sqlStr(uploadId)}, ${fileTs});`);
           lines.push('');
         }
         lessonPos++;
