@@ -3,7 +3,7 @@ import { Bindings } from '../types';
 import { requireAuth, requireRole } from '../lib/auth';
 import { successResponse, errorResponse, escapeHtml } from '../lib/utils';
 import { initiatePaymentSchema } from '../lib/validation';
-import { autoCreatePendingPayments, parseDateString, deriveBillingState, addMonths } from '../lib/payment-utils';
+import { autoCreatePendingPayments, syncAcademyPendingPayments, parseDateString, deriveBillingState, addMonths } from '../lib/payment-utils';
 import type { BillingEnrollmentRow } from '../lib/payment-utils';
 import { getStripeKeys } from '../lib/stripe-keys';
 import { rateLimit } from '../lib/rate-limit';
@@ -260,6 +260,11 @@ payments.post('/initiate', paymentInitiateRateLimit, async (c) => {
 payments.get('/pending-cash', async (c) => {
   try {
     const session = await requireAuth(c);
+
+    // Sync derived pending payments before reading so price changes are reflected immediately
+    if (session.role === 'ACADEMY') {
+      await syncAcademyPendingPayments(c.env.DB, session.id);
+    }
 
     let query = '';
     let params: any[] = [];

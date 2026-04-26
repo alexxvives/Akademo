@@ -381,3 +381,9 @@ export async function isAccessBlocked(db: D1Database, userId: string, classId: s
 export async function autoCreatePendingPayments(db: D1Database, userId: string): Promise<void> {
   await syncDerivedPendingPayments(db, { userId });
 }
+
+// Auto-create or update PENDING Payment records for all students enrolled in an academy's classes.
+// Call this before the academy reads pending-cash so price changes are reflected immediately.
+export async function syncAcademyPendingPayments(db: D1Database, academyOwnerId: string): Promise<void> {
+  await syncDerivedPendingPayments(db, { academyOwnerId });
+}
