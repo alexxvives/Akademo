@@ -83,11 +83,16 @@ function mimeFromFilename(filename) {
     '.pdf': 'application/pdf',
     '.jpg': 'image/jpeg',
     '.jpeg': 'image/jpeg',
+    '.jfif': 'image/jpeg',
     '.png': 'image/png',
+    '.gif': 'image/gif',
+    '.webp': 'image/webp',
     '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     '.doc': 'application/msword',
     '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    '.xls': 'application/vnd.ms-excel',
     '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    '.ppt': 'application/vnd.ms-powerpoint',
     '.zip': 'application/zip',
   };
   return map[ext] || 'application/octet-stream';
