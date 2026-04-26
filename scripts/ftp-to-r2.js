@@ -372,24 +372,26 @@ async function main() {
 
   // ── Generate documents-manifest.json (used by the Migration UI to import documents) ──
   const manifest = [];
-  for (const [courseName, byTitle] of byCourse) {
-    for (const [fileTitle, fileRows] of byTitle) {
-      const seenPaths = new Set();
-      for (const row of fileRows) {
-        const fp = (row.file_path || '').trim();
-        if (seenPaths.has(fp)) continue;
-        seenPaths.add(fp);
-        const info = progress[fp];
-        if (!info) continue;
-        manifest.push({
-          fileTitle,
-          courseName,
-          filename:    info.filename    || row.filename || 'document',
-          filesize:    info.filesize    || parseInt(row.filesize, 10) || 0,
-          contentType: info.contentType || mimeFromFilename(info.filename || row.filename || ''),
-          r2Key:       info.r2Key,
-          uploadId:    info.uploadId,
-        });
+  for (const [courseName, bySec] of byCourse) {
+    for (const [, { files: byTitle }] of bySec) {
+      for (const [fileTitle, fileRows] of byTitle) {
+        const seenPaths = new Set();
+        for (const row of fileRows) {
+          const fp = (row.file_path || '').trim();
+          if (seenPaths.has(fp)) continue;
+          seenPaths.add(fp);
+          const info = progress[fp];
+          if (!info) continue;
+          manifest.push({
+            fileTitle,
+            courseName,
+            filename:    info.filename    || row.filename || 'document',
+            filesize:    info.filesize    || parseInt(row.filesize, 10) || 0,
+            contentType: info.contentType || mimeFromFilename(info.filename || row.filename || ''),
+            r2Key:       info.r2Key,
+            uploadId:    info.uploadId,
+          });
+        }
       }
     }
   }
