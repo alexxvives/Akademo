@@ -78,6 +78,12 @@ export async function addWatermarkToPdf(
   cfg: WatermarkConfig,
 ): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+
+  // If the PDF is password-protected we cannot write to it — return original bytes untouched.
+  if (pdfDoc.isEncrypted) {
+    return new Uint8Array(pdfBytes);
+  }
+
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
   const line1 = winAnsi(cfg.fullName);
