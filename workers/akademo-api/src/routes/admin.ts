@@ -1162,9 +1162,11 @@ admin.post('/bulk-import', async (c) => {
       }
     }
 
-    // Create PENDING payment records for non-pagado students so they appear immediately in the dashboard
+    // Create PENDING payment records for non-pagado students so they appear immediately in the dashboard.
+    // For zero-cost classes (amount = 0), create a COMPLETED €0 payment instead — there is nothing to collect.
     if (pendingEnrollments.length > 0) {
       const pendingStatements = [];
+      const freeCompletedStatements = [];
       for (const { userId, classId, firstName, lastName, email } of pendingEnrollments) {
         const classPrice = classPriceMap.get(classId);
         if (!classPrice) continue;
@@ -1186,11 +1188,28 @@ admin.post('/bulk-import', async (c) => {
                 classPrice.startDate, null,
               )
           );
+        } else {
+          // Zero-cost class — create a COMPLETED €0 payment so the student appears in the dashboard
+          // and is never flagged as having an outstanding payment.
+          freeCompletedStatements.push(
+            c.env.DB
+              .prepare(`INSERT INTO Payment (id, type, payerId, receiverId, amount, currency, status, paymentMethod, classId, metadata, completedAt, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`)
+              .bind(
+                crypto.randomUUID(), 'STUDENT_TO_ACADEMY', userId, academy.id,
+                0, 'EUR', 'COMPLETED', 'migration', classId,
+                JSON.stringify({ source: 'bulk-import', pagado: true, freeClass: true }),
+              )
+          );
         }
       }
       if (pendingStatements.length > 0) {
         for (let s = 0; s < pendingStatements.length; s += 100) {
           await c.env.DB.batch(pendingStatements.slice(s, s + 100));
+        }
+      }
+      if (freeCompletedStatements.length > 0) {
+        for (let s = 0; s < freeCompletedStatements.length; s += 100) {
+          await c.env.DB.batch(freeCompletedStatements.slice(s, s + 100));
         }
       }
     }
