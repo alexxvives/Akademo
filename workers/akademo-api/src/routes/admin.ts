@@ -827,18 +827,17 @@ admin.post('/bulk-import', async (c) => {
           if (!existing) break;
           slug = `${baseSlug}-${slugCounter++}`;
         }
-        // If no price is provided the class is created unpublished (isPublished=0).
-        // The academy must set a price before students can enroll or see the class.
-        const hasPrice = !!cr.price;
-        const price = hasPrice ? parseFloat(String(cr.price)) : null;
+        // If no price is provided, default to 0 (free class, published immediately).
+        const rawPrice = cr.price !== undefined && cr.price !== null && cr.price !== '' ? parseFloat(String(cr.price)) : 0;
+        const price = isNaN(rawPrice) ? 0 : rawPrice;
         const cuotas = cr.cuotas ? parseInt(String(cr.cuotas), 10) : 0;
         // precio in the Excel = per-installment monthly price (not total)
         // If cuotas → monthlyPrice = price (per-installment), oneTimePrice = null
         // If no cuotas → oneTimePrice = price (single one-time payment)
-        const monthlyPrice = (price !== null && cuotas > 0) ? price : null;
-        const oneTimePrice = (price !== null && cuotas === 0) ? price : null;
+        const monthlyPrice = (price > 0 && cuotas > 0) ? price : null;
+        const oneTimePrice = (price > 0 && cuotas === 0) ? price : null;
         const cuotasValue = cuotas > 0 ? cuotas : null;
-        const isPublished = hasPrice ? 1 : 0;
+        const isPublished = 1;
         const startDate = normalizeDateForStorage(cr.startDate);
         const description = cr.description || null;
         const university = cr.university || null;
