@@ -328,8 +328,8 @@ async function main() {
         const lessonCreatedAt = moodleDatetime(lessonTs);
 
         const lessonId = uuid();
-        lines.push(`INSERT INTO Lesson (id, topicId, classId, title, createdAt)`);
-        lines.push(`SELECT ${sqlStr(lessonId)}, ${sqlStr(topicId)}, classId, ${sqlStr(fileTitle)}, ${lessonCreatedAt}`);
+        lines.push(`INSERT INTO Lesson (id, topicId, classId, title, createdAt, releaseDate)`);
+        lines.push(`SELECT ${sqlStr(lessonId)}, ${sqlStr(topicId)}, classId, ${sqlStr(fileTitle)}, ${lessonCreatedAt}, ${lessonCreatedAt}`);
         lines.push(`FROM Topic WHERE id = ${sqlStr(topicId)};`);
         lines.push('');
 
