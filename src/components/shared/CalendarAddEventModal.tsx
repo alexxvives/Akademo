@@ -233,7 +233,7 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
             disabled={saving || disabled}
             title={disabled ? 'No disponible en modo demo' : undefined}
             className={`flex-1 py-2 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-60 ${
-              disabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-brand-600 hover:bg-brand-700'
+              disabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
             }`}
           >
             {saving ? 'Guardando...' : isEditMode ? 'Guardar cambios' : 'Crear evento'}

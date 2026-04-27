@@ -189,7 +189,7 @@ academies.post('/teachers', async (c) => {
       return c.json(errorResponse('Only academy owners can create teachers'), 403);
     }
 
-    const { email, fullName, password, classId } = await c.req.json();
+    const { email, fullName, password, classIds } = await c.req.json();
 
     if (!email || !fullName || !password) {
       return c.json(errorResponse('Email, nombre completo y contraseña son requeridos'), 400);
@@ -241,11 +241,13 @@ academies.post('/teachers', async (c) => {
        VALUES (?, ?, ?, datetime('now'))`
     ).bind(crypto.randomUUID(), userId, academyId).run();
 
-    // Assign teacher to the selected class (if provided)
-    if (classId) {
-      await c.env.DB.prepare(
-        'UPDATE Class SET teacherId = ? WHERE id = ? AND academyId = ?'
-      ).bind(userId, classId, academyId).run();
+    // Assign teacher to selected classes (if provided)
+    if (Array.isArray(classIds) && classIds.length > 0) {
+      for (const cId of classIds) {
+        await c.env.DB.prepare(
+          'UPDATE Class SET teacherId = ? WHERE id = ? AND academyId = ?'
+        ).bind(userId, cId, academyId).run();
+      }
     }
 
     // Send onboarding email

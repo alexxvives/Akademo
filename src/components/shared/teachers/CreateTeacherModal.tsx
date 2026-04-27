@@ -5,8 +5,8 @@ import type { ClassSummary } from './types';
 
 interface CreateTeacherModalProps {
   classes: ClassSummary[];
-  formData: { email: string; fullName: string; classId: string };
-  onFormChange: (data: { email: string; fullName: string; classId: string }) => void;
+  formData: { email: string; fullName: string; classIds: string[] };
+  onFormChange: (data: { email: string; fullName: string; classIds: string[] }) => void;
   creating: boolean;
   isDemo: boolean;
   onSubmit: (e: FormEvent) => void;
@@ -27,7 +27,7 @@ export function CreateTeacherModal({
               type="email"
               value={formData.email}
               onChange={(e) => onFormChange({ ...formData, email: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               required
             />
           </div>
@@ -37,44 +37,62 @@ export function CreateTeacherModal({
               type="text"
               value={formData.fullName}
               onChange={(e) => onFormChange({ ...formData, fullName: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Ej: David Garcia"
               required
             />
             <p className="mt-1 text-xs text-gray-500">Se enviará un email con las credenciales de acceso</p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Asignatura (Opcional)</label>
-            <div className="relative">
-              <select
-                value={formData.classId}
-                onChange={(e) => onFormChange({ ...formData, classId: e.target.value })}
-                className="appearance-none w-full pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
-              >
-                <option value="">Sin asignar</option>
-                {classes.map((cls) => (
-                  <option key={cls.id} value={cls.id}>{cls.name}</option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Asignaturas
+              {formData.classIds.length > 0 && (
+                <span className="ml-2 text-xs font-normal text-blue-600">
+                  {formData.classIds.length} seleccionada{formData.classIds.length !== 1 ? 's' : ''}
+                </span>
+              )}
+            </label>
+            {classes.length === 0 ? (
+              <p className="text-sm text-gray-400">No hay asignaturas disponibles</p>
+            ) : (
+              <div className="border border-gray-200 rounded-lg divide-y divide-gray-100 max-h-52 overflow-y-auto">
+                {classes.map((cls) => {
+                  const checked = formData.classIds.includes(cls.id);
+                  return (
+                    <label
+                      key={cls.id}
+                      className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => {
+                          const next = checked
+                            ? formData.classIds.filter((id) => id !== cls.id)
+                            : [...formData.classIds, cls.id];
+                          onFormChange({ ...formData, classIds: next });
+                        }}
+                        className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">{cls.name}</span>
+                    </label>
+                  );
+                })}
               </div>
-            </div>
+            )}
           </div>
           <div className="flex gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex-1 px-4 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
               disabled={creating}
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
               disabled={creating || isDemo}
               title={isDemo ? 'Función no disponible en modo demo' : ''}
             >

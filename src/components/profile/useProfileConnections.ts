@@ -111,10 +111,26 @@ export function useProfileConnections(s: ProfileState) {
     } finally { setSavingEditYear(false); }
   };
 
+  const handleDeleteAcademicYear = async (yearId: string, yearName: string) => {
+    if (!confirm(`¿Eliminar el período "${yearName}"? Esta acción no se puede deshacer.`)) return;
+    try {
+      const res = await apiClient(`/academic-years/${yearId}`, { method: 'DELETE' });
+      const result = await res.json();
+      if (result.success) {
+        setAcademicYears(result.data || []);
+        const stillExists = (result.data || []).some((y: { id: string }) => y.id === yearId);
+        if (!stillExists) setActivePeriodId('all');
+      } else alert('Error al eliminar el período: ' + (result.error || 'Error desconocido'));
+    } catch (e) {
+      console.error('Error deleting academic period:', e);
+      alert('Error de conexión al eliminar el período');
+    }
+  };
+
   return {
     handleConnectZoom, handleConnectGTM, handleDisconnectZoom,
     handleConnectStripe, handleDisconnectStripe,
-    handleCreateAcademicYear, handleSetCurrentPeriod, handleEditAcademicYear,
+    handleCreateAcademicYear, handleSetCurrentPeriod, handleEditAcademicYear, handleDeleteAcademicYear,
   };
 }
 

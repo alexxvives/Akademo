@@ -10,8 +10,8 @@ interface TeacherActionsDeps {
   setUpdating: (v: boolean) => void;
   setShowCreateModal: (v: boolean) => void;
   setCreating: (v: boolean) => void;
-  formData: { email: string; fullName: string; classId: string };
-  setFormData: (d: { email: string; fullName: string; classId: string }) => void;
+  formData: { email: string; fullName: string; classIds: string[] };
+  setFormData: (d: { email: string; fullName: string; classIds: string[] }) => void;
   setCopiedId: (id: string | null) => void;
   loadTeachers: () => Promise<void>;
   editingTeacher: Teacher | null;
@@ -97,12 +97,12 @@ export function useTeacherActions(deps: TeacherActionsDeps) {
     }
     setCreating(true);
     try {
-      const requestBody: { email: string; fullName: string; password: string; classId?: string } = {
+      const requestBody: { email: string; fullName: string; password: string; classIds?: string[] } = {
         email: formData.email,
         fullName: formData.fullName,
         password: generateRandomPassword(),
       };
-      if (formData.classId) requestBody.classId = formData.classId;
+      if (formData.classIds.length > 0) requestBody.classIds = formData.classIds;
 
       const res = await apiClient('/academies/teachers', {
         method: 'POST',
@@ -112,7 +112,7 @@ export function useTeacherActions(deps: TeacherActionsDeps) {
       const result = await res.json();
       if (result.success) {
         setShowCreateModal(false);
-        setFormData({ email: '', fullName: '', classId: '' });
+        setFormData({ email: '', fullName: '', classIds: [] });
         loadTeachers();
         alert(
           `Profesor creado exitosamente. Se ha enviado un email a ${formData.email} con las credenciales de acceso.`

@@ -114,7 +114,7 @@ export function TeachersPage({ role }: TeachersPageProps) {
           onSubmit={actions.handleCreateTeacher}
           onClose={() => {
             data.setShowCreateModal(false);
-            data.setFormData({ email: '', fullName: '', classId: '' });
+            data.setFormData({ email: '', fullName: '', classIds: [] });
           }}
         />
       )}

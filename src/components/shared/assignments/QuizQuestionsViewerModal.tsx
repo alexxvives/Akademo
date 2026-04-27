@@ -102,7 +102,7 @@ export function QuizQuestionsViewerModal({ assignmentId, title, onClose }: Props
 
         <div className="px-6 py-4 border-t border-gray-100 flex-shrink-0">
           <button onClick={onClose}
-            className="w-full px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 font-medium text-sm transition-colors">
+            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm transition-colors">
             Cerrar
           </button>
         </div>

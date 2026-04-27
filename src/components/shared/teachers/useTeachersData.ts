@@ -17,7 +17,7 @@ export function useTeachersData(role: 'ACADEMY' | 'ADMIN') {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [formData, setFormData] = useState({ email: '', fullName: '', classId: '' });
+  const [formData, setFormData] = useState({ email: '', fullName: '', classIds: [] as string[] });
   const [deleting, setDeleting] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null);
