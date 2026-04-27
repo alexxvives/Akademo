@@ -153,7 +153,6 @@ export function EditModeMedia({
         </div>
 
         <div className="mt-4 relative">
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">O utiliza grabaciones de stream</label>
           <StreamRecordingSelector
             formData={formData}
             setFormData={setFormData}
