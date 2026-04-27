@@ -22,7 +22,7 @@ export function useTeachersData(role: 'ACADEMY' | 'ADMIN') {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [editFormData, setEditFormData] = useState({ fullName: '', email: '', classId: '' });
+  const [editFormData, setEditFormData] = useState({ fullName: '', email: '', classIds: [] as string[] });
   const [updating, setUpdating] = useState(false);
   const [pendingWelcomeTeachers, setPendingWelcomeTeachers] = useState(0);
   const [sendingTeacherWelcome, setSendingTeacherWelcome] = useState(false);

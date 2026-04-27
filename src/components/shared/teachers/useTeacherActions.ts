@@ -5,7 +5,7 @@ import type { Teacher, TeacherClass } from './types';
 interface TeacherActionsDeps {
   setDeleting: (id: string | null) => void;
   setEditingTeacher: (t: Teacher | null) => void;
-  setEditFormData: (d: { fullName: string; email: string; classId: string }) => void;
+  setEditFormData: (d: { fullName: string; email: string; classIds: string[] }) => void;
   setShowEditModal: (v: boolean) => void;
   setUpdating: (v: boolean) => void;
   setShowCreateModal: (v: boolean) => void;
@@ -15,7 +15,7 @@ interface TeacherActionsDeps {
   setCopiedId: (id: string | null) => void;
   loadTeachers: () => Promise<void>;
   editingTeacher: Teacher | null;
-  editFormData: { fullName: string; email: string; classId: string };
+  editFormData: { fullName: string; email: string; classIds: string[] };
 }
 
 export function useTeacherActions(deps: TeacherActionsDeps) {
@@ -49,7 +49,8 @@ export function useTeacherActions(deps: TeacherActionsDeps) {
 
   const openEditModal = (teacher: Teacher) => {
     setEditingTeacher(teacher);
-    setEditFormData({ fullName: teacher.name, email: teacher.email, classId: '' });
+    const currentClassIds = teacher.classes.map(c => c.id).filter((id): id is string => !!id);
+    setEditFormData({ fullName: teacher.name, email: teacher.email, classIds: currentClassIds });
     setShowEditModal(true);
   };
 

@@ -200,7 +200,7 @@ app.get('/teacher/tutorial-status', async (c) => {
       .prepare('SELECT tutorialSeenAt FROM Teacher WHERE userId = ?')
       .bind(session.id)
       .first<{ tutorialSeenAt: string | null }>();
-    return c.json(successResponse({ seen: !!row?.tutorialSeenAt }));
+    return c.json(successResponse({ seen: !!row?.tutorialSeenAt, userId: session.id }));
   } catch (error: unknown) {
     console.error('[Teacher Tutorial] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);

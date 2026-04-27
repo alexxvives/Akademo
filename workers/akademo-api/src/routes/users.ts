@@ -226,7 +226,7 @@ users.patch('/teacher/:id', async (c) => {
     }
 
     const teacherId = c.req.param('id');
-    const { fullName, email, classId } = await c.req.json();
+    const { fullName, email, classIds } = await c.req.json();
 
     // Verify teacher belongs to this academy
     const teacher: any = await c.env.DB
@@ -258,19 +258,22 @@ users.patch('/teacher/:id', async (c) => {
       .bind(firstName, lastName, email.toLowerCase(), teacherId)
       .run();
 
-    // Update class assignment if provided
-    if (classId) {
-      // First, unassign from all classes
+    // Update class assignments if provided
+    if (classIds !== undefined) {
+      // Unassign from all classes in this academy first
       await c.env.DB
         .prepare('UPDATE Class SET teacherId = NULL WHERE teacherId = ? AND academyId = ?')
         .bind(teacherId, teacher.academyId)
         .run();
-      
-      // Then assign to new class
-      await c.env.DB
-        .prepare('UPDATE Class SET teacherId = ? WHERE id = ? AND academyId = ?')
-        .bind(teacherId, classId, teacher.academyId)
-        .run();
+      // Assign to each selected class
+      if (Array.isArray(classIds)) {
+        for (const cId of classIds) {
+          await c.env.DB
+            .prepare('UPDATE Class SET teacherId = ? WHERE id = ? AND academyId = ?')
+            .bind(teacherId, cId, teacher.academyId)
+            .run();
+        }
+      }
     }
 
     return c.json(successResponse({ message: 'Teacher updated successfully' }));

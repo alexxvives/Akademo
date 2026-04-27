@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { apiClient } from '@/lib/api-client';
 import {
   STEPS,
@@ -10,32 +10,49 @@ import {
   type SpotlightRect,
 } from './TeacherTutorial.constants';
 
+// Build a per-user localStorage key so accounts on the same browser don't interfere
+function perUserKey(userId: string) {
+  return `${STORAGE_KEY}_${userId}`;
+}
+
 export function TeacherTutorial() {
   const [visible, setVisible] = useState(false);
   const [step, setStep] = useState(0);
   const [spotlightRect, setSpotlightRect] = useState<SpotlightRect | null>(null);
   const [viewportW, setViewportW] = useState(0);
   const [viewportH, setViewportH] = useState(0);
+  // Holds the resolved per-user key once we know the userId
+  const storageKeyRef = useRef<string>(STORAGE_KEY);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    // localStorage fast-path: if already dismissed on this device, skip the API call
-    if (localStorage.getItem(STORAGE_KEY)) return;
     // Only show on desktop (lg breakpoint: >= 1024px) where sidebar is visible
     if (window.innerWidth < 1024) return;
 
-    // Check DB — single source of truth across devices
+    // Fast-path: if we already cached the userId we can check per-user key immediately
+    const cachedUserId = localStorage.getItem('akademo_teacher_id');
+    if (cachedUserId) {
+      const key = perUserKey(cachedUserId);
+      if (localStorage.getItem(key)) return;
+    }
+
+    // Call API — authoritative state across devices, also returns userId for per-user key
     apiClient('/teacher/tutorial-status')
-      .then((res) => res.json() as Promise<{ success: boolean; data: { seen: boolean } }>)
+      .then((res) => res.json() as Promise<{ success: boolean; data: { seen: boolean; userId: string } }>)
       .then((res) => {
+        const userId = res?.data?.userId;
+        if (userId) {
+          localStorage.setItem('akademo_teacher_id', userId);
+          storageKeyRef.current = perUserKey(userId);
+        }
         if (res?.data?.seen) {
-          // Seen on another device — cache locally and skip
-          localStorage.setItem(STORAGE_KEY, '1');
+          // Seen on another device — cache locally
+          localStorage.setItem(storageKeyRef.current, '1');
           return;
         }
-        // Not seen yet — clear any stale key (e.g. from a different teacher
-        // account that previously dismissed on this browser) and show
-        localStorage.removeItem(STORAGE_KEY);
+        // Per-user key already set on this browser? skip
+        if (localStorage.getItem(storageKeyRef.current)) return;
+        // Not seen yet — show tutorial
         setTimeout(() => {
           setViewportW(window.innerWidth);
           setViewportH(window.innerHeight);
@@ -76,7 +93,7 @@ export function TeacherTutorial() {
   }, [step, visible]);
 
   const dismiss = useCallback(() => {
-    localStorage.setItem(STORAGE_KEY, '1');
+    localStorage.setItem(storageKeyRef.current, '1');
     setVisible(false);
     // Persist in DB so it won't show again on other devices/browsers
     apiClient('/teacher/tutorial-seen', { method: 'PATCH' as const }).catch(() => {
