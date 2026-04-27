@@ -33,7 +33,9 @@ export function TeacherTutorial() {
           localStorage.setItem(STORAGE_KEY, '1');
           return;
         }
-        // Not seen yet — show after a short delay
+        // Not seen yet — clear any stale key (e.g. from a different teacher
+        // account that previously dismissed on this browser) and show
+        localStorage.removeItem(STORAGE_KEY);
         setTimeout(() => {
           setViewportW(window.innerWidth);
           setViewportH(window.innerHeight);

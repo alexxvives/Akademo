@@ -57,6 +57,7 @@ export function ClassesPage({ role }: ClassesPageProps) {
                 cls={cls}
                 role={role}
                 dashboardBase={data.dashboardBase}
+                dailycoEnabled={data.dailycoEnabled}
                 onEdit={crud.openEditModal}
                 onDelete={crud.handleDeleteClass}
               />

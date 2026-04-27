@@ -22,6 +22,7 @@ export function useClassesData(role: 'ACADEMY' | 'ADMIN' | 'TEACHER') {
   const [academies, setAcademies] = useState<Academy[]>([]);
   const [selectedAcademy, setSelectedAcademy] = useState<string>('all');
   const [selectedClassId, setSelectedClassId] = useState<string>('all');
+  const [dailycoEnabled, setDailycoEnabled] = useState<boolean>(role === 'ADMIN');
 
   const isDemo = role === 'ACADEMY' && paymentStatus === 'NOT PAID';
   const { isClassInPeriod, activePeriodId } = usePeriod();
@@ -43,6 +44,7 @@ export function useClassesData(role: 'ACADEMY' | 'ADMIN' | 'TEACHER') {
             setAcademyName(academy.name);
             const status = academy.paymentStatus || 'NOT PAID';
             setPaymentStatus(status);
+            setDailycoEnabled(!!academy.dailyEnabled);
 
             if (status === 'NOT PAID') {
               const demoClasses = generateDemoClasses();
@@ -127,6 +129,7 @@ export function useClassesData(role: 'ACADEMY' | 'ADMIN' | 'TEACHER') {
           const membershipResult = await membershipRes.json();
           if (Array.isArray(membershipResult) && membershipResult.length > 0) {
             setAcademyName(membershipResult[0].academyName);
+            setDailycoEnabled(!!membershipResult[0].dailyEnabled);
           }
         }
       } else {
@@ -183,5 +186,6 @@ export function useClassesData(role: 'ACADEMY' | 'ADMIN' | 'TEACHER') {
     selectedClassId, setSelectedClassId,
     isDemo, filteredClasses, dashboardBase, loadData,
     activePeriodId, isClassInPeriod,
+    dailycoEnabled,
   };
 }

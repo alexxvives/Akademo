@@ -144,7 +144,8 @@ requests.get('/teacher', async (c) => {
         t.*,
         a.name as academyName,
         a.description as academyDescription,
-        a.ownerId as academyOwnerId
+        a.ownerId as academyOwnerId,
+        a.dailyEnabled as dailyEnabled
       FROM Teacher t
       JOIN Academy a ON t.academyId = a.id
       WHERE t.userId = ?
@@ -158,6 +159,7 @@ requests.get('/teacher', async (c) => {
       academyId: row.academyId,
       academyName: row.academyName,
       academyDescription: row.academyDescription,
+      dailyEnabled: row.dailyEnabled,
       status: 'APPROVED', // Teacher table entries are always approved
       requestedAt: row.createdAt,
       createdAt: row.createdAt,
