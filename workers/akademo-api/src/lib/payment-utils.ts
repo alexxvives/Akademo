@@ -239,6 +239,7 @@ async function syncDerivedPendingPayments(db: D1Database, scope: BillingSyncScop
   const whereClauses = [
     `ce.status = 'APPROVED'`,
     `ce.stripeSubscriptionId IS NULL`,
+    `(c.monthlyPrice > 0 OR c.oneTimePrice > 0)`,
   ];
   const params: string[] = [];
 
