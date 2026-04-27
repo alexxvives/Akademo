@@ -19,6 +19,8 @@ export function StudentTimeModal({
 }: StudentTimeModalProps) {
   if (!show || !lesson) return null;
 
+  const hasNoVideos = studentData.length > 0 && studentData.every(s => s.videos.length === 0);
+
   const filteredData = searchQuery
     ? studentData.filter(s => s.studentName.toLowerCase().includes(searchQuery.toLowerCase()))
     : studentData;
@@ -44,6 +46,10 @@ export function StudentTimeModal({
           {isLoading ? (
             <div className="flex items-center justify-center py-16">
               <div className="w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : hasNoVideos ? (
+            <div className="text-center py-12 text-gray-500">
+              <p>Esta clase no tiene ningún video</p>
             </div>
           ) : studentData.length === 0 ? (
             <div className="text-center py-12 text-gray-500">

@@ -130,7 +130,7 @@ export function CreateAssignmentModal(props: AssignmentModalsProps) {
                   <select
                     value={selectedLesson}
                     onChange={(e) => handleLessonChange(e.target.value)}
-                    className="appearance-none w-full pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-white text-sm"
+                    className="appearance-none w-full pl-3 pr-10 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-white text-sm"
                   >
                     <option value="">Sin clase específica</option>
                     {topicOrder.map(topicName => (
@@ -159,12 +159,12 @@ export function CreateAssignmentModal(props: AssignmentModalsProps) {
             <div>
               <label htmlFor="create-title" className="block text-sm font-medium text-gray-700 mb-1">Título *</label>
               <input id="create-title" type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm" />
             </div>
             <div>
               <label htmlFor="create-description" className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
               <textarea id="create-description" value={newDescription} onChange={(e) => setNewDescription(e.target.value)} rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm" />
             </div>
             {requireGrading && (
               <div>
@@ -189,7 +189,7 @@ export function CreateAssignmentModal(props: AssignmentModalsProps) {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Archivos adjuntos</label>
                 <label className={`flex items-center justify-center gap-2 w-full h-[38px] px-3 text-sm border rounded-lg cursor-pointer transition-colors ${
-                  uploadFiles.length > 0 ? 'border-brand-400 bg-brand-50 text-brand-700' : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                  uploadFiles.length > 0 ? 'border-brand-400 bg-brand-50 text-brand-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                 }`}>
                   <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
@@ -207,7 +207,7 @@ export function CreateAssignmentModal(props: AssignmentModalsProps) {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Cuestionario</label>
                 <button type="button" onClick={openQuizBuilder}
                   className={`w-full h-[38px] px-3 text-sm border rounded-lg transition-colors flex items-center justify-center gap-2 ${
-                    quizReady ? 'border-green-400 bg-green-50 text-green-700' : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                    quizReady ? 'border-green-400 bg-green-50 text-green-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
                   }`}>
                   {quizReady ? (
                     <>
@@ -235,7 +235,7 @@ export function CreateAssignmentModal(props: AssignmentModalsProps) {
             )}
             <div className="flex gap-3 pt-4">
               <button type="button" onClick={() => { setShowCreateModal(false); resetForm(); }}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">Cancelar</button>
+                className="flex-1 px-4 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">Cancelar</button>
               <button type="submit" disabled={creating || paymentStatus === 'NOT PAID'}
                 className="flex-1 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
                 title={paymentStatus === 'NOT PAID' ? 'No disponible en modo demostración' : ''}>
