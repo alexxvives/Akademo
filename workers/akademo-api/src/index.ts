@@ -171,6 +171,42 @@ app.get('/teacher/academy', async (c) => {
   }
 });
 
+// PATCH /student/tutorial-seen - Mark onboarding tutorial as seen
+app.patch('/student/tutorial-seen', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    if (session.role !== 'STUDENT') {
+      return c.json(errorResponse('Only students can use this endpoint'), 403);
+    }
+    await c.env.DB
+      .prepare('UPDATE User SET tutorialSeenAt = ? WHERE id = ?')
+      .bind(new Date().toISOString(), session.id)
+      .run();
+    return c.json(successResponse({ ok: true }));
+  } catch (error: unknown) {
+    console.error('[Student Tutorial] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
+
+// GET /student/tutorial-status - Check if tutorial has been seen
+app.get('/student/tutorial-status', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    if (session.role !== 'STUDENT') {
+      return c.json(errorResponse('Only students can use this endpoint'), 403);
+    }
+    const row = await c.env.DB
+      .prepare('SELECT tutorialSeenAt FROM User WHERE id = ?')
+      .bind(session.id)
+      .first<{ tutorialSeenAt: string | null }>();
+    return c.json(successResponse({ seen: !!row?.tutorialSeenAt, userId: session.id }));
+  } catch (error: unknown) {
+    console.error('[Student Tutorial] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
+
 // PATCH /teacher/tutorial-seen - Mark onboarding tutorial as seen (persisted in DB)
 app.patch('/teacher/tutorial-seen', async (c) => {
   try {
