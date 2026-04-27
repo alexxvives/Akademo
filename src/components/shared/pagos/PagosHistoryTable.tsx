@@ -26,16 +26,16 @@ export function PagosHistoryTable({ state, actions }: PagosHistoryTableProps) {
         <span className="text-xs bg-green-200 text-green-700 px-2 py-0.5 rounded-full font-medium">{filteredPaymentHistory.length}</span>
       </div>
       <div className="max-h-[630px] overflow-y-auto overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full table-fixed">
           <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
             <tr>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap" style={{ minWidth: 180 }}>Estudiante</th>
-              {isAdmin && <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap" style={{ minWidth: 120 }}>Academia</th>}
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap" style={{ minWidth: 130 }}>Asignatura</th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap" style={{ minWidth: 90 }}>Monto</th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap" style={{ minWidth: 100 }}>Método</th>
-              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap" style={{ minWidth: 130 }}>Fecha</th>
-              <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap" style={{ minWidth: 100 }}>Acciones</th>
+              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ width: 200 }}>Estudiante</th>
+              {isAdmin && <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ width: 130 }}>Academia</th>}
+              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ width: 180 }}>Asignatura</th>
+              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ width: 100 }}>Monto</th>
+              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ width: 120 }}>Método</th>
+              <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ width: 140 }}>Fecha</th>
+              <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider" style={{ width: 110 }}>Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">

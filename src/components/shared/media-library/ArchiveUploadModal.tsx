@@ -162,7 +162,7 @@ export function ArchiveUploadModal({ onClose, onSuccess, classes }: Props) {
           <button
             onClick={handleUpload}
             disabled={!file || uploading || (classes && classes.length > 0 && !selectedClassId)}
-            className="px-4 py-2 text-sm font-medium text-white bg-black rounded-lg hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {uploading && (
               <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">

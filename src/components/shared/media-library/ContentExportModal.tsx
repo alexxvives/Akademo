@@ -330,7 +330,7 @@ export function ContentExportModal({ onClose, classes, role, selectedAcademy }: 
           <button
             onClick={handleSearch}
             disabled={loading || !(typeFilters.videos || typeFilters.documents || typeFilters.archived)}
-            className="w-full px-4 py-2.5 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
+            className="w-full px-4 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
           >
             {loading ? (
               <>
@@ -405,7 +405,7 @@ export function ContentExportModal({ onClose, classes, role, selectedAcademy }: 
               <button
                 onClick={handleDownloadAll}
                 disabled={bulkDownloading}
-                className="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 disabled:opacity-50 flex items-center gap-2 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2 transition-colors"
               >
                 {bulkDownloading ? (
                   <>
