@@ -1020,7 +1020,7 @@ payments.get('/history', async (c) => {
           AND p.status IN ('PAID', 'COMPLETED')
           AND p.type = 'STUDENT_TO_ACADEMY'
         ORDER BY p.completedAt DESC
-        LIMIT 50
+        LIMIT 500
       `;
       params = [session.id];
     } else if (session.role === 'ADMIN') {
@@ -1054,7 +1054,7 @@ payments.get('/history', async (c) => {
             AND p.status IN ('PAID', 'COMPLETED')
             AND p.type = 'STUDENT_TO_ACADEMY'
           ORDER BY p.completedAt DESC
-          LIMIT 100
+          LIMIT 500
         `;
         params = [academyId];
       } else {
@@ -1085,7 +1085,7 @@ payments.get('/history', async (c) => {
           WHERE p.status IN ('PAID', 'COMPLETED')
             AND p.type = 'STUDENT_TO_ACADEMY'
           ORDER BY p.completedAt DESC
-          LIMIT 100
+          LIMIT 500
         `;
       }
     } else {

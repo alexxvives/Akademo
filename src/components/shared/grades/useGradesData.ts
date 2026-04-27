@@ -6,7 +6,7 @@ import { generateDemoClasses } from '@/lib/demo-data';
 import { usePeriod } from '@/contexts/PeriodContext';
 import type {
   StudentGrade, StudentAverage, ClassSummary, Academy,
-  AssignmentSummary, AssignmentDetail, ApiResponse,
+  ApiResponse,
 } from './types';
 import { buildDemoGrades, calcAverages } from './grades-utils';
 
@@ -47,59 +47,48 @@ export function useGradesData(role: 'ACADEMY' | 'ADMIN' | 'TEACHER') {
       let endpoint: string;
       if (role === 'ADMIN') {
         if (selectedAcademy === 'all') {
-          endpoint = selectedClass === 'all' ? '/assignments/all' : `/assignments?classId=${selectedClass}`;
+          endpoint = selectedClass === 'all' ? '/assignments/grades' : `/assignments/grades?classId=${selectedClass}`;
         } else {
-          endpoint =
-            selectedClass === 'all'
-              ? `/assignments?academyId=${selectedAcademy}`
-              : `/assignments?classId=${selectedClass}`;
+          endpoint = selectedClass === 'all'
+            ? `/assignments/grades?academyId=${selectedAcademy}`
+            : `/assignments/grades?academyId=${selectedAcademy}&classId=${selectedClass}`;
         }
       } else {
-        endpoint = selectedClass === 'all' ? '/assignments/all' : `/assignments?classId=${selectedClass}`;
+        endpoint = selectedClass === 'all' ? '/assignments/grades' : `/assignments/grades?classId=${selectedClass}`;
       }
 
-      console.log('[GradesPage] Fetching assignments from:', endpoint);
-      const assignmentsRaw = await apiClient(endpoint);
-      const assignmentsRes = (await assignmentsRaw.json()) as ApiResponse<AssignmentSummary[]>;
-      if (!assignmentsRes.success) {
-        console.error('[GradesPage] Failed to fetch assignments:', assignmentsRes.error);
+      console.log('[GradesPage] Fetching grades from:', endpoint);
+      const gradesRaw = await apiClient(endpoint);
+      const gradesRes = (await gradesRaw.json()) as ApiResponse<Array<{
+        studentId: string; studentName: string; studentEmail: string;
+        assignmentId: string; assignmentTitle: string; score: number; maxScore: number;
+        gradedAt: string; className: string;
+        assignmentUploadId?: string; assignmentAttachmentIds?: string;
+        submissionUploadId?: string; assignmentStoragePath?: string; submissionStoragePath?: string;
+      }>>;
+
+      if (!gradesRes.success) {
+        console.error('[GradesPage] Failed to fetch grades:', gradesRes.error);
         setLoading(false);
         return;
       }
 
-      console.log('[GradesPage] Assignments fetched:', assignmentsRes.data.length);
-      const allGrades: StudentGrade[] = [];
-      const detailResults = await Promise.all(
-        assignmentsRes.data.map(async (assignment) => {
-          const res = await apiClient(`/assignments/${assignment.id}`);
-          const detail = (await res.json()) as ApiResponse<AssignmentDetail>;
-          return { assignment, detail };
-        })
-      );
-      for (const { assignment, detail } of detailResults) {
-        if (detail.success && detail.data.submissions) {
-          detail.data.submissions.forEach((sub) => {
-            if (sub.gradedAt) {
-              allGrades.push({
-                studentId: sub.studentId,
-                studentName: sub.studentName,
-                studentEmail: sub.studentEmail,
-                assignmentId: assignment.id,
-                assignmentTitle: assignment.title,
-                score: sub.score,
-                maxScore: assignment.maxScore,
-                gradedAt: sub.gradedAt,
-                className: assignment.className || '',
-                assignmentUploadIds: assignment.attachmentIds,
-                assignmentUploadId: assignment.uploadId ?? undefined,
-                submissionUploadId: sub.uploadId ?? undefined,
-                assignmentStoragePath: detail.data.attachmentStoragePath ?? undefined,
-                submissionStoragePath: sub.submissionStoragePath ?? undefined,
-              });
-            }
-          });
-        }
-      }
+      const allGrades: StudentGrade[] = gradesRes.data.map(g => ({
+        studentId: g.studentId,
+        studentName: g.studentName,
+        studentEmail: g.studentEmail,
+        assignmentId: g.assignmentId,
+        assignmentTitle: g.assignmentTitle,
+        score: g.score,
+        maxScore: g.maxScore,
+        gradedAt: g.gradedAt,
+        className: g.className,
+        assignmentUploadIds: g.assignmentAttachmentIds ?? undefined,
+        assignmentUploadId: g.assignmentUploadId ?? undefined,
+        submissionUploadId: g.submissionUploadId ?? undefined,
+        assignmentStoragePath: g.assignmentStoragePath ?? undefined,
+        submissionStoragePath: g.submissionStoragePath ?? undefined,
+      }));
 
       console.log('[GradesPage] Total graded submissions:', allGrades.length);
       setGrades(allGrades);

@@ -382,6 +382,107 @@ assignments.post('/', async (c) => {
   }
 });
 
+// GET /assignments/grades - All graded submissions for calificaciones page (avoids N+1)
+// IMPORTANT: Must be before /:id route
+assignments.get('/grades', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    const classId = c.req.query('classId');
+    const academyId = c.req.query('academyId');
+
+    let query = '';
+    let bindings: string[] = [];
+
+    if (session.role === 'TEACHER') {
+      query = `
+        SELECT
+          s.studentId, s.score, s.gradedAt,
+          s.uploadId as submissionUploadId,
+          sup.storagePath as submissionStoragePath,
+          a.id as assignmentId, a.title as assignmentTitle, a.maxScore,
+          a.uploadId as assignmentUploadId,
+          aup.storagePath as assignmentStoragePath,
+          a.attachmentIds as assignmentAttachmentIds,
+          c.name as className,
+          u.firstName || ' ' || u.lastName as studentName,
+          u.email as studentEmail
+        FROM AssignmentSubmission s
+        JOIN Assignment a ON s.assignmentId = a.id
+        JOIN Class c ON a.classId = c.id
+        JOIN User u ON s.studentId = u.id
+        LEFT JOIN Upload sup ON s.uploadId = sup.id
+        LEFT JOIN Upload aup ON a.uploadId = aup.id
+        WHERE a.teacherId = ? AND s.gradedAt IS NOT NULL
+        ${classId ? 'AND a.classId = ?' : ''}
+        ORDER BY s.gradedAt DESC
+      `;
+      bindings = classId ? [session.id, classId] : [session.id];
+    } else if (session.role === 'ACADEMY') {
+      query = `
+        SELECT
+          s.studentId, s.score, s.gradedAt,
+          s.uploadId as submissionUploadId,
+          sup.storagePath as submissionStoragePath,
+          a.id as assignmentId, a.title as assignmentTitle, a.maxScore,
+          a.uploadId as assignmentUploadId,
+          aup.storagePath as assignmentStoragePath,
+          a.attachmentIds as assignmentAttachmentIds,
+          c.name as className,
+          u.firstName || ' ' || u.lastName as studentName,
+          u.email as studentEmail
+        FROM AssignmentSubmission s
+        JOIN Assignment a ON s.assignmentId = a.id
+        JOIN Class c ON a.classId = c.id
+        JOIN Academy ac ON c.academyId = ac.id
+        JOIN User u ON s.studentId = u.id
+        LEFT JOIN Upload sup ON s.uploadId = sup.id
+        LEFT JOIN Upload aup ON a.uploadId = aup.id
+        WHERE ac.ownerId = ? AND s.gradedAt IS NOT NULL
+        ${classId ? 'AND a.classId = ?' : ''}
+        ORDER BY s.gradedAt DESC
+      `;
+      bindings = classId ? [session.id, classId] : [session.id];
+    } else if (session.role === 'ADMIN') {
+      const academyFilter = academyId ? 'AND ac.id = ?' : '';
+      const classFilter = classId ? 'AND a.classId = ?' : '';
+      query = `
+        SELECT
+          s.studentId, s.score, s.gradedAt,
+          s.uploadId as submissionUploadId,
+          sup.storagePath as submissionStoragePath,
+          a.id as assignmentId, a.title as assignmentTitle, a.maxScore,
+          a.uploadId as assignmentUploadId,
+          aup.storagePath as assignmentStoragePath,
+          a.attachmentIds as assignmentAttachmentIds,
+          c.name as className,
+          u.firstName || ' ' || u.lastName as studentName,
+          u.email as studentEmail
+        FROM AssignmentSubmission s
+        JOIN Assignment a ON s.assignmentId = a.id
+        JOIN Class c ON a.classId = c.id
+        JOIN Academy ac ON c.academyId = ac.id
+        JOIN User u ON s.studentId = u.id
+        LEFT JOIN Upload sup ON s.uploadId = sup.id
+        LEFT JOIN Upload aup ON a.uploadId = aup.id
+        WHERE s.gradedAt IS NOT NULL ${academyFilter} ${classFilter}
+        ORDER BY s.gradedAt DESC
+      `;
+      if (academyId && classId) bindings = [academyId, classId];
+      else if (academyId) bindings = [academyId];
+      else if (classId) bindings = [classId];
+    } else {
+      return c.json(errorResponse('Unauthorized'), 403);
+    }
+
+    const result = await c.env.DB.prepare(query).bind(...bindings).all();
+    return c.json(successResponse(result.results || []));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Assignments GET /grades] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
+
 // GET /assignments/ungraded-count - Count of ungraded submissions for teacher/academy
 // IMPORTANT: Must be before /:id route to avoid matching "ungraded-count" as an ID
 assignments.get('/ungraded-count', async (c) => {

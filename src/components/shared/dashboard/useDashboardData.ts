@@ -121,6 +121,9 @@ export function useDashboardData(role: 'ACADEMY' | 'ADMIN') {
             .filter(c => isClassInPeriod(c.startDate))
             .map(c => c.id);
           if (periodIds.length > 0) {
+            // Reset to zeros so the animation counts up once to the correct filtered number,
+            // instead of animating to the unfiltered total first then jumping down.
+            setStudentPaymentStatus({ alDia: 0, atrasados: 0, total: 0, uniqueAlDia: 0, uniqueAtrasados: 0, uniqueTotal: 0 });
             apiClient(`/enrollments/payment-status?classIds=${periodIds.join(',')}`)
               .then(r => r.json())
               .then(result => {
