@@ -17,20 +17,20 @@ export function WatermarkOverlay({
   plyrContainer,
   isUnlimitedUser,
 }: WatermarkOverlayProps) {
-  // Don't show for unlimited users or if no name
-  if (isUnlimitedUser || !studentName || !showWatermark) {
+  // Don't show for unlimited users or if no email
+  if (isUnlimitedUser || !studentEmail || !showWatermark) {
     return null;
   }
 
   const watermarkContent = (
     <div className="absolute inset-0 flex items-center justify-center z-[20] pointer-events-none animate-fade-in">
-      <div className="bg-black/50 backdrop-blur-sm border border-white/20 rounded-xl px-6 py-3 shadow-lg">
-        <div className="text-white/80 text-lg font-semibold tracking-wide text-center">
-          {studentName}
+      <div className="bg-black/50 backdrop-blur-sm border border-white/20 rounded-lg px-3 py-1.5 shadow-lg">
+        <div className="text-white/85 text-sm font-semibold tracking-wide text-center">
+          {studentEmail}
         </div>
-        {studentEmail && (
-          <div className="text-white/60 text-xs font-medium mt-1 text-center">
-            {studentEmail}
+        {studentName && (
+          <div className="text-white/55 text-[10px] font-black mt-0.5 text-center tracking-wider uppercase">
+            {studentName}
           </div>
         )}
       </div>

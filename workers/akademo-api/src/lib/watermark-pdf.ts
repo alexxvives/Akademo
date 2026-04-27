@@ -84,7 +84,8 @@ export async function addWatermarkToPdf(
     return new Uint8Array(pdfBytes);
   }
 
-  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontNormal = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontBold   = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
   const line1 = winAnsi(cfg.fullName);
   const line2 = winAnsi(cfg.email);
@@ -123,8 +124,8 @@ export async function addWatermarkToPdf(
     const cy = height / 2;
 
     // Width of each text line for centering along the 45° baseline
-    const w1 = font.widthOfTextAtSize(line1, size1);
-    const w2 = font.widthOfTextAtSize(line2, size2);
+    const w1 = fontBold.widthOfTextAtSize(line1, size1);
+    const w2 = fontNormal.widthOfTextAtSize(line2, size2);
 
     // Place the two lines symmetrically around the page center.
     // Line1 shifts towards "above" the diagonal: perpendicular dir (-SQ, +SQ).
@@ -136,21 +137,23 @@ export async function addWatermarkToPdf(
     const by2 = cy - halfSpacing * SQ;
 
     // Text draw origin = block center minus half-projected text width
+    // line1 = full name — bold/intense, harder to remove
     page.drawText(line1, {
       x: bx1 - (w1 / 2) * SQ,
       y: by1 - (w1 / 2) * SQ,
       size: size1,
-      font,
+      font: fontBold,
       color: textColor,
       opacity: textOpacity,
       rotate: degrees(45),
     });
 
+    // line2 = email — normal weight
     page.drawText(line2, {
       x: bx2 - (w2 / 2) * SQ,
       y: by2 - (w2 / 2) * SQ,
       size: size2,
-      font,
+      font: fontNormal,
       color: textColor,
       opacity: textOpacity,
       rotate: degrees(45),

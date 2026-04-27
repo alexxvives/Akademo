@@ -436,20 +436,29 @@ async function buildFileResponse(
       }
 
       const pdfBytes = await object.arrayBuffer();
-      const watermarked = await addWatermarkToPdf(pdfBytes, { fullName, email, academyName, logoBytes, logoMime });
-
-      return new Response(watermarked, {
-        headers: {
-          'Content-Type': 'application/pdf',
-          'Content-Length': watermarked.byteLength.toString(),
-          'Cache-Control': 'private, no-store',
-        },
-      });
-    } catch {
-      // Watermarking failed — fall through and serve the original file
+      try {
+        const watermarked = await addWatermarkToPdf(pdfBytes, { fullName, email, academyName, logoBytes, logoMime });
+        return new Response(watermarked, {
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Length': watermarked.byteLength.toString(),
+            'Cache-Control': 'private, no-store',
+          },
+        });
+      } catch {
+        // Watermarking failed — serve original bytes (stream already consumed by arrayBuffer())
+        return new Response(pdfBytes, {
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Length': pdfBytes.byteLength.toString(),
+            'Cache-Control': opts.cacheControl,
+          },
+        });
+      }
     }
   }
 
+  // Non-PDF or too large to watermark — stream directly
   return new Response(object.body as ReadableStream, {
     headers: {
       'Content-Type': contentType,

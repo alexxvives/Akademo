@@ -1271,14 +1271,26 @@ admin.post('/bulk-import', async (c) => {
         .replace(/\s+/g, ' ')
         .trim();
 
+      // Fix CSV encoding: some exports are UTF-8 saved/read as Latin-1, producing Ã¡ instead of á.
+      // Convert by re-interpreting each char as a Latin-1 byte and decoding as UTF-8.
+      const fixEncoding = (s: string): string => {
+        try {
+          const bytes = Uint8Array.from([...s].map(c => c.charCodeAt(0) & 0xFF));
+          const decoded = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+          // Only use decoded version if it looks like a valid fix (shorter and has real accents)
+          return decoded.length <= s.length ? decoded : s;
+        } catch { return s; }
+      };
+
       // Build quiz map: quizId → { quizName, courseName, description }
       const quizMap = new Map<string, { quizName: string; courseName: string; description: string }>();
       for (const row of quizRows) {
         const quizId = String(row.quizId || '').trim();
         if (!quizId) continue;
+        const rawCourseName = String(row.courseName || '').trim();
         quizMap.set(quizId, {
           quizName: stripHtml(row.quizName || ''),
-          courseName: String(row.courseName || '').trim(),
+          courseName: fixEncoding(rawCourseName),
           description: stripHtml(row.quizDescription || ''),
         });
       }

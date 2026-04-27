@@ -66,7 +66,7 @@ export function PagosHistoryTable({ state, actions }: PagosHistoryTableProps) {
                       ? 'Transferencia'
                       : history.paymentMethod.toLowerCase() === 'stripe' || history.paymentMethod === 'STRIPE'
                       ? 'Stripe'
-                      : history.paymentMethod}
+                      : 'Desconocido'}
                   </div>
                 </td>
                 <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
