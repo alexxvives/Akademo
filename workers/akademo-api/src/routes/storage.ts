@@ -472,6 +472,8 @@ async function buildFileResponse(
         if (contentDisposition) fbHeaders['Content-Disposition'] = contentDisposition;
         return new Response(pdfBytes, { headers: fbHeaders });
       }
+    } catch {
+      // Watermark setup failed (e.g. DB error) — fall through to stream directly
     }
   }
 
