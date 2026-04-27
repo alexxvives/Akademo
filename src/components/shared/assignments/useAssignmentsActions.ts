@@ -151,6 +151,7 @@ export function useAssignmentsActions(data: AssignmentsDataReturn) {
         classId: data.selectedClassForCreate, title: data.newTitle, description: data.newDescription,
         dueDate: data.newDueDate || undefined, maxScore: 100,
         type: data.assignmentType,
+        ...(data.selectedLessonForCreate ? { lessonId: data.selectedLessonForCreate } : {}),
         ...(data.assignmentType === 'file' ? { uploadIds } : { questions: data.quizQuestions }),
       });
       const result = await res.json();
@@ -200,6 +201,7 @@ export function useAssignmentsActions(data: AssignmentsDataReturn) {
   const resetForm = () => {
     data.setNewTitle(''); data.setNewDescription(''); data.setNewDueDate('');
     data.setUploadFiles([]); data.setUploadProgress(0); data.setSelectedClassForCreate('');
+    data.setSelectedLessonForCreate?.('');
     data.setAssignmentType('file'); data.setQuizQuestions([createEmptyQuestion()]);
   };
 

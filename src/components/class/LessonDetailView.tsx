@@ -1,11 +1,18 @@
 'use client';
 
-import { openDocument } from '@/lib/api-client';
+import { useState, useEffect } from 'react';
+import { openDocument, apiClient } from '@/lib/api-client';
 import ProtectedVideoPlayer from '@/components/ProtectedVideoPlayer';
 import type { LessonDetail, LessonVideo, LessonFeedback } from './types';
 
+interface Assignment {
+  id: string; title: string; description?: string; type: string;
+  dueDate?: string; submissionCount: number; gradedCount: number;
+}
+
 interface LessonDetailViewProps {
   lesson: LessonDetail;
+  classId: string;
   selectedVideo: LessonVideo | null;
   currentUserId: string;
   feedbackEnabled: boolean;
@@ -16,6 +23,7 @@ interface LessonDetailViewProps {
 
 export default function LessonDetailView({
   lesson,
+  classId,
   selectedVideo,
   currentUserId,
   feedbackEnabled,
@@ -23,6 +31,16 @@ export default function LessonDetailView({
   onGoBack,
   onSelectVideo,
 }: LessonDetailViewProps) {
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+
+  useEffect(() => {
+    setAssignments([]);
+    apiClient(`/assignments?classId=${classId}&lessonId=${lesson.id}`)
+      .then(r => r.json())
+      .then(data => { if (data.success) setAssignments(data.data || []); })
+      .catch(() => {});
+  }, [classId, lesson.id]);
+
   return (
     <div className="space-y-6">
       <div>
@@ -127,6 +145,33 @@ export default function LessonDetailView({
           )}
         </div>
       </div>
+
+      {/* Ejercicios Section */}
+      {assignments.length > 0 && (
+        <div>
+          <h3 className="font-semibold text-gray-900 mb-3 text-lg text-center">EJERCICIOS</h3>
+          <div className="rounded-xl border border-gray-200 p-4 space-y-2">
+            {assignments.map(a => (
+              <div key={a.id} className="flex items-center gap-3 p-2.5 bg-gray-50 border border-gray-200 rounded-lg">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${a.type === 'quiz' ? 'bg-amber-100' : 'bg-orange-100'}`}>
+                  {a.type === 'quiz' ? (
+                    <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  ) : (
+                    <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-sm text-gray-900 truncate">{a.title}</p>
+                  {a.dueDate && <p className="text-xs text-gray-500">Entrega: {new Date(a.dueDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</p>}
+                </div>
+                <div className="text-right flex-shrink-0">
+                  <span className="text-xs text-gray-500">{a.submissionCount} entregas{a.gradedCount > 0 ? ` · ${a.gradedCount} calificadas` : ''}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Feedback Section */}
       {feedbackEnabled && (

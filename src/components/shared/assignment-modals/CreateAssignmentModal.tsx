@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { nanoid } from 'nanoid';
+import { apiClient } from '@/lib/api-client';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 import { CustomDatePicker } from '@/components/ui/CustomDatePicker';
 import { CustomTimePicker } from '@/components/ui/CustomTimePicker';
@@ -14,10 +15,18 @@ function emptyQuestion(): QuizQuestionForm {
   return { questionText: '', options: [{ id: o1, text: '' }, { id: o2, text: '' }], correctOptionIds: [], explanation: '' };
 }
 
+interface LessonOption {
+  id: string;
+  title: string;
+  topicId: string | null;
+  topicName?: string;
+}
+
 export function CreateAssignmentModal(props: AssignmentModalsProps) {
   const {
     classes, paymentStatus,
     showCreateModal, setShowCreateModal, selectedClassForCreate, setSelectedClassForCreate,
+    selectedLessonForCreate, setSelectedLessonForCreate,
     newTitle, setNewTitle, newDescription, setNewDescription, newDueDate, setNewDueDate,
     uploadFiles, setUploadFiles, uploadProgress, creating, handleCreateAssignment, resetForm,
     assignmentType, setAssignmentType, quizQuestions, setQuizQuestions,
@@ -27,6 +36,37 @@ export function CreateAssignmentModal(props: AssignmentModalsProps) {
   const [showQuizBuilder, setShowQuizBuilder] = useState(false);
   const [dueDatePart, setDueDatePart] = useState(() => newDueDate ? newDueDate.slice(0, 10) : '');
   const [dueTimePart, setDueTimePart] = useState(() => newDueDate ? newDueDate.slice(11, 16) : '');
+  const [lessons, setLessons] = useState<LessonOption[]>([]);
+  const [selectedLesson, setSelectedLesson] = useState(selectedLessonForCreate || '');
+
+  useEffect(() => {
+    setSelectedLesson('');
+    setSelectedLessonForCreate?.('');
+    setLessons([]);
+    if (!selectedClassForCreate) return;
+    apiClient(`/lessons?classId=${selectedClassForCreate}`)
+      .then(r => r.json())
+      .then(data => { if (data.success) setLessons(data.data || []); })
+      .catch(() => {});
+  }, [selectedClassForCreate]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleLessonChange = (id: string) => {
+    setSelectedLesson(id);
+    setSelectedLessonForCreate?.(id);
+  };
+
+  // Group lessons by topic
+  const lessonsByTopic: Record<string, LessonOption[]> = {};
+  const topicOrder: string[] = [];
+  const noTopicLessons: LessonOption[] = [];
+  for (const l of lessons) {
+    if (l.topicName) {
+      if (!lessonsByTopic[l.topicName]) { lessonsByTopic[l.topicName] = []; topicOrder.push(l.topicName); }
+      lessonsByTopic[l.topicName].push(l);
+    } else {
+      noTopicLessons.push(l);
+    }
+  }
 
   const handleDueDateChange = (date: string) => {
     setDueDatePart(date);
@@ -81,6 +121,34 @@ export function CreateAssignmentModal(props: AssignmentModalsProps) {
                 required
               />
             </div>
+            {selectedClassForCreate && lessons.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Clase <span className="text-gray-400 font-normal">(opcional)</span>
+                </label>
+                <select
+                  value={selectedLesson}
+                  onChange={(e) => handleLessonChange(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 bg-white text-sm"
+                >
+                  <option value="">Sin clase específica</option>
+                  {topicOrder.map(topicName => (
+                    <optgroup key={topicName} label={topicName}>
+                      {lessonsByTopic[topicName].map(l => (
+                        <option key={l.id} value={l.id}>{l.title}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                  {noTopicLessons.length > 0 && (
+                    topicOrder.length > 0
+                      ? <optgroup label="Sin tema">
+                          {noTopicLessons.map(l => <option key={l.id} value={l.id}>{l.title}</option>)}
+                        </optgroup>
+                      : noTopicLessons.map(l => <option key={l.id} value={l.id}>{l.title}</option>)
+                  )}
+                </select>
+              </div>
+            )}
             <div>
               <label htmlFor="create-title" className="block text-sm font-medium text-gray-700 mb-1">Título *</label>
               <input id="create-title" type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} required

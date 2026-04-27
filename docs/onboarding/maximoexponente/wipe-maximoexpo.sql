@@ -1,4 +1,8 @@
 -- ============================================================
+-- ⚠️  EMERGENCY ROLLBACK — NOT APPLIED
+-- Deletes all imported data for maximoexpo academy from D1.
+-- Only run this if you need to fully roll back the migration.
+-- ============================================================
 -- WIPE all imported data for maximoexpo academy
 -- Academy ID : 93ab97cf-271b-48de-924b-10fb7eab0a38
 -- Owner ID   : 3d26da5d-c5b6-4c49-ae62-d4687c44cfd7  (kept)

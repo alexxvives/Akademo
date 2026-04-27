@@ -154,6 +154,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
           selectedAssignment={data.selectedAssignment}
           showCreateModal={data.showCreateModal} setShowCreateModal={data.setShowCreateModal}
           selectedClassForCreate={data.selectedClassForCreate} setSelectedClassForCreate={data.setSelectedClassForCreate}
+          selectedLessonForCreate={data.selectedLessonForCreate} setSelectedLessonForCreate={data.setSelectedLessonForCreate}
           newTitle={data.newTitle} setNewTitle={data.setNewTitle}
           newDescription={data.newDescription} setNewDescription={data.setNewDescription}
           newDueDate={data.newDueDate} setNewDueDate={data.setNewDueDate}

@@ -1,11 +1,8 @@
 # Moodle → AKADEMO Migration Guide
 
-Internal reference for migrating clients from Moodle to AKADEMO.
-Tested on: maximo exponente (April 2026). DB prefix: `mdl3y_` (varies per install).
+> **This file is superseded.** The canonical and up-to-date version is at:
+> [`docs/onboarding/moodle-migration.md`](onboarding/moodle-migration.md)
 
----
-
-## Step 0 — Find the DB prefix
 
 ```sql
 SHOW TABLES;

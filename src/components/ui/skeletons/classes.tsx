@@ -107,57 +107,60 @@ export function SkeletonClassDetail() {
       {/* Back link */}
       <SkeletonBox className="h-4 w-40" />
 
-      {/* Header: title + action buttons */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+      {/* ClassHeader: title + description + action buttons */}
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-4 mt-0 gap-3">
         <div className="flex-1 space-y-2">
           <SkeletonBox className="h-8 w-72" />
           <SkeletonBox className="h-5 w-full max-w-xl" />
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 sm:gap-3">
           <SkeletonBox className="h-9 w-28 rounded-lg" />
           <SkeletonBox className="h-9 w-24 rounded-lg" />
         </div>
       </div>
 
       {/* "Clases" section header + "Nuevo Tema" button */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-2">
         <SkeletonBox className="h-6 w-16" />
         <SkeletonBox className="h-9 w-28 rounded-lg" />
       </div>
 
-      {/* Topic group 1 */}
-      <div className="space-y-3">
-        <SkeletonBox className="h-10 w-full rounded-xl" />
-        {Array.from({ length: 2 }).map((_, i) => (
-          <div key={i} className="bg-white rounded-xl border border-gray-200 p-5">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex-1 space-y-2">
-                <SkeletonBox className="h-5 w-56" />
-                <div className="flex items-center gap-3">
-                  <SkeletonBox className="h-4 w-16" />
-                  <SkeletonBox className="h-4 w-20" />
-                  <SkeletonBox className="h-4 w-24" />
-                </div>
-              </div>
-              <SkeletonBox className="h-16 w-28 rounded-lg flex-shrink-0" />
-            </div>
+      {/* Topic group 1 — expanded with lesson grid */}
+      <div className="rounded-xl border-2 border-slate-600/40">
+        <div className="flex items-center justify-between px-4 py-3.5">
+          <div className="flex items-center gap-3">
+            <SkeletonBox className="h-5 w-5 rounded" />
+            <SkeletonBox className="h-5 w-40" />
+            <SkeletonBox className="h-6 w-16 rounded-full" />
           </div>
-        ))}
+        </div>
+        <div className="px-4 pb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <SkeletonBox key={i} className="h-40 rounded-xl" />
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* Topic group 2 */}
-      <div className="space-y-3">
-        <SkeletonBox className="h-10 w-full rounded-xl" />
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex-1 space-y-2">
-              <SkeletonBox className="h-5 w-48" />
-              <div className="flex items-center gap-3">
-                <SkeletonBox className="h-4 w-16" />
-                <SkeletonBox className="h-4 w-24" />
-              </div>
-            </div>
-            <SkeletonBox className="h-16 w-28 rounded-lg flex-shrink-0" />
+      {/* Topic group 2 — collapsed */}
+      <div className="rounded-xl border-2 border-slate-600/40">
+        <div className="flex items-center justify-between px-4 py-3.5">
+          <div className="flex items-center gap-3">
+            <SkeletonBox className="h-5 w-5 rounded" />
+            <SkeletonBox className="h-5 w-52" />
+            <SkeletonBox className="h-6 w-14 rounded-full" />
+          </div>
+        </div>
+      </div>
+
+      {/* Topic group 3 — collapsed */}
+      <div className="rounded-xl border-2 border-slate-600/40">
+        <div className="flex items-center justify-between px-4 py-3.5">
+          <div className="flex items-center gap-3">
+            <SkeletonBox className="h-5 w-5 rounded" />
+            <SkeletonBox className="h-5 w-36" />
+            <SkeletonBox className="h-6 w-12 rounded-full" />
           </div>
         </div>
       </div>

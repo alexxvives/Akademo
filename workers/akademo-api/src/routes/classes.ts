@@ -63,7 +63,8 @@ classes.get('/', async (c) => {
           (SELECT COUNT(*) FROM ClassEnrollment WHERE classId = c.id AND STATUS = 'APPROVED') as studentCount,
           (SELECT COUNT(*) FROM Lesson WHERE classId = c.id) as lessonCount,
           (SELECT COUNT(*) FROM Video v JOIN Lesson l ON v.lessonId = l.id WHERE l.classId = c.id) as videoCount,
-          (SELECT COUNT(*) FROM Document d JOIN Lesson l ON d.lessonId = l.id WHERE l.classId = c.id) as documentCount
+          (SELECT COUNT(*) FROM Document d JOIN Lesson l ON d.lessonId = l.id WHERE l.classId = c.id) as documentCount,
+          (SELECT COUNT(*) FROM Assignment WHERE classId = c.id) as assignmentCount
         FROM ClassEnrollment ce
         JOIN Class c ON ce.classId = c.id
         JOIN Academy a ON c.academyId = a.id
@@ -97,6 +98,7 @@ classes.get('/', async (c) => {
           (SELECT COUNT(*) FROM Lesson WHERE classId = c.id) as lessonCount,
           (SELECT COUNT(*) FROM Video v JOIN Lesson l ON v.lessonId = l.id WHERE l.classId = c.id) as videoCount,
           (SELECT COUNT(*) FROM Document d JOIN Lesson l ON d.lessonId = l.id WHERE l.classId = c.id) as documentCount,
+          (SELECT COUNT(*) FROM Assignment WHERE classId = c.id) as assignmentCount,
           (SELECT ROUND(AVG(lr.rating), 1) FROM LessonRating lr JOIN Lesson l ON lr.lessonId = l.id WHERE l.classId = c.id) as avgRating,
           (SELECT COUNT(*) FROM LiveStream WHERE classId = c.id AND status IN ('active','scheduled') AND createdAt > datetime('now', '-24 hours')) as activeStreamCount
         FROM Class c
@@ -121,6 +123,7 @@ classes.get('/', async (c) => {
           (SELECT COUNT(*) FROM Lesson WHERE classId = c.id) as lessonCount,
           (SELECT COUNT(*) FROM Video v JOIN Lesson l ON v.lessonId = l.id WHERE l.classId = c.id) as videoCount,
           (SELECT COUNT(*) FROM Document d JOIN Lesson l ON d.lessonId = l.id WHERE l.classId = c.id) as documentCount,
+          (SELECT COUNT(*) FROM Assignment WHERE classId = c.id) as assignmentCount,
           (SELECT ROUND(AVG(lr.rating), 1) FROM LessonRating lr JOIN Lesson l ON lr.lessonId = l.id WHERE l.classId = c.id) as avgRating,
           (SELECT COUNT(*) FROM LiveStream WHERE classId = c.id AND status IN ('active','scheduled') AND createdAt > datetime('now', '-24 hours')) as activeStreamCount
         FROM Class c

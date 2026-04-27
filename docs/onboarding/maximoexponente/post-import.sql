@@ -1,3 +1,7 @@
+-- ⚠️  ALREADY APPLIED — 2026-04-17 (maximo exponente migration)
+-- Do NOT run again. This creates COMPLETED payment records for legacy enrolled students.
+-- Running it again is safe (NOT EXISTS guard) but unnecessary.
+--
 -- AKADEMO post-import migration SQL
 -- Generated: 2026-04-17T15:43:02.387Z
 -- Run with: npx wrangler d1 execute akademo-db --remote --file=scripts/post-import.sql

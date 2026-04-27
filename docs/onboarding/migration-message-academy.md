@@ -1,6 +1,11 @@
 # Mensaje de Migración para la Academia
 
 > **Cómo usar**: Copia y pega el mensaje de abajo en un email. Adjunta `Users_template.xlsx` o `Users_example.xlsx` de esta misma carpeta.
+> **Importante**: Si estos archivos no existen todavía, genera el ejemplo primero:
+> ```bash
+> node scripts/generate-example-xlsx.js
+> ```
+> Esto crea `docs/onboarding/Users_template.xlsx` y `docs/onboarding/Users_example.xlsx`.
 
 ---
 

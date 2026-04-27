@@ -49,6 +49,7 @@ export default function ClassPage() {
         {data.selectedLesson && data.user && (
           <LessonContentView
             selectedLesson={data.selectedLesson}
+            classId={data.classData?.id ?? ''}
             selectedVideo={data.selectedVideo}
             user={data.user}
             academyFeedbackEnabled={data.academyFeedbackEnabled}

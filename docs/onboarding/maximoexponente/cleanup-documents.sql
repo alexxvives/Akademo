@@ -1,4 +1,8 @@
 -- ============================================================
+-- ⚠️  ALREADY USED — ran 2026-04-26 before re-importing with import-documents.sql
+-- Only needed if you need to wipe and re-import documents for this academy.
+-- Safe to re-run (deletes Topic/Lesson/Document/Upload for maximoexponente).
+-- ============================================================
 -- Cleanup: Remove all Topic / Lesson / Document / Upload records
 -- for the maximoexponente academy so they can be re-imported
 -- with proper Moodle section grouping + original file dates.

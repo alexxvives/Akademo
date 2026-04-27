@@ -46,6 +46,7 @@ export interface Class {
   university?: string | null;
   carrera?: string | null;
   activeStreamCount?: number;
+  assignmentCount?: number;
 }
 
 export interface Academy {

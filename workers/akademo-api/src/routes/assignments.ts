@@ -97,6 +97,9 @@ assignments.get('/', async (c) => {
   try {
     const session = await requireAuth(c);
     const classId = c.req.query('classId');
+    const lessonId = c.req.query('lessonId');
+    const lessonWhere = lessonId ? 'AND a.lessonId = ?' : '';
+    const lessonBinding: string[] = lessonId ? [lessonId] : [];
 
     // Students can fetch all assignments across all enrolled classes if classId is not provided
     if (!classId && session.role === 'STUDENT') {
@@ -160,7 +163,7 @@ assignments.get('/', async (c) => {
       // Teachers see all assignments for their classes
       query = `
         SELECT 
-          a.id, a.classId, a.teacherId, a.title, a.description, a.type,
+          a.id, a.classId, a.teacherId, a.lessonId, a.title, a.description, a.type,
           a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt, a.updatedAt,
           c.name as className,
           GROUP_CONCAT(DISTINCT aa.uploadId) as attachmentIds,
@@ -171,17 +174,17 @@ assignments.get('/', async (c) => {
         JOIN Class c ON a.classId = c.id
         LEFT JOIN AssignmentAttachment aa ON a.id = aa.assignmentId
         LEFT JOIN AssignmentSubmission s ON a.id = s.assignmentId
-        WHERE a.classId = ? AND a.teacherId = ?
+        WHERE a.classId = ? AND a.teacherId = ? ${lessonWhere}
         GROUP BY a.id
         ORDER BY a.dueDate DESC, a.createdAt DESC
       `;
-      bindings = [classId, session.id];
+      bindings = [classId, session.id, ...lessonBinding];
     } else if (session.role === 'ACADEMY' || session.role === 'ADMIN') {
       // Academy owners see assignments for classes in their academy; ADMIN sees all
       const ownerFilter = session.role === 'ADMIN' ? '' : 'AND ac.ownerId = ?';
       query = `
         SELECT 
-          a.id, a.classId, a.teacherId, a.title, a.description, a.type,
+          a.id, a.classId, a.teacherId, a.lessonId, a.title, a.description, a.type,
           a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt, a.updatedAt,
           c.name as className,
           GROUP_CONCAT(DISTINCT aa.uploadId) as attachmentIds,
@@ -193,11 +196,11 @@ assignments.get('/', async (c) => {
         JOIN Academy ac ON c.academyId = ac.id
         LEFT JOIN AssignmentAttachment aa ON a.id = aa.assignmentId
         LEFT JOIN AssignmentSubmission s ON a.id = s.assignmentId
-        WHERE a.classId = ? ${ownerFilter}
+        WHERE a.classId = ? ${ownerFilter} ${lessonWhere}
         GROUP BY a.id
         ORDER BY a.dueDate DESC, a.createdAt DESC
       `;
-      bindings = session.role === 'ADMIN' ? [classId] : [classId, session.id];
+      bindings = session.role === 'ADMIN' ? [classId, ...lessonBinding] : [classId, session.id, ...lessonBinding];
     } else if (session.role === 'STUDENT') {
       // Verify enrollment before listing assignments for a specific class
       const enrollment = await c.env.DB.prepare(
@@ -215,7 +218,7 @@ assignments.get('/', async (c) => {
       // Students see assignments with their submission status for specific class
       query = `
         SELECT 
-          a.id, a.classId, a.title, a.description, a.type,
+          a.id, a.classId, a.lessonId, a.title, a.description, a.type,
           a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt,
           c.name as className,
           s.id as submissionId,
@@ -237,11 +240,11 @@ assignments.get('/', async (c) => {
         LEFT JOIN AssignmentSubmission s ON a.id = s.assignmentId AND s.studentId = ?
         LEFT JOIN Upload up ON s.uploadId = up.id
         LEFT JOIN QuizAttempt qa ON a.id = qa.assignmentId AND qa.studentId = ?
-        WHERE a.classId = ?
+        WHERE a.classId = ? ${lessonWhere}
         GROUP BY a.id
         ORDER BY a.dueDate DESC, a.createdAt DESC
       `;
-      bindings = [session.id, session.id, classId];
+      bindings = [session.id, session.id, classId, ...lessonBinding];
     } else {
       return c.json(errorResponse('Unauthorized'), 403);
     }
@@ -275,7 +278,7 @@ assignments.post('/', async (c) => {
       }));
       return c.json({ success: false, error: 'Validation failed', details: errors }, 400);
     }
-    const { classId, title, description, dueDate, maxScore, uploadId, uploadIds, type, questions } = body;
+    const { classId, lessonId: assignmentLessonId, title, description, dueDate, maxScore, uploadId, uploadIds, type, questions } = body;
 
     // Validate quiz-specific fields
     if (type === 'quiz') {
@@ -316,12 +319,13 @@ assignments.post('/', async (c) => {
     // Build all statements for atomic batch insert
     const statements: D1PreparedStatement[] = [
       c.env.DB.prepare(`
-        INSERT INTO Assignment (id, classId, teacherId, title, description, dueDate, maxScore, uploadId, attachmentIds, type)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO Assignment (id, classId, teacherId, lessonId, title, description, dueDate, maxScore, uploadId, attachmentIds, type)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         assignmentId,
         classId,
         session.id,
+        assignmentLessonId || null,
         title,
         description || null,
         dueDate || null,

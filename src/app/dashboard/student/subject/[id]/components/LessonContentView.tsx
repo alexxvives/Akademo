@@ -1,11 +1,19 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import ProtectedVideoPlayer from '@/components/ProtectedVideoPlayer';
-import { openDocument } from '@/lib/api-client';
+import { openDocument, apiClient } from '@/lib/api-client';
 import type { Video, Lesson } from './types';
+
+interface StudentAssignment {
+  id: string; title: string; type: string; dueDate?: string;
+  submissionId?: string; score?: number; submittedAt?: string; gradedAt?: string;
+  quizAttemptId?: string; quizScore?: number;
+}
 
 interface LessonContentViewProps {
   selectedLesson: Lesson;
+  classId: string;
   selectedVideo: Video | null;
   user: { id: string; firstName: string; lastName: string; email: string; role: string };
   academyFeedbackEnabled: boolean;
@@ -23,12 +31,22 @@ interface LessonContentViewProps {
 }
 
 export default function LessonContentView({
-  selectedLesson, selectedVideo, user,
+  selectedLesson, classId, selectedVideo, user,
   academyFeedbackEnabled, lessonRating, ratingHover,
   tempRating, showRatingSuccess, feedbackText,
   goBackToLessons, selectVideoInLesson, handleStarClick,
   setRatingHover, setFeedbackText, submitRating,
 }: LessonContentViewProps) {
+  const [assignments, setAssignments] = useState<StudentAssignment[]>([]);
+
+  useEffect(() => {
+    setAssignments([]);
+    apiClient(`/assignments?classId=${classId}&lessonId=${selectedLesson.id}`)
+      .then(r => r.json())
+      .then(data => { if (data.success) setAssignments(data.data || []); })
+      .catch(() => {});
+  }, [classId, selectedLesson.id]);
+
   return (
     <div className="space-y-6">
       <div>
@@ -189,6 +207,49 @@ export default function LessonContentView({
           )}
         </div>
       </div>
+
+      {/* Ejercicios Section */}
+      {assignments.length > 0 && (
+        <div>
+          <h3 className="font-semibold text-gray-900 mb-3 text-lg text-center">EJERCICIOS</h3>
+          <div className="rounded-xl border border-gray-200 p-4 space-y-2">
+            {assignments.map(a => {
+              const isSubmitted = !!a.submissionId || !!a.quizAttemptId;
+              const isGraded = !!a.gradedAt;
+              const isPastDue = a.dueDate && new Date(a.dueDate) < new Date();
+              return (
+                <div key={a.id} className="flex items-center gap-3 p-2.5 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${a.type === 'quiz' ? 'bg-amber-100' : 'bg-orange-100'}`}>
+                    {a.type === 'quiz' ? (
+                      <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    ) : (
+                      <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-sm text-gray-900 truncate">{a.title}</p>
+                    {a.dueDate && <p className="text-xs text-gray-500">Entrega: {new Date(a.dueDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</p>}
+                  </div>
+                  <div className="flex-shrink-0">
+                    {isGraded ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                        {a.score !== undefined ? `${a.score} pts` : 'Calificado'}
+                      </span>
+                    ) : isSubmitted ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">Entregado</span>
+                    ) : isPastDue ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">Vencido</span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">Pendiente</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

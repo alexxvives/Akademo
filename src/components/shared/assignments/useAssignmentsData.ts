@@ -24,6 +24,7 @@ export function useAssignmentsData(role: AssignmentsPageProps['role']) {
   const highlightRef = useRef<HTMLTableRowElement | null>(null);
   const [selectedClassId, setSelectedClassId] = useState('');
   const [selectedClassForCreate, setSelectedClassForCreate] = useState('');
+  const [selectedLessonForCreate, setSelectedLessonForCreate] = useState('');
   const [academyName, setAcademyName] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('');
   const [userEmail, setUserEmail] = useState('');
@@ -232,6 +233,7 @@ export function useAssignmentsData(role: AssignmentsPageProps['role']) {
     classes, assignments, setAssignments, loading,
     deletingAssignmentId, setDeletingAssignmentId, glowId, highlightRef,
     selectedClassId, setSelectedClassId, selectedClassForCreate, setSelectedClassForCreate,
+    selectedLessonForCreate, setSelectedLessonForCreate,
     academyName, paymentStatus, userEmail,
     showCreateModal, setShowCreateModal, showEditModal, setShowEditModal,
     showSubmissionsModal, setShowSubmissionsModal, showGradeModal, setShowGradeModal,

@@ -9,6 +9,7 @@ export interface Lesson {
   watermarkIntervalMins: number;
   videoCount: number;
   documentCount: number;
+  assignmentCount?: number;
   studentsWatching?: number;
   studentsAccessed?: number;
   avgProgress?: number;

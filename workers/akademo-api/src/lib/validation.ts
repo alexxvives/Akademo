@@ -185,6 +185,7 @@ export const createAssignmentSchema = z.object({
   title: z.string().min(1, 'Assignment title is required').max(200),
   description: z.string().max(2000).optional(),
   classId: z.string().min(1, 'Class ID is required'),
+  lessonId: z.string().optional(),
   dueDate: z.string().optional(),
   maxScore: z.coerce.number().int().min(0).max(1000).default(100),
   uploadId: z.string().optional(),

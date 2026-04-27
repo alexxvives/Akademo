@@ -89,6 +89,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
       {selectedLesson && currentUser && (
         <LessonDetailView
           lesson={selectedLesson}
+          classId={classId}
           selectedVideo={selectedVideo}
           currentUserId={currentUser.id}
           feedbackEnabled={!!feedbackEnabled}

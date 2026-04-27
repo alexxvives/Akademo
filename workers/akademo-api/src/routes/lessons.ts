@@ -84,6 +84,7 @@ lessons.get('/', async (c) => {
         l.*,
         (SELECT COUNT(*) FROM Video v WHERE v.lessonId = l.id) as videoCount,
         (SELECT COUNT(*) FROM Document d WHERE d.lessonId = l.id) as documentCount,
+        (SELECT COUNT(*) FROM Assignment a WHERE a.lessonId = l.id) as assignmentCount,
         (SELECT u.bunnyGuid FROM Video v 
          JOIN Upload u ON v.uploadId = u.id 
          WHERE v.lessonId = l.id 

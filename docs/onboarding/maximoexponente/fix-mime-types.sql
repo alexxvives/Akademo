@@ -1,3 +1,6 @@
+-- ⚠️  ALREADY APPLIED — 2026-04-26 (maximo exponente migration)
+-- Fixes incorrect MIME types on specific PPT uploads after import.
+--
 -- Run this to fix MIME types in D1:
 UPDATE Upload SET mimeType = 'application/vnd.ms-powerpoint' WHERE id = '94f6d994-e482-47ac-b34d-af8bbbbf3e2e';
 UPDATE Upload SET mimeType = 'application/vnd.ms-powerpoint' WHERE id = 'aac50a04-8fa5-4734-97a0-74fa1589a5ba';
