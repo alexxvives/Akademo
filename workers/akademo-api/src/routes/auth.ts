@@ -983,11 +983,25 @@ auth.post('/confirm-email-change', emailVerificationRateLimit, async (c) => {
       return c.json(errorResponse('Este email ya está en uso'), 400);
     }
 
+    // Get current email for audit log
+    const currentUser = await c.env.DB
+      .prepare('SELECT email FROM User WHERE id = ?')
+      .bind(session.id)
+      .first<{ email: string }>();
+
     // Update the user's email
     await c.env.DB
       .prepare('UPDATE User SET email = ? WHERE id = ?')
       .bind(normalized, session.id)
       .run();
+
+    // Log the email change for audit trail
+    if (currentUser) {
+      await c.env.DB
+        .prepare("INSERT INTO UserEmailChangeLog (id, userId, oldEmail, newEmail, changedAt) VALUES (?, ?, ?, ?, datetime('now'))")
+        .bind(crypto.randomUUID(), session.id, currentUser.email, normalized)
+        .run();
+    }
 
     await c.env.DB.prepare('DELETE FROM VerificationCode WHERE email = ?').bind(normalized).run();
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { apiClient } from '@/lib/api-client';
+import { decodeHtmlEntities } from '@/lib/utils';
 
 interface QuizOption {
   id: string;
@@ -65,7 +66,7 @@ export function QuizQuestionsViewerModal({ assignmentId, title, onClose }: Props
             {questions.map((q, idx) => (
               <div key={q.id} className="border border-gray-200 rounded-lg p-4">
                 <p className="text-sm font-medium text-gray-900 mb-3">
-                  {idx + 1}. {q.questionText}
+                  {idx + 1}. {decodeHtmlEntities(q.questionText)}
                 </p>
                 <div className="space-y-2">
                   {q.options.map((opt) => {
@@ -84,14 +85,14 @@ export function QuizQuestionsViewerModal({ assignmentId, title, onClose }: Props
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                           </svg>
                         )}
-                        <span>{opt.text}</span>
+                        <span>{decodeHtmlEntities(opt.text)}</span>
                       </div>
                     );
                   })}
                 </div>
                 {q.explanation && (
                   <p className="mt-2 text-xs text-gray-500 italic">
-                    Explicación: {q.explanation}
+                    Explicación: {decodeHtmlEntities(q.explanation)}
                   </p>
                 )}
               </div>

@@ -1684,4 +1684,79 @@ payments.post('/academy-activation-session', async (c) => {
   }
 });
 
+// POST /payments/send-payment-reminder - Send payment reminder emails to pending students
+payments.post('/send-payment-reminder', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    if (session.role !== 'ACADEMY') {
+      return c.json(errorResponse('Only academy owners can send payment reminders'), 403);
+    }
+
+    const body = await c.req.json();
+    const students: Array<{ email: string; firstName: string; className: string }> = body.students;
+
+    if (!Array.isArray(students) || students.length === 0) {
+      return c.json(errorResponse('students array is required'), 400);
+    }
+    if (students.length > 200) {
+      return c.json(errorResponse('Maximum 200 students per batch'), 400);
+    }
+
+    const academy = await c.env.DB
+      .prepare('SELECT id, name FROM Academy WHERE ownerId = ? LIMIT 1')
+      .bind(session.id)
+      .first() as { id: string; name: string } | null;
+    if (!academy) {
+      return c.json(errorResponse('Academy not found'), 404);
+    }
+
+    let sent = 0;
+    let failed = 0;
+
+    for (const student of students) {
+      const { email, firstName, className } = student;
+      if (!email || !firstName || !className) { failed++; continue; }
+      const safeName = escapeHtml(academy.name);
+      const safeFirst = escapeHtml(firstName);
+      const safeClass = escapeHtml(className);
+      try {
+        const ok = await sendEmail(c.env, {
+          from: 'AKADEMO <onboarding@akademo-edu.com>',
+          to: email,
+          subject: `Recordatorio de pago — ${className} · ${academy.name}`,
+          html: `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: 0 auto; background-color: #f8fafc; padding: 24px;">
+              <div style="background-color: #0f172a; padding: 32px 40px; border-radius: 12px 12px 0 0;">
+                <p style="color: #94a3b8; margin: 0 0 4px 0; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;">Recordatorio de</p>
+                <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700;">${safeName}</h1>
+              </div>
+              <div style="background-color: #ffffff; padding: 40px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
+                <p style="color: #0f172a; font-size: 18px; font-weight: 600; margin: 0 0 8px 0;">Hola, ${safeFirst}</p>
+                <p style="color: #475569; font-size: 15px; line-height: 1.7; margin: 0 0 24px 0;">Te recordamos que tienes un pago pendiente para la asignatura <strong style="color: #0f172a;">${safeClass}</strong> en <strong style="color: #0f172a;">${safeName}</strong>.</p>
+                <div style="background-color: #fefce8; border: 1px solid #fde047; border-radius: 8px; padding: 14px 18px; margin-bottom: 28px;">
+                  <p style="margin: 0; color: #713f12; font-size: 13px; line-height: 1.5;">Por favor, realiza el pago lo antes posible para mantener tu acceso a los contenidos de la asignatura.</p>
+                </div>
+                <div style="text-align: center; margin-bottom: 36px;">
+                  <a href="https://akademo-edu.com/dashboard/student" style="display: inline-block; background-color: #0f172a; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-size: 15px; font-weight: 600;">Ir a mi cuenta →</a>
+                </div>
+                <p style="color: #94a3b8; font-size: 13px; line-height: 1.6; margin: 0; padding-top: 24px; border-top: 1px solid #f1f5f9;">Saludos,<br><strong style="color: #475569;">Equipo de ${safeName}</strong></p>
+              </div>
+              <p style="text-align: center; color: #cbd5e1; font-size: 11px; margin: 16px 0 0 0;">Powered by AKADEMO · akademo-edu.com</p>
+            </div>
+          `,
+        });
+        if (ok) sent++; else failed++;
+      } catch {
+        failed++;
+      }
+    }
+
+    return c.json(successResponse({ sent, failed }));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Payment Reminder] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
+
 export default payments;

@@ -180,10 +180,13 @@ export function useStudentsData(role: 'TEACHER' | 'ACADEMY' | 'ADMIN') {
   }, [students, activePeriodId, filteredClasses, isClassInPeriod, selectedAcademy, role, classes]);
 
   // For ACADEMY role, fetch pending welcome email count
-  const loadPendingWelcome = useCallback(async () => {
+  const loadPendingWelcome = useCallback(async (classId?: string) => {
     if (role !== 'ACADEMY') return;
     try {
-      const res = await apiClient('/academies/welcome-emails/pending');
+      const url = classId
+        ? `/academies/welcome-emails/pending?classId=${encodeURIComponent(classId)}`
+        : '/academies/welcome-emails/pending';
+      const res = await apiClient(url);
       const data = await res.json();
       if (data.success) {
         setPendingWelcomeStudents(data.data.students ?? 0);
@@ -194,16 +197,18 @@ export function useStudentsData(role: 'TEACHER' | 'ACADEMY' | 'ADMIN') {
   }, [role]);
 
   useEffect(() => {
-    loadPendingWelcome();
-  }, [loadPendingWelcome]);
+    loadPendingWelcome(selectedClass !== 'all' ? selectedClass : undefined);
+  }, [loadPendingWelcome, selectedClass]);
 
-  const sendStudentWelcomeEmails = useCallback(async (): Promise<{ sent: number; failed: number }> => {
+  const sendStudentWelcomeEmails = useCallback(async (classId?: string): Promise<{ sent: number; failed: number }> => {
     setSendingWelcome(true);
     try {
+      const body: Record<string, string> = { role: 'STUDENT' };
+      if (classId) body.classId = classId;
       const res = await apiClient('/academies/welcome-emails', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: 'STUDENT' }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.error || 'Error sending emails');

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { apiClient } from '@/lib/api-client';
 import type { PagosState } from './usePagosData';
 import type { PagosActions } from './usePagosActions';
 
@@ -20,6 +21,8 @@ export function PagosPendingTable({ state, actions, hasHistory = false }: PagosP
 
   const [justApprovedIds, setJustApprovedIds] = useState<string[] | null>(null);
   const [approving, setApproving] = useState(false);
+  const [showReminderConfirm, setShowReminderConfirm] = useState(false);
+  const [sendingReminder, setSendingReminder] = useState(false);
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const UNDO_WINDOW = 15000;
 
@@ -47,6 +50,33 @@ export function PagosPendingTable({ state, actions, hasHistory = false }: PagosP
     await handleUndoApproveAll(justApprovedIds);
   }, [justApprovedIds, handleUndoApproveAll]);
 
+  const handleSendReminder = useCallback(async () => {
+    setSendingReminder(true);
+    setShowReminderConfirm(false);
+    try {
+      const students = filteredPendingPayments.map(p => ({
+        email: p.studentEmail,
+        firstName: p.studentFirstName,
+        className: p.className,
+      }));
+      const res = await apiClient('/payments/send-payment-reminder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ students }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`Recordatorio enviado a ${data.data.sent} estudiante${data.data.sent !== 1 ? 's' : ''}.${data.data.failed > 0 ? ` ${data.data.failed} fallido(s).` : ''}`);
+      } else {
+        alert('Error al enviar el recordatorio: ' + (data.error || 'Error desconocido'));
+      }
+    } catch {
+      alert('Error de conexión al enviar el recordatorio.');
+    } finally {
+      setSendingReminder(false);
+    }
+  }, [filteredPendingPayments]);
+
   useEffect(() => () => { if (undoTimer.current) clearTimeout(undoTimer.current); }, []);
 
   return (
@@ -71,13 +101,40 @@ export function PagosPendingTable({ state, actions, hasHistory = false }: PagosP
                 Deshacer ({justApprovedIds.length})
               </button>
             ) : filteredPendingPayments.length > 0 ? (
-              <button
-                onClick={(e) => { e.stopPropagation(); void startAcceptAll(); }}
-                disabled={approving}
-                className="ml-2 text-xs font-medium px-3 py-1 rounded-full bg-green-100 text-green-700 hover:bg-green-200 transition-colors disabled:opacity-50"
-              >
-                {approving ? 'Procesando…' : 'Aceptar todos'}
-              </button>
+              <>
+                <button
+                  onClick={(e) => { e.stopPropagation(); void startAcceptAll(); }}
+                  disabled={approving}
+                  className="ml-2 text-xs font-medium px-3 py-1 rounded-full bg-green-100 text-green-700 hover:bg-green-200 transition-colors disabled:opacity-50"
+                >
+                  {approving ? 'Procesando…' : 'Aceptar todos'}
+                </button>
+                {showReminderConfirm ? (
+                  <span className="ml-2 flex items-center gap-1">
+                    <span className="text-xs text-yellow-800">¿Enviar a {filteredPendingPayments.length}?</span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); void handleSendReminder(); }}
+                      className="text-xs font-medium px-2 py-0.5 rounded-full bg-yellow-500 text-white hover:bg-yellow-600 transition-colors"
+                    >
+                      Sí
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setShowReminderConfirm(false); }}
+                      className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
+                    >
+                      No
+                    </button>
+                  </span>
+                ) : (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setShowReminderConfirm(true); }}
+                    disabled={sendingReminder}
+                    className="ml-2 text-xs font-medium px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 hover:bg-yellow-200 transition-colors disabled:opacity-50"
+                  >
+                    {sendingReminder ? 'Enviando…' : 'Enviar recordatorio'}
+                  </button>
+                )}
+              </>
             ) : null
           )}
         </div>

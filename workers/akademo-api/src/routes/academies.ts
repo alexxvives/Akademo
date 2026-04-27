@@ -705,30 +705,50 @@ academies.get('/welcome-emails/pending', async (c) => {
       return c.json(errorResponse('Only academy owners can access this'), 403);
     }
 
-    const result = await c.env.DB.prepare(`
-      SELECT
-        SUM(CASE WHEN sub.role = 'STUDENT' THEN 1 ELSE 0 END) as students,
-        SUM(CASE WHEN sub.role = 'TEACHER' THEN 1 ELSE 0 END) as teachers
-      FROM (
-        SELECT DISTINCT u.id, u.role
+    const classId = c.req.query('classId');
+
+    let studentQuery: string;
+    let studentBinds: any[];
+    if (classId) {
+      studentQuery = `SELECT DISTINCT u.id, u.role
         FROM User u
         JOIN ClassEnrollment ce ON u.id = ce.userId
         JOIN Class cls ON ce.classId = cls.id
         JOIN Academy a ON cls.academyId = a.id
-        WHERE u.tempPassword IS NOT NULL AND a.ownerId = ?
-        UNION
-        SELECT DISTINCT u.id, u.role
+        WHERE u.tempPassword IS NOT NULL AND a.ownerId = ? AND cls.id = ?`;
+      studentBinds = [session.id, classId];
+    } else {
+      studentQuery = `SELECT DISTINCT u.id, u.role
         FROM User u
-        JOIN Teacher t ON u.id = t.userId
-        JOIN Academy a ON t.academyId = a.id
-        WHERE u.tempPassword IS NOT NULL AND a.ownerId = ?
-      ) sub
-    `).bind(session.id, session.id).first() as any;
+        JOIN ClassEnrollment ce ON u.id = ce.userId
+        JOIN Class cls ON ce.classId = cls.id
+        JOIN Academy a ON cls.academyId = a.id
+        WHERE u.tempPassword IS NOT NULL AND a.ownerId = ?`;
+      studentBinds = [session.id];
+    }
+
+    const teacherQuery = `SELECT DISTINCT u.id, u.role
+      FROM User u
+      JOIN Teacher t ON u.id = t.userId
+      JOIN Academy a ON t.academyId = a.id
+      WHERE u.tempPassword IS NOT NULL AND a.ownerId = ?`;
+
+    const [studentResult, teacherResult] = await Promise.all([
+      c.env.DB.prepare(`SELECT SUM(1) as cnt FROM (${studentQuery}) sub`)
+        .bind(...studentBinds).first() as Promise<any>,
+      classId
+        ? Promise.resolve({ cnt: 0 })
+        : c.env.DB.prepare(`SELECT SUM(1) as cnt FROM (${teacherQuery}) sub`)
+            .bind(session.id).first() as Promise<any>,
+    ]);
+
+    const students = studentResult?.cnt ?? 0;
+    const teachers = classId ? 0 : (teacherResult?.cnt ?? 0);
 
     return c.json(successResponse({
-      students: result?.students ?? 0,
-      teachers: result?.teachers ?? 0,
-      total: (result?.students ?? 0) + (result?.teachers ?? 0),
+      students,
+      teachers,
+      total: students + teachers,
     }));
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
@@ -748,6 +768,7 @@ academies.post('/welcome-emails', async (c) => {
 
     const body = await c.req.json().catch(() => ({}));
     const roleFilter: string | undefined = (body as any).role; // optional: 'STUDENT' | 'TEACHER'
+    const classId: string | undefined = (body as any).classId; // optional class filter
 
     // Get academy info
     const academy = await c.env.DB
@@ -761,19 +782,27 @@ academies.post('/welcome-emails', async (c) => {
     // Fetch pending users (students)
     let users: any[] = [];
     if (!roleFilter || roleFilter === 'STUDENT') {
-      const studentsResult = await c.env.DB.prepare(`
-        SELECT DISTINCT u.id, u.email, u.firstName, u.lastName, u.tempPassword, 'STUDENT' as role
-        FROM User u
-        JOIN ClassEnrollment ce ON u.id = ce.userId
-        JOIN Class cls ON ce.classId = cls.id
-        JOIN Academy a ON cls.academyId = a.id
-        WHERE u.tempPassword IS NOT NULL AND a.ownerId = ?
-        ORDER BY u.firstName, u.lastName
-      `).bind(session.id).all();
+      const studentSql = classId
+        ? `SELECT DISTINCT u.id, u.email, u.firstName, u.lastName, u.tempPassword, 'STUDENT' as role
+          FROM User u
+          JOIN ClassEnrollment ce ON u.id = ce.userId
+          JOIN Class cls ON ce.classId = cls.id
+          JOIN Academy a ON cls.academyId = a.id
+          WHERE u.tempPassword IS NOT NULL AND a.ownerId = ? AND cls.id = ?
+          ORDER BY u.firstName, u.lastName`
+        : `SELECT DISTINCT u.id, u.email, u.firstName, u.lastName, u.tempPassword, 'STUDENT' as role
+          FROM User u
+          JOIN ClassEnrollment ce ON u.id = ce.userId
+          JOIN Class cls ON ce.classId = cls.id
+          JOIN Academy a ON cls.academyId = a.id
+          WHERE u.tempPassword IS NOT NULL AND a.ownerId = ?
+          ORDER BY u.firstName, u.lastName`;
+      const studentBinds = classId ? [session.id, classId] : [session.id];
+      const studentsResult = await c.env.DB.prepare(studentSql).bind(...studentBinds).all();
       users = users.concat(studentsResult.results || []);
     }
 
-    if (!roleFilter || roleFilter === 'TEACHER') {
+    if (!classId && (!roleFilter || roleFilter === 'TEACHER')) {
       const teachersResult = await c.env.DB.prepare(`
         SELECT DISTINCT u.id, u.email, u.firstName, u.lastName, u.tempPassword, 'TEACHER' as role
         FROM User u

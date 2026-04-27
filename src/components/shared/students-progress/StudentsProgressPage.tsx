@@ -40,7 +40,8 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
 
   const handleSendWelcome = async () => {
     try {
-      const result = await sendStudentWelcomeEmails();
+      const classId = selectedClass !== 'all' ? selectedClass : undefined;
+      const result = await sendStudentWelcomeEmails(classId);
       setWelcomeResult(result);
     } catch {
       alert('Error al enviar los emails de bienvenida. Intenta de nuevo.');

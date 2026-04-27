@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { apiClient, apiPost } from '@/lib/api-client';
+import { decodeHtmlEntities } from '@/lib/utils';
 
 interface QuizQuestion {
   id: string;
@@ -194,7 +195,7 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
                 const selectedIds = answer?.selectedOptionIds ?? (answer?.selectedOptionId ? [answer.selectedOptionId] : []);
                 return (
                   <div key={q.id} className={`p-4 rounded-lg border ${answer?.correct ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
-                    <p className="font-medium text-gray-900 mb-2">{i + 1}. {q.questionText}</p>
+                    <p className="font-medium text-gray-900 mb-2">{i + 1}. {decodeHtmlEntities(q.questionText)}</p>
                     <div className="space-y-1">
                       {q.options.map(opt => {
                         const isSelected = selectedIds.includes(opt.id);
@@ -207,7 +208,7 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
                           {isCorrect && <span>✓</span>}
                             {isSelected && !isCorrect && <span>✗</span>}
                             {!isSelected && !isCorrect && <span className="w-3" />}
-                            <span>{opt.text}</span>
+                            <span>{decodeHtmlEntities(opt.text)}</span>
                           </div>
                         );
                       })}
@@ -289,7 +290,7 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
         {/* Current question */}
         {currentQuestion && (
           <div className="p-5 bg-gray-50 rounded-xl mb-5">
-            <p className="font-semibold text-gray-900 mb-4">{currentQuestion.questionText}</p>
+            <p className="font-semibold text-gray-900 mb-4">{decodeHtmlEntities(currentQuestion.questionText)}</p>
             <div className="space-y-2">
               {currentQuestion.options.map(opt => (
                 <label
@@ -306,7 +307,7 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
                     onChange={() => toggleAnswer(currentQuestion.id, opt.id)}
                     className="w-4 h-4 rounded text-gray-900 focus:ring-gray-900 accent-black"
                   />
-                  <span className="text-sm text-gray-700">{opt.text}</span>
+                  <span className="text-sm text-gray-700">{decodeHtmlEntities(opt.text)}</span>
                 </label>
               ))}
             </div>
