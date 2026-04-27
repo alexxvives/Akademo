@@ -67,6 +67,8 @@ export interface WatermarkConfig {
   logoBytes?: ArrayBuffer;
   /** MIME type of the logo: 'image/png' | 'image/jpeg' */
   logoMime?: string;
+  /** Original filename — used to set the PDF document title so browsers show a readable tab title */
+  fileName?: string;
 }
 
 /**
@@ -82,6 +84,12 @@ export async function addWatermarkToPdf(
   // If the PDF is password-protected we cannot write to it — return original bytes untouched.
   if (pdfDoc.isEncrypted) {
     return new Uint8Array(pdfBytes);
+  }
+
+  // Set document title from the original filename (makes browser tab show a readable name
+  // instead of the hash-based URL segment).
+  if (cfg.fileName) {
+    try { pdfDoc.setTitle(cfg.fileName.replace(/\.[^.]+$/, '')); } catch { /* ignore */ }
   }
 
   const fontNormal = await pdfDoc.embedFont(StandardFonts.Helvetica);

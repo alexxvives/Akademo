@@ -389,18 +389,35 @@ storage.post('/multipart/abort', async (c) => {
 
 /** Build a Response for an R2 object, applying a PDF watermark when eligible. */
 async function buildFileResponse(
-  object: { body: ReadableStream; httpMetadata?: { contentType?: string }; size: number; arrayBuffer(): Promise<ArrayBuffer> },
+  object: { body: ReadableStream; httpMetadata?: { contentType?: string }; size: number; arrayBuffer(): Promise<ArrayBuffer>; customMetadata?: Record<string, string> },
   opts: {
     cacheControl: string;
     session: SessionUser | null;
     env: Bindings;
     /** Pre-resolved watermark data (used for signed-URL path where session may not exist). */
     overrideWatermark?: { fullName: string; email: string; academyName?: string; logoBytes?: ArrayBuffer; logoMime?: string };
+    /** R2 key — used to resolve the original filename for Content-Disposition and PDF title */
+    fileKey?: string;
   },
 ): Promise<Response> {
   const contentType = object.httpMetadata?.contentType || 'application/octet-stream';
   const isPdf = contentType === 'application/pdf';
   const { session, env } = opts;
+
+  // Resolve original filename: R2 custom metadata (regular uploads) → DB lookup (Moodle imports)
+  let displayFileName: string | undefined = object.customMetadata?.originalName;
+  if (!displayFileName && opts.fileKey) {
+    try {
+      const row = await env.DB
+        .prepare('SELECT fileName FROM Upload WHERE storagePath = ? LIMIT 1')
+        .bind(opts.fileKey)
+        .first<{ fileName: string | null }>();
+      displayFileName = row?.fileName || undefined;
+    } catch { /* non-critical */ }
+  }
+  const contentDisposition = displayFileName
+    ? `inline; filename*=UTF-8''${encodeURIComponent(displayFileName)}`
+    : undefined;
 
   const wmData = opts.overrideWatermark ?? null;
   const shouldWatermark = isPdf && object.size <= PDF_WATERMARK_SIZE_LIMIT && (wmData !== null || session !== null);
@@ -437,35 +454,35 @@ async function buildFileResponse(
 
       const pdfBytes = await object.arrayBuffer();
       try {
-        const watermarked = await addWatermarkToPdf(pdfBytes, { fullName, email, academyName, logoBytes, logoMime });
-        return new Response(watermarked, {
-          headers: {
-            'Content-Type': 'application/pdf',
-            'Content-Length': watermarked.byteLength.toString(),
-            'Cache-Control': 'private, no-store',
-          },
-        });
+        const watermarked = await addWatermarkToPdf(pdfBytes, { fullName, email, academyName, logoBytes, logoMime, fileName: displayFileName });
+        const wHeaders: Record<string, string> = {
+          'Content-Type': 'application/pdf',
+          'Content-Length': watermarked.byteLength.toString(),
+          'Cache-Control': 'private, no-store',
+        };
+        if (contentDisposition) wHeaders['Content-Disposition'] = contentDisposition;
+        return new Response(watermarked, { headers: wHeaders });
       } catch {
         // Watermarking failed — serve original bytes (stream already consumed by arrayBuffer())
-        return new Response(pdfBytes, {
-          headers: {
-            'Content-Type': 'application/pdf',
-            'Content-Length': pdfBytes.byteLength.toString(),
-            'Cache-Control': opts.cacheControl,
-          },
-        });
+        const fbHeaders: Record<string, string> = {
+          'Content-Type': 'application/pdf',
+          'Content-Length': pdfBytes.byteLength.toString(),
+          'Cache-Control': opts.cacheControl,
+        };
+        if (contentDisposition) fbHeaders['Content-Disposition'] = contentDisposition;
+        return new Response(pdfBytes, { headers: fbHeaders });
       }
     }
   }
 
   // Non-PDF or too large to watermark — stream directly
-  return new Response(object.body as ReadableStream, {
-    headers: {
-      'Content-Type': contentType,
-      'Content-Length': object.size.toString(),
-      'Cache-Control': opts.cacheControl,
-    },
-  });
+  const streamHeaders: Record<string, string> = {
+    'Content-Type': contentType,
+    'Content-Length': object.size.toString(),
+    'Cache-Control': opts.cacheControl,
+  };
+  if (contentDisposition) streamHeaders['Content-Disposition'] = contentDisposition;
+  return new Response(object.body as ReadableStream, { headers: streamHeaders });
 }
 
 // GET /storage/serve/:key - Serve file from R2
@@ -588,6 +605,7 @@ storage.get('/serve/*', async (c) => {
             cacheControl: 'private, no-store',
             session: null,
             env: c.env,
+            fileKey: key,
             overrideWatermark: { fullName: signedName, email: signedEmail, academyName: signedAcademyName, logoBytes, logoMime },
           });
         }
@@ -746,6 +764,7 @@ storage.get('/serve/*', async (c) => {
           cacheControl: isPublicAsset ? 'public, max-age=31536000, immutable' : 'private, max-age=3600',
           session: isPublicAsset ? null : (session ?? null),
           env: c.env,
+          fileKey: isPublicAsset ? undefined : rawKey,
         });
       }
       console.error('[Serve File] File not found in R2. Key:', key);
@@ -756,6 +775,7 @@ storage.get('/serve/*', async (c) => {
       cacheControl: isPublicAsset ? 'public, max-age=31536000, immutable' : 'private, max-age=3600',
       session: isPublicAsset ? null : (session ?? null),
       env: c.env,
+      fileKey: isPublicAsset ? undefined : key,
     });
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;

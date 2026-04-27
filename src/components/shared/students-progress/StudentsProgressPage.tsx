@@ -99,7 +99,6 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
       {role === 'ACADEMY' && pendingWelcomeStudents > 0 && !welcomeResult && (
         <div className="flex items-center justify-between gap-4 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
           <div className="flex items-center gap-3">
-            <span className="text-amber-500 text-lg">✉️</span>
             <div>
               <p className="text-sm font-semibold text-amber-800">
                 {pendingWelcomeStudents} {pendingWelcomeStudents === 1 ? 'estudiante tiene' : 'estudiantes tienen'} credenciales pendientes de enviar
