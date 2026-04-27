@@ -1363,16 +1363,6 @@ lessons.get('/:id/student-times', async (c) => {
       return c.json(errorResponse('Not authorized'), 403);
     }
 
-    // Get all videos for this lesson
-    const videos = await c.env.DB
-      .prepare('SELECT id, title, durationSeconds FROM Video WHERE lessonId = ? ORDER BY createdAt')
-      .bind(lessonId)
-      .all();
-
-    if (!videos.results || videos.results.length === 0) {
-      return c.json(successResponse([]));
-    }
-
     // Get all enrolled students for this class
     const students = await c.env.DB
       .prepare(`
@@ -1387,6 +1377,22 @@ lessons.get('/:id/student-times', async (c) => {
 
     if (!students.results || students.results.length === 0) {
       return c.json(successResponse([]));
+    }
+
+    // Get all videos for this lesson
+    const videos = await c.env.DB
+      .prepare('SELECT id, title, durationSeconds FROM Video WHERE lessonId = ? ORDER BY createdAt')
+      .bind(lessonId)
+      .all();
+
+    // If no videos, return all enrolled students with empty video arrays
+    if (!videos.results || videos.results.length === 0) {
+      const studentsNoVideos = students.results.map((student: any) => ({
+        studentId: student.id,
+        studentName: `${student.firstName} ${student.lastName}`,
+        videos: [],
+      }));
+      return c.json(successResponse(studentsNoVideos));
     }
 
     // Build student times data using a single batch query instead of S×V individual queries

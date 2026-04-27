@@ -126,7 +126,7 @@ export function SkeletonClassDetail() {
       </div>
 
       {/* Topic group 1 — expanded with lesson grid */}
-      <div className="rounded-xl border-2 border-slate-600/40">
+      <div className="rounded-xl border border-gray-200 bg-white">
         <div className="flex items-center justify-between px-4 py-3.5">
           <div className="flex items-center gap-3">
             <SkeletonBox className="h-5 w-5 rounded" />
@@ -144,7 +144,7 @@ export function SkeletonClassDetail() {
       </div>
 
       {/* Topic group 2 — collapsed */}
-      <div className="rounded-xl border-2 border-slate-600/40">
+      <div className="rounded-xl border border-gray-200 bg-white">
         <div className="flex items-center justify-between px-4 py-3.5">
           <div className="flex items-center gap-3">
             <SkeletonBox className="h-5 w-5 rounded" />
@@ -155,7 +155,7 @@ export function SkeletonClassDetail() {
       </div>
 
       {/* Topic group 3 — collapsed */}
-      <div className="rounded-xl border-2 border-slate-600/40">
+      <div className="rounded-xl border border-gray-200 bg-white">
         <div className="flex items-center justify-between px-4 py-3.5">
           <div className="flex items-center gap-3">
             <SkeletonBox className="h-5 w-5 rounded" />
