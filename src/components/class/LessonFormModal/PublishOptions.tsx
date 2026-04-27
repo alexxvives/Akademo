@@ -49,19 +49,19 @@ export function PublishOptions({ formData, setFormData }: PublishOptionsProps) {
       </div>
       {!formData.publishImmediately && (
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Fecha y Hora</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Fecha y Hora</label>
           <div className="grid grid-cols-2 gap-2">
             <input
               type="date"
               value={formData.releaseDate}
               onChange={e => setFormData(prev => ({ ...prev, releaseDate: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-colors"
             />
             <input
               type="time"
               value={formData.releaseTime}
               onChange={e => setFormData(prev => ({ ...prev, releaseTime: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-colors"
             />
           </div>
         </div>

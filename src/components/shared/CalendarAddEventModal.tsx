@@ -6,6 +6,7 @@ import { apiClient } from '@/lib/api-client';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 import { CustomTimePicker } from '@/components/ui/CustomTimePicker';
 import { CustomDatePicker } from '@/components/ui/CustomDatePicker';
+import { FormInput } from '@/components/ui/FormInput';
 import { type CalendarAddEventModalProps, pad } from './CalendarAddEventModal.types';
 
 export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEvent, disabled }: CalendarAddEventModalProps) {
@@ -142,23 +143,22 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
         <div className="px-6 py-5 space-y-4">
           {/* Title */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Título <span className="text-red-400">*</span></label>
-            <input
+            <label className="block text-sm font-medium text-gray-700 mb-1">Título <span className="text-red-400">*</span></label>
+            <FormInput
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
           </div>
 
           {/* Date & Time — custom pickers */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Fecha <span className="text-red-400">*</span></label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Fecha <span className="text-red-400">*</span></label>
               <CustomDatePicker value={eventDate} onChange={setEventDate} />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Hora</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Hora</label>
               <CustomTimePicker value={startTime} onChange={setStartTime} />
             </div>
           </div>
@@ -166,7 +166,7 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
           {/* Asignatura — searchable dropdown with uni/carrera grouping */}
           {classes.length > 0 && (
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Asignatura</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Asignatura</label>
               <ClassSearchDropdown
                 classes={classes}
                 value={classId || 'all'}
@@ -180,34 +180,33 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
 
           {/* Location */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Ubicación (opcional)</label>
-            <input
+            <label className="block text-sm font-medium text-gray-700 mb-1">Ubicación (opcional)</label>
+            <FormInput
               type="text"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               placeholder="p.ej. Aula 3, Campus Norte"
-              className="w-full px-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
             />
           </div>
 
           {/* Link (optional — for physical or external meetings) */}
           {showZoomLink && (
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-sm font-semibold text-gray-700">Link de la reunión</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-gray-700">Link de la reunión</label>
               </div>
               <div className="flex gap-2">
-                <input
+                <FormInput
                   type="url"
                   value={zoomLink}
                   onChange={(e) => setZoomLink(e.target.value)}
                   placeholder="https://..."
-                  className="flex-1 px-4 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  className="flex-1 w-auto"
                 />
                 <button
                   type="button"
                   onClick={() => { setShowZoomLink(false); setZoomLink(''); setZoomMeetingId(''); }}
-                  className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -224,7 +223,7 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-2.5 text-sm font-medium text-gray-700 border-2 border-gray-200 hover:bg-gray-50 rounded-xl transition-colors"
+            className="flex-1 py-2 text-sm font-medium text-gray-700 border border-gray-200 hover:bg-gray-50 rounded-lg transition-colors"
           >
             Cancelar
           </button>
@@ -233,8 +232,8 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
             onClick={disabled ? undefined : handleSave}
             disabled={saving || disabled}
             title={disabled ? 'No disponible en modo demo' : undefined}
-            className={`flex-1 py-2.5 text-sm font-medium text-white rounded-xl transition-colors disabled:opacity-60 ${
-              disabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+            className={`flex-1 py-2 text-sm font-medium text-white rounded-lg transition-colors disabled:opacity-60 ${
+              disabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-brand-600 hover:bg-brand-700'
             }`}
           >
             {saving ? 'Guardando...' : isEditMode ? 'Guardar cambios' : 'Crear evento'}

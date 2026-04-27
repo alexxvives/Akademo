@@ -98,7 +98,7 @@ export default function PendingEnrollments({
                 </button>
                 <button
                   onClick={() => onApprove(enrollment.id)}
-                  className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all"
+                  className="p-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-all"
                   title="Aprobar"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -36,7 +36,6 @@ export function useDashboardData(role: 'ACADEMY' | 'ADMIN') {
   const [academies, setAcademies] = useState<Academy[]>([]);
   const [selectedAcademy, setSelectedAcademy] = useState('all');
   const [academyClasses, setAcademyClasses] = useState<Class[]>([]);
-  const paymentStatusInitRef = useRef(true);
   const prevPeriodRef = useRef(activePeriodId);
 
   // Reset class/academy filters when period changes
@@ -66,10 +65,9 @@ export function useDashboardData(role: 'ACADEMY' | 'ADMIN') {
     }
   }, [selectedAcademy, classes, isAdmin]);
 
-  // Re-fetch payment status when class or period filter changes
+  // Re-fetch payment status when class, period, or initial data load changes
   useEffect(() => {
     if (paymentStatus === 'NOT PAID') return;
-    if (paymentStatusInitRef.current) { paymentStatusInitRef.current = false; return; }
     let url: string;
     if (selectedClass !== 'all') {
       url = `/enrollments/payment-status?classId=${selectedClass}`;
@@ -92,7 +90,8 @@ export function useDashboardData(role: 'ACADEMY' | 'ADMIN') {
     }).catch(() => {/* silent */});
   }, [selectedClass, isAdmin, selectedAcademy, paymentStatus, activePeriodId, classes, isClassInPeriod]);
 
-  // Apply fetched data to state
+  // Apply fetched data to state — intentionally does NOT set studentPaymentStatus.
+  // The re-fetch effect populates it correctly (with period filter) once paymentStatus changes.
   const applyResult = useCallback((data: Awaited<ReturnType<typeof fetchAcademyData>>) => {
     if (data.academyInfo !== undefined) setAcademyInfo(data.academyInfo ?? null);
     setPaymentStatus(data.paymentStatus);
@@ -104,7 +103,6 @@ export function useDashboardData(role: 'ACADEMY' | 'ADMIN') {
     setAllStreams(data.allStreams);
     setClassWatchTime(data.classWatchTime);
     setAllCompletedPayments(data.allCompletedPayments);
-    setStudentPaymentStatus(data.studentPaymentStatus);
     if (data.academies.length > 0) setAcademies(data.academies);
   }, []);
 
@@ -113,28 +111,9 @@ export function useDashboardData(role: 'ACADEMY' | 'ADMIN') {
       try {
         const data = isAcademy ? await fetchAcademyData() : await fetchAdminData();
         applyResult(data);
-        // If a period is already selected, the summary endpoint returns unfiltered payment
-        // status. Re-fetch immediately with the period filter so the numbers are correct
-        // from the very first render instead of only after the user changes the selector.
-        if (isAcademy && data.paymentStatus !== 'NOT PAID' && activePeriodId !== 'all') {
-          const periodIds = data.classes
-            .filter(c => isClassInPeriod(c.startDate))
-            .map(c => c.id);
-          if (periodIds.length > 0) {
-            // Reset to zeros so the animation counts up once to the correct filtered number,
-            // instead of animating to the unfiltered total first then jumping down.
-            setStudentPaymentStatus({ alDia: 0, atrasados: 0, total: 0, uniqueAlDia: 0, uniqueAtrasados: 0, uniqueTotal: 0 });
-            apiClient(`/enrollments/payment-status?classIds=${periodIds.join(',')}`)
-              .then(r => r.json())
-              .then(result => {
-                if (result.success && result.data) setStudentPaymentStatus(result.data);
-              })
-              .catch(() => {/* silent */});
-          } else {
-            setStudentPaymentStatus({ alDia: 0, atrasados: 0, total: 0, uniqueAlDia: 0, uniqueAtrasados: 0, uniqueTotal: 0 });
-          }
-        }
-        if (!isAcademy) paymentStatusInitRef.current = true;
+        // studentPaymentStatus stays at zeros (initial state) until the re-fetch effect
+        // fires (triggered by paymentStatus changing from NOT PAID to PAID/etc).
+        // That effect applies the correct period/class filter automatically.
       } catch (error) {
         console.error('❌ Failed to load data:', error);
       } finally {

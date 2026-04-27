@@ -40,7 +40,13 @@ export function PeriodProvider({
   role: string;
 }) {
   const [periods, setPeriods] = useState<AcademicPeriod[]>([]);
-  const [activePeriodId, setActivePeriodIdState] = useState<string>('all');
+  // Read saved preference immediately from localStorage so the correct period is
+  // available on the very first render — before the API call completes. This prevents
+  // the dashboard from briefly showing unfiltered payment-status numbers on refresh.
+  const [activePeriodId, setActivePeriodIdState] = useState<string>(() => {
+    if (typeof window === 'undefined') return 'all';
+    try { return localStorage.getItem(LS_KEY) ?? 'all'; } catch { return 'all'; }
+  });
 
   useEffect(() => {
     if (role !== 'ACADEMY' && role !== 'TEACHER') return;
@@ -54,19 +60,15 @@ export function PeriodProvider({
         data.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
         setPeriods(data);
 
-        // Restore saved preference — including 'all'
+        // Validate the saved preference — if the saved ID no longer exists in the
+        // API response, fall back to the most recent period.
         try {
           const saved = localStorage.getItem(LS_KEY);
-          if (saved === 'all') {
-            setActivePeriodIdState('all');
-            return;
-          }
-          if (saved && data.find((p) => p.id === saved)) {
-            setActivePeriodIdState(saved);
-            return;
-          }
+          if (saved === 'all') return; // 'all' is always valid
+          if (saved && data.find((p) => p.id === saved)) return; // still valid
         } catch { /* ignore */ }
 
+        // Saved ID is missing or invalid — default to most recent
         const defaultId = data.length > 0 ? data[0].id : 'all';
         setActivePeriodIdState(defaultId);
         try { localStorage.setItem(LS_KEY, defaultId); } catch { /* ignore */ }
