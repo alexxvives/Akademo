@@ -66,8 +66,8 @@ const OUTPUT_XLSX     = path.join(ROOT, 'moodle-migration.xlsx');
 // Moodle roles that map to AKADEMO TEACHER
 const TEACHER_ROLES = new Set(['editingteacher', 'teacher', 'manager']);
 
-// Admin/system usernames to skip
-const SKIP_EMAILS = new Set(['campusmanager@maximoexponente.es', 'amaximoexponente@gmail.com']);
+// Admin/system emails to skip during import — add academy-specific admin accounts here
+const SKIP_EMAILS = new Set([]);
 
 // ── Parse CSV ────────────────────────────────────────────────────────────────
 function parseCSV(filePath) {

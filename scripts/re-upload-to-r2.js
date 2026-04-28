@@ -7,8 +7,8 @@
  * are missing. It does NOT touch the database.
  *
  * Usage (PowerShell):
- *   $env:FTP_HOST="ftp.maximoexponente.es"
- *   $env:FTP_USER="akademo@maximoexponente.es"
+ *   $env:FTP_HOST="ftp.client-domain.es"
+ *   $env:FTP_USER="ftp-username"
  *   $env:FTP_PASS="<password>"
  *   $env:R2_ACCESS_KEY_ID="<key>"
  *   $env:R2_SECRET_ACCESS_KEY="<secret>"

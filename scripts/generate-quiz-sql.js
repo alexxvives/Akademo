@@ -192,7 +192,7 @@ fs.writeFileSync(OUT_SQL, sqlLines.join('\n'), 'utf8');
 
 // ── Generate PDF manifest ─────────────────────────────────────────────────────
 // Groups files by course. Provides the SiteGround path to download each file.
-const MOODLE_DATA_ROOT = '/home/customer/www/maximoexponente.es/campus/moodledata/filedir';
+const MOODLE_DATA_ROOT = '/home/customer/www/{client-domain}/moodledata/filedir'; // update per client
 
 const manifestLines = [
   'AKADEMO PDF Migration Manifest',

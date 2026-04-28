@@ -2,16 +2,18 @@
 /**
  * Moodle FTP → Cloudflare R2 document migration
  *
- * Reads  : scripts/moodle-import/files.csv
+ * Reads  : docs/onboarding/{CLIENT_SLUG}/files.csv
  * Does   : FTP-download every unique file from moodledata/filedir/,
  *          uploads to R2, then generates import-documents.sql which
  *          creates Topic / Lesson / Upload / Document rows linked to
  *          the already-imported Class records.
  *
+ * Before running: update the CLIENT_SLUG, ACADEMY_ID, OWNER_ID constants below.
+ *
  * Usage (PowerShell):
- *   $env:FTP_HOST="ftp.maximoexponente.es"
- *   $env:FTP_USER="akademo@maximoexponente.es"
- *   $env:FTP_PASS="@Alex1z2x"
+ *   $env:FTP_HOST="ftp.client-domain.es"
+ *   $env:FTP_USER="ftp-username"
+ *   $env:FTP_PASS="ftp-password"
  *   $env:R2_ACCESS_KEY_ID="<your-key>"
  *   $env:R2_SECRET_ACCESS_KEY="<your-secret>"
  *   node scripts/ftp-to-r2.js
@@ -36,29 +38,26 @@ if (fs.existsSync(envFile)) {
   }
 }
 
-// ── Config ───────────────────────────────────────────────────────────────────
-const FTP_HOST      = process.env.FTP_HOST      || 'ftp.maximoexponente.es';
-const FTP_USER      = process.env.FTP_USER      || 'akademo@maximoexponente.es';
+// ── Update these per client ───────────────────────────────────────────────────
+const CLIENT_SLUG   = 'client-slug'; // e.g. 'maximo-exponente'
+const FTP_HOST      = process.env.FTP_HOST      || '';
+const FTP_USER      = process.env.FTP_USER      || '';
 const FTP_PASS      = process.env.FTP_PASS      || '';
 const R2_KEY_ID     = process.env.R2_ACCESS_KEY_ID     || '';
 const R2_SECRET     = process.env.R2_SECRET_ACCESS_KEY || '';
 const R2_BUCKET     = process.env.R2_BUCKET     || 'akademo-storage';
 const CF_ACCOUNT_ID = process.env.R2_ACCOUNT_ID || '53808754f4bd94365d6e31351aa426c0';
 
-const ACADEMY_ID    = '93ab97cf-271b-48de-924b-10fb7eab0a38';
-const OWNER_ID      = '3d26da5d-c5b6-4c49-ae62-d4687c44cfd7'; // academy owner user
+const ACADEMY_ID    = ''; // SELECT id FROM Academy WHERE name = '...'
+const OWNER_ID      = ''; // academy owner user id
 
-const FILES_CSV     = path.join(__dirname, '..', 'docs', 'onboarding', 'maximoexponente', 'files.csv');
-const OUT_SQL       = path.join(__dirname, '..', 'docs', 'onboarding', 'maximoexponente', 'import-documents.sql');
-const OUT_MANIFEST  = path.join(__dirname, '..', 'docs', 'onboarding', 'maximoexponente', 'documents-manifest.json');
-const PROGRESS_JSON = path.join(__dirname, '..', 'docs', 'onboarding', 'maximoexponente', 'ftp-progress.json');
+const FILES_CSV     = path.join(__dirname, '..', 'docs', 'onboarding', CLIENT_SLUG, 'files.csv');
+const OUT_SQL       = path.join(__dirname, '..', 'docs', 'onboarding', CLIENT_SLUG, 'import-documents.sql');
+const OUT_MANIFEST  = path.join(__dirname, '..', 'docs', 'onboarding', CLIENT_SLUG, 'documents-manifest.json');
+const PROGRESS_JSON = path.join(__dirname, '..', 'docs', 'onboarding', CLIENT_SLUG, 'ftp-progress.json');
 
-// Candidate moodledata paths to try in order
+// Candidate moodledata paths to try in order (add client-specific paths first)
 const MOODLE_DATA_CANDIDATES = [
-  'campus.maximoexponente.es/moodledata/filedir',
-  'campus.maximoexponente.es/public_html/moodledata/filedir',
-  'maximoexponente.es/moodledata/filedir',
-  'maximoexponente.es/public_html/moodledata/filedir',
   'moodledata/filedir',
   'public_html/moodledata/filedir',
   'www/moodledata/filedir',
@@ -135,14 +134,10 @@ async function findMoodleDataDir(client) {
       // not found, try next
     }
   }
-  // Last resort: print root + campus listing to help diagnose
-  console.log('⚠️  Could not find moodledata. Root listing:');
-  const root = await client.list('/');
-  root.forEach(e => console.log('  ', e.type === 2 ? '[dir]' : '[file]', e.name));
   try {
-    console.log('\n  campus.maximoexponente.es listing:');
-    const campus = await client.list('campus.maximoexponente.es');
-    campus.forEach(e => console.log('  ', e.type === 2 ? '[dir]' : '[file]', e.name));
+    console.log('\u26a0\ufe0f  Could not find moodledata. Root listing:');
+    const root = await client.list('/');
+    root.forEach(e => console.log('  ', e.type === 2 ? '[dir]' : '[file]', e.name));
   } catch {}
   throw new Error('Could not locate moodledata/filedir on FTP server. See root listing above.');
 }
@@ -229,7 +224,7 @@ async function main() {
       const filename    = (row.filename || '').trim();
       const filesize    = parseInt(row.filesize, 10) || 0;
       const contentType = mimeFromFilename(filename);
-      const r2Key       = `maximo-exponente/documents/${filePath}`; // keeps hash path → no duplicates
+      const r2Key       = `${CLIENT_SLUG}/documents/${filePath}`; // keeps hash path → no duplicates
 
       // Already done in a previous run?
       if (progress[filePath]) {
@@ -416,7 +411,7 @@ async function main() {
     console.log('    Documents are now visible in Mediateca → Documentos.');
   } catch (execErr) {
     console.error('❌  Failed to apply import-documents.sql automatically.');
-    console.error('    Run manually: npx wrangler d1 execute akademo-db --remote --file=docs/onboarding/maximoexponente/import-documents.sql');
+    console.error(`    Run manually: npx wrangler d1 execute akademo-db --remote --file=docs/onboarding/${CLIENT_SLUG}/import-documents.sql`);
   }
   console.log('');
   console.log('Migration complete. Verify in AKADEMO → Mediateca → Documentos.');

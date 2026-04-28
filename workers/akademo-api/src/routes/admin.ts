@@ -1217,7 +1217,7 @@ admin.post('/bulk-import', async (c) => {
     // and GET /payments/my-payments will reconcile amounts if billing state changes later.
 
     // ── Quiz & Question import ──────────────────────────────────────────────────
-    const MOODLE_DATA_ROOT = '/home/customer/www/maximoexponente.es/campus/moodledata/filedir';
+    const MOODLE_DATA_ROOT = ''; // informational only — used in PDF manifest output
     let quizzesCreated = 0;
     let questionsCreatedCount = 0;
     const quizResultsList: Array<{ quizName: string; courseName: string; questionsCount: number; status: 'created' | 'skipped' | 'error'; message?: string }> = [];
