@@ -1276,7 +1276,7 @@ admin.post('/bulk-import', async (c) => {
       const fixEncoding = (s: string): string => {
         try {
           const bytes = Uint8Array.from([...s].map(c => c.charCodeAt(0) & 0xFF));
-          const decoded = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+          const decoded = new TextDecoder('utf-8', { fatal: false, ignoreBOM: false }).decode(bytes);
           // Only use decoded version if it looks like a valid fix (shorter and has real accents)
           return decoded.length <= s.length ? decoded : s;
         } catch { return s; }
