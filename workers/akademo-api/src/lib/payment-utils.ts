@@ -236,34 +236,43 @@ async function syncPendingPaymentForEnrollment(db: D1Database, enrollment: Billi
 }
 
 async function syncDerivedPendingPayments(db: D1Database, scope: BillingSyncScope): Promise<void> {
-  const whereClauses = [
+  const enrollWhere = [
     `ce.status = 'APPROVED'`,
     `ce.stripeSubscriptionId IS NULL`,
     `(c.monthlyPrice > 0 OR c.oneTimePrice > 0)`,
   ];
-  const params: string[] = [];
+  const enrollParams: string[] = [];
+
+  // Build the payment scoping clause so all three batch queries use the same filter
+  // without dynamic IN clauses (avoids D1's 100-bind-param limit for large academies).
+  let paymentScopeJoin = '';
+  let paymentScopeWhere = '';
+  const paymentParams: string[] = [];
 
   if (scope.userId) {
-    whereClauses.push('ce.userId = ?');
-    params.push(scope.userId);
+    enrollWhere.push('ce.userId = ?');
+    enrollParams.push(scope.userId);
+    paymentScopeWhere = 'p.payerId = ?';
+    paymentParams.push(scope.userId);
   }
 
   if (scope.academyOwnerId) {
-    whereClauses.push('a.ownerId = ?');
-    params.push(scope.academyOwnerId);
+    enrollWhere.push('a.ownerId = ?');
+    enrollParams.push(scope.academyOwnerId);
+    paymentScopeJoin = 'JOIN Class pc ON p.classId = pc.id JOIN Academy pa ON pc.academyId = pa.id';
+    paymentScopeWhere = 'pa.ownerId = ?';
+    paymentParams.push(scope.academyOwnerId);
   }
 
+  // 1. Load all enrollments — correlated subqueries removed, fetched in batch below
   const enrollments = await db
     .prepare(`
-      SELECT 
+      SELECT
         ce.id as enrollmentId,
         ce.userId as studentId,
         ce.classId,
         ce.enrolledAt,
         ce.paymentFrequency,
-        (SELECT p3.paymentMethod FROM Payment p3
-         WHERE p3.payerId = ce.userId AND p3.classId = ce.classId AND p3.type = 'STUDENT_TO_ACADEMY'
-         ORDER BY p3.createdAt DESC LIMIT 1) as paymentMethod,
         c.monthlyPrice,
         c.oneTimePrice,
         c.startDate as classStartDate,
@@ -272,23 +281,154 @@ async function syncDerivedPendingPayments(db: D1Database, scope: BillingSyncScop
         u.lastName,
         u.email,
         a.id as academyId,
-        a.name as academyName,
-        COALESCE(
-          (SELECT SUM(p2.amount) FROM Payment p2 
-           WHERE p2.payerId = ce.userId AND p2.classId = ce.classId 
-           AND p2.status IN ('PAID', 'COMPLETED') AND p2.type = 'STUDENT_TO_ACADEMY'), 0
-        ) as totalPaid
+        a.name as academyName
       FROM ClassEnrollment ce
       JOIN Class c ON ce.classId = c.id
       JOIN Academy a ON c.academyId = a.id
       JOIN User u ON ce.userId = u.id
-      WHERE ${whereClauses.join(' AND ')}
+      WHERE ${enrollWhere.join(' AND ')}
     `)
-    .bind(...params)
+    .bind(...enrollParams)
     .all();
 
-  for (const enrollment of (enrollments.results || []) as BillingEnrollmentRow[]) {
-    await syncPendingPaymentForEnrollment(db, enrollment);
+  const rows = (enrollments.results || []) as Omit<BillingEnrollmentRow, 'totalPaid' | 'paymentMethod'>[];
+  if (rows.length === 0) return;
+
+  // 2. Batch load all existing PENDING payments (replaces N individual SELECT queries)
+  type PendingRow = { id: string; payerId: string; classId: string; amount: number; description: string | null; metadata: string | null };
+  const pendingPayments = await db
+    .prepare(`
+      SELECT p.id, p.payerId, p.classId, p.amount, p.description, p.metadata
+      FROM Payment p ${paymentScopeJoin}
+      WHERE p.status = 'PENDING' AND p.type = 'STUDENT_TO_ACADEMY'
+        AND ${paymentScopeWhere}
+    `)
+    .bind(...paymentParams)
+    .all();
+
+  // 3. Batch load total paid per (payerId, classId) — replaces N correlated SUM subqueries
+  const paidTotals = await db
+    .prepare(`
+      SELECT p.payerId, p.classId, SUM(p.amount) as totalPaid
+      FROM Payment p ${paymentScopeJoin}
+      WHERE p.status IN ('PAID', 'COMPLETED') AND p.type = 'STUDENT_TO_ACADEMY'
+        AND ${paymentScopeWhere}
+      GROUP BY p.payerId, p.classId
+    `)
+    .bind(...paymentParams)
+    .all();
+
+  // 4. Batch load last payment method per (payerId, classId) — replaces N correlated subqueries
+  const lastMethods = await db
+    .prepare(`
+      SELECT p.payerId, p.classId, p.paymentMethod
+      FROM Payment p ${paymentScopeJoin}
+      WHERE p.type = 'STUDENT_TO_ACADEMY'
+        AND ${paymentScopeWhere}
+      ORDER BY p.createdAt DESC
+    `)
+    .bind(...paymentParams)
+    .all();
+
+  // Build O(1) lookup maps
+  const ek = (payerId: string, classId: string) => `${payerId}::${classId}`;
+
+  const pendingMap = new Map<string, PendingRow>();
+  for (const p of (pendingPayments.results || []) as PendingRow[]) {
+    pendingMap.set(ek(p.payerId, p.classId), p);
+  }
+
+  const totalPaidMap = new Map<string, number>();
+  for (const p of (paidTotals.results || []) as { payerId: string; classId: string; totalPaid: number }[]) {
+    totalPaidMap.set(ek(p.payerId, p.classId), Number(p.totalPaid) || 0);
+  }
+
+  const methodMap = new Map<string, string>();
+  for (const p of (lastMethods.results || []) as { payerId: string; classId: string; paymentMethod: string }[]) {
+    const key = ek(p.payerId, p.classId);
+    if (!methodMap.has(key)) { // ORDER BY createdAt DESC — first entry wins
+      methodMap.set(key, p.paymentMethod);
+    }
+  }
+
+  // 5. Process each enrollment using in-memory lookups (no per-enrollment DB queries)
+  for (const enrollment of rows) {
+    const key = ek(enrollment.studentId, enrollment.classId);
+    const fullEnrollment: BillingEnrollmentRow = {
+      ...enrollment,
+      totalPaid: totalPaidMap.get(key) ?? 0,
+      paymentMethod: methodMap.get(key) ?? null,
+    };
+    const derived = deriveBillingState(fullEnrollment);
+    const existingPayment = pendingMap.get(key) ?? null;
+
+    if (derived.amountOwed <= 0) {
+      if (existingPayment) {
+        await db.prepare('DELETE FROM Payment WHERE id = ?').bind(existingPayment.id).run();
+      }
+      continue;
+    }
+
+    const method = (fullEnrollment.paymentMethod && fullEnrollment.paymentMethod !== 'stripe')
+      ? fullEnrollment.paymentMethod
+      : 'cash';
+
+    if (!existingPayment) {
+      const paymentId = `payment-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+      await db
+        .prepare(`
+          INSERT INTO Payment (
+            id, type, payerId, payerType, payerName, payerEmail,
+            receiverId, receiverName, amount, currency, status,
+            paymentMethod, classId, description, metadata, nextPaymentDue, billingCycleEnd, createdAt
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        `)
+        .bind(
+          paymentId,
+          'STUDENT_TO_ACADEMY',
+          enrollment.studentId,
+          'STUDENT',
+          `${enrollment.firstName} ${enrollment.lastName}`,
+          enrollment.email,
+          enrollment.academyId,
+          enrollment.academyName,
+          derived.amountOwed,
+          'EUR',
+          'PENDING',
+          method,
+          enrollment.classId,
+          derived.description,
+          JSON.stringify({ enrollmentId: enrollment.enrollmentId, monthsOwed: derived.monthsOwed, autoCreated: true }),
+          derived.nextPaymentDue,
+          derived.billingCycleEnd,
+        )
+        .run();
+      continue;
+    }
+
+    // Skip write if amount and description are unchanged (avoids unnecessary D1 writes)
+    if (existingPayment.amount === derived.amountOwed && existingPayment.description === derived.description) {
+      continue;
+    }
+
+    const prevMeta = (() => { try { return JSON.parse(existingPayment.metadata || '{}'); } catch { return {}; } })();
+    await db
+      .prepare(`
+        UPDATE Payment
+        SET amount = ?, paymentMethod = ?, description = ?, metadata = ?,
+            nextPaymentDue = ?, billingCycleEnd = ?
+        WHERE id = ?
+      `)
+      .bind(
+        derived.amountOwed,
+        method,
+        derived.description,
+        JSON.stringify({ ...prevMeta, enrollmentId: enrollment.enrollmentId, monthsOwed: derived.monthsOwed, autoUpdated: true }),
+        derived.nextPaymentDue,
+        derived.billingCycleEnd,
+        existingPayment.id,
+      )
+      .run();
   }
 }
 

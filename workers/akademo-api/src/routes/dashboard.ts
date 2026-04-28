@@ -108,9 +108,9 @@ dashboard.get('/summary', async (c) => {
               l.classId,
               COUNT(DISTINCT v.lessonId) AS lessonsCompleted,
               SUM(vps.totalWatchTimeSeconds) AS totalWatchTime
-            FROM VideoPlayState vps
-            JOIN Video v ON v.id = vps.videoId
-            JOIN Lesson l ON l.id = v.lessonId
+            FROM Lesson l
+            JOIN Video v ON v.lessonId = l.id
+            JOIN VideoPlayState vps ON vps.videoId = v.id
             WHERE l.classId IN (SELECT classId FROM academy_classes)
             GROUP BY vps.studentId, l.classId
           ),
