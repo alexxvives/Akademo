@@ -186,27 +186,17 @@ users.delete('/teacher/:id', async (c) => {
       return c.json(errorResponse('Not authorized to delete this teacher'), 403);
     }
 
-    // Unassign from classes
-    await c.env.DB
-      .prepare('UPDATE Class SET teacherId = NULL WHERE teacherId = ?')
-      .bind(teacherId)
-      .run();
-
-    // Note: LiveStream.teacherId is NOT NULL so we can't SET NULL.
-    // Historical LiveStream records will retain the deleted teacher's ID as a reference.
-    // Assignment records cascade-delete via FK ON DELETE CASCADE.
-
-    // Delete teacher record
-    await c.env.DB
-      .prepare('DELETE FROM Teacher WHERE userId = ?')
-      .bind(teacherId)
-      .run();
-
-    // Delete user account
-    await c.env.DB
-      .prepare('DELETE FROM User WHERE id = ?')
-      .bind(teacherId)
-      .run();
+    // Atomic batch: unassign from classes, clean up LoginEvent (FK RESTRICT, no cascade),
+    // delete Teacher record, then delete User account.
+    // Note: LiveStream.teacherId has no FK constraint — historical records are kept.
+    // Note: Assignment records cascade-delete via FK ON DELETE CASCADE on User.
+    // Note: ArchivedVideo.uploadedById has no ON DELETE — orphaned reference kept (content preserved).
+    await c.env.DB.batch([
+      c.env.DB.prepare('UPDATE Class SET teacherId = NULL WHERE teacherId = ?').bind(teacherId),
+      c.env.DB.prepare('DELETE FROM LoginEvent WHERE userId = ?').bind(teacherId),
+      c.env.DB.prepare('DELETE FROM Teacher WHERE userId = ?').bind(teacherId),
+      c.env.DB.prepare('DELETE FROM User WHERE id = ?').bind(teacherId),
+    ]);
 
     return c.json(successResponse({ message: 'Teacher deleted successfully' }));
   } catch (error: any) {
