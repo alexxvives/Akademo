@@ -69,7 +69,7 @@ This directory contains **manual** maintenance scripts for the AKADEMO database.
 Preview what would be deleted without making changes:
 
 ```powershell
-.\scripts\cleanup-orphaned-videos.ps1 -DryRun
+.\scripts\sync-bunny-videos.ps1 -DryRun
 ```
 
 **Output**:
@@ -93,7 +93,7 @@ DELETE FROM Upload WHERE id = 12;
 DELETE FROM Upload WHERE id = 19;
 
 ℹ DRY RUN: No changes made to database
-✓ SQL statements saved to: cleanup-orphaned-videos-20260117-220530.sql
+✓ SQL statements saved to: sync-bunny-videos-YYYYMMDD-HHMMSS.sql
 ```
 
 #### 2. Execute Cleanup (Production Mode)
@@ -101,7 +101,7 @@ DELETE FROM Upload WHERE id = 19;
 Apply the deletions to the database:
 
 ```powershell
-.\scripts\cleanup-orphaned-videos.ps1 -Execute
+.\scripts\sync-bunny-videos.ps1 -Execute
 ```
 
 **⚠️ WARNING**: This will permanently delete database records. Always run with `-DryRun` first!

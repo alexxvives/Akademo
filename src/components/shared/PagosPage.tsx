@@ -1,1 +1,1 @@
-export { PagosPage, PagosPage as default } from './pagos';
+export { PagosPage } from './pagos';

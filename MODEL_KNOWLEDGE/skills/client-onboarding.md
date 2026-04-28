@@ -58,7 +58,7 @@ scripts/re-upload-to-r2.js      # Re-upload if R2 objects are missing
 |---------|-----|
 | Wrong MIME types in R2 | Run `node scripts/fix-mime-types.js` |
 | R2 objects missing but DB is correct | Run `node scripts/re-upload-to-r2.js` |
-| Quiz questions missing ("ghost IDs") | Run `scripts/find-missing-quizzes.js` then generate fix SQL |
+| Quiz questions missing ("ghost IDs") | Diff Assignment IDs vs Question.assignmentId in D1; regenerate missing quiz SQL with `scripts/generate-quiz-sql.js` |
 | FTP credentials | Store in `scripts/.env` (never commit — gitignored) |
 | Classes must exist before quiz SQL | Steps 11-12 must run AFTER step 5 |
 

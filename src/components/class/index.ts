@@ -8,12 +8,6 @@
 export { default as TopicsLessonsList } from './TopicsLessonsList';
 export type { TopicsLessonsListProps, Topic, Lesson as TopicLesson } from './TopicsLessonsList';
 
-export { default as LessonsList } from './LessonsList';
-export type { LessonsListProps, Lesson } from './LessonsList';
-
-export { default as StudentsList } from './StudentsList';
-export type { StudentsListProps } from './StudentsList';
-
 export { default as PendingEnrollments } from './PendingEnrollments';
 export type { PendingEnrollmentsProps } from './PendingEnrollments';
 

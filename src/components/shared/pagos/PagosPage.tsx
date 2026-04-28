@@ -85,5 +85,3 @@ export function PagosPage({ role }: PagosPageProps) {
     </div>
   );
 }
-
-export default PagosPage;

@@ -46,7 +46,6 @@ next-env.d.ts
 build_log.txt
 build_output.txt
 tail2.txt
-# prisma
-/prisma/migrations
-tail2.txt
 *.jpeg
+# compiled package artifacts (rebuilt by `npm run build:types`)
+packages/types/dist/

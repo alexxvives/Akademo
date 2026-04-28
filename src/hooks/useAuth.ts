@@ -121,4 +121,4 @@ export function clearAuthCache(): void {
   cacheTimestamp = 0;
 }
 
-export default useAuth;
+
