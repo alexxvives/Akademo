@@ -150,15 +150,7 @@ Run this script:
 
 ### Alternative: Webhook Integration
 
-For automatic cleanup without running scripts, implement the webhook endpoint:
-
-```typescript
-// POST /api/webhooks/bunny
-// Listens for video.deleted events from Bunny Stream
-// Automatically removes database references when videos are deleted
-```
-
-See `ZOOM_PARTICIPANT_TRACKING.md` for webhook implementation patterns.
+For automatic cleanup without running scripts, implement a webhook that listens for `video.deleted` events from Bunny Stream and removes database references automatically.
 
 ### Best Practices
 
@@ -172,17 +164,29 @@ See `ZOOM_PARTICIPANT_TRACKING.md` for webhook implementation patterns.
 
 ```powershell
 # 1. Check what would be cleaned
-.\scripts\cleanup-orphaned-videos.ps1 -DryRun
+.\scripts\sync-bunny-videos.ps1 -DryRun
 
 # 2. Review the generated SQL file
-notepad cleanup-orphaned-videos-20260117-220530.sql
+notepad sync-bunny-videos-YYYYMMDD-HHMMSS.sql
 
 # 3. If everything looks good, execute
-.\scripts\cleanup-orphaned-videos.ps1 -Execute
+.\scripts\sync-bunny-videos.ps1 -Execute
 
 # 4. Verify in production
 # Check that lessons no longer show deleted videos
 ```
+
+---
+
+## gen-hash.js — Reset Admin Password
+
+Generates a bcrypt hash and prints the wrangler command to reset the `admin` user password.
+
+```bash
+node scripts/gen-hash.js <new-password>
+```
+
+Copy the printed `wrangler d1 execute` command and run it. **Do not save the output to a file or commit it.**
 
 ---
 
