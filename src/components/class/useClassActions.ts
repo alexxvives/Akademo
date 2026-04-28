@@ -179,6 +179,23 @@ export function useClassActions(s: ClassDetailState) {
     } catch { alert('Error al cambiar visibilidad'); }
   };
 
+  // Bulk toggle without per-lesson confirm dialogs.
+  // If any lesson in the group is currently released → hide all released ones.
+  // If all are already hidden → show all of them.
+  const handleBulkToggleRelease = async (lessons: Lesson[]) => {
+    const now = new Date();
+    const releasedLessons = lessons.filter(l => new Date(l.releaseDate) <= now);
+    const toToggle = releasedLessons.length > 0 ? releasedLessons : lessons;
+    const newReleaseDate = releasedLessons.length > 0 ? '2099-12-31T23:59:59Z' : now.toISOString();
+    await Promise.all(toToggle.map(async (lesson) => {
+      try {
+        const res = await apiClient(`/lessons/${lesson.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ releaseDate: newReleaseDate, resetTimers: false }) });
+        const result = await res.json();
+        if (result.success) s.setLessons(prev => prev.map(l => l.id === lesson.id ? { ...l, releaseDate: newReleaseDate } : l));
+      } catch { /* ignore individual errors */ }
+    }));
+  };
+
   const handleLessonMove = async (lessonId: string, topicId: string | null) => {
     try {
       const res = await apiClient(`/lessons/${lessonId}/move`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ topicId }) });
@@ -237,7 +254,7 @@ export function useClassActions(s: ClassDetailState) {
   return {
     selectLesson, goBackToLessons, selectVideoInLesson,
     createLiveClass, confirmCreateStream, deleteLiveClass,
-    handleEnrollmentAction, handleDeleteLesson, handleToggleRelease,
+    handleEnrollmentAction, handleDeleteLesson, handleToggleRelease, handleBulkToggleRelease,
     handleLessonMove, handleRescheduleLesson, handleRescheduleSubmit,
     addVideoToForm, addDocumentToForm, handleDeleteVideo, handleDeleteDocument,
   };

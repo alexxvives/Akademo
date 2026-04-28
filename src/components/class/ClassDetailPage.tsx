@@ -39,7 +39,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
   const {
     selectLesson, goBackToLessons, selectVideoInLesson,
     createLiveClass, confirmCreateStream, deleteLiveClass,
-    handleEnrollmentAction, handleDeleteLesson, handleToggleRelease,
+    handleEnrollmentAction, handleDeleteLesson, handleToggleRelease, handleBulkToggleRelease,
     handleLessonMove, handleRescheduleLesson, handleRescheduleSubmit,
     addVideoToForm, addDocumentToForm, handleDeleteVideo, handleDeleteDocument,
   } = useClassActions(s);
@@ -149,6 +149,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
             onTopicsChange={loadData}
             onLessonMove={handleLessonMove}
             onToggleRelease={handleToggleRelease}
+            onBulkToggleRelease={handleBulkToggleRelease}
             onTopicsUpdate={setTopics}
             onLessonsUpdate={setLessons}
           />

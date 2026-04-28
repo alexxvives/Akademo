@@ -117,8 +117,8 @@ export function createVideoFormEntry(
   file: File,
   callback: (entry: { file: File; title: string; description: string; duration: number }) => void,
 ) {
-  if (file.size > 500 * 1024 * 1024) {
-    alert('File size must be under 500MB');
+  if (file.size > 5 * 1024 * 1024 * 1024) {
+    alert('File size must be under 5GB');
     return;
   }
   const video = document.createElement('video');

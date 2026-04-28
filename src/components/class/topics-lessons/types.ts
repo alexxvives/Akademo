@@ -61,4 +61,5 @@ export interface TopicsLessonsListProps {
   onLessonsUpdate?: (lessons: Lesson[] | ((prev: Lesson[]) => Lesson[])) => void;
   onLessonMove: (lessonId: string, topicId: string | null) => void;
   onToggleRelease: (lesson: Lesson) => void;
+  onBulkToggleRelease: (lessons: Lesson[]) => void;
 }

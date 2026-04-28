@@ -100,7 +100,7 @@ export default function DailyWatermark({ name, email, userId, watermarkIntervalM
             transform: 'translate(-50%, -50%) rotate(-30deg)',
             fontSize: 'clamp(1.4rem, 3.5vw, 2.8rem)',
             fontWeight: 700,
-            color: 'rgba(255,255,255,0.12)',
+            color: 'rgba(255,255,255,0.24)',
             textTransform: 'uppercase',
             letterSpacing: '0.12em',
             whiteSpace: 'nowrap',

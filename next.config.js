@@ -8,7 +8,7 @@ const nextConfig = {
   },
   experimental: {
     serverActions: {
-      bodySizeLimit: '500mb',
+      bodySizeLimit: '5gb',
     },
     // Tree-shake barrel-export packages so webpack doesn't create dozens of
     // tiny chunks for every named import (major source of chunk explosion).

@@ -1,6 +1,5 @@
 'use client';
 
-import { isReleased } from '@/lib/formatters';
 import type { Lesson, TopicsLessonsListProps } from './types';
 import { useTopicsLessons } from './useTopicsLessons';
 import { LessonCard } from './LessonCard';
@@ -10,7 +9,7 @@ import { StudentTimeModal } from './StudentTimeModal';
 export default function TopicsLessonsList({
   lessons, topics, classId, totalStudents, expandTopicId, highlightLessonId,
   paymentStatus, onSelectLesson, onEditLesson, onDeleteLesson, onRescheduleLesson,
-  onTopicsChange, onTopicsUpdate, onLessonsUpdate, onLessonMove, onToggleRelease,
+  onTopicsChange, onTopicsUpdate, onLessonsUpdate, onLessonMove, onToggleRelease, onBulkToggleRelease,
 }: TopicsLessonsListProps) {
   const h = useTopicsLessons({
     lessons, topics, classId, expandTopicId, highlightLessonId, paymentStatus,
@@ -44,10 +43,7 @@ export default function TopicsLessonsList({
           <h2 className="text-lg font-semibold text-gray-900">Clases</h2>
           <div className="relative group/hideall">
             <button
-              onClick={() => {
-                if (!confirm('¿Ocultar todas las Clases visibles de todas las clases?')) return;
-                lessons.filter(l => isReleased(l.releaseDate)).forEach(l => onToggleRelease(l));
-              }}
+              onClick={() => onBulkToggleRelease(lessons)}
               className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 rounded-lg transition-all duration-200"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -67,14 +63,14 @@ export default function TopicsLessonsList({
               value={h.newTopicName}
               onChange={(e) => h.setNewTopicName(e.target.value)}
               placeholder="Nombre del tema"
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-accent-500 focus:border-accent-500"
+              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
               onKeyDown={(e) => e.key === 'Enter' && h.handleCreateTopic()}
               autoFocus
             />
             <button
               onClick={h.handleCreateTopic}
               disabled={h.creatingTopic || !h.newTopicName.trim()}
-              className="px-4 py-2 bg-accent-600 text-white rounded-lg text-sm font-medium hover:bg-accent-700 disabled:opacity-50"
+              className="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700 disabled:opacity-50"
             >
               {h.creatingTopic ? 'Creando...' : 'Crear'}
             </button>
@@ -122,10 +118,7 @@ export default function TopicsLessonsList({
               onDragOver={(e) => h.handleDragOver(e, topic.id)}
               onDrop={(e) => h.handleDrop(e, topic.id)}
               onDeleteTopic={() => h.handleDeleteTopic(topic.id)}
-              onHideAllLessons={() => {
-                if (!confirm('¿Ocultar todas las Clases visibles de este tema?')) return;
-                (h.lessonsByTopic.get(topic.id) || []).filter(l => isReleased(l.releaseDate)).forEach(l => onToggleRelease(l));
-              }}
+              onHideAllLessons={() => onBulkToggleRelease(h.lessonsByTopic.get(topic.id) || [])}
               renderLesson={renderLesson}
             />
           ))}
@@ -144,10 +137,7 @@ export default function TopicsLessonsList({
               onDragOver={(e) => h.handleDragOver(e, topic.id)}
               onDrop={(e) => h.handleDrop(e, topic.id)}
               onDeleteTopic={() => h.handleDeleteTopic(topic.id)}
-              onHideAllLessons={() => {
-                if (!confirm('¿Ocultar todas las Clases visibles de este tema?')) return;
-                (h.lessonsByTopic.get(topic.id) || []).filter(l => isReleased(l.releaseDate)).forEach(l => onToggleRelease(l));
-              }}
+              onHideAllLessons={() => onBulkToggleRelease(h.lessonsByTopic.get(topic.id) || [])}
               renderLesson={renderLesson}
             />
           ))}
