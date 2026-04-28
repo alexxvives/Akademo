@@ -31,6 +31,9 @@ jobs:
       - name: Install dependencies
         run: npm install --legacy-peer-deps
       
+      - name: Build types package
+        run: npm run build:types
+
       - name: Build and Deploy Worker
         run: npx @opennextjs/cloudflare build && npx @opennextjs/cloudflare deploy
         env:
