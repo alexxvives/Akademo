@@ -20,6 +20,8 @@
 | Zoom integration | [MODEL_KNOWLEDGE/skills/zoom-integration.md](../MODEL_KNOWLEDGE/skills/zoom-integration.md) |
 | Stripe / payments | [MODEL_KNOWLEDGE/skills/stripe-payments.md](../MODEL_KNOWLEDGE/skills/stripe-payments.md) |
 | Video upload / playback | [MODEL_KNOWLEDGE/skills/video-upload.md](../MODEL_KNOWLEDGE/skills/video-upload.md) |
+| D1 slow queries / row-read spikes | [MODEL_KNOWLEDGE/skills/d1-performance.md](../MODEL_KNOWLEDGE/skills/d1-performance.md) |
+| Onboarding a new client (Moodle migration) | [MODEL_KNOWLEDGE/skills/client-onboarding.md](../MODEL_KNOWLEDGE/skills/client-onboarding.md) |
 
 ---
 

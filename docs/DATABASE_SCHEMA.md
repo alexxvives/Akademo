@@ -4,8 +4,8 @@
 - **Database**: Cloudflare D1 (SQLite-based)
 - **ID**: `65c2951c-acf6-4c1d-8810-4c3d6be18767`
 - **Name**: `akademo-db`
-- **Last Updated**: June 2026
-- **Total tables**: 30 (+ AuditLog pending migration 0006)
+- **Last Updated**: April 2026
+- **Total tables**: 31
 
 ---
 
