@@ -78,6 +78,7 @@ export default function DailyWatermark({ name, email, userId, watermarkIntervalM
         zIndex: 2,
         pointerEvents: 'none',
         userSelect: 'none',
+        overflow: 'hidden',
       }}
     >
       {/* Top-left: Name — positioned near video edge */}
@@ -96,15 +97,16 @@ export default function DailyWatermark({ name, email, userId, watermarkIntervalM
           style={{
             position: 'absolute',
             top: '50%',
-            left: '45%',
+            left: '50%',
             transform: 'translate(-50%, -50%) rotate(-30deg)',
             fontSize: 'clamp(1.4rem, 3.5vw, 2.8rem)',
-            fontWeight: 700,
-            color: 'rgba(255,255,255,0.24)',
+            fontWeight: 800,
+            color: 'transparent',
+            WebkitTextStroke: '1.5px rgba(255,255,255,0.55)',
             textTransform: 'uppercase',
-            letterSpacing: '0.12em',
+            letterSpacing: '0.18em',
             whiteSpace: 'nowrap',
-            textShadow: '0 1px 4px rgba(0,0,0,0.4)',
+            textShadow: '0 2px 6px rgba(0,0,0,0.5)',
           }}
         >
           {name}

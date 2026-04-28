@@ -40,7 +40,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
     selectLesson, goBackToLessons, selectVideoInLesson,
     createLiveClass, confirmCreateStream, deleteLiveClass,
     handleEnrollmentAction, handleDeleteLesson, handleToggleRelease, handleBulkToggleRelease,
-    handleLessonMove, handleRescheduleLesson, handleRescheduleSubmit,
+    handleLessonMove, handleRescheduleLesson, handleRescheduleSubmit, handleHideLesson,
     addVideoToForm, addDocumentToForm, handleDeleteVideo, handleDeleteDocument,
   } = useClassActions(s);
 
@@ -162,6 +162,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
               onDateChange={setRescheduleDate}
               onTimeChange={setRescheduleTime}
               onSubmit={handleRescheduleSubmit}
+              onHide={handleHideLesson}
               onClose={() => { setShowRescheduleModal(false); setReschedulingLesson(null); }}
             />
           )}

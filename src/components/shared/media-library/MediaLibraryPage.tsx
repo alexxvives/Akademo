@@ -80,7 +80,7 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
   // Filter classes by active period
   const filteredClasses = useMemo(() => {
     if (!activePeriodId) return classes;
-    return classes.filter(c => isClassInPeriod(c.id));
+    return classes.filter(c => isClassInPeriod(c.startDate));
   }, [classes, activePeriodId, isClassInPeriod]);
 
   // Derive academy options for admin from classes list
@@ -201,7 +201,7 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
           {role === 'ADMIN' && selectedAcademy !== 'all' && (
             <div className="w-full sm:w-56">
               <ClassSearchDropdown
-                classes={classes.filter(c => c.academyId === selectedAcademy)}
+                classes={filteredClasses.filter(c => c.academyId === selectedAcademy)}
                 value={selectedClass}
                 onChange={setSelectedClass}
                 allLabel="Todas las asignaturas"
@@ -212,7 +212,7 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
           {role !== 'ADMIN' && (
             <div className="w-full sm:w-56">
               <ClassSearchDropdown
-                classes={classes}
+                classes={filteredClasses}
                 value={selectedClass}
                 onChange={setSelectedClass}
                 allLabel="Todas las asignaturas"

@@ -171,7 +171,7 @@ export function useClassActions(s: ClassDetailState) {
     const msg = isReleasedNow ? `¿Estás seguro de que deseas ocultar la lección "${lesson.title}"? Los estudiantes perderán el acceso inmediatamente.` : `¿Estás seguro de que deseas publicar la lección "${lesson.title}"? Los estudiantes tendrán acceso inmediatamente.`;
     if (!window.confirm(msg)) return;
     try {
-      const newReleaseDate = isReleasedNow ? '2099-12-31T23:59:59Z' : new Date().toISOString();
+      const newReleaseDate = isReleasedNow ? '2099-12-31T23:59:59Z' : (lesson.createdAt || new Date().toISOString());
       const res = await apiClient(`/lessons/${lesson.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ releaseDate: newReleaseDate, resetTimers: false }) });
       const result = await res.json();
       if (result.success) s.setLessons(prev => prev.map(l => l.id === lesson.id ? { ...l, releaseDate: newReleaseDate } : l));
@@ -186,8 +186,8 @@ export function useClassActions(s: ClassDetailState) {
     const now = new Date();
     const releasedLessons = lessons.filter(l => new Date(l.releaseDate) <= now);
     const toToggle = releasedLessons.length > 0 ? releasedLessons : lessons;
-    const newReleaseDate = releasedLessons.length > 0 ? '2099-12-31T23:59:59Z' : now.toISOString();
     await Promise.all(toToggle.map(async (lesson) => {
+      const newReleaseDate = releasedLessons.length > 0 ? '2099-12-31T23:59:59Z' : (lesson.createdAt || new Date().toISOString());
       try {
         const res = await apiClient(`/lessons/${lesson.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ releaseDate: newReleaseDate, resetTimers: false }) });
         const result = await res.json();
@@ -228,6 +228,18 @@ export function useClassActions(s: ClassDetailState) {
     } catch { alert('Error rescheduling lesson'); }
   };
 
+  const handleHideLesson = async () => {
+    if (!s.reschedulingLesson) return;
+    try {
+      const res = await apiClient(`/lessons/${s.reschedulingLesson.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ releaseDate: '2099-12-31T23:59:59Z', resetTimers: false }) });
+      const result = await res.json();
+      if (result.success) {
+        s.setLessons(prev => prev.map(l => l.id === s.reschedulingLesson!.id ? { ...l, releaseDate: '2099-12-31T23:59:59Z' } : l));
+        s.setShowRescheduleModal(false); s.setReschedulingLesson(null);
+      } else alert(result.error || 'Error al ocultar la clase');
+    } catch { alert('Error al ocultar la clase'); }
+  };
+
   const addVideoToForm = (file: File) => createVideoFormEntry(file, (entry) => s.setLessonFormData(p => ({ ...p, videos: [...p.videos, entry] })));
   const addDocumentToForm = (file: File) => s.setLessonFormData(p => ({ ...p, documents: [...p.documents, { file, title: '', description: '' }] }));
 
@@ -255,7 +267,7 @@ export function useClassActions(s: ClassDetailState) {
     selectLesson, goBackToLessons, selectVideoInLesson,
     createLiveClass, confirmCreateStream, deleteLiveClass,
     handleEnrollmentAction, handleDeleteLesson, handleToggleRelease, handleBulkToggleRelease,
-    handleLessonMove, handleRescheduleLesson, handleRescheduleSubmit,
+    handleLessonMove, handleRescheduleLesson, handleRescheduleSubmit, handleHideLesson,
     addVideoToForm, addDocumentToForm, handleDeleteVideo, handleDeleteDocument,
   };
 }
