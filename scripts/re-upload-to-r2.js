@@ -29,21 +29,22 @@ if (fs.existsSync(envFile)) {
   }
 }
 
-const FTP_HOST      = process.env.FTP_HOST      || 'ftp.maximoexponente.es';
-const FTP_USER      = process.env.FTP_USER      || 'akademo@maximoexponente.es';
+// ── Update these per client ─────────────────────────────────────────────────
+const CLIENT_SLUG   = 'client-slug'; // e.g. 'maximo-exponente'
+const FTP_HOST      = process.env.FTP_HOST      || '';
+const FTP_USER      = process.env.FTP_USER      || '';
 const FTP_PASS      = process.env.FTP_PASS      || '';
 const R2_KEY_ID     = process.env.R2_ACCESS_KEY_ID     || '';
 const R2_SECRET     = process.env.R2_SECRET_ACCESS_KEY || '';
 const R2_BUCKET     = process.env.R2_BUCKET     || 'akademo-storage';
 const CF_ACCOUNT_ID = process.env.R2_ACCOUNT_ID || '53808754f4bd94365d6e31351aa426c0';
 
-const PROGRESS_JSON = path.join(__dirname, '..', 'docs', 'onboarding', 'maximoexponente', 'ftp-progress.json');
+const PROGRESS_JSON = path.join(__dirname, '..', 'docs', 'onboarding', CLIENT_SLUG, 'ftp-progress.json');
 
 const MOODLE_DATA_CANDIDATES = [
-  'campus.maximoexponente.es/moodledata/filedir',
-  'campus.maximoexponente.es/public_html/moodledata/filedir',
-  'maximoexponente.es/moodledata/filedir',
-  'maximoexponente.es/public_html/moodledata/filedir',
+  // Update this list with the client's domain and moodledata path variants
+  `${CLIENT_SLUG}/moodledata/filedir`,
+  `${CLIENT_SLUG}/public_html/moodledata/filedir`,
   'moodledata/filedir',
   'public_html/moodledata/filedir',
 ];

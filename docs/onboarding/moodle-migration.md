@@ -395,6 +395,206 @@ WHERE c.academyId = '<academy-id>'
     SELECT 1 FROM Payment p
     WHERE p.payerId = ce.userId AND p.classId = ce.classId
   );
+
+-- Verify overall migration completeness (run after each phase)
+SELECT
+  (SELECT COUNT(*) FROM Class WHERE academyId='<academy-id>') AS classes,
+  (SELECT COUNT(*) FROM Teacher WHERE academyId='<academy-id>') AS teachers,
+  (SELECT COUNT(*) FROM ClassEnrollment ce JOIN Class c ON ce.classId=c.id WHERE c.academyId='<academy-id>') AS enrollments,
+  (SELECT COUNT(*) FROM Topic t JOIN Class c ON t.classId=c.id WHERE c.academyId='<academy-id>') AS topics,
+  (SELECT COUNT(*) FROM Lesson l JOIN Topic t ON l.topicId=t.id JOIN Class c ON t.classId=c.id WHERE c.academyId='<academy-id>') AS lessons,
+  (SELECT COUNT(*) FROM Document d JOIN Lesson l ON d.lessonId=l.id JOIN Topic t ON l.topicId=t.id JOIN Class c ON t.classId=c.id WHERE c.academyId='<academy-id>') AS documents,
+  (SELECT COUNT(*) FROM Assignment a JOIN Class c ON a.classId=c.id WHERE c.academyId='<academy-id>') AS assignments,
+  (SELECT COUNT(*) FROM Payment WHERE receiverId='<academy-id>') AS payments;
+```
+
+---
+
+## Known Issues & Fixes
+
+### MIME type corruption (`.ppt`, `.jfif`, `.gif`)
+
+SiteGround FTP serves some files without a content-type header, so `ftp-to-r2.js` uploads them as `application/octet-stream`. Affected extensions: `.ppt`, `.jfif`, `.gif`.
+
+**Symptom**: Students can't open these files from the documents list (browser tries to download instead of preview, or app shows an error).
+
+**Fix**: Run `scripts/fix-mime-types.js` to detect and re-upload affected files:
+
+```powershell
+node scripts/fix-mime-types.js
+```
+
+Before running, update the constants at the top of the script:
+- `PROGRESS_JSON` — path to the client's `ftp-progress.json`
+- `FTP_HOST`, `FTP_USER` — SiteGround FTP credentials (in `scripts/.env`)
+
+The script prints `UPDATE Upload SET mimeType = '...' WHERE id = '...'` statements. Collect them, save as a `.sql` file, and run via wrangler:
+
+```powershell
+npx wrangler d1 execute akademo-db --remote --file=docs/onboarding/{client}/fix-mime-types.sql
+```
+
+---
+
+### Duplicate quiz titles in the same course
+
+Moodle allows multiple quizzes with the same title in one course. AKADEMO has a `NOT EXISTS (SELECT 1 FROM Assignment WHERE classId=? AND title=?)` guard, so the second duplicate is silently skipped.
+
+**Symptom**: Expected N quizzes but DB shows fewer.
+
+**Detection**:
+```js
+// Run from project root: node -e "..."
+const fs = require('fs');
+const sql = fs.readFileSync('docs/onboarding/{client}/quiz-import.sql', 'utf8');
+const lines = sql.split('\n');
+const counts = {};
+for (const l of lines.filter(l => l.startsWith('-- Quiz:'))) {
+  const m = l.match(/^-- Quiz: "(.+)" → Course: "(.+)" \(/);
+  if (!m) continue;
+  const key = m[2] + '|||' + m[1];
+  counts[key] = (counts[key] || 0) + 1;
+}
+for (const [k, v] of Object.entries(counts)) {
+  if (v > 1) { const [c, t] = k.split('|||'); console.log(`x${v}: [${c}] "${t}"`); }
+}
+```
+
+**Fix**: For each duplicate, generate a new `INSERT` with the title renamed (e.g. append `" (2)"`), then insert matching `QuizQuestion` rows. Use the same approach as Step 7d (filter ghost IDs → run filtered questions file).
+
+---
+
+### Wipe and reimport documents only
+
+If `import-documents.sql` was run with incorrect data (wrong R2 keys, wrong section grouping, etc.) and you need to reimport without touching enrollments/payments:
+
+```sql
+-- 1. Delete Documents linked to this academy's lessons
+DELETE FROM Document
+WHERE lessonId IN (
+  SELECT l.id FROM Lesson l
+  JOIN Class c ON c.id = l.classId
+  WHERE c.academyId = '<academy-id>'
+);
+
+-- 2. Delete Uploads from the R2 documents prefix
+DELETE FROM Upload
+WHERE uploadedById = '<owner-user-id>'
+  AND storagePath LIKE '{client-slug}/documents/%';
+
+-- 3. Delete Lessons
+DELETE FROM Lesson
+WHERE classId IN (SELECT id FROM Class WHERE academyId = '<academy-id>');
+
+-- 4. Delete Topics
+DELETE FROM Topic
+WHERE classId IN (SELECT id FROM Class WHERE academyId = '<academy-id>');
+```
+
+Then re-run `ftp-to-r2.js` (it's idempotent — skips files already in R2) and re-run `import-documents.sql`.
+
+---
+
+## Full rollback procedure
+
+Delete all imported data for an academy while keeping the `Academy` record and owner `User` (so the migration can be re-run). Delete leaf tables first to respect FK constraints:
+
+```sql
+-- 1. QuizAttempts
+DELETE FROM QuizAttempt WHERE assignmentId IN (
+  SELECT a.id FROM Assignment a JOIN Class c ON a.classId = c.id WHERE c.academyId = '<academy-id>'
+);
+-- 2. QuizQuestions
+DELETE FROM QuizQuestion WHERE assignmentId IN (
+  SELECT a.id FROM Assignment a JOIN Class c ON a.classId = c.id WHERE c.academyId = '<academy-id>'
+);
+-- 3. AssignmentSubmission Uploads
+DELETE FROM Upload WHERE id IN (
+  SELECT s.uploadId FROM AssignmentSubmission s
+  JOIN Assignment a ON s.assignmentId = a.id JOIN Class c ON a.classId = c.id
+  WHERE c.academyId = '<academy-id>' AND s.uploadId IS NOT NULL
+);
+-- 4. AssignmentSubmissions
+DELETE FROM AssignmentSubmission WHERE assignmentId IN (
+  SELECT a.id FROM Assignment a JOIN Class c ON a.classId = c.id WHERE c.academyId = '<academy-id>'
+);
+-- 5. AssignmentAttachment Uploads
+DELETE FROM Upload WHERE id IN (
+  SELECT aa.uploadId FROM AssignmentAttachment aa
+  JOIN Assignment a ON aa.assignmentId = a.id JOIN Class c ON a.classId = c.id
+  WHERE c.academyId = '<academy-id>'
+);
+-- 6. AssignmentAttachments
+DELETE FROM AssignmentAttachment WHERE assignmentId IN (
+  SELECT a.id FROM Assignment a JOIN Class c ON a.classId = c.id WHERE c.academyId = '<academy-id>'
+);
+-- 7. Assignment file Uploads
+DELETE FROM Upload WHERE id IN (
+  SELECT uploadId FROM Assignment JOIN Class c ON classId = c.id
+  WHERE c.academyId = '<academy-id>' AND uploadId IS NOT NULL
+  UNION
+  SELECT solutionUploadId FROM Assignment JOIN Class c ON classId = c.id
+  WHERE c.academyId = '<academy-id>' AND solutionUploadId IS NOT NULL
+);
+-- 8. Assignments
+DELETE FROM Assignment WHERE classId IN (SELECT id FROM Class WHERE academyId = '<academy-id>');
+-- 9. VideoPlayState
+DELETE FROM VideoPlayState WHERE videoId IN (
+  SELECT v.id FROM Video v JOIN Lesson l ON v.lessonId = l.id JOIN Topic t ON l.topicId = t.id
+  JOIN Class c ON t.classId = c.id WHERE c.academyId = '<academy-id>'
+);
+-- 10. LessonRatings
+DELETE FROM LessonRating WHERE lessonId IN (
+  SELECT l.id FROM Lesson l JOIN Topic t ON l.topicId = t.id
+  JOIN Class c ON t.classId = c.id WHERE c.academyId = '<academy-id>'
+);
+-- 11. Document Uploads
+DELETE FROM Upload WHERE id IN (
+  SELECT d.uploadId FROM Document d JOIN Lesson l ON d.lessonId = l.id
+  JOIN Topic t ON l.topicId = t.id JOIN Class c ON t.classId = c.id
+  WHERE c.academyId = '<academy-id>' AND d.uploadId IS NOT NULL
+);
+-- 12. Documents
+DELETE FROM Document WHERE lessonId IN (
+  SELECT l.id FROM Lesson l JOIN Topic t ON l.topicId = t.id
+  JOIN Class c ON t.classId = c.id WHERE c.academyId = '<academy-id>'
+);
+-- 13. Video Uploads
+DELETE FROM Upload WHERE id IN (
+  SELECT v.uploadId FROM Video v JOIN Lesson l ON v.lessonId = l.id
+  JOIN Topic t ON l.topicId = t.id JOIN Class c ON t.classId = c.id
+  WHERE c.academyId = '<academy-id>' AND v.uploadId IS NOT NULL
+);
+-- 14. Videos
+DELETE FROM Video WHERE lessonId IN (
+  SELECT l.id FROM Lesson l JOIN Topic t ON l.topicId = t.id
+  JOIN Class c ON t.classId = c.id WHERE c.academyId = '<academy-id>'
+);
+-- 15. Lessons
+DELETE FROM Lesson WHERE topicId IN (
+  SELECT t.id FROM Topic t JOIN Class c ON t.classId = c.id WHERE c.academyId = '<academy-id>'
+);
+-- 16. Topics
+DELETE FROM Topic WHERE classId IN (SELECT id FROM Class WHERE academyId = '<academy-id>');
+-- 17. LiveStreams
+DELETE FROM LiveStream WHERE classId IN (SELECT id FROM Class WHERE academyId = '<academy-id>');
+-- 18. CalendarScheduledEvents
+DELETE FROM CalendarScheduledEvent WHERE academyId = '<academy-id>';
+-- 19. ClassEnrollments
+DELETE FROM ClassEnrollment WHERE classId IN (SELECT id FROM Class WHERE academyId = '<academy-id>');
+-- 20. Payments
+DELETE FROM Payment WHERE receiverId = '<academy-id>';
+-- 21. Classes
+DELETE FROM Class WHERE academyId = '<academy-id>';
+-- 22. ArchivedVideos
+DELETE FROM ArchivedVideo WHERE academyId = '<academy-id>';
+-- 23. ZoomAccounts
+DELETE FROM ZoomAccount WHERE academyId = '<academy-id>';
+-- 24. Teachers
+DELETE FROM Teacher WHERE academyId = '<academy-id>';
+-- Academy and owner User intentionally NOT deleted.
+-- NOTE: R2 files referenced by deleted Upload rows are now orphaned.
+-- Run a separate R2 cleanup (or re-run ftp-to-r2.js fresh) if needed.
 ```
 
 ---
