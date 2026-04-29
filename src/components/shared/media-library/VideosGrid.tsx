@@ -17,7 +17,7 @@ export function SkeletonVideosGrid() {
   );
 }
 
-export function VideosGrid({ videos }: { videos: VideoItem[] }) {
+export function VideosGrid({ videos, onArchive }: { videos: VideoItem[]; onArchive?: (videoId: string) => void }) {
   if (videos.length === 0) {
     return (
       <div className="text-center py-16 text-gray-400">
@@ -33,7 +33,7 @@ export function VideosGrid({ videos }: { videos: VideoItem[] }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {videos.map((video) => (
-        <VideoCard key={`${video.source}-${video.id}`} video={video} />
+        <VideoCard key={`${video.source}-${video.id}`} video={video} onArchive={onArchive} />
       ))}
     </div>
   );

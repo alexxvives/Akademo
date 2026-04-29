@@ -155,6 +155,13 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
     if (tab !== 'archived') { loadData(); }
   }, [tab, loadData]);
 
+  // Called when a video is archived from the Videos tab — refresh both lists
+  const handleArchive = useCallback((videoId: string) => {
+    setVideos(prev => prev.filter(v => v.id !== videoId));
+    setTotalVideos(prev => Math.max(0, prev - 1));
+    loadArchived();
+  }, [loadArchived]);
+
   const totalPages = tab === 'archived' ? 0 : Math.ceil((tab === 'videos' ? totalVideos : totalDocuments) / 50);
 
   return (
@@ -248,7 +255,7 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
         ) : loading ? (
           tab === 'videos' ? <SkeletonVideosGrid /> : <SkeletonTable rows={8} cols={5} />
         ) : tab === 'videos' ? (
-          <VideosGrid videos={videos} />
+          <VideosGrid videos={videos} onArchive={handleArchive} />
         ) : (
           <DocumentsTable documents={documents} />
         )}

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import { apiClient } from '@/lib/api-client';
 import { getBunnyThumbnailUrl, getBunnyEmbedUrl, getBunnyDownloadUrl } from '@/lib/bunny-stream';
 import { formatDuration, formatDate, formatBytes } from '@/lib/formatters';
 import type { VideoItem } from './types';
@@ -41,9 +42,10 @@ function VideoPlayerModal({ video, onClose }: { video: VideoItem; onClose: () =>
   );
 }
 
-export function VideoCard({ video }: { video: VideoItem }) {
+export function VideoCard({ video, onArchive }: { video: VideoItem; onArchive?: (videoId: string) => void }) {
   const [imgError, setImgError] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [archiving, setArchiving] = useState(false);
   const [showPlayer, setShowPlayer] = useState(false);
   const thumbnailUrl = video.bunnyGuid ? getBunnyThumbnailUrl(video.bunnyGuid) : null;
 
@@ -68,6 +70,26 @@ export function VideoCard({ video }: { video: VideoItem }) {
       window.open(getBunnyDownloadUrl(video.bunnyGuid), '_blank');
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const handleArchive = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (archiving) return;
+    if (!window.confirm(`¿Archivar "${video.title}"? El video se moverá a Archivados y ya no estará visible en la clase.`)) return;
+    setArchiving(true);
+    try {
+      const res = await apiClient(`/bunny/videos/${video.id}/archive`, { method: 'POST' });
+      if (res.ok) {
+        onArchive?.(video.id);
+      } else {
+        const data = await res.json() as { error?: string };
+        alert(data.error || 'Error al archivar el video');
+      }
+    } catch {
+      alert('Error al archivar el video');
+    } finally {
+      setArchiving(false);
     }
   };
 
@@ -122,23 +144,44 @@ export function VideoCard({ video }: { video: VideoItem }) {
         )}
         {/* Download button overlay */}
         {video.bunnyGuid && video.bunnyStatus !== null && video.bunnyStatus >= 3 && (
-          <button
-            title={downloading ? 'Descargando...' : 'Descargar video'}
-            onClick={handleDownload}
-            disabled={downloading}
-            className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/50 hover:bg-black/70 text-white transition-colors opacity-0 group-hover:opacity-100"
-          >
-            {downloading ? (
-              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
-            ) : (
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
+          <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100">
+            {onArchive && (
+              <button
+                title={archiving ? 'Archivando...' : 'Mover a Archivados'}
+                onClick={handleArchive}
+                disabled={archiving}
+                className="p-1.5 rounded-lg bg-black/50 hover:bg-amber-600 text-white transition-colors disabled:opacity-50"
+              >
+                {archiving ? (
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                  </svg>
+                )}
+              </button>
             )}
-          </button>
+            <button
+              title={downloading ? 'Descargando...' : 'Descargar video'}
+              onClick={handleDownload}
+              disabled={downloading}
+              className="p-1.5 rounded-lg bg-black/50 hover:bg-black/70 text-white transition-colors"
+            >
+              {downloading ? (
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+              )}
+            </button>
+          </div>
         )}
       </div>
       {/* Info */}

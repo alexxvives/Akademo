@@ -153,7 +153,7 @@ export function ActivityCard({ isAcademy, filteredStudents }: ActivityCardProps)
               const cur = studentMap.get(s.id);
               if (!cur || (s.lastActive ?? '') > (cur.lastActive ?? '')) studentMap.set(s.id, s);
             }
-            const uniqueStudents = [...studentMap.values()];
+            const uniqueStudents = Array.from(studentMap.values());
             const activos = uniqueStudents.filter(s => s.lastActive && new Date(s.lastActive).getTime() >= d1).length;
             const a7 = uniqueStudents.filter(s => { if (!s.lastActive) return false; const t = new Date(s.lastActive).getTime(); return t < d1 && t >= d7; }).length;
             const a30 = uniqueStudents.filter(s => { if (!s.lastActive) return false; const t = new Date(s.lastActive).getTime(); return t < d7 && t >= d30; }).length;

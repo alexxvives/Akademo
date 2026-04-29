@@ -636,6 +636,64 @@ bunny.get('/video/:guid/download-url', async (c) => {
   }
 });
 
+// POST /bunny/videos/:videoId/archive — move a lesson video to the archive tab
+// The video file stays in Bunny Stream; we create an ArchivedVideo record and
+// delete the Video + Upload DB rows so it no longer appears in lessons.
+bunny.post('/videos/:videoId/archive', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    if (!['ACADEMY', 'ADMIN', 'TEACHER'].includes(session.role)) {
+      return c.json(errorResponse('Not authorized'), 403);
+    }
+
+    const videoId = c.req.param('videoId');
+
+    // Fetch video + upload + lesson + class in one query
+    const row = await c.env.DB.prepare(`
+      SELECT v.id, v.title, v.durationSeconds,
+             up.bunnyGuid, up.fileName, up.fileSize, up.mimeType,
+             l.id AS lessonId, l.classId,
+             cl.name AS className, cl.academyId
+      FROM Video v
+      JOIN Upload up ON v.uploadId = up.id
+      JOIN Lesson l ON v.lessonId = l.id
+      JOIN Class cl ON l.classId = cl.id
+      WHERE v.id = ?
+    `).bind(videoId).first() as any;
+
+    if (!row) return c.json(errorResponse('Video not found'), 404);
+    if (!row.bunnyGuid) return c.json(errorResponse('Video has no Bunny Stream GUID'), 400);
+
+    // Authorization: academy must own the class, teacher must teach it
+    if (session.role === 'ACADEMY') {
+      const academy = await c.env.DB.prepare('SELECT id FROM Academy WHERE ownerId = ?').bind(session.id).first() as any;
+      if (!academy || academy.id !== row.academyId) return c.json(errorResponse('Forbidden'), 403);
+    } else if (session.role === 'TEACHER') {
+      const teacher = await c.env.DB.prepare('SELECT academyId FROM Teacher WHERE userId = ?').bind(session.id).first() as any;
+      if (!teacher || teacher.academyId !== row.academyId) return c.json(errorResponse('Forbidden'), 403);
+    }
+
+    const newId = crypto.randomUUID();
+    const storageKey = `bunnystream:${row.bunnyGuid}`;
+
+    // Create ArchivedVideo pointing to the existing Bunny Stream video
+    await c.env.DB.prepare(
+      'INSERT INTO ArchivedVideo (id, academyId, classId, className, title, fileName, fileSize, mimeType, storageKey, durationSeconds, uploadedById) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).bind(newId, row.academyId, row.classId, row.className, row.title, row.fileName || `${row.title}.mp4`, row.fileSize, 'video/stream', storageKey, row.durationSeconds, session.id).run();
+
+    // Delete Video record (VideoPlayState cascades automatically)
+    await c.env.DB.prepare('DELETE FROM Video WHERE id = ?').bind(videoId).run();
+    // Delete Upload record (no cascade from Video deletion)
+    await c.env.DB.prepare('DELETE FROM Upload WHERE bunnyGuid = ?').bind(row.bunnyGuid).run();
+
+    return c.json(successResponse({ archivedId: newId }));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Archive Video] Error:', error);
+    return c.json(errorResponse('Failed to archive video'), 500);
+  }
+});
+
 // GET /bunny/archive/:id/download — authenticated proxy download
 bunny.get('/archive/:id/download', async (c) => {
   try {
@@ -656,6 +714,15 @@ bunny.get('/archive/:id/download', async (c) => {
 
     const storageZone = c.env.BUNNY_STORAGE_ZONE_NAME;
     const storageApiKey = c.env.BUNNY_STORAGE_API_KEY;
+
+    // Bunny Stream-backed archived video: redirect to CDN download URL
+    if (video.mimeType === 'video/stream' && video.storageKey.startsWith('bunnystream:')) {
+      const guid = video.storageKey.replace('bunnystream:', '');
+      const cdnHostname = c.env.BUNNY_STREAM_CDN_HOSTNAME || 'vz-bb8d111e-8eb.b-cdn.net';
+      const downloadUrl = `https://${cdnHostname}/${guid}/play_720p.mp4`;
+      return Response.redirect(downloadUrl, 302);
+    }
+
     if (!storageZone || !storageApiKey) return c.json(errorResponse('Storage not configured'), 500);
 
     const storageHostname = c.env.BUNNY_STORAGE_HOSTNAME || 'uk.storage.bunnycdn.com';
