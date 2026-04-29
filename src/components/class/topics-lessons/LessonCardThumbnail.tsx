@@ -17,9 +17,12 @@ export function LessonCardThumbnail({ lesson, released, onToggleRelease }: Lesso
   const assignmentCount = lesson.assignmentCount || 0;
   const bunnyGuid = lesson.firstVideoBunnyGuid || lesson.firstVideoUpload?.bunnyGuid;
 
+  const isSentinelDate = new Date(lesson.releaseDate).getFullYear() >= 2099;
+
   const DateBadge = () => {
     if (!lesson.releaseDate) return null;
     if (!released) {
+      if (isSentinelDate) return null;
       return (
         <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg backdrop-blur-sm shadow-lg border border-violet-400/50 bg-violet-900/80 text-violet-200">
           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

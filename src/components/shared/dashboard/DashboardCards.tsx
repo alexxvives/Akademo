@@ -147,10 +147,17 @@ export function ActivityCard({ isAcademy, filteredStudents }: ActivityCardProps)
           <DonutChart data={(() => {
             const now = Date.now();
             const d1 = now - 86400000, d7 = now - 604800000, d30 = now - 2592000000;
-            const activos = filteredStudents.filter(s => s.lastActive && new Date(s.lastActive).getTime() >= d1).length;
-            const a7 = filteredStudents.filter(s => { if (!s.lastActive) return false; const t = new Date(s.lastActive).getTime(); return t < d1 && t >= d7; }).length;
-            const a30 = filteredStudents.filter(s => { if (!s.lastActive) return false; const t = new Date(s.lastActive).getTime(); return t < d7 && t >= d30; }).length;
-            const inact = filteredStudents.filter(s => !s.lastActive || new Date(s.lastActive).getTime() < d30).length;
+            // Deduplicate by student id, keeping the most recent lastActive per student
+            const studentMap = new Map<string, EnrolledStudent>();
+            for (const s of filteredStudents) {
+              const cur = studentMap.get(s.id);
+              if (!cur || (s.lastActive ?? '') > (cur.lastActive ?? '')) studentMap.set(s.id, s);
+            }
+            const uniqueStudents = [...studentMap.values()];
+            const activos = uniqueStudents.filter(s => s.lastActive && new Date(s.lastActive).getTime() >= d1).length;
+            const a7 = uniqueStudents.filter(s => { if (!s.lastActive) return false; const t = new Date(s.lastActive).getTime(); return t < d1 && t >= d7; }).length;
+            const a30 = uniqueStudents.filter(s => { if (!s.lastActive) return false; const t = new Date(s.lastActive).getTime(); return t < d7 && t >= d30; }).length;
+            const inact = uniqueStudents.filter(s => !s.lastActive || new Date(s.lastActive).getTime() < d30).length;
             return [
               { label: 'Activos (<24h)', value: activos, color: '#22c55e' },
               { label: 'Activos 7d', value: a7, color: '#f97316' },

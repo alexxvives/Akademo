@@ -143,7 +143,7 @@ export default function ProtectedVideoPlayer({
 
       <ErrorMessage error={error} />
 
-      <div ref={containerRef} id={`video-container-${videoId}`} className="relative bg-black">
+      <div ref={containerRef} id={`video-container-${videoId}`} className="relative bg-black aspect-video">
         <video
           ref={videoRef}
           className="w-full bg-black"

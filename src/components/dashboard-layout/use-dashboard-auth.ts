@@ -18,7 +18,7 @@ export function useDashboardAuth(role: string) {
       );
       if (!confirmLogout) return;
     }
-    await apiClient('/auth/logout', { method: 'POST' });
+    await apiClient('/auth/logout', { method: 'POST', skipAutoRedirect: true });
     localStorage.removeItem('auth_token');
     const joinOrigin = role === 'STUDENT' ? localStorage.getItem('akademo_join_origin') : null;
     router.push(joinOrigin ? `${joinOrigin}?login=true` : '/');

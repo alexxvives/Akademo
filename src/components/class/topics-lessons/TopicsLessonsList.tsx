@@ -43,7 +43,11 @@ export default function TopicsLessonsList({
           <h2 className="text-lg font-semibold text-gray-900">Clases</h2>
           <div className="relative group/hideall">
             <button
-              onClick={() => onBulkToggleRelease(lessons)}
+              onClick={() => {
+                const hasVisible = lessons.some(l => new Date(l.releaseDate) <= new Date());
+                if (hasVisible && !window.confirm('¿Ocultar todas las clases visibles?')) return;
+                onBulkToggleRelease(lessons);
+              }}
               className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 rounded-lg transition-all duration-200"
             >
               {lessons.some(l => new Date(l.releaseDate) <= new Date()) ? (
