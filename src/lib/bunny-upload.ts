@@ -30,6 +30,14 @@ function tusBase64(str: string): string {
   return btoa(binary);
 }
 
+// TUS auth credentials needed on every PATCH
+interface TusAuth {
+  tusSignature: string;
+  tusExpiry: number;
+  tusLibraryId: string;
+  videoGuid: string;
+}
+
 // Upload one chunk via XHR PATCH (returns a progress-tracked promise)
 function uploadChunk(
   location: string,
@@ -37,6 +45,7 @@ function uploadChunk(
   offset: number,
   baseUploaded: number,
   totalSize: number,
+  auth: TusAuth,
   onProgress: ((p: BunnyUploadProgress) => void) | undefined,
   signal: AbortSignal | undefined,
 ): Promise<void> {
@@ -46,6 +55,11 @@ function uploadChunk(
     xhr.setRequestHeader('Tus-Resumable', '1.0.0');
     xhr.setRequestHeader('Content-Type', 'application/offset+octet-stream');
     xhr.setRequestHeader('Upload-Offset', String(offset));
+    // Bunny requires auth headers on every PATCH, not just the initial POST
+    xhr.setRequestHeader('AuthorizationSignature', auth.tusSignature);
+    xhr.setRequestHeader('AuthorizationExpire', String(auth.tusExpiry));
+    xhr.setRequestHeader('VideoId', auth.videoGuid);
+    xhr.setRequestHeader('LibraryId', auth.tusLibraryId);
     // Content-Length is a forbidden header — the browser sets it automatically from the body
 
     xhr.upload.onprogress = (event) => {
@@ -146,7 +160,7 @@ export async function uploadToBunny({
     const chunkEnd = Math.min(chunkStart + CHUNK_SIZE, file.size);
     const chunk = file.slice(chunkStart, chunkEnd);
 
-    await uploadChunk(location, chunk, chunkStart, uploadedBytes, file.size, onProgress, signal);
+    await uploadChunk(location, chunk, chunkStart, uploadedBytes, file.size, { tusSignature, tusExpiry, tusLibraryId, videoGuid }, onProgress, signal);
 
     uploadedBytes = chunkEnd;
     // Report 100% for this chunk boundary
