@@ -46,7 +46,7 @@ function uploadChunk(
     xhr.setRequestHeader('Tus-Resumable', '1.0.0');
     xhr.setRequestHeader('Content-Type', 'application/offset+octet-stream');
     xhr.setRequestHeader('Upload-Offset', String(offset));
-    xhr.setRequestHeader('Content-Length', String(chunk.size));
+    // Content-Length is a forbidden header — the browser sets it automatically from the body
 
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable && onProgress) {
@@ -128,8 +128,12 @@ export async function uploadToBunny({
     throw new Error(`TUS create failed (HTTP ${tusCreateRes.status}): ${body}`);
   }
 
-  const location = tusCreateRes.headers.get('Location');
-  if (!location) throw new Error('TUS create succeeded but returned no Location header');
+  const rawLocation = tusCreateRes.headers.get('Location');
+  if (!rawLocation) throw new Error('TUS create succeeded but returned no Location header');
+  // Bunny may return a relative path like /tusupload/{videoId} — resolve to the full URL
+  const location = rawLocation.startsWith('/')
+    ? `https://video.bunnycdn.com${rawLocation}`
+    : rawLocation;
 
   // Step 3: Upload file in 100 MB chunks directly to Bunny (completely bypasses our Worker)
   const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
