@@ -1,4 +1,5 @@
-// Bunny Stream upload utility for client-side video uploads
+// Bunny Stream upload utility — uploads directly from browser to Bunny CDN via TUS protocol.
+// This completely bypasses the Cloudflare Worker proxy, removing all size limits (up to 10 GB).
 import { apiClient } from '@/lib/api-client';
 
 export interface BunnyUploadProgress {
@@ -21,6 +22,62 @@ export interface BunnyUploadResult {
   title: string;
 }
 
+// Encode a string to base64 handling UTF-8 characters (Spanish accents etc.)
+function tusBase64(str: string): string {
+  const bytes = new TextEncoder().encode(str);
+  let binary = '';
+  bytes.forEach(b => { binary += String.fromCharCode(b); });
+  return btoa(binary);
+}
+
+// Upload one chunk via XHR PATCH (returns a progress-tracked promise)
+function uploadChunk(
+  location: string,
+  chunk: Blob,
+  offset: number,
+  baseUploaded: number,
+  totalSize: number,
+  onProgress: ((p: BunnyUploadProgress) => void) | undefined,
+  signal: AbortSignal | undefined,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('PATCH', location);
+    xhr.setRequestHeader('Tus-Resumable', '1.0.0');
+    xhr.setRequestHeader('Content-Type', 'application/offset+octet-stream');
+    xhr.setRequestHeader('Upload-Offset', String(offset));
+    xhr.setRequestHeader('Content-Length', String(chunk.size));
+
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable && onProgress) {
+        onProgress({
+          loaded: baseUploaded + event.loaded,
+          total: totalSize,
+          percentage: ((baseUploaded + event.loaded) / totalSize) * 100,
+        });
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status === 204) {
+        resolve();
+      } else {
+        reject(new Error(`Chunk upload failed (HTTP ${xhr.status}): ${xhr.responseText}`));
+      }
+    };
+    xhr.onerror = () => reject(new Error('Network error during chunk upload'));
+    xhr.onabort = () => reject(new Error('Upload aborted'));
+
+    if (signal) {
+      signal.addEventListener('abort', () => xhr.abort(), { once: true });
+    }
+
+    xhr.send(chunk);
+  });
+}
+
+const CHUNK_SIZE = 100 * 1024 * 1024; // 100 MB per chunk
+
 export async function uploadToBunny({
   file,
   title,
@@ -29,16 +86,11 @@ export async function uploadToBunny({
   onProgress,
   signal,
 }: BunnyUploadOptions): Promise<BunnyUploadResult> {
-  // Step 1: Create video entry in Bunny Stream
+  // Step 1: Create video entry in Bunny Stream (server-side) and get TUS credentials
   const createRes = await apiClient('/bunny/video/create', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      title,
-      collectionName,
-      parentCollectionName,
-      fileName: file.name,
-    }),
+    body: JSON.stringify({ title, collectionName, parentCollectionName, fileName: file.name }),
     signal,
   });
 
@@ -48,76 +100,54 @@ export async function uploadToBunny({
   }
 
   const { data } = await createRes.json();
-  const { videoGuid } = data;
+  const { videoGuid, tusSignature, tusExpiry, tusLibraryId } = data;
 
-  if (!videoGuid) {
-    throw new Error('Failed to create video: No videoGuid returned from server');
+  if (!videoGuid) throw new Error('Failed to create video: no videoGuid returned');
+  if (!tusSignature) throw new Error('Failed to create video: no TUS credentials returned');
+
+  // Step 2: Create TUS upload directly with Bunny CDN (browser → Bunny, no proxy)
+  const metadata = `filetype ${tusBase64(file.type || 'video/mp4')},title ${tusBase64(title)}`;
+
+  const tusCreateRes = await fetch('https://video.bunnycdn.com/tusupload', {
+    method: 'POST',
+    headers: {
+      'AuthorizationSignature': tusSignature,
+      'AuthorizationExpire': String(tusExpiry),
+      'VideoId': videoGuid,
+      'LibraryId': tusLibraryId,
+      'Tus-Resumable': '1.0.0',
+      'Upload-Length': String(file.size),
+      'Upload-Metadata': metadata,
+    },
+    signal,
+  });
+
+  // Bunny returns 201 Created with a Location header for the upload endpoint
+  if (tusCreateRes.status !== 201) {
+    const body = await tusCreateRes.text();
+    throw new Error(`TUS create failed (HTTP ${tusCreateRes.status}): ${body}`);
   }
 
+  const location = tusCreateRes.headers.get('Location');
+  if (!location) throw new Error('TUS create succeeded but returned no Location header');
 
-  // Get API URL for upload
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://akademo-api.alexxvives.workers.dev';
+  // Step 3: Upload file in 100 MB chunks directly to Bunny (completely bypasses our Worker)
+  const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+  let uploadedBytes = 0;
 
-  // Step 2: Upload video content through our proxy
-  // We use XMLHttpRequest for progress tracking
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    
-    xhr.open('PUT', `${apiUrl}/bunny/video/upload?videoGuid=${videoGuid}`);
-    // Include credentials for session auth (cookies)
-    xhr.withCredentials = true;
-    // Set content type for binary upload
-    xhr.setRequestHeader('Content-Type', 'application/octet-stream');
-    
-    // Also include Authorization header for cross-domain auth (cookies don't work cross-domain)
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-    }
-    
-    xhr.upload.onprogress = (event) => {
-      if (event.lengthComputable && onProgress) {
-        onProgress({
-          loaded: event.loaded,
-          total: event.total,
-          percentage: (event.loaded / event.total) * 100,
-        });
-      }
-    };
+  for (let i = 0; i < totalChunks; i++) {
+    if (signal?.aborted) throw new Error('Upload aborted');
 
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        resolve({
-          videoGuid,
-          title,
-        });
-      } else {
-        // Parse error response
-        let errorMessage = `Upload failed with status ${xhr.status}`;
-        try {
-          const errorData = JSON.parse(xhr.responseText);
-          errorMessage = errorData.error || errorData.message || errorMessage;
-        } catch {
-          // If response isn't JSON, use raw text
-          errorMessage = xhr.responseText || errorMessage;
-        }
-        console.error('[Bunny Upload] Error:', {
-          status: xhr.status,
-          response: xhr.responseText,
-          videoGuid,
-        });
-        reject(new Error(errorMessage));
-      }
-    };
+    const chunkStart = i * CHUNK_SIZE;
+    const chunkEnd = Math.min(chunkStart + CHUNK_SIZE, file.size);
+    const chunk = file.slice(chunkStart, chunkEnd);
 
-    xhr.onerror = () => reject(new Error('Network error during upload'));
-    xhr.onabort = () => reject(new Error('Upload aborted'));
+    await uploadChunk(location, chunk, chunkStart, uploadedBytes, file.size, onProgress, signal);
 
-    if (signal) {
-      signal.addEventListener('abort', () => xhr.abort());
-    }
+    uploadedBytes = chunkEnd;
+    // Report 100% for this chunk boundary
+    onProgress?.({ loaded: uploadedBytes, total: file.size, percentage: (uploadedBytes / file.size) * 100 });
+  }
 
-    xhr.send(file);
-  });
+  return { videoGuid, title };
 }
-

@@ -6,6 +6,15 @@ import { isAccessBlocked } from '../lib/payment-utils';
 
 const bunny = new Hono<{ Bindings: Bindings }>();
 
+// Compute TUS upload signature for direct browser→Bunny uploads:
+// SHA256(libraryId + apiKey + expirationTime + videoGuid)
+async function computeTusSignature(libraryId: string, apiKey: string, expiry: number, videoGuid: string): Promise<string> {
+  const data = `${libraryId}${apiKey}${expiry}${videoGuid}`;
+  const encoder = new TextEncoder();
+  const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(data));
+  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 // Helper to call Bunny API
 async function bunnyApi(endpoint: string, options: RequestInit, apiKey: string) {
   const response = await fetch(`https://video.bunnycdn.com${endpoint}`, {
@@ -110,11 +119,18 @@ bunny.post('/video/create', async (c) => {
       body: JSON.stringify(payload),
     }, apiKey) as any;
 
+    // Generate TUS credentials so the browser can upload directly to Bunny (no proxy)
+    const tusExpiry = Math.floor(Date.now() / 1000) + 6 * 3600; // 6 hours
+    const tusSignature = await computeTusSignature(String(libraryId), apiKey, tusExpiry, video.guid);
+
     return c.json(successResponse({
       videoGuid: video.guid,
       title: video.title,
       collectionId: collectionId || null,
       uploadUrl: `https://video.bunnycdn.com/library/${libraryId}/videos/${video.guid}`,
+      tusSignature,
+      tusExpiry,
+      tusLibraryId: String(libraryId),
     }));
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
