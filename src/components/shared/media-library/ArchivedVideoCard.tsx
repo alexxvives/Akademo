@@ -243,11 +243,6 @@ export function ArchivedVideoCard({ video, canDelete, onDelete }: Props) {
   );
 }
 
-  const [downloading, setDownloading] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [loadingPreview, setLoadingPreview] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-
   // Revoke blob URL on unmount or when preview closes
   useEffect(() => {
     return () => { if (previewUrl) URL.revokeObjectURL(previewUrl); };
