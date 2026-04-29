@@ -13,6 +13,11 @@ const montserrat = Montserrat({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://akademo-edu.com'),
+  verification: {
+    other: {
+      'zoom-domain-verification': 'ZOOM_verify_3f7dcb80a02b44f19ea7d3210592af8f',
+    },
+  },
   title: "AKADEMO - Software de Gestión para Academias | Protección de Contenido",
   description: "Plataforma todo-en-uno para academias online: protege vídeos con marca de agua, evita cuentas compartidas, gestiona profesores, estudiantes y clases en directo. Software para academias y centros de formación.",
   keywords: [
