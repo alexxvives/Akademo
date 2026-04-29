@@ -162,7 +162,6 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
               onDateChange={setRescheduleDate}
               onTimeChange={setRescheduleTime}
               onSubmit={handleRescheduleSubmit}
-              onHide={handleHideLesson}
               onClose={() => { setShowRescheduleModal(false); setReschedulingLesson(null); }}
             />
           )}
