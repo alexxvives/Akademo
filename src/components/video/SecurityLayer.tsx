@@ -60,11 +60,8 @@ export function TranscodingStatus({ transcodingStatus }: TranscodingStatusProps)
   if (transcodingStatus !== 'processing') return null;
 
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-gray-900 z-40">
-      <div
-        className="flex flex-col items-center gap-4 max-w-md px-6"
-        style={{ minHeight: '400px' }}
-      >
+    <div className="absolute inset-0 flex items-center justify-center bg-gray-900 z-40 py-8">
+      <div className="flex flex-col items-center gap-4 max-w-md px-6 text-center">
         <div className="relative">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent"></div>
           <div className="absolute inset-0 flex items-center justify-center">
@@ -83,18 +80,16 @@ export function TranscodingStatus({ transcodingStatus }: TranscodingStatusProps)
             </svg>
           </div>
         </div>
-        <div className="text-center">
-          <h3 className="text-white text-lg font-semibold mb-2">
-            Video en proceso de transcodificación
-          </h3>
-          <p className="text-gray-400 text-sm mb-3">
-            El video se está procesando y optimizando para su reproducción. Este proceso puede
-            tardar unos minutos dependiendo de la duración del video.
-          </p>
-          <div className="flex items-center justify-center gap-2 text-blue-400 text-xs">
-            <div className="animate-pulse w-2 h-2 bg-blue-400 rounded-full"></div>
-            <span>Actualizando automáticamente...</span>
-          </div>
+        <h3 className="text-white text-lg font-semibold mb-2">
+          Video en proceso de transcodificación
+        </h3>
+        <p className="text-gray-400 text-sm mb-3">
+          El video se está procesando y optimizando para su reproducción. Este proceso puede
+          tardar unos minutos dependiendo de la duración del video.
+        </p>
+        <div className="flex items-center justify-center gap-2 text-blue-400 text-xs">
+          <div className="animate-pulse w-2 h-2 bg-blue-400 rounded-full"></div>
+          <span>Actualizando automáticamente...</span>
         </div>
       </div>
     </div>
