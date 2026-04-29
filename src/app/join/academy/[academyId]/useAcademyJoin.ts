@@ -16,7 +16,7 @@ export function useAcademyJoin() {
 
   // Auth state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [, setCurrentUser] = useState<AuthUser | null>(null);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [showLogin, setShowLogin] = useState(false);
 
   // Pre-select login tab if redirected from logout
@@ -25,10 +25,15 @@ export function useAcademyJoin() {
     if (params.get('login') === 'true') setShowLogin(true);
   }, []);
 
-  // Skip class selection — redirect to dashboard when logged in
+  // Skip class selection — redirect to appropriate dashboard when logged in
   useEffect(() => {
-    if (isLoggedIn) router.push('/dashboard/student');
-  }, [isLoggedIn, router]);
+    if (!isLoggedIn || !currentUser) return;
+    const role = (currentUser as Record<string, string>).role?.toLowerCase();
+    if (role === 'academy') router.push('/dashboard/academy');
+    else if (role === 'teacher') router.push('/dashboard/teacher');
+    else if (role === 'admin') router.push('/dashboard/admin');
+    else router.push('/dashboard/student');
+  }, [isLoggedIn, currentUser, router]);
 
   // Form state
   const [formData, setFormData] = useState({
