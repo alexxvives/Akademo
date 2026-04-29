@@ -28,6 +28,7 @@ export interface Lesson {
   isTranscoding?: number;
   isUploading?: boolean;
   uploadProgress?: number;
+  createdAt?: string;
 }
 
 export interface LessonDetail {
