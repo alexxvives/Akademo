@@ -96,14 +96,23 @@ ORDER BY fullname;
 ```
 
 ### `quizzes.csv`
+
+> **Includes section (tema) info** — used by `generate-quiz-sql.js` to set `lessonId` on each Assignment so quizzes are linked to the correct topic in AKADEMO.
+
 ```sql
 SELECT
   c.fullname AS course_name,
   q.id AS quiz_id,
   q.name AS quiz_name,
-  q.intro AS quiz_description
+  q.intro AS quiz_description,
+  cs.section AS section_number,
+  COALESCE(NULLIF(TRIM(cs.name), ''), CONCAT('Tema ', cs.section)) AS section_name
 FROM {PREFIX}_quiz q
 JOIN {PREFIX}_course c ON c.id = q.course
+JOIN {PREFIX}_course_modules cm ON cm.course = q.course
+  AND cm.instance = q.id
+  AND cm.module = (SELECT id FROM {PREFIX}_modules WHERE name = 'quiz')
+JOIN {PREFIX}_course_sections cs ON cs.id = cm.section
 WHERE c.id > 1
 ORDER BY c.id, q.id;
 ```
@@ -124,6 +133,10 @@ ORDER BY qs.quizid, qu.id, qa.fraction DESC;
 ```
 
 ### `files.csv` — PDF references (for FTP transfer in Step 4)
+
+> **Includes both single-file resources (`mod_resource`) and files inside folders (`mod_folder`).**
+> Files inside folders will use their filename as the document title in AKADEMO.
+
 ```sql
 SELECT
   r.name AS file_title,
@@ -139,13 +152,36 @@ JOIN {PREFIX}_context ctx ON ctx.id = f.contextid AND ctx.contextlevel = 70
 JOIN {PREFIX}_course_modules cm ON cm.id = ctx.instanceid
 JOIN {PREFIX}_course c ON c.id = cm.course
 JOIN {PREFIX}_course_sections cs ON cs.id = cm.section
-JOIN {PREFIX}_resource r ON cm.instance = r.id
+JOIN {PREFIX}_resource r ON cm.instance = r.id AND cm.module = (SELECT id FROM {PREFIX}_modules WHERE name = 'resource')
 WHERE f.component = 'mod_resource'
   AND f.filearea = 'content'
   AND f.filename != '.'
   AND f.filesize > 0
   AND c.visible = 1
-ORDER BY c.fullname, cs.section, r.name;
+
+UNION ALL
+
+SELECT
+  f.filename AS file_title,
+  c.fullname AS course_name,
+  cs.section AS section_number,
+  COALESCE(NULLIF(TRIM(cs.name), ''), CONCAT('Tema ', cs.section)) AS section_name,
+  f.filename,
+  f.filesize,
+  CONCAT(LEFT(f.contenthash,2), '/', MID(f.contenthash,3,2), '/', f.contenthash) AS file_path,
+  f.timecreated AS file_timestamp
+FROM {PREFIX}_files f
+JOIN {PREFIX}_context ctx ON ctx.id = f.contextid AND ctx.contextlevel = 70
+JOIN {PREFIX}_course_modules cm ON cm.id = ctx.instanceid
+JOIN {PREFIX}_course c ON c.id = cm.course
+JOIN {PREFIX}_course_sections cs ON cs.id = cm.section
+WHERE f.component = 'mod_folder'
+  AND f.filearea = 'content'
+  AND f.filename != '.'
+  AND f.filesize > 0
+  AND c.visible = 1
+
+ORDER BY course_name, section_number, file_title;
 ```
 
 Replace `{PREFIX}` with the actual prefix found in Step 0.
@@ -253,7 +289,9 @@ This creates `Topic → Lesson → Upload → Document` rows linked to the alrea
 
 ## Step 7 — Import quizzes
 
-Moodle quizzes become `Assignment` rows (class-level, **not** linked to a topic/tema). Each multiple-choice option becomes a `QuizQuestion` row.
+Moodle quizzes become `Assignment` rows linked to the topic/lesson (via `lessonId`) they belong to in Moodle. The `quizzes.csv` now includes `section_number` and `section_name` which `generate-quiz-sql.js` uses to look up the matching `Lesson` row in AKADEMO and set `lessonId`.
+
+> **Prerequisite**: `import-documents.sql` must have run first (Step 6b) so that `Lesson` rows exist before the quiz SQL tries to reference them.
 
 ### 7a — Generate quiz-import.sql
 

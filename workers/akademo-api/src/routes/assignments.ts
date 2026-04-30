@@ -187,6 +187,7 @@ assignments.get('/', async (c) => {
           a.id, a.classId, a.teacherId, a.lessonId, a.title, a.description, a.type,
           a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt, a.updatedAt,
           c.name as className,
+          ac.name as academyName,
           GROUP_CONCAT(DISTINCT aa.uploadId) as attachmentIds,
           COUNT(DISTINCT aa.id) as attachmentCount,
           COUNT(DISTINCT s.id) as submissionCount,
