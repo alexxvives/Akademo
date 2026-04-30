@@ -245,7 +245,7 @@ app.get('/teacher/tutorial-status', async (c) => {
 
 // ============ Orphan Cleanup ============
 // Deletes R2 objects that have no matching Upload row in D1.
-// Runs daily; only removes objects older than 24 hours to avoid
+// Runs daily at 3am; only removes objects older than 24 hours to avoid
 // racing with in-progress uploads.
 async function handleOrphanCleanup(env: Bindings) {
   console.log('[Cleanup] Orphan R2 object scan started');
@@ -258,21 +258,32 @@ async function handleOrphanCleanup(env: Bindings) {
   try {
     do {
       const listed = await env.STORAGE.list({ limit: 500, cursor });
-      for (const obj of listed.objects) {
-        scanned++;
-        if (obj.uploaded && new Date(obj.uploaded) > cutoff) continue;
+      scanned += listed.objects.length;
 
-        const row = await env.DB
-          .prepare('SELECT id FROM Upload WHERE storagePath = ? LIMIT 1')
-          .bind(obj.key)
-          .first();
+      // Filter to objects older than 24h (skip recent uploads to avoid races)
+      const oldObjects = listed.objects.filter(
+        obj => !obj.uploaded || new Date(obj.uploaded) <= cutoff
+      );
 
-        if (!row) {
-          await env.STORAGE.delete(obj.key);
-          deleted++;
-          console.log(`[Cleanup] Deleted orphan: ${obj.key}`);
+      if (oldObjects.length > 0) {
+        // Batch check: one D1 query per page instead of one per object (N+1 fix)
+        const keys = oldObjects.map(obj => obj.key);
+        const placeholders = keys.map(() => '?').join(', ');
+        const existingRows = await env.DB
+          .prepare(`SELECT storagePath FROM Upload WHERE storagePath IN (${placeholders})`)
+          .bind(...keys)
+          .all<{ storagePath: string }>();
+        const existingSet = new Set(existingRows.results.map(r => r.storagePath));
+
+        for (const obj of oldObjects) {
+          if (!existingSet.has(obj.key)) {
+            await env.STORAGE.delete(obj.key);
+            deleted++;
+            console.log(`[Cleanup] Deleted orphan: ${obj.key}`);
+          }
         }
       }
+
       cursor = listed.truncated ? listed.cursor : undefined;
     } while (cursor);
 

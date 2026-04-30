@@ -26,9 +26,9 @@ BUNNY_STREAM_CDN_HOSTNAME = "vz-bb8d111e-8eb.b-cdn.net"
 FRONTEND_URL = "https://akademo-edu.com"
 BUNNY_DEMO_VIDEO_GUID = "912efe98-e6af-4c29-ada3-2617f0ff6674"
 
-# Cron Triggers - Monthly payment generation
+# Cron Triggers
 [triggers]
-crons = ["0 0 1 * *", "*/5 * * * *"]  # Monthly payment generation + every 5 min live stream cleanup
+crons = ["0 0 1 * *", "0 3 * * *"]  # Monthly payment generation (1st of month) + daily orphan R2 cleanup (3am)
 
 # Secrets (configured via: wrangler secret put NAME)
 # Bunny Stream (for video hosting)
