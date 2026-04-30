@@ -28,7 +28,31 @@ Tested on: maximo exponente (April 2026). DB prefix: `mdl3y_` (varies per instal
 
 ---
 
-## Data Flow Overview
+## Per-client folder layout
+
+Each client gets a folder under `docs/onboarding/{client-slug}/`:
+```
+docs/onboarding/{client-slug}/
+  queries/          ← CSVs exported from phpMyAdmin (gitignored — contain student data)
+    enrollments.csv
+    asignaturas.csv
+    quizzes.csv
+    questions.csv
+    files.csv
+  files/            ← Generated SQL/JSON/xlsx (committed)
+    moodle-migration.xlsx
+    post-import.sql
+    import-documents.sql
+    ftp-progress.json
+    quiz-assignments.sql
+    quiz-questions.sql
+    quiz-questions-filtered.sql
+```
+
+> When running scripts, point `FILES_CSV`, `QUIZZES_CSV`, `QUESTIONS_CSV` etc. to `docs/onboarding/{client-slug}/queries/*.csv`.
+> Output SQL files should be written to `docs/onboarding/{client-slug}/files/`.
+
+---
 
 ```
 phpMyAdmin (Moodle DB)
@@ -95,9 +119,11 @@ WHERE id > 1
 ORDER BY fullname;
 ```
 
-### `quizzes.csv`
+### `quizzes.csv` — Quiz metadata (one row per quiz)
 
-> **Includes section (tema) info** — used by `generate-quiz-sql.js` to set `lessonId` on each Assignment so quizzes are linked to the correct topic in AKADEMO.
+> **You need this AND `questions.csv`** — they are two separate exports that work together.
+> `quizzes.csv` tells you which quiz belongs to which course + section (tema).
+> `questions.csv` gives you the actual questions and answer options.
 
 ```sql
 SELECT
