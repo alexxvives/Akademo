@@ -50,6 +50,7 @@ export interface Topic {
   classId: string;
   orderIndex: number;
   lessonCount: number;
+  quizCount?: number;
 }
 
 export interface StudentTopicsLessonsListProps {
@@ -72,4 +73,5 @@ export interface TopicSectionProps {
   isExpanded: boolean;
   onToggle: () => void;
   onSelectLesson: (lesson: Lesson) => void;
+  quizCount?: number;
 }

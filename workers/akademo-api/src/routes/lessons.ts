@@ -386,10 +386,17 @@ lessons.get('/:id', async (c) => {
       }
     }));
 
+    // Get lesson links
+    const links = await c.env.DB
+      .prepare(`SELECT id, title, url, orderIndex, createdAt FROM LessonLink WHERE lessonId = ? ORDER BY orderIndex ASC, createdAt ASC`)
+      .bind(lessonId)
+      .all();
+
     return c.json(successResponse({
       ...lesson,
       videos: videosWithUpload,
       documents: documentsWithUpload,
+      links: links.results || [],
     }));
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
@@ -1560,3 +1567,77 @@ lessons.post('/:id/add-stream', async (c) => {
 });
 
 export default lessons;
+
+// ---- LessonLink CRUD (POST /lessons/:id/links, DELETE /lessons/:lessonId/links/:linkId) ----
+
+// POST /lessons/:id/links - Add a link to a lesson
+lessons.post('/:id/links', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    if (!['ADMIN', 'TEACHER', 'ACADEMY'].includes(session.role)) {
+      return c.json(errorResponse('Not authorized'), 403);
+    }
+    const lessonId = c.req.param('id');
+    const body = await c.req.json();
+    const { title, url, orderIndex } = body;
+    if (!title || !url) {
+      return c.json(errorResponse('title and url are required'), 400);
+    }
+    // Validate URL format (must be http/https)
+    try {
+      const parsed = new URL(url);
+      if (!['http:', 'https:'].includes(parsed.protocol)) {
+        return c.json(errorResponse('url must start with http:// or https://'), 400);
+      }
+    } catch {
+      return c.json(errorResponse('Invalid url format'), 400);
+    }
+
+    // Verify lesson access
+    const lesson = await c.env.DB
+      .prepare('SELECT l.id, c.teacherId, a.ownerId FROM Lesson l JOIN Class c ON l.classId = c.id JOIN Academy a ON c.academyId = a.id WHERE l.id = ?')
+      .bind(lessonId).first() as any;
+    if (!lesson) return c.json(errorResponse('Lesson not found'), 404);
+    if (session.role === 'TEACHER' && lesson.teacherId !== session.id) return c.json(errorResponse('Not authorized'), 403);
+    if (session.role === 'ACADEMY' && lesson.ownerId !== session.id) return c.json(errorResponse('Not authorized'), 403);
+
+    const result = await c.env.DB
+      .prepare(`INSERT INTO LessonLink (id, lessonId, title, url, orderIndex) VALUES (lower(hex(randomblob(16))), ?, ?, ?, ?) RETURNING *`)
+      .bind(lessonId, title.trim(), url.trim(), typeof orderIndex === 'number' ? orderIndex : 0)
+      .first();
+
+    return c.json(successResponse(result), 201);
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Create LessonLink] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
+
+// DELETE /lessons/:lessonId/links/:linkId - Remove a link from a lesson
+lessons.delete('/:lessonId/links/:linkId', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    if (!['ADMIN', 'TEACHER', 'ACADEMY'].includes(session.role)) {
+      return c.json(errorResponse('Not authorized'), 403);
+    }
+    const lessonId = c.req.param('lessonId');
+    const linkId = c.req.param('linkId');
+
+    // Verify lesson access
+    const lesson = await c.env.DB
+      .prepare('SELECT l.id, c.teacherId, a.ownerId FROM Lesson l JOIN Class c ON l.classId = c.id JOIN Academy a ON c.academyId = a.id WHERE l.id = ?')
+      .bind(lessonId).first() as any;
+    if (!lesson) return c.json(errorResponse('Lesson not found'), 404);
+    if (session.role === 'TEACHER' && lesson.teacherId !== session.id) return c.json(errorResponse('Not authorized'), 403);
+    if (session.role === 'ACADEMY' && lesson.ownerId !== session.id) return c.json(errorResponse('Not authorized'), 403);
+
+    await c.env.DB.prepare('DELETE FROM LessonLink WHERE id = ? AND lessonId = ?').bind(linkId, lessonId).run();
+
+    return c.json(successResponse({ deleted: true }));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Delete LessonLink] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});

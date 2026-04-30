@@ -163,7 +163,7 @@ assignments.get('/', async (c) => {
       // Teachers see all assignments for their classes
       query = `
         SELECT 
-          a.id, a.classId, a.teacherId, a.lessonId, a.title, a.description, a.type,
+          a.id, a.classId, a.teacherId, a.lessonId, a.topicId, a.title, a.description, a.type,
           a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt, a.updatedAt,
           c.name as className,
           GROUP_CONCAT(DISTINCT aa.uploadId) as attachmentIds,
@@ -219,7 +219,7 @@ assignments.get('/', async (c) => {
       // Students see assignments with their submission status for specific class
       query = `
         SELECT 
-          a.id, a.classId, a.lessonId, a.title, a.description, a.type,
+          a.id, a.classId, a.lessonId, a.topicId, a.title, a.description, a.type,
           a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt,
           c.name as className,
           s.id as submissionId,
@@ -279,7 +279,7 @@ assignments.post('/', async (c) => {
       }));
       return c.json({ success: false, error: 'Validation failed', details: errors }, 400);
     }
-    const { classId, lessonId: assignmentLessonId, title, description, dueDate, maxScore, uploadId, uploadIds, type, questions } = body;
+    const { classId, lessonId: assignmentLessonId, topicId: assignmentTopicId, title, description, dueDate, maxScore, uploadId, uploadIds, type, questions } = body;
 
     // Validate quiz-specific fields
     if (type === 'quiz') {
@@ -320,13 +320,14 @@ assignments.post('/', async (c) => {
     // Build all statements for atomic batch insert
     const statements: D1PreparedStatement[] = [
       c.env.DB.prepare(`
-        INSERT INTO Assignment (id, classId, teacherId, lessonId, title, description, dueDate, maxScore, uploadId, attachmentIds, type)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO Assignment (id, classId, teacherId, lessonId, topicId, title, description, dueDate, maxScore, uploadId, attachmentIds, type)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         assignmentId,
         classId,
         session.id,
         assignmentLessonId || null,
+        assignmentTopicId || null,
         title,
         description || null,
         dueDate || null,

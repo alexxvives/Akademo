@@ -42,6 +42,7 @@ export function useClassDetail(role: 'academy' | 'teacher' | 'admin') {
   const [editingLessonMedia, setEditingLessonMedia] = useState<{
     videos: Array<{ id: string; title: string; durationSeconds: number | null; bunnyGuid?: string }>;
     documents: Array<{ id: string; title: string; fileName: string; storagePath: string }>;
+    links: Array<{ id: string; title: string; url: string; orderIndex: number }>;
   } | null>(null);
   const [lessonFormData, setLessonFormData] = useState(DEFAULT_FORM_DATA());
   const [uploading, setUploading] = useState(false);

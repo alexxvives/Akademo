@@ -8,6 +8,7 @@ export default function StudentTopicSection({
   isExpanded,
   onToggle,
   onSelectLesson,
+  quizCount,
 }: TopicSectionProps) {
   if (lessons.length === 0) return null;
 
@@ -34,6 +35,15 @@ export default function StudentTopicSection({
           <span className="text-xs text-gray-600 bg-gray-200 px-2.5 py-1 rounded-full font-medium">
             {lessons.length} {lessons.length === 1 ? 'lección' : 'Clases'}
           </span>
+          {quizCount != null && quizCount > 0 && (
+            <a
+              href="/dashboard/student/assignments"
+              onClick={e => e.stopPropagation()}
+              className="text-xs text-purple-700 bg-purple-100 px-2.5 py-1 rounded-full font-medium hover:bg-purple-200 transition-colors"
+            >
+              {quizCount} {quizCount === 1 ? 'cuestionario' : 'cuestionarios'}
+            </a>
+          )}
         </div>
       </div>
 

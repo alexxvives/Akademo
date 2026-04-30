@@ -31,6 +31,13 @@ export interface Lesson {
   createdAt?: string;
 }
 
+export interface LessonLink {
+  id: string;
+  title: string;
+  url: string;
+  orderIndex: number;
+}
+
 export interface LessonDetail {
   id: string;
   title: string;
@@ -49,6 +56,7 @@ export interface LessonDetail {
     bunnyGuid?: string;
   }>;
   documents: Array<{ id: string; title: string; description: string | null; upload: { storagePath: string; fileName: string; mimeType?: string } }>;
+  links?: LessonLink[];
 }
 
 export interface LessonDetailResponse {
@@ -62,6 +70,7 @@ export interface LessonDetailResponse {
   topicId?: string | null;
   videos?: Array<{ id: string; title?: string; durationSeconds: number | null; upload?: { bunnyGuid?: string; storageType?: string } }>;
   documents?: Array<{ id: string; title?: string; upload?: { fileName?: string; storagePath?: string } }>;
+  links?: Array<{ id: string; title: string; url: string; orderIndex: number }>;
 }
 
 export interface LessonVideo {
@@ -148,6 +157,7 @@ export interface LessonFormData {
 export interface EditingLessonMedia {
   videos: Array<{ id: string; title: string; durationSeconds: number | null; bunnyGuid?: string }>;
   documents: Array<{ id: string; title: string; fileName: string; storagePath: string }>;
+  links: Array<{ id: string; title: string; url: string; orderIndex: number }>;
 }
 
 export interface LessonFeedback {

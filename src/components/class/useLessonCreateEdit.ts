@@ -104,7 +104,7 @@ export function useLessonCreateEdit(s: ClassDetailState) {
 
   const handleEditLesson = async (lesson: Lesson) => {
     if (s.paymentStatus === 'NOT PAID') {
-      s.setEditingLessonMedia({ videos: [], documents: [] });
+      s.setEditingLessonMedia({ videos: [], documents: [], links: [] });
       s.setLessonFormData({
         title: lesson.title, description: lesson.description || '', externalUrl: '', releaseDate: lesson.releaseDate.split('T')[0],
         releaseTime: '00:00', publishImmediately: true, maxWatchTimeMultiplier: lesson.maxWatchTimeMultiplier,
@@ -120,6 +120,7 @@ export function useLessonCreateEdit(s: ClassDetailState) {
       s.setEditingLessonMedia({
         videos: (detail.videos || []).map(v => ({ id: v.id, title: v.title || 'Video', durationSeconds: v.durationSeconds, bunnyGuid: v.upload?.bunnyGuid })),
         documents: (detail.documents || []).map(d => ({ id: d.id, title: d.title || d.upload?.fileName || 'Document', fileName: d.upload?.fileName || 'Unknown', storagePath: d.upload?.storagePath || '' })),
+        links: (detail.links || []).map((l: { id: string; title: string; url: string; orderIndex: number }) => ({ id: l.id, title: l.title, url: l.url, orderIndex: l.orderIndex })),
       });
       s.setLessonFormData({
         title: detail.title, description: detail.description || '', externalUrl: detail.externalUrl || '', releaseDate: detail.releaseDate.split('T')[0],
@@ -175,5 +176,35 @@ export function useLessonCreateEdit(s: ClassDetailState) {
     } catch { alert('Error updating lesson'); }
   };
 
-  return { handleLessonCreate, handleEditLesson, handleUpdateLesson };
+  const handleAddLink = async (title: string, url: string) => {
+    if (!s.editingLessonId) return;
+    try {
+      const res = await apiClient(`/lessons/${s.editingLessonId}/links`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, url }),
+      });
+      const result = await res.json();
+      if (!result.success) { alert(result.error || 'Error al añadir enlace'); return; }
+      // Optimistically update local state
+      s.setEditingLessonMedia(prev => prev ? {
+        ...prev,
+        links: [...prev.links, result.data],
+      } : prev);
+    } catch { alert('Error al añadir enlace'); }
+  };
+
+  const handleDeleteLink = async (linkId: string) => {
+    if (!s.editingLessonId) return;
+    try {
+      const res = await apiClient(`/lessons/${s.editingLessonId}/links/${linkId}`, { method: 'DELETE' });
+      const result = await res.json();
+      if (!result.success) { alert(result.error || 'Error al eliminar enlace'); return; }
+      s.setEditingLessonMedia(prev => prev ? {
+        ...prev,
+        links: prev.links.filter(l => l.id !== linkId),
+      } : prev);
+    } catch { alert('Error al eliminar enlace'); }
+  };
+
+  return { handleLessonCreate, handleEditLesson, handleUpdateLesson, handleAddLink, handleDeleteLink };
 }

@@ -42,6 +42,14 @@ export interface Lesson {
   documentCount?: number;
   totalVideoDuration?: number;
   totalWatchedSeconds?: number;
+  links?: LessonLink[];
+}
+
+export interface LessonLink {
+  id: string;
+  title: string;
+  url: string;
+  orderIndex: number;
 }
 
 export interface Topic {
@@ -50,6 +58,7 @@ export interface Topic {
   classId: string;
   orderIndex: number;
   lessonCount: number;
+  quizCount?: number;
 }
 
 export interface ClassData {

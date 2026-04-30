@@ -26,6 +26,8 @@ interface LessonFormModalProps {
   onDeleteDocument: (id: string) => void;
   onAddVideo: (file: File) => void;
   onAddDocument: (file: File) => void;
+  onAddLink: (title: string, url: string) => Promise<void>;
+  onDeleteLink: (linkId: string) => Promise<void>;
 }
 
 export default function LessonFormModal({
@@ -47,6 +49,8 @@ export default function LessonFormModal({
   onDeleteDocument,
   onAddVideo,
   onAddDocument,
+  onAddLink,
+  onDeleteLink,
 }: LessonFormModalProps) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 !m-0 p-4">
@@ -139,6 +143,8 @@ export default function LessonFormModal({
               onDeleteDocument={onDeleteDocument}
               onAddVideo={onAddVideo}
               onAddDocument={onAddDocument}
+              onAddLink={onAddLink}
+              onDeleteLink={onDeleteLink}
             />
           )}
 

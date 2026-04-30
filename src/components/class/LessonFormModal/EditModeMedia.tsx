@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import type { LessonFormData, EditingLessonMedia } from '../types';
 import { StreamRecordingSelector } from './StreamRecordingSelector';
 
@@ -12,6 +13,8 @@ interface EditModeMediaProps {
   onDeleteDocument: (id: string) => void;
   onAddVideo: (file: File) => void;
   onAddDocument: (file: File) => void;
+  onAddLink: (title: string, url: string) => Promise<void>;
+  onDeleteLink: (linkId: string) => Promise<void>;
 }
 
 export function EditModeMedia({
@@ -23,7 +26,13 @@ export function EditModeMedia({
   onDeleteDocument,
   onAddVideo,
   onAddDocument,
+  onAddLink,
+  onDeleteLink,
 }: EditModeMediaProps) {
+  const [newLinkTitle, setNewLinkTitle] = useState('');
+  const [newLinkUrl, setNewLinkUrl] = useState('');
+  const [addingLink, setAddingLink] = useState(false);
+  const [showAddLink, setShowAddLink] = useState(false);
   return (
     <div className="space-y-4">
       {/* Current Videos */}
@@ -159,6 +168,99 @@ export function EditModeMedia({
             availableStreamRecordings={availableStreamRecordings}
           />
         </div>
+      </div>
+
+      {/* Links Section */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <label className="block text-sm font-semibold text-gray-700">
+            Links ({editingLessonMedia.links.length})
+          </label>
+          {!showAddLink && (
+            <button
+              type="button"
+              onClick={() => setShowAddLink(true)}
+              className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Añadir enlace
+            </button>
+          )}
+        </div>
+        {editingLessonMedia.links.length > 0 && (
+          <div className="space-y-2 mb-2">
+            {editingLessonMedia.links.map((link) => (
+              <div key={link.id} className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{link.title}</p>
+                  <p className="text-xs text-gray-500 truncate">{link.url}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onDeleteLink(link.id)}
+                  className="text-xs text-red-600 bg-red-100 hover:bg-red-200 px-2 py-1 rounded transition-colors"
+                >
+                  Eliminar
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        {showAddLink && (
+          <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg space-y-2">
+            <input
+              type="text"
+              value={newLinkTitle}
+              onChange={e => setNewLinkTitle(e.target.value)}
+              placeholder="Título del enlace"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors"
+            />
+            <input
+              type="url"
+              value={newLinkUrl}
+              onChange={e => setNewLinkUrl(e.target.value)}
+              placeholder="https://..."
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors"
+            />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={addingLink || !newLinkTitle.trim() || !newLinkUrl.trim()}
+                onClick={async () => {
+                  setAddingLink(true);
+                  try {
+                    await onAddLink(newLinkTitle.trim(), newLinkUrl.trim());
+                    setNewLinkTitle('');
+                    setNewLinkUrl('');
+                    setShowAddLink(false);
+                  } finally {
+                    setAddingLink(false);
+                  }
+                }}
+                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {addingLink ? 'Guardando...' : 'Guardar enlace'}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowAddLink(false); setNewLinkTitle(''); setNewLinkUrl(''); }}
+                className="px-3 py-1.5 text-gray-600 hover:text-gray-900 text-xs font-medium"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+        {editingLessonMedia.links.length === 0 && !showAddLink && (
+          <p className="text-sm text-gray-500 italic">No hay links en esta lección</p>
+        )}
       </div>
     </div>
   );

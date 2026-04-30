@@ -44,7 +44,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
     addVideoToForm, addDocumentToForm, handleDeleteVideo, handleDeleteDocument,
   } = useClassActions(s);
 
-  const { handleLessonCreate, handleEditLesson, handleUpdateLesson } = useLessonCreateEdit(s);
+  const { handleLessonCreate, handleEditLesson, handleUpdateLesson, handleAddLink, handleDeleteLink } = useLessonCreateEdit(s);
 
   if (loading) {
     return <SkeletonClassDetail />;
@@ -131,6 +131,8 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
               onDeleteDocument={handleDeleteDocument}
               onAddVideo={addVideoToForm}
               onAddDocument={addDocumentToForm}
+              onAddLink={handleAddLink}
+              onDeleteLink={handleDeleteLink}
             />
           )}
 

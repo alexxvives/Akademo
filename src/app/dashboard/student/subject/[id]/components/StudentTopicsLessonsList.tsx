@@ -59,6 +59,7 @@ export default function StudentTopicsLessonsList({
               isExpanded={expandedTopics.has(topic.id)}
               onToggle={() => toggleTopic(topic.id)}
               onSelectLesson={onSelectLesson}
+              quizCount={topic.quizCount}
             />
           ))}
           <StudentTopicSection
