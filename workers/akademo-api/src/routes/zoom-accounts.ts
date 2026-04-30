@@ -24,19 +24,27 @@ zoomAccounts.get('/', async (c) => {
       'SELECT id, academyId, accountName, accountId, provider, createdAt FROM ZoomAccount WHERE academyId = ?'
     ).bind(academyResult.id).all();
 
-    // For each account, get the classes that use it
-    const accountsWithClasses = await Promise.all(
-      (accounts.results || []).map(async (account: any) => {
-        const classes = await c.env.DB.prepare(
-          'SELECT id, name, startDate FROM Class WHERE zoomAccountId = ?'
-        ).bind(account.id).all();
-        
-        return {
-          ...account,
-          classes: classes.results || []
-        };
-      })
-    );
+    if ((accounts.results || []).length === 0) {
+      return c.json({ success: true, data: [] });
+    }
+
+    // Single LEFT JOIN to fetch all linked classes — was 1+N queries.
+    const classesResult = await c.env.DB.prepare(
+      `SELECT id, name, startDate, zoomAccountId
+       FROM Class
+       WHERE zoomAccountId IN (SELECT id FROM ZoomAccount WHERE academyId = ?)`
+    ).bind(academyResult.id).all<{ id: string; name: string; startDate: string; zoomAccountId: string }>();
+
+    const classesByAccount = new Map<string, Array<{ id: string; name: string; startDate: string }>>();
+    for (const cls of (classesResult.results || [])) {
+      if (!classesByAccount.has(cls.zoomAccountId)) classesByAccount.set(cls.zoomAccountId, []);
+      classesByAccount.get(cls.zoomAccountId)!.push({ id: cls.id, name: cls.name, startDate: cls.startDate });
+    }
+
+    const accountsWithClasses = (accounts.results || []).map((account: any) => ({
+      ...account,
+      classes: classesByAccount.get(account.id) || [],
+    }));
 
     return c.json({ success: true, data: accountsWithClasses });
   } catch (error: unknown) {

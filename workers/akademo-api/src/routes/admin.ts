@@ -906,12 +906,13 @@ admin.post('/bulk-import', async (c) => {
           if (periodsToCreate.some(p => p.isCurrent === 1)) {
             await c.env.DB.prepare('UPDATE AcademicYear SET isCurrent = 0 WHERE academyId = ?').bind(academyId).run();
           }
-          for (const p of periodsToCreate) {
-            await c.env.DB
-              .prepare(`INSERT INTO AcademicYear (id, academyId, name, startDate, endDate, isCurrent, createdAt) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`)
-              .bind(p.id, academyId, p.name, p.startDate, p.endDate, p.isCurrent)
-              .run();
-          }
+          // One batch instead of N sequential INSERTs.
+          await c.env.DB.batch(
+            periodsToCreate.map(p =>
+              c.env.DB.prepare(`INSERT INTO AcademicYear (id, academyId, name, startDate, endDate, isCurrent, createdAt) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`)
+                .bind(p.id, academyId, p.name, p.startDate, p.endDate, p.isCurrent)
+            )
+          );
           log(`created ${periodsToCreate.length} academic year periods: ${periodsToCreate.map(p => p.name).join(', ')}`);
         }
       }

@@ -241,13 +241,13 @@ academies.post('/teachers', async (c) => {
        VALUES (?, ?, ?, datetime('now'))`
     ).bind(crypto.randomUUID(), userId, academyId).run();
 
-    // Assign teacher to selected classes (if provided)
+    // Assign teacher to selected classes — one batch instead of N sequential UPDATEs.
     if (Array.isArray(classIds) && classIds.length > 0) {
-      for (const cId of classIds) {
-        await c.env.DB.prepare(
-          'UPDATE Class SET teacherId = ? WHERE id = ? AND academyId = ?'
-        ).bind(userId, cId, academyId).run();
-      }
+      await c.env.DB.batch(
+        classIds.map((cId: string) =>
+          c.env.DB.prepare('UPDATE Class SET teacherId = ? WHERE id = ? AND academyId = ?').bind(userId, cId, academyId)
+        )
+      );
     }
 
     // Send onboarding email
@@ -387,46 +387,55 @@ academies.get('/teachers', async (c) => {
     const teachersResult = await c.env.DB.prepare(teachersQuery).bind(...params).all();
     const teachers = teachersResult.results || [];
 
-    // Get class and student counts for each teacher
-    const teachersWithCounts = await Promise.all(
-      teachers.map(async (teacher: any) => {
-        // Get classes taught by this teacher (with names and student counts)
-        const classesResult = await c.env.DB.prepare(
-          `SELECT c.id, c.name,
-           (SELECT COUNT(*) FROM ClassEnrollment ce WHERE ce.classId = c.id AND ce.status = 'APPROVED') as studentCount
-           FROM Class c WHERE c.teacherId = ?`
-        ).bind(teacher.id).all();
-        
-        const teacherClasses = (classesResult.results || []) as Array<{ id: string; name: string; studentCount: number }>;
-        const classCount = teacherClasses.length;
-        const studentCount = teacherClasses.reduce((sum, cls) => sum + (cls.studentCount || 0), 0);
+    if (teachers.length === 0) {
+      return c.json(successResponse([]));
+    }
 
-        // Get revenue per class from completed payments
-        const classRevenueMap: Record<string, number> = {};
-        if (classCount > 0) {
-          const classIds = teacherClasses.map(cls => cls.id);
-          const placeholders = classIds.map(() => '?').join(',');
-          const revenueResult = await c.env.DB.prepare(
-            `SELECT classId, COALESCE(SUM(amount), 0) as total FROM Payment WHERE classId IN (${placeholders}) AND (status = 'COMPLETED' OR status = 'PAID') GROUP BY classId`
-          ).bind(...classIds).all();
-          for (const row of (revenueResult.results || []) as Array<{ classId: string; total: number }>) {
-            classRevenueMap[row.classId] = row.total || 0;
-          }
-        }
-        const totalRevenue = Object.values(classRevenueMap).reduce((sum: number, v: number) => sum + v, 0);
+    // Fetch all classes and revenue in 2 queries total (was 1+2N).
+    const teacherIds = (teachers as any[]).map(t => t.id);
+    const idPlaceholders = teacherIds.map(() => '?').join(',');
 
-        return {
-          id: teacher.id,
-          email: teacher.email,
-          name: `${teacher.firstName} ${teacher.lastName}`,
-          classCount,
-          studentCount,
-          totalRevenue,
-          classes: teacherClasses.map(cls => ({ id: cls.id, name: cls.name, studentCount: cls.studentCount || 0, revenue: classRevenueMap[cls.id] || 0 })),
-          createdAt: teacher.createdAt,
-        };
-      })
-    );
+    const [allClassesResult, allRevenueResult] = await Promise.all([
+      c.env.DB.prepare(
+        `SELECT c.id, c.name, c.teacherId,
+          (SELECT COUNT(*) FROM ClassEnrollment ce WHERE ce.classId = c.id AND ce.status = 'APPROVED') as studentCount
+         FROM Class c WHERE c.teacherId IN (${idPlaceholders})`
+      ).bind(...teacherIds).all<{ id: string; name: string; teacherId: string; studentCount: number }>(),
+      c.env.DB.prepare(
+        `SELECT classId, COALESCE(SUM(amount), 0) as total
+         FROM Payment
+         WHERE classId IN (SELECT id FROM Class WHERE teacherId IN (${idPlaceholders}))
+           AND (status = 'COMPLETED' OR status = 'PAID')
+         GROUP BY classId`
+      ).bind(...teacherIds).all<{ classId: string; total: number }>(),
+    ]);
+
+    // Index results in memory — O(N) JS loops, 0 extra DB round-trips.
+    const classesByTeacher = new Map<string, Array<{ id: string; name: string; studentCount: number }>>();
+    for (const cls of (allClassesResult.results || [])) {
+      if (!classesByTeacher.has(cls.teacherId)) classesByTeacher.set(cls.teacherId, []);
+      classesByTeacher.get(cls.teacherId)!.push({ id: cls.id, name: cls.name, studentCount: cls.studentCount || 0 });
+    }
+
+    const revenueByClass = new Map<string, number>();
+    for (const row of (allRevenueResult.results || [])) {
+      revenueByClass.set(row.classId, row.total || 0);
+    }
+
+    const teachersWithCounts = (teachers as any[]).map(teacher => {
+      const teacherClasses = classesByTeacher.get(teacher.id) || [];
+      const totalRevenue = teacherClasses.reduce((sum, cls) => sum + (revenueByClass.get(cls.id) || 0), 0);
+      return {
+        id: teacher.id,
+        email: teacher.email,
+        name: `${teacher.firstName} ${teacher.lastName}`,
+        classCount: teacherClasses.length,
+        studentCount: teacherClasses.reduce((sum, cls) => sum + cls.studentCount, 0),
+        totalRevenue,
+        classes: teacherClasses.map(cls => ({ id: cls.id, name: cls.name, studentCount: cls.studentCount, revenue: revenueByClass.get(cls.id) || 0 })),
+        createdAt: teacher.createdAt,
+      };
+    });
 
     return c.json(successResponse(teachersWithCounts));
   } catch (error: any) {
@@ -830,18 +839,25 @@ academies.post('/welcome-emails', async (c) => {
     let sent = 0;
     let failed = 0;
 
-    for (const user of users) {
-      const roleLabel = user.role === 'TEACHER' ? 'profesor' : 'alumno';
-      const safeName = escapeHtml(academy.name);
-      const safeUserFirst = escapeHtml(user.firstName);
-      const safeUserEmail = escapeHtml(user.email);
-      const safeTempPwd = escapeHtml(user.tempPassword);
-      try {
-        const ok = await sendEmail(c.env, {
-          from: 'AKADEMO <onboarding@akademo-edu.com>',
-          to: user.email,
-          subject: `Tus credenciales de acceso — ${academy.name}`,
-          html: `
+    // Send in chunks of 5 to respect email API rate limits while still
+    // parallelising within each chunk (was fully sequential — one await per user).
+    const EMAIL_CONCURRENCY = 5;
+    const successfulIds: string[] = [];
+
+    for (let i = 0; i < users.length; i += EMAIL_CONCURRENCY) {
+      const chunk = (users as any[]).slice(i, i + EMAIL_CONCURRENCY);
+      const results = await Promise.all(chunk.map(async (user: any) => {
+        const roleLabel = user.role === 'TEACHER' ? 'profesor' : 'alumno';
+        const safeName = escapeHtml(academy.name);
+        const safeUserFirst = escapeHtml(user.firstName);
+        const safeUserEmail = escapeHtml(user.email);
+        const safeTempPwd = escapeHtml(user.tempPassword);
+        try {
+          const ok = await sendEmail(c.env, {
+            from: 'AKADEMO <onboarding@akademo-edu.com>',
+            to: user.email,
+            subject: `Tus credenciales de acceso — ${academy.name}`,
+            html: `
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: 0 auto; background-color: #f8fafc; padding: 24px;">
               <div style="background-color: #0f172a; padding: 32px 40px; border-radius: 12px 12px 0 0;">
                 <p style="color: #94a3b8; margin: 0 0 4px 0; font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;">Bienvenido a</p>
@@ -869,17 +885,27 @@ academies.post('/welcome-emails', async (c) => {
               <p style="text-align: center; color: #cbd5e1; font-size: 11px; margin: 16px 0 0 0;">Powered by AKADEMO · akademo-edu.com</p>
             </div>
           `,
-        });
-        if (ok) {
-          // Clear the tempPassword after successful send
-          await c.env.DB.prepare('UPDATE User SET tempPassword = NULL WHERE id = ?').bind(user.id).run();
-          sent++;
-        } else {
-          failed++;
+          });
+          return { userId: user.id, ok };
+        } catch (emailErr) {
+          console.error('[Welcome Emails] Email failed for', user.email, emailErr);
+          return { userId: user.id, ok: false };
         }
-      } catch (emailErr) {
-        console.error('[Welcome Emails] Email failed for', user.email, emailErr);
-        failed++;
+      }));
+
+      for (const r of results) {
+        if (r.ok) { successfulIds.push(r.userId); sent++; } else { failed++; }
+      }
+    }
+
+    // Clear tempPassword for all successful sends in one batch instead of N sequential UPDATEs.
+    if (successfulIds.length > 0) {
+      const D1_CHUNK = 100;
+      for (let i = 0; i < successfulIds.length; i += D1_CHUNK) {
+        const slice = successfulIds.slice(i, i + D1_CHUNK);
+        await c.env.DB.batch(
+          slice.map(id => c.env.DB.prepare('UPDATE User SET tempPassword = NULL WHERE id = ?').bind(id))
+        );
       }
     }
 

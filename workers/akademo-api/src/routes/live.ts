@@ -404,10 +404,19 @@ live.get('/history', async (c) => {
     const result = await c.env.DB.prepare(query).bind(...params).all();
     const streams = result.results || [];
 
-    // Fetch Bunny status for streams that have a recordingId
-    const streamsWithStatus = await Promise.all(
-      streams.map(async (stream: any) => {
-        if (!stream.recordingId) return stream;
+    // Fetch Bunny status for streams that have a recordingId.
+    // Chunk to 6 concurrent requests — Cloudflare Workers cap simultaneous
+    // outbound connections at 6; unbounded Promise.all stalls the CPU.
+    const streamsWithStatus = [...streams];
+    const recordingIndices = streamsWithStatus
+      .map((s: any, i: number) => (s.recordingId ? i : -1))
+      .filter((i: number) => i !== -1);
+
+    const BUNNY_CONCURRENCY = 6;
+    for (let i = 0; i < recordingIndices.length; i += BUNNY_CONCURRENCY) {
+      const chunk = recordingIndices.slice(i, i + BUNNY_CONCURRENCY);
+      await Promise.all(chunk.map(async (idx: number) => {
+        const stream = streamsWithStatus[idx] as any;
         try {
           const bunnyRes = await fetch(
             `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/videos/${stream.recordingId}`,
@@ -415,12 +424,11 @@ live.get('/history', async (c) => {
           );
           if (bunnyRes.ok) {
             const bunnyData = await bunnyRes.json() as any;
-            return { ...stream, bunnyStatus: bunnyData.status ?? null };
+            streamsWithStatus[idx] = { ...stream, bunnyStatus: bunnyData.status ?? null };
           }
-        } catch {}
-        return stream;
-      })
-    );
+        } catch { /* keep stream without bunnyStatus */ }
+      }));
+    }
 
     return c.json(successResponse(streamsWithStatus));
   } catch (error: any) {

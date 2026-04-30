@@ -142,20 +142,27 @@ media.get('/', async (c) => {
 
       // For recording-source items, fetch actual video duration from Bunny
       const recordingItems = (results.videos as any[]).filter((v: any) => v.source === 'recording' && v.bunnyGuid);
+      // For recording-source items, fetch actual video duration from Bunny.
+      // Chunk to 6 concurrent requests — Cloudflare Workers cap simultaneous
+      // outbound connections at 6; unbounded Promise.all stalls the CPU.
       if (recordingItems.length > 0) {
-        await Promise.all(recordingItems.map(async (item: any) => {
-          try {
-            const bunnyRes = await fetch(
-              `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/videos/${item.bunnyGuid}`,
-              { headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY } }
-            );
-            if (bunnyRes.ok) {
-              const bunnyData = await bunnyRes.json() as any;
-              item.durationSeconds = bunnyData.length || item.durationSeconds;
-              item.bunnyStatus = bunnyData.status ?? item.bunnyStatus;
-            }
-          } catch { /* keep DB-computed duration as fallback */ }
-        }));
+        const BUNNY_CONCURRENCY = 6;
+        for (let i = 0; i < recordingItems.length; i += BUNNY_CONCURRENCY) {
+          const chunk = recordingItems.slice(i, i + BUNNY_CONCURRENCY);
+          await Promise.all(chunk.map(async (item: any) => {
+            try {
+              const bunnyRes = await fetch(
+                `https://video.bunnycdn.com/library/${c.env.BUNNY_STREAM_LIBRARY_ID}/videos/${item.bunnyGuid}`,
+                { headers: { 'AccessKey': c.env.BUNNY_STREAM_API_KEY } }
+              );
+              if (bunnyRes.ok) {
+                const bunnyData = await bunnyRes.json() as any;
+                item.durationSeconds = bunnyData.length || item.durationSeconds;
+                item.bunnyStatus = bunnyData.status ?? item.bunnyStatus;
+              }
+            } catch { /* keep DB-computed duration as fallback */ }
+          }));
+        }
       }
     }
 
