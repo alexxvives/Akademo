@@ -33,24 +33,27 @@ Tested on: maximo exponente (April 2026). DB prefix: `mdl3y_` (varies per instal
 Each client gets a folder under `docs/onboarding/{client-slug}/`:
 ```
 docs/onboarding/{client-slug}/
-  queries/          ← CSVs exported from phpMyAdmin (gitignored — contain student data)
-    enrollments.csv
-    asignaturas.csv
-    quizzes.csv
-    questions.csv
-    files.csv
-  files/            ← Generated SQL/JSON/xlsx (committed)
+  queries/          ← SQL files to run in phpMyAdmin (committed)
+    01_enrollments.sql
+    02_asignaturas.sql
+    03_quizzes.sql
+    04_questions.sql
+    05_files.sql
+    06_urls.sql
+  files/            ← All outputs: CSVs from phpMyAdmin (gitignored) + generated SQL/JSON/xlsx (committed)
+    users.csv           ← gitignored
+    asignaturas.csv     ← gitignored
+    quizzes.csv         ← gitignored
+    questions.csv       ← gitignored
+    files.csv           ← gitignored
+    links.csv           ← gitignored
     moodle-migration.xlsx
     post-import.sql
     import-documents.sql
     ftp-progress.json
     quiz-assignments.sql
-    quiz-questions.sql
     quiz-questions-filtered.sql
 ```
-
-> When running scripts, point `FILES_CSV`, `QUIZZES_CSV`, `QUESTIONS_CSV` etc. to `docs/onboarding/{client-slug}/queries/*.csv`.
-> Output SQL files should be written to `docs/onboarding/{client-slug}/files/`.
 
 ---
 
