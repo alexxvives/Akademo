@@ -22,10 +22,17 @@ export function useClassesData(role: 'ACADEMY' | 'ADMIN' | 'TEACHER') {
   const [academies, setAcademies] = useState<Academy[]>([]);
   const [selectedAcademy, setSelectedAcademy] = useState<string>('all');
   const [selectedClassId, setSelectedClassId] = useState<string>('all');
+  const [selectedTeacherId, setSelectedTeacherId] = useState<string>('all');
   const [dailycoEnabled, setDailycoEnabled] = useState<boolean>(role === 'ADMIN');
 
   const isDemo = role === 'ACADEMY' && paymentStatus === 'NOT PAID';
   const { isClassInPeriod, activePeriodId } = usePeriod();
+
+  // Reset teacher filter when academy selection changes (ADMIN)
+  const handleSetSelectedAcademy = useCallback((v: string) => {
+    setSelectedAcademy(v);
+    setSelectedTeacherId('all');
+  }, []);
 
   const loadData = useCallback(async () => {
     try {
@@ -170,6 +177,9 @@ export function useClassesData(role: 'ACADEMY' | 'ADMIN' | 'TEACHER') {
     if (role === 'ACADEMY' && activePeriodId !== 'all') {
       result = result.filter((c) => isClassInPeriod(c.startDate));
     }
+    if (selectedTeacherId !== 'all') {
+      result = result.filter((c) => c.teacherId === selectedTeacherId);
+    }
     return result;
   })();
 
@@ -182,8 +192,9 @@ export function useClassesData(role: 'ACADEMY' | 'ADMIN' | 'TEACHER') {
     editingClass, setEditingClass, formData, setFormData,
     saving, setSaving, error, setError,
     paymentOptionsError, setPaymentOptionsError,
-    academies, selectedAcademy, setSelectedAcademy,
+    academies, selectedAcademy, setSelectedAcademy: handleSetSelectedAcademy,
     selectedClassId, setSelectedClassId,
+    selectedTeacherId, setSelectedTeacherId,
     isDemo, filteredClasses, dashboardBase, loadData,
     activePeriodId, isClassInPeriod,
     dailycoEnabled,

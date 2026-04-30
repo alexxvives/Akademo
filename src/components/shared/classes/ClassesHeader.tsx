@@ -1,5 +1,6 @@
-'use client';
+﻿'use client';
 
+import { useMemo } from 'react';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 import { AcademySearchDropdown } from '@/components/ui/AcademySearchDropdown';
 import type { Class, Academy, Teacher } from './types';
@@ -14,6 +15,8 @@ interface ClassesHeaderProps {
   setSelectedAcademy: (v: string) => void;
   selectedClassId: string;
   setSelectedClassId: (v: string) => void;
+  selectedTeacherId: string;
+  setSelectedTeacherId: (v: string) => void;
   onCreateClass: () => void;
   activePeriodId: string;
   isClassInPeriod: (startDate?: string | null) => boolean;
@@ -23,8 +26,27 @@ export function ClassesHeader({
   role, academyName, teachers, classes, academies,
   selectedAcademy, setSelectedAcademy,
   selectedClassId, setSelectedClassId,
+  selectedTeacherId, setSelectedTeacherId,
   onCreateClass, activePeriodId, isClassInPeriod,
 }: ClassesHeaderProps) {
+  // Derive unique teachers from classes (for ADMIN, scoped to selected academy)
+  const teacherOptions = useMemo(() => {
+    if (role === 'ACADEMY') {
+      return teachers.map(t => ({ id: t.id, name: `${t.firstName} ${t.lastName}`.trim() }));
+    }
+    if (role === 'ADMIN' && selectedAcademy !== 'all') {
+      const academyClasses = classes.filter(c => c.academyId === selectedAcademy);
+      const seen = new Map<string, string>();
+      for (const c of academyClasses) {
+        if (c.teacherId && c.teacherName && !seen.has(c.teacherId)) {
+          seen.set(c.teacherId, c.teacherName);
+        }
+      }
+      return Array.from(seen.entries()).map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
+    }
+    return [];
+  }, [role, teachers, classes, selectedAcademy]);
+
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div>
@@ -62,6 +84,19 @@ export function ClassesHeader({
             allLabel="Todas las Academias"
             className="w-full sm:w-56"
           />
+        )}
+        {teacherOptions.length > 1 && (
+          <select
+            value={selectedTeacherId}
+            onChange={(e) => setSelectedTeacherId(e.target.value)}
+            className="h-10 pl-3 pr-8 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent w-full sm:w-48 appearance-none"
+            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.5rem center', backgroundSize: '1.25rem' }}
+          >
+            <option value="all">Todos los profesores</option>
+            {teacherOptions.map(t => (
+              <option key={t.id} value={t.id}>{t.name}</option>
+            ))}
+          </select>
         )}
         {(role === 'ACADEMY' || role === 'TEACHER') && classes.length > 1 && (
           <ClassSearchDropdown

@@ -42,6 +42,8 @@ export function ClassesPage({ role }: ClassesPageProps) {
           setSelectedAcademy={data.setSelectedAcademy}
           selectedClassId={data.selectedClassId}
           setSelectedClassId={data.setSelectedClassId}
+          selectedTeacherId={data.selectedTeacherId}
+          setSelectedTeacherId={data.setSelectedTeacherId}
           onCreateClass={crud.openCreateModal}
           activePeriodId={data.activePeriodId}
           isClassInPeriod={data.isClassInPeriod}
