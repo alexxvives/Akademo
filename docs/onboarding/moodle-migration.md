@@ -86,38 +86,13 @@ Look for the prefix before `_user`, `_course`, etc. (Standard Moodle uses `mdl_`
 Go to **SiteGround → Sitio Web → MySQL → PHPMYADMIN**, open the Moodle database, click **SQL**, run each query and click **Export → CSV** (keep column names in first row). Save files to the **project root** (`C:\...\AKADEMO\`).
 
 ### `enrollments.csv` — Users + course assignments
-```sql
-SELECT
-  u.email,
-  u.firstname AS nombre,
-  u.lastname  AS apellido,
-  c.fullname  AS asignatura,
-  r.shortname AS moodle_rol
-FROM {PREFIX}_user_enrolments ue
-JOIN {PREFIX}_enrol e   ON ue.enrolid   = e.id
-JOIN {PREFIX}_course c  ON e.courseid   = c.id
-JOIN {PREFIX}_context ctx ON ctx.instanceid = c.id AND ctx.contextlevel = 50
-JOIN {PREFIX}_role_assignments ra ON ra.userid = ue.userid AND ra.contextid = ctx.id
-JOIN {PREFIX}_role r  ON r.id  = ra.roleid
-JOIN {PREFIX}_user u  ON u.id  = ue.userid
-WHERE u.deleted = 0 AND u.suspended = 0
-  AND r.shortname IN ('student','editingteacher')
-  AND c.visible = 1
-ORDER BY u.email;
-```
+
+See [`docs/onboarding/{client}/queries/01_enrollments.sql`](maximo-expo/queries/01_enrollments.sql)
 
 ### `asignaturas.csv` — Class list with start dates
 > This is the list of courses (clases), not individual lessons.
 
-```sql
-SELECT
-  fullname AS nombre,
-  FROM_UNIXTIME(startdate, '%d/%m/%Y') AS fechaInicio
-FROM {PREFIX}_course
-WHERE id > 1
-  AND visible = 1
-ORDER BY fullname;
-```
+See [`docs/onboarding/{client}/queries/02_asignaturas.sql`](maximo-expo/queries/02_asignaturas.sql)
 
 ### `quizzes.csv` — Quiz metadata (one row per quiz)
 
@@ -125,90 +100,18 @@ ORDER BY fullname;
 > `quizzes.csv` tells you which quiz belongs to which course + section (tema).
 > `questions.csv` gives you the actual questions and answer options.
 
-```sql
-SELECT
-  c.fullname AS course_name,
-  q.id AS quiz_id,
-  q.name AS quiz_name,
-  q.intro AS quiz_description,
-  cs.section AS section_number,
-  COALESCE(NULLIF(TRIM(cs.name), ''), CONCAT('Tema ', cs.section)) AS section_name
-FROM {PREFIX}_quiz q
-JOIN {PREFIX}_course c ON c.id = q.course
-JOIN {PREFIX}_course_modules cm ON cm.course = q.course
-  AND cm.instance = q.id
-  AND cm.module = (SELECT id FROM {PREFIX}_modules WHERE name = 'quiz')
-JOIN {PREFIX}_course_sections cs ON cs.id = cm.section
-WHERE c.id > 1
-ORDER BY c.id, q.id;
-```
+See [`docs/onboarding/{client}/queries/03_quizzes.sql`](maximo-expo/queries/03_quizzes.sql)
 
 ### `questions.csv`
-```sql
-SELECT
-  qs.quizid AS quiz_id,
-  qu.id AS question_id,
-  qu.questiontext AS question_text,
-  qa.id AS answer_id,
-  qa.answer AS answer_text,
-  qa.fraction AS is_correct
-FROM {PREFIX}_quiz_slots qs
-JOIN {PREFIX}_question qu ON qu.id = qs.questionid AND qu.qtype = 'multichoice'
-JOIN {PREFIX}_question_answers qa ON qa.question = qu.id
-ORDER BY qs.quizid, qu.id, qa.fraction DESC;
-```
 
-### `files.csv` — PDF references (for FTP transfer in Step 4)
+See [`docs/onboarding/{client}/queries/04_questions.sql`](maximo-expo/queries/04_questions.sql)
+
+### `files.csv` — PDF references (for FTP transfer in Step 5)
 
 > **Includes both single-file resources (`mod_resource`) and files inside folders (`mod_folder`).**
 > Files inside folders will use their filename as the document title in AKADEMO.
 
-```sql
-SELECT
-  r.name AS file_title,
-  c.fullname AS course_name,
-  cs.section AS section_number,
-  COALESCE(NULLIF(TRIM(cs.name), ''), CONCAT('Tema ', cs.section)) AS section_name,
-  f.filename,
-  f.filesize,
-  CONCAT(LEFT(f.contenthash,2), '/', MID(f.contenthash,3,2), '/', f.contenthash) AS file_path,
-  f.timecreated AS file_timestamp
-FROM {PREFIX}_files f
-JOIN {PREFIX}_context ctx ON ctx.id = f.contextid AND ctx.contextlevel = 70
-JOIN {PREFIX}_course_modules cm ON cm.id = ctx.instanceid
-JOIN {PREFIX}_course c ON c.id = cm.course
-JOIN {PREFIX}_course_sections cs ON cs.id = cm.section
-JOIN {PREFIX}_resource r ON cm.instance = r.id AND cm.module = (SELECT id FROM {PREFIX}_modules WHERE name = 'resource')
-WHERE f.component = 'mod_resource'
-  AND f.filearea = 'content'
-  AND f.filename != '.'
-  AND f.filesize > 0
-  AND c.visible = 1
-
-UNION ALL
-
-SELECT
-  f.filename AS file_title,
-  c.fullname AS course_name,
-  cs.section AS section_number,
-  COALESCE(NULLIF(TRIM(cs.name), ''), CONCAT('Tema ', cs.section)) AS section_name,
-  f.filename,
-  f.filesize,
-  CONCAT(LEFT(f.contenthash,2), '/', MID(f.contenthash,3,2), '/', f.contenthash) AS file_path,
-  f.timecreated AS file_timestamp
-FROM {PREFIX}_files f
-JOIN {PREFIX}_context ctx ON ctx.id = f.contextid AND ctx.contextlevel = 70
-JOIN {PREFIX}_course_modules cm ON cm.id = ctx.instanceid
-JOIN {PREFIX}_course c ON c.id = cm.course
-JOIN {PREFIX}_course_sections cs ON cs.id = cm.section
-WHERE f.component = 'mod_folder'
-  AND f.filearea = 'content'
-  AND f.filename != '.'
-  AND f.filesize > 0
-  AND c.visible = 1
-
-ORDER BY course_name, section_number, file_title;
-```
+See [`docs/onboarding/{client}/queries/05_files.sql`](maximo-expo/queries/05_files.sql)
 
 Replace `{PREFIX}` with the actual prefix found in Step 0.
 
