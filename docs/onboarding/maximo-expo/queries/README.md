@@ -8,16 +8,23 @@
 | `02_asignaturas.sql` | `asignaturas.csv` | Course list with start dates |
 | `03_quizzes.sql` | `quizzes.csv` | Quiz metadata + section info |
 | `04_questions.sql` | `questions.csv` | Questions + answer options |
-| `05_files.sql` | `files.csv` | PDF paths for R2 upload |
+| `05_files.sql` | `files.csv` | PDF paths for R2 upload (mod_resource + mod_folder) |
+| `06_urls.sql` | `urls.csv` | External link resources (no FTP needed — just URLs) |
 
 **How to export**: phpMyAdmin → SQL tab → paste query → run → Export → CSV (keep headers).
 
-Remember to replace `{PREFIX}` in each SQL file with the actual Moodle DB prefix (e.g. `mdl3y_`).
+All queries use the `mdl3y_` prefix (hardcoded for this client).
 
 The generated `.csv` files are gitignored (contain student data). The `.sql` files are committed.
 
 ---
-<!-- original README content below -->
+
+**What was NOT migrated and why:**
+- `mdl3y_assign` (12 rows) — written assignment submission tasks. AKADEMO doesn't have this content type (only multiple-choice quizzes).
+- `mdl3y_quiz_attempts` / `mdl3y_quiz_grades` — past attempt history. Could be imported if AKADEMO needs to show historical scores, but not currently in scope.
+- `mdl3y_forum` / discussions / posts — forum content. Not applicable to AKADEMO.
+
+---
 
 
 **Drop your phpMyAdmin CSV exports here before running the migration scripts.**

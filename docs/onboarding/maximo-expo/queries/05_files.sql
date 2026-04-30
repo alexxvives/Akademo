@@ -1,6 +1,6 @@
 -- Export to: files.csv
 -- PDF references for FTP upload to R2 (Step 5 of migration)
--- Replace {PREFIX} with the actual Moodle DB prefix (e.g. mdl3y_)
+-- DB prefix: mdl3y_
 --
 -- Captures BOTH:
 --   mod_resource  → single-file resources (most PDFs)
@@ -15,12 +15,12 @@ SELECT
   f.filesize,
   CONCAT(LEFT(f.contenthash,2), '/', MID(f.contenthash,3,2), '/', f.contenthash) AS file_path,
   f.timecreated AS file_timestamp
-FROM {PREFIX}_files f
-JOIN {PREFIX}_context ctx ON ctx.id = f.contextid AND ctx.contextlevel = 70
-JOIN {PREFIX}_course_modules cm ON cm.id = ctx.instanceid
-JOIN {PREFIX}_course c ON c.id = cm.course
-JOIN {PREFIX}_course_sections cs ON cs.id = cm.section
-JOIN {PREFIX}_resource r ON cm.instance = r.id AND cm.module = (SELECT id FROM {PREFIX}_modules WHERE name = 'resource')
+FROM mdl3y_files f
+JOIN mdl3y_context ctx ON ctx.id = f.contextid AND ctx.contextlevel = 70
+JOIN mdl3y_course_modules cm ON cm.id = ctx.instanceid
+JOIN mdl3y_course c ON c.id = cm.course
+JOIN mdl3y_course_sections cs ON cs.id = cm.section
+JOIN mdl3y_resource r ON cm.instance = r.id AND cm.module = (SELECT id FROM mdl3y_modules WHERE name = 'resource')
 WHERE f.component = 'mod_resource'
   AND f.filearea = 'content'
   AND f.filename != '.'
@@ -38,11 +38,11 @@ SELECT
   f.filesize,
   CONCAT(LEFT(f.contenthash,2), '/', MID(f.contenthash,3,2), '/', f.contenthash) AS file_path,
   f.timecreated AS file_timestamp
-FROM {PREFIX}_files f
-JOIN {PREFIX}_context ctx ON ctx.id = f.contextid AND ctx.contextlevel = 70
-JOIN {PREFIX}_course_modules cm ON cm.id = ctx.instanceid
-JOIN {PREFIX}_course c ON c.id = cm.course
-JOIN {PREFIX}_course_sections cs ON cs.id = cm.section
+FROM mdl3y_files f
+JOIN mdl3y_context ctx ON ctx.id = f.contextid AND ctx.contextlevel = 70
+JOIN mdl3y_course_modules cm ON cm.id = ctx.instanceid
+JOIN mdl3y_course c ON c.id = cm.course
+JOIN mdl3y_course_sections cs ON cs.id = cm.section
 WHERE f.component = 'mod_folder'
   AND f.filearea = 'content'
   AND f.filename != '.'
