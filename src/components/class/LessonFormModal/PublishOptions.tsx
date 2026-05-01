@@ -55,13 +55,13 @@ export function PublishOptions({ formData, setFormData }: PublishOptionsProps) {
               type="date"
               value={formData.releaseDate}
               onChange={e => setFormData(prev => ({ ...prev, releaseDate: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-colors"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors"
             />
             <input
               type="time"
               value={formData.releaseTime}
               onChange={e => setFormData(prev => ({ ...prev, releaseTime: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-colors"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors"
             />
           </div>
         </div>

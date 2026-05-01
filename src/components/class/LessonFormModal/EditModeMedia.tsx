@@ -33,6 +33,7 @@ export function EditModeMedia({
   const [newLinkUrl, setNewLinkUrl] = useState('');
   const [addingLink, setAddingLink] = useState(false);
   const [showAddLink, setShowAddLink] = useState(false);
+  const [deletingLinkId, setDeletingLinkId] = useState<string | null>(null);
   return (
     <div className="space-y-4">
       {/* Current Videos */}
@@ -108,17 +109,12 @@ export function EditModeMedia({
               accept="video/mp4"
               multiple
               onChange={e => { if (e.target.files) Array.from(e.target.files).forEach(onAddVideo); e.target.value = ''; }}
-              className="w-full h-[38px] px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 file:mr-4 file:py-0.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+              className="w-full h-[38px] px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-100 file:mr-4 file:py-0.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
             />
             {formData.videos.length > 0 && (
               <div className="mt-2 space-y-2">
                 {formData.videos.map((v, i) => (
                   <div key={`video-${i}-${v.file.name}`} className="relative p-2 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
-                    <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
-                      </svg>
-                    </div>
                     <span className="text-xs text-gray-700 truncate flex-1">{v.file.name}</span>
                     <button type="button" onClick={() => setFormData(prev => ({ ...prev, videos: prev.videos.filter((_, j) => j !== i) }))} className="w-5 h-5 flex items-center justify-center text-red-500 hover:text-red-700 rounded">
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -137,17 +133,12 @@ export function EditModeMedia({
               accept=".pdf"
               multiple
               onChange={e => { if (e.target.files) Array.from(e.target.files).forEach(onAddDocument); e.target.value = ''; }}
-              className="w-full h-[38px] px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 file:mr-4 file:py-0.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+              className="w-full h-[38px] px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-100 file:mr-4 file:py-0.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
             />
             {formData.documents.length > 0 && (
               <div className="mt-2 space-y-2">
                 {formData.documents.map((d, i) => (
                   <div key={`doc-${i}-${d.file.name}`} className="relative p-2 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
-                    <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
-                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
-                      </svg>
-                    </div>
                     <span className="text-xs text-gray-700 truncate flex-1">{d.file.name}</span>
                     <button type="button" onClick={() => setFormData(prev => ({ ...prev, documents: prev.documents.filter((_, j) => j !== i) }))} className="w-5 h-5 flex items-center justify-center text-red-500 hover:text-red-700 rounded">
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -204,10 +195,14 @@ export function EditModeMedia({
                 </div>
                 <button
                   type="button"
-                  onClick={() => onDeleteLink(link.id)}
-                  className="text-xs text-red-600 bg-red-100 hover:bg-red-200 px-2 py-1 rounded transition-colors"
+                  disabled={deletingLinkId === link.id}
+                  onClick={async () => {
+                    setDeletingLinkId(link.id);
+                    try { await onDeleteLink(link.id); } finally { setDeletingLinkId(null); }
+                  }}
+                  className="text-xs text-red-600 bg-red-100 hover:bg-red-200 px-2 py-1 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Eliminar
+                  {deletingLinkId === link.id ? 'Eliminando...' : 'Eliminar'}
                 </button>
               </div>
             ))}
