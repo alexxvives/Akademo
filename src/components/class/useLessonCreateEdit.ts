@@ -11,6 +11,7 @@ const resetFormData = (defaults: { maxWatchTimeMultiplier: number; watermarkInte
   maxWatchTimeMultiplier: defaults.maxWatchTimeMultiplier, watermarkIntervalMins: defaults.watermarkIntervalMins,
   topicId: '', videos: [] as { file: File; title: string; description: string; duration: number }[],
   documents: [] as { file: File; title: string; description: string }[], selectedStreamRecordings: [] as string[],
+  links: [] as { title: string; url: string }[],
 });
 
 export function useLessonCreateEdit(s: ClassDetailState) {
@@ -42,8 +43,8 @@ export function useLessonCreateEdit(s: ClassDetailState) {
       return;
     }
 
-    if (s.lessonFormData.videos.length === 0 && s.lessonFormData.documents.length === 0) {
-      return alert('Agrega al menos un video o documento, o selecciona una grabación de stream');
+    if (s.lessonFormData.videos.length === 0 && s.lessonFormData.documents.length === 0 && s.lessonFormData.links.length === 0) {
+      return alert('Agrega al menos un video, documento o enlace, o selecciona una grabación de stream');
     }
 
     const releaseTimestamp = s.lessonFormData.publishImmediately
@@ -87,6 +88,7 @@ export function useLessonCreateEdit(s: ClassDetailState) {
           classId: s.classData?.id, title: s.lessonFormData.title || new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }),
           description: s.lessonFormData.description, releaseDate: releaseTimestamp, topicId: s.lessonFormData.topicId || null,
           maxWatchTimeMultiplier: s.lessonFormData.maxWatchTimeMultiplier, watermarkIntervalMins: s.lessonFormData.watermarkIntervalMins, videos, documents,
+          links: s.lessonFormData.links.length > 0 ? s.lessonFormData.links : undefined,
         }),
         signal: abortController.signal,
       });
@@ -108,7 +110,7 @@ export function useLessonCreateEdit(s: ClassDetailState) {
       s.setLessonFormData({
         title: lesson.title, description: lesson.description || '', externalUrl: '', releaseDate: lesson.releaseDate.split('T')[0],
         releaseTime: '00:00', publishImmediately: true, maxWatchTimeMultiplier: lesson.maxWatchTimeMultiplier,
-        watermarkIntervalMins: lesson.watermarkIntervalMins, topicId: lesson.topicId || '', videos: [], documents: [], selectedStreamRecordings: [],
+        watermarkIntervalMins: lesson.watermarkIntervalMins, topicId: lesson.topicId || '', videos: [], documents: [], selectedStreamRecordings: [], links: [],
       });
       s.setEditingLessonId(lesson.id); s.setShowLessonForm(true); return;
     }
@@ -125,7 +127,7 @@ export function useLessonCreateEdit(s: ClassDetailState) {
       s.setLessonFormData({
         title: detail.title, description: detail.description || '', externalUrl: detail.externalUrl || '', releaseDate: detail.releaseDate.split('T')[0],
         releaseTime: '00:00', publishImmediately: true, maxWatchTimeMultiplier: detail.maxWatchTimeMultiplier,
-        watermarkIntervalMins: detail.watermarkIntervalMins, topicId: detail.topicId || '', videos: [], documents: [], selectedStreamRecordings: [],
+        watermarkIntervalMins: detail.watermarkIntervalMins, topicId: detail.topicId || '', videos: [], documents: [], selectedStreamRecordings: [], links: [],
       });
       s.setEditingLessonId(lesson.id); s.setShowLessonForm(true);
     } catch { alert('Error loading lesson details'); }

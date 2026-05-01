@@ -792,7 +792,7 @@ lessons.post('/create-with-uploaded', validateBody(createLessonSchema), async (c
     const { 
       classId, title, description, releaseDate, 
       maxWatchTimeMultiplier, watermarkIntervalMins,
-      videos, documents, topicId 
+      videos, documents, topicId, links,
     } = body;
 
     // Verify access to the class
@@ -945,10 +945,24 @@ lessons.post('/create-with-uploaded', validateBody(createLessonSchema), async (c
     // Return created lesson with videos and documents
     const lesson = await c.env.DB.prepare('SELECT * FROM Lesson WHERE id = ?').bind(lessonId).first();
 
+    // Insert links if provided — batch for efficiency.
+    const createdLinks: Array<{ id: string; title: string; url: string; orderIndex: number }> = [];
+    if (Array.isArray(links) && links.length > 0) {
+      const linkInserts = links.map((link: { title: string; url: string }, idx: number) => {
+        const linkId = crypto.randomUUID();
+        createdLinks.push({ id: linkId, title: link.title, url: link.url, orderIndex: idx });
+        return c.env.DB.prepare(
+          `INSERT INTO LessonLink (id, lessonId, title, url, orderIndex) VALUES (?, ?, ?, ?, ?)`
+        ).bind(linkId, lessonId, link.title, link.url, idx);
+      });
+      await c.env.DB.batch(linkInserts);
+    }
+
     return c.json(successResponse({
       ...lesson,
       videos: createdVideos,
       documents: createdDocuments,
+      links: createdLinks,
       videoCount: createdVideos.length,
       documentCount: createdDocuments.length,
     }));

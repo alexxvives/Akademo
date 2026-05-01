@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import type { LessonFormData } from '../types';
 import { StreamRecordingSelector } from './StreamRecordingSelector';
 
@@ -18,6 +19,10 @@ export function CreateModeUploads({
   onAddVideo,
   onAddDocument,
 }: CreateModeUploadsProps) {
+  const [showAddLink, setShowAddLink] = useState(false);
+  const [newLinkTitle, setNewLinkTitle] = useState('');
+  const [newLinkUrl, setNewLinkUrl] = useState('');
+
   return (
     <>
       <div className="grid md:grid-cols-2 gap-4">
@@ -64,7 +69,7 @@ export function CreateModeUploads({
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1.5">Documentos (PDF)</label>
-        <input type="file" accept=".pdf" multiple onChange={e => { if (e.target.files) Array.from(e.target.files).forEach(onAddDocument); e.target.value = ''; }} className="w-full h-[38px] px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 file:mr-4 file:py-0.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"/>
+        <input type="file" accept=".pdf" multiple onChange={e => { if (e.target.files) Array.from(e.target.files).forEach(onAddDocument); e.target.value = ''; }} className="w-full h-[38px] px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-100 file:mr-4 file:py-0.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"/>
         {formData.documents.length > 0 && (
           <div className="mt-2 space-y-2">
             {formData.documents.map((d, i) => (
@@ -87,6 +92,95 @@ export function CreateModeUploads({
               </div>
             ))}
           </div>
+        )}
+      </div>
+
+      {/* Links Section */}
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <label className="block text-sm font-medium text-gray-700">
+            Links{formData.links.length > 0 ? ` (${formData.links.length})` : ''}
+          </label>
+          {!showAddLink && (
+            <button
+              type="button"
+              onClick={() => setShowAddLink(true)}
+              className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Añadir enlace
+            </button>
+          )}
+        </div>
+
+        {formData.links.length > 0 && (
+          <div className="space-y-2 mb-2">
+            {formData.links.map((link, i) => (
+              <div key={i} className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{link.title}</p>
+                  <p className="text-xs text-gray-500 truncate">{link.url}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, links: prev.links.filter((_, j) => j !== i) }))}
+                  className="text-xs text-red-600 bg-red-100 hover:bg-red-200 px-2 py-1 rounded transition-colors"
+                >
+                  Eliminar
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {showAddLink && (
+          <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg space-y-2">
+            <input
+              type="text"
+              value={newLinkTitle}
+              onChange={e => setNewLinkTitle(e.target.value)}
+              placeholder="Título del enlace"
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors"
+            />
+            <input
+              type="url"
+              value={newLinkUrl}
+              onChange={e => setNewLinkUrl(e.target.value)}
+              placeholder="https://..."
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors"
+            />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={!newLinkTitle.trim() || !newLinkUrl.trim()}
+                onClick={() => {
+                  setFormData(prev => ({ ...prev, links: [...prev.links, { title: newLinkTitle.trim(), url: newLinkUrl.trim() }] }));
+                  setNewLinkTitle(''); setNewLinkUrl(''); setShowAddLink(false);
+                }}
+                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Guardar enlace
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowAddLink(false); setNewLinkTitle(''); setNewLinkUrl(''); }}
+                className="px-3 py-1.5 text-gray-600 hover:text-gray-900 text-xs font-medium"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+
+        {formData.links.length === 0 && !showAddLink && (
+          <p className="text-xs text-gray-400 italic">Sin enlaces</p>
         )}
       </div>
     </>

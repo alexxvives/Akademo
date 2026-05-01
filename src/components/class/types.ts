@@ -152,6 +152,7 @@ export interface LessonFormData {
   videos: { file: File; title: string; description: string; duration: number }[];
   documents: { file: File; title: string; description: string }[];
   selectedStreamRecordings: string[];
+  links: { title: string; url: string }[];
 }
 
 export interface EditingLessonMedia {

@@ -1,6 +1,8 @@
 'use client';
 
 import { StyledSelect } from '@/components/ui/StyledSelect';
+import { FormInput } from '@/components/ui/FormInput';
+import { FormTextarea } from '@/components/ui/FormTextarea';
 import type { Topic, LessonFormData, EditingLessonMedia } from '../types';
 import { PublishOptions } from './PublishOptions';
 import { CreateModeUploads } from './CreateModeUploads';
@@ -74,11 +76,10 @@ export default function LessonFormModal({
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Título</label>
-              <input
+              <FormInput
                 type="text"
                 value={formData.title}
                 onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors"
                 placeholder="Titulo de la clase"
               />
             </div>
@@ -101,11 +102,10 @@ export default function LessonFormModal({
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Descripción</label>
-            <textarea
+            <FormTextarea
               value={formData.description}
               onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
               rows={2}
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors resize-y"
               placeholder="Descripcion de la clase"
             />
           </div>
@@ -113,11 +113,11 @@ export default function LessonFormModal({
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Multiplicador <span className="text-xs font-normal text-gray-500">(El video podrá verse durante X veces su duración)</span></label>
-              <input type="number" min="0" max="10" step="0.5" value={formData.maxWatchTimeMultiplier} onChange={e => setFormData(prev => ({ ...prev, maxWatchTimeMultiplier: parseFloat(e.target.value) }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"/>
+              <FormInput type="number" min="0" max="10" step="0.5" value={formData.maxWatchTimeMultiplier} onChange={e => setFormData(prev => ({ ...prev, maxWatchTimeMultiplier: parseFloat(e.target.value) }))} />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">Marca de agua <span className="text-xs font-normal text-gray-500">(Cada cuántos minutos aparece)</span></label>
-              <input type="number" min="0" max="60" step="0.5" value={formData.watermarkIntervalMins} onChange={e => setFormData(prev => ({ ...prev, watermarkIntervalMins: parseFloat(e.target.value) }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"/>
+              <FormInput type="number" min="0" max="60" step="0.5" value={formData.watermarkIntervalMins} onChange={e => setFormData(prev => ({ ...prev, watermarkIntervalMins: parseFloat(e.target.value) }))} />
             </div>
           </div>
 

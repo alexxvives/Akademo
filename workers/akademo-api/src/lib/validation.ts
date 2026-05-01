@@ -135,6 +135,10 @@ export const createLessonSchema = z.object({
     title: z.string().optional(),
     uploadId: z.string().optional(),
   })).optional(),
+  links: z.array(z.object({
+    title: z.string().min(1).max(200),
+    url: z.string().url(),
+  })).optional(),
 });
 
 export const updateLessonSchema = createLessonSchema.partial().omit({ classId: true }).extend({

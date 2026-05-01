@@ -16,6 +16,7 @@ const DEFAULT_FORM_DATA = () => ({
   publishImmediately: true, maxWatchTimeMultiplier: 2.0, watermarkIntervalMins: 5,
   topicId: '' as string, videos: [] as { file: File; title: string; description: string; duration: number }[],
   documents: [] as { file: File; title: string; description: string }[], selectedStreamRecordings: [] as string[],
+  links: [] as { title: string; url: string }[],
 });
 
 export function useClassDetail(role: 'academy' | 'teacher' | 'admin') {
