@@ -16,7 +16,7 @@ export function PublishOptions({ formData, setFormData }: PublishOptionsProps) {
           <button
             type="button"
             onClick={() => setFormData(prev => ({ ...prev, publishImmediately: true }))}
-            className={`flex-1 h-[42px] px-3 py-2.5 rounded-xl border text-sm font-medium transition-all ${
+            className={`flex-1 h-[38px] px-3 py-2 rounded-xl border text-sm font-medium transition-all ${
               formData.publishImmediately
                 ? 'border-brand-500 bg-brand-50 text-brand-700'
                 : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
@@ -32,7 +32,7 @@ export function PublishOptions({ formData, setFormData }: PublishOptionsProps) {
           <button
             type="button"
             onClick={() => setFormData(prev => ({ ...prev, publishImmediately: false }))}
-            className={`flex-1 h-[42px] px-3 py-2.5 rounded-xl border text-sm font-medium transition-all ${
+            className={`flex-1 h-[38px] px-3 py-2 rounded-xl border text-sm font-medium transition-all ${
               !formData.publishImmediately
                 ? 'border-brand-500 bg-brand-50 text-brand-700'
                 : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'

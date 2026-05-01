@@ -15,7 +15,7 @@ export function StreamRecordingSelector({
 }: StreamRecordingSelectorProps) {
   return (
     <div className="relative">
-      <label className="block text-xs font-medium text-gray-600 mb-1.5">Grabación de stream</label>
+      <label className="block text-sm font-medium text-gray-700 mb-1.5">Grabación de stream</label>
       <details className="w-full border border-gray-200 rounded-lg text-sm bg-white">
         <summary className="px-3 py-2 cursor-pointer hover:bg-gray-50 rounded-lg flex items-center justify-between">
           <span>

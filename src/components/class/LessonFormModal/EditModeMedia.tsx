@@ -43,7 +43,7 @@ export function EditModeMedia({
         {editingLessonMedia.videos.length > 0 ? (
           <div className="space-y-2">
             {editingLessonMedia.videos.map((v, i) => (
-              <div key={v.id} className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div key={v.id} className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
                 <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
                   <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
@@ -76,7 +76,7 @@ export function EditModeMedia({
         {editingLessonMedia.documents.length > 0 ? (
           <div className="space-y-2">
             {editingLessonMedia.documents.map((d) => (
-              <div key={d.id} className="flex items-center gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div key={d.id} className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
                 <div className="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center flex-shrink-0">
                   <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
@@ -106,8 +106,8 @@ export function EditModeMedia({
           <div className="space-y-2">
             {editingLessonMedia.links.map((link) => (
               <div key={link.id} className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                   </svg>
                 </div>
@@ -196,7 +196,15 @@ export function EditModeMedia({
 
         {/* Add Link */}
         <div className="mt-4">
-          <label className="block text-xs font-medium text-gray-600 mb-1.5">Nuevo enlace</label>
+          <div className="flex items-center gap-2 mb-1.5">
+            <label className="block text-xs font-medium text-gray-600">Nuevo link</label>
+            <span className="flex items-center gap-1 text-xs text-blue-600 font-medium">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Añadir enlace
+            </span>
+          </div>
           <div className="space-y-2">
             <input
               type="text"
