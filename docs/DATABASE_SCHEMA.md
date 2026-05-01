@@ -30,6 +30,7 @@
 | 15 | [LessonRating](#15-lessonrating) | Student lesson ratings |
 | 16 | [LiveStream](#16-livestream) | Live class sessions (Zoom/Daily) |
 | 17 | [Assignment](#17-assignment) | Class assignments & quizzes |
+| 32 | [LessonLink](#32-lessonlink) | External links attached to lessons |
 | 18 | [AssignmentAttachment](#18-assignmentattachment) | Files attached to assignments |
 | 19 | [AssignmentSubmission](#19-assignmentsubmission) | Student assignment submissions |
 | 20 | [QuizQuestion](#20-quizquestion) | Quiz questions |
@@ -390,6 +391,8 @@ Class tasks (file submission or quiz type).
 | id | TEXT | NO | — | PK |
 | classId | TEXT | NO | — | FK → Class.id |
 | teacherId | TEXT | NO | — | FK → User.id |
+| lessonId | TEXT | YES | NULL | FK → Lesson.id (ON DELETE SET NULL) |
+| topicId | TEXT | YES | NULL | FK → Topic.id (ON DELETE SET NULL) |
 | title | TEXT | NO | — | |
 | description | TEXT | YES | NULL | |
 | dueDate | TEXT | YES | NULL | ISO 8601 datetime |
@@ -651,6 +654,23 @@ Admin action audit trail. **Pending migration 0006 — not yet applied.**
 | meta | TEXT | YES | NULL | JSON extra context |
 | ip | TEXT | YES | NULL | Request IP |
 | createdAt | TEXT | NO | datetime('now') | |
+
+---
+
+### 32. LessonLink
+
+External links (URLs) attached to a lesson.
+
+| Column | Type | Nullable | Default | Notes |
+|---|---|---|---|---|
+| id | TEXT | NO | lower(hex(randomblob(16))) | PK |
+| lessonId | TEXT | NO | — | FK → Lesson.id (ON DELETE CASCADE) |
+| title | TEXT | NO | — | Display name for the link |
+| url | TEXT | NO | — | Must be http or https |
+| orderIndex | INTEGER | NO | 0 | Sort order |
+| createdAt | TEXT | NO | datetime('now') | |
+
+**Index**: `idx_lessonlink_lessonid` on `lessonId`
 
 ---
 
