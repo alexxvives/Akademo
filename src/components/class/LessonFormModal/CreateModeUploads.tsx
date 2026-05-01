@@ -68,8 +68,8 @@ export function CreateModeUploads({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">Documentos (PDF)</label>
-        <input type="file" accept=".pdf" multiple onChange={e => { if (e.target.files) Array.from(e.target.files).forEach(onAddDocument); e.target.value = ''; }} className="w-full h-[38px] px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-100 file:mr-4 file:py-0.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"/>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">Documentos</label>
+        <input type="file" accept=".pdf,.doc,.docx" multiple onChange={e => { if (e.target.files) Array.from(e.target.files).forEach(onAddDocument); e.target.value = ''; }} className="w-full h-[38px] px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-100 file:mr-4 file:py-0.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"/>
         {formData.documents.length > 0 && (
           <div className="mt-2 space-y-2">
             {formData.documents.map((d, i) => (

@@ -36,7 +36,7 @@ export function StyledSelect({ value, onChange, options, placeholder = 'Seleccio
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white hover:bg-gray-50 flex items-center justify-between cursor-pointer transition-colors focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white hover:bg-gray-50 flex items-center justify-between cursor-pointer transition-colors focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
       >
         <span className={value ? 'text-gray-900' : 'text-gray-500'}>{selectedLabel}</span>
         <svg className={`w-4 h-4 text-gray-500 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
