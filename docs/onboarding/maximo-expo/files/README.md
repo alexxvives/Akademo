@@ -20,6 +20,7 @@
 | `moodle-migration.xlsx` | `node scripts/moodle-to-excel.js` | Step 3 |
 | `post-import.sql` | `node scripts/moodle-to-excel.js` | Step 4b |
 | `import-documents.sql` | `node scripts/ftp-to-r2.js` | Step 5 (auto) |
+| `import-links.sql` | `node scripts/generate-links-sql.js` | Step 8b |
 | `ftp-progress.json` | `node scripts/ftp-to-r2.js` | Step 5 (auto) — **keep, needed for re-upload recovery** |
 | `quiz-assignments.sql` | `node scripts/generate-quiz-sql.js` + split | Step 7b |
 | `quiz-questions.sql` | `node scripts/generate-quiz-sql.js` + split | Step 7b |

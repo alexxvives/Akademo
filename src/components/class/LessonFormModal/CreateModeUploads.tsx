@@ -97,22 +97,21 @@ export function CreateModeUploads({
 
       {/* Links Section */}
       <div>
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2 mb-2">
           <label className="block text-sm font-medium text-gray-700">
             Links{formData.links.length > 0 ? ` (${formData.links.length})` : ''}
           </label>
-          {!showAddLink && (
-            <button
-              type="button"
-              onClick={() => setShowAddLink(true)}
-              className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Añadir enlace
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => setShowAddLink(true)}
+            disabled={showAddLink}
+            className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Añadir enlace
+          </button>
         </div>
 
         {formData.links.length > 0 && (

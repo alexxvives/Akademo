@@ -10,21 +10,22 @@ Tested on: maximo exponente (April 2026). DB prefix: `mdl3y_` (varies per instal
 | # | What | Command / Action |
 |---|------|------------------|
 | 0 | Find DB prefix | `SHOW TABLES;` in phpMyAdmin |
-| 1 | Export 5 CSVs | phpMyAdmin → SQL → Export CSV |
+| 1 | Export 6 CSVs | phpMyAdmin → SQL → Export CSV |
 | 2 | Create academy | Admin panel → register academy |
 | 3 | Generate Excel + post-import.sql | `node scripts/moodle-to-excel.js` |
 | 4 | Fill prices in xlsx | Open `moodle-migration.xlsx`, Asignaturas sheet |
 | 5 | Upload via admin UI | Admin → Academias → Migración CSV |
 | 6 | Run post-import.sql | `npx wrangler d1 execute akademo-db --remote --yes --file=post-import.sql` |
 | 7 | Upload PDFs to R2 | `node scripts/ftp-to-r2.js` (needs FTP + R2 creds in `scripts/.env`) |
-| 8 | Run import-documents.sql | `npx wrangler d1 execute akademo-db --remote --yes --file=docs/onboarding/{client}/import-documents.sql` |
+| 8a | Run import-documents.sql | `npx wrangler d1 execute akademo-db --remote --yes --file=docs/onboarding/{client}/files/import-documents.sql` |
+| 8b | Generate + run import-links.sql | `node scripts/generate-links-sql.js` then `npx wrangler d1 execute akademo-db --remote --yes --file=docs/onboarding/{client}/files/import-links.sql` |
 | 9 | Generate quiz SQL | `node scripts/generate-quiz-sql.js` |
 | 10 | Split quiz SQL | Node script: separate assignments + questions, filter ghost IDs |
 | 11 | Run quiz-assignments.sql | `npx wrangler d1 execute akademo-db --remote --yes --file=docs/onboarding/{client}/quiz-assignments.sql` |
 | 12 | Run quiz-questions-filtered.sql | `npx wrangler d1 execute akademo-db --remote --yes --file=docs/onboarding/{client}/quiz-questions-filtered.sql` |
 | 13 | Send welcome emails | Admin → [academy] → Enviar emails de bienvenida |
 
-> **Critical**: Steps 8 and 11–12 must run **after** Step 5 (classes must already exist in DB). Steps 11–12 must run in order — assignments before questions.
+> **Critical**: Steps 8a–8b and 11–12 must run **after** Step 5 (classes must already exist in DB). Step 8b must run after 8a (Lesson rows must exist). Steps 11–12 must run in order — assignments before questions.
 
 ---
 
@@ -47,9 +48,9 @@ docs/onboarding/{client-slug}/
     questions.csv       ← gitignored
     files.csv           ← gitignored
     links.csv           ← gitignored
-    moodle-migration.xlsx
     post-import.sql
     import-documents.sql
+    import-links.sql
     ftp-progress.json
     quiz-assignments.sql
     quiz-questions-filtered.sql

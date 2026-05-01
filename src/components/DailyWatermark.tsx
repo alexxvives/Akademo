@@ -26,17 +26,18 @@ function useClock() {
 const badge = {
   display: 'inline-flex',
   alignItems: 'center',
-  background: 'rgba(0,0,0,0.62)',
+  background: 'rgba(0,0,0,0.78)',
   color: '#fff',
   fontSize: '0.72rem',
-  fontWeight: 500,
-  padding: '3px 9px',
+  fontWeight: 600,
+  padding: '4px 10px',
   borderRadius: '5px',
-  backdropFilter: 'blur(4px)',
+  backdropFilter: 'blur(6px)',
   userSelect: 'none' as const,
   letterSpacing: '0.01em',
   whiteSpace: 'nowrap' as const,
-  border: '1px solid rgba(255,255,255,0.10)',
+  border: '1px solid rgba(255,255,255,0.18)',
+  textShadow: '0 1px 3px rgba(0,0,0,0.8)',
 };
 
 export default function DailyWatermark({ name, email, userId, watermarkIntervalMins = 5 }: DailyWatermarkProps) {
@@ -81,14 +82,14 @@ export default function DailyWatermark({ name, email, userId, watermarkIntervalM
         overflow: 'hidden',
       }}
     >
-      {/* Top-left: Name — positioned near video edge */}
-      <div style={{ position: 'absolute', top: '12%', left: '12%' }}>
-        <span style={badge}>{name}</span>
+      {/* Top-left: Email — positioned near video edge */}
+      <div style={{ position: 'absolute', top: '8%', left: '8%' }}>
+        <span style={badge}>{email}</span>
       </div>
 
-      {/* Top-right: Email — positioned near video edge */}
-      <div style={{ position: 'absolute', top: '12%', right: '22%' }}>
-        <span style={badge}>{email}</span>
+      {/* Top-right: Name — positioned near video edge */}
+      <div style={{ position: 'absolute', top: '8%', right: '8%' }}>
+        <span style={badge}>{name}</span>
       </div>
 
       {/* Center: large diagonal full name — intermittent, anchored to center of badge rectangle */}
@@ -99,14 +100,15 @@ export default function DailyWatermark({ name, email, userId, watermarkIntervalM
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%) rotate(-30deg)',
-            fontSize: 'clamp(1.4rem, 3.5vw, 2.8rem)',
+            fontSize: 'clamp(1.6rem, 4vw, 3.2rem)',
             fontWeight: 800,
             color: 'transparent',
-            WebkitTextStroke: '1.5px rgba(255,255,255,0.55)',
+            WebkitTextStroke: '2px rgba(255,255,255,0.82)',
             textTransform: 'uppercase',
-            letterSpacing: '0.18em',
+            letterSpacing: '0.20em',
             whiteSpace: 'nowrap',
-            textShadow: '0 2px 6px rgba(0,0,0,0.5)',
+            textShadow: '0 0 24px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.6)',
+            paintOrder: 'stroke fill' as any,
           }}
         >
           {name}
@@ -114,12 +116,12 @@ export default function DailyWatermark({ name, email, userId, watermarkIntervalM
       )}
 
       {/* Bottom-left: User ID — positioned near video edge */}
-      <div style={{ position: 'absolute', bottom: '12%', left: '12%' }}>
+      <div style={{ position: 'absolute', bottom: '8%', left: '8%' }}>
         <span style={badge}>ID: {shortId}</span>
       </div>
 
       {/* Bottom-right: Live clock — positioned near video edge */}
-      <div style={{ position: 'absolute', bottom: '12%', right: '22%' }}>
+      <div style={{ position: 'absolute', bottom: '8%', right: '8%' }}>
         <span style={badge}>{clock}</span>
       </div>
     </div>
