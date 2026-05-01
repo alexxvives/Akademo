@@ -49,7 +49,7 @@ export function PublishOptions({ formData, setFormData }: PublishOptionsProps) {
       </div>
       {!formData.publishImmediately && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Fecha y Hora</label>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Fecha y Hora</label>
           <div className="grid grid-cols-2 gap-2">
             <input
               type="date"

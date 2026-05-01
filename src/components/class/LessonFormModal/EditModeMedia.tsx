@@ -98,74 +98,11 @@ export function EditModeMedia({
         )}
       </div>
 
-      {/* Add More Files */}
-      <div className="pt-4 border-t border-gray-200">
-        <label className="block text-sm font-semibold text-gray-700 mb-3">Agregar más archivos</label>
-        <div className="grid md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1.5">Nuevos videos</label>
-            <input
-              type="file"
-              accept="video/mp4"
-              multiple
-              onChange={e => { if (e.target.files) Array.from(e.target.files).forEach(onAddVideo); e.target.value = ''; }}
-              className="w-full h-[38px] px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-100 file:mr-4 file:py-0.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
-            />
-            {formData.videos.length > 0 && (
-              <div className="mt-2 space-y-2">
-                {formData.videos.map((v, i) => (
-                  <div key={`video-${i}-${v.file.name}`} className="relative p-2 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
-                    <span className="text-xs text-gray-700 truncate flex-1">{v.file.name}</span>
-                    <button type="button" onClick={() => setFormData(prev => ({ ...prev, videos: prev.videos.filter((_, j) => j !== i) }))} className="w-5 h-5 flex items-center justify-center text-red-500 hover:text-red-700 rounded">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1.5">Nuevos documentos (PDF)</label>
-            <input
-              type="file"
-              accept=".pdf"
-              multiple
-              onChange={e => { if (e.target.files) Array.from(e.target.files).forEach(onAddDocument); e.target.value = ''; }}
-              className="w-full h-[38px] px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-100 file:mr-4 file:py-0.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
-            />
-            {formData.documents.length > 0 && (
-              <div className="mt-2 space-y-2">
-                {formData.documents.map((d, i) => (
-                  <div key={`doc-${i}-${d.file.name}`} className="relative p-2 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
-                    <span className="text-xs text-gray-700 truncate flex-1">{d.file.name}</span>
-                    <button type="button" onClick={() => setFormData(prev => ({ ...prev, documents: prev.documents.filter((_, j) => j !== i) }))} className="w-5 h-5 flex items-center justify-center text-red-500 hover:text-red-700 rounded">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="mt-4 relative">
-          <StreamRecordingSelector
-            formData={formData}
-            setFormData={setFormData}
-            availableStreamRecordings={availableStreamRecordings}
-          />
-        </div>
-      </div>
-
-      {/* Links Section */}
+      {/* Links actuales */}
       <div>
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2 mb-2">
           <label className="block text-sm font-semibold text-gray-700">
-            Links ({editingLessonMedia.links.length})
+            Links actuales ({editingLessonMedia.links.length})
           </label>
           {!showAddLink && (
             <button
@@ -183,7 +120,7 @@ export function EditModeMedia({
         {editingLessonMedia.links.length > 0 && (
           <div className="space-y-2 mb-2">
             {editingLessonMedia.links.map((link) => (
-              <div key={link.id} className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div key={link.id} className="flex items-center gap-3 p-3 bg-gray-50 border border-gray-200 rounded-lg">
                 <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
                   <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
@@ -257,6 +194,70 @@ export function EditModeMedia({
           <p className="text-sm text-gray-500 italic">No hay links en esta lección</p>
         )}
       </div>
+
+      {/* Add More Files */}
+      <div className="pt-4 border-t border-gray-200">
+        <label className="block text-sm font-semibold text-gray-700 mb-3">Agregar más archivos</label>
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">Nuevos videos</label>
+            <input
+              type="file"
+              accept="video/mp4"
+              multiple
+              onChange={e => { if (e.target.files) Array.from(e.target.files).forEach(onAddVideo); e.target.value = ''; }}
+              className="w-full h-[38px] px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-100 file:mr-4 file:py-0.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+            />
+            {formData.videos.length > 0 && (
+              <div className="mt-2 space-y-2">
+                {formData.videos.map((v, i) => (
+                  <div key={`video-${i}-${v.file.name}`} className="relative p-2 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
+                    <span className="text-xs text-gray-700 truncate flex-1">{v.file.name}</span>
+                    <button type="button" onClick={() => setFormData(prev => ({ ...prev, videos: prev.videos.filter((_, j) => j !== i) }))} className="w-5 h-5 flex items-center justify-center text-red-500 hover:text-red-700 rounded">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">Nuevos documentos (PDF)</label>
+            <input
+              type="file"
+              accept=".pdf"
+              multiple
+              onChange={e => { if (e.target.files) Array.from(e.target.files).forEach(onAddDocument); e.target.value = ''; }}
+              className="w-full h-[38px] px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-100 file:mr-4 file:py-0.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+            />
+            {formData.documents.length > 0 && (
+              <div className="mt-2 space-y-2">
+                {formData.documents.map((d, i) => (
+                  <div key={`doc-${i}-${d.file.name}`} className="relative p-2 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
+                    <span className="text-xs text-gray-700 truncate flex-1">{d.file.name}</span>
+                    <button type="button" onClick={() => setFormData(prev => ({ ...prev, documents: prev.documents.filter((_, j) => j !== i) }))} className="w-5 h-5 flex items-center justify-center text-red-500 hover:text-red-700 rounded">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-4 relative">
+          <StreamRecordingSelector
+            formData={formData}
+            setFormData={setFormData}
+            availableStreamRecordings={availableStreamRecordings}
+          />
+        </div>
+      </div>
+
     </div>
   );
 }
