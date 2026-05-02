@@ -44,6 +44,7 @@ export interface ImportSummary {
   questionsCreated?: number;
   quizResults?: { quizName: string; courseName: string; questionsCount: number; status: 'created' | 'skipped' | 'error'; message?: string }[];
   documentsCreated?: number;
+  linksCreated?: number;
   pdfManifest?: PdfManifestEntry[];
 }
 

@@ -96,7 +96,7 @@ export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
           </div>
 
           <div>
-            <p className="text-xs font-semibold text-gray-600 mb-2">Hoja &ldquo;Files&rdquo; (opcional — manifiesto PDF)</p>
+            <p className="text-xs font-semibold text-gray-600 mb-2">Hoja &ldquo;Files&rdquo; (opcional &mdash; manifiesto de archivos)</p>
             <table className="text-xs text-gray-500 w-full">
               <thead>
                 <tr className="text-gray-600">
@@ -105,7 +105,7 @@ export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
                 </tr>
               </thead>
               <tbody>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">file_title</td><td>Nombre del PDF</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">file_title</td><td>Nombre del archivo</td></tr>
                 <tr><td className="pr-4 py-1 font-semibold text-gray-700">course_name</td><td>Asignatura</td></tr>
                 <tr><td className="pr-4 py-1 font-semibold text-gray-700">filename</td><td>Nombre de archivo</td></tr>
                 <tr><td className="pr-4 py-1 text-gray-400">filesize</td><td>Bytes</td></tr>
@@ -189,7 +189,7 @@ export function PreviewStep({ preview, classPreview, quizPreview, questionPrevie
         {studentCount > 0 && <span className="px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-xs font-semibold">{studentCount} alumnos</span>}
         {quizPreview.length > 0 && <span className="px-3 py-1.5 bg-purple-50 text-purple-700 rounded-lg text-xs font-semibold">{quizPreview.length} cuestionarios</span>}
         {questionPreview.length > 0 && <span className="px-3 py-1.5 bg-pink-50 text-pink-700 rounded-lg text-xs font-semibold">{questionPreview.length} preguntas</span>}
-        {filePreview.length > 0 && <span className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs font-semibold">{filePreview.length} PDFs</span>}
+        {filePreview.length > 0 && <span className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs font-semibold">{filePreview.length} archivos</span>}
         {urlPreview.length > 0 && <span className="px-3 py-1.5 bg-orange-50 text-orange-700 rounded-lg text-xs font-semibold">{urlPreview.length} enlaces</span>}
       </div>
       {classWarnings.length > 0 && (
@@ -242,8 +242,13 @@ export function ResultsStep({ summary, onClose }: ResultsStepProps) {
   const quizzesCreated = summary.quizzesCreated ?? 0;
   const questionsCreated = summary.questionsCreated ?? 0;
   const documentsCreated = summary.documentsCreated ?? 0;
+  const linksCreated = summary.linksCreated ?? 0;
   const teachersCreated = (summary.results || []).filter(r => r.status === 'created' && r.role === 'TEACHER').length;
+  const teachersSkipped = (summary.results || []).filter(r => r.status === 'skipped' && r.role === 'TEACHER').length;
   const studentsCreated = (summary.results || []).filter(r => r.status === 'created' && r.role === 'STUDENT').length;
+  const studentsSkipped = (summary.results || []).filter(r => r.status === 'skipped' && r.role === 'STUDENT').length;
+  const classesExisted = (summary.classResults || []).filter(r => r.status === 'existed').length;
+  const quizzesSkipped = (summary.quizResults || []).filter(r => r.status === 'skipped').length;
 
   return (
     <div className="space-y-5">
@@ -252,30 +257,52 @@ export function ResultsStep({ summary, onClose }: ResultsStepProps) {
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Profesores</p>
           <p className="text-2xl font-bold text-gray-900">{teachersCreated}</p>
           <p className="text-xs text-gray-500 mt-0.5">Creados</p>
+          {teachersSkipped > 0 && <p className="text-xs text-yellow-600 mt-1">{teachersSkipped} omitidos</p>}
         </div>
         <div className="border border-gray-200 rounded-xl p-4 text-center">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Alumnos</p>
           <p className="text-2xl font-bold text-gray-900">{studentsCreated}</p>
           <p className="text-xs text-gray-500 mt-0.5">Creados</p>
+          {studentsSkipped > 0 && <p className="text-xs text-yellow-600 mt-1">{studentsSkipped} omitidos</p>}
         </div>
         <div className="border border-gray-200 rounded-xl p-4 text-center">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Asignaturas</p>
           <p className="text-2xl font-bold text-gray-900">{classesCreated}</p>
           <p className="text-xs text-gray-500 mt-0.5">Creadas</p>
+          {classesExisted > 0 && <p className="text-xs text-yellow-600 mt-1">{classesExisted} ya existían</p>}
         </div>
       </div>
-      {(quizzesCreated > 0 || questionsCreated > 0) && (
+      {(quizzesCreated > 0 || questionsCreated > 0 || documentsCreated > 0 || linksCreated > 0 || quizzesSkipped > 0) && (
         <div className="grid grid-cols-2 gap-3">
-          <div className="border border-gray-200 rounded-xl p-4 text-center">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Cuestionarios</p>
-            <p className="text-2xl font-bold text-gray-900">{quizzesCreated}</p>
-            <p className="text-xs text-gray-500 mt-0.5">Creados</p>
-          </div>
-          <div className="border border-gray-200 rounded-xl p-4 text-center">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Preguntas</p>
-            <p className="text-2xl font-bold text-gray-900">{questionsCreated}</p>
-            <p className="text-xs text-gray-500 mt-0.5">Creadas</p>
-          </div>
+          {(quizzesCreated > 0 || quizzesSkipped > 0) && (
+            <div className="border border-gray-200 rounded-xl p-4 text-center">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Cuestionarios</p>
+              <p className="text-2xl font-bold text-gray-900">{quizzesCreated}</p>
+              <p className="text-xs text-gray-500 mt-0.5">Creados</p>
+              {quizzesSkipped > 0 && <p className="text-xs text-yellow-600 mt-1">{quizzesSkipped} omitidos</p>}
+            </div>
+          )}
+          {questionsCreated > 0 && (
+            <div className="border border-gray-200 rounded-xl p-4 text-center">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Preguntas</p>
+              <p className="text-2xl font-bold text-gray-900">{questionsCreated}</p>
+              <p className="text-xs text-gray-500 mt-0.5">Creadas</p>
+            </div>
+          )}
+          {documentsCreated > 0 && (
+            <div className="border border-gray-200 rounded-xl p-4 text-center">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Archivos</p>
+              <p className="text-2xl font-bold text-gray-900">{documentsCreated}</p>
+              <p className="text-xs text-gray-500 mt-0.5">Importados</p>
+            </div>
+          )}
+          {linksCreated > 0 && (
+            <div className="border border-gray-200 rounded-xl p-4 text-center">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Enlaces</p>
+              <p className="text-2xl font-bold text-gray-900">{linksCreated}</p>
+              <p className="text-xs text-gray-500 mt-0.5">Creados</p>
+            </div>
+          )}
         </div>
       )}
 
@@ -353,14 +380,6 @@ export function ResultsStep({ summary, onClose }: ResultsStepProps) {
 
 
 
-      {documentsCreated > 0 && (
-        <div className="border border-gray-200 rounded-xl p-4 text-center">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Documentos</p>
-          <p className="text-2xl font-bold text-gray-900">{documentsCreated}</p>
-          <p className="text-xs text-gray-500 mt-0.5">Documentos importados</p>
-        </div>
-      )}
-
       {summary.quizResults && summary.quizResults.length > 0 && (
         <div>
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Detalle cuestionarios</p>
@@ -400,7 +419,7 @@ export function ResultsStep({ summary, onClose }: ResultsStepProps) {
 
       {summary.pdfManifest && summary.pdfManifest.length > 0 && (
         <div>
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Manifiesto PDF — descarga manual desde SiteGround</p>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Manifiesto de archivos &mdash; descarga manual desde SiteGround</p>
           <div className="overflow-x-auto max-h-60 overflow-y-auto border border-gray-200 rounded-xl">
             <table className="w-full text-sm">
               <thead className="text-gray-500 text-xs sticky top-0 bg-gray-50">
