@@ -40,6 +40,7 @@ export interface Lesson {
   isTranscoding?: number;
   videoCount?: number;
   documentCount?: number;
+  linkCount?: number;
   totalVideoDuration?: number;
   totalWatchedSeconds?: number;
 }

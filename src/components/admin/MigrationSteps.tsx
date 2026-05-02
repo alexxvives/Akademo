@@ -183,7 +183,7 @@ export function PreviewStep({ preview, classPreview, quizPreview, questionPrevie
   return (
     <div className="space-y-4">
       {/* Detected summary */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 justify-center">
         {classPreview.length > 0 && <span className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-xs font-semibold">{classPreview.length} asignaturas</span>}
         {teacherCount > 0 && <span className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-semibold">{teacherCount} profesores</span>}
         {studentCount > 0 && <span className="px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-xs font-semibold">{studentCount} alumnos</span>}

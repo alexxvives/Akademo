@@ -10,6 +10,7 @@ export interface Lesson {
   videoCount: number;
   documentCount: number;
   assignmentCount?: number;
+  linkCount?: number;
   studentsWatching?: number;
   studentsAccessed?: number;
   avgProgress?: number;

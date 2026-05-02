@@ -24,6 +24,7 @@ export default function StudentLessonCard({ lesson, onSelectLesson }: LessonCard
   const released = isReleased(lesson.releaseDate);
   const videoCount = lesson.videoCount ?? lesson.videos?.length ?? 0;
   const docCount = lesson.documentCount ?? lesson.documents?.length ?? 0;
+  const linkCount = lesson.linkCount ?? 0;
 
   let totalWatched = 0;
   let totalMax = 0;
@@ -155,11 +156,19 @@ export default function StudentLessonCard({ lesson, onSelectLesson }: LessonCard
                 </div>
               )}
               {docCount > 0 && (
-                <div className="flex items-center gap-1.5 bg-purple-500/90 px-2.5 py-1 rounded-lg border border-purple-400/50">
+                <div className="flex items-center gap-1.5 bg-red-500/90 px-2.5 py-1 rounded-lg border border-red-400/50">
                   <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
                   </svg>
                   <span className="text-white font-bold text-xs">{docCount}</span>
+                </div>
+              )}
+              {linkCount > 0 && (
+                <div className="flex items-center gap-1.5 bg-violet-500/90 px-2.5 py-1 rounded-lg border border-violet-400/50">
+                  <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                  </svg>
+                  <span className="text-white font-bold text-xs">{linkCount}</span>
                 </div>
               )}
             </div>
