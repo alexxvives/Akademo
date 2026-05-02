@@ -1498,7 +1498,8 @@ admin.post('/bulk-import', async (c) => {
     }
 
     // ── URL / Link import (from urls.csv) ──
-    // Creates: Topic "Enlaces" per course → Lesson per sectionName → LessonLink per url
+    // Places each link inside the Topic matching its sectionName (creates Topic if absent).
+    // Lesson title = linkTitle. LessonLink = the URL.
     // Idempotent: reuses existing Topic/Lesson by name, skips duplicate URLs.
     let linksCreated = 0;
     if (Array.isArray(urlRows) && urlRows.length > 0) {
@@ -1506,8 +1507,8 @@ admin.post('/bulk-import', async (c) => {
       const byCourseSec = new Map<string, Map<string, Array<{ linkTitle: string; url: string }>>>();
       for (const row of (urlRows as Array<{ linkTitle?: string; url?: string; courseName?: string; sectionName?: string; sectionNumber?: string }>) ) {
         const course = fixEncoding(String(row.courseName || '').trim());
-        const section = String(row.sectionName || row.sectionNumber || 'General').trim() || 'General';
-        const linkTitle = String(row.linkTitle || '').trim();
+        const section = fixEncoding(String(row.sectionName || row.sectionNumber || 'General').trim()) || 'General';
+        const linkTitle = fixEncoding(String(row.linkTitle || '').trim());
         const url = String(row.url || '').trim();
         if (!course || !url) continue;
         if (!byCourseSec.has(course)) byCourseSec.set(course, new Map());
@@ -1522,50 +1523,52 @@ admin.post('/bulk-import', async (c) => {
           log(`urls: skipping course "${courseName}" — class not found`);
           continue;
         }
-        // Get or create Topic "Enlaces"
-        let linkTopicId: string;
-        const existingLinkTopic = await c.env.DB
-          .prepare('SELECT id FROM Topic WHERE classId = ? AND name = ?')
-          .bind(classId, 'Enlaces')
-          .first() as any;
-        if (existingLinkTopic) {
-          linkTopicId = existingLinkTopic.id;
-        } else {
-          linkTopicId = crypto.randomUUID();
-          await c.env.DB
-            .prepare('INSERT INTO Topic (id, name, classId, orderIndex, createdAt) VALUES (?, ?, ?, ?, ?)')
-            .bind(linkTopicId, 'Enlaces', classId, 999, urlNow)
-            .run();
-        }
         for (const [sectionName, links] of bySec) {
-          // Get or create Lesson for this section
-          let linkLessonId: string;
-          const existingLinkLesson = await c.env.DB
-            .prepare('SELECT id FROM Lesson WHERE topicId = ? AND title = ?')
-            .bind(linkTopicId, sectionName)
+          // Get or create Topic matching the Moodle section name
+          let linkTopicId: string;
+          const existingTopic = await c.env.DB
+            .prepare('SELECT id FROM Topic WHERE classId = ? AND name = ?')
+            .bind(classId, sectionName)
             .first() as any;
-          if (existingLinkLesson) {
-            linkLessonId = existingLinkLesson.id;
+          if (existingTopic) {
+            linkTopicId = existingTopic.id;
           } else {
-            linkLessonId = crypto.randomUUID();
+            linkTopicId = crypto.randomUUID();
             await c.env.DB
-              .prepare('INSERT INTO Lesson (id, title, classId, topicId, releaseDate, createdAt) VALUES (?, ?, ?, ?, ?, ?)')
-              .bind(linkLessonId, sectionName, classId, linkTopicId, urlNow, urlNow)
+              .prepare('INSERT INTO Topic (id, name, classId, orderIndex, createdAt) VALUES (?, ?, ?, ?, ?)')
+              .bind(linkTopicId, sectionName, classId, 998, urlNow)
               .run();
           }
-          // Load existing URLs for this lesson to skip duplicates
-          const existingLinksRes = await c.env.DB
-            .prepare('SELECT url FROM LessonLink WHERE lessonId = ?')
-            .bind(linkLessonId)
-            .all();
-          const existingUrls = new Set((existingLinksRes.results || []).map((r: any) => String(r.url)));
-          let orderIndex = existingUrls.size;
           for (const link of links) {
-            if (existingUrls.has(link.url)) continue;
-            existingUrls.add(link.url);
+            // Get or create Lesson with the link title under this topic
+            let linkLessonId: string;
+            const existingLesson = await c.env.DB
+              .prepare('SELECT id FROM Lesson WHERE topicId = ? AND title = ?')
+              .bind(linkTopicId, link.linkTitle)
+              .first() as any;
+            if (existingLesson) {
+              linkLessonId = existingLesson.id;
+            } else {
+              linkLessonId = crypto.randomUUID();
+              await c.env.DB
+                .prepare('INSERT INTO Lesson (id, title, classId, topicId, releaseDate, createdAt) VALUES (?, ?, ?, ?, ?, ?)')
+                .bind(linkLessonId, link.linkTitle, classId, linkTopicId, urlNow, urlNow)
+                .run();
+            }
+            // Skip if this URL is already attached to this lesson
+            const existingLink = await c.env.DB
+              .prepare('SELECT id FROM LessonLink WHERE lessonId = ? AND url = ?')
+              .bind(linkLessonId, link.url)
+              .first();
+            if (existingLink) continue;
+            const orderRes = await c.env.DB
+              .prepare('SELECT COUNT(*) as cnt FROM LessonLink WHERE lessonId = ?')
+              .bind(linkLessonId)
+              .first() as any;
+            const orderIndex = Number(orderRes?.cnt ?? 0);
             await c.env.DB
               .prepare('INSERT INTO LessonLink (id, lessonId, title, url, orderIndex, createdAt) VALUES (?, ?, ?, ?, ?, ?)')
-              .bind(crypto.randomUUID(), linkLessonId, link.linkTitle, link.url, orderIndex++, urlNow)
+              .bind(crypto.randomUUID(), linkLessonId, link.linkTitle, link.url, orderIndex, urlNow)
               .run();
             linksCreated++;
           }
