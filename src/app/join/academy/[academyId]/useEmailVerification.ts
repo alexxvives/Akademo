@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { apiClient } from '@/lib/api-client';
 
 interface VerificationParams {
-  formData: { email: string; password: string; fullName: string };
+  formData: { email: string; password: string; fullName: string; dni: string; isUnderage: boolean; guardianName: string; guardianDni: string };
   setAuthLoading: (v: boolean) => void;
   setAuthError: (v: string | null) => void;
   onRegistered: (data: Record<string, unknown> & { token?: string }) => void;
@@ -75,6 +75,10 @@ export function useEmailVerification({
           firstName: formData.fullName.split(' ')[0] || formData.fullName,
           lastName: formData.fullName.split(' ').slice(1).join(' ') || undefined,
           role: 'STUDENT',
+          dni: formData.dni || undefined,
+          isUnderage: formData.isUnderage,
+          guardianName: formData.isUnderage ? (formData.guardianName || undefined) : undefined,
+          guardianDni: formData.isUnderage ? (formData.guardianDni || undefined) : undefined,
         }),
       });
       const regResult = await regResponse.json();

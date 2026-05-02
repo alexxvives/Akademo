@@ -40,6 +40,10 @@ export function useAcademyJoin() {
     email: '',
     password: '',
     fullName: '',
+    dni: '',
+    isUnderage: false,
+    guardianName: '',
+    guardianDni: '',
   });
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);

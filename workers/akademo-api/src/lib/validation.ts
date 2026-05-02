@@ -33,6 +33,10 @@ export const registerSchema = z.object({
   academyId: z.string().min(1).optional(),
   classId: z.string().min(1).optional(),
   classIds: z.array(z.string().min(1)).optional().default([]),
+  dni: z.string().max(20).optional(),
+  isUnderage: z.boolean().optional().default(false),
+  guardianName: z.string().max(200).optional(),
+  guardianDni: z.string().max(20).optional(),
 });
 
 export const changePasswordSchema = z.object({

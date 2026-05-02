@@ -26,6 +26,7 @@ WHERE f.component = 'mod_resource'
   AND f.filename != '.'
   AND f.filesize > 0
   AND c.visible = 1
+  AND cm.visible = 1
 
 UNION ALL
 
@@ -48,5 +49,6 @@ WHERE f.component = 'mod_folder'
   AND f.filename != '.'
   AND f.filesize > 0
   AND c.visible = 1
+  AND cm.visible = 1
 
 ORDER BY course_name, section_number, file_title;

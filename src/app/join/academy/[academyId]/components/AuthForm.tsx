@@ -6,8 +6,8 @@ import type { MutableRefObject } from 'react';
 export interface AuthFormProps {
   showLogin: boolean;
   setShowLogin: (v: boolean) => void;
-  formData: { email: string; password: string; fullName: string };
-  setFormData: (v: { email: string; password: string; fullName: string }) => void;
+  formData: { email: string; password: string; fullName: string; dni: string; isUnderage: boolean; guardianName: string; guardianDni: string };
+  setFormData: (v: { email: string; password: string; fullName: string; dni: string; isUnderage: boolean; guardianName: string; guardianDni: string }) => void;
   authLoading: boolean;
   authError: string | null;
   setAuthError: (v: string | null) => void;
@@ -70,20 +70,88 @@ export function AuthForm({
 
         <form onSubmit={handleAuth} className="space-y-4">
           {!showLogin && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nombre completo
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.fullName}
-                onChange={e => setFormData({ ...formData, fullName: e.target.value })}
-                disabled={showVerification || verifyingCode || verificationSuccess}
-                placeholder="Juan García"
-                className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-500"
-              />
-            </div>
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nombre completo
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.fullName}
+                  onChange={e => setFormData({ ...formData, fullName: e.target.value })}
+                  disabled={showVerification || verifyingCode || verificationSuccess}
+                  placeholder="Juan García"
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  DNI / NIE
+                </label>
+                <input
+                  type="text"
+                  value={formData.dni}
+                  onChange={e => setFormData({ ...formData, dni: e.target.value })}
+                  disabled={showVerification || verifyingCode || verificationSuccess}
+                  placeholder="12345678A"
+                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-500"
+                />
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => !showVerification && !verifyingCode && !verificationSuccess && setFormData({ ...formData, isUnderage: !formData.isUnderage })}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
+                    formData.isUnderage ? 'bg-gray-900' : 'bg-gray-200'
+                  } disabled:opacity-50`}
+                  aria-checked={formData.isUnderage}
+                  role="switch"
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ${
+                      formData.isUnderage ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+                <span className="text-sm font-medium text-gray-700">Soy menor de edad</span>
+              </div>
+
+              {formData.isUnderage && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nombre completo del representante
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.guardianName}
+                      onChange={e => setFormData({ ...formData, guardianName: e.target.value })}
+                      disabled={showVerification || verifyingCode || verificationSuccess}
+                      placeholder="María García López"
+                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      DNI del representante
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.guardianDni}
+                      onChange={e => setFormData({ ...formData, guardianDni: e.target.value })}
+                      disabled={showVerification || verifyingCode || verificationSuccess}
+                      placeholder="87654321B"
+                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-500"
+                    />
+                  </div>
+                </>
+              )}
+            </>
           )}
 
           <div>

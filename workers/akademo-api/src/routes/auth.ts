@@ -67,6 +67,10 @@ auth.post('/register', registerRateLimit, validateBody(registerSchema), async (c
       academyId,      // For STUDENT and TEACHER
       classId,        // For STUDENT
       classIds = [],  // For TEACHER (can join multiple classes)
+      dni,            // For STUDENT
+      isUnderage = false, // For STUDENT
+      guardianName,   // For STUDENT (if underage)
+      guardianDni,    // For STUDENT (if underage)
     } = await c.req.json();
 
     // Zod validates: email format, password min 8, role enum
@@ -124,8 +128,13 @@ auth.post('/register', registerRateLimit, validateBody(registerSchema), async (c
     const userLastName = role === 'ACADEMY' ? '' : lastName;
 
     await c.env.DB
-      .prepare('INSERT INTO User (id, email, password, firstName, lastName, role) VALUES (?, ?, ?, ?, ?, ?)')
-      .bind(userId, email.toLowerCase(), hashedPassword, userFirstName, userLastName, role)
+      .prepare('INSERT INTO User (id, email, password, firstName, lastName, role, dni, isUnderage, guardianName, guardianDni) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .bind(userId, email.toLowerCase(), hashedPassword, userFirstName, userLastName, role,
+        role === 'STUDENT' ? (dni ?? null) : null,
+        role === 'STUDENT' ? (isUnderage ? 1 : 0) : 0,
+        role === 'STUDENT' && isUnderage ? (guardianName ?? null) : null,
+        role === 'STUDENT' && isUnderage ? (guardianDni ?? null) : null,
+      )
       .run();
 
     // Handle different signup flows
