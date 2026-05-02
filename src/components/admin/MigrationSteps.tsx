@@ -249,6 +249,12 @@ export function ResultsStep({ summary, onClose }: ResultsStepProps) {
   const studentsSkipped = (summary.results || []).filter(r => r.status === 'skipped' && r.role === 'STUDENT').length;
   const classesExisted = (summary.classResults || []).filter(r => r.status === 'existed').length;
   const quizzesSkipped = (summary.quizResults || []).filter(r => r.status === 'skipped').length;
+  const contentCardCount = [
+    quizzesCreated > 0 || quizzesSkipped > 0,
+    questionsCreated > 0,
+    documentsCreated > 0,
+    linksCreated > 0,
+  ].filter(Boolean).length;
 
   return (
     <div className="space-y-5">
@@ -297,7 +303,7 @@ export function ResultsStep({ summary, onClose }: ResultsStepProps) {
             </div>
           )}
           {linksCreated > 0 && (
-            <div className="border border-gray-200 rounded-xl p-4 text-center">
+            <div className={`border border-gray-200 rounded-xl p-4 text-center ${contentCardCount % 2 !== 0 ? 'col-span-2' : ''}`}>
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Enlaces</p>
               <p className="text-2xl font-bold text-gray-900">{linksCreated}</p>
               <p className="text-xs text-gray-500 mt-0.5">Creados</p>
@@ -309,7 +315,7 @@ export function ResultsStep({ summary, onClose }: ResultsStepProps) {
       {summary.classResults && summary.classResults.length > 0 && (
         <div>
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Asignaturas</p>
-          <div className="overflow-x-auto border border-gray-200 rounded-xl">
+          <div className="overflow-x-auto max-h-60 overflow-y-auto border border-gray-200 rounded-xl">
             <table className="w-full text-sm">
               <thead className="text-gray-500 text-xs bg-gray-50">
                 <tr>
@@ -348,7 +354,7 @@ export function ResultsStep({ summary, onClose }: ResultsStepProps) {
                 <th className="text-left px-4 py-2.5">Email</th>
                 <th className="text-left px-4 py-2.5">Estado</th>
                 <th className="text-left px-4 py-2.5">Rol</th>
-                <th className="text-left px-4 py-2.5">Contraseña temp.</th>
+
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -370,7 +376,7 @@ export function ResultsStep({ summary, onClose }: ResultsStepProps) {
                       {r.role === 'TEACHER' ? 'Profesor' : 'Alumno'}
                     </span>
                   </td>
-                  <td className="px-4 py-2 font-mono text-xs text-gray-500">{r.tempPassword || '—'}</td>
+
                 </tr>
               ))}
             </tbody>

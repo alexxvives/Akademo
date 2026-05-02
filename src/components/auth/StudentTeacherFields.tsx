@@ -27,6 +27,15 @@ interface StudentTeacherFieldsProps {
   onAcademyChange: (id: string) => void;
   onClassChange: (id: string) => void;
   onClassIdsChange: (ids: string[]) => void;
+  // Optional student-only fields
+  dni?: string;
+  isUnderage?: boolean;
+  guardianName?: string;
+  guardianDni?: string;
+  onDniChange?: (v: string) => void;
+  onIsUnderageChange?: (v: boolean) => void;
+  onGuardianNameChange?: (v: string) => void;
+  onGuardianDniChange?: (v: string) => void;
 }
 
 /* ── Custom styled dropdown (replaces native <select>) ── */
@@ -113,7 +122,9 @@ function FormSelect({
 export function StudentTeacherFields({ 
   role, fullName, academyId, classId, classIds,
   academies, classes, loadingAcademies, loadingClasses,
-  onFullNameChange, onAcademyChange, onClassChange, onClassIdsChange
+  onFullNameChange, onAcademyChange, onClassChange, onClassIdsChange,
+  dni = '', isUnderage = false, guardianName = '', guardianDni = '',
+  onDniChange, onIsUnderageChange, onGuardianNameChange, onGuardianDniChange,
 }: StudentTeacherFieldsProps) {
   const academyOptions = academies.map(a => ({ id: a.id, label: a.name }));
   const classOptions = classes.map(c => ({
@@ -136,6 +147,67 @@ export function StudentTeacherFields({
           placeholder="Juan Pérez"
         />
       </div>
+
+      {/* Student-only: DNI and guardian fields */}
+      {role === 'STUDENT' && (
+        <>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">DNI / NIE <span className="text-gray-400 font-normal">(opcional)</span></label>
+            <input
+              type="text"
+              value={dni}
+              onChange={(e) => onDniChange?.(e.target.value)}
+              className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm text-gray-900 bg-white transition-all"
+              placeholder="12345678A"
+              maxLength={20}
+            />
+          </div>
+
+          <div className="flex items-center justify-between py-1">
+            <span className="text-sm font-medium text-gray-700">Soy menor de edad</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={isUnderage}
+              onClick={() => onIsUnderageChange?.(!isUnderage)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 ${
+                isUnderage ? 'bg-brand-600' : 'bg-gray-200'
+              }`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                isUnderage ? 'translate-x-6' : 'translate-x-1'
+              }`} />
+            </button>
+          </div>
+
+          {isUnderage && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Nombre del tutor legal</label>
+                <input
+                  type="text"
+                  value={guardianName}
+                  onChange={(e) => onGuardianNameChange?.(e.target.value)}
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm text-gray-900 bg-white transition-all"
+                  placeholder="María García"
+                  maxLength={200}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">DNI / NIE del tutor legal</label>
+                <input
+                  type="text"
+                  value={guardianDni}
+                  onChange={(e) => onGuardianDniChange?.(e.target.value)}
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm text-gray-900 bg-white transition-all"
+                  placeholder="87654321B"
+                  maxLength={20}
+                />
+              </div>
+            </>
+          )}
+        </>
+      )}
 
       {/* Academy Selection */}
       <div>

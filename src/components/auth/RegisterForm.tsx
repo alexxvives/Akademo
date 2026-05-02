@@ -25,6 +25,10 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, onClose, defaultRole 
     classId: '',
     classIds: [] as string[],
     academyName: '',
+    dni: '',
+    isUnderage: false,
+    guardianName: '',
+    guardianDni: '',
   });
   
   const [loading, setLoading] = useState(false);
@@ -83,6 +87,12 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, onClose, defaultRole 
         classId: formData.classId || undefined,
         classIds: formData.classIds.length > 0 ? formData.classIds : undefined,
         academyName: formData.academyName || undefined,
+        ...(formData.role === 'STUDENT' ? {
+          dni: formData.dni || undefined,
+          isUnderage: formData.isUnderage,
+          guardianName: formData.isUnderage ? (formData.guardianName || undefined) : undefined,
+          guardianDni: formData.isUnderage ? (formData.guardianDni || undefined) : undefined,
+        } : {}),
       };
 
       const response = await apiClient('/auth/register', {
@@ -197,6 +207,14 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, onClose, defaultRole 
             onAcademyChange={(id) => setFormData({ ...formData, academyId: id, classId: '', classIds: [] })}
             onClassChange={(id) => setFormData({ ...formData, classId: id })}
             onClassIdsChange={(ids) => setFormData({ ...formData, classIds: ids })}
+            dni={formData.dni}
+            isUnderage={formData.isUnderage}
+            guardianName={formData.guardianName}
+            guardianDni={formData.guardianDni}
+            onDniChange={(v) => setFormData({ ...formData, dni: v })}
+            onIsUnderageChange={(v) => setFormData({ ...formData, isUnderage: v })}
+            onGuardianNameChange={(v) => setFormData({ ...formData, guardianName: v })}
+            onGuardianDniChange={(v) => setFormData({ ...formData, guardianDni: v })}
           />
         )}
 

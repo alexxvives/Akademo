@@ -25,14 +25,14 @@ export function useAcademyJoin() {
     if (params.get('login') === 'true') setShowLogin(true);
   }, []);
 
-  // Skip class selection — redirect to appropriate dashboard when logged in
+  // Skip class selection — redirect non-students to their dashboard when logged in
+  // Students stay on this page to complete class selection; handleRequestAccess handles their redirect.
   useEffect(() => {
     if (!isLoggedIn || !currentUser) return;
     const role = (currentUser as Record<string, string>).role?.toLowerCase();
     if (role === 'academy') router.push('/dashboard/academy');
     else if (role === 'teacher') router.push('/dashboard/teacher');
     else if (role === 'admin') router.push('/dashboard/admin');
-    else router.push('/dashboard/student');
   }, [isLoggedIn, currentUser, router]);
 
   // Form state

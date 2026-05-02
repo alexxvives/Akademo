@@ -751,6 +751,10 @@ const fixEncoding = (s: string): string => {
   try {
     const bytes = Uint8Array.from([...s].map(c => c.charCodeAt(0) & 0xFF));
     const decoded = new TextDecoder('utf-8', { fatal: false, ignoreBOM: false }).decode(bytes);
+    // If the decoded string contains replacement chars the bytes weren't valid UTF-8
+    // (e.g. the input was already correct Unicode with Latin-1 code points like á=U+00E1).
+    // In that case return the original string unchanged.
+    if (decoded.includes('\uFFFD')) return s;
     return decoded.length <= s.length ? decoded : s;
   } catch { return s; }
 };
