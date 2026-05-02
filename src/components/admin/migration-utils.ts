@@ -333,3 +333,44 @@ export function normalizeFileRows(rows: Record<string, unknown>[]): FileRow[] {
     }];
   });
 }
+
+export interface UrlRow {
+  linkTitle: string;
+  url: string;
+  courseName: string;
+  sectionNumber?: string;
+  sectionName?: string;
+  description?: string;
+}
+
+export function normalizeUrlRows(rows: Record<string, unknown>[]): UrlRow[] {
+  if (rows.length === 0) return [];
+  const raw = rows[0];
+  const keys = Object.keys(raw).map(k => k.toLowerCase().trim().replace(/\s+/g, '').replace(/_/g, ''));
+  const find = (...names: string[]) => keys.findIndex(k => names.includes(k));
+
+  const titleIdx = find('linktitle', 'title', 'titulo', 'name', 'nombre');
+  const urlIdx = find('url', 'externalurl', 'link');
+  const courseIdx = find('coursename', 'curso', 'asignatura', 'course');
+  const sectionNumIdx = find('sectionnumber', 'section', 'seccion');
+  const sectionNameIdx = find('sectionname', 'nombreseccion');
+  const descIdx = find('description', 'descripcion', 'intro');
+
+  if (titleIdx === -1 || urlIdx === -1 || courseIdx === -1) return [];
+
+  const origKeys = Object.keys(raw);
+  return rows.flatMap(row => {
+    const linkTitle = String(row[origKeys[titleIdx]] ?? '').trim();
+    const url = String(row[origKeys[urlIdx]] ?? '').trim();
+    const courseName = String(row[origKeys[courseIdx]] ?? '').trim();
+    if (!linkTitle || !url || !courseName) return [];
+    return [{
+      linkTitle,
+      url,
+      courseName,
+      sectionNumber: sectionNumIdx >= 0 ? String(row[origKeys[sectionNumIdx]] ?? '') : undefined,
+      sectionName: sectionNameIdx >= 0 ? String(row[origKeys[sectionNameIdx]] ?? '') : undefined,
+      description: descIdx >= 0 ? String(row[origKeys[descIdx]] ?? '') : undefined,
+    }];
+  });
+}

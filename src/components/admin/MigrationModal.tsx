@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { apiClient, API_BASE_URL } from '@/lib/api-client';
-import { type ImportRow, type ClassRow, type QuizRow, type QuestionRow, type FileRow, type ImportSummary, XLSX, normalizeRows, normalizeClassRows, normalizeQuizRows, normalizeQuestionRows, normalizeFileRows, parseCSV, parseCSVGeneric } from './migration-utils';
+import { type ImportRow, type ClassRow, type QuizRow, type QuestionRow, type FileRow, type UrlRow, type ImportSummary, XLSX, normalizeRows, normalizeClassRows, normalizeQuizRows, normalizeQuestionRows, normalizeFileRows, normalizeUrlRows, parseCSV, parseCSVGeneric } from './migration-utils';
 import { UploadStep, PreviewStep, ResultsStep } from './MigrationSteps';
 
 interface MigrationModalProps {
@@ -19,6 +19,7 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
   const [quizPreview, setQuizPreview] = useState<QuizRow[]>([]);
   const [questionPreview, setQuestionPreview] = useState<QuestionRow[]>([]);
   const [filePreview, setFilePreview] = useState<FileRow[]>([]);
+  const [urlPreview, setUrlPreview] = useState<UrlRow[]>([]);
   const [summary, setSummary] = useState<ImportSummary | null>(null);
   const [error, setError] = useState('');
   const [step, setStep] = useState<'upload' | 'preview' | 'results'>('upload');
@@ -98,13 +99,20 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
       let quizRows: QuizRow[] = [];
       let questionRows: QuestionRow[] = [];
       let fileRows: FileRow[] = [];
+      let urlRows: UrlRow[] = [];
       let filesRead = 0;
       const totalFiles = files.length;
+
+      const decodeCSV = (buf: ArrayBuffer): string => {
+        let text = new TextDecoder('utf-8', { fatal: false }).decode(buf);
+        if (text.includes('\uFFFD')) text = new TextDecoder('windows-1252').decode(buf);
+        return text;
+      };
 
       Array.from(files).forEach(file => {
         const reader = new FileReader();
         reader.onload = (ev) => {
-          const text = ev.target?.result as string;
+          const text = decodeCSV(ev.target?.result as ArrayBuffer);
           const generic = parseCSVGeneric(text);
           if (generic.length > 0) {
             const headers = Object.keys(generic[0]).map(h => h.toLowerCase().trim().replace(/\s+/g, '').replace(/_/g, ''));
@@ -119,23 +127,27 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
               classRows = normalizeClassRows(generic);
             } else if (headers.some(h => h === 'email')) {
               rows = normalizeRows(generic);
+            } else if (headers.some(h => h === 'url' || h === 'externalurl') && headers.some(h => h === 'linktitle' || h === 'coursename')) {
+              urlRows = normalizeUrlRows(generic);
             } else {
               // Fallback: try all parsers, use the one that returns results
               const tryQuestions = normalizeQuestionRows(generic);
               const tryQuizzes = normalizeQuizRows(generic);
               const tryFiles = normalizeFileRows(generic);
+              const tryUrls = normalizeUrlRows(generic);
               const tryClasses = normalizeClassRows(generic);
               const tryUsers = normalizeRows(generic);
               if (tryQuestions.length > 0) questionRows = tryQuestions;
               else if (tryQuizzes.length > 0) quizRows = tryQuizzes;
               else if (tryFiles.length > 0) fileRows = tryFiles;
+              else if (tryUrls.length > 0) urlRows = tryUrls;
               else if (tryClasses.length > 0) classRows = tryClasses;
               else if (tryUsers.length > 0) rows = tryUsers;
             }
           }
           filesRead++;
           if (filesRead === totalFiles) {
-            if (rows.length === 0 && classRows.length === 0 && quizRows.length === 0 && questionRows.length === 0 && fileRows.length === 0) {
+            if (rows.length === 0 && classRows.length === 0 && quizRows.length === 0 && questionRows.length === 0 && fileRows.length === 0 && urlRows.length === 0) {
               setError('No se pudieron leer los archivos CSV. Comprueba que las columnas sean correctas.');
               return;
             }
@@ -144,10 +156,11 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
             setQuizPreview(quizRows);
             setQuestionPreview(questionRows);
             setFilePreview(fileRows);
+            setUrlPreview(urlRows);
             setStep('preview');
           }
         };
-        reader.readAsText(file);
+        reader.readAsArrayBuffer(file);
       });
     }
   };
@@ -163,7 +176,7 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
       const res = await apiClient('/admin/bulk-import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ academyId, users: preview, classes: classPreview, quizzes: quizPreview, questions: questionPreview, files: filePreview, documents: [], approveAll: true }),
+        body: JSON.stringify({ academyId, users: preview, classes: classPreview, quizzes: quizPreview, questions: questionPreview, files: filePreview, urls: urlPreview, documents: [], approveAll: true }),
         skipAutoRedirect: true,
       });
       const data = await res.json();
@@ -203,6 +216,7 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
     setQuizPreview([]);
     setQuestionPreview([]);
     setFilePreview([]);
+    setUrlPreview([]);
     setSummary(null);
     setStep('upload');
     setError('');
@@ -238,7 +252,7 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
           )}
 
           {step === 'upload' && <UploadStep fileRef={fileRef} handleFileUpload={handleFileUpload} />}
-          {step === 'preview' && <PreviewStep preview={preview} classPreview={classPreview} quizPreview={quizPreview} questionPreview={questionPreview} filePreview={filePreview} importing={importing} reset={reset} handleImport={handleImport} />}
+          {step === 'preview' && <PreviewStep preview={preview} classPreview={classPreview} quizPreview={quizPreview} questionPreview={questionPreview} filePreview={filePreview} urlPreview={urlPreview} importing={importing} reset={reset} handleImport={handleImport} />}
           {step === 'results' && summary && <ResultsStep summary={summary} onClose={onClose} />}
         </div>
       </div>

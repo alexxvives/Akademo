@@ -6,16 +6,18 @@ interface StreamRecordingSelectorProps {
   formData: LessonFormData;
   setFormData: React.Dispatch<React.SetStateAction<LessonFormData>>;
   availableStreamRecordings: Array<{ id: string; title: string; createdAt: string }>;
+  compact?: boolean;
 }
 
 export function StreamRecordingSelector({
   formData,
   setFormData,
   availableStreamRecordings,
+  compact,
 }: StreamRecordingSelectorProps) {
   return (
     <div className="relative">
-      <label className="block text-sm font-medium text-gray-700 mb-1.5">Grabación de stream</label>
+      <label className={`block ${compact ? 'text-xs font-medium text-gray-600' : 'text-sm font-medium text-gray-700'} mb-1.5`}>Grabación de stream</label>
       <details className="w-full border border-gray-200 rounded-lg text-sm bg-white">
         <summary className="px-3 py-2 cursor-pointer hover:bg-gray-50 rounded-lg flex items-center justify-between">
           <span>

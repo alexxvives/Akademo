@@ -1,7 +1,7 @@
 'use client';
 
 
-import { type ImportRow, type ClassRow, type QuizRow, type QuestionRow, type FileRow, type ImportSummary } from './migration-utils';
+import { type ImportRow, type ClassRow, type QuizRow, type QuestionRow, type FileRow, type UrlRow, type ImportSummary } from './migration-utils';
 
 interface UploadStepProps {
   fileRef: React.RefObject<HTMLInputElement | null>;
@@ -56,7 +56,7 @@ export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4 items-start mt-4 pt-4 border-t border-gray-200">
+          <div className="grid grid-cols-3 gap-4 items-start mt-4 pt-4 border-t border-gray-200">
           <div>
             <p className="text-xs font-semibold text-gray-600 mb-2">Hoja &ldquo;Quizzes&rdquo; (opcional)</p>
             <table className="text-xs text-gray-500 w-full">
@@ -114,6 +114,28 @@ export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
             </table>
           </div>
         </div>
+
+        <div className="grid grid-cols-1 gap-4 items-start mt-4 pt-4 border-t border-gray-200">
+          <div>
+            <p className="text-xs font-semibold text-gray-600 mb-2">Hoja &ldquo;URLs&rdquo; (opcional)</p>
+            <table className="text-xs text-gray-500 w-full max-w-md">
+              <thead>
+                <tr className="text-gray-600">
+                  <th className="text-left pr-4 pb-2 font-medium">Columna</th>
+                  <th className="text-left pb-2 font-medium">Nota</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">link_title</td><td>Título del enlace</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">url</td><td>URL del recurso</td></tr>
+                <tr><td className="pr-4 py-1 font-semibold text-gray-700">course_name</td><td>Nombre de asignatura</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">section_number <span className="text-gray-300">(opcional)</span></td><td>Nº sección</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">section_name <span className="text-gray-300">(opcional)</span></td><td>Nombre sección</td></tr>
+                <tr><td className="pr-4 py-1 text-gray-400">description <span className="text-gray-300">(opcional)</span></td><td>Descripción</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       <div className="flex items-center justify-center">
@@ -139,12 +161,13 @@ interface PreviewStepProps {
   quizPreview: QuizRow[];
   questionPreview: QuestionRow[];
   filePreview: FileRow[];
+  urlPreview: UrlRow[];
   importing: boolean;
   reset: () => void;
   handleImport: () => void;
 }
 
-export function PreviewStep({ preview, classPreview, quizPreview, questionPreview, filePreview, importing, reset, handleImport }: PreviewStepProps) {
+export function PreviewStep({ preview, classPreview, quizPreview, questionPreview, filePreview, urlPreview, importing, reset, handleImport }: PreviewStepProps) {
   const classNamesInFile = new Set(classPreview.map(c => c.name.toLowerCase().trim()));
   const classWarnings = preview
     .filter(row => row.classNames)
@@ -165,7 +188,9 @@ export function PreviewStep({ preview, classPreview, quizPreview, questionPrevie
         {teacherCount > 0 && <span className="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-semibold">{teacherCount} profesores</span>}
         {studentCount > 0 && <span className="px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-xs font-semibold">{studentCount} alumnos</span>}
         {quizPreview.length > 0 && <span className="px-3 py-1.5 bg-purple-50 text-purple-700 rounded-lg text-xs font-semibold">{quizPreview.length} cuestionarios</span>}
+        {questionPreview.length > 0 && <span className="px-3 py-1.5 bg-pink-50 text-pink-700 rounded-lg text-xs font-semibold">{questionPreview.length} preguntas</span>}
         {filePreview.length > 0 && <span className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs font-semibold">{filePreview.length} PDFs</span>}
+        {urlPreview.length > 0 && <span className="px-3 py-1.5 bg-orange-50 text-orange-700 rounded-lg text-xs font-semibold">{urlPreview.length} enlaces</span>}
       </div>
       {classWarnings.length > 0 && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
@@ -178,136 +203,6 @@ export function PreviewStep({ preview, classPreview, quizPreview, questionPrevie
             ))}
           </ul>
           <p className="text-xs text-amber-600 mt-2">Si estas asignaturas ya existen en la base de datos no hay problema. Si no, añádelas a la hoja &ldquo;Clases&rdquo;.</p>
-        </div>
-      )}
-      {classPreview.length > 0 && (
-        <div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-2">Asignaturas ({classPreview.length})</h3>
-          <div className="overflow-x-auto border border-gray-200 rounded-xl">
-            <table className="w-full text-sm">
-              <thead className="text-gray-500 text-xs bg-gray-50">
-                <tr>
-                  <th className="text-left px-4 py-2.5">Nombre</th>
-                  <th className="text-left px-4 py-2.5">Precio</th>
-                  <th className="text-left px-4 py-2.5">Inicio</th>
-                  <th className="text-left px-4 py-2.5">Profesor</th>
-                  <th className="text-left px-4 py-2.5">Universidad</th>
-                  <th className="text-left px-4 py-2.5">Carrera</th>
-                  <th className="text-left px-4 py-2.5">Máx.</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {classPreview.map((cls, i) => (
-                  <tr key={i} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 font-medium text-gray-900">{cls.name}</td>
-                    <td className="px-4 py-2 text-gray-500">
-                      {cls.price != null ? (cls.cuotas ? `${cls.cuotas} cuotas × €${cls.price}/mes` : `€${cls.price} único`) : '—'}
-                    </td>
-                    <td className="px-4 py-2 text-gray-500">{cls.startDate ?? '—'}</td>
-                    <td className="px-4 py-2 text-gray-500 text-xs">{cls.teacherEmail ?? '—'}</td>
-                    <td className="px-4 py-2 text-gray-500 text-xs">{cls.university ?? '—'}</td>
-                    <td className="px-4 py-2 text-gray-500 text-xs">{cls.carrera ?? '—'}</td>
-                    <td className="px-4 py-2 text-gray-500 text-xs">{cls.maxStudents ?? '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      <h3 className="text-sm font-semibold text-gray-700">Usuarios ({preview.length})</h3>
-
-      <div className="overflow-x-auto max-h-[55vh] overflow-y-auto border border-gray-200 rounded-xl">
-        <table className="w-full text-sm">
-          <thead className="text-gray-500 text-xs sticky top-0 bg-gray-50">
-            <tr>
-              <th className="text-left px-4 py-2.5">#</th>
-              <th className="text-left px-4 py-2.5">Email</th>
-              <th className="text-left px-4 py-2.5">Nombre</th>
-              <th className="text-left px-4 py-2.5">Apellido</th>
-              <th className="text-left px-4 py-2.5">Rol</th>
-              <th className="text-left px-4 py-2.5">Clases</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {preview.slice(0, 100).map((row, i) => (
-              <tr key={i} className="hover:bg-gray-50">
-                <td className="px-4 py-2 text-gray-400">{i + 1}</td>
-                <td className="px-4 py-2 text-gray-900 font-medium">{row.email}</td>
-                <td className="px-4 py-2 text-gray-600">{row.firstName}</td>
-                <td className="px-4 py-2 text-gray-600">{row.lastName}</td>
-                <td className="px-4 py-2">
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${row.role === 'TEACHER' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
-                    {row.role}
-                  </span>
-                </td>
-                <td className="px-4 py-2 text-gray-500 text-xs">{row.classNames || '—'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {preview.length > 100 && (
-          <p className="text-xs text-gray-400 px-4 py-2 bg-gray-50">Mostrando 100 de {preview.length} filas</p>
-        )}
-      </div>
-
-      {quizPreview.length > 0 && (
-        <div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-2">Cuestionarios ({quizPreview.length})</h3>
-          <div className="overflow-x-auto max-h-40 overflow-y-auto border border-gray-200 rounded-xl">
-            <table className="w-full text-sm">
-              <thead className="text-gray-500 text-xs sticky top-0 bg-gray-50">
-                <tr>
-                  <th className="text-left px-4 py-2.5">Quiz ID</th>
-                  <th className="text-left px-4 py-2.5">Nombre</th>
-                  <th className="text-left px-4 py-2.5">Asignatura</th>
-                  <th className="text-left px-4 py-2.5">Preguntas</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {quizPreview.map((q, i) => (
-                  <tr key={i} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 text-gray-400 font-mono text-xs">{q.quizId}</td>
-                    <td className="px-4 py-2 text-gray-900 font-medium">{q.quizName}</td>
-                    <td className="px-4 py-2 text-gray-500">{q.courseName}</td>
-                    <td className="px-4 py-2 text-gray-500">
-                      {questionPreview.filter(qr => qr.quizId === q.quizId).reduce((set, qr) => set.add(qr.questionId), new Set<string>()).size}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {filePreview.length > 0 && (
-        <div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-2">Archivos PDF ({filePreview.length})</h3>
-          <div className="overflow-x-auto max-h-40 overflow-y-auto border border-gray-200 rounded-xl">
-            <table className="w-full text-sm">
-              <thead className="text-gray-500 text-xs sticky top-0 bg-gray-50">
-                <tr>
-                  <th className="text-left px-4 py-2.5">Título</th>
-                  <th className="text-left px-4 py-2.5">Asignatura</th>
-                  <th className="text-left px-4 py-2.5">Archivo</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filePreview.slice(0, 50).map((f, i) => (
-                  <tr key={i} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 text-gray-900 font-medium text-xs">{f.fileTitle}</td>
-                    <td className="px-4 py-2 text-gray-500 text-xs">{f.courseName}</td>
-                    <td className="px-4 py-2 text-gray-500 text-xs">{f.filename}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {filePreview.length > 50 && (
-              <p className="text-xs text-gray-400 px-4 py-2 bg-gray-50">Mostrando 50 de {filePreview.length} archivos</p>
-            )}
-          </div>
         </div>
       )}
 

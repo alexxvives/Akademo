@@ -745,6 +745,16 @@ admin.get('/daily-webhook-setup', async (c) => {
   }
 });
 
+// Fix CSV encoding: some exports are UTF-8 saved/read as Latin-1, producing Ã¡ instead of á.
+// Convert by re-interpreting each char as a Latin-1 byte and decoding as UTF-8.
+const fixEncoding = (s: string): string => {
+  try {
+    const bytes = Uint8Array.from([...s].map(c => c.charCodeAt(0) & 0xFF));
+    const decoded = new TextDecoder('utf-8', { fatal: false, ignoreBOM: false }).decode(bytes);
+    return decoded.length <= s.length ? decoded : s;
+  } catch { return s; }
+};
+
 // POST /admin/bulk-import - Bulk import teachers and students for an academy
 admin.post('/bulk-import', async (c) => {
   try {
@@ -753,7 +763,7 @@ admin.post('/bulk-import', async (c) => {
       return c.json(errorResponse('Forbidden'), 403);
     }
 
-    const { academyId, users: rows, classes: classRows = [], quizzes: quizRows = [], questions: questionRows = [], files: fileRows = [], documents: documentRows = [], approveAll = false } = await c.req.json();
+    const { academyId, users: rows, classes: classRows = [], quizzes: quizRows = [], questions: questionRows = [], files: fileRows = [], urls: urlRows = [], documents: documentRows = [], approveAll = false } = await c.req.json();
     if (!academyId || !Array.isArray(rows) || rows.length === 0) {
       return c.json(errorResponse('academyId and users array required'), 400);
     }
@@ -775,7 +785,7 @@ admin.post('/bulk-import', async (c) => {
 
     const t0 = Date.now();
     const log = (msg: string) => console.log(`[bulk-import +${Date.now() - t0}ms] ${msg}`);
-    log(`start — users=${rows.length}, classes=${classRows.length}, quizzes=${quizRows.length}, questions=${questionRows.length}, files=${fileRows.length}, documents=${documentRows.length}, approveAll=${approveAll}`);
+    log(`start — users=${rows.length}, classes=${classRows.length}, quizzes=${quizRows.length}, questions=${questionRows.length}, files=${fileRows.length}, urls=${urlRows.length}, documents=${documentRows.length}, approveAll=${approveAll}`);
 
     // Load all classes for this academy (for matching by name)
     const classesResult = await c.env.DB
@@ -787,7 +797,10 @@ admin.post('/bulk-import', async (c) => {
     const classTeacherIdMap = new Map<string, string | null>(); // classId -> teacherId
     const classPriceMap = new Map<string, { monthlyPrice: number | null; oneTimePrice: number | null; startDate: string | null; cuotas: number | null }>();
     for (const cls of classes) {
-      classMap.set((cls.name as string).toLowerCase().trim(), cls.id as string);
+      const key = (cls.name as string).toLowerCase().trim();
+      classMap.set(key, cls.id as string);
+      const fixedKey = fixEncoding(cls.name as string).toLowerCase().trim();
+      if (fixedKey !== key) classMap.set(fixedKey, cls.id as string);
       classTeacherIdMap.set(cls.id as string, cls.teacherId as string | null);
       classPriceMap.set(cls.id as string, {
         monthlyPrice: cls.monthlyPrice as number | null,
@@ -849,6 +862,8 @@ admin.post('/bulk-import', async (c) => {
           .bind(classId, name, slug, academyId, monthlyPrice, oneTimePrice, startDate, description, university, carrera, maxStudents, whatsappGroupLink, cuotasValue, isPublished, now)
           .run();
         classMap.set(key, classId);
+        const fixedKey2 = fixEncoding(name).toLowerCase().trim();
+        if (fixedKey2 !== key) classMap.set(fixedKey2, classId);
         classPriceMap.set(classId, { monthlyPrice, oneTimePrice, startDate: startDate as string | null, cuotas: cuotasValue });
         classesCreated++;
         // Note: isPublished=0 classes are created but won't be visible until the academy adds a price
@@ -1274,14 +1289,7 @@ admin.post('/bulk-import', async (c) => {
 
       // Fix CSV encoding: some exports are UTF-8 saved/read as Latin-1, producing Ã¡ instead of á.
       // Convert by re-interpreting each char as a Latin-1 byte and decoding as UTF-8.
-      const fixEncoding = (s: string): string => {
-        try {
-          const bytes = Uint8Array.from([...s].map(c => c.charCodeAt(0) & 0xFF));
-          const decoded = new TextDecoder('utf-8', { fatal: false, ignoreBOM: false }).decode(bytes);
-          // Only use decoded version if it looks like a valid fix (shorter and has real accents)
-          return decoded.length <= s.length ? decoded : s;
-        } catch { return s; }
-      };
+      // (fixEncoding is now defined at module scope)
 
       // Build quiz map: quizId → { quizName, courseName, description }
       const quizMap = new Map<string, { quizName: string; courseName: string; description: string }>();

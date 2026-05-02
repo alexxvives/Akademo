@@ -32,6 +32,7 @@ export function EditModeMedia({
   const [newLinkTitle, setNewLinkTitle] = useState('');
   const [newLinkUrl, setNewLinkUrl] = useState('');
   const [addingLink, setAddingLink] = useState(false);
+  const [showAddLink, setShowAddLink] = useState(false);
   const [deletingLinkId, setDeletingLinkId] = useState<string | null>(null);
   return (
     <div className="space-y-4">
@@ -191,6 +192,7 @@ export function EditModeMedia({
             formData={formData}
             setFormData={setFormData}
             availableStreamRecordings={availableStreamRecordings}
+            compact
           />
         </div>
 
@@ -198,46 +200,64 @@ export function EditModeMedia({
         <div className="mt-4">
           <div className="flex items-center gap-2 mb-1.5">
             <label className="block text-xs font-medium text-gray-600">Nuevo link</label>
-            <span className="flex items-center gap-1 text-xs text-blue-600 font-medium">
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Añadir enlace
-            </span>
+            {!showAddLink && (
+              <button
+                type="button"
+                onClick={() => setShowAddLink(true)}
+                className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Añadir enlace
+              </button>
+            )}
           </div>
-          <div className="space-y-2">
-            <input
-              type="text"
-              value={newLinkTitle}
-              onChange={e => setNewLinkTitle(e.target.value)}
-              placeholder="Título del enlace"
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors"
-            />
-            <input
-              type="url"
-              value={newLinkUrl}
-              onChange={e => setNewLinkUrl(e.target.value)}
-              placeholder="https://..."
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors"
-            />
-            <button
-              type="button"
-              disabled={addingLink || !newLinkTitle.trim() || !newLinkUrl.trim()}
-              onClick={async () => {
-                setAddingLink(true);
-                try {
-                  await onAddLink(newLinkTitle.trim(), newLinkUrl.trim());
-                  setNewLinkTitle('');
-                  setNewLinkUrl('');
-                } finally {
-                  setAddingLink(false);
-                }
-              }}
-              className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {addingLink ? 'Guardando...' : 'Guardar enlace'}
-            </button>
-          </div>
+          {showAddLink && (
+            <div className="space-y-2">
+              <input
+                type="text"
+                value={newLinkTitle}
+                onChange={e => setNewLinkTitle(e.target.value)}
+                placeholder="Título del enlace"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors"
+              />
+              <input
+                type="url"
+                value={newLinkUrl}
+                onChange={e => setNewLinkUrl(e.target.value)}
+                placeholder="https://..."
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors"
+              />
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled={addingLink || !newLinkTitle.trim() || !newLinkUrl.trim()}
+                  onClick={async () => {
+                    setAddingLink(true);
+                    try {
+                      await onAddLink(newLinkTitle.trim(), newLinkUrl.trim());
+                      setNewLinkTitle('');
+                      setNewLinkUrl('');
+                      setShowAddLink(false);
+                    } finally {
+                      setAddingLink(false);
+                    }
+                  }}
+                  className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {addingLink ? 'Guardando...' : 'Guardar enlace'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowAddLink(false); setNewLinkTitle(''); setNewLinkUrl(''); }}
+                  className="px-3 py-1.5 text-gray-600 hover:text-gray-900 text-xs font-medium"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
