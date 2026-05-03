@@ -19,5 +19,4 @@ JOIN mdl3y_course_modules cm ON cm.instance = u.id
 JOIN mdl3y_course c ON c.id = cm.course
 JOIN mdl3y_course_sections cs ON cs.id = cm.section
 WHERE c.visible = 1
-  AND cm.visible = 1
 ORDER BY course_name, section_number, link_title;
