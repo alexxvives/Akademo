@@ -97,7 +97,10 @@ export async function addWatermarkToPdf(
 
   const line1 = winAnsi(cfg.fullName);
   const line2 = winAnsi(cfg.email);
-  // academyName is intentionally not drawn as text
+  // Academy label: "ACADEMIA [NAME]" in uppercase, preserving accented chars (within Latin-1)
+  const line3 = cfg.academyName
+    ? winAnsi('ACADEMIA ' + cfg.academyName.toUpperCase())
+    : '';
 
   // Embed logo once for the whole document (reused per page)
   let logo: Awaited<ReturnType<typeof pdfDoc.embedPng>> | null = null;
@@ -122,11 +125,27 @@ export async function addWatermarkToPdf(
   for (const page of pdfDoc.getPages()) {
     const { width, height } = page.getSize();
 
-    // Font sizes: 14% of the shorter dimension (2× the original 7%)
-    const size1 = Math.max(32, Math.min(width, height) * 0.14);
-    const size2 = size1 * 0.78;
-    // Perpendicular line spacing between the two text rows
-    const lineSpacing = size1 * 1.5;
+    // Base font sizes relative to the shorter page dimension
+    const shorter = Math.min(width, height);
+    const size1Base = Math.max(28, shorter * 0.13);
+    const size2Base = size1Base * 0.78;
+    const size3Base = size1Base * 0.62;
+
+    // Auto-scale each line down so it never extends past the page edges.
+    // Safe text width ≈ 82% of the page diagonal (text is centred, extends ±w/2 each side).
+    const safeDiag = Math.sqrt(width * width + height * height) * 0.82;
+    const fitted = (text: string, font: typeof fontBold, base: number): number => {
+      if (!text) return base;
+      const w = font.widthOfTextAtSize(text, base);
+      return w > safeDiag ? base * (safeDiag / w) : base;
+    };
+
+    const size1 = fitted(line1, fontBold,   size1Base);
+    const size2 = fitted(line2, fontNormal, size2Base);
+    const size3 = fitted(line3, fontBold,   size3Base);
+
+    // Perpendicular spacing between the three rows (using base size so spacing doesn't collapse)
+    const lineSpacing = size1Base * 1.35;
 
     const cx = width / 2;
     const cy = height / 2;
@@ -134,38 +153,37 @@ export async function addWatermarkToPdf(
     // Width of each text line for centering along the 45° baseline
     const w1 = fontBold.widthOfTextAtSize(line1, size1);
     const w2 = fontNormal.widthOfTextAtSize(line2, size2);
+    const w3 = line3 ? fontBold.widthOfTextAtSize(line3, size3) : 0;
 
-    // Place the two lines symmetrically around the page center.
-    // Line1 shifts towards "above" the diagonal: perpendicular dir (-SQ, +SQ).
-    // Line2 shifts towards "below" the diagonal: perpendicular dir (+SQ, -SQ).
-    const halfSpacing = lineSpacing / 2;
-    const bx1 = cx - halfSpacing * SQ;
-    const by1 = cy + halfSpacing * SQ;
-    const bx2 = cx + halfSpacing * SQ;
-    const by2 = cy - halfSpacing * SQ;
+    // Three lines placed symmetrically around the page centre along the perpendicular
+    // to the 45° diagonal: direction (-SQ, +SQ).
+    //   line3 (academy) → +lineSpacing offset (top)
+    //   line1 (name)    → 0 offset (middle)
+    //   line2 (email)   → -lineSpacing offset (bottom)
+    const drawLine = (
+      text: string,
+      font: typeof fontBold,
+      size: number,
+      textWidth: number,
+      offsetPerp: number,
+    ) => {
+      if (!text) return;
+      const bx = cx - offsetPerp * SQ;
+      const by = cy + offsetPerp * SQ;
+      page.drawText(text, {
+        x: bx - (textWidth / 2) * SQ,
+        y: by - (textWidth / 2) * SQ,
+        size,
+        font,
+        color: textColor,
+        opacity: textOpacity,
+        rotate: degrees(45),
+      });
+    };
 
-    // Text draw origin = block center minus half-projected text width
-    // line1 = full name — bold/intense, harder to remove
-    page.drawText(line1, {
-      x: bx1 - (w1 / 2) * SQ,
-      y: by1 - (w1 / 2) * SQ,
-      size: size1,
-      font: fontBold,
-      color: textColor,
-      opacity: textOpacity,
-      rotate: degrees(45),
-    });
-
-    // line2 = email — normal weight
-    page.drawText(line2, {
-      x: bx2 - (w2 / 2) * SQ,
-      y: by2 - (w2 / 2) * SQ,
-      size: size2,
-      font: fontNormal,
-      color: textColor,
-      opacity: textOpacity,
-      rotate: degrees(45),
-    });
+    drawLine(line3, fontBold,   size3, w3,  lineSpacing);   // academy — top
+    drawLine(line1, fontBold,   size1, w1,  0);             // name    — middle
+    drawLine(line2, fontNormal, size2, w2, -lineSpacing);   // email   — bottom
 
     // Academy logo: top-left corner, semi-transparent
     if (logo) {
