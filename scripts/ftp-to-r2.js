@@ -186,9 +186,12 @@ async function main() {
   //   This means the same hash can appear in multiple courses (all get a manifest
   //   entry) but the same hash won't create two entries for the same course.
   const seenUpload   = new Set();   // for R2 dedup (global by hash)
-  const seenManifest = new Set();   // for manifest dedup (per course+hash)
+  const seenManifest = new Map();   // manifestKey -> index in manifestFiles
   const uploadFiles  = [];          // unique hashes to upload
-  const manifestFiles = [];         // one entry per (course, hash) — best section
+  const manifestFiles = [];         // one entry per (course, hash) — best title wins
+
+  // Filename pattern used to detect entries where the title is just the filename
+  const FILENAME_RE = /\.(jpg|jpeg|png|gif|bmp|webp|pdf|doc|docx|ppt|pptx|xls|xlsx|mp4|mp3|zip|rar|7z)\s*$/i;
 
   for (const row of dataRows) {
     if (!row[cols.filePath]) continue;
@@ -202,12 +205,15 @@ async function main() {
       uploadFiles.push(filePath);
     }
 
-    // Manifest: once per (course, hash) — first row wins (already best-sorted)
+    // Manifest: once per (course, hash).
+    // When a duplicate is found, upgrade to the current row's title if the existing
+    // entry has a filename-as-title (e.g. "3.jpg") but the current row has a real title.
     const manifestKey = `${courseName}::${filePath}`;
+    const currentTitle = row[cols.fileTitle].trim();
     if (!seenManifest.has(manifestKey)) {
-      seenManifest.add(manifestKey);
+      seenManifest.set(manifestKey, manifestFiles.length);
       manifestFiles.push({
-        fileTitle:     row[cols.fileTitle].trim(),
+        fileTitle:     currentTitle,
         courseName,
         sectionNumber: parseInt(row[cols.sectionNumber], 10) || 0,
         sectionName:   row[cols.sectionName].trim(),
@@ -215,6 +221,14 @@ async function main() {
         filesize:      parseInt(row[cols.filesize], 10) || 0,
         filePath,
       });
+    } else if (currentTitle && !FILENAME_RE.test(currentTitle)) {
+      // Current row has a real title — upgrade existing entry if it only has a filename
+      const existingIdx = seenManifest.get(manifestKey);
+      if (FILENAME_RE.test(manifestFiles[existingIdx].fileTitle)) {
+        manifestFiles[existingIdx].fileTitle     = currentTitle;
+        manifestFiles[existingIdx].sectionNumber = parseInt(row[cols.sectionNumber], 10) || 0;
+        manifestFiles[existingIdx].sectionName   = row[cols.sectionName].trim();
+      }
     }
   }
 

@@ -866,6 +866,42 @@ admin.post('/import-documents', async (c) => {
   }
 });
 
+// POST /admin/fix-document-titles — fix Document.title and Lesson.title for entries where filename was used instead of real title
+admin.post('/fix-document-titles', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    if (session.role !== 'ADMIN') {
+      return c.json(errorResponse('Forbidden'), 403);
+    }
+
+    const body = await c.req.json();
+    const { academyId, fixes } = body as { academyId: string; fixes: { uploadId: string; newTitle: string }[] };
+    if (!academyId || !Array.isArray(fixes) || fixes.length === 0) {
+      return c.json(errorResponse('academyId and fixes array required'), 400);
+    }
+
+    let updated = 0;
+    for (const fix of fixes) {
+      if (!fix.uploadId || !fix.newTitle) continue;
+      const title = fix.newTitle.trim();
+      const docResult = await c.env.DB
+        .prepare('UPDATE Document SET title = ? WHERE uploadId = ?')
+        .bind(title, fix.uploadId)
+        .run();
+      updated += docResult.meta?.changes ?? 0;
+      // Also update the Lesson title (imported documents create a Lesson with the same title)
+      await c.env.DB
+        .prepare('UPDATE Lesson SET title = ? WHERE id IN (SELECT lessonId FROM Document WHERE uploadId = ?)')
+        .bind(title, fix.uploadId)
+        .run();
+    }
+
+    return c.json(successResponse({ updated }));
+  } catch (err: any) {
+    return c.json(errorResponse(err?.message || 'Internal error'), 500);
+  }
+});
+
 // POST /admin/bulk-import - Bulk import teachers and students for an academy
 admin.post('/bulk-import', async (c) => {
   try {

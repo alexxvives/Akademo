@@ -135,8 +135,8 @@ export function StudentTeacherFields({
 
   return (
     <div className="grid grid-cols-2 gap-3">
-      {/* Full name — always full width */}
-      <div className="col-span-2">
+      {/* Full name — left col (student) or full width (teacher) */}
+      <div className={role === 'STUDENT' ? '' : 'col-span-2'}>
         <label className="block text-sm font-medium text-gray-700 mb-1.5">Nombre Completo</label>
         <input
           type="text"
@@ -149,7 +149,7 @@ export function StudentTeacherFields({
         />
       </div>
 
-      {/* Student-only: DNI + underage toggle side by side */}
+      {/* Student-only: DNI right col (side by side with name) */}
       {role === 'STUDENT' && (
         <>
           <div>
@@ -164,24 +164,22 @@ export function StudentTeacherFields({
             />
           </div>
 
-          <div className="flex flex-col justify-end">
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">&nbsp;</label>
-            <div className="flex items-center gap-3 py-2.5">
-              <button
-                type="button"
-                role="switch"
-                aria-checked={isUnderage}
-                onClick={() => onIsUnderageChange?.(!isUnderage)}
-                className={`relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 ${
-                  isUnderage ? 'bg-brand-600' : 'bg-gray-200'
-                }`}
-              >
-                <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
-                  isUnderage ? 'translate-x-4' : 'translate-x-0.5'
-                }`} />
-              </button>
-              <span className="text-sm font-medium text-gray-700">Soy menor de edad</span>
-            </div>
+          {/* Underage toggle — full width below name+DNI */}
+          <div className="col-span-2 flex items-center gap-3">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={isUnderage}
+              onClick={() => onIsUnderageChange?.(!isUnderage)}
+              className={`relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 ${
+                isUnderage ? 'bg-brand-600' : 'bg-gray-200'
+              }`}
+            >
+              <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
+                isUnderage ? 'translate-x-4' : 'translate-x-0.5'
+              }`} />
+            </button>
+            <span className="text-sm font-medium text-gray-700">Soy menor de edad</span>
           </div>
 
           {/* Guardian fields — 2 cols when underage */}
