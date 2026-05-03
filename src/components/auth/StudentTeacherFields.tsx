@@ -134,8 +134,9 @@ export function StudentTeacherFields({
   }));
 
   return (
-    <>
-      <div>
+    <div className="grid grid-cols-2 gap-3">
+      {/* Full name — always full width */}
+      <div className="col-span-2">
         <label className="block text-sm font-medium text-gray-700 mb-1.5">Nombre Completo</label>
         <input
           type="text"
@@ -148,7 +149,7 @@ export function StudentTeacherFields({
         />
       </div>
 
-      {/* Student-only: DNI and guardian fields */}
+      {/* Student-only: DNI + underage toggle side by side */}
       {role === 'STUDENT' && (
         <>
           <div>
@@ -163,23 +164,27 @@ export function StudentTeacherFields({
             />
           </div>
 
-          <div className="flex items-center justify-between py-1">
-            <span className="text-sm font-medium text-gray-700">Soy menor de edad</span>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={isUnderage}
-              onClick={() => onIsUnderageChange?.(!isUnderage)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 ${
-                isUnderage ? 'bg-brand-600' : 'bg-gray-200'
-              }`}
-            >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-                isUnderage ? 'translate-x-6' : 'translate-x-1'
-              }`} />
-            </button>
+          <div className="flex flex-col justify-end">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Menor de edad</label>
+            <div className="flex items-center justify-between px-3 py-2.5 border border-gray-200 rounded-lg bg-white">
+              <span className="text-sm text-gray-500">Soy menor de edad</span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={isUnderage}
+                onClick={() => onIsUnderageChange?.(!isUnderage)}
+                className={`relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 ${
+                  isUnderage ? 'bg-brand-600' : 'bg-gray-200'
+                }`}
+              >
+                <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${
+                  isUnderage ? 'translate-x-4' : 'translate-x-0.5'
+                }`} />
+              </button>
+            </div>
           </div>
 
+          {/* Guardian fields — 2 cols when underage */}
           {isUnderage && (
             <>
               <div>
@@ -194,7 +199,7 @@ export function StudentTeacherFields({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">DNI / NIE del tutor legal</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">DNI del tutor legal</label>
                 <input
                   type="text"
                   value={guardianDni}
@@ -209,8 +214,8 @@ export function StudentTeacherFields({
         </>
       )}
 
-      {/* Academy Selection */}
-      <div>
+      {/* Academy Selection — full width */}
+      <div className="col-span-2">
         <label className="block text-sm font-medium text-gray-700 mb-1.5">
           Academia{role === 'STUDENT' && <span className="text-red-500 ml-0.5">*</span>} {academies.length > 0 && <span className="text-gray-500">({academies.length} disponibles)</span>}
         </label>
@@ -228,9 +233,9 @@ export function StudentTeacherFields({
         )}
       </div>
 
-      {/* Student: Single Class Selection */}
+      {/* Student: Single Class Selection — full width */}
       {role === 'STUDENT' && academyId && (
-        <div>
+        <div className="col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Asignatura <span className="text-gray-400 font-normal">(opcional)</span> {classes.length > 0 && <span className="text-gray-500">({classes.length} disponibles)</span>}
           </label>
@@ -243,13 +248,12 @@ export function StudentTeacherFields({
             loading={loadingClasses}
             emptyMessage="No hay asignaturas disponibles"
           />
-
         </div>
       )}
 
-      {/* Teacher: Multi-select Classes */}
+      {/* Teacher: Multi-select Classes — full width */}
       {role === 'TEACHER' && academyId && (
-        <div>
+        <div className="col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-1.5">Clases a enseñar</label>
           <div className="border border-gray-200 rounded-lg p-3 max-h-40 overflow-y-auto bg-white">
             {loadingClasses ? (
@@ -279,6 +283,6 @@ export function StudentTeacherFields({
           <p className="text-xs text-gray-500 mt-1">Selecciona al menos una. Necesitarás aprobación de la academia.</p>
         </div>
       )}
-    </>
+    </div>
   );
 }
