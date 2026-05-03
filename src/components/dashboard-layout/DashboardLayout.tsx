@@ -171,7 +171,7 @@ export default function DashboardLayout({ children, role }: DashboardLayoutProps
           onOpenMenu={() => setMobileMenuOpen(true)}
         />
         <main className="flex-1 overflow-y-auto bg-gray-100 overscroll-contain">
-          <div className="pt-4 pb-2 px-4 md:py-8 md:px-10 lg:py-12 lg:pl-20 lg:pr-20">
+          <div className="pt-4 pb-0 px-4 md:pt-8 md:pb-0 md:px-10 lg:pt-12 lg:pb-0 lg:pl-20 lg:pr-20">
             {children}
           </div>
         </main>

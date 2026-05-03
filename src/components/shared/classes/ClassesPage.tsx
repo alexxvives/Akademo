@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { SkeletonClasses } from '@/components/ui/SkeletonLoader';
 import { ClassFormModal } from '../ClassFormModal';
 import { useClassesData } from './useClassesData';
@@ -7,6 +8,7 @@ import { useClassesCrud } from './useClassesCrud';
 import { ClassesHeader } from './ClassesHeader';
 import { ClassesEmptyState } from './ClassesEmptyState';
 import { ClassCard } from './ClassCard';
+import { ClassRowItem } from './ClassRowItem';
 import type { ClassesPageProps } from './types';
 
 export function ClassesPage({ role }: ClassesPageProps) {
@@ -24,6 +26,15 @@ export function ClassesPage({ role }: ClassesPageProps) {
     isDemo: data.isDemo,
     loadData: data.loadData,
   });
+
+  const [viewMode, setViewMode] = useState<'cards' | 'rows'>(() => {
+    try { return (localStorage.getItem('classes-view') as 'cards' | 'rows') || 'cards'; } catch { return 'cards'; }
+  });
+
+  function handleViewModeChange(mode: 'cards' | 'rows') {
+    setViewMode(mode);
+    try { localStorage.setItem('classes-view', mode); } catch { /* ignore */ }
+  }
 
   if (data.loading) {
     return <SkeletonClasses />;
@@ -47,10 +58,25 @@ export function ClassesPage({ role }: ClassesPageProps) {
           onCreateClass={crud.openCreateModal}
           activePeriodId={data.activePeriodId}
           isClassInPeriod={data.isClassInPeriod}
+          viewMode={viewMode}
+          onViewModeChange={handleViewModeChange}
         />
 
         {data.filteredClasses.length === 0 ? (
           <ClassesEmptyState role={role} selectedAcademy={data.selectedAcademy} />
+        ) : viewMode === 'rows' ? (
+          <div className="flex flex-col gap-2 pb-8">
+            {data.filteredClasses.map((cls) => (
+              <ClassRowItem
+                key={cls.id}
+                cls={cls}
+                role={role}
+                dashboardBase={data.dashboardBase}
+                onEdit={crud.openEditModal}
+                onDelete={crud.handleDeleteClass}
+              />
+            ))}
+          </div>
         ) : (
           <div className="space-y-4 pb-8">
             {data.filteredClasses.map((cls) => (
