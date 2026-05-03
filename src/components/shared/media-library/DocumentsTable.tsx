@@ -31,7 +31,7 @@ export function DocumentsTable({ documents }: { documents: DocumentItem[] }) {
           <tr className="bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
             <th className="px-4 py-3">Documento</th>
             <th className="px-4 py-3 hidden sm:table-cell">Asignatura</th>
-            <th className="px-4 py-3 hidden md:table-cell">Lección</th>
+            <th className="px-4 py-3 hidden md:table-cell">Clase</th>
             <th className="px-4 py-3 hidden lg:table-cell">Tamaño</th>
             <th className="px-4 py-3 hidden lg:table-cell">Fecha</th>
             <th className="px-4 py-3 w-10"></th>

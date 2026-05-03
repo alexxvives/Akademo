@@ -20,4 +20,6 @@ JOIN mdl3y_course_modules cm ON cm.course = q.course
   AND cm.module = (SELECT id FROM mdl3y_modules WHERE name = 'quiz')
 JOIN mdl3y_course_sections cs ON cs.id = cm.section
 WHERE c.id > 1
+  AND cm.visible = 1
+  AND cm.deletioninprogress = 0
 ORDER BY c.id, q.id;

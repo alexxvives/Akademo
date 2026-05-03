@@ -6,6 +6,8 @@ import { apiClient, API_BASE_URL } from '@/lib/api-client';
 import { type ImportRow, type ClassRow, type QuizRow, type QuestionRow, type FileRow, type UrlRow, type ImportSummary, XLSX, normalizeRows, normalizeClassRows, normalizeQuizRows, normalizeQuestionRows, normalizeFileRows, normalizeUrlRows, parseCSV, parseCSVGeneric } from './migration-utils';
 import { UploadStep, PreviewStep, ResultsStep } from './MigrationSteps';
 
+type DocumentManifestEntry = Record<string, unknown>;
+
 interface MigrationModalProps {
   academyId: string;
   academyName: string;
@@ -20,6 +22,7 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
   const [questionPreview, setQuestionPreview] = useState<QuestionRow[]>([]);
   const [filePreview, setFilePreview] = useState<FileRow[]>([]);
   const [urlPreview, setUrlPreview] = useState<UrlRow[]>([]);
+  const [documentManifest, setDocumentManifest] = useState<DocumentManifestEntry[]>([]);
   const [summary, setSummary] = useState<ImportSummary | null>(null);
   const [error, setError] = useState('');
   const [step, setStep] = useState<'upload' | 'preview' | 'results'>('upload');
@@ -37,9 +40,9 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
     // Single xlsx = all sheets in one file
     const firstFile = files[0];
     const isXlsx = firstFile.name.endsWith('.xlsx') || firstFile.name.endsWith('.xls');
-    const allCsv = Array.from(files).every(f => f.name.endsWith('.csv'));
+    const allCsv = Array.from(files).every(f => f.name.endsWith('.csv') || f.name.endsWith('.json'));
     if (!isXlsx && !allCsv) {
-      setError('Sube un archivo .xlsx (con hojas) o varios archivos .csv');
+      setError('Sube un archivo .xlsx (con hojas), varios archivos .csv, o incluye el documents-manifest.json');
       return;
     }
 
@@ -112,6 +115,27 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
       Array.from(files).forEach(file => {
         const reader = new FileReader();
         reader.onload = (ev) => {
+          // Handle JSON manifest
+          if (file.name.endsWith('.json')) {
+            try {
+              const text = new TextDecoder('utf-8').decode(ev.target?.result as ArrayBuffer);
+              const parsed = JSON.parse(text);
+              if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].r2Key) {
+                documentManifest.length === 0 && setDocumentManifest(parsed);
+              }
+            } catch { /* ignore invalid JSON */ }
+            filesRead++;
+            if (filesRead === totalFiles) {
+              if (rows.length === 0 && classRows.length === 0 && quizRows.length === 0 && questionRows.length === 0 && fileRows.length === 0 && urlRows.length === 0 && documentManifest.length === 0) {
+                setError('No se pudieron leer los archivos. Comprueba que las columnas sean correctas.');
+                return;
+              }
+              setPreview(rows); setClassPreview(classRows); setQuizPreview(quizRows);
+              setQuestionPreview(questionRows); setFilePreview(fileRows); setUrlPreview(urlRows);
+              setStep('preview');
+            }
+            return;
+          }
           const text = decodeCSV(ev.target?.result as ArrayBuffer);
           const generic = parseCSVGeneric(text);
           if (generic.length > 0) {
@@ -147,8 +171,8 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
           }
           filesRead++;
           if (filesRead === totalFiles) {
-            if (rows.length === 0 && classRows.length === 0 && quizRows.length === 0 && questionRows.length === 0 && fileRows.length === 0 && urlRows.length === 0) {
-              setError('No se pudieron leer los archivos CSV. Comprueba que las columnas sean correctas.');
+            if (rows.length === 0 && classRows.length === 0 && quizRows.length === 0 && questionRows.length === 0 && fileRows.length === 0 && urlRows.length === 0 && documentManifest.length === 0) {
+              setError('No se pudieron leer los archivos. Comprueba que las columnas sean correctas.');
               return;
             }
             setPreview(rows);
@@ -176,7 +200,7 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
       const res = await apiClient('/admin/bulk-import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ academyId, users: preview, classes: classPreview, quizzes: quizPreview, questions: questionPreview, files: filePreview, urls: urlPreview, documents: [], approveAll: true }),
+        body: JSON.stringify({ academyId, users: preview, classes: classPreview, quizzes: quizPreview, questions: questionPreview, files: filePreview, urls: urlPreview, documents: documentManifest, approveAll: true }),
         skipAutoRedirect: true,
       });
       const data = await res.json();
@@ -217,6 +241,7 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
     setQuestionPreview([]);
     setFilePreview([]);
     setUrlPreview([]);
+    setDocumentManifest([]);
     setSummary(null);
     setStep('upload');
     setError('');
@@ -252,7 +277,7 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
           )}
 
           {step === 'upload' && <UploadStep fileRef={fileRef} handleFileUpload={handleFileUpload} />}
-          {step === 'preview' && <PreviewStep preview={preview} classPreview={classPreview} quizPreview={quizPreview} questionPreview={questionPreview} filePreview={filePreview} urlPreview={urlPreview} importing={importing} reset={reset} handleImport={handleImport} />}
+          {step === 'preview' && <PreviewStep preview={preview} classPreview={classPreview} quizPreview={quizPreview} questionPreview={questionPreview} filePreview={filePreview} urlPreview={urlPreview} documentManifest={documentManifest} importing={importing} reset={reset} handleImport={handleImport} />}
           {step === 'results' && summary && <ResultsStep summary={summary} onClose={onClose} />}
         </div>
       </div>

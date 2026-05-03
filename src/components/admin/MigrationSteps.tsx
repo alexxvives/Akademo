@@ -140,11 +140,11 @@ export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
 
       <div className="flex items-center justify-center">
         <label className="px-6 py-2.5 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors cursor-pointer">
-          Seleccionar Excel / CSV
+          Seleccionar Excel / CSV / JSON
           <input
             ref={fileRef as React.RefObject<HTMLInputElement>}
             type="file"
-            accept=".csv,.xlsx,.xls"
+            accept=".csv,.xlsx,.xls,.json"
             multiple
             onChange={handleFileUpload}
             className="sr-only"
@@ -162,12 +162,13 @@ interface PreviewStepProps {
   questionPreview: QuestionRow[];
   filePreview: FileRow[];
   urlPreview: UrlRow[];
+  documentManifest: Record<string, unknown>[];
   importing: boolean;
   reset: () => void;
   handleImport: () => void;
 }
 
-export function PreviewStep({ preview, classPreview, quizPreview, questionPreview, filePreview, urlPreview, importing, reset, handleImport }: PreviewStepProps) {
+export function PreviewStep({ preview, classPreview, quizPreview, questionPreview, filePreview, urlPreview, documentManifest, importing, reset, handleImport }: PreviewStepProps) {
   const classNamesInFile = new Set(classPreview.map(c => c.name.toLowerCase().trim()));
   const classWarnings = preview
     .filter(row => row.classNames)
@@ -177,8 +178,8 @@ export function PreviewStep({ preview, classPreview, quizPreview, questionPrevie
       return unmatched.length > 0 ? [{ email: row.email, unmatched }] : [];
     });
 
-  const teacherCount = preview.filter(r => r.role === 'TEACHER').length;
-  const studentCount = preview.filter(r => r.role === 'STUDENT').length;
+  const teacherCount = preview.filter(r => r.role?.toUpperCase() === 'TEACHER').length;
+  const studentCount = preview.filter(r => r.role?.toUpperCase() === 'STUDENT').length;
 
   return (
     <div className="space-y-4">
@@ -191,6 +192,7 @@ export function PreviewStep({ preview, classPreview, quizPreview, questionPrevie
         {questionPreview.length > 0 && <span className="px-3 py-1.5 bg-pink-50 text-pink-700 rounded-lg text-xs font-semibold">{questionPreview.length} preguntas</span>}
         {filePreview.length > 0 && <span className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs font-semibold">{filePreview.length} archivos</span>}
         {urlPreview.length > 0 && <span className="px-3 py-1.5 bg-orange-50 text-orange-700 rounded-lg text-xs font-semibold">{urlPreview.length} enlaces</span>}
+        {documentManifest.length > 0 && <span className="px-3 py-1.5 bg-teal-50 text-teal-700 rounded-lg text-xs font-semibold">{documentManifest.length} documentos (manifest)</span>}
       </div>
       {classWarnings.length > 0 && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">

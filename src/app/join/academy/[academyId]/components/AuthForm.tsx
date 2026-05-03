@@ -71,33 +71,35 @@ export function AuthForm({
         <form onSubmit={handleAuth} className="space-y-4">
           {!showLogin && (
             <>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nombre completo
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.fullName}
-                  onChange={e => setFormData({ ...formData, fullName: e.target.value })}
-                  disabled={showVerification || verifyingCode || verificationSuccess}
-                  placeholder="Juan García"
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-500"
-                />
-              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nombre completo
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.fullName}
+                    onChange={e => setFormData({ ...formData, fullName: e.target.value })}
+                    disabled={showVerification || verifyingCode || verificationSuccess}
+                    placeholder="Juan García"
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-500"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  DNI / NIE
-                </label>
-                <input
-                  type="text"
-                  value={formData.dni}
-                  onChange={e => setFormData({ ...formData, dni: e.target.value })}
-                  disabled={showVerification || verifyingCode || verificationSuccess}
-                  placeholder="12345678A"
-                  className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-500"
-                />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    DNI / NIE
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.dni}
+                    onChange={e => setFormData({ ...formData, dni: e.target.value })}
+                    disabled={showVerification || verifyingCode || verificationSuccess}
+                    placeholder="12345678A"
+                    className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-500"
+                  />
+                </div>
               </div>
 
               <div className="flex items-center gap-3">
@@ -120,10 +122,10 @@ export function AuthForm({
               </div>
 
               {formData.isUnderage && (
-                <>
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nombre completo del representante
+                      Nombre del representante
                     </label>
                     <input
                       type="text"
@@ -149,7 +151,7 @@ export function AuthForm({
                       className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-500"
                     />
                   </div>
-                </>
+                </div>
               )}
             </>
           )}

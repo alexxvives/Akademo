@@ -751,13 +751,120 @@ const fixEncoding = (s: string): string => {
   try {
     const bytes = Uint8Array.from([...s].map(c => c.charCodeAt(0) & 0xFF));
     const decoded = new TextDecoder('utf-8', { fatal: false, ignoreBOM: false }).decode(bytes);
-    // If the decoded string contains replacement chars the bytes weren't valid UTF-8
-    // (e.g. the input was already correct Unicode with Latin-1 code points like á=U+00E1).
-    // In that case return the original string unchanged.
     if (decoded.includes('\uFFFD')) return s;
     return decoded.length <= s.length ? decoded : s;
   } catch { return s; }
 };
+
+// POST /admin/import-documents — lightweight endpoint for bulk-importing a documents manifest.
+// Accepts { academyId, documents: [{ courseName, sectionName, fileTitle, filename, filesize, contentType, r2Key, uploadId }] }
+// Idempotent: INSERT OR IGNORE / skip-if-exists on every row.
+// Designed for batched calls (20-50 docs each) from scripts/import-manifest.js.
+admin.post('/import-documents', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    if (session.role !== 'ADMIN' && session.role !== 'ACADEMY') {
+      return c.json(errorResponse('Forbidden'), 403);
+    }
+
+    const { academyId, documents: documentRows = [] } = await c.req.json();
+    if (!academyId || !Array.isArray(documentRows) || documentRows.length === 0) {
+      return c.json(errorResponse('academyId and documents array required'), 400);
+    }
+
+    // Verify academy
+    const academy = await c.env.DB
+      .prepare('SELECT id FROM Academy WHERE id = ?')
+      .bind(academyId)
+      .first() as any;
+    if (!academy) return c.json(errorResponse('Academy not found'), 404);
+
+    // Load class map: lowercase name → id
+    const classesResult = await c.env.DB
+      .prepare('SELECT id, name FROM Class WHERE academyId = ?')
+      .bind(academyId)
+      .all();
+    const classMap = new Map<string, string>();
+    for (const cls of (classesResult.results || [])) {
+      classMap.set((cls.name as string).toLowerCase().trim(), cls.id as string);
+      const fixed = fixEncoding(cls.name as string).toLowerCase().trim();
+      if (fixed !== (cls.name as string).toLowerCase().trim()) classMap.set(fixed, cls.id as string);
+    }
+
+    const now = new Date().toISOString();
+    let documentsCreated = 0;
+    let skipped = 0;
+
+    for (const entry of documentRows) {
+      const course   = fixEncoding(String(entry.courseName  || '').trim());
+      const section  = fixEncoding(String(entry.sectionName || '').trim()) || 'Documentos';
+      const title    = fixEncoding(String(entry.fileTitle   || '').trim());
+      if (!course || !title || !entry.r2Key) { skipped++; continue; }
+
+      const classId = classMap.get(course.toLowerCase().trim());
+      if (!classId) { skipped++; continue; }
+
+      // Get or create Topic
+      let topicId: string;
+      const existingTopic = await c.env.DB
+        .prepare('SELECT id FROM Topic WHERE classId = ? AND name = ?')
+        .bind(classId, section)
+        .first() as any;
+      if (existingTopic) {
+        topicId = existingTopic.id;
+      } else {
+        topicId = crypto.randomUUID();
+        await c.env.DB
+          .prepare('INSERT INTO Topic (id, name, classId, orderIndex, createdAt) VALUES (?, ?, ?, ?, ?)')
+          .bind(topicId, section, classId, 999, now)
+          .run();
+      }
+
+      // Get or create Lesson
+      let lessonId: string;
+      const existingLesson = await c.env.DB
+        .prepare('SELECT id FROM Lesson WHERE topicId = ? AND title = ?')
+        .bind(topicId, title)
+        .first() as any;
+      if (existingLesson) {
+        lessonId = existingLesson.id;
+      } else {
+        lessonId = crypto.randomUUID();
+        await c.env.DB
+          .prepare('INSERT INTO Lesson (id, title, classId, topicId, releaseDate, createdAt) VALUES (?, ?, ?, ?, ?, ?)')
+          .bind(lessonId, title, classId, topicId, now, now)
+          .run();
+      }
+
+      const uploadId = String(entry.uploadId || crypto.randomUUID()).trim();
+      const r2Key    = String(entry.r2Key).trim();
+      const filename = String(entry.filename    || 'document').trim();
+      const filesize = Number(entry.filesize)   || 0;
+      const mime     = String(entry.contentType || 'application/octet-stream').trim();
+
+      await c.env.DB
+        .prepare('INSERT OR IGNORE INTO Upload (id, fileName, fileSize, mimeType, storagePath, uploadedById, storageType, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+        .bind(uploadId, filename, filesize, mime, r2Key, session.id, 'r2', now)
+        .run();
+
+      const existingDoc = await c.env.DB
+        .prepare('SELECT id FROM Document WHERE uploadId = ? AND lessonId = ?')
+        .bind(uploadId, lessonId)
+        .first();
+      if (existingDoc) { skipped++; continue; }
+
+      await c.env.DB
+        .prepare('INSERT INTO Document (id, title, lessonId, uploadId, createdAt) VALUES (?, ?, ?, ?, ?)')
+        .bind(crypto.randomUUID(), title, lessonId, uploadId, now)
+        .run();
+      documentsCreated++;
+    }
+
+    return c.json(successResponse({ documentsCreated, skipped }));
+  } catch (err: any) {
+    return c.json(errorResponse(err?.message || 'Internal error'), 500);
+  }
+});
 
 // POST /admin/bulk-import - Bulk import teachers and students for an academy
 admin.post('/bulk-import', async (c) => {
@@ -768,8 +875,12 @@ admin.post('/bulk-import', async (c) => {
     }
 
     const { academyId, users: rows, classes: classRows = [], quizzes: quizRows = [], questions: questionRows = [], files: fileRows = [], urls: urlRows = [], documents: documentRows = [], approveAll = false } = await c.req.json();
-    if (!academyId || !Array.isArray(rows) || rows.length === 0) {
+    if (!academyId || !Array.isArray(rows)) {
       return c.json(errorResponse('academyId and users array required'), 400);
+    }
+    const hasAnyData = rows.length > 0 || classRows.length > 0 || quizRows.length > 0 || fileRows.length > 0 || urlRows.length > 0 || documentRows.length > 0;
+    if (!hasAnyData) {
+      return c.json(errorResponse('No data to import'), 400);
     }
     if (rows.length > 500) {
       return c.json(errorResponse('Maximum 500 users per import'), 400);
@@ -1417,18 +1528,23 @@ admin.post('/bulk-import', async (c) => {
     }
 
     // ── Document import (from documents-manifest.json generated by ftp-to-r2.js) ──
-    // Creates: Topic "Documentos" per course → Lesson per fileTitle → Upload + Document per file
+    // Places each file inside the Topic matching its sectionName (creates Topic if absent).
+    // Falls back to Topic "Documentos" when sectionName is absent (legacy manifests).
     // Idempotent: reuses existing Topic/Lesson by name, skips already-imported files by uploadId.
     let documentsCreated = 0;
     if (Array.isArray(documentRows) && documentRows.length > 0) {
-      // Group by courseName → Map<fileTitle → entries[]>
-      const byCourse = new Map<string, Map<string, Array<{ filename: string; filesize: number; contentType: string; r2Key: string; uploadId: string }>>>();
+      // Group: courseName → sectionName → fileTitle → files[]
+      type DocFile = { filename: string; filesize: number; contentType: string; r2Key: string; uploadId: string };
+      const byCourse = new Map<string, Map<string, Map<string, DocFile[]>>>();
       for (const entry of documentRows) {
-        const course = String(entry.courseName || '').trim();
-        const title  = String(entry.fileTitle  || '').trim();
+        const course   = fixEncoding(String(entry.courseName || '').trim());
+        const section  = fixEncoding(String(entry.sectionName || '').trim()) || 'Documentos';
+        const title    = fixEncoding(String(entry.fileTitle  || '').trim());
         if (!course || !title || !entry.r2Key) continue;
         if (!byCourse.has(course)) byCourse.set(course, new Map());
-        const byTitle = byCourse.get(course)!;
+        const bySec = byCourse.get(course)!;
+        if (!bySec.has(section)) bySec.set(section, new Map());
+        const byTitle = bySec.get(section)!;
         if (!byTitle.has(title)) byTitle.set(title, []);
         byTitle.get(title)!.push({
           filename:    String(entry.filename    || 'document').trim(),
@@ -1439,62 +1555,64 @@ admin.post('/bulk-import', async (c) => {
         });
       }
       const docNow = new Date().toISOString();
-      for (const [courseName, byTitle] of byCourse) {
+      for (const [courseName, bySec] of byCourse) {
         const classId = classMap.get(courseName.toLowerCase().trim());
         if (!classId) {
           log(`documents: skipping course "${courseName}" — class not found`);
           continue;
         }
-        // Get or create Topic "Documentos" (reuse if already exists)
-        let docTopicId: string;
-        const existingDocTopic = await c.env.DB
-          .prepare('SELECT id FROM Topic WHERE classId = ? AND name = ?')
-          .bind(classId, 'Documentos')
-          .first() as any;
-        if (existingDocTopic) {
-          docTopicId = existingDocTopic.id;
-        } else {
-          docTopicId = crypto.randomUUID();
-          await c.env.DB
-            .prepare('INSERT INTO Topic (id, name, classId, orderIndex, createdAt) VALUES (?, ?, ?, ?, ?)')
-            .bind(docTopicId, 'Documentos', classId, 1, docNow)
-            .run();
-        }
-        for (const [fileTitle, files] of byTitle) {
-          // Get or create Lesson for this fileTitle
-          let docLessonId: string;
-          const existingDocLesson = await c.env.DB
-            .prepare('SELECT id FROM Lesson WHERE topicId = ? AND title = ?')
-            .bind(docTopicId, fileTitle)
+        for (const [sectionName, byTitle] of bySec) {
+          // Get or create Topic matching the section name
+          let docTopicId: string;
+          const existingDocTopic = await c.env.DB
+            .prepare('SELECT id FROM Topic WHERE classId = ? AND name = ?')
+            .bind(classId, sectionName)
             .first() as any;
-          if (existingDocLesson) {
-            docLessonId = existingDocLesson.id;
+          if (existingDocTopic) {
+            docTopicId = existingDocTopic.id;
           } else {
-            docLessonId = crypto.randomUUID();
+            docTopicId = crypto.randomUUID();
             await c.env.DB
-              .prepare('INSERT INTO Lesson (id, title, classId, topicId, releaseDate, createdAt) VALUES (?, ?, ?, ?, ?, ?)')
-              .bind(docLessonId, fileTitle, classId, docTopicId, docNow, docNow)
+              .prepare('INSERT INTO Topic (id, name, classId, orderIndex, createdAt) VALUES (?, ?, ?, ?, ?)')
+              .bind(docTopicId, sectionName, classId, 999, docNow)
               .run();
           }
-          const seenUploads = new Set<string>();
-          for (const file of files) {
-            if (seenUploads.has(file.uploadId)) continue;
-            seenUploads.add(file.uploadId);
-            await c.env.DB
-              .prepare('INSERT OR IGNORE INTO Upload (id, fileName, fileSize, mimeType, storagePath, uploadedById, storageType, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-              .bind(file.uploadId, file.filename, file.filesize, file.contentType, file.r2Key, session.id, 'r2', docNow)
-              .run();
-            const existingDoc = await c.env.DB
-              .prepare('SELECT id FROM Document WHERE uploadId = ? AND lessonId = ?')
-              .bind(file.uploadId, docLessonId)
-              .first();
-            if (existingDoc) continue;
-            const docId = crypto.randomUUID();
-            await c.env.DB
-              .prepare('INSERT INTO Document (id, title, lessonId, uploadId, createdAt) VALUES (?, ?, ?, ?, ?)')
-              .bind(docId, fileTitle, docLessonId, file.uploadId, docNow)
-              .run();
-            documentsCreated++;
+          for (const [fileTitle, files] of byTitle) {
+            // Get or create Lesson for this fileTitle under this topic
+            let docLessonId: string;
+            const existingDocLesson = await c.env.DB
+              .prepare('SELECT id FROM Lesson WHERE topicId = ? AND title = ?')
+              .bind(docTopicId, fileTitle)
+              .first() as any;
+            if (existingDocLesson) {
+              docLessonId = existingDocLesson.id;
+            } else {
+              docLessonId = crypto.randomUUID();
+              await c.env.DB
+                .prepare('INSERT INTO Lesson (id, title, classId, topicId, releaseDate, createdAt) VALUES (?, ?, ?, ?, ?, ?)')
+                .bind(docLessonId, fileTitle, classId, docTopicId, docNow, docNow)
+                .run();
+            }
+            const seenUploads = new Set<string>();
+            for (const file of files) {
+              if (seenUploads.has(file.uploadId)) continue;
+              seenUploads.add(file.uploadId);
+              await c.env.DB
+                .prepare('INSERT OR IGNORE INTO Upload (id, fileName, fileSize, mimeType, storagePath, uploadedById, storageType, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+                .bind(file.uploadId, file.filename, file.filesize, file.contentType, file.r2Key, session.id, 'r2', docNow)
+                .run();
+              const existingDoc = await c.env.DB
+                .prepare('SELECT id FROM Document WHERE uploadId = ? AND lessonId = ?')
+                .bind(file.uploadId, docLessonId)
+                .first();
+              if (existingDoc) continue;
+              const docId = crypto.randomUUID();
+              await c.env.DB
+                .prepare('INSERT INTO Document (id, title, lessonId, uploadId, createdAt) VALUES (?, ?, ?, ?, ?)')
+                .bind(docId, fileTitle, docLessonId, file.uploadId, docNow)
+                .run();
+              documentsCreated++;
+            }
           }
         }
       }

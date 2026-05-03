@@ -165,9 +165,8 @@ export function StudentTeacherFields({
           </div>
 
           <div className="flex flex-col justify-end">
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Menor de edad</label>
-            <div className="flex items-center justify-between px-3 py-2.5 border border-gray-200 rounded-lg bg-white">
-              <span className="text-sm text-gray-500">Soy menor de edad</span>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">&nbsp;</label>
+            <div className="flex items-center gap-3 py-2.5">
               <button
                 type="button"
                 role="switch"
@@ -181,6 +180,7 @@ export function StudentTeacherFields({
                   isUnderage ? 'translate-x-4' : 'translate-x-0.5'
                 }`} />
               </button>
+              <span className="text-sm font-medium text-gray-700">Soy menor de edad</span>
             </div>
           </div>
 

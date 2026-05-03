@@ -32,6 +32,7 @@ SELECT * FROM (
     AND f.filename != '.'
     AND f.filesize > 0
     AND c.visible = 1
+    AND cm.deletioninprogress = 0
 
   UNION ALL
 
@@ -55,5 +56,6 @@ SELECT * FROM (
     AND f.filename != '.'
     AND f.filesize > 0
     AND c.visible = 1
+    AND cm.deletioninprogress = 0
 ) AS all_files
 ORDER BY course_name, visible DESC, section_number, file_title;
