@@ -290,7 +290,7 @@ export function useTopicsLessons(props: HookProps) {
   };
 
   return {
-    expandedTopics, draggedLesson, dragOverTopic, draggedTopicId, topicDragOverId,
+    expandedTopics, draggedLesson, dragOverTopic, draggedTopicId, topicInsertIndex, topicDragOverId,
     showNewTopicInput, setShowNewTopicInput, newTopicName, setNewTopicName, creatingTopic,
     scrollContainerRef, setHighlightCardRef, glowLessonId,
     isDisabled, lessonsByTopic,
