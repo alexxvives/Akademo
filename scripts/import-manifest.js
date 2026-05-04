@@ -89,7 +89,7 @@ async function main() {
       process.exit(1);
     }
 
-    const summary = importData.summary || importData;
+    const summary = (importData.data) || importData.summary || importData;
     const created = summary.documentsCreated ?? summary.documents ?? 0;
     const skip = summary.skipped ?? 0;
     totalCreated += created;
