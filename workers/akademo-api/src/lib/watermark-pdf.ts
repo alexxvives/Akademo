@@ -177,9 +177,14 @@ export async function addWatermarkToPdf(
       by: number,
     ) => {
       if (!text) return;
+      // pdf-lib draws text from the baseline start (bottom-left). For 45° text the
+      // visual center sits ~0.35*size ABOVE the baseline in text-local space.
+      // After rotation that shift maps to direction (-SQ, +SQ) in page space.
+      // To land the VISUAL center at (bx, by) we add the inverse offset (+SQ, -SQ).
+      const halfH = size * 0.35;
       page.drawText(text, {
-        x: bx - (textWidth / 2) * SQ,
-        y: by - (textWidth / 2) * SQ,
+        x: bx - (textWidth / 2) * SQ + halfH * SQ,
+        y: by - (textWidth / 2) * SQ - halfH * SQ,
         size,
         font,
         color: textColor,
