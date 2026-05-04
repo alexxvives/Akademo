@@ -36,7 +36,8 @@ const CLIENT_SLUG = process.argv.includes('--client')
   ? process.argv[process.argv.indexOf('--client') + 1]
   : 'maximo-expo';
 
-const DRY_RUN = process.argv.includes('--dry-run');
+const DRY_RUN      = process.argv.includes('--dry-run');
+const REGEN_MANIFEST = process.argv.includes('--regen-manifest');
 
 const FILES_CSV  = path.join(__dirname, '..', 'docs', 'onboarding', CLIENT_SLUG, 'files', 'files.csv');
 const PROGRESS   = path.join(__dirname, '..', 'docs', 'onboarding', CLIENT_SLUG, 'files', 'ftp-progress.json');
@@ -263,6 +264,32 @@ async function main() {
     todo.slice(0, 5).forEach(fp =>
       console.log(`  FTP: moodledata/filedir/${fp}  →  R2: ${R2_PREFIX}/${fp}`)
     );
+    return;
+  }
+
+  // --regen-manifest: rebuild manifest from CSV + progress, skip FTP upload entirely
+  if (REGEN_MANIFEST) {
+    console.log('\nRegenerating manifest (no FTP upload)...');
+    const manifest = [];
+    for (const f of manifestFiles) {
+      // Include all entries — if progress exists, only include uploaded files;
+      // if no progress info, include everything (assumes files are already in R2).
+      if (Object.keys(progress).length > 0 && progress[f.filePath] !== 'ok') continue;
+      manifest.push({
+        courseName:         f.courseName,
+        sectionNumber:      f.sectionNumber,
+        sectionName:        f.sectionName,
+        fileTitle:          f.fileTitle,
+        filename:           f.filename,
+        filesize:           f.filesize,
+        contentType:        guessContentType(f.filename),
+        r2Key:              `${R2_PREFIX}/${f.filePath}`,
+        uploadId:           f.filePath.replace(/\//g, ''),
+        originalUploadedAt: f.fileTimestamp ? new Date(f.fileTimestamp * 1000).toISOString() : null,
+      });
+    }
+    fs.writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2));
+    console.log(`Wrote ${manifest.length} entries to ${MANIFEST}`);
     return;
   }
 
