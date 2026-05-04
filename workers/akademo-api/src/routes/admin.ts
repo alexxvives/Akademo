@@ -801,6 +801,11 @@ admin.post('/import-documents', async (c) => {
       const title    = fixEncoding(String(entry.fileTitle   || '').trim());
       if (!course || !title || !entry.r2Key) { skipped++; continue; }
 
+      // Use the original Moodle upload timestamp when available
+      const entryDate = entry.originalUploadedAt
+        ? new Date(entry.originalUploadedAt).toISOString()
+        : now;
+
       const classId = classMap.get(course.toLowerCase().trim());
       if (!classId) { skipped++; continue; }
 
@@ -816,7 +821,7 @@ admin.post('/import-documents', async (c) => {
         topicId = crypto.randomUUID();
         await c.env.DB
           .prepare('INSERT INTO Topic (id, name, classId, orderIndex, createdAt) VALUES (?, ?, ?, ?, ?)')
-          .bind(topicId, section, classId, 999, now)
+          .bind(topicId, section, classId, 999, entryDate)
           .run();
       }
 
@@ -832,7 +837,7 @@ admin.post('/import-documents', async (c) => {
         lessonId = crypto.randomUUID();
         await c.env.DB
           .prepare('INSERT INTO Lesson (id, title, classId, topicId, releaseDate, createdAt) VALUES (?, ?, ?, ?, ?, ?)')
-          .bind(lessonId, title, classId, topicId, now, now)
+          .bind(lessonId, title, classId, topicId, entryDate, entryDate)
           .run();
       }
 
@@ -844,7 +849,7 @@ admin.post('/import-documents', async (c) => {
 
       await c.env.DB
         .prepare('INSERT OR IGNORE INTO Upload (id, fileName, fileSize, mimeType, storagePath, uploadedById, storageType, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-        .bind(uploadId, filename, filesize, mime, r2Key, session.id, 'r2', now)
+        .bind(uploadId, filename, filesize, mime, r2Key, session.id, 'r2', entryDate)
         .run();
 
       const existingDoc = await c.env.DB
@@ -855,7 +860,7 @@ admin.post('/import-documents', async (c) => {
 
       await c.env.DB
         .prepare('INSERT INTO Document (id, title, lessonId, uploadId, createdAt) VALUES (?, ?, ?, ?, ?)')
-        .bind(crypto.randomUUID(), title, lessonId, uploadId, now)
+        .bind(crypto.randomUUID(), title, lessonId, uploadId, entryDate)
         .run();
       documentsCreated++;
     }

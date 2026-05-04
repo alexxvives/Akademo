@@ -8,6 +8,7 @@ import { LessonCardThumbnail } from './LessonCardThumbnail';
 
 interface LessonCardProps {
   lesson: Lesson;
+  viewMode?: 'cards' | 'rows';
   glowLessonId: string | null;
   onHighlightRef?: (el: HTMLDivElement | null) => void;
   draggedLesson: string | null;
@@ -24,11 +25,102 @@ interface LessonCardProps {
 }
 
 export function LessonCard({
-  lesson, glowLessonId, onHighlightRef, draggedLesson, isDisabled, totalStudents,
+  lesson, viewMode = 'cards', glowLessonId, onHighlightRef, draggedLesson, isDisabled, totalStudents,
   onDragStart, onDragEnd, onSelectLesson, onEditLesson,
   onDeleteLesson, onRescheduleLesson, onToggleRelease, onManageStudentTimes,
 }: LessonCardProps) {
   const released = isReleased(lesson.releaseDate);
+
+  if (viewMode === 'rows') {
+    const isSentinelDate = new Date(lesson.releaseDate).getFullYear() >= 2099;
+    const hasVideo = (lesson.videoCount || 0) > 0;
+    const hasAssignment = (lesson.assignmentCount || 0) > 0;
+    return (
+      <div
+        ref={glowLessonId === lesson.id ? onHighlightRef : undefined}
+        draggable={!lesson.isUploading}
+        onDragStart={(e) => onDragStart(e, lesson.id)}
+        onDragEnd={onDragEnd}
+        onClick={(e) => {
+          const target = e.target as HTMLElement;
+          if (target.closest('[data-action-buttons]')) return;
+          if (!lesson.isUploading) onSelectLesson(lesson);
+        }}
+        className={`bg-[#1a1d29] rounded-lg border flex items-center gap-3 px-4 py-2.5 transition-all duration-200 ${
+          glowLessonId === lesson.id
+            ? 'border-blue-400 ring-2 ring-blue-400/50 shadow-[0_0_30px_rgba(96,165,250,0.4)]'
+            : 'border-gray-700 hover:border-accent-500'
+        } ${lesson.isUploading ? 'cursor-default' : 'cursor-pointer'} ${draggedLesson === lesson.id ? 'opacity-50' : ''} ${!released ? 'opacity-70' : ''}`}
+      >
+        {/* Type icon */}
+        <div className={`w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 ${hasVideo ? 'bg-blue-500/20 text-blue-400' : hasAssignment ? 'bg-amber-500/20 text-amber-400' : 'bg-gray-500/20 text-gray-400'}`}>
+          {hasVideo ? (
+            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+          ) : hasAssignment ? (
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+          ) : (
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          )}
+        </div>
+        {/* Title */}
+        <span className="text-white font-medium text-sm flex-1 truncate">{lesson.title}</span>
+        {/* Hidden/schedule badge */}
+        {!released && !isSentinelDate && (
+          <span className="text-xs px-1.5 py-0.5 bg-violet-900/50 text-violet-300 rounded flex-shrink-0 hidden sm:block">
+            {new Date(lesson.releaseDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+          </span>
+        )}
+        {!released && isSentinelDate && (
+          <span className="text-xs px-1.5 py-0.5 bg-gray-700 text-gray-400 rounded flex-shrink-0">Oculta</span>
+        )}
+        {/* Student stats */}
+        <span className="text-gray-500 text-xs flex-shrink-0 hidden md:block">{lesson.studentsAccessed || 0}/{totalStudents}</span>
+        {/* Action buttons */}
+        <div data-action-buttons className="flex gap-1 flex-shrink-0">
+          <button
+            onClick={(e) => { e.stopPropagation(); onManageStudentTimes(lesson); }}
+            className="p-1.5 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-all border border-blue-500/30"
+            title="Gestionar tiempos de estudiantes"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onRescheduleLesson(lesson); }}
+            className="p-1.5 bg-violet-500/20 text-violet-400 rounded-lg hover:bg-violet-500/30 transition-all border border-violet-500/30"
+            title="Reprogramar"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); if (!lesson.isUploading) onEditLesson(lesson); }}
+            disabled={lesson.isUploading}
+            className="p-1.5 bg-accent-500/20 text-accent-400 rounded-lg hover:bg-accent-500/30 transition-all border border-accent-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
+            title="Editar lección"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); if (!lesson.isUploading && !isDisabled) onDeleteLesson(lesson.id); }}
+            disabled={lesson.isUploading || isDisabled}
+            className="p-1.5 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-all border border-red-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
+            title={isDisabled ? 'Active su academia para eliminar lecciones' : 'Eliminar lección'}
+          >
+            <DeleteIcon size={14} />
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

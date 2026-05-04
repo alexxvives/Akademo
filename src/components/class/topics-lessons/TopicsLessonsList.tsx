@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import type { Lesson, TopicsLessonsListProps } from './types';
 import { useTopicsLessons } from './useTopicsLessons';
 import { LessonCard } from './LessonCard';
@@ -16,10 +17,21 @@ export default function TopicsLessonsList({
     onTopicsChange, onTopicsUpdate, onLessonsUpdate, onLessonMove,
   });
 
+  const [viewMode, setViewMode] = useState<'cards' | 'rows'>('cards');
+  useEffect(() => {
+    const saved = localStorage.getItem('lessons-view');
+    if (saved === 'cards' || saved === 'rows') setViewMode(saved);
+  }, []);
+  const handleViewModeChange = (mode: 'cards' | 'rows') => {
+    setViewMode(mode);
+    localStorage.setItem('lessons-view', mode);
+  };
+
   const renderLesson = (lesson: Lesson) => (
     <LessonCard
       key={lesson.id}
       lesson={lesson}
+      viewMode={viewMode}
       glowLessonId={h.glowLessonId}
       onHighlightRef={h.setHighlightCardRef}
       draggedLesson={h.draggedLesson}
@@ -93,15 +105,37 @@ export default function TopicsLessonsList({
             </button>
           </div>
         ) : (
-          <button
-            onClick={() => h.setShowNewTopicInput(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Nuevo Tema
-          </button>
+          <div className="flex items-center gap-2">
+            <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
+              <button
+                onClick={() => handleViewModeChange('cards')}
+                className={`p-1.5 rounded-md transition-all ${viewMode === 'cards' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                title="Vista cuadrícula"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+                </svg>
+              </button>
+              <button
+                onClick={() => handleViewModeChange('rows')}
+                className={`p-1.5 rounded-md transition-all ${viewMode === 'rows' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                title="Vista lista"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            </div>
+            <button
+              onClick={() => h.setShowNewTopicInput(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Nuevo Tema
+            </button>
+          </div>
         )}
       </div>
 
@@ -116,7 +150,7 @@ export default function TopicsLessonsList({
           <p className="text-gray-500 text-sm">Crea tu primera lección para comenzar</p>
         </div>
       ) : lessons.length === 0 && topics.length > 0 ? (
-        <div ref={h.scrollContainerRef} className="max-h-[700px] overflow-y-auto space-y-3 scroll-smooth py-2">
+        <div ref={h.scrollContainerRef} className="max-h-[calc(100dvh-14rem)] overflow-y-auto space-y-3 scroll-smooth py-2">
           {topics.map(topic => (
             <TopicSection
               key={topic.id}
@@ -131,11 +165,12 @@ export default function TopicsLessonsList({
               onDeleteTopic={() => h.handleDeleteTopic(topic.id)}
               onHideAllLessons={() => onBulkToggleRelease(h.lessonsByTopic.get(topic.id) || [])}
               renderLesson={renderLesson}
+              viewMode={viewMode}
             />
           ))}
         </div>
       ) : (
-        <div ref={h.scrollContainerRef} className="max-h-[700px] overflow-y-auto space-y-3 scroll-smooth py-2">
+        <div ref={h.scrollContainerRef} className="max-h-[calc(100dvh-14rem)] overflow-y-auto space-y-3 scroll-smooth py-2">
           {topics.map(topic => (
             <TopicSection
               key={topic.id}
@@ -150,6 +185,7 @@ export default function TopicsLessonsList({
               onDeleteTopic={() => h.handleDeleteTopic(topic.id)}
               onHideAllLessons={() => onBulkToggleRelease(h.lessonsByTopic.get(topic.id) || [])}
               renderLesson={renderLesson}
+              viewMode={viewMode}
             />
           ))}
           <TopicSection
@@ -162,6 +198,7 @@ export default function TopicsLessonsList({
             onDragOver={(e) => h.handleDragOver(e, null)}
             onDrop={(e) => h.handleDrop(e, null)}
             renderLesson={renderLesson}
+            viewMode={viewMode}
           />
         </div>
       )}

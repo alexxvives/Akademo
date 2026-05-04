@@ -171,11 +171,13 @@ async function main() {
     filename:      idx('filename'),
     filesize:      idx('filesize'),
     filePath:      idx('file_path'),
+    fileTimestamp: idx('file_timestamp'),
     visible:       idx('visible'),
   };
 
-  // Check columns exist
+  // Check columns exist (file_timestamp is optional for backwards compat)
   for (const [k, v] of Object.entries(cols)) {
+    if (k === 'fileTimestamp') continue;
     if (v === -1) { console.error(`Column not found in CSV: ${k}`); process.exit(1); }
   }
 
@@ -217,6 +219,7 @@ async function main() {
       filename:      row[cols.filename].trim(),
       filesize:      parseInt(row[cols.filesize], 10) || 0,
       filePath,
+      fileTimestamp: cols.fileTimestamp !== -1 ? parseInt(row[cols.fileTimestamp], 10) || null : null,
     });
   }
 
@@ -229,13 +232,15 @@ async function main() {
   for (const entries of manifestGroups.values()) {
     const realTitleEntries = entries.filter(e => !FILENAME_RE.test(e.fileTitle));
     const candidates = realTitleEntries.length > 0 ? realTitleEntries : [entries[0]];
+    // Use the latest (max) timestamp in the group
+    const maxTimestamp = entries.reduce((m, e) => (e.fileTimestamp && e.fileTimestamp > m ? e.fileTimestamp : m), 0) || null;
     // Deduplicate by normalized title within the group
     const seenTitles = new Set();
     for (const entry of candidates) {
       const norm = entry.fileTitle.toLowerCase().trim();
       if (!seenTitles.has(norm)) {
         seenTitles.add(norm);
-        manifestFiles.push(entry);
+        manifestFiles.push({ ...entry, fileTimestamp: maxTimestamp });
       }
     }
   }
@@ -342,15 +347,16 @@ async function main() {
     if (progress[f.filePath] !== 'ok') continue;
     const fullHash = f.filePath.replace(/\//g, '');  // strip slashes → content hash
     manifest.push({
-      courseName:    f.courseName,
-      sectionNumber: f.sectionNumber,
-      sectionName:   f.sectionName,
-      fileTitle:     f.fileTitle,
-      filename:      f.filename,
-      filesize:      f.filesize,
-      contentType:   guessContentType(f.filename),
-      r2Key:         `${R2_PREFIX}/${f.filePath}`,
-      uploadId:      fullHash,
+      courseName:          f.courseName,
+      sectionNumber:       f.sectionNumber,
+      sectionName:         f.sectionName,
+      fileTitle:           f.fileTitle,
+      filename:            f.filename,
+      filesize:            f.filesize,
+      contentType:         guessContentType(f.filename),
+      r2Key:               `${R2_PREFIX}/${f.filePath}`,
+      uploadId:            fullHash,
+      originalUploadedAt:  f.fileTimestamp ? new Date(f.fileTimestamp * 1000).toISOString() : null,
     });
   }
 

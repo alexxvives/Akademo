@@ -3,7 +3,9 @@
 -- DB prefix: mdl3y_
 --
 -- These are "link" resources in Moodle — external URLs placed in a section.
--- 141 rows found. Migrate as link-type documents in AKADEMO.
+-- NOTE: cm.visible can be 0 when a section is temporarily hidden (Moodle stores original in cm.visibleold).
+--       We include rows where visible=1 OR visibleold=1 to catch those. Only visible=0 AND visibleold=0
+--       means the teacher explicitly hid the link — those are excluded.
 -- NOTE: These do NOT require FTP upload — they are just URLs, no file to transfer.
 
 SELECT
@@ -19,6 +21,6 @@ JOIN mdl3y_course_modules cm ON cm.instance = u.id
 JOIN mdl3y_course c ON c.id = cm.course
 JOIN mdl3y_course_sections cs ON cs.id = cm.section
 WHERE c.visible = 1
-  AND cm.visible = 1
+  AND (cm.visible = 1 OR cm.visibleold = 1)
   AND cm.deletioninprogress = 0
 ORDER BY course_name, section_number, link_title;

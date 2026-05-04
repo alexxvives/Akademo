@@ -16,11 +16,12 @@ interface TopicSectionProps {
   onDeleteTopic?: () => void;
   onHideAllLessons?: () => void;
   renderLesson: (lesson: Lesson) => ReactNode;
+  viewMode?: 'cards' | 'rows';
 }
 
 export function TopicSection({
   topicId, topicName, topicLessons, isExpanded, isDragOver,
-  onToggle, onDragOver, onDrop, onDeleteTopic, onHideAllLessons, renderLesson,
+  onToggle, onDragOver, onDrop, onDeleteTopic, onHideAllLessons, renderLesson, viewMode = 'cards',
 }: TopicSectionProps) {
   return (
     <div
@@ -103,7 +104,7 @@ export function TopicSection({
               <p>Arrastra Clases aquí</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-2">
+            <div className={viewMode === 'rows' ? 'flex flex-col gap-2 p-2' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-2'}>
               {topicLessons.map(renderLesson)}
             </div>
           )}

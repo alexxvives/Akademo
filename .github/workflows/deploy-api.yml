@@ -27,6 +27,9 @@ jobs:
       - name: Install dependencies
         working-directory: workers/akademo-api
         run: npm install --legacy-peer-deps
+        env:
+          npm_config_fetch_retries: 5
+          npm_config_fetch_retry_mintimeout: 5000
       
       - name: Deploy to Cloudflare Workers
         working-directory: workers/akademo-api
