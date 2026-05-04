@@ -73,20 +73,18 @@ export function useTopicsLessons(props: HookProps) {
     return () => clearTimeout(glowTimer);
   }, [highlightLessonId, lessons]);
 
-  // Auto-scroll while dragging near edges
+  // Auto-scroll while dragging near viewport edges
   const handleDragScroll = useCallback((clientY: number) => {
     const container = scrollContainerRef.current;
     if (!container || (!draggedLesson && !draggedTopicId)) return;
-    const rect = container.getBoundingClientRect();
-    const scrollThreshold = 80;
-    const maxScrollSpeed = 15;
-    const distFromTop = clientY - rect.top;
-    const distFromBottom = rect.bottom - clientY;
+    const scrollThreshold = 100;
+    const maxScrollSpeed = 18;
+    const viewportH = window.innerHeight;
     let scrollAmount = 0;
-    if (distFromTop < scrollThreshold && distFromTop > 0) {
-      scrollAmount = -maxScrollSpeed * (1 - distFromTop / scrollThreshold);
-    } else if (distFromBottom < scrollThreshold && distFromBottom > 0) {
-      scrollAmount = maxScrollSpeed * (1 - distFromBottom / scrollThreshold);
+    if (clientY < scrollThreshold) {
+      scrollAmount = -maxScrollSpeed * (1 - clientY / scrollThreshold);
+    } else if (clientY > viewportH - scrollThreshold) {
+      scrollAmount = maxScrollSpeed * (1 - (viewportH - clientY) / scrollThreshold);
     }
     if (scrollAmount !== 0) {
       container.scrollTop += scrollAmount;
