@@ -118,7 +118,7 @@ export async function addWatermarkToPdf(
   }
 
   const textColor = rgb(0.55, 0.55, 0.55);
-  const textOpacity = 0.2;
+  const textOpacity = 0.40;
   // cos/sin of 45° — used for projecting text positions
   const SQ = Math.SQRT1_2;
 
@@ -131,45 +131,52 @@ export async function addWatermarkToPdf(
     const size2Base = size1Base * 0.78;
     const size3Base = size1Base * 0.62;
 
-    // Auto-scale each line down so it never extends past the page edges.
-    // Safe text width ≈ 82% of the page diagonal (text is centred, extends ±w/2 each side).
-    const safeDiag = Math.sqrt(width * width + height * height) * 0.82;
-    const fitted = (text: string, font: typeof fontBold, base: number): number => {
-      if (!text) return base;
-      const w = font.widthOfTextAtSize(text, base);
-      return w > safeDiag ? base * (safeDiag / w) : base;
-    };
-
-    const size1 = fitted(line1, fontBold,   size1Base);
-    const size2 = fitted(line2, fontNormal, size2Base);
-    const size3 = fitted(line3, fontBold,   size3Base);
-
-    // Perpendicular spacing between the three rows (using base size so spacing doesn't collapse)
+    // Perpendicular spacing between the three rows
     const lineSpacing = size1Base * 1.35;
 
     const cx = width / 2;
     const cy = height / 2;
+
+    // Pre-compute the center (bx, by) for each line along the perpendicular to the 45° axis.
+    // Perpendicular direction to (SQ, SQ) is (-SQ, +SQ).
+    //   line3 (academy) → +lineSpacing offset (above diagonal)
+    //   line1 (name)    → 0 offset (on diagonal)
+    //   line2 (email)   → -lineSpacing offset (below diagonal)
+    const bx1 = cx,                    by1 = cy;                     // name — middle
+    const bx2 = cx + lineSpacing * SQ, by2 = cy - lineSpacing * SQ; // email — below
+    const bx3 = cx - lineSpacing * SQ, by3 = cy + lineSpacing * SQ; // academy — above
+
+    // Max safe text width for a line centred at (bx, by): the text extends ±w/2 in both
+    // x and y (at 45°), so it must not exceed 2 * min(bx, width-bx, by, height-by) / SQ.
+    // Apply a 5% safety margin so text never grazes the edge.
+    const safeFor = (bx: number, by: number) =>
+      Math.min(2 * bx, 2 * (width - bx), 2 * by, 2 * (height - by)) / SQ * 0.95;
+
+    const fitted = (text: string, font: typeof fontBold, base: number, bx: number, by: number): number => {
+      if (!text) return base;
+      const w = font.widthOfTextAtSize(text, base);
+      const safe = safeFor(bx, by);
+      return w > safe ? base * (safe / w) : base;
+    };
+
+    const size1 = fitted(line1, fontBold,   size1Base, bx1, by1);
+    const size2 = fitted(line2, fontNormal, size2Base, bx2, by2);
+    const size3 = fitted(line3, fontBold,   size3Base, bx3, by3);
 
     // Width of each text line for centering along the 45° baseline
     const w1 = fontBold.widthOfTextAtSize(line1, size1);
     const w2 = fontNormal.widthOfTextAtSize(line2, size2);
     const w3 = line3 ? fontBold.widthOfTextAtSize(line3, size3) : 0;
 
-    // Three lines placed symmetrically around the page centre along the perpendicular
-    // to the 45° diagonal: direction (-SQ, +SQ).
-    //   line3 (academy) → +lineSpacing offset (top)
-    //   line1 (name)    → 0 offset (middle)
-    //   line2 (email)   → -lineSpacing offset (bottom)
     const drawLine = (
       text: string,
       font: typeof fontBold,
       size: number,
       textWidth: number,
-      offsetPerp: number,
+      bx: number,
+      by: number,
     ) => {
       if (!text) return;
-      const bx = cx - offsetPerp * SQ;
-      const by = cy + offsetPerp * SQ;
       page.drawText(text, {
         x: bx - (textWidth / 2) * SQ,
         y: by - (textWidth / 2) * SQ,
@@ -181,9 +188,9 @@ export async function addWatermarkToPdf(
       });
     };
 
-    drawLine(line3, fontBold,   size3, w3,  lineSpacing);   // academy — top
-    drawLine(line1, fontBold,   size1, w1,  0);             // name    — middle
-    drawLine(line2, fontNormal, size2, w2, -lineSpacing);   // email   — bottom
+    drawLine(line3, fontBold,   size3, w3, bx3, by3);   // academy — above
+    drawLine(line1, fontBold,   size1, w1, bx1, by1);   // name    — middle
+    drawLine(line2, fontNormal, size2, w2, bx2, by2);   // email   — below
 
     // Academy logo: top-left corner, semi-transparent
     if (logo) {
