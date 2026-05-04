@@ -22,7 +22,7 @@ export function useTopicsLessons(props: HookProps) {
   const [draggedLesson, setDraggedLesson] = useState<string | null>(null);
   const [dragOverTopic, setDragOverTopic] = useState<string | null>(null);
   const [draggedTopicId, setDraggedTopicId] = useState<string | null>(null);
-  const [topicDragOverId, setTopicDragOverId] = useState<string | null>(null);
+  const [topicInsertIndex, setTopicInsertIndex] = useState<number | null>(null);
   const [showNewTopicInput, setShowNewTopicInput] = useState(false);
   const [newTopicName, setNewTopicName] = useState('');
   const [creatingTopic, setCreatingTopic] = useState(false);
@@ -177,33 +177,41 @@ export function useTopicsLessons(props: HookProps) {
 
   const handleTopicDragEnd = () => {
     setDraggedTopicId(null);
-    setTopicDragOverId(null);
+    setTopicInsertIndex(null);
   };
 
-  const handleTopicDragOver = (e: DragEvent, topicId: string) => {
-    if (!draggedTopicId || draggedTopicId === topicId) return;
+  const handleTopicDragOver = (e: DragEvent, index: number) => {
+    if (!draggedTopicId) return;
     e.preventDefault();
     e.stopPropagation();
-    setTopicDragOverId(topicId);
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const midpoint = rect.top + rect.height / 2;
+    setTopicInsertIndex(e.clientY < midpoint ? index : index + 1);
   };
 
-  const handleTopicDrop = async (e: DragEvent, targetTopicId: string) => {
+  const handleTopicDrop = async (e: DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!draggedTopicId || draggedTopicId === targetTopicId) {
+    if (!draggedTopicId || topicInsertIndex === null) {
       setDraggedTopicId(null);
-      setTopicDragOverId(null);
+      setTopicInsertIndex(null);
       return;
     }
     const fromIdx = topics.findIndex(t => t.id === draggedTopicId);
-    const toIdx = topics.findIndex(t => t.id === targetTopicId);
-    if (fromIdx === -1 || toIdx === -1) return;
+    if (fromIdx === -1) return;
+    let toIdx = topicInsertIndex;
+    if (fromIdx < toIdx) toIdx--;
+    if (fromIdx === toIdx) {
+      setDraggedTopicId(null);
+      setTopicInsertIndex(null);
+      return;
+    }
     const newTopics = [...topics];
     const [moved] = newTopics.splice(fromIdx, 1);
     newTopics.splice(toIdx, 0, moved);
     const sourceId = draggedTopicId;
     setDraggedTopicId(null);
-    setTopicDragOverId(null);
+    setTopicInsertIndex(null);
     if (onTopicsUpdate) {
       onTopicsUpdate(() => newTopics.map((t, i) => ({ ...t, orderIndex: i })));
     }

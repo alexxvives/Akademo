@@ -10,13 +10,11 @@ interface TopicSectionProps {
   topicLessons: Lesson[];
   isExpanded: boolean;
   isDragOver: boolean;
-  isTopicDragOver?: boolean;
+  isDraggingThis?: boolean;
   onToggle: () => void;
   onDragOver: (e: DragEvent<HTMLDivElement>) => void;
   onDrop: (e: DragEvent<HTMLDivElement>) => void;
   onTopicDragStart?: (e: DragEvent<HTMLDivElement>) => void;
-  onTopicDragOver?: (e: DragEvent<HTMLDivElement>) => void;
-  onTopicDrop?: (e: DragEvent<HTMLDivElement>) => void;
   onTopicDragEnd?: () => void;
   onDeleteTopic?: () => void;
   onHideAllLessons?: () => void;
@@ -25,21 +23,19 @@ interface TopicSectionProps {
 }
 
 export function TopicSection({
-  topicId, topicName, topicLessons, isExpanded, isDragOver, isTopicDragOver,
-  onToggle, onDragOver, onDrop, onTopicDragStart, onTopicDragOver, onTopicDrop, onTopicDragEnd,
+  topicId, topicName, topicLessons, isExpanded, isDragOver, isDraggingThis,
+  onToggle, onDragOver, onDrop, onTopicDragStart, onTopicDragEnd,
   onDeleteTopic, onHideAllLessons, renderLesson, viewMode = 'cards',
 }: TopicSectionProps) {
   return (
     <div
       className={`rounded-xl border-2 transition-all duration-200 ${
-        isTopicDragOver
-          ? 'border-blue-400 bg-blue-50 shadow-lg shadow-blue-400/20'
-          : isDragOver
+        isDragOver
           ? 'border-accent-500 bg-accent-500/10 shadow-lg shadow-accent-500/10'
           : 'border-slate-600/40'
-      }`}
-      onDragOver={(e) => { onTopicDragOver?.(e); onDragOver(e); }}
-      onDrop={(e) => { onTopicDrop?.(e); onDrop(e); }}
+      } ${isDraggingThis ? 'opacity-40' : ''}`}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
     >
       {/* Topic Header */}
       <div

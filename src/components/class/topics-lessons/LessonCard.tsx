@@ -78,12 +78,12 @@ export function LessonCard({
           <span className="text-xs px-1.5 py-0.5 bg-gray-700 text-gray-400 rounded flex-shrink-0">Oculta</span>
         )}
         {/* Rating stars */}
-        {lesson.avgRating != null && lesson.avgRating > 0 && (
-          <div className="flex items-center gap-1 flex-shrink-0 hidden md:flex">
-            <svg className="w-3.5 h-3.5 text-yellow-400 fill-current" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-            <span className="text-yellow-400 text-xs font-medium">{lesson.avgRating.toFixed(1)}</span>
+        {!lesson.isUploading && !lesson.isTranscoding && (
+          <div className="flex items-center gap-0.5 flex-shrink-0 hidden md:flex">
+            <span className="text-yellow-500 text-xs">{'★'.repeat(Math.round(lesson.avgRating || 0))}</span>
+            <span className="text-gray-600 text-xs">{'★'.repeat(5 - Math.round(lesson.avgRating || 0))}</span>
             {lesson.ratingCount != null && lesson.ratingCount > 0 && (
-              <span className="text-gray-500 text-xs">({lesson.ratingCount})</span>
+              <span className="text-gray-500 text-xs ml-0.5">({lesson.ratingCount})</span>
             )}
           </div>
         )}

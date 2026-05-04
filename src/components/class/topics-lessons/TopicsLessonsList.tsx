@@ -151,52 +151,72 @@ export default function TopicsLessonsList({
         </div>
       ) : lessons.length === 0 && topics.length > 0 ? (
         <div ref={h.scrollContainerRef} className="max-h-[calc(100dvh-14rem)] overflow-y-auto space-y-3 scroll-smooth py-2">
-          {topics.map(topic => (
-            <TopicSection
+          {topics.map((topic, index) => (
+            <div
               key={topic.id}
-              topicId={topic.id}
-              topicName={topic.name}
-              topicLessons={[]}
-              isExpanded={h.expandedTopics.has(topic.id)}
-              isDragOver={h.dragOverTopic === topic.id}
-              isTopicDragOver={h.topicDragOverId === topic.id}
-              onToggle={() => h.toggleTopic(topic.id)}
-              onDragOver={(e) => h.handleDragOver(e, topic.id)}
-              onDrop={(e) => h.handleDrop(e, topic.id)}
-              onTopicDragStart={(e) => h.handleTopicDragStart(e, topic.id)}
-              onTopicDragOver={(e) => h.handleTopicDragOver(e, topic.id)}
-              onTopicDrop={(e) => h.handleTopicDrop(e, topic.id)}
-              onTopicDragEnd={h.handleTopicDragEnd}
-              onDeleteTopic={() => h.handleDeleteTopic(topic.id)}
-              onHideAllLessons={() => onBulkToggleRelease(h.lessonsByTopic.get(topic.id) || [])}
-              renderLesson={renderLesson}
-              viewMode={viewMode}
-            />
+              className="relative"
+              onDragOver={(e) => h.handleTopicDragOver(e, index)}
+              onDrop={h.handleTopicDrop}
+            >
+              {h.draggedTopicId && h.draggedTopicId !== topic.id && h.topicInsertIndex === index && (
+                <div className="absolute -top-2 left-0 right-0 h-0.5 bg-blue-400 rounded-full z-20 shadow-[0_0_6px_2px_rgba(96,165,250,0.6)]" />
+              )}
+              <TopicSection
+                topicId={topic.id}
+                topicName={topic.name}
+                topicLessons={[]}
+                isExpanded={h.expandedTopics.has(topic.id)}
+                isDragOver={h.dragOverTopic === topic.id}
+                isDraggingThis={h.draggedTopicId === topic.id}
+                onToggle={() => h.toggleTopic(topic.id)}
+                onDragOver={(e) => h.handleDragOver(e, topic.id)}
+                onDrop={(e) => h.handleDrop(e, topic.id)}
+                onTopicDragStart={(e) => h.handleTopicDragStart(e, topic.id)}
+                onTopicDragEnd={h.handleTopicDragEnd}
+                onDeleteTopic={() => h.handleDeleteTopic(topic.id)}
+                onHideAllLessons={() => onBulkToggleRelease(h.lessonsByTopic.get(topic.id) || [])}
+                renderLesson={renderLesson}
+                viewMode={viewMode}
+              />
+              {h.draggedTopicId && h.draggedTopicId !== topic.id && h.topicInsertIndex === index + 1 && index === topics.length - 1 && (
+                <div className="absolute -bottom-2 left-0 right-0 h-0.5 bg-blue-400 rounded-full z-20 shadow-[0_0_6px_2px_rgba(96,165,250,0.6)]" />
+              )}
+            </div>
           ))}
         </div>
       ) : (
         <div ref={h.scrollContainerRef} className="max-h-[calc(100dvh-14rem)] overflow-y-auto space-y-3 scroll-smooth py-2">
-          {topics.map(topic => (
-            <TopicSection
+          {topics.map((topic, index) => (
+            <div
               key={topic.id}
-              topicId={topic.id}
-              topicName={topic.name}
-              topicLessons={h.lessonsByTopic.get(topic.id) || []}
-              isExpanded={h.expandedTopics.has(topic.id)}
-              isDragOver={h.dragOverTopic === topic.id}
-              isTopicDragOver={h.topicDragOverId === topic.id}
-              onToggle={() => h.toggleTopic(topic.id)}
-              onDragOver={(e) => h.handleDragOver(e, topic.id)}
-              onDrop={(e) => h.handleDrop(e, topic.id)}
-              onTopicDragStart={(e) => h.handleTopicDragStart(e, topic.id)}
-              onTopicDragOver={(e) => h.handleTopicDragOver(e, topic.id)}
-              onTopicDrop={(e) => h.handleTopicDrop(e, topic.id)}
-              onTopicDragEnd={h.handleTopicDragEnd}
-              onDeleteTopic={() => h.handleDeleteTopic(topic.id)}
-              onHideAllLessons={() => onBulkToggleRelease(h.lessonsByTopic.get(topic.id) || [])}
-              renderLesson={renderLesson}
-              viewMode={viewMode}
-            />
+              className="relative"
+              onDragOver={(e) => h.handleTopicDragOver(e, index)}
+              onDrop={h.handleTopicDrop}
+            >
+              {h.draggedTopicId && h.draggedTopicId !== topic.id && h.topicInsertIndex === index && (
+                <div className="absolute -top-2 left-0 right-0 h-0.5 bg-blue-400 rounded-full z-20 shadow-[0_0_6px_2px_rgba(96,165,250,0.6)]" />
+              )}
+              <TopicSection
+                topicId={topic.id}
+                topicName={topic.name}
+                topicLessons={h.lessonsByTopic.get(topic.id) || []}
+                isExpanded={h.expandedTopics.has(topic.id)}
+                isDragOver={h.dragOverTopic === topic.id}
+                isDraggingThis={h.draggedTopicId === topic.id}
+                onToggle={() => h.toggleTopic(topic.id)}
+                onDragOver={(e) => h.handleDragOver(e, topic.id)}
+                onDrop={(e) => h.handleDrop(e, topic.id)}
+                onTopicDragStart={(e) => h.handleTopicDragStart(e, topic.id)}
+                onTopicDragEnd={h.handleTopicDragEnd}
+                onDeleteTopic={() => h.handleDeleteTopic(topic.id)}
+                onHideAllLessons={() => onBulkToggleRelease(h.lessonsByTopic.get(topic.id) || [])}
+                renderLesson={renderLesson}
+                viewMode={viewMode}
+              />
+              {h.draggedTopicId && h.draggedTopicId !== topic.id && h.topicInsertIndex === index + 1 && index === topics.length - 1 && (
+                <div className="absolute -bottom-2 left-0 right-0 h-0.5 bg-blue-400 rounded-full z-20 shadow-[0_0_6px_2px_rgba(96,165,250,0.6)]" />
+              )}
+            </div>
           ))}
           <TopicSection
             topicId={null}
