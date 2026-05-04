@@ -112,7 +112,7 @@ export function normalizeRows(rows: Record<string, unknown>[]): ImportRow[] {
     email: String(row[origKeys[emailIdx]] ?? '').trim(),
     firstName: String(row[origKeys[firstIdx]] ?? '').trim(),
     lastName: String(row[origKeys[lastIdx]] ?? '').trim(),
-    role: roleIdx !== -1 ? String(row[origKeys[roleIdx]] ?? 'STUDENT').trim() : 'STUDENT',
+    role: roleIdx !== -1 ? (String(row[origKeys[roleIdx]] ?? 'STUDENT').trim().toUpperCase() === 'EDITINGTEACHER' ? 'TEACHER' : String(row[origKeys[roleIdx]] ?? 'STUDENT').trim().toUpperCase() || 'STUDENT') : 'STUDENT',
     classNames: classIdx !== -1 ? String(row[origKeys[classIdx]] ?? '').trim() : '',
     pagado: pagadoIdx !== -1 ? TRUTHY.includes(String(row[origKeys[pagadoIdx]] ?? '').toLowerCase().trim()) : false,
   })).filter(r => r.email);
@@ -174,7 +174,7 @@ export function parseCSV(text: string): ImportRow[] {
       email: fields[emailIdx] || '',
       firstName: fields[firstIdx] || '',
       lastName: fields[lastIdx] || '',
-      role: roleIdx !== -1 ? (fields[roleIdx] || 'STUDENT') : 'STUDENT',
+      role: roleIdx !== -1 ? (fields[roleIdx].toUpperCase() === 'EDITINGTEACHER' ? 'TEACHER' : fields[roleIdx].toUpperCase() || 'STUDENT') : 'STUDENT',
       classNames: classIdx !== -1 ? (fields[classIdx] || '') : '',
       pagado: pagadoIdx !== -1 ? TRUTHY.includes((fields[pagadoIdx] || '').toLowerCase().trim()) : false,
     };

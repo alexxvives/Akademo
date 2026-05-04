@@ -109,7 +109,7 @@ export function ClassesHeader({
           />
         )}
         {/* View toggle */}
-        <div className="flex items-center rounded-lg border border-gray-200 overflow-hidden shrink-0">
+        <div className="flex items-center rounded-lg overflow-hidden shrink-0">
           <button
             onClick={() => onViewModeChange('cards')}
             className={`p-2 transition-colors ${viewMode === 'cards' ? 'bg-gray-900 text-white' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}

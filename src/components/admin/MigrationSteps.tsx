@@ -10,147 +10,21 @@ interface UploadStepProps {
 
 export function UploadStep({ fileRef, handleFileUpload }: UploadStepProps) {
   return (
-    <div className="space-y-5">
-      <div className="bg-gray-50 rounded-xl p-5 border border-gray-200">
-        <h3 className="text-sm font-semibold text-gray-700 mb-3">Formato del archivo (CSV o Excel)</h3>
-        <p className="text-xs text-gray-500 mb-3">
-          Sube un archivo <span className="font-semibold text-gray-700">.xlsx</span> con hojas separadas, o <span className="font-semibold text-gray-700">varios archivos .csv</span> (se detectan automáticamente por columnas).
-        </p>
-
-        <div className="grid grid-cols-2 gap-4 items-start">
-          <div>
-            <p className="text-xs font-semibold text-gray-600 mb-2">Hoja &ldquo;Usuarios&rdquo; (obligatoria)</p>
-            <table className="text-xs text-gray-500 w-full">
-              <thead>
-                <tr className="text-gray-600">
-                  <th className="text-left pr-4 pb-2 font-medium">Columna</th>
-                  <th className="text-left pb-2 font-medium">Nota</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">email</td><td><em className="text-gray-300 not-italic">Sin nota</em></td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">nombre</td><td><em className="text-gray-300 not-italic">Sin nota</em></td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">apellido</td><td><em className="text-gray-300 not-italic">Sin nota</em></td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">moodle_rol</td><td>student / editingteacher</td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">asignatura</td><td>Nombre del curso</td></tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div>
-            <p className="text-xs font-semibold text-gray-600 mb-2">Hoja &ldquo;Asignaturas&rdquo; (opcional)</p>
-            <table className="text-xs text-gray-500 w-full">
-              <thead>
-                <tr className="text-gray-600">
-                  <th className="text-left pr-4 pb-2 font-medium">Columna</th>
-                  <th className="text-left pb-2 font-medium">Nota</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">nombre</td><td><em className="text-gray-300 not-italic">Sin nota</em></td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">fechaInicio <span className="text-gray-300">(opcional)</span></td><td>DD/MM/YYYY</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">precio <span className="text-gray-300">(opcional)</span></td><td>€ por cuota o total</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">cuotas <span className="text-gray-300">(opcional)</span></td><td>Nº de meses</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-          <div className="grid grid-cols-3 gap-4 items-start mt-4 pt-4 border-t border-gray-200">
-          <div>
-            <p className="text-xs font-semibold text-gray-600 mb-2">Hoja &ldquo;Quizzes&rdquo; (opcional)</p>
-            <table className="text-xs text-gray-500 w-full">
-              <thead>
-                <tr className="text-gray-600">
-                  <th className="text-left pr-4 pb-2 font-medium">Columna</th>
-                  <th className="text-left pb-2 font-medium">Nota</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">course_name</td><td>Nombre de asignatura</td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">quiz_id</td><td>ID del quiz (Moodle)</td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">quiz_name</td><td>Título del quiz</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">quiz_description</td><td>Descripción (HTML OK)</td></tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div>
-            <p className="text-xs font-semibold text-gray-600 mb-2">Hoja &ldquo;Questions&rdquo; (opcional)</p>
-            <table className="text-xs text-gray-500 w-full">
-              <thead>
-                <tr className="text-gray-600">
-                  <th className="text-left pr-4 pb-2 font-medium">Columna</th>
-                  <th className="text-left pb-2 font-medium">Nota</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">quiz_id</td><td>Enlaza con Quizzes</td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">question_id</td><td>ID de pregunta</td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">question_text</td><td>Texto (HTML OK)</td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">answer_id</td><td>ID de respuesta</td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">answer_text</td><td>Texto respuesta</td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">is_correct</td><td>1.0 = correcta</td></tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div>
-            <p className="text-xs font-semibold text-gray-600 mb-2">Hoja &ldquo;Files&rdquo; (opcional &mdash; manifiesto de archivos)</p>
-            <table className="text-xs text-gray-500 w-full">
-              <thead>
-                <tr className="text-gray-600">
-                  <th className="text-left pr-4 pb-2 font-medium">Columna</th>
-                  <th className="text-left pb-2 font-medium">Nota</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">file_title</td><td>Nombre del archivo</td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">course_name</td><td>Asignatura</td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">filename</td><td>Nombre de archivo</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">filesize</td><td>Bytes</td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">file_path</td><td>Ruta en SiteGround</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 items-start mt-4 pt-4 border-t border-gray-200">
-          <div>
-            <p className="text-xs font-semibold text-gray-600 mb-2">Hoja &ldquo;URLs&rdquo; (opcional)</p>
-            <table className="text-xs text-gray-500 w-full max-w-md">
-              <thead>
-                <tr className="text-gray-600">
-                  <th className="text-left pr-4 pb-2 font-medium">Columna</th>
-                  <th className="text-left pb-2 font-medium">Nota</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">link_title</td><td>Título del enlace</td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">url</td><td>URL del recurso</td></tr>
-                <tr><td className="pr-4 py-1 font-semibold text-gray-700">course_name</td><td>Nombre de asignatura</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">section_number <span className="text-gray-300">(opcional)</span></td><td>Nº sección</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">section_name <span className="text-gray-300">(opcional)</span></td><td>Nombre sección</td></tr>
-                <tr><td className="pr-4 py-1 text-gray-400">description <span className="text-gray-300">(opcional)</span></td><td>Descripción</td></tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-center">
-        <label className="px-6 py-2.5 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors cursor-pointer">
-          Seleccionar Excel / CSV / JSON
-          <input
-            ref={fileRef as React.RefObject<HTMLInputElement>}
-            type="file"
-            accept=".csv,.xlsx,.xls,.json"
-            multiple
-            onChange={handleFileUpload}
-            className="sr-only"
-          />
-        </label>
-      </div>
+    <div className="flex flex-col items-center justify-center py-8 gap-4">
+      <p className="text-sm text-gray-500 text-center">
+        Sube uno o varios archivos: <span className="font-semibold text-gray-700">.xlsx</span>, <span className="font-semibold text-gray-700">.csv</span> o <span className="font-semibold text-gray-700">documents-manifest.json</span>
+      </p>
+      <label className="px-6 py-2.5 bg-gray-900 text-white text-sm font-semibold rounded-xl hover:bg-gray-800 transition-colors cursor-pointer">
+        Seleccionar archivos
+        <input
+          ref={fileRef as React.RefObject<HTMLInputElement>}
+          type="file"
+          accept=".csv,.xlsx,.xls,.json"
+          multiple
+          onChange={handleFileUpload}
+          className="sr-only"
+        />
+      </label>
     </div>
   );
 }
