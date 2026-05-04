@@ -159,9 +159,14 @@ export default function TopicsLessonsList({
               topicLessons={[]}
               isExpanded={h.expandedTopics.has(topic.id)}
               isDragOver={h.dragOverTopic === topic.id}
+              isTopicDragOver={h.topicDragOverId === topic.id}
               onToggle={() => h.toggleTopic(topic.id)}
               onDragOver={(e) => h.handleDragOver(e, topic.id)}
               onDrop={(e) => h.handleDrop(e, topic.id)}
+              onTopicDragStart={(e) => h.handleTopicDragStart(e, topic.id)}
+              onTopicDragOver={(e) => h.handleTopicDragOver(e, topic.id)}
+              onTopicDrop={(e) => h.handleTopicDrop(e, topic.id)}
+              onTopicDragEnd={h.handleTopicDragEnd}
               onDeleteTopic={() => h.handleDeleteTopic(topic.id)}
               onHideAllLessons={() => onBulkToggleRelease(h.lessonsByTopic.get(topic.id) || [])}
               renderLesson={renderLesson}
@@ -179,9 +184,14 @@ export default function TopicsLessonsList({
               topicLessons={h.lessonsByTopic.get(topic.id) || []}
               isExpanded={h.expandedTopics.has(topic.id)}
               isDragOver={h.dragOverTopic === topic.id}
+              isTopicDragOver={h.topicDragOverId === topic.id}
               onToggle={() => h.toggleTopic(topic.id)}
               onDragOver={(e) => h.handleDragOver(e, topic.id)}
               onDrop={(e) => h.handleDrop(e, topic.id)}
+              onTopicDragStart={(e) => h.handleTopicDragStart(e, topic.id)}
+              onTopicDragOver={(e) => h.handleTopicDragOver(e, topic.id)}
+              onTopicDrop={(e) => h.handleTopicDrop(e, topic.id)}
+              onTopicDragEnd={h.handleTopicDragEnd}
               onDeleteTopic={() => h.handleDeleteTopic(topic.id)}
               onHideAllLessons={() => onBulkToggleRelease(h.lessonsByTopic.get(topic.id) || [])}
               renderLesson={renderLesson}

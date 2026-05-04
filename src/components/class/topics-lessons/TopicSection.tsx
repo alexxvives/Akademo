@@ -10,9 +10,14 @@ interface TopicSectionProps {
   topicLessons: Lesson[];
   isExpanded: boolean;
   isDragOver: boolean;
+  isTopicDragOver?: boolean;
   onToggle: () => void;
   onDragOver: (e: DragEvent<HTMLDivElement>) => void;
   onDrop: (e: DragEvent<HTMLDivElement>) => void;
+  onTopicDragStart?: (e: DragEvent<HTMLDivElement>) => void;
+  onTopicDragOver?: (e: DragEvent<HTMLDivElement>) => void;
+  onTopicDrop?: (e: DragEvent<HTMLDivElement>) => void;
+  onTopicDragEnd?: () => void;
   onDeleteTopic?: () => void;
   onHideAllLessons?: () => void;
   renderLesson: (lesson: Lesson) => ReactNode;
@@ -20,18 +25,21 @@ interface TopicSectionProps {
 }
 
 export function TopicSection({
-  topicId, topicName, topicLessons, isExpanded, isDragOver,
-  onToggle, onDragOver, onDrop, onDeleteTopic, onHideAllLessons, renderLesson, viewMode = 'cards',
+  topicId, topicName, topicLessons, isExpanded, isDragOver, isTopicDragOver,
+  onToggle, onDragOver, onDrop, onTopicDragStart, onTopicDragOver, onTopicDrop, onTopicDragEnd,
+  onDeleteTopic, onHideAllLessons, renderLesson, viewMode = 'cards',
 }: TopicSectionProps) {
   return (
     <div
       className={`rounded-xl border-2 transition-all duration-200 ${
-        isDragOver
+        isTopicDragOver
+          ? 'border-blue-400 bg-blue-50 shadow-lg shadow-blue-400/20'
+          : isDragOver
           ? 'border-accent-500 bg-accent-500/10 shadow-lg shadow-accent-500/10'
           : 'border-slate-600/40'
       }`}
-      onDragOver={onDragOver}
-      onDrop={onDrop}
+      onDragOver={(e) => { onTopicDragOver?.(e); onDragOver(e); }}
+      onDrop={(e) => { onTopicDrop?.(e); onDrop(e); }}
     >
       {/* Topic Header */}
       <div
@@ -39,6 +47,22 @@ export function TopicSection({
         onClick={onToggle}
       >
         <div className="flex items-center gap-3">
+          {topicId && onTopicDragStart && (
+            <div
+              draggable
+              onDragStart={onTopicDragStart}
+              onDragEnd={onTopicDragEnd}
+              onClick={(e) => e.stopPropagation()}
+              className="cursor-grab active:cursor-grabbing p-1 -ml-1 text-gray-400 hover:text-gray-600 transition-colors"
+              title="Arrastra para reordenar"
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <circle cx="9" cy="5" r="1.5" /><circle cx="15" cy="5" r="1.5" />
+                <circle cx="9" cy="12" r="1.5" /><circle cx="15" cy="12" r="1.5" />
+                <circle cx="9" cy="19" r="1.5" /><circle cx="15" cy="19" r="1.5" />
+              </svg>
+            </div>
+          )}
           <svg
             className={`w-5 h-5 text-gray-600 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}
             fill="none" stroke="currentColor" viewBox="0 0 24 24"

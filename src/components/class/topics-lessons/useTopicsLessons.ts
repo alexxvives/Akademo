@@ -21,6 +21,8 @@ export function useTopicsLessons(props: HookProps) {
   const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set());
   const [draggedLesson, setDraggedLesson] = useState<string | null>(null);
   const [dragOverTopic, setDragOverTopic] = useState<string | null>(null);
+  const [draggedTopicId, setDraggedTopicId] = useState<string | null>(null);
+  const [topicDragOverId, setTopicDragOverId] = useState<string | null>(null);
   const [showNewTopicInput, setShowNewTopicInput] = useState(false);
   const [newTopicName, setNewTopicName] = useState('');
   const [creatingTopic, setCreatingTopic] = useState(false);
@@ -152,18 +154,69 @@ export function useTopicsLessons(props: HookProps) {
   };
 
   const handleDragOver = (e: DragEvent, topicId: string | null) => {
+    if (draggedTopicId) return; // topic drag in progress
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     setDragOverTopic(topicId === null ? 'uncategorized' : topicId);
   };
 
   const handleDrop = async (e: DragEvent, topicId: string | null) => {
+    if (draggedTopicId) return; // topic drag in progress
     e.preventDefault();
     if (draggedLesson) {
       onLessonMove(draggedLesson, topicId);
     }
     setDraggedLesson(null);
     setDragOverTopic(null);
+  };
+
+  const handleTopicDragStart = (e: DragEvent, topicId: string) => {
+    setDraggedTopicId(topicId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleTopicDragEnd = () => {
+    setDraggedTopicId(null);
+    setTopicDragOverId(null);
+  };
+
+  const handleTopicDragOver = (e: DragEvent, topicId: string) => {
+    if (!draggedTopicId || draggedTopicId === topicId) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setTopicDragOverId(topicId);
+  };
+
+  const handleTopicDrop = async (e: DragEvent, targetTopicId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!draggedTopicId || draggedTopicId === targetTopicId) {
+      setDraggedTopicId(null);
+      setTopicDragOverId(null);
+      return;
+    }
+    const fromIdx = topics.findIndex(t => t.id === draggedTopicId);
+    const toIdx = topics.findIndex(t => t.id === targetTopicId);
+    if (fromIdx === -1 || toIdx === -1) return;
+    const newTopics = [...topics];
+    const [moved] = newTopics.splice(fromIdx, 1);
+    newTopics.splice(toIdx, 0, moved);
+    const sourceId = draggedTopicId;
+    setDraggedTopicId(null);
+    setTopicDragOverId(null);
+    if (onTopicsUpdate) {
+      onTopicsUpdate(() => newTopics.map((t, i) => ({ ...t, orderIndex: i })));
+    }
+    try {
+      const res = await apiClient(`/topics/${sourceId}/reorder`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newOrderIndex: toIdx }),
+      });
+      if (!res.ok) onTopicsChange();
+    } catch {
+      onTopicsChange();
+    }
   };
 
   const handleCreateTopic = async () => {
@@ -229,11 +282,12 @@ export function useTopicsLessons(props: HookProps) {
   };
 
   return {
-    expandedTopics, draggedLesson, dragOverTopic,
+    expandedTopics, draggedLesson, dragOverTopic, draggedTopicId, topicDragOverId,
     showNewTopicInput, setShowNewTopicInput, newTopicName, setNewTopicName, creatingTopic,
     scrollContainerRef, setHighlightCardRef, glowLessonId,
     isDisabled, lessonsByTopic,
     toggleTopic, handleDragStart, handleDragEnd, handleDragOver, handleDrop,
+    handleTopicDragStart, handleTopicDragEnd, handleTopicDragOver, handleTopicDrop,
     handleCreateTopic, handleDeleteTopic,
     ...studentTimes,
   };
