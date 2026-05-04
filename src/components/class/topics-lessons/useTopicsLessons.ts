@@ -76,7 +76,7 @@ export function useTopicsLessons(props: HookProps) {
   // Auto-scroll while dragging near edges
   const handleDragScroll = useCallback((clientY: number) => {
     const container = scrollContainerRef.current;
-    if (!container || !draggedLesson) return;
+    if (!container || (!draggedLesson && !draggedTopicId)) return;
     const rect = container.getBoundingClientRect();
     const scrollThreshold = 80;
     const maxScrollSpeed = 15;
@@ -91,11 +91,11 @@ export function useTopicsLessons(props: HookProps) {
     if (scrollAmount !== 0) {
       container.scrollTop += scrollAmount;
     }
-  }, [draggedLesson]);
+  }, [draggedLesson, draggedTopicId]);
 
   // Global drag handler for auto-scroll
   useEffect(() => {
-    if (!draggedLesson) {
+    if (!draggedLesson && !draggedTopicId) {
       if (scrollAnimationRef.current) {
         cancelAnimationFrame(scrollAnimationRef.current);
         scrollAnimationRef.current = null;
@@ -118,7 +118,7 @@ export function useTopicsLessons(props: HookProps) {
         cancelAnimationFrame(scrollAnimationRef.current);
       }
     };
-  }, [draggedLesson, handleDragScroll]);
+  }, [draggedLesson, draggedTopicId, handleDragScroll]);
 
   const toggleTopic = (topicId: string) => {
     setExpandedTopics(prev => {

@@ -819,9 +819,10 @@ admin.post('/import-documents', async (c) => {
         topicId = existingTopic.id;
       } else {
         topicId = crypto.randomUUID();
+        const topicOrder = typeof entry.sectionNumber === 'number' ? entry.sectionNumber : 999;
         await c.env.DB
           .prepare('INSERT INTO Topic (id, name, classId, orderIndex, createdAt) VALUES (?, ?, ?, ?, ?)')
-          .bind(topicId, section, classId, 999, entryDate)
+          .bind(topicId, section, classId, topicOrder, entryDate)
           .run();
       }
 
@@ -1697,9 +1698,10 @@ admin.post('/bulk-import', async (c) => {
             linkTopicId = existingTopic.id;
           } else {
             linkTopicId = crypto.randomUUID();
+            const linkTopicOrder = typeof (row as any).sectionNumber === 'number' ? Number((row as any).sectionNumber) : 998;
             await c.env.DB
               .prepare('INSERT INTO Topic (id, name, classId, orderIndex, createdAt) VALUES (?, ?, ?, ?, ?)')
-              .bind(linkTopicId, sectionName, classId, 998, urlNow)
+              .bind(linkTopicId, sectionName, classId, linkTopicOrder, urlNow)
               .run();
           }
           for (const link of links) {
