@@ -25,6 +25,7 @@ export function useAssignmentsData(role: AssignmentsPageProps['role']) {
   const [selectedClassId, setSelectedClassId] = useState('');
   const [selectedClassForCreate, setSelectedClassForCreate] = useState('');
   const [selectedLessonForCreate, setSelectedLessonForCreate] = useState('');
+  const [selectedTopicForCreate, setSelectedTopicForCreate] = useState('');
   const [academyName, setAcademyName] = useState('');
   const [paymentStatus, setPaymentStatus] = useState('');
   const [userEmail, setUserEmail] = useState('');
@@ -234,6 +235,7 @@ export function useAssignmentsData(role: AssignmentsPageProps['role']) {
     deletingAssignmentId, setDeletingAssignmentId, glowId, highlightRef,
     selectedClassId, setSelectedClassId, selectedClassForCreate, setSelectedClassForCreate,
     selectedLessonForCreate, setSelectedLessonForCreate,
+    selectedTopicForCreate, setSelectedTopicForCreate,
     academyName, paymentStatus, userEmail,
     showCreateModal, setShowCreateModal, showEditModal, setShowEditModal,
     showSubmissionsModal, setShowSubmissionsModal, showGradeModal, setShowGradeModal,

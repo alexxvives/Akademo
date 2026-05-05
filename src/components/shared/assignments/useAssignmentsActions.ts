@@ -152,6 +152,7 @@ export function useAssignmentsActions(data: AssignmentsDataReturn) {
         dueDate: data.newDueDate || undefined, maxScore: 100,
         type: data.assignmentType,
         ...(data.selectedLessonForCreate ? { lessonId: data.selectedLessonForCreate } : {}),
+        ...(data.selectedTopicForCreate ? { topicId: data.selectedTopicForCreate } : {}),
         ...(data.assignmentType === 'file' ? { uploadIds } : { questions: data.quizQuestions }),
       });
       const result = await res.json();
@@ -202,6 +203,7 @@ export function useAssignmentsActions(data: AssignmentsDataReturn) {
     data.setNewTitle(''); data.setNewDescription(''); data.setNewDueDate('');
     data.setUploadFiles([]); data.setUploadProgress(0); data.setSelectedClassForCreate('');
     data.setSelectedLessonForCreate?.('');
+    data.setSelectedTopicForCreate?.('');
     data.setAssignmentType('file'); data.setQuizQuestions([createEmptyQuestion()]);
   };
 

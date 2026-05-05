@@ -23,11 +23,17 @@ interface LessonOption {
   topicName?: string;
 }
 
+interface TopicOption {
+  id: string;
+  name: string;
+}
+
 export function CreateAssignmentModal(props: AssignmentModalsProps) {
   const {
     classes, paymentStatus,
     showCreateModal, setShowCreateModal, selectedClassForCreate, setSelectedClassForCreate,
     selectedLessonForCreate, setSelectedLessonForCreate,
+    selectedTopicForCreate, setSelectedTopicForCreate,
     newTitle, setNewTitle, newDescription, setNewDescription, newDueDate, setNewDueDate,
     uploadFiles, setUploadFiles, uploadProgress, creating, handleCreateAssignment, resetForm,
     assignmentType, setAssignmentType, quizQuestions, setQuizQuestions,
@@ -38,22 +44,36 @@ export function CreateAssignmentModal(props: AssignmentModalsProps) {
   const [dueDatePart, setDueDatePart] = useState(() => newDueDate ? newDueDate.slice(0, 10) : '');
   const [dueTimePart, setDueTimePart] = useState(() => newDueDate ? newDueDate.slice(11, 16) : '');
   const [lessons, setLessons] = useState<LessonOption[]>([]);
+  const [topics, setTopics] = useState<TopicOption[]>([]);
   const [selectedLesson, setSelectedLesson] = useState(selectedLessonForCreate || '');
+  const [selectedTopic, setSelectedTopic] = useState(selectedTopicForCreate || '');
 
   useEffect(() => {
     setSelectedLesson('');
     setSelectedLessonForCreate?.('');
+    setSelectedTopic('');
+    setSelectedTopicForCreate?.('');
     setLessons([]);
+    setTopics([]);
     if (!selectedClassForCreate) return;
     apiClient(`/lessons?classId=${selectedClassForCreate}`)
       .then(r => r.json())
       .then(data => { if (data.success) setLessons(data.data || []); })
+      .catch(() => {});
+    apiClient(`/topics?classId=${selectedClassForCreate}`)
+      .then(r => r.json())
+      .then(data => { if (data.success) setTopics(data.data || []); })
       .catch(() => {});
   }, [selectedClassForCreate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleLessonChange = (id: string) => {
     setSelectedLesson(id);
     setSelectedLessonForCreate?.(id);
+    // Auto-select topic from lesson's topicId
+    const lesson = lessons.find(l => l.id === id);
+    const autoTopic = lesson?.topicId || '';
+    setSelectedTopic(autoTopic);
+    setSelectedTopicForCreate?.(autoTopic);
   };
 
   const handleDueDateChange = (date: string) => {
@@ -109,6 +129,23 @@ export function CreateAssignmentModal(props: AssignmentModalsProps) {
                 required
               />
             </div>
+            {selectedClassForCreate && topics.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tema <span className="text-gray-400 font-normal">(opcional)</span>
+                </label>
+                <select
+                  value={selectedTopic}
+                  onChange={e => { setSelectedTopic(e.target.value); setSelectedTopicForCreate?.(e.target.value); }}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm bg-white"
+                >
+                  <option value="">Sin tema</option>
+                  {topics.map(t => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             {selectedClassForCreate && lessons.length > 0 && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">

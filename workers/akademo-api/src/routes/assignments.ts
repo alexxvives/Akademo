@@ -315,6 +315,15 @@ assignments.post('/', async (c) => {
       return c.json(errorResponse('Class not found or you do not have permission'), 403);
     }
 
+    // Auto-derive topicId from lessonId if not explicitly provided
+    let resolvedTopicId = assignmentTopicId || null;
+    if (assignmentLessonId && !assignmentTopicId) {
+      const lessonRow = await c.env.DB.prepare(`SELECT topicId FROM Lesson WHERE id = ?`)
+        .bind(assignmentLessonId)
+        .first<{ topicId: string | null }>();
+      resolvedTopicId = lessonRow?.topicId || null;
+    }
+
     const assignmentId = nanoid();
 
     // Build all statements for atomic batch insert
@@ -327,7 +336,7 @@ assignments.post('/', async (c) => {
         classId,
         session.id,
         assignmentLessonId || null,
-        assignmentTopicId || null,
+        resolvedTopicId,
         title,
         description || null,
         dueDate || null,

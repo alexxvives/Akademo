@@ -26,6 +26,8 @@ export interface AssignmentModalsProps {
   setSelectedClassForCreate: (v: string) => void;
   selectedLessonForCreate?: string;
   setSelectedLessonForCreate?: (v: string) => void;
+  selectedTopicForCreate?: string;
+  setSelectedTopicForCreate?: (v: string) => void;
   newTitle: string; setNewTitle: (v: string) => void;
   newDescription: string; setNewDescription: (v: string) => void;
   newDueDate: string; setNewDueDate: (v: string) => void;
