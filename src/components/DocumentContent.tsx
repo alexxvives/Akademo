@@ -23,7 +23,6 @@ export function DocumentContent({ academyName }: DocumentContentProps) {
         impresa o digital que se pone a su disposición a través del portal de la asignatura o en
         el aula, propiedad intelectual de <strong>{academyName}</strong>.
       </p>
-      <p>La forma de pago del curso será íntegra antes de la fecha de comienzo de las clases.</p>
 
       <h3 className="font-bold text-base pt-4 border-t border-gray-200">
         Cláusulas sobre propiedad intelectual para cursos online

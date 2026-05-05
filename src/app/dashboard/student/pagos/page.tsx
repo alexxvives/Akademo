@@ -96,13 +96,15 @@ export default function StudentPagosPage() {
     </tr>
   );
 
+  const thBase = 'px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wider';
+
   const TableHead = ({ dateLabel }: { dateLabel: string }) => (
     <thead className="bg-gray-50 border-b border-gray-200">
       <tr>
-        <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asignatura</th>
-        <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Método</th>
-        <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">{dateLabel}</th>
-        <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Importe</th>
+        <th className={`${thBase} text-left`}>Asignatura</th>
+        <th className={`${thBase} text-left w-32 hidden sm:table-cell`}>Método</th>
+        <th className={`${thBase} text-left w-36 hidden md:table-cell`}>{dateLabel}</th>
+        <th className={`${thBase} text-right w-28`}>Importe</th>
       </tr>
     </thead>
   );
@@ -166,7 +168,7 @@ export default function StudentPagosPage() {
               </button>
               {!pendingCollapsed && (
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full table-fixed">
                     <TableHead dateLabel="Vencimiento" />
                     <tbody>
                       {pending.map(p => <TableRow key={p.enrollmentId} p={p} />)}
@@ -185,7 +187,7 @@ export default function StudentPagosPage() {
                 <span className="text-xs bg-green-200 text-green-700 px-2 py-0.5 rounded-full font-medium">{history.length}</span>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full table-fixed">
                   <TableHead dateLabel="Fecha de pago" />
                   <tbody>
                     {history.map(p => <TableRow key={p.enrollmentId} p={p} />)}
