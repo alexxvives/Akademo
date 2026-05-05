@@ -11,6 +11,7 @@ export default function TopicsLessonsList({
   lessons, topics, classId, totalStudents, expandTopicId, highlightLessonId,
   paymentStatus, onSelectLesson, onEditLesson, onDeleteLesson, onRescheduleLesson,
   onTopicsChange, onTopicsUpdate, onLessonsUpdate, onLessonMove, onToggleRelease, onBulkToggleRelease,
+  dashboardBase,
 }: TopicsLessonsListProps) {
   const h = useTopicsLessons({
     lessons, topics, classId, expandTopicId, highlightLessonId, paymentStatus,
@@ -177,6 +178,8 @@ export default function TopicsLessonsList({
                 onHideAllLessons={() => onBulkToggleRelease(h.lessonsByTopic.get(topic.id) || [])}
                 renderLesson={renderLesson}
                 viewMode={viewMode}
+                quizCount={topic.quizCount}
+                dashboardBase={dashboardBase}
               />
               {h.draggedTopicId && h.draggedTopicId !== topic.id && h.topicInsertIndex === index + 1 && index === topics.length - 1 && (
                 <div className="absolute -bottom-2 left-0 right-0 h-0.5 bg-blue-400 rounded-full z-20 shadow-[0_0_6px_2px_rgba(96,165,250,0.6)]" />
@@ -212,6 +215,8 @@ export default function TopicsLessonsList({
                 onHideAllLessons={() => onBulkToggleRelease(h.lessonsByTopic.get(topic.id) || [])}
                 renderLesson={renderLesson}
                 viewMode={viewMode}
+                quizCount={topic.quizCount}
+                dashboardBase={dashboardBase}
               />
               {h.draggedTopicId && h.draggedTopicId !== topic.id && h.topicInsertIndex === index + 1 && index === topics.length - 1 && (
                 <div className="absolute -bottom-2 left-0 right-0 h-0.5 bg-blue-400 rounded-full z-20 shadow-[0_0_6px_2px_rgba(96,165,250,0.6)]" />

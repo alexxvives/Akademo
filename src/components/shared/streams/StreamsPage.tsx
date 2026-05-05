@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { SkeletonTable } from '@/components/ui/SkeletonLoader';
 import type { StreamsPageProps } from './types';
 import { useStreamsData } from './useStreamsData';
@@ -8,6 +9,16 @@ import { StreamsTable } from './StreamsTable';
 
 export function StreamsPage({ role }: StreamsPageProps) {
   const data = useStreamsData(role);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const lowerSearch = searchQuery.trim().toLowerCase();
+  const displayedStreams = lowerSearch
+    ? data.filteredStreams.filter(s =>
+        s.title?.toLowerCase().includes(lowerSearch) ||
+        s.className?.toLowerCase().includes(lowerSearch) ||
+        s.teacherName?.toLowerCase().includes(lowerSearch)
+      )
+    : data.filteredStreams;
 
   return (
     <div className="space-y-6">
@@ -26,13 +37,15 @@ export function StreamsPage({ role }: StreamsPageProps) {
         filteredClassOptions={data.filteredClassOptions}
         activePeriodId={data.activePeriodId}
         isClassInPeriod={data.isClassInPeriod}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
       />
 
       {data.loading ? (
         <SkeletonTable rows={8} cols={6} />
       ) : (
         <StreamsTable
-          streams={data.filteredStreams}
+          streams={displayedStreams}
           role={role}
           dashboardBase={data.dashboardBase}
           isDemo={data.isDemo}

@@ -154,6 +154,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
             onBulkToggleRelease={handleBulkToggleRelease}
             onTopicsUpdate={setTopics}
             onLessonsUpdate={setLessons}
+            dashboardBase={basePath}
           />
 
           {showRescheduleModal && reschedulingLesson && (

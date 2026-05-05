@@ -1,6 +1,7 @@
 'use client';
 
 import { DragEvent, ReactNode } from 'react';
+import Link from 'next/link';
 import { DeleteIcon } from '@/components/ui/DeleteIcon';
 import type { Lesson } from './types';
 
@@ -20,12 +21,15 @@ interface TopicSectionProps {
   onHideAllLessons?: () => void;
   renderLesson: (lesson: Lesson) => ReactNode;
   viewMode?: 'cards' | 'rows';
+  quizCount?: number;
+  dashboardBase?: string;
 }
 
 export function TopicSection({
   topicId, topicName, topicLessons, isExpanded, isDragOver, isDraggingThis,
   onToggle, onDragOver, onDrop, onTopicDragStart, onTopicDragEnd,
   onDeleteTopic, onHideAllLessons, renderLesson, viewMode = 'cards',
+  quizCount, dashboardBase,
 }: TopicSectionProps) {
   return (
     <div
@@ -69,6 +73,15 @@ export function TopicSection({
           <span className="text-xs text-gray-600 bg-gray-200 px-2.5 py-1 rounded-full font-medium">
             {topicLessons.length} {topicLessons.length === 1 ? 'clase' : 'clases'}
           </span>
+          {topicId && dashboardBase && quizCount != null && quizCount > 0 && (
+            <Link
+              href={`${dashboardBase}/assignments?tab=quiz&topicId=${topicId}`}
+              onClick={(e) => e.stopPropagation()}
+              className="text-xs text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full font-medium hover:bg-blue-100 transition-colors"
+            >
+              {quizCount} {quizCount === 1 ? 'cuestionario' : 'cuestionarios'}
+            </Link>
+          )}
         </div>
         {topicId && (
           <div className="flex items-center gap-1">

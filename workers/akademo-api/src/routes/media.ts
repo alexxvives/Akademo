@@ -170,8 +170,16 @@ media.get('/', async (c) => {
 
     // Fetch documents
     if (type === 'all' || type === 'documents') {
-      const searchFilter = search ? "AND (d.title LIKE ? OR l.title LIKE ? OR c.name LIKE ?)" : '';
-      const searchParams = search ? [`%${search}%`, `%${search}%`, `%${search}%`] : [];
+      // Accent-insensitive search: normalize search term and SQL columns
+      const normCol = (col: string) =>
+        `REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(LOWER(${col}),'á','a'),'é','e'),'í','i'),'ó','o'),'ú','u'),'ü','u'),'ñ','n')`;
+      const normalizedSearch = search
+        ? search.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+        : null;
+      const searchFilter = normalizedSearch
+        ? `AND (${normCol('d.title')} LIKE ? OR ${normCol('l.title')} LIKE ? OR ${normCol('c.name')} LIKE ?)`
+        : '';
+      const searchParams = normalizedSearch ? [`%${normalizedSearch}%`, `%${normalizedSearch}%`, `%${normalizedSearch}%`] : [];
       const docParams = [...baseParams, ...classParams, ...searchParams];
 
       const docsQuery = `

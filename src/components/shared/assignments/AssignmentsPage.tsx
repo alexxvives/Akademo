@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useAssignmentsData } from './useAssignmentsData';
 import { useAssignmentsActions } from './useAssignmentsActions';
 import { useSubmissionActions } from './useSubmissionActions';
@@ -19,8 +20,24 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
   const subActions = useSubmissionActions(data);
   const [viewingQuiz, setViewingQuiz] = useState<Assignment | null>(null);
   const [activeTab, setActiveTab] = useState<'file' | 'quiz'>('file');
+  const [searchQuery, setSearchQuery] = useState('');
+  const searchParams = useSearchParams();
+
+  // Read tab and topicId from URL params on mount
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'quiz' || tabParam === 'file') setActiveTab(tabParam);
+  }, [searchParams]);
 
   if (data.loading) return <AssignmentsLoadingSkeleton />;
+
+  const topicIdParam = searchParams.get('topicId');
+  const lowerSearch = searchQuery.trim().toLowerCase();
+  const filteredAssignments = data.visibleAssignments.filter(a => {
+    if (topicIdParam && a.topicId !== topicIdParam) return false;
+    if (lowerSearch && !a.title.toLowerCase().includes(lowerSearch)) return false;
+    return true;
+  });
 
   const triggerSolutionUpload = (assignmentId: string) => {
     data.solutionAssignmentRef.current = assignmentId;
@@ -50,6 +67,18 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="relative w-full sm:w-56">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar ejercicio..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+              />
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
             {(data.isAcademy || data.isTeacher || (data.isAdmin && data.selectedAcademy)) && (
               <ClassSearchDropdown
                 classes={data.filteredClasses}
@@ -74,7 +103,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
         </div>
 
         {/* Empty state */}
-        {data.visibleAssignments.length === 0 ? (
+        {filteredAssignments.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
             <div className="w-20 h-20 bg-gradient-to-br from-brand-100 to-brand-200 rounded-full flex items-center justify-center mx-auto mb-6">
               <svg className="w-10 h-10 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -108,17 +137,17 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
             <div className="flex justify-center">
               <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
                 <button onClick={() => setActiveTab('file')} className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'file' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-                  Ejercicios ({data.visibleAssignments.filter(a => a.type !== 'quiz').length})
+                  Ejercicios ({filteredAssignments.filter(a => a.type !== 'quiz').length})
                 </button>
                 <button onClick={() => setActiveTab('quiz')} className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'quiz' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-                  Cuestionarios ({data.visibleAssignments.filter(a => a.type === 'quiz').length})
+                  Cuestionarios ({filteredAssignments.filter(a => a.type === 'quiz').length})
                 </button>
               </div>
             </div>
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
               <div className="overflow-x-auto max-h-[700px] overflow-y-auto">
                 <AssignmentsTable
-                  assignments={data.visibleAssignments}
+                  assignments={filteredAssignments}
                   isAdmin={data.isAdmin}
                   isAcademy={data.isAcademy}
                   isTeacher={data.isTeacher}
