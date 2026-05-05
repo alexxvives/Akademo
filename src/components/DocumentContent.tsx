@@ -6,19 +6,6 @@ export function DocumentContent({ academyName }: DocumentContentProps) {
   return (
     <div className="p-8 text-sm text-gray-800 leading-relaxed space-y-4">
       <p>
-        Con la firma de este documento, el alumno se compromete al pago total de la asignatura
-        indicada en las líneas anteriores. Las faltas de asistencia no afectarán al coste del
-        curso en el que se matricule.
-      </p>
-      <p>
-        El alumno deberá comprometerse a asistir en directo en el horario en el que se impartan
-        las clases programadas de la asignatura. Dicha asistencia será responsabilidad del alumno.
-      </p>
-      <p>
-        <strong>{academyName}</strong>, por su parte, se compromete a impartir todas las clases
-        pactadas a la firma de este contrato.
-      </p>
-      <p>
         El alumno se compromete a mantener para uso exclusivamente personal la documentación
         impresa o digital que se pone a su disposición a través del portal de la asignatura o en
         el aula, propiedad intelectual de <strong>{academyName}</strong>.
@@ -52,16 +39,6 @@ export function DocumentContent({ academyName }: DocumentContentProps) {
         De la misma manera, el alumno se compromete a mantener para uso exclusivamente personal la
         documentación digital que se pone a su disposición a través del portal de la asignatura,
         propiedad intelectual de <strong>{academyName}</strong>.
-      </p>
-      <p>
-        Los cursos, tanto presenciales como online, están organizados para atenderlos en directo,
-        por lo que salvo causa excepcional y justificada que impidan realmente el no poder asistir
-        a las clases, no se facilitará acceso a las grabaciones de las clases perdidas.
-      </p>
-      <p>
-        En caso de realizar el curso online, es obligatorio disponer de una cámara web funcional,
-        y tenerla en todo momento activa enfocando a la cara completa y el entorno. Caso contrario,
-        el programa expulsará al alumno de la sesión.
       </p>
       <p>
         El pago de esta matrícula cubre la inscripción y atención a las clases de un solo alumno,
