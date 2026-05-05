@@ -7,7 +7,7 @@ type SettingField = keyof ProfileState['formData'];
 type SettingValue = string | number | boolean | string[];
 
 export function useProfileActions(s: ProfileState) {
-  const { academy, formData, setFormData, stripeStatus, expandedPaymentMethod, setExpandedPaymentMethod, setSaving, setEditing, setUploadingLogo, loadData, setPasswordData, setShowPasswordForm, setEmailChangeStep, setPendingEmailChange, emailChangeCode, setEmailChangeCode, refetchUser } = s;
+  const { academy, setAcademy, formData, setFormData, stripeStatus, expandedPaymentMethod, setExpandedPaymentMethod, setSaving, setEditing, setUploadingLogo, loadData, setPasswordData, setShowPasswordForm, setEmailChangeStep, setPendingEmailChange, emailChangeCode, setEmailChangeCode, refetchUser } = s;
 
   const handleSettingChange = async (field: SettingField, value: SettingValue) => {
     if (!academy) return;
@@ -89,6 +89,10 @@ export function useProfileActions(s: ProfileState) {
       });
       if (response.status === 401) return false;
       const result = await response.json();
+      if (result.success) {
+        // Sync academy state so the "no-change" guard in handleBlur works on subsequent blurs
+        setAcademy({ ...academy, name: formData.name, address: formData.address, phone: formData.phone });
+      }
       return result.success === true;
     } catch (error) {
       console.error('Error auto-saving profile:', error);

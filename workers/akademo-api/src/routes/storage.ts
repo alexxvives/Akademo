@@ -395,7 +395,7 @@ async function buildFileResponse(
     session: SessionUser | null;
     env: Bindings;
     /** Pre-resolved watermark data (used for signed-URL path where session may not exist). */
-    overrideWatermark?: { fullName: string; email: string; academyName?: string; logoBytes?: ArrayBuffer; logoMime?: string };
+    overrideWatermark?: { email: string; academyName?: string };
     /** R2 key — used to resolve the original filename for Content-Disposition and PDF title */
     fileKey?: string;
   },
@@ -424,37 +424,23 @@ async function buildFileResponse(
 
   if (shouldWatermark) {
     try {
-      let fullName: string;
       let email: string;
       let academyName: string | undefined;
-      let logoBytes: ArrayBuffer | undefined;
-      let logoMime: string | undefined;
 
       if (wmData) {
         // Pre-resolved identity (signed-URL path)
-        fullName = wmData.fullName;
         email = wmData.email;
         academyName = wmData.academyName;
-        logoBytes = wmData.logoBytes;
-        logoMime = wmData.logoMime;
       } else {
         // Session path — look up academy info from DB
         const academyInfo = await getAcademyInfoForSession(env.DB, session!);
-        fullName = `${session!.firstName} ${session!.lastName}`;
         email = session!.email;
         academyName = academyInfo?.name;
-        if (academyInfo?.logoUrl) {
-          const logoObj = await env.STORAGE.get(academyInfo.logoUrl);
-          if (logoObj) {
-            logoBytes = await logoObj.arrayBuffer();
-            logoMime = logoObj.httpMetadata?.contentType;
-          }
-        }
       }
 
       const pdfBytes = await object.arrayBuffer();
       try {
-        const watermarked = await addWatermarkToPdf(pdfBytes, { fullName, email, academyName, logoBytes, logoMime, fileName: displayFileName });
+        const watermarked = await addWatermarkToPdf(pdfBytes, { email, academyName, fileName: displayFileName });
         const wHeaders: Record<string, string> = {
           'Content-Type': 'application/pdf',
           'Content-Length': watermarked.byteLength.toString(),
@@ -584,31 +570,12 @@ storage.get('/serve/*', async (c) => {
         }
         // Apply watermark if user identity is available (new-format signed URLs)
         if (signedName && signedEmail) {
-          let logoBytes: ArrayBuffer | undefined;
-          let logoMime: string | undefined;
-          // Look up academy logo from DB by name
-          if (signedAcademyName) {
-            try {
-              const academyRow = await c.env.DB.prepare(
-                'SELECT logoUrl FROM Academy WHERE name = ? LIMIT 1',
-              ).bind(signedAcademyName).first<{ logoUrl: string | null }>();
-              if (academyRow?.logoUrl) {
-                const logoObj = await c.env.STORAGE.get(academyRow.logoUrl);
-                if (logoObj) {
-                  logoBytes = await logoObj.arrayBuffer();
-                  logoMime = logoObj.httpMetadata?.contentType;
-                }
-              }
-            } catch {
-              // Skip logo on error — text watermark still applies
-            }
-          }
           return buildFileResponse(object, {
             cacheControl: 'private, no-store',
             session: null,
             env: c.env,
             fileKey: key,
-            overrideWatermark: { fullName: signedName, email: signedEmail, academyName: signedAcademyName, logoBytes, logoMime },
+            overrideWatermark: { email: signedEmail, academyName: signedAcademyName },
           });
         }
         return new Response(object.body, {

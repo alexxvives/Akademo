@@ -12,6 +12,15 @@ export function AcademyInfoCard({ s, actions }: { s: ProfileState; actions: Prof
   if (!academy) return null;
 
   const handleBlur = async (field: string) => {
+    const origValue =
+      field === 'phone' ? (academy.phone || '') :
+      field === 'address' ? (academy.address || '') :
+      (academy.name || '');
+    const currValue =
+      field === 'phone' ? formData.phone :
+      field === 'address' ? formData.address :
+      formData.name;
+    if (currValue === origValue) return;
     const ok = await actions.handleBlurSave();
     setSaveStatus({ field, status: ok ? 'saved' : 'error' });
     setTimeout(() => setSaveStatus({ field: null, status: 'idle' }), 2000);

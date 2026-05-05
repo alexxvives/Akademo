@@ -17,7 +17,9 @@ media.get('/', async (c) => {
     const classId = c.req.query('classId');
     const search = c.req.query('search');
     const page = parseInt(c.req.query('page') || '1', 10);
-    const limit = Math.min(parseInt(c.req.query('limit') || '50', 10), 100);
+    // Allow higher limits for documents (no client-side pagination)
+    const maxLimit = (type === 'documents') ? 2000 : 100;
+    const limit = Math.min(parseInt(c.req.query('limit') || '50', 10), maxLimit);
     const offset = (page - 1) * limit;
 
     const db = c.env.DB;

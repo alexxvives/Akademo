@@ -121,7 +121,7 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
       const params = new URLSearchParams({
         type: tab,
         page: String(page),
-        limit: '50',
+        limit: tab === 'documents' ? '2000' : '50',
       });
       if (selectedClass !== 'all') params.set('classId', selectedClass);
       if (debouncedSearch) params.set('search', debouncedSearch);
@@ -162,7 +162,8 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
     loadArchived();
   }, [loadArchived]);
 
-  const totalPages = tab === 'archived' ? 0 : Math.ceil((tab === 'videos' ? totalVideos : totalDocuments) / 50);
+  // Pagination only applies to the videos tab; documents are loaded all at once
+  const totalPages = tab === 'videos' ? Math.ceil(totalVideos / 50) : 0;
 
   return (
     <div className="space-y-6">
