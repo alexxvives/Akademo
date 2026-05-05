@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { ShieldAnimationOverlay, DocumentSigningAnimationStyles } from './DocumentSigningStyles';
+import { DocumentContent } from './DocumentContent';
 
 interface DocumentSigningModalProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface DocumentSigningModalProps {
   onSign: () => Promise<void>;
   classId: string;
   className: string;
+  academyName?: string;
   readOnly?: boolean;
 }
 
@@ -19,14 +21,13 @@ export default function DocumentSigningModal({
   onSign,
   classId: _classId,
   className,
+  academyName = 'Academia',
   readOnly = false,
 }: DocumentSigningModalProps) {
   const [agreed, setAgreed] = useState(false);
   const [signing, setSigning] = useState(false);
-  const [pdfLoaded, setPdfLoaded] = useState(false);
   const [showShieldAnimation, setShowShieldAnimation] = useState(true);
   const [hasScrolledToEnd, setHasScrolledToEnd] = useState(false);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Lock body scroll when modal is open
@@ -42,7 +43,6 @@ export default function DocumentSigningModal({
     if (isOpen) {
       setAgreed(false);
       setSigning(false);
-      setPdfLoaded(false);
       setShowShieldAnimation(!readOnly);
       setHasScrolledToEnd(readOnly);
       // Hide shield animation after 1.5 seconds
@@ -53,9 +53,9 @@ export default function DocumentSigningModal({
     }
   }, [isOpen, readOnly]);
 
-  // Monitor scroll in the PDF container
+  // Monitor scroll in the document container
   useEffect(() => {
-    if (!isOpen || !pdfLoaded) return;
+    if (!isOpen) return;
 
     const container = containerRef.current;
     if (!container) return;
@@ -73,7 +73,7 @@ export default function DocumentSigningModal({
 
     container.addEventListener('scroll', handleScroll);
     return () => container.removeEventListener('scroll', handleScroll);
-  }, [isOpen, pdfLoaded]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -109,7 +109,7 @@ export default function DocumentSigningModal({
         <div className="px-8 py-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white rounded-t-3xl">
           <div className="flex items-center justify-center gap-4">
             <div className="flex-1 text-center">
-              <h2 className="text-xl font-bold text-gray-900">CONTRATO DE USO Y COMPROMISO DE CONFIDENCIALIDAD – AKADEMO</h2>
+              <h2 className="text-xl font-bold text-gray-900">CONTRATO DE USO Y COMPROMISO DE CONFIDENCIALIDAD</h2>
               <p className="text-gray-600 mt-1">
                 <span className="font-medium text-brand-600">{className}</span> — {readOnly ? 'Documento ya firmado' : 'Firma requerida para acceder'}
               </p>
@@ -125,29 +125,13 @@ export default function DocumentSigningModal({
           </div>
         </div>
 
-        {/* PDF Viewer - Scrollable */}
+        {/* Document content - Scrollable */}
         <div 
           ref={containerRef}
           className="flex-1 overflow-y-auto bg-gray-50 rounded-2xl border-2 border-gray-200 relative shadow-inner" 
           style={{ height: '500px' }}
         >
-          {!pdfLoaded && (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-10">
-              <div className="text-center">
-                <div className="w-12 h-12 border-4 border-gray-300 border-t-black rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-gray-600 font-medium">Cargando documento...</p>
-                <p className="text-sm text-gray-500 mt-1">Por favor espera</p>
-              </div>
-            </div>
-          )}
-          <iframe
-            ref={iframeRef}
-            src="/legal/consent.pdf"
-            className="w-full rounded-2xl"
-            style={{ height: '1200px', minHeight: '1200px' }}
-            onLoad={() => setPdfLoaded(true)}
-            title="Documento de Consentimiento"
-          />
+          <DocumentContent academyName={academyName} />
         </div>
 
         {/* Footer - Agreement and Sign Button */}

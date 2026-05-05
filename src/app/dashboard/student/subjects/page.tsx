@@ -109,6 +109,7 @@ export default function StudentClassesPage() {
         onSign={handleSign}
         classId={signingClass?.id || ''}
         className={signingClass?.name || ''}
+        academyName={signingClass?.academyName || ''}
       />
 
       <DocumentSigningModal
@@ -117,6 +118,7 @@ export default function StudentClassesPage() {
         onSign={async () => {}}
         classId={viewingDocClass?.id || ''}
         className={viewingDocClass?.name || ''}
+        academyName={viewingDocClass?.academyName || ''}
         readOnly
       />
     </div>

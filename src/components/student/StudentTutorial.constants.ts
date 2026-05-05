@@ -53,7 +53,7 @@ export function getTooltipStyle(
   viewportW: number,
   viewportH: number
 ): React.CSSProperties {
-  const TOOLTIP_W = 340;
+  const TOOLTIP_W = 400;
   const TOOLTIP_H = 270;
   const TOOLTIP_GAP = 20;
 
