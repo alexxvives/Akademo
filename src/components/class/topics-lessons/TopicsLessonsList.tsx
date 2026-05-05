@@ -180,6 +180,7 @@ export default function TopicsLessonsList({
                 viewMode={viewMode}
                 quizCount={topic.quizCount}
                 dashboardBase={dashboardBase}
+                classId={classId}
               />
               {h.draggedTopicId && h.draggedTopicId !== topic.id && h.topicInsertIndex === index + 1 && index === topics.length - 1 && (
                 <div className="absolute -bottom-2 left-0 right-0 h-0.5 bg-blue-400 rounded-full z-20 shadow-[0_0_6px_2px_rgba(96,165,250,0.6)]" />
@@ -217,6 +218,7 @@ export default function TopicsLessonsList({
                 viewMode={viewMode}
                 quizCount={topic.quizCount}
                 dashboardBase={dashboardBase}
+                classId={classId}
               />
               {h.draggedTopicId && h.draggedTopicId !== topic.id && h.topicInsertIndex === index + 1 && index === topics.length - 1 && (
                 <div className="absolute -bottom-2 left-0 right-0 h-0.5 bg-blue-400 rounded-full z-20 shadow-[0_0_6px_2px_rgba(96,165,250,0.6)]" />

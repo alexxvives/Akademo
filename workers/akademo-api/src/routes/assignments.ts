@@ -20,15 +20,17 @@ assignments.get('/all', async (c) => {
       // Teachers see all assignments for all their classes
       query = `
         SELECT 
-          a.id, a.classId, a.teacherId, a.title, a.description, a.type,
+          a.id, a.classId, a.teacherId, a.topicId, a.title, a.description, a.type,
           a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt, a.updatedAt,
           c.name as className,
+          t.name as topicName,
           GROUP_CONCAT(DISTINCT aa.uploadId) as attachmentIds,
           COUNT(DISTINCT aa.id) as attachmentCount,
           COUNT(DISTINCT s.id) as submissionCount,
           COUNT(DISTINCT CASE WHEN s.gradedAt IS NOT NULL THEN s.id END) as gradedCount
         FROM Assignment a
         JOIN Class c ON a.classId = c.id
+        LEFT JOIN Topic t ON a.topicId = t.id
         LEFT JOIN AssignmentAttachment aa ON a.id = aa.assignmentId
         LEFT JOIN AssignmentSubmission s ON a.id = s.assignmentId
         WHERE a.teacherId = ?
@@ -40,9 +42,10 @@ assignments.get('/all', async (c) => {
       // Academy owners see all assignments for all classes in their academy
       query = `
         SELECT 
-          a.id, a.classId, a.teacherId, a.title, a.description, a.type,
+          a.id, a.classId, a.teacherId, a.topicId, a.title, a.description, a.type,
           a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt, a.updatedAt,
           c.name as className,
+          t.name as topicName,
           GROUP_CONCAT(DISTINCT aa.uploadId) as attachmentIds,
           COUNT(DISTINCT aa.id) as attachmentCount,
           COUNT(DISTINCT s.id) as submissionCount,
@@ -50,6 +53,7 @@ assignments.get('/all', async (c) => {
         FROM Assignment a
         JOIN Class c ON a.classId = c.id
         JOIN Academy ac ON c.academyId = ac.id
+        LEFT JOIN Topic t ON a.topicId = t.id
         LEFT JOIN AssignmentAttachment aa ON a.id = aa.assignmentId
         LEFT JOIN AssignmentSubmission s ON a.id = s.assignmentId
         WHERE ac.ownerId = ?
@@ -61,10 +65,11 @@ assignments.get('/all', async (c) => {
       // Admin sees all assignments from all academies
       query = `
         SELECT 
-          a.id, a.classId, a.teacherId, a.title, a.description, a.type,
+          a.id, a.classId, a.teacherId, a.topicId, a.title, a.description, a.type,
           a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt, a.updatedAt,
           c.name as className,
           ac.name as academyName,
+          t.name as topicName,
           GROUP_CONCAT(DISTINCT aa.uploadId) as attachmentIds,
           COUNT(DISTINCT aa.id) as attachmentCount,
           COUNT(DISTINCT s.id) as submissionCount,
@@ -72,6 +77,7 @@ assignments.get('/all', async (c) => {
         FROM Assignment a
         JOIN Class c ON a.classId = c.id
         JOIN Academy ac ON c.academyId = ac.id
+        LEFT JOIN Topic t ON a.topicId = t.id
         LEFT JOIN AssignmentAttachment aa ON a.id = aa.assignmentId
         LEFT JOIN AssignmentSubmission s ON a.id = s.assignmentId
         GROUP BY a.id
@@ -166,12 +172,14 @@ assignments.get('/', async (c) => {
           a.id, a.classId, a.teacherId, a.lessonId, a.topicId, a.title, a.description, a.type,
           a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt, a.updatedAt,
           c.name as className,
+          t.name as topicName,
           GROUP_CONCAT(DISTINCT aa.uploadId) as attachmentIds,
           COUNT(DISTINCT aa.id) as attachmentCount,
           COUNT(DISTINCT s.id) as submissionCount,
           COUNT(DISTINCT CASE WHEN s.gradedAt IS NOT NULL THEN s.id END) as gradedCount
         FROM Assignment a
         JOIN Class c ON a.classId = c.id
+        LEFT JOIN Topic t ON a.topicId = t.id
         LEFT JOIN AssignmentAttachment aa ON a.id = aa.assignmentId
         LEFT JOIN AssignmentSubmission s ON a.id = s.assignmentId
         WHERE a.classId = ? AND a.teacherId = ? ${lessonWhere}
@@ -184,10 +192,11 @@ assignments.get('/', async (c) => {
       const ownerFilter = session.role === 'ADMIN' ? '' : 'AND ac.ownerId = ?';
       query = `
         SELECT 
-          a.id, a.classId, a.teacherId, a.lessonId, a.title, a.description, a.type,
+          a.id, a.classId, a.teacherId, a.lessonId, a.topicId, a.title, a.description, a.type,
           a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt, a.updatedAt,
           c.name as className,
           ac.name as academyName,
+          t.name as topicName,
           GROUP_CONCAT(DISTINCT aa.uploadId) as attachmentIds,
           COUNT(DISTINCT aa.id) as attachmentCount,
           COUNT(DISTINCT s.id) as submissionCount,
@@ -195,6 +204,7 @@ assignments.get('/', async (c) => {
         FROM Assignment a
         JOIN Class c ON a.classId = c.id
         JOIN Academy ac ON c.academyId = ac.id
+        LEFT JOIN Topic t ON a.topicId = t.id
         LEFT JOIN AssignmentAttachment aa ON a.id = aa.assignmentId
         LEFT JOIN AssignmentSubmission s ON a.id = s.assignmentId
         WHERE a.classId = ? ${ownerFilter} ${lessonWhere}

@@ -54,7 +54,7 @@ topics.get('/', async (c) => {
       SELECT 
         t.*,
         (SELECT COUNT(*) FROM Lesson l WHERE l.topicId = t.id) as lessonCount,
-        (SELECT COUNT(*) FROM Assignment a WHERE a.topicId = t.id AND a.type = 'quiz') as quizCount
+        (SELECT COUNT(*) FROM Assignment a WHERE a.topicId = t.id) as quizCount
       FROM Topic t
       WHERE t.classId = ?
       ORDER BY t.orderIndex ASC, t.createdAt ASC

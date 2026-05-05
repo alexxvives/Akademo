@@ -91,6 +91,7 @@ function FileAssignmentsTable({ assignments, isAdmin, isDemo, canManage, require
           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Título</th>
           {isAdmin && <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Academia</th>}
           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asignatura</th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tema</th>
           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ejercicios</th>
           {requireGrading && <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha límite</th>}
           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Entregas</th>
@@ -112,9 +113,8 @@ function FileAssignmentsTable({ assignments, isAdmin, isDemo, canManage, require
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assignment.academyName || 'N/A'}</td>
             )}
             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assignment.className || 'N/A'}</td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{assignment.topicName || '—'}</td>
             <td className="px-6 py-4 whitespace-nowrap">
-              {(() => {
-                const fileCount = getFileCount(assignment);
                 return fileCount > 0 ? (
                   <div className="flex items-center justify-center gap-2">
                     <button onClick={(e) => { e.stopPropagation(); onOpenFiles(assignment); }}
@@ -270,6 +270,7 @@ function QuizAssignmentsTable({ assignments, isAdmin, isDemo, canManage, require
           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Título</th>
           {isAdmin && <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Academia</th>}
           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asignatura</th>
+          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tema</th>
           {requireGrading && <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha límite</th>}
           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Realizados</th>
           {canManage && <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Preguntas</th>}
@@ -289,6 +290,7 @@ function QuizAssignmentsTable({ assignments, isAdmin, isDemo, canManage, require
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assignment.academyName || 'N/A'}</td>
             )}
             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assignment.className || 'N/A'}</td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{assignment.topicName || '—'}</td>
             {requireGrading && (
               <td className={`px-6 py-4 whitespace-nowrap text-sm ${getDueDateColor(assignment.dueDate)}`}>
                 {assignment.dueDate ? (

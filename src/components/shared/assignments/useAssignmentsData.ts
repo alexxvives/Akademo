@@ -22,7 +22,8 @@ export function useAssignmentsData(role: AssignmentsPageProps['role']) {
   const [deletingAssignmentId, setDeletingAssignmentId] = useState<string | null>(null);
   const [glowId, setGlowId] = useState<string | null>(null);
   const highlightRef = useRef<HTMLTableRowElement | null>(null);
-  const [selectedClassId, setSelectedClassId] = useState('');
+  const classIdFromUrl = searchParams.get('classId') || '';
+  const [selectedClassId, setSelectedClassId] = useState(classIdFromUrl);
   const [selectedClassForCreate, setSelectedClassForCreate] = useState('');
   const [selectedLessonForCreate, setSelectedLessonForCreate] = useState('');
   const [selectedTopicForCreate, setSelectedTopicForCreate] = useState('');
