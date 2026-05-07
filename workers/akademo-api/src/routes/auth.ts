@@ -606,11 +606,11 @@ auth.post('/send-verification', emailVerificationRateLimit, async (c) => {
             `,
     });
 
-    // Log code for development/testing
+    // Log code — visible in Cloudflare Workers dashboard (Real-time Logs)
+    console.log(`[VerificationCode][register] email=${email.toLowerCase()} code=${code}`);
 
     return c.json(successResponse({
       message: 'Verification code sent',
-      // Note: In production, remove this - code should only be sent via email
     }));
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
@@ -826,6 +826,9 @@ auth.post('/forgot-password', forgotPasswordRateLimit, validateBody(forgotPasswo
         .bind(email.toLowerCase(), code, expires)
         .run();
 
+      // Log code — visible in Cloudflare Workers dashboard (Real-time Logs)
+      console.log(`[VerificationCode][password-reset] email=${email.toLowerCase()} code=${code}`);
+
       await sendEmail(c.env, {
         from: 'AKADEMO <onboarding@akademo-edu.com>',
         to: email,
@@ -929,6 +932,9 @@ auth.post('/request-email-change', emailVerificationRateLimit, async (c) => {
       .prepare('INSERT OR REPLACE INTO VerificationCode (email, code, expiresAt) VALUES (?, ?, ?)')
       .bind(normalized, code, expiresAt)
       .run();
+
+    // Log code — visible in Cloudflare Workers dashboard (Real-time Logs)
+    console.log(`[VerificationCode][email-change] email=${normalized} code=${code}`);
 
     await sendEmail(c.env, {
       from: 'AKADEMO <onboarding@akademo-edu.com>',
