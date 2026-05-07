@@ -31,14 +31,16 @@ export default function PaymentModal(props: PaymentModalProps) {
   const isClassFull = maxStudents && currentStudentCount && currentStudentCount >= maxStudents;
 
   return createPortal(
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] backdrop-blur-sm">
-      <div className="bg-white rounded-2xl w-full max-w-5xl shadow-2xl max-h-[90vh] overflow-y-auto m-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] backdrop-blur-sm p-2 sm:p-4">
+      <div className="bg-white rounded-2xl w-full max-w-5xl shadow-2xl max-h-[94dvh] flex flex-col overflow-hidden">
         <PaymentHeader className={className} academyName={academyName} onClose={onClose} />
 
         {isClassFull ? (
-          <ClassFullMessage maxStudents={maxStudents} />
+          <div className="overflow-y-auto">
+            <ClassFullMessage maxStudents={maxStudents} />
+          </div>
         ) : (
-          <div className="p-8">
+          <div className="p-4 sm:p-8 overflow-y-auto">
             <FrequencySelector
               hasMonthly={modal.hasMonthly}
               hasOneTime={modal.hasOneTime}

@@ -24,8 +24,8 @@ export function FrequencySelector({
   firstPaymentAmount,
 }: FrequencySelectorProps) {
   return (
-    <div className="mb-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-3">Selecciona tu modalidad de pago</h3>
+    <div className="mb-4 sm:mb-6">
+      <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-3">Selecciona tu modalidad de pago</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {/* Monthly Card */}
         <button

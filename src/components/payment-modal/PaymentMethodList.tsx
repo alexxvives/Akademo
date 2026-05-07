@@ -35,7 +35,7 @@ export function PaymentMethodList({
 }: PaymentMethodListProps) {
   return (
     <div>
-      <h3 className="text-lg font-semibold text-gray-900 mb-3">
+      <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 sm:mb-3">
         {!paymentFrequency
           ? 'Selecciona una modalidad primero'
           : 'Selecciona tu método de pago'}

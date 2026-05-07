@@ -104,7 +104,7 @@ export default function DocumentSigningModal({
       {showShieldAnimation && <ShieldAnimationOverlay />}
 
       {/* Main Modal */}
-      <div className={`bg-white rounded-2xl sm:rounded-3xl w-full max-w-5xl max-h-[82vh] sm:max-h-[98vh] flex flex-col shadow-2xl transition-all duration-500 p-3 sm:p-6 ${showShieldAnimation ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
+      <div className={`bg-white rounded-2xl sm:rounded-3xl w-full max-w-5xl max-h-[94dvh] sm:max-h-[96dvh] flex flex-col shadow-2xl transition-all duration-500 p-3 sm:p-6 ${showShieldAnimation ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
         {/* Header */}
         <div className="px-3 sm:px-8 py-2 sm:py-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white rounded-t-2xl sm:rounded-t-3xl">
           <div className="flex items-center justify-between sm:justify-center gap-2 sm:gap-4">
