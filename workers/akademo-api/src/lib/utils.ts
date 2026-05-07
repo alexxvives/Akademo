@@ -37,10 +37,9 @@ export function escapeHtml(str: string): string {
  *   - `LiveStream.teacherId` stores `User.id` (same semantics).
  *   - `Assignment.teacherId` stores `User.id` (has FK to User).
  *
- * Access rules (any one is sufficient):
- *   1. The teacher is the assigned teacher of the class.
- *   2. The teacher belongs to the same Academy as the class (academy fallback —
- *      lets co-teachers in the same academy collaborate on each other's classes).
+ * Access rule: the teacher must be the explicitly assigned teacher of the class
+ * (`Class.teacherId === userId`). Belonging to the same academy is NOT sufficient —
+ * teachers can only see and edit their own classes.
  */
 export async function teacherCanAccessClass(
   db: D1Database,
@@ -48,16 +47,11 @@ export async function teacherCanAccessClass(
   classId: string,
 ): Promise<boolean> {
   const row = await db
-    .prepare(`SELECT teacherId, academyId FROM Class WHERE id = ? LIMIT 1`)
+    .prepare(`SELECT teacherId FROM Class WHERE id = ? LIMIT 1`)
     .bind(classId)
-    .first<{ teacherId: string | null; academyId: string }>();
+    .first<{ teacherId: string | null }>();
   if (!row) return false;
-  if (row.teacherId && row.teacherId === userId) return true;
-  const inAcademy = await db
-    .prepare('SELECT 1 FROM Teacher WHERE userId = ? AND academyId = ? LIMIT 1')
-    .bind(userId, row.academyId)
-    .first();
-  return !!inAcademy;
+  return row.teacherId === userId;
 }
 
 /**
@@ -79,7 +73,7 @@ export async function teacherCanAccessLesson(
 }
 
 /**
- * Check whether a TEACHER can access a LiveStream (assigned teacher OR same-academy teacher).
+ * Check whether a TEACHER can access a LiveStream (assigned teacher only).
  */
 export async function teacherCanAccessLiveStream(
   db: D1Database,
@@ -87,12 +81,11 @@ export async function teacherCanAccessLiveStream(
   liveStreamId: string,
 ): Promise<boolean> {
   const row = await db
-    .prepare('SELECT classId, teacherId FROM LiveStream WHERE id = ? LIMIT 1')
+    .prepare('SELECT teacherId FROM LiveStream WHERE id = ? LIMIT 1')
     .bind(liveStreamId)
-    .first<{ classId: string; teacherId: string | null }>();
+    .first<{ teacherId: string | null }>();
   if (!row) return false;
-  if (row.teacherId && row.teacherId === userId) return true;
-  return teacherCanAccessClass(db, userId, row.classId);
+  return row.teacherId === userId;
 }
 
 /**
