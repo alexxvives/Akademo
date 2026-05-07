@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function EmptyClassesView() {
   return (
     <div className="max-w-2xl mx-auto mt-8 sm:mt-20">
@@ -8,9 +10,18 @@ export default function EmptyClassesView() {
           </svg>
         </div>
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">Aún no tienes clases</h2>
-        <p className="text-gray-500 text-sm">
-          Pídele a tu academia o profesor el enlace de inscripción para unirte a una clase.
+        <p className="text-gray-500 text-sm mb-6">
+          Únete a las clases que ofrece tu academia.
         </p>
+        <Link
+          href="/dashboard/student/enrolled-academies/subjects"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1a1c29] text-[#b1e787] font-semibold rounded-xl hover:bg-[#2a2d3e] transition-colors text-sm"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          Unirse a una Clase
+        </Link>
       </div>
     </div>
   );
