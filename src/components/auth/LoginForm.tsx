@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { PasswordInput } from '@/components/ui';
 import { apiClient } from '@/lib/api-client';
 
@@ -12,6 +13,7 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ onSuccess, onSwitchToRegister, onForgotPassword, onClose }: LoginFormProps) {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,8 +23,8 @@ export function LoginForm({ onSuccess, onSwitchToRegister, onForgotPassword, onC
   const [pendingRedirect, setPendingRedirect] = useState<{ role: string } | null>(null);
 
   const doRedirect = (role: string) => {
-    window.location.href = `/dashboard/${role}`;
     onSuccess(role);
+    router.push(`/dashboard/${role}`);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
