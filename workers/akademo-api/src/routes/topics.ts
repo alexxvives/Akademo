@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { requireAuth } from '../lib/auth';
-import { successResponse, errorResponse } from '../lib/utils';
+import { successResponse, errorResponse, teacherCanAccessClass } from '../lib/utils';
 
 const topics = new Hono<{ Bindings: Bindings }>();
 
@@ -36,7 +36,7 @@ topics.get('/', async (c) => {
     } else if (session.role === 'ACADEMY') {
       hasAccess = classRecord.academyOwnerId === session.id;
     } else if (session.role === 'TEACHER') {
-      hasAccess = classRecord.teacherId === session.id;
+      hasAccess = await teacherCanAccessClass(c.env.DB, session.id, classRecord.id as string);
     } else if (session.role === 'STUDENT') {
       const enrollment = await c.env.DB.prepare(`
         SELECT id FROM ClassEnrollment 

@@ -3,7 +3,7 @@ import { setCookie, getCookie } from 'hono/cookie';
 import bcrypt from 'bcryptjs';
 import { Bindings } from '../types';
 import { getSession, createSignedSession, hashPassword, hashRefreshToken, generateRefreshToken, ACCESS_TOKEN_MAX_AGE, REFRESH_TOKEN_MAX_AGE } from '../lib/auth';
-import { successResponse, errorResponse } from '../lib/utils';
+import { successResponse, errorResponse, checkAcademyEmailDomain } from '../lib/utils';
 import { loginSchema, registerSchema, forgotPasswordSchema, validateBody } from '../lib/validation';
 import { loginRateLimit, registerRateLimit, checkEmailRateLimit, emailVerificationRateLimit, forgotPasswordRateLimit, resetPasswordRateLimit, joinRateLimit, academyRegisterRateLimit } from '../lib/rate-limit';
 import { sendEmail } from '../lib/sendEmail';
@@ -115,6 +115,15 @@ auth.post('/register', registerRateLimit, validateBody(registerSchema), async (c
 
     if (existing) {
       return c.json(errorResponse('Este email ya está registrado. Intenta con otro o inicia sesión.'), 400);
+    }
+
+    // Enforce per-academy email domain restriction (e.g. only @myuax for some academies)
+    if (role === 'STUDENT' && academyId) {
+      const domainCheck = await checkAcademyEmailDomain(c.env.DB, academyId, email);
+      if (!domainCheck.allowed) {
+        const list = domainCheck.allowedDomains?.map((d) => `@${d}`).join(', ') || '';
+        return c.json(errorResponse(`Esta academia solo acepta correos: ${list}`), 400);
+      }
     }
 
     // Hash password

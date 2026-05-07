@@ -22,9 +22,10 @@ lessons.get('/', async (c) => {
     const classRecord = await c.env.DB.prepare(`
       SELECT c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
              a.feedbackEnabled, c.whatsappGroupLink, c.monthlyPrice, c.oneTimePrice, c.zoomAccountId, 
-             a.ownerId as academyOwnerId
+             a.ownerId as academyOwnerId, t.userId as teacherUserId
       FROM Class c
       JOIN Academy a ON c.academyId = a.id
+      LEFT JOIN Teacher t ON c.teacherId = t.id
       WHERE c.id = ?
     `).bind(classId).first();
 
@@ -39,7 +40,14 @@ lessons.get('/', async (c) => {
     } else if (session.role === 'ACADEMY') {
       hasAccess = classRecord.academyOwnerId === session.id;
     } else if (session.role === 'TEACHER') {
-      hasAccess = classRecord.teacherId === session.id;
+      // Class.teacherId references Teacher.id; check Teacher.userId or fall back to membership in same academy
+      hasAccess = classRecord.teacherUserId === session.id;
+      if (!hasAccess) {
+        const teacherInAcademy = await c.env.DB.prepare(
+          'SELECT 1 FROM Teacher WHERE userId = ? AND academyId = ? LIMIT 1'
+        ).bind(session.id, classRecord.academyId).first();
+        hasAccess = !!teacherInAcademy;
+      }
     } else if (session.role === 'STUDENT') {
       const enrollment = await c.env.DB.prepare(`
         SELECT id FROM ClassEnrollment 
@@ -800,9 +808,10 @@ lessons.post('/create-with-uploaded', validateBody(createLessonSchema), async (c
     const classRecord = await c.env.DB.prepare(`
       SELECT c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
              a.feedbackEnabled, c.whatsappGroupLink, c.monthlyPrice, c.oneTimePrice, c.zoomAccountId, 
-             a.ownerId as academyOwnerId
+             a.ownerId as academyOwnerId, t.userId as teacherUserId
       FROM Class c
       JOIN Academy a ON c.academyId = a.id
+      LEFT JOIN Teacher t ON c.teacherId = t.id
       WHERE c.id = ?
     `).bind(classId).first();
 
@@ -817,7 +826,14 @@ lessons.post('/create-with-uploaded', validateBody(createLessonSchema), async (c
     } else if (session.role === 'ACADEMY') {
       hasAccess = classRecord.academyOwnerId === session.id;
     } else if (session.role === 'TEACHER') {
-      hasAccess = classRecord.teacherId === session.id;
+      // Class.teacherId references Teacher.id; resolve to Teacher.userId or allow same-academy teachers
+      hasAccess = classRecord.teacherUserId === session.id;
+      if (!hasAccess) {
+        const teacherInAcademy = await c.env.DB.prepare(
+          'SELECT 1 FROM Teacher WHERE userId = ? AND academyId = ? LIMIT 1'
+        ).bind(session.id, classRecord.academyId).first();
+        hasAccess = !!teacherInAcademy;
+      }
     }
 
     if (!hasAccess) {
@@ -1482,10 +1498,11 @@ lessons.post('/:id/add-stream', async (c) => {
     // Verify the lesson exists and user has access
     const lesson = await c.env.DB.prepare(`
       SELECT l.id, l.title, l.description, l.classId, l.maxWatchTimeMultiplier, l.watermarkIntervalMins, l.createdAt, l.releaseDate, l.topicId, 
-             c.teacherId, c.academyId, a.ownerId as academyOwnerId
+             c.teacherId, c.academyId, a.ownerId as academyOwnerId, t.userId as teacherUserId
       FROM Lesson l
       JOIN Class c ON l.classId = c.id
       JOIN Academy a ON c.academyId = a.id
+      LEFT JOIN Teacher t ON c.teacherId = t.id
       WHERE l.id = ?
     `).bind(lessonId).first() as any;
 
@@ -1493,9 +1510,19 @@ lessons.post('/:id/add-stream', async (c) => {
       return c.json(errorResponse('Lesson not found'), 404);
     }
 
-    // Check authorization
+    // Check authorization (Class.teacherId is Teacher.id; resolve to Teacher.userId)
+    let isTeacherOfClass = false;
+    if (session.role === 'TEACHER') {
+      isTeacherOfClass = lesson.teacherUserId === session.id;
+      if (!isTeacherOfClass) {
+        const teacherInAcademy = await c.env.DB.prepare(
+          'SELECT 1 FROM Teacher WHERE userId = ? AND academyId = ? LIMIT 1'
+        ).bind(session.id, lesson.academyId).first();
+        isTeacherOfClass = !!teacherInAcademy;
+      }
+    }
     const isOwner = session.role === 'ADMIN' ||
-      (session.role === 'TEACHER' && lesson.teacherId === session.id) ||
+      isTeacherOfClass ||
       (session.role === 'ACADEMY' && lesson.academyOwnerId === session.id);
 
     if (!isOwner) {

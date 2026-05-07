@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { requireAuth } from '../lib/auth';
-import { successResponse, errorResponse } from '../lib/utils';
+import { successResponse, errorResponse, checkAcademyEmailDomain } from '../lib/utils';
 
 const requests = new Hono<{ Bindings: Bindings }>();
 
@@ -33,6 +33,15 @@ requests.post('/student', async (c) => {
     if (!classRecord) {
       console.error('[Student Request] Class not found:', classId);
       return c.json(errorResponse('Class not found'), 404);
+    }
+
+    // Enforce per-academy email domain restriction
+    {
+      const domainCheck = await checkAcademyEmailDomain(c.env.DB, classRecord.academyId, session.email);
+      if (!domainCheck.allowed) {
+        const list = domainCheck.allowedDomains?.map((d) => `@${d}`).join(', ') || '';
+        return c.json(errorResponse(`Esta academia solo acepta correos: ${list}`), 403);
+      }
     }
 
     // Check if class has reached max students limit

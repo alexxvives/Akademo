@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { requireAuth } from '../lib/auth';
-import { successResponse, errorResponse } from '../lib/utils';
+import { successResponse, errorResponse, teacherCanAccessClass } from '../lib/utils';
 import { validateBody, createClassSchema, updateClassSchema } from '../lib/validation';
 import { autoCreatePendingPayments, parseDateString, isAccessBlocked } from '../lib/payment-utils';
 
@@ -355,8 +355,8 @@ classes.get('/:id', async (c) => {
       // Academy owner can access their own classes
       hasAccess = classRecord.academyOwnerId === session.id;
     } else if (session.role === 'TEACHER') {
-      // Teacher can access classes they teach
-      hasAccess = classRecord.teacherId === session.id;
+      // Teacher can access classes they teach (Class.teacherId is Teacher.id; resolve via helper)
+      hasAccess = await teacherCanAccessClass(c.env.DB, session.id, classRecord.id as string);
     } else if (session.role === 'STUDENT') {
       // Students can view basic class details (for enrollment/payment)
       // But check if they're enrolled to return enrollment-specific info

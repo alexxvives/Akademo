@@ -43,7 +43,7 @@ academies.get('/', async (c) => {
         GROUP BY a.id
         ORDER BY a.createdAt DESC
       `;
-    } else if (session && (session.role === 'ACADEMY' || session.role === 'TEACHER')) {
+    } else if (session && session.role === 'ACADEMY') {
       // Academy owners see their own
       query = `
         SELECT 
@@ -56,6 +56,23 @@ academies.get('/', async (c) => {
         LEFT JOIN Class c ON a.id = c.academyId
         LEFT JOIN Teacher t ON a.id = t.academyId
         WHERE a.ownerId = ?
+        GROUP BY a.id
+        ORDER BY a.createdAt DESC
+      `;
+      params = [session.id];
+    } else if (session && session.role === 'TEACHER') {
+      // Teachers see the academies they belong to
+      query = `
+        SELECT 
+          a.*,
+          u.email as email,
+          COUNT(DISTINCT c.id) as classCount,
+          COUNT(DISTINCT t.id) as teacherCount
+        FROM Academy a
+        JOIN User u ON a.ownerId = u.id
+        JOIN Teacher t2 ON t2.academyId = a.id AND t2.userId = ?
+        LEFT JOIN Class c ON a.id = c.academyId
+        LEFT JOIN Teacher t ON a.id = t.academyId
         GROUP BY a.id
         ORDER BY a.createdAt DESC
       `;
@@ -569,6 +586,15 @@ academies.get('/:id', async (c) => {
       safeAcademy.ownerId = academy.ownerId;
       safeAcademy.paymentStatus = academy.paymentStatus;
       safeAcademy.stripeAccountId = academy.stripeAccountId;
+    } else if (session.role === 'TEACHER') {
+      // Teachers belonging to this academy need paymentStatus to know if they can create lessons
+      const teacherRel = await c.env.DB
+        .prepare('SELECT 1 FROM Teacher WHERE userId = ? AND academyId = ? LIMIT 1')
+        .bind(session.id, academyId)
+        .first();
+      if (teacherRel) {
+        safeAcademy.paymentStatus = academy.paymentStatus;
+      }
     }
 
     return c.json(successResponse(safeAcademy));

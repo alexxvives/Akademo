@@ -612,8 +612,7 @@ enrollments.post('/leave', async (c) => {
         SET status = ?,
             documentSigned = 0,
             nextPaymentDue = NULL,
-            stripeSubscriptionId = NULL,
-            paymentMethod = NULL
+            stripeSubscriptionId = NULL
         WHERE userId = ? AND classId = ?
       `)
       .bind('WITHDRAWN', session.id, classId),
@@ -693,8 +692,7 @@ enrollments.delete('/:id', async (c) => {
         SET status = ?,
             documentSigned = 0,
             nextPaymentDue = NULL,
-            stripeSubscriptionId = NULL,
-            paymentMethod = NULL
+            stripeSubscriptionId = NULL
         WHERE id = ?
       `)
       .bind('BANNED', enrollmentId),
