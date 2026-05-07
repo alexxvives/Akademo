@@ -124,8 +124,8 @@ explore.get('/enrolled-academies/classes', async (c) => {
         LEFT JOIN User u ON c.teacherId = u.id
         LEFT JOIN ClassEnrollment ce2 ON c.id = ce2.classId AND ce2.userId = ?
         WHERE ce1.userId = ? 
-          AND ce1.status = 'APPROVED'
-          AND (ce2.id IS NULL OR ce2.status != 'APPROVED')
+          AND ce1.status IN ('APPROVED', 'WITHDRAWN')
+          AND (ce2.id IS NULL OR ce2.status NOT IN ('APPROVED', 'PENDING'))
         ORDER BY a.name, c.name
       `)
       .bind(session.id, session.id)
