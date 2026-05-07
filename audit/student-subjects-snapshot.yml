@@ -1,0 +1,211 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e13]:
+      - complementary [ref=e14]:
+        - generic [ref=e15]:
+          - link "Akademo AKADEMO" [ref=e16] [cursor=pointer]:
+            - /url: /dashboard/student
+            - img "Akademo" [ref=e17]
+            - generic [ref=e18]: AKADEMO
+          - button "Close menu" [ref=e19] [cursor=pointer]:
+            - img [ref=e20]
+        - navigation [ref=e22]:
+          - generic [ref=e24]:
+            - link "Mis Asignaturas" [ref=e25] [cursor=pointer]:
+              - /url: /dashboard/student/subjects
+              - img [ref=e28]
+              - generic [ref=e30]: Mis Asignaturas
+            - link "Ejercicios" [ref=e31] [cursor=pointer]:
+              - /url: /dashboard/student/assignments
+              - img [ref=e34]
+              - generic [ref=e37]: Ejercicios
+            - link "Mis Pagos 1" [ref=e38] [cursor=pointer]:
+              - /url: /dashboard/student/pagos
+              - img [ref=e41]
+              - generic [ref=e47]: Mis Pagos
+              - generic [ref=e48]: "1"
+            - link "Calendario" [ref=e49] [cursor=pointer]:
+              - /url: /dashboard/student/calendar
+              - img [ref=e52]
+              - generic [ref=e60]: Calendario
+        - generic [ref=e61]:
+          - link "S1 Student 1-1 student1_1@gmail.com" [ref=e63] [cursor=pointer]:
+            - /url: /dashboard/student/profile
+            - generic [ref=e64]: S1
+            - generic [ref=e65]:
+              - paragraph [ref=e66]: Student 1-1
+              - paragraph [ref=e67]: student1_1@gmail.com
+          - button "Cerrar Sesión" [ref=e68] [cursor=pointer]:
+            - img [ref=e70]
+            - text: Cerrar Sesión
+      - generic [ref=e73]:
+        - generic [ref=e74]:
+          - button "Open menu" [ref=e75] [cursor=pointer]:
+            - img [ref=e76]
+          - link "Akademo AKADEMO" [ref=e78] [cursor=pointer]:
+            - /url: /dashboard/student
+            - img "Akademo" [ref=e79]
+            - generic [ref=e80]: AKADEMO
+        - main [ref=e81]:
+          - generic [ref=e83]:
+            - generic [ref=e84]:
+              - generic [ref=e85]:
+                - generic [ref=e86]:
+                  - heading "Mis Asignaturas" [level=1] [ref=e87]
+                  - link "Unirse a Más Clases" [ref=e88] [cursor=pointer]:
+                    - /url: /dashboard/student/enrolled-academies/subjects
+                    - img [ref=e89]
+                    - text: Unirse a Más Clases
+                - paragraph [ref=e91]: Academy Oneh
+              - generic [ref=e93] [cursor=pointer]:
+                - generic [ref=e94]: Todas las asignaturas
+                - generic:
+                  - img
+            - generic [ref=e95]:
+              - generic [ref=e98] [cursor=pointer]:
+                - generic [ref=e99]:
+                  - generic [ref=e100]:
+                    - heading "Bio" [level=3] [ref=e101]
+                    - generic [ref=e102]:
+                      - generic [ref=e103]: Bocconi
+                      - generic [ref=e104]: ADE
+                    - generic [ref=e105]:
+                      - img "Documentos firmados" [ref=e106]
+                      - generic [ref=e107]: Ver documento firmado
+                  - button "Abandonar Clase" [ref=e108]:
+                    - img [ref=e109]
+                    - text: Abandonar Clase
+                - paragraph [ref=e111]: Hello
+                - generic [ref=e112]:
+                  - generic [ref=e113]: "Profesor:"
+                  - generic [ref=e114]: Academy One
+                - generic [ref=e116]:
+                  - img [ref=e117]
+                  - text: 11 de marzo de 2026
+              - generic [ref=e121] [cursor=pointer]:
+                - generic [ref=e122]:
+                  - generic [ref=e123]:
+                    - heading "Clase (pago mensual)" [level=3] [ref=e124]
+                    - generic [ref=e125]:
+                      - generic [ref=e126]: UB
+                      - generic [ref=e127]: Economia
+                    - generic:
+                      - img "Documentos firmados"
+                      - generic [ref=e128]: Ver documento firmado
+                    - generic [ref=e129]:
+                      - img [ref=e130]
+                      - generic [ref=e132]: Esperando aprobación de la academia (efectivo)
+                  - button "Abandonar Clase" [ref=e133]:
+                    - img [ref=e134]
+                    - text: Abandonar Clase
+                - paragraph [ref=e136]: Sin descripción
+                - generic [ref=e137]:
+                  - generic [ref=e138]: "Profesor:"
+                  - generic [ref=e139]: Carlos Jimenez
+                - generic [ref=e141]:
+                  - img [ref=e142]
+                  - text: 1 de enero de 2026
+              - generic [ref=e146] [cursor=pointer]:
+                - generic [ref=e147]:
+                  - generic [ref=e148]:
+                    - heading "Clase (pago unico)" [level=3] [ref=e149]
+                    - generic [ref=e150]:
+                      - generic [ref=e151]: UPC
+                      - generic [ref=e152]: Ingenieria Informatica
+                    - generic [ref=e153]:
+                      - img "Documentos firmados" [ref=e154]
+                      - generic [ref=e155]: Ver documento firmado
+                  - button "Abandonar Clase" [ref=e156]:
+                    - img [ref=e157]
+                    - text: Abandonar Clase
+                - paragraph [ref=e159]: Sin descripción
+                - generic [ref=e160]:
+                  - generic [ref=e161]: "Profesor:"
+                  - generic [ref=e162]: David Perez
+                - generic [ref=e164]:
+                  - img [ref=e165]
+                  - text: 1 de febrero de 2026
+              - generic [ref=e169] [cursor=pointer]:
+                - generic [ref=e170]:
+                  - generic [ref=e171]:
+                    - heading "Clase (dos pagos)" [level=3] [ref=e172]
+                    - generic [ref=e173]:
+                      - generic [ref=e174]: ESADE
+                      - generic [ref=e175]: Economia
+                    - generic [ref=e176]:
+                      - img "Documentos firmados" [ref=e177]
+                      - generic [ref=e178]: Ver documento firmado
+                  - button "Abandonar Clase" [ref=e179]:
+                    - img [ref=e180]
+                    - text: Abandonar Clase
+                - paragraph [ref=e182]: dd
+                - generic [ref=e183]:
+                  - generic [ref=e184]: "Profesor:"
+                  - generic [ref=e185]: Teacher One
+                - generic [ref=e187]:
+                  - img [ref=e188]
+                  - text: 1 de febrero de 2026
+              - generic [ref=e192] [cursor=pointer]:
+                - generic [ref=e193]:
+                  - generic [ref=e194]:
+                    - heading "Eng101" [level=3] [ref=e195]
+                    - generic [ref=e196]:
+                      - generic [ref=e197]: UPC
+                      - generic [ref=e198]: Ingenieiria Industrial
+                    - link "Grupo WhatsApp" [ref=e199]:
+                      - /url: https://chat.whatsapp.com/EVwr6bNsKng5Rk965ZuM4U
+                      - img [ref=e200]
+                    - generic:
+                      - img "Documentos firmados"
+                      - generic [ref=e202]: Ver documento firmado
+                  - button "Abandonar Clase" [ref=e203]:
+                    - img [ref=e204]
+                    - text: Abandonar Clase
+                - paragraph [ref=e206]: Sin descripción
+                - generic [ref=e207]:
+                  - generic [ref=e208]: "Profesor:"
+                  - generic [ref=e209]: Teacher One
+                - generic [ref=e211]:
+                  - img [ref=e212]
+                  - text: 1 de enero de 2026
+              - generic [ref=e216] [cursor=pointer]:
+                - generic [ref=e217]:
+                  - generic [ref=e218]:
+                    - heading "Chem101" [level=3] [ref=e219]
+                    - link "Grupo WhatsApp" [ref=e220]:
+                      - /url: https://chat.whatsapp.com/EVwr6bNsKng5Rk965ZuM4U
+                      - img [ref=e221]
+                    - generic [ref=e223]:
+                      - img "Documentos firmados" [ref=e224]
+                      - generic [ref=e225]: Ver documento firmado
+                  - button "Abandonar Clase" [ref=e226]:
+                    - img [ref=e227]
+                    - text: Abandonar Clase
+                - paragraph [ref=e229]: Sin descripción
+                - generic [ref=e230]:
+                  - generic [ref=e231]: "Profesor:"
+                  - generic [ref=e232]: Sin asignar
+                - generic [ref=e234]:
+                  - img [ref=e235]
+                  - text: 1 de febrero de 2026
+              - generic [ref=e239] [cursor=pointer]:
+                - generic [ref=e240]:
+                  - generic [ref=e241]:
+                    - heading "Math101" [level=3] [ref=e242]
+                    - link "Grupo WhatsApp" [ref=e243]:
+                      - /url: https://chat.whatsapp.com/EVwr6bNsKng5Rk965ZuM4U
+                      - img [ref=e244]
+                    - generic [ref=e246]:
+                      - img "Documentos firmados" [ref=e247]
+                      - generic [ref=e248]: Ver documento firmado
+                  - button "Abandonar Clase" [ref=e249]:
+                    - img [ref=e250]
+                    - text: Abandonar Clase
+                - paragraph [ref=e252]: This is the description of the class....
+                - generic [ref=e253]:
+                  - generic [ref=e254]: "Profesor:"
+                  - generic [ref=e255]: Teacher One
+                - generic [ref=e257]:
+                  - img [ref=e258]
+                  - text: 1 de febrero de 2026
+  - alert [ref=e11]

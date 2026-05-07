@@ -17,12 +17,12 @@ export function ClassCard({ cls, role, dashboardBase, dailycoEnabled = false, on
   return (
     <Link
       href={`${dashboardBase}/subject/${cls.slug || cls.id}`}
-      className="block bg-white rounded-xl border-2 border-gray-200 hover:border-brand-400 hover:shadow-xl transition-all p-6 group cursor-pointer"
+      className="block bg-white rounded-xl border-2 border-gray-200 hover:border-brand-400 hover:shadow-xl transition-all p-4 sm:p-6 group cursor-pointer"
     >
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-1">
-            <h3 className="text-xl font-bold text-gray-900">{cls.name}</h3>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-1">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 break-words">{cls.name}</h3>
             {(cls.activeStreamCount ?? 0) > 0 && (
               <span className="relative flex h-3 w-3" title="Stream en vivo activo">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -128,7 +128,7 @@ export function ClassCard({ cls, role, dashboardBase, dailycoEnabled = false, on
         </div>
 
         {(role === 'ACADEMY' || role === 'TEACHER' || role === 'ADMIN') && (
-          <div className="flex flex-col items-end gap-2 ml-4">
+          <div className="flex flex-row sm:flex-col items-center sm:items-end gap-2 sm:ml-4 shrink-0 flex-wrap">
             {(role === 'ACADEMY' || role === 'ADMIN') && (
               <div className="flex items-center gap-1">
                 <button

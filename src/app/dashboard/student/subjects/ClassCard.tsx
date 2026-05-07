@@ -22,10 +22,10 @@ export default function ClassCard({ classItem, activeStreams, onClassClick, onVi
         onClick={(e) => onClassClick(classItem, e)}
         className="flex flex-col sm:flex-row sm:items-start justify-between gap-2"
       >
-        <div className="flex-1">
-          <div className="flex items-center justify-between gap-2 mb-1">
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg sm:text-xl font-bold text-gray-900">{classItem.name}</h3>
+        <div className="flex-1 min-w-0 pr-10 sm:pr-0">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 break-words">{classItem.name}</h3>
               {(classItem.university || classItem.carrera) && (
                 <div className="flex flex-wrap items-center gap-1.5">
                   {classItem.university && (
@@ -57,7 +57,7 @@ export default function ClassCard({ classItem, activeStreams, onClassClick, onVi
               {needsSignature ? (
                 <div className="relative group/shield">
                   <Image src="/icons/shield-broken.svg" alt="Firma requerida" width={28} height={28} className="drop-shadow-sm" />
-                  <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover/shield:opacity-100 transition-opacity z-10">
+                  <div className="hidden sm:block absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover/shield:opacity-100 transition-opacity z-10">
                     Firma requerida
                   </div>
                 </div>
@@ -70,7 +70,7 @@ export default function ClassCard({ classItem, activeStreams, onClassClick, onVi
                   }}
                 >
                   <Image src="/icons/shield-verified.svg" alt="Documentos firmados" width={28} height={28} className="drop-shadow-sm hover:scale-110 transition-transform" />
-                  <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover/shield-signed:opacity-100 transition-opacity z-10">
+                  <div className="hidden sm:block absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover/shield-signed:opacity-100 transition-opacity z-10">
                     Ver documento firmado
                   </div>
                 </div>
@@ -83,7 +83,7 @@ export default function ClassCard({ classItem, activeStreams, onClassClick, onVi
                     <svg className="w-6 h-6 text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover/payment:opacity-100 transition-opacity z-10">
+                    <div className="hidden sm:block absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover/payment:opacity-100 transition-opacity z-10">
                       {classItem.paymentMethod === 'cash' ? 'Esperando aprobación de la academia (efectivo)' : 'Esperando aprobación de la academia (transferencia)'}
                     </div>
                   </div>
@@ -92,7 +92,7 @@ export default function ClassCard({ classItem, activeStreams, onClassClick, onVi
                     <svg className="w-6 h-6 text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
-                    <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover/payment:opacity-100 transition-opacity z-10">
+                    <div className="hidden sm:block absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover/payment:opacity-100 transition-opacity z-10">
                       Pago requerido
                     </div>
                   </div>
@@ -130,12 +130,14 @@ export default function ClassCard({ classItem, activeStreams, onClassClick, onVi
                   }
                 }
               }}
-              className="flex items-center gap-2 px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all font-medium text-sm border border-red-200"
+              aria-label="Abandonar Clase"
+              title="Abandonar Clase"
+              className="absolute top-3 right-3 sm:static flex items-center gap-2 p-2 sm:px-3 sm:py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all font-medium text-sm border border-red-200 shrink-0 z-10"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
-              Abandonar Clase
+              <span className="hidden sm:inline">Abandonar Clase</span>
             </button>
           </div>
           {classItem.description ? (

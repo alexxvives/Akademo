@@ -34,7 +34,7 @@ export function StudentsCard(props: StudentsCardProps) {
 function AcademyStudentsContent({ uniqueStudentCount, displayedPaymentStatus, filteredStudents, paymentStats }: StudentsCardProps) {
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         <div className="flex flex-col gap-3">
           {/* Estudiantes box */}
           <div className="flex-1 flex items-center p-3 bg-gray-50 rounded-lg gap-3">
