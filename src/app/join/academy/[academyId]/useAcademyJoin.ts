@@ -51,6 +51,7 @@ export function useAcademyJoin() {
   // Email verification (extracted hook)
   const verification = useEmailVerification({
     formData,
+    academyId,
     setAuthLoading,
     setAuthError,
     onRegistered: (data) => {

@@ -61,19 +61,76 @@ export function JoinAuthForm({
 
       <form onSubmit={handleAuth} className="space-y-4">
         {!showLogin && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre completo</label>
-            <input
-              type="text"
-              required={!showLogin}
-              value={formData.fullName}
-              onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-              autoComplete="name"
-              disabled={showVerification}
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-500"
-              placeholder="Juan García"
-            />
-          </div>
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre completo</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.fullName}
+                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                  autoComplete="name"
+                  disabled={showVerification}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-500"
+                  placeholder="Juan García"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">DNI / NIE</label>
+                <input
+                  type="text"
+                  value={formData.dni}
+                  onChange={(e) => setFormData({ ...formData, dni: e.target.value })}
+                  disabled={showVerification}
+                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-500"
+                  placeholder="12345678A"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => !showVerification && setFormData({ ...formData, isUnderage: !formData.isUnderage })}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${formData.isUnderage ? 'bg-gray-900' : 'bg-gray-200'}`}
+                role="switch"
+                aria-checked={formData.isUnderage}
+              >
+                <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow transition duration-200 ${formData.isUnderage ? 'translate-x-5' : 'translate-x-0'}`} />
+              </button>
+              <span className="text-sm font-medium text-gray-700">Soy menor de edad</span>
+            </div>
+
+            {formData.isUnderage && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del representante</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.guardianName}
+                    onChange={(e) => setFormData({ ...formData, guardianName: e.target.value })}
+                    disabled={showVerification}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-500"
+                    placeholder="María García López"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">DNI del representante</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.guardianDni}
+                    onChange={(e) => setFormData({ ...formData, guardianDni: e.target.value })}
+                    disabled={showVerification}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 disabled:bg-gray-50 disabled:text-gray-500"
+                    placeholder="87654321B"
+                  />
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         <div>

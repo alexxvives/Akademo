@@ -8,12 +8,13 @@ export function useJoinPage() {
   const router = useRouter();
   const teacherId = params?.teacherId as string;
   const [teacher, setTeacher] = useState<Teacher | null>(null);
+  const [academyId, setAcademyId] = useState<string | null>(null);
   const [classes, setClasses] = useState<JoinClass[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
-  const [formData, setFormData] = useState<JoinFormData>({ email: '', password: '', fullName: '' });
+  const [formData, setFormData] = useState<JoinFormData>({ email: '', password: '', fullName: '', dni: '', isUnderage: false, guardianName: '', guardianDni: '' });
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [showVerification, setShowVerification] = useState(false);
@@ -31,9 +32,6 @@ export function useJoinPage() {
     const sp = new URLSearchParams(window.location.search);
     if (sp.get('login') === 'true') setShowLogin(true);
   }, []);
-  useEffect(() => {
-    if (isLoggedIn) router.push('/dashboard/student');
-  }, [isLoggedIn, router]);
   useEffect(() => {
     if (teacherId) {
       loadTeacherData();
@@ -65,6 +63,7 @@ export function useJoinPage() {
       const result = await response.json();
       if (result.success) {
         setTeacher(result.data.teacher);
+        setAcademyId(result.data.teacher.academyId || null);
         setClasses(result.data.classes);
       } else {
         setError(result.error || 'No se encontró el profesor');
@@ -161,6 +160,11 @@ export function useJoinPage() {
           firstName: formData.fullName.split(' ')[0] || formData.fullName,
           lastName: formData.fullName.split(' ').slice(1).join(' ') || undefined,
           role: 'STUDENT',
+          ...(academyId ? { academyId } : {}),
+          dni: formData.dni || undefined,
+          isUnderage: formData.isUnderage,
+          guardianName: formData.isUnderage ? (formData.guardianName || undefined) : undefined,
+          guardianDni: formData.isUnderage ? (formData.guardianDni || undefined) : undefined,
         }),
       });
       const regResult = await regResponse.json();

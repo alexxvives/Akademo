@@ -16,8 +16,8 @@ export function ClassSelection({
   authLoading, authError, handleRequestAccess,
 }: ClassSelectionProps) {
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-8">
-      <h2 className="text-xl font-bold text-gray-900 mb-6">Selecciona tus clases</h2>
+    <div className="bg-white rounded-2xl shadow-lg p-5 sm:p-8">
+      <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-5">Selecciona tus clases</h2>
 
       {authError && (
         <div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-600 text-sm rounded-lg">
@@ -30,7 +30,7 @@ export function ClassSelection({
           No hay clases disponibles en esta academia en este momento.
         </p>
       ) : (
-        <div className="space-y-3 mb-6">
+        <div className="space-y-3 mb-5 max-h-[50vh] overflow-y-auto pr-1">
           {classes.map(classItem => (
             <div
               key={classItem.id}

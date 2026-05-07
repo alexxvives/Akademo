@@ -5,6 +5,7 @@ export interface Teacher {
   email: string;
   academyLogoUrl?: string | null;
   academyName?: string | null;
+  academyId?: string | null;
 }
 
 export interface JoinClass {
@@ -20,4 +21,8 @@ export interface JoinFormData {
   email: string;
   password: string;
   fullName: string;
+  dni: string;
+  isUnderage: boolean;
+  guardianName: string;
+  guardianDni: string;
 }

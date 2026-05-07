@@ -3,13 +3,14 @@ import { apiClient } from '@/lib/api-client';
 
 interface VerificationParams {
   formData: { email: string; password: string; fullName: string; dni: string; isUnderage: boolean; guardianName: string; guardianDni: string };
+  academyId: string;
   setAuthLoading: (v: boolean) => void;
   setAuthError: (v: string | null) => void;
   onRegistered: (data: Record<string, unknown> & { token?: string }) => void;
 }
 
 export function useEmailVerification({
-  formData, setAuthLoading, setAuthError, onRegistered,
+  formData, academyId, setAuthLoading, setAuthError, onRegistered,
 }: VerificationParams) {
   const [showVerification, setShowVerification] = useState(false);
   const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '']);
@@ -75,6 +76,7 @@ export function useEmailVerification({
           firstName: formData.fullName.split(' ')[0] || formData.fullName,
           lastName: formData.fullName.split(' ').slice(1).join(' ') || undefined,
           role: 'STUDENT',
+          academyId,
           dni: formData.dni || undefined,
           isUnderage: formData.isUnderage,
           guardianName: formData.isUnderage ? (formData.guardianName || undefined) : undefined,

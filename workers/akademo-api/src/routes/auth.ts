@@ -729,12 +729,12 @@ auth.get('/join/:teacherId', joinRateLimit, async (c) => {
 
     // Get teacher's academy logo
     const academyRecord = await c.env.DB.prepare(`
-      SELECT a.logoUrl, a.name as academyName
+      SELECT a.id as academyId, a.logoUrl, a.name as academyName
       FROM Teacher t
       JOIN Academy a ON t.academyId = a.id
       WHERE t.userId = ?
       LIMIT 1
-    `).bind(teacherUser.id).first() as { logoUrl: string | null; academyName: string } | null;
+    `).bind(teacherUser.id).first() as { academyId: string; logoUrl: string | null; academyName: string } | null;
 
     return c.json(successResponse({
       teacher: {
@@ -743,6 +743,7 @@ auth.get('/join/:teacherId', joinRateLimit, async (c) => {
         lastName: teacherUser.lastName,
         academyLogoUrl: academyRecord?.logoUrl || null,
         academyName: academyRecord?.academyName || null,
+        academyId: academyRecord?.academyId || null,
       },
       classes: classesResult.results || []
     }));
