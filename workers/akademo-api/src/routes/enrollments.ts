@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { requireAuth, requireRole } from '../lib/auth';
-import { successResponse, errorResponse } from '../lib/utils';
+import { successResponse, errorResponse, teacherCanAccessClass } from '../lib/utils';
 import { validateBody, approveEnrollmentSchema, signDocumentSchema } from '../lib/validation';
 
 const enrollments = new Hono<{ Bindings: Bindings }>();
@@ -368,7 +368,7 @@ enrollments.put('/pending', validateBody(approveEnrollmentSchema), async (c) => 
          return c.json(errorResponse('Not authorized'), 403);
       }
     } else if (session.role === 'TEACHER') {
-      if (enrollment.teacherId !== session.id) {
+      if (!(await teacherCanAccessClass(c.env.DB, session.id, enrollment.classId as string))) {
          return c.json(errorResponse('Not authorized'), 403);
       }
     } else {
@@ -526,7 +526,7 @@ enrollments.put('/history/:id/reverse', async (c) => {
          return c.json(errorResponse('Not authorized'), 403);
       }
     } else if (session.role === 'TEACHER') {
-      if (enrollment.teacherId !== session.id) {
+      if (!(await teacherCanAccessClass(c.env.DB, session.id, enrollment.classId as string))) {
          return c.json(errorResponse('Not authorized'), 403);
       }
     } else {

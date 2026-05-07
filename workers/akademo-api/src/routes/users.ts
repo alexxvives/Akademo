@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { requireAuth, hashPassword } from '../lib/auth';
-import { successResponse, errorResponse } from '../lib/utils';
+import { successResponse, errorResponse, teacherCanAccessClass } from '../lib/utils';
 import { validateBody, createStudentSchema, createTeacherSchema } from '../lib/validation';
 import { createUserRateLimit } from '../lib/rate-limit';
 
@@ -47,7 +47,7 @@ users.post('/create-student', createUserRateLimit, validateBody(createStudentSch
           .bind(classId)
           .first();
 
-        if (!classRecord || classRecord.teacherId !== session.id) {
+        if (!classRecord || !(await teacherCanAccessClass(c.env.DB, session.id, classId))) {
           return c.json(errorResponse('Not authorized for this class'), 403);
         }
       } else if (session.role === 'ACADEMY') {

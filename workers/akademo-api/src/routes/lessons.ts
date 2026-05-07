@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { requireAuth } from '../lib/auth';
-import { successResponse, errorResponse } from '../lib/utils';
+import { successResponse, errorResponse, teacherCanAccessClass } from '../lib/utils';
 import { validateBody, createLessonSchema, updateLessonSchema, createRatingSchema } from '../lib/validation';
 import { isAccessBlocked } from '../lib/payment-utils';
 
@@ -25,7 +25,7 @@ lessons.get('/', async (c) => {
              a.ownerId as academyOwnerId, t.userId as teacherUserId
       FROM Class c
       JOIN Academy a ON c.academyId = a.id
-      LEFT JOIN Teacher t ON c.teacherId = t.id
+      LEFT JOIN Teacher t ON c.teacherId = t.userId
       WHERE c.id = ?
     `).bind(classId).first();
 
@@ -283,7 +283,7 @@ lessons.get('/:id', async (c) => {
         return c.json(errorResponse('Lesson not yet available'), 403);
       }
     } else if (session.role === 'TEACHER') {
-      if (lesson.teacherId !== session.id) {
+      if (!(await teacherCanAccessClass(c.env.DB, session.id, lesson.classId as string))) {
         return c.json(errorResponse('Not authorized'), 403);
       }
     } else if (session.role === 'ACADEMY') {
@@ -435,7 +435,7 @@ lessons.patch('/:id', validateBody(updateLessonSchema), async (c) => {
       return c.json(errorResponse('Lesson not found'), 404);
     }
 
-    if (session.role === 'TEACHER' && lesson.teacherId !== session.id) {
+    if (session.role === 'TEACHER' && !(await teacherCanAccessClass(c.env.DB, session.id, lesson.classId as string))) {
       return c.json(errorResponse('Not authorized'), 403);
     }
 
@@ -578,7 +578,7 @@ lessons.put('/:id/move', async (c) => {
       return c.json(errorResponse('Lesson not found'), 404);
     }
 
-    if (session.role === 'TEACHER' && lesson.teacherId !== session.id) {
+    if (session.role === 'TEACHER' && !(await teacherCanAccessClass(c.env.DB, session.id, lesson.classId as string))) {
       return c.json(errorResponse('Not authorized'), 403);
     }
 
@@ -637,7 +637,7 @@ lessons.delete('/:id', async (c) => {
       return c.json(errorResponse('Lesson not found'), 404);
     }
 
-    if (session.role === 'TEACHER' && lesson.teacherId !== session.id) {
+    if (session.role === 'TEACHER' && !(await teacherCanAccessClass(c.env.DB, session.id, lesson.classId as string))) {
       return c.json(errorResponse('Not authorized'), 403);
     }
 
@@ -726,7 +726,7 @@ lessons.delete('/document/:id', async (c) => {
     }
 
     // Check permissions
-    if (session.role === 'TEACHER' && document.teacherId !== session.id) {
+    if (session.role === 'TEACHER' && !(await teacherCanAccessClass(c.env.DB, session.id, document.classId as string))) {
       return c.json(errorResponse('Not authorized'), 403);
     }
     if (session.role === 'ACADEMY' && document.ownerId !== session.id) {
@@ -770,7 +770,7 @@ lessons.delete('/video/:id', async (c) => {
     }
 
     // Check permissions
-    if (session.role === 'TEACHER' && video.teacherId !== session.id) {
+    if (session.role === 'TEACHER' && !(await teacherCanAccessClass(c.env.DB, session.id, video.classId as string))) {
       return c.json(errorResponse('Not authorized'), 403);
     }
     if (session.role === 'ACADEMY' && video.ownerId !== session.id) {
@@ -811,7 +811,7 @@ lessons.post('/create-with-uploaded', validateBody(createLessonSchema), async (c
              a.ownerId as academyOwnerId, t.userId as teacherUserId
       FROM Class c
       JOIN Academy a ON c.academyId = a.id
-      LEFT JOIN Teacher t ON c.teacherId = t.id
+      LEFT JOIN Teacher t ON c.teacherId = t.userId
       WHERE c.id = ?
     `).bind(classId).first();
 
@@ -1218,7 +1218,7 @@ lessons.post('/:id/add-files', async (c) => {
     }
 
     // Check permissions
-    if (session.role === 'TEACHER' && lesson.teacherId !== session.id) {
+    if (session.role === 'TEACHER' && !(await teacherCanAccessClass(c.env.DB, session.id, lesson.classId as string))) {
       return c.json(errorResponse('Not authorized'), 403);
     }
     if (session.role === 'ACADEMY' && lesson.academyOwnerId !== session.id) {
@@ -1335,7 +1335,7 @@ lessons.get('/:id/ratings', async (c) => {
     }
 
     // Check authorization (skip for ADMIN)
-    if (session.role === 'TEACHER' && lesson.teacherId !== session.id) {
+    if (session.role === 'TEACHER' && !(await teacherCanAccessClass(c.env.DB, session.id, lesson.classId as string))) {
       return c.json(errorResponse('Not authorized'), 403);
     }
 
@@ -1393,7 +1393,7 @@ lessons.get('/:id/student-times', async (c) => {
       return c.json(errorResponse('Lesson not found'), 404);
     }
 
-    if (session.role === 'TEACHER' && lesson.teacherId !== session.id) {
+    if (session.role === 'TEACHER' && !(await teacherCanAccessClass(c.env.DB, session.id, lesson.classId as string))) {
       return c.json(errorResponse('Not authorized'), 403);
     }
 
@@ -1502,7 +1502,7 @@ lessons.post('/:id/add-stream', async (c) => {
       FROM Lesson l
       JOIN Class c ON l.classId = c.id
       JOIN Academy a ON c.academyId = a.id
-      LEFT JOIN Teacher t ON c.teacherId = t.id
+      LEFT JOIN Teacher t ON c.teacherId = t.userId
       WHERE l.id = ?
     `).bind(lessonId).first() as any;
 
@@ -1637,10 +1637,10 @@ lessons.post('/:id/links', async (c) => {
 
     // Verify lesson access
     const lesson = await c.env.DB
-      .prepare('SELECT l.id, c.teacherId, a.ownerId FROM Lesson l JOIN Class c ON l.classId = c.id JOIN Academy a ON c.academyId = a.id WHERE l.id = ?')
+      .prepare('SELECT l.id, l.classId, c.teacherId, a.ownerId FROM Lesson l JOIN Class c ON l.classId = c.id JOIN Academy a ON c.academyId = a.id WHERE l.id = ?')
       .bind(lessonId).first() as any;
     if (!lesson) return c.json(errorResponse('Lesson not found'), 404);
-    if (session.role === 'TEACHER' && lesson.teacherId !== session.id) return c.json(errorResponse('Not authorized'), 403);
+    if (session.role === 'TEACHER' && !(await teacherCanAccessClass(c.env.DB, session.id, lesson.classId as string))) return c.json(errorResponse('Not authorized'), 403);
     if (session.role === 'ACADEMY' && lesson.ownerId !== session.id) return c.json(errorResponse('Not authorized'), 403);
 
     const result = await c.env.DB
@@ -1668,10 +1668,10 @@ lessons.delete('/:lessonId/links/:linkId', async (c) => {
 
     // Verify lesson access
     const lesson = await c.env.DB
-      .prepare('SELECT l.id, c.teacherId, a.ownerId FROM Lesson l JOIN Class c ON l.classId = c.id JOIN Academy a ON c.academyId = a.id WHERE l.id = ?')
+      .prepare('SELECT l.id, l.classId, c.teacherId, a.ownerId FROM Lesson l JOIN Class c ON l.classId = c.id JOIN Academy a ON c.academyId = a.id WHERE l.id = ?')
       .bind(lessonId).first() as any;
     if (!lesson) return c.json(errorResponse('Lesson not found'), 404);
-    if (session.role === 'TEACHER' && lesson.teacherId !== session.id) return c.json(errorResponse('Not authorized'), 403);
+    if (session.role === 'TEACHER' && !(await teacherCanAccessClass(c.env.DB, session.id, lesson.classId as string))) return c.json(errorResponse('Not authorized'), 403);
     if (session.role === 'ACADEMY' && lesson.ownerId !== session.id) return c.json(errorResponse('Not authorized'), 403);
 
     await c.env.DB.prepare('DELETE FROM LessonLink WHERE id = ? AND lessonId = ?').bind(linkId, lessonId).run();

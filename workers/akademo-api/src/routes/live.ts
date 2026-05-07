@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { requireAuth } from '../lib/auth';
-import { successResponse, errorResponse } from '../lib/utils';
+import { successResponse, errorResponse, teacherCanAccessClass } from '../lib/utils';
 import { createZoomMeeting, getZoomRecording, getZoomRecordingDownloadUrl } from '../lib/zoom';
 import { isAccessBlocked } from '../lib/payment-utils';
 
@@ -116,7 +116,7 @@ live.post('/', async (c) => {
 
     // Verify permissions
     if (session.role === 'TEACHER') {
-      if (!classInfo.teacherId || classInfo.teacherId !== session.id) {
+      if (!(await teacherCanAccessClass(c.env.DB, session.id, classId))) {
         return c.json(errorResponse('Not authorized to create stream for this class'), 403);
       }
     } else if (session.role === 'ACADEMY') {
@@ -554,7 +554,7 @@ live.get('/:id', async (c) => {
         .first();
       if (!enrolled) return c.json(errorResponse('Not authorized'), 403);
     } else if (session.role === 'TEACHER') {
-      if (stream.teacherId !== session.id) return c.json(errorResponse('Not authorized'), 403);
+      if (!(await teacherCanAccessClass(c.env.DB, session.id, stream.classId as string))) return c.json(errorResponse('Not authorized'), 403);
     } else if (session.role === 'ACADEMY') {
       const owns: any = await c.env.DB
         .prepare('SELECT id FROM Academy WHERE id = ? AND ownerId = ?')
@@ -597,7 +597,7 @@ live.post('/:id/start-recording', async (c) => {
     if (!stream) return c.json(errorResponse('Stream not found'), 404);
     if (!stream.dailyRoomName) return c.json(successResponse({ started: false, reason: 'Not a Daily.co stream' }));
 
-    if (session.role === 'TEACHER' && stream.teacherId !== session.id) return c.json(errorResponse('Not authorized'), 403);
+    if (session.role === 'TEACHER' && !(await teacherCanAccessClass(c.env.DB, session.id, stream.classId as string))) return c.json(errorResponse('Not authorized'), 403);
     if (session.role === 'ACADEMY' && stream.academyOwnerId !== session.id) return c.json(errorResponse('Not authorized'), 403);
 
     const apiKey = c.env.DAILY_API_KEY;
@@ -645,7 +645,7 @@ live.get('/:id/join-token', async (c) => {
         .first();
       if (!enrolled) return c.json(errorResponse('No estás matriculado en esta asignatura'), 403);
     } else if (session.role === 'TEACHER') {
-      if (stream.teacherId !== session.id) return c.json(errorResponse('Not authorized'), 403);
+      if (!(await teacherCanAccessClass(c.env.DB, session.id, stream.classId as string))) return c.json(errorResponse('Not authorized'), 403);
     } else if (session.role === 'ACADEMY') {
       if (stream.academyOwnerId !== session.id) return c.json(errorResponse('Not authorized'), 403);
     }
@@ -873,7 +873,7 @@ live.patch('/:id', async (c) => {
       return c.json(errorResponse('Stream not found'), 404);
     }
 
-    if (session.role === 'TEACHER' && stream.teacherId !== session.id) {
+    if (session.role === 'TEACHER' && !(await teacherCanAccessClass(c.env.DB, session.id, stream.classId as string))) {
       return c.json(errorResponse('Not authorized'), 403);
     }
 
@@ -1308,7 +1308,7 @@ live.delete('/:id', async (c) => {
       return c.json(errorResponse('Stream not found'), 404);
     }
 
-    if (session.role === 'TEACHER' && stream.teacherId !== session.id) {
+    if (session.role === 'TEACHER' && !(await teacherCanAccessClass(c.env.DB, session.id, stream.classId as string))) {
       return c.json(errorResponse('Not authorized'), 403);
     }
 
@@ -1671,8 +1671,11 @@ live.post('/:id/notify', async (c) => {
       return c.json(errorResponse('Stream not found'), 404);
     }
 
-    // Verify teacher owns this stream
-    if (session.role !== 'ADMIN' && stream.teacherId !== session.id) {
+    // Verify teacher owns this stream (or is a co-teacher in the same academy / ACADEMY owner)
+    if (
+      session.role !== 'ADMIN' &&
+      !(await teacherCanAccessClass(c.env.DB, session.id, stream.classId as string))
+    ) {
       return c.json(errorResponse('Not authorized'), 403);
     }
 
@@ -1912,7 +1915,7 @@ live.get('/:id/participants', async (c) => {
     }
 
     // Verify permissions
-    if (session.role === 'TEACHER' && stream.teacherId !== session.id) {
+    if (session.role === 'TEACHER' && !(await teacherCanAccessClass(c.env.DB, session.id, stream.classId as string))) {
       return c.json(errorResponse('Not authorized to view participants'), 403);
     } else if (session.role === 'ACADEMY') {
       // Verify academy ownership
@@ -1960,7 +1963,7 @@ live.post('/:id/check-recording-gtm', async (c) => {
       .first() as any;
 
     if (!classInfo) return c.json(errorResponse('Class not found'), 404);
-    if (session.role === 'TEACHER' && classInfo.teacherId !== session.id) {
+    if (session.role === 'TEACHER' && !(await teacherCanAccessClass(c.env.DB, session.id, stream.classId as string))) {
       return c.json(errorResponse('Not authorized'), 403);
     }
     if (session.role === 'ACADEMY' && classInfo.ownerId !== session.id) {

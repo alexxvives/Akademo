@@ -19,7 +19,8 @@
     "deploy:all": "npm run deploy && npm run deploy:api",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv",
     "knip": "knip",
-    "check:filesize": "node scripts/check-filesize.js"
+    "check:filesize": "node scripts/check-filesize.js",
+    "audit:teacher-access": "node scripts/audit-teacher-access-checks.mjs"
   },
   "dependencies": {
     "@akademo/types": "^1.0.0",

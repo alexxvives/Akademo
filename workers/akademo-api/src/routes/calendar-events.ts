@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { requireAuth } from '../lib/auth';
-import { successResponse, errorResponse } from '../lib/utils';
+import { successResponse, errorResponse, teacherCanAccessClass } from '../lib/utils';
 import { nanoid } from 'nanoid';
 import { createZoomMeeting } from '../lib/zoom';
 
@@ -52,7 +52,7 @@ calendarEvents.post('/create-zoom', async (c) => {
        WHERE c.id = ?`
     ).bind(body.classId).first<{ zoomAccountId: string | null; name: string; academyId: string; teacherId: string | null }>();
 
-    if (classInfo && session.role === 'TEACHER' && classInfo.teacherId !== session.id) {
+    if (classInfo && session.role === 'TEACHER' && !(await teacherCanAccessClass(c.env.DB, session.id, body.classId))) {
       return c.json(errorResponse('Forbidden'), 403);
     }
     if (classInfo && session.role === 'ACADEMY') {

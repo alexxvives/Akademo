@@ -40,7 +40,28 @@ const app = new Hono<{ Bindings: Bindings }>();
 
 // Global error handler - map auth errors to proper status codes
 app.onError((err, c) => {
-  console.error('[API Error]', err);
+  // Enriched error log: includes route, method, request id, and user context
+  // (when available) so we can correlate 5xx errors with the user that hit them
+  // without having to reproduce the issue.
+  const reqId =
+    c.req.header('cf-ray') || c.req.header('x-request-id') || crypto.randomUUID();
+  const userCtx = (() => {
+    try {
+      const u = (c.get as any)?.('user');
+      if (u && typeof u === 'object') {
+        return { userId: u.id, role: u.role, email: u.email };
+      }
+    } catch { /* no auth context */ }
+    return null;
+  })();
+  console.error('[API Error]', {
+    reqId,
+    method: c.req.method,
+    path: new URL(c.req.url).pathname,
+    err: err.message,
+    stack: err.stack,
+    user: userCtx,
+  });
   const origin = c.req.header('Origin') || '';
   const allowedOrigins = ['https://akademo-edu.com', 'https://www.akademo-edu.com', 'https://akademo.alexxvives.workers.dev', 'http://localhost:3000'];
   const corsOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
@@ -52,11 +73,36 @@ app.onError((err, c) => {
   if (err.message === 'Forbidden') {
     return c.json({ success: false, error: 'Forbidden' }, 403);
   }
-  return c.json({ success: false, error: 'Internal server error' }, 500);
+  return c.json({ success: false, error: 'Internal server error', reqId }, 500);
 });
 
 // Middleware
 app.use('*', logger());
+
+// Response-status auditor: logs ANY 4xx/5xx response (including those returned
+// via `c.json(errorResponse(...), 500)` that never reach app.onError). This is
+// what catches silent 500s before users complain.
+app.use('*', async (c, next) => {
+  await next();
+  const status = c.res.status;
+  if (status >= 400) {
+    const reqId =
+      c.req.header('cf-ray') || c.req.header('x-request-id') || 'no-req-id';
+    let userCtx: { userId?: string; role?: string } | null = null;
+    try {
+      const u = (c.get as any)?.('user');
+      if (u && typeof u === 'object') userCtx = { userId: u.id, role: u.role };
+    } catch { /* no auth context */ }
+    const tag = status >= 500 ? '[5xx]' : '[4xx]';
+    console.warn(tag, {
+      reqId,
+      status,
+      method: c.req.method,
+      path: new URL(c.req.url).pathname,
+      user: userCtx,
+    });
+  }
+});
 
 // Make env available via getCloudflareContext() for utility functions
 import { runWithEnv, CloudflareEnv } from './lib/cloudflare';

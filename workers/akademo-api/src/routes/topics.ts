@@ -98,7 +98,7 @@ topics.post('/', async (c) => {
     }
 
     // Check permissions
-    if (session.role === 'TEACHER' && classRecord.teacherId !== session.id) {
+    if (session.role === 'TEACHER' && !(await teacherCanAccessClass(c.env.DB, session.id, classRecord.id as string))) {
       return c.json(errorResponse('Not authorized'), 403);
     }
     if (session.role === 'ACADEMY' && classRecord.academyOwnerId !== session.id) {
@@ -158,7 +158,7 @@ topics.put('/:id', async (c) => {
     }
 
     // Check permissions
-    if (session.role === 'TEACHER' && topic.teacherId !== session.id) {
+    if (session.role === 'TEACHER' && !(await teacherCanAccessClass(c.env.DB, session.id, topic.classId as string))) {
       return c.json(errorResponse('Not authorized'), 403);
     }
     if (session.role === 'ACADEMY' && topic.academyOwnerId !== session.id) {
@@ -210,7 +210,7 @@ topics.delete('/:id', async (c) => {
     }
 
     // Check permissions
-    if (session.role === 'TEACHER' && topic.teacherId !== session.id) {
+    if (session.role === 'TEACHER' && !(await teacherCanAccessClass(c.env.DB, session.id, topic.classId as string))) {
       return c.json(errorResponse('Not authorized'), 403);
     }
     if (session.role === 'ACADEMY' && topic.academyOwnerId !== session.id) {
@@ -266,7 +266,7 @@ topics.put('/:id/reorder', async (c) => {
     }
 
     // Check permissions
-    if (session.role === 'TEACHER' && topic.teacherId !== session.id) {
+    if (session.role === 'TEACHER' && !(await teacherCanAccessClass(c.env.DB, session.id, topic.classId as string))) {
       return c.json(errorResponse('Not authorized'), 403);
     }
     if (session.role === 'ACADEMY' && topic.academyOwnerId !== session.id) {

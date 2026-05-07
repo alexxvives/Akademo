@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { Bindings } from '../types';
 import { requireAuth } from '../lib/auth';
-import { successResponse, errorResponse } from '../lib/utils';
+import { successResponse, errorResponse, teacherCanAccessClass } from '../lib/utils';
 import { validateBody, videoProgressSchema } from '../lib/validation';
 import { rateLimit } from '../lib/rate-limit';
 import { isAccessBlocked } from '../lib/payment-utils';
@@ -223,7 +223,7 @@ videos.post('/progress/admin-update', async (c) => {
     }
 
     // Check authorization
-    if (session.role === 'TEACHER' && video.teacherId !== session.id) {
+    if (session.role === 'TEACHER' && !(await teacherCanAccessClass(c.env.DB, session.id, video.classId as string))) {
       return c.json(errorResponse('Not authorized'), 403);
     }
 
@@ -439,7 +439,7 @@ videos.get('/:id', async (c) => {
 
       return c.json(successResponse({ ...video, playState }));
     } else if (session.role === 'TEACHER') {
-      if (video.teacherId !== session.id) {
+      if (!(await teacherCanAccessClass(c.env.DB, session.id, video.classId as string))) {
         return c.json(errorResponse('Not authorized'), 403);
       }
     } else if (session.role === 'ACADEMY') {

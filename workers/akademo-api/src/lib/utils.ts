@@ -28,10 +28,19 @@ export function escapeHtml(str: string): string {
 
 /**
  * Check whether a TEACHER (by user.id) can access a class.
- * `Class.teacherId` references `Teacher.id`, NOT `User.id`. To grant access we either:
- *   - resolve Teacher.id → Teacher.userId and compare to the session userId, OR
- *   - allow any teacher belonging to the same Academy.
- * Returns true if either condition holds.
+ *
+ * IMPORTANT — semantics of the columns (verified against production data):
+ *   - `Class.teacherId` stores `User.id` of the assigned teacher (NOT `Teacher.id`).
+ *     The column name is historical; do NOT join `c.teacherId = Teacher.id` (that
+ *     returns no rows and silently breaks access checks). Compare directly to a
+ *     User.id, or join `c.teacherId = Teacher.userId` if you also need teacher row data.
+ *   - `LiveStream.teacherId` stores `User.id` (same semantics).
+ *   - `Assignment.teacherId` stores `User.id` (has FK to User).
+ *
+ * Access rules (any one is sufficient):
+ *   1. The teacher is the assigned teacher of the class.
+ *   2. The teacher belongs to the same Academy as the class (academy fallback —
+ *      lets co-teachers in the same academy collaborate on each other's classes).
  */
 export async function teacherCanAccessClass(
   db: D1Database,
@@ -39,22 +48,51 @@ export async function teacherCanAccessClass(
   classId: string,
 ): Promise<boolean> {
   const row = await db
-    .prepare(
-      `SELECT t.userId AS teacherUserId, c.academyId
-       FROM Class c
-       LEFT JOIN Teacher t ON c.teacherId = t.id
-       WHERE c.id = ?
-       LIMIT 1`,
-    )
+    .prepare(`SELECT teacherId, academyId FROM Class WHERE id = ? LIMIT 1`)
     .bind(classId)
-    .first<{ teacherUserId: string | null; academyId: string }>();
+    .first<{ teacherId: string | null; academyId: string }>();
   if (!row) return false;
-  if (row.teacherUserId === userId) return true;
+  if (row.teacherId && row.teacherId === userId) return true;
   const inAcademy = await db
     .prepare('SELECT 1 FROM Teacher WHERE userId = ? AND academyId = ? LIMIT 1')
     .bind(userId, row.academyId)
     .first();
   return !!inAcademy;
+}
+
+/**
+ * Check whether a TEACHER can access a Lesson (resolves the lesson's class
+ * and delegates to `teacherCanAccessClass`). Returns false if the lesson
+ * does not exist.
+ */
+export async function teacherCanAccessLesson(
+  db: D1Database,
+  userId: string,
+  lessonId: string,
+): Promise<boolean> {
+  const row = await db
+    .prepare('SELECT classId FROM Lesson WHERE id = ? LIMIT 1')
+    .bind(lessonId)
+    .first<{ classId: string }>();
+  if (!row) return false;
+  return teacherCanAccessClass(db, userId, row.classId);
+}
+
+/**
+ * Check whether a TEACHER can access a LiveStream (assigned teacher OR same-academy teacher).
+ */
+export async function teacherCanAccessLiveStream(
+  db: D1Database,
+  userId: string,
+  liveStreamId: string,
+): Promise<boolean> {
+  const row = await db
+    .prepare('SELECT classId, teacherId FROM LiveStream WHERE id = ? LIMIT 1')
+    .bind(liveStreamId)
+    .first<{ classId: string; teacherId: string | null }>();
+  if (!row) return false;
+  if (row.teacherId && row.teacherId === userId) return true;
+  return teacherCanAccessClass(db, userId, row.classId);
 }
 
 /**
