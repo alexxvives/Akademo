@@ -134,7 +134,7 @@ auth.post('/register', registerRateLimit, validateBody(registerSchema), async (c
 
     // Create user with appropriate name fields
     const userFirstName = role === 'ACADEMY' ? academyName : firstName;
-    const userLastName = role === 'ACADEMY' ? '' : lastName;
+    const userLastName = role === 'ACADEMY' ? '' : (lastName ?? '');
 
     await c.env.DB
       .prepare('INSERT INTO User (id, email, password, firstName, lastName, role, dni, isUnderage, guardianName, guardianDni) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
