@@ -4,7 +4,7 @@ interface DocumentContentProps {
 
 export function DocumentContent({ academyName }: DocumentContentProps) {
   return (
-    <div className="p-8 text-sm text-gray-800 leading-relaxed space-y-4">
+    <div className="p-4 sm:p-8 text-sm text-gray-800 leading-relaxed space-y-3 sm:space-y-4">
       <p>
         El alumno se compromete a mantener para uso exclusivamente personal la documentación
         impresa o digital que se pone a su disposición a través del portal de la asignatura o en

@@ -106,7 +106,7 @@ export default function DocumentSigningModal({
       {/* Main Modal */}
       <div className={`bg-white rounded-2xl sm:rounded-3xl w-full max-w-5xl max-h-[98vh] flex flex-col shadow-2xl transition-all duration-500 p-3 sm:p-6 ${showShieldAnimation ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
         {/* Header */}
-        <div className="px-3 sm:px-8 py-3 sm:py-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white rounded-t-2xl sm:rounded-t-3xl">
+        <div className="px-3 sm:px-8 py-2 sm:py-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white rounded-t-2xl sm:rounded-t-3xl">
           <div className="flex items-center justify-between sm:justify-center gap-2 sm:gap-4">
             <div className="flex-1 text-center min-w-0">
               <h2 className="text-sm sm:text-xl font-bold text-gray-900 leading-tight"><span className="sm:hidden">CONTRATO Y CONFIDENCIALIDAD</span><span className="hidden sm:inline">CONTRATO DE USO Y COMPROMISO DE CONFIDENCIALIDAD</span></h2>
@@ -139,7 +139,7 @@ export default function DocumentSigningModal({
         <div className="border-t border-gray-200 bg-white rounded-b-2xl sm:rounded-b-3xl">
           {/* Scroll indicator */}
           {!hasScrolledToEnd && (
-            <div className="border-2 border-blue-500 rounded-xl p-2 sm:p-3 my-2 sm:my-3 flex items-center justify-center gap-2 sm:gap-3">
+            <div className="border-2 border-blue-500 rounded-xl p-1.5 sm:p-3 my-1 sm:my-3 flex items-center justify-center gap-2 sm:gap-3">
               <svg className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 flex-shrink-0 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
               </svg>
@@ -150,7 +150,7 @@ export default function DocumentSigningModal({
           )}
 
           {/* Checkbox Agreement */}
-          <label className={`flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white border-2 rounded-xl transition-colors my-2 sm:my-3 ${
+          <label className={`flex items-center gap-2 sm:gap-4 p-2 sm:p-4 bg-white border-2 rounded-xl transition-colors my-1 sm:my-3 ${
             hasScrolledToEnd
               ? 'border-gray-200 hover:border-green-300 cursor-pointer'
               : 'border-gray-200 opacity-50 cursor-not-allowed'
@@ -172,11 +172,11 @@ export default function DocumentSigningModal({
           </label>
 
           {/* Action Button - Centered */}
-          <div className="flex items-center justify-center">
+          <div className="flex items-center justify-center mb-1 sm:mb-0">
             <button
               onClick={handleSign}
               disabled={!hasScrolledToEnd || !agreed || signing}
-              className={`w-full sm:w-auto px-6 sm:px-10 py-3 sm:py-3.5 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 sm:gap-3 shadow-lg text-sm sm:text-base ${
+              className={`w-full sm:w-auto px-6 sm:px-10 py-2.5 sm:py-3.5 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 sm:gap-3 shadow-lg text-sm sm:text-base ${
                 hasScrolledToEnd && agreed && !signing
                   ? 'bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-green-500/30 hover:shadow-green-500/40 hover:scale-[1.02]'
                   : 'bg-gray-200 text-gray-500 cursor-not-allowed shadow-none'
