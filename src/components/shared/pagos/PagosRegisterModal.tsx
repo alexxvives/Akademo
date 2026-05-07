@@ -21,8 +21,8 @@ export function PagosRegisterModal({ state, actions }: PagosRegisterModalProps) 
 
   return (
     <ModalPortal>
-      <div className="fixed inset-0 bg-black/50 flex items-start justify-center z-[9999] overflow-y-auto py-8 px-4">
-        <div className="bg-white rounded-2xl w-full max-w-md p-6 my-auto">
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4">
+        <div className="bg-white rounded-2xl w-full max-w-md p-5 sm:p-6 max-h-[92dvh] overflow-y-auto">
           <h2 className="text-xl font-bold text-gray-900 mb-4">
             {editingPaymentId ? 'Editar Pago' : 'Registrar Pago'}
           </h2>

@@ -16,8 +16,8 @@ export function EditTeacherModal({
   classes, editFormData, onFormChange, updating, onSubmit, onClose,
 }: EditTeacherModalProps) {
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl p-5 sm:p-6 max-w-md w-full max-h-[92dvh] overflow-y-auto">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Editar Profesor</h2>
         <form onSubmit={onSubmit} className="space-y-4">
           <div>

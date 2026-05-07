@@ -15,7 +15,7 @@ export function GradeModal(props: AssignmentModalsProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-md w-full p-6">
+      <div className="bg-white rounded-xl max-w-md w-full p-5 sm:p-6 max-h-[92dvh] overflow-y-auto">
         <h2 className="text-2xl font-semibold mb-4">Calificar Entrega</h2>
         <p className="text-sm text-gray-600 mb-6">{selectedSubmission.studentName}</p>
         <form onSubmit={handleGradeSubmission} className="space-y-4">

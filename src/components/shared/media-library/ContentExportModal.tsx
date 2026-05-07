@@ -256,7 +256,7 @@ export function ContentExportModal({ onClose, classes, role, selectedAcademy }: 
   if (typeof document === 'undefined') return null;
   return createPortal(
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[92dvh] flex flex-col">
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100">

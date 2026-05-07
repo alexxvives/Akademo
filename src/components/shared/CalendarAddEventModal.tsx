@@ -129,9 +129,9 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
   return createPortal(
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" onClick={onClose}>
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[92dvh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
           <h3 className="text-lg font-semibold text-gray-900">{isEditMode ? 'Editar evento' : 'Añadir evento'}</h3>
           <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
             <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -140,7 +140,7 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
           </button>
         </div>
 
-        <div className="px-6 py-5 space-y-4">
+        <div className="px-6 py-5 space-y-4 overflow-y-auto">
           {/* Title */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Título <span className="text-red-400">*</span></label>
@@ -219,7 +219,7 @@ export function CalendarAddEventModal({ date, classes, onClose, onSaved, editEve
           {error && <p className="text-xs text-red-500 bg-red-50 px-3 py-2 rounded-lg">{error}</p>}
         </div>
 
-        <div className="flex gap-3 px-6 pb-6">
+        <div className="flex gap-3 px-6 pb-6 pt-2 border-t border-gray-100 shrink-0">
           <button
             type="button"
             onClick={onClose}

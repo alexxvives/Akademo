@@ -14,7 +14,7 @@ export function SubmissionsModal(props: AssignmentModalsProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+      <div className="bg-white rounded-xl max-w-6xl w-full max-h-[92dvh] overflow-y-auto p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
           <div>
             <h2 className="text-xl sm:text-2xl font-semibold">Entregas</h2>

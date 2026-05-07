@@ -116,7 +116,7 @@ function PeriodModal({ title, data, setData, onClose, onSubmit, loading, submitL
   return (
     <ModalPortal>
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-        <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+        <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-5 sm:p-6 max-h-[92dvh] overflow-y-auto">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
             <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 text-gray-500">

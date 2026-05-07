@@ -254,7 +254,7 @@ export function MigrationModal({ academyId, academyName, onClose }: MigrationMod
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={onClose}>
-      <div className={`bg-white rounded-2xl shadow-2xl w-full ${maxWidth} max-h-[92vh] overflow-hidden`} onClick={e => e.stopPropagation()}>
+      <div className={`bg-white rounded-2xl shadow-2xl w-full ${maxWidth} max-h-[92dvh] overflow-hidden`} onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
           <div>

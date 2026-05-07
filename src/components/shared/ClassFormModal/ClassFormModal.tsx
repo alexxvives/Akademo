@@ -37,8 +37,8 @@ export function ClassFormModal({
   ], [zoomAccounts]);
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl w-full max-w-4xl p-6 my-8">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl w-full max-w-4xl p-5 sm:p-6 max-h-[92dvh] overflow-y-auto">
         <h2 className="text-xl font-bold text-gray-900 mb-4">{title}</h2>
 
         <form onSubmit={onSubmit} className="space-y-4">

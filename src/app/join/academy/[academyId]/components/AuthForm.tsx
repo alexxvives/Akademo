@@ -39,7 +39,7 @@ export function AuthForm({
   sendVerificationCode,
 }: AuthFormProps) {
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-8">
+    <div className="bg-white rounded-2xl shadow-lg p-5 sm:p-8">
       <>
         <div className="flex mb-6">
           <button

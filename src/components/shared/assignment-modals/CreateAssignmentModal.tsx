@@ -115,7 +115,7 @@ export function CreateAssignmentModal(props: AssignmentModalsProps) {
     <>
       {/* Main create modal */}
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4">
-        <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+        <div className="bg-white rounded-xl max-w-2xl w-full max-h-[92dvh] overflow-y-auto p-4 sm:p-6">
           <h2 className="text-2xl font-semibold mb-6">Crear Ejercicio</h2>
           <form onSubmit={handleCreateAssignment} className="space-y-4">
             <div>
@@ -252,7 +252,7 @@ export function CreateAssignmentModal(props: AssignmentModalsProps) {
       {/* Quiz builder overlay modal */}
       {showQuizBuilder && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[10000] p-4">
-          <div className="bg-white rounded-xl max-w-[800px] w-full flex flex-col max-h-[95vh]">
+          <div className="bg-white rounded-xl max-w-[800px] w-full flex flex-col max-h-[92dvh]">
             <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100 flex-shrink-0">
               <h3 className="text-xl font-semibold text-gray-900">Crear cuestionario</h3>
               <button type="button" onClick={cancelQuiz} className="p-1 text-gray-400 hover:text-gray-600">

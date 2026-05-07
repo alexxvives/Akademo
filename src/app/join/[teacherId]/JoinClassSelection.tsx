@@ -22,7 +22,7 @@ export function JoinClassSelection({
         </div>
       )}
 
-      <div className="space-y-3 mb-5 max-h-[50vh] overflow-y-auto pr-1">
+      <div className="space-y-3 mb-5 max-h-[50dvh] overflow-y-auto pr-1">
         {classes.map((cls) => (
           <div
             key={cls.id}

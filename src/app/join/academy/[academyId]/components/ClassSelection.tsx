@@ -30,7 +30,7 @@ export function ClassSelection({
           No hay clases disponibles en esta academia en este momento.
         </p>
       ) : (
-        <div className="space-y-3 mb-5 max-h-[50vh] overflow-y-auto pr-1">
+        <div className="space-y-3 mb-5 max-h-[50dvh] overflow-y-auto pr-1">
           {classes.map(classItem => (
             <div
               key={classItem.id}

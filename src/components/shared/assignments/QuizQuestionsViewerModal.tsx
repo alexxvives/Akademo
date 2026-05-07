@@ -46,7 +46,7 @@ export function QuizQuestionsViewerModal({ assignmentId, title, onClose }: Props
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-white rounded-xl max-w-[700px] w-full flex flex-col max-h-[90vh]">
+      <div className="bg-white rounded-xl max-w-[700px] w-full flex flex-col max-h-[92dvh]">
         <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100 flex-shrink-0">
           <h3 className="text-lg font-semibold text-gray-900 truncate pr-4">{title}</h3>
           <button type="button" onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 flex-shrink-0">
