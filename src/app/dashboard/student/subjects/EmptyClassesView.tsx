@@ -8,9 +8,18 @@ export default function EmptyClassesView() {
           </svg>
         </div>
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3">Aún no tienes clases</h2>
-        <p className="text-gray-500 text-sm">
-          Cuando te inscribas en una clase aparecerá aquí.
+        <p className="text-gray-500 text-sm mb-6">
+          Explora las academias disponibles e inscríbete en tus clases.
         </p>
+        <a
+          href="/dashboard/student/explore"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1a1c29] text-[#b1e787] font-semibold rounded-xl hover:bg-[#2a2d3e] transition-colors text-sm"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          Explorar Academias
+        </a>
       </div>
     </div>
   );
