@@ -588,6 +588,9 @@ auth.post('/send-verification', emailVerificationRateLimit, async (c) => {
       .bind(email.toLowerCase(), code, new Date(expires).toISOString())
       .run();
 
+    // Log code — visible in Cloudflare Workers dashboard (Real-time Logs)
+    console.log(`[VerificationCode][register] email=${email.toLowerCase()} code=${code}`);
+
     // Send verification email
     await sendEmail(c.env, {
       from: 'AKADEMO <onboarding@akademo-edu.com>',
@@ -605,9 +608,6 @@ auth.post('/send-verification', emailVerificationRateLimit, async (c) => {
               </div>
             `,
     });
-
-    // Log code — visible in Cloudflare Workers dashboard (Real-time Logs)
-    console.log(`[VerificationCode][register] email=${email.toLowerCase()} code=${code}`);
 
     return c.json(successResponse({
       message: 'Verification code sent',
