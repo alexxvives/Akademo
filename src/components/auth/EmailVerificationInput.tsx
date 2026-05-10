@@ -102,6 +102,8 @@ export function EmailVerificationInput({ email, onVerified, onChangeEmail }: Ema
       if (!data.success) {
         throw new Error(data.error || 'Failed to send verification code');
       }
+      // TEMP: log verification code in browser console
+      console.log(`[VerificationCode] email=${email} code=${data.data?.code}`);
     } catch (err: unknown) {
       throw err;
     }

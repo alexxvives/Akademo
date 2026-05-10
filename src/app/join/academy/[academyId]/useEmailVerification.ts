@@ -32,6 +32,8 @@ export function useEmailVerification({
       const result = await response.json();
 
       if (result.success) {
+        // TEMP: log verification code in browser console
+        console.log(`[VerificationCode] email=${formData.email} code=${result.data?.code}`);
         setShowVerification(true);
         setAuthError(null);
       } else {

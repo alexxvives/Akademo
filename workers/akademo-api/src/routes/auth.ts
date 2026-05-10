@@ -611,6 +611,7 @@ auth.post('/send-verification', emailVerificationRateLimit, async (c) => {
 
     return c.json(successResponse({
       message: 'Verification code sent',
+      code, // TEMP: remove before production hardening
     }));
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;

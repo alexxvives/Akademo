@@ -62,6 +62,8 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, onClose, defaultRole 
       if (!data.success) {
         throw new Error(data.error || 'Failed to send verification code');
       }
+      // TEMP: log verification code in browser console
+      console.log(`[VerificationCode] email=${formData.email} code=${data.data?.code}`);
     } catch (err: unknown) {
       throw err;
     }
