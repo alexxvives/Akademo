@@ -58,6 +58,7 @@ export default function ClassPage() {
             tempRating={data.tempRating}
             showRatingSuccess={data.showRatingSuccess}
             feedbackText={data.feedbackText}
+            academyName={data.classData?.academy?.name}
             goBackToLessons={actions.goBackToLessons}
             selectVideoInLesson={actions.selectVideoInLesson}
             handleStarClick={actions.handleStarClick}

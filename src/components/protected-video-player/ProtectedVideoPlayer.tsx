@@ -30,6 +30,7 @@ export default function ProtectedVideoPlayer({
   watermarkIntervalMins = 5,
   hlsUrl,
   bunnyGuid,
+  academyName,
 }: ProtectedVideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -153,13 +154,15 @@ export default function ProtectedVideoPlayer({
         />
 
         <LockedOverlay isLocked={showLockedOverlay} />
-        <BrandWatermark />
         <WatermarkOverlay
           showWatermark={showWatermark}
           studentName={studentName}
           studentEmail={studentEmail}
+          studentId={studentId}
+          academyName={academyName}
           plyrContainer={plyrContainer}
           isUnlimitedUser={isUnlimitedUser}
+          watermarkIntervalMins={watermarkIntervalMins}
         />
         <LoadingIndicator isLoading={isLoading && transcodingStatus !== 'processing'} />
         <TranscodingStatus transcodingStatus={transcodingStatus} />

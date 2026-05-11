@@ -20,6 +20,7 @@ export interface ProtectedVideoPlayerProps {
   watermarkIntervalMins?: number;
   hlsUrl?: string;
   bunnyGuid?: string;
+  academyName?: string;
 }
 
 export interface CompletionFlags {

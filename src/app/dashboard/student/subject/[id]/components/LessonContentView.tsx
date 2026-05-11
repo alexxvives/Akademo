@@ -22,6 +22,7 @@ interface LessonContentViewProps {
   tempRating: number | null;
   showRatingSuccess: boolean;
   feedbackText: string;
+  academyName?: string;
   goBackToLessons: () => void;
   selectVideoInLesson: (video: Video) => void;
   handleStarClick: (rating: number) => void;
@@ -33,7 +34,7 @@ interface LessonContentViewProps {
 export default function LessonContentView({
   selectedLesson, classId, selectedVideo, user,
   academyFeedbackEnabled, lessonRating, ratingHover,
-  tempRating, showRatingSuccess, feedbackText,
+  tempRating, showRatingSuccess, feedbackText, academyName,
   goBackToLessons, selectVideoInLesson, handleStarClick,
   setRatingHover, setFeedbackText, submitRating,
 }: LessonContentViewProps) {
@@ -144,6 +145,7 @@ export default function LessonContentView({
                 initialPlayState={selectedVideo.playStates?.[0] || { totalWatchTimeSeconds: 0, sessionStartTime: null }}
                 userRole={user.role}
                 watermarkIntervalMins={selectedLesson.watermarkIntervalMins}
+                academyName={academyName}
                 bunnyGuid={(selectedVideo.upload?.storageType === 'bunny' ? selectedVideo.upload?.bunnyGuid : selectedVideo.bunnyGuid) || undefined}
               />
             </div>
