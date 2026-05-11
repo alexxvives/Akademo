@@ -167,6 +167,7 @@ export default function StudentLivePage() {
               displayName={displayName}
               displayEmail={displayEmail}
               displayId={displayId}
+              academyName={stream?.academyName}
               watermarkIntervalMins={watermarkIntervalMins}
             />
           ) : !embedUrl ? (
@@ -189,6 +190,7 @@ export default function StudentLivePage() {
                   name={displayName}
                   email={displayEmail}
                   userId={displayId}
+                  academyName={stream?.academyName}
                   watermarkIntervalMins={watermarkIntervalMins}
                 />
               )}

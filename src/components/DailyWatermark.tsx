@@ -6,6 +6,7 @@ interface DailyWatermarkProps {
   name: string;
   email: string;
   userId: string;
+  academyName?: string;
   watermarkIntervalMins?: number;
 }
 
@@ -21,6 +22,14 @@ function useClock() {
     return () => clearInterval(id);
   }, []);
   return time;
+}
+
+function randomCenterPos() {
+  // Keep within 25–75% so the large text doesn't clip at edges
+  return {
+    x: 25 + Math.random() * 50,
+    y: 25 + Math.random() * 50,
+  };
 }
 
 const badge = {
@@ -40,7 +49,7 @@ const badge = {
   textShadow: '0 1px 3px rgba(0,0,0,0.8)',
 };
 
-export default function DailyWatermark({ name, email, userId, watermarkIntervalMins = 5 }: DailyWatermarkProps) {
+export default function DailyWatermark({ name, email, userId, academyName, watermarkIntervalMins = 5 }: DailyWatermarkProps) {
   const clock = useClock();
   const shortId = userId ? `#${userId.slice(0, 8).toUpperCase()}` : '';
 
@@ -48,6 +57,9 @@ export default function DailyWatermark({ name, email, userId, watermarkIntervalM
   const [showCenter, setShowCenter] = useState(true);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const initialPhaseRef = useRef(true);
+
+  // Moving position for the center watermark
+  const [centerPos, setCenterPos] = useState({ x: 50, y: 50 });
 
   const scheduleNext = useCallback((visible: boolean) => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -61,7 +73,6 @@ export default function DailyWatermark({ name, email, userId, watermarkIntervalM
   useEffect(() => {
     setShowCenter(true);
     initialPhaseRef.current = true;
-    // Stay visible for first 60s, then start intermittent cycle
     timerRef.current = setTimeout(() => {
       initialPhaseRef.current = false;
       setShowCenter(false);
@@ -69,6 +80,14 @@ export default function DailyWatermark({ name, email, userId, watermarkIntervalM
     }, 60000);
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [scheduleNext]);
+
+  // Move the center watermark to a new random position every 8 seconds
+  useEffect(() => {
+    const moveId = setInterval(() => {
+      setCenterPos(randomCenterPos());
+    }, 8000);
+    return () => clearInterval(moveId);
+  }, []);
 
   return (
     <div
@@ -82,24 +101,25 @@ export default function DailyWatermark({ name, email, userId, watermarkIntervalM
         overflow: 'hidden',
       }}
     >
-      {/* Top-left: Email — positioned near video edge */}
+      {/* Top-left: Email */}
       <div style={{ position: 'absolute', top: '8%', left: '8%' }}>
         <span style={badge}>{email}</span>
       </div>
 
-      {/* Top-right: Name — positioned near video edge */}
+      {/* Top-right: Academy name (falls back to student name) */}
       <div style={{ position: 'absolute', top: '8%', right: '8%' }}>
-        <span style={badge}>{name}</span>
+        <span style={badge}>{academyName ? `Academia ${academyName}` : name}</span>
       </div>
 
-      {/* Center: large diagonal full name — intermittent, anchored to center of badge rectangle */}
+      {/* Center: large diagonal watermark — moves every 8s with smooth transition */}
       {showCenter && (
         <span
           style={{
             position: 'absolute',
-            top: '50%',
-            left: '50%',
+            top: `${centerPos.y}%`,
+            left: `${centerPos.x}%`,
             transform: 'translate(-50%, -50%) rotate(-30deg)',
+            transition: 'top 2.5s ease-in-out, left 2.5s ease-in-out',
             fontSize: 'clamp(3.2rem, 8vw, 6.4rem)',
             fontWeight: 800,
             color: 'transparent',
@@ -115,12 +135,12 @@ export default function DailyWatermark({ name, email, userId, watermarkIntervalM
         </span>
       )}
 
-      {/* Bottom-left: User ID — positioned near video edge */}
+      {/* Bottom-left: User ID */}
       <div style={{ position: 'absolute', bottom: '8%', left: '8%' }}>
         <span style={badge}>ID: {shortId}</span>
       </div>
 
-      {/* Bottom-right: Live clock — positioned near video edge */}
+      {/* Bottom-right: Live clock */}
       <div style={{ position: 'absolute', bottom: '8%', right: '8%' }}>
         <span style={badge}>{clock}</span>
       </div>

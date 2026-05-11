@@ -9,6 +9,7 @@ interface ZoomJoinOverlayProps {
   displayName: string;
   displayEmail: string;
   displayId: string;
+  academyName?: string;
   watermarkIntervalMins: number;
 }
 
@@ -19,6 +20,7 @@ export default function ZoomJoinOverlay({
   displayName,
   displayEmail,
   displayId,
+  academyName,
   watermarkIntervalMins,
 }: ZoomJoinOverlayProps) {
   return (
@@ -57,6 +59,7 @@ export default function ZoomJoinOverlay({
           name={displayName}
           email={displayEmail}
           userId={displayId}
+          academyName={academyName}
           watermarkIntervalMins={watermarkIntervalMins}
         />
       )}
