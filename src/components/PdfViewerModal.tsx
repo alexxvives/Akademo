@@ -145,7 +145,7 @@ export default function PdfViewerModal() {
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex flex-col"
+      className="fixed inset-0 z-[10001] flex flex-col"
       style={{ background: 'rgba(0,0,0,0.96)' }}
       onContextMenu={e => e.preventDefault()}
     >
