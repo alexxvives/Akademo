@@ -14,22 +14,24 @@ interface WatermarkOverlayProps {
   watermarkIntervalMins?: number;
 }
 
-const badge: React.CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  background: 'rgba(0,0,0,0.78)',
-  color: '#fff',
-  fontSize: '1.44rem',
-  fontWeight: 600,
-  padding: '4px 10px',
-  borderRadius: '5px',
-  backdropFilter: 'blur(6px)',
-  userSelect: 'none',
-  letterSpacing: '0.01em',
-  whiteSpace: 'nowrap',
-  border: '1px solid rgba(255,255,255,0.18)',
-  textShadow: '0 1px 3px rgba(0,0,0,0.8)',
-};
+function badgeStyle(fontPx: number): React.CSSProperties {
+  return {
+    display: 'inline-flex',
+    alignItems: 'center',
+    background: 'rgba(0,0,0,0.78)',
+    color: '#fff',
+    fontSize: `${fontPx}px`,
+    fontWeight: 600,
+    padding: '4px 10px',
+    borderRadius: '5px',
+    backdropFilter: 'blur(6px)',
+    userSelect: 'none',
+    letterSpacing: '0.01em',
+    whiteSpace: 'nowrap',
+    border: '1px solid rgba(255,255,255,0.18)',
+    textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+  };
+}
 
 // Pixel-based DVD-logo bounce — adapts to actual container size on every tick
 function useBounce(
@@ -76,12 +78,14 @@ function VideoWatermarkContent({
   const bouncePos = useBounce(containerRef, textRef);
 
   const [fontSize, setFontSize] = useState(18);
+  const [badgeFontPx, setBadgeFontPx] = useState(11);
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
     const ro = new ResizeObserver(([entry]) => {
       const w = entry.contentRect.width;
-      setFontSize(Math.max(12, Math.min(36, w * 0.025)));
+      setFontSize(Math.max(16, Math.min(54, w * 0.0375)));
+      setBadgeFontPx(Math.max(11, Math.min(22, w * 0.012)));
     });
     ro.observe(el);
     return () => ro.disconnect();
@@ -119,14 +123,16 @@ function VideoWatermarkContent({
       {/* Top-left: Email */}
       {studentEmail && (
         <div style={{ position: 'absolute', top: '8%', left: '8%' }}>
-          <span style={badge}>{studentEmail}</span>
+          <span style={badgeStyle(badgeFontPx)}>{studentEmail}</span>
         </div>
       )}
 
       {/* Top-right: Academy name */}
-      <div style={{ position: 'absolute', top: '8%', right: '8%' }}>
-        <span style={badge}>{academyName ? `Academia ${academyName}` : 'AKADEMO'}</span>
-      </div>
+      {academyName && (
+        <div style={{ position: 'absolute', top: '8%', right: '8%' }}>
+          <span style={badgeStyle(badgeFontPx)}>Academia {academyName}</span>
+        </div>
+      )}
 
       {/* Center: bouncing watermark — pixel-positioned, always fully visible */}
       {showCenter && studentName && (
