@@ -19,7 +19,7 @@ const badge: React.CSSProperties = {
   alignItems: 'center',
   background: 'rgba(0,0,0,0.78)',
   color: '#fff',
-  fontSize: '0.72rem',
+  fontSize: '1.44rem',
   fontWeight: 600,
   padding: '4px 10px',
   borderRadius: '5px',
@@ -31,22 +31,36 @@ const badge: React.CSSProperties = {
   textShadow: '0 1px 3px rgba(0,0,0,0.8)',
 };
 
-// Bouncing DVD-logo style movement
-function useBounce(speed = 0.3) {
-  const [pos, setPos] = useState({ x: 30, y: 40 });
-  const ref = useRef({ x: 30, y: 40, dx: speed, dy: speed * 0.75 });
+// Pixel-based DVD-logo bounce — adapts to actual container size on every tick
+function useBounce(
+  containerRef: { current: HTMLElement | null },
+  textRef: { current: HTMLElement | null },
+  speed = 1.5
+) {
+  const [pos, setPos] = useState({ x: 50, y: 50 });
+  const stateRef = useRef({ x: 50, y: 50, dx: speed, dy: speed * 0.75 });
+
   useEffect(() => {
     const id = setInterval(() => {
-      const s = ref.current;
+      const cw = containerRef.current?.clientWidth ?? 600;
+      const ch = containerRef.current?.clientHeight ?? 400;
+      const tw = textRef.current?.offsetWidth ?? 120;
+      const th = textRef.current?.offsetHeight ?? 30;
+
+      const maxX = Math.max(0, cw - tw);
+      const maxY = Math.max(0, ch - th);
+
+      const s = stateRef.current;
       let { x, y, dx, dy } = s;
       x += dx; y += dy;
-      if (x <= 10 || x >= 78) { dx = -dx; x = Math.max(10, Math.min(78, x)); }
-      if (y <= 10 || y >= 82) { dy = -dy; y = Math.max(10, Math.min(82, y)); }
-      ref.current = { x, y, dx, dy };
+      if (x <= 0 || x >= maxX) { dx = -dx; x = Math.max(0, Math.min(maxX, x)); }
+      if (y <= 0 || y >= maxY) { dy = -dy; y = Math.max(0, Math.min(maxY, y)); }
+      stateRef.current = { x, y, dx, dy };
       setPos({ x, y });
     }, 50);
     return () => clearInterval(id);
-  }, [speed]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   return pos;
 }
 
@@ -57,7 +71,21 @@ function VideoWatermarkContent({
   academyName,
   watermarkIntervalMins = 5,
 }: Omit<WatermarkOverlayProps, 'plyrContainer' | 'isUnlimitedUser' | 'studentId'>) {
-  const bouncePos = useBounce();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLSpanElement>(null);
+  const bouncePos = useBounce(containerRef, textRef);
+
+  const [fontSize, setFontSize] = useState(18);
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      const w = entry.contentRect.width;
+      setFontSize(Math.max(12, Math.min(36, w * 0.025)));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const [showCenter, setShowCenter] = useState(true);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -84,6 +112,7 @@ function VideoWatermarkContent({
 
   return (
     <div
+      ref={containerRef}
       aria-hidden
       style={{ position: 'absolute', inset: 0, zIndex: 20, pointerEvents: 'none', userSelect: 'none', overflow: 'hidden' }}
     >
@@ -99,24 +128,22 @@ function VideoWatermarkContent({
         <span style={badge}>{academyName ? `Academia ${academyName}` : 'AKADEMO'}</span>
       </div>
 
-      {/* Center: bouncing watermark */}
+      {/* Center: bouncing watermark — pixel-positioned, always fully visible */}
       {showCenter && studentName && (
         <span
+          ref={textRef}
           style={{
             position: 'absolute',
-            top: `${bouncePos.y}%`,
-            left: `${bouncePos.x}%`,
-            transform: 'translate(-50%, -50%)',
-            fontSize: 'clamp(1.28rem, 3.2vw, 2.56rem)',
+            top: bouncePos.y,
+            left: bouncePos.x,
+            fontSize: `${fontSize}px`,
             fontWeight: 800,
-            color: 'transparent',
-            WebkitTextStroke: '1.5px rgba(255,255,255,0.38)',
+            color: 'rgba(255,255,255,0.9)',
             textTransform: 'uppercase',
             letterSpacing: '0.20em',
             whiteSpace: 'nowrap',
             textShadow: '0 0 24px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.6)',
-            paintOrder: 'stroke fill',
-          } as React.CSSProperties}
+          }}
         >
           {studentName}
         </span>
