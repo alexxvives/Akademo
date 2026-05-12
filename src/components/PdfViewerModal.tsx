@@ -12,7 +12,7 @@ async function getPdfJs(): Promise<PdfJsLib> {
   if (!cachedPdfJs) {
     const pdfjs = await import('pdfjs-dist');
     pdfjs.GlobalWorkerOptions.workerSrc =
-      `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+      `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
     cachedPdfJs = pdfjs;
   }
   return cachedPdfJs;
@@ -83,6 +83,8 @@ export default function PdfViewerModal() {
   // Listen for open-pdf custom event
   useEffect(() => {
     const handler = (e: CustomEvent<{ url: string; title?: string }>) => {
+      // Push a history entry so the browser back button closes the modal
+      history.pushState({ pdfModal: true }, '');
       setPdfUrl(e.detail.url);
       setTitle(e.detail.title ?? '');
       setIsOpen(true);
@@ -90,6 +92,15 @@ export default function PdfViewerModal() {
     window.addEventListener('open-pdf', handler as EventListener);
     return () => window.removeEventListener('open-pdf', handler as EventListener);
   }, []);
+
+  // Close modal when user hits browser back button
+  useEffect(() => {
+    const onPopState = (e: PopStateEvent) => {
+      if (isOpen) close();
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [isOpen]);
 
   // Load PDF when opened
   useEffect(() => {

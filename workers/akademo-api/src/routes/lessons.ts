@@ -22,7 +22,8 @@ lessons.get('/', async (c) => {
     const classRecord = await c.env.DB.prepare(`
       SELECT c.id, c.name, c.slug, c.description, c.academyId, c.teacherId, c.createdAt, 
              a.feedbackEnabled, c.whatsappGroupLink, c.monthlyPrice, c.oneTimePrice, c.zoomAccountId, 
-             a.ownerId as academyOwnerId, t.userId as teacherUserId
+             a.ownerId as academyOwnerId, t.userId as teacherUserId,
+             a.hideCompletedLessons as hideCompletedLessons
       FROM Class c
       JOIN Academy a ON c.academyId = a.id
       LEFT JOIN Teacher t ON c.teacherId = t.userId
