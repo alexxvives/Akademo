@@ -67,9 +67,10 @@ lessons.get('/', async (c) => {
 
     // Build query with conditional progress tracking for students
     let progressSelect = '0 as totalWatchedSeconds';
+    let allVideosBlockedSelect = '0 as allVideosBlocked';
     const bindParams: any[] = [];
 
-    // If student, fetch their specific watch progress
+    // If student, fetch their specific watch progress and blocked status
     if (session.role === 'STUDENT') {
       progressSelect = `(
         SELECT COALESCE(SUM(vps.totalWatchTimeSeconds), 0) 
@@ -77,6 +78,19 @@ lessons.get('/', async (c) => {
         JOIN Video v ON vps.videoId = v.id 
         WHERE v.lessonId = l.id AND vps.studentId = ?
       ) as totalWatchedSeconds`;
+      bindParams.push(session.id);
+
+      allVideosBlockedSelect = `(
+        SELECT CASE
+          WHEN (SELECT COUNT(*) FROM Video v2 WHERE v2.lessonId = l.id) = 0 THEN 0
+          WHEN (SELECT COUNT(*) FROM Video v2
+                JOIN VideoPlayState vps2 ON vps2.videoId = v2.id
+                WHERE v2.lessonId = l.id AND vps2.studentId = ? AND vps2.status = 'BLOCKED')
+               = (SELECT COUNT(*) FROM Video v2 WHERE v2.lessonId = l.id)
+          THEN 1
+          ELSE 0
+        END
+      ) as allVideosBlocked`;
       bindParams.push(session.id);
     }
 
@@ -109,7 +123,8 @@ lessons.get('/', async (c) => {
          WHERE v.lessonId = l.id) as studentsAccessed,
         t.name as topicName,
         ${durationSelect},
-        ${progressSelect}
+        ${progressSelect},
+        ${allVideosBlockedSelect}
       FROM Lesson l
       LEFT JOIN Topic t ON l.topicId = t.id
       WHERE l.classId = ?
@@ -129,6 +144,10 @@ lessons.get('/', async (c) => {
       // Only show lessons that have been released (releaseDate in the past or null)
       const now = new Date().toISOString();
       filteredLessons = filteredLessons.filter((l: any) => !l.releaseDate || l.releaseDate <= now);
+      // If academy has hideCompletedLessons enabled, hide lessons where all videos are BLOCKED
+      if ((classRecord as any).hideCompletedLessons === 1) {
+        filteredLessons = filteredLessons.filter((l: any) => l.allVideosBlocked !== 1);
+      }
     }
 
     // If checkTranscoding is true, update Bunny status for any transcoding videos

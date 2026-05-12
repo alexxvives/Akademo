@@ -32,6 +32,7 @@ export interface Academy {
   bizumPhone?: string;
   requireGrading?: number;
   hiddenMenuItems?: string;
+  hideCompletedLessons?: number;
 }
 
 export interface AcademicYear {
@@ -57,6 +58,7 @@ export interface ProfileFormData {
   bizumPhone: string;
   requireGrading: boolean;
   hiddenMenuItems: string[];
+  hideCompletedLessons: boolean;
 }
 
 export const WATERMARK_OPTIONS = [

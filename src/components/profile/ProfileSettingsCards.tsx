@@ -24,6 +24,7 @@ export function AdvancedSettingsCard({ s, actions }: { s: ProfileState; actions:
           <SelectSetting label="Marca de agua" desc="Frecuencia de aparición" value={formData.defaultWatermarkIntervalMins} options={WATERMARK_OPTIONS} onChange={(v) => actions.handleSettingChange('defaultWatermarkIntervalMins', parseFloat(v))} />
           <ToggleSetting label="Calificación obligatoria" desc="Requiere que los profesores califiquen los ejercicios" checked={formData.requireGrading} onToggle={() => actions.handleSettingChange('requireGrading', formData.requireGrading ? 0 : 1)} />
           <SelectSetting label="Límite de visualización" desc="Veces que puede ver el contenido" value={formData.defaultMaxWatchTimeMultiplier} options={MULTIPLIER_OPTIONS} onChange={(v) => actions.handleSettingChange('defaultMaxWatchTimeMultiplier', parseFloat(v))} />
+          <ToggleSetting label="Ocultar lecciones completadas" desc="Oculta automáticamente las lecciones cuando el estudiante ha agotado el tiempo de todos sus videos" checked={formData.hideCompletedLessons} onToggle={() => actions.handleSettingChange('hideCompletedLessons', formData.hideCompletedLessons ? 0 : 1)} />
         </div>
       </div>
     </div>

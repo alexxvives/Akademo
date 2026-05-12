@@ -122,6 +122,7 @@ Class
 | dailyEnabled | INTEGER | YES | 0 | Daily.co streaming enabled |
 | transferenciaIban | TEXT | YES | NULL | Bank transfer details |
 | bizumPhone | TEXT | YES | NULL | Bizum phone number |
+| hideCompletedLessons | INTEGER | YES | 0 | 0=off, 1=on — hide lessons when student has watched all videos |
 
 ---
 

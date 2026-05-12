@@ -570,6 +570,7 @@ academies.get('/:id', async (c) => {
       createdAt: academy.createdAt,
       feedbackEnabled: academy.feedbackEnabled,
       requireGrading: academy.requireGrading,
+      hideCompletedLessons: academy.hideCompletedLessons,
       defaultWatermarkIntervalMins: academy.defaultWatermarkIntervalMins,
       defaultMaxWatchTimeMultiplier: academy.defaultMaxWatchTimeMultiplier,
       allowedPaymentMethods: academy.allowedPaymentMethods,
@@ -681,6 +682,10 @@ academies.patch('/:id', async (c) => {
     if (body.requireGrading !== undefined) {
       updates.push('requireGrading = ?');
       values.push(body.requireGrading);
+    }
+    if (body.hideCompletedLessons !== undefined) {
+      updates.push('hideCompletedLessons = ?');
+      values.push(body.hideCompletedLessons);
     }
     if (body.hiddenMenuItems !== undefined) {
       updates.push('hiddenMenuItems = ?');

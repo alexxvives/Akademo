@@ -25,6 +25,7 @@ export function useProfileActions(s: ProfileState) {
         bizumPhone: field === 'bizumPhone' ? value : newFormData.bizumPhone,
         requireGrading: field === 'requireGrading' ? value : (newFormData.requireGrading ? 1 : 0),
         hiddenMenuItems: field === 'hiddenMenuItems' ? JSON.stringify(value) : JSON.stringify(newFormData.hiddenMenuItems),
+        hideCompletedLessons: field === 'hideCompletedLessons' ? value : (newFormData.hideCompletedLessons ? 1 : 0),
       };
       const response = await apiClient(`/academies/${academy.id}`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' }, skipAutoRedirect: true, body: JSON.stringify(body),
@@ -58,6 +59,7 @@ export function useProfileActions(s: ProfileState) {
           allowedPaymentMethods: JSON.stringify(formData.allowedPaymentMethods),
           transferenciaIban: formData.transferenciaIban, bizumPhone: formData.bizumPhone,
           requireGrading: formData.requireGrading ? 1 : 0, hiddenMenuItems: JSON.stringify(formData.hiddenMenuItems),
+          hideCompletedLessons: formData.hideCompletedLessons ? 1 : 0,
         }),
       });
       const result = await response.json();
@@ -85,6 +87,7 @@ export function useProfileActions(s: ProfileState) {
           allowedPaymentMethods: JSON.stringify(formData.allowedPaymentMethods),
           transferenciaIban: formData.transferenciaIban, bizumPhone: formData.bizumPhone,
           requireGrading: formData.requireGrading ? 1 : 0, hiddenMenuItems: JSON.stringify(formData.hiddenMenuItems),
+          hideCompletedLessons: formData.hideCompletedLessons ? 1 : 0,
         }),
       });
       if (response.status === 401) return false;

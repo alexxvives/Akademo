@@ -44,6 +44,7 @@ export function useProfileData() {
     feedbackEnabled: true, defaultWatermarkIntervalMins: 5, defaultMaxWatchTimeMultiplier: 2.0,
     allowedPaymentMethods: [...DEFAULT_ALLOWED_PAYMENT_METHODS],
     transferenciaIban: '', bizumPhone: '', requireGrading: true, hiddenMenuItems: [],
+    hideCompletedLessons: false,
   });
 
   const loadData = useCallback(async () => {
@@ -81,6 +82,7 @@ export function useProfileData() {
           transferenciaIban: d.transferenciaIban || 'ES', bizumPhone: d.bizumPhone || '',
           requireGrading: d.requireGrading !== 0,
           hiddenMenuItems: (() => { try { return JSON.parse(d.hiddenMenuItems || '[]'); } catch { return []; } })(),
+          hideCompletedLessons: d.hideCompletedLessons !== 0,
         });
         setOriginalEmail((d.email as string | undefined) || user?.email || '');
       }
