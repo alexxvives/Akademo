@@ -6,7 +6,7 @@ import { AcademyFields } from './AcademyFields';
 import { StudentTeacherFields } from './StudentTeacherFields';
 import { EmailPasswordSection } from './EmailPasswordSection';
 import { useRegistrationData } from '@/hooks/useRegistrationData';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, setAuthSession } from '@/lib/api-client';
 
 interface RegisterFormProps {
   onSuccess: (role: string) => void;
@@ -107,7 +107,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin, onClose, defaultRole 
 
       if (result.success) {
         if (result.data?.token) {
-          localStorage.setItem('auth_token', result.data.token);
+          await setAuthSession(result.data.token);
         }
 
         // Mark new user so dashboard fires confetti on first load

@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, setAuthSession } from '@/lib/api-client';
 import type { Teacher, JoinClass, JoinFormData } from './types';
 
 export function useJoinPage() {
@@ -171,7 +171,7 @@ export function useJoinPage() {
       });
       const regResult = await regResponse.json();
       if (regResult.success) {
-        if (regResult.data.token) localStorage.setItem('auth_token', regResult.data.token);
+        if (regResult.data.token) await setAuthSession(regResult.data.token);
         sessionStorage.setItem('akademo_new_user', '1');
         setTimeout(() => {
           setIsLoggedIn(true);
@@ -203,7 +203,7 @@ export function useJoinPage() {
         });
         const result = await response.json();
         if (result.success) {
-          if (result.data.token) localStorage.setItem('auth_token', result.data.token);
+          if (result.data.token) await setAuthSession(result.data.token);
           if (result.data?.suspicionWarning) sessionStorage.setItem('akademo_suspicion_warning', '1');
           const role = result.data.role as string;
           const roleMap: Record<string, string> = { STUDENT: '/dashboard/student', TEACHER: '/dashboard/teacher', ACADEMY: '/dashboard/academy', ADMIN: '/dashboard/admin' };

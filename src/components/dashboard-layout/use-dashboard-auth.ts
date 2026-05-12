@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, clearAuthSession } from '@/lib/api-client';
 import type { User } from './types';
 
 export function useDashboardAuth(role: string) {
@@ -19,7 +19,7 @@ export function useDashboardAuth(role: string) {
       if (!confirmLogout) return;
     }
     await apiClient('/auth/logout', { method: 'POST', skipAutoRedirect: true });
-    localStorage.removeItem('auth_token');
+    clearAuthSession();
     const joinOrigin = role === 'STUDENT' ? localStorage.getItem('akademo_join_origin') : null;
     router.push(joinOrigin ? `${joinOrigin}?login=true` : '/');
   }, [router, role]);

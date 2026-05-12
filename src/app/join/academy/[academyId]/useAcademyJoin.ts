@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, setAuthSession } from '@/lib/api-client';
 import { useEmailVerification } from './useEmailVerification';
 import type { Academy, Class, AuthUser } from './types';
 
@@ -136,7 +136,7 @@ export function useAcademyJoin() {
 
         if (result.success) {
           if (result.data.token) {
-            localStorage.setItem('auth_token', result.data.token);
+            await setAuthSession(result.data.token);
           }
           if (result.data?.suspicionWarning) {
             sessionStorage.setItem('akademo_suspicion_warning', '1');

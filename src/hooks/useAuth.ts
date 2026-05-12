@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, clearAuthSession } from '@/lib/api-client';
 import type { User, ApiResponse } from '@akademo/types';
 
 interface UseAuthReturn {
@@ -80,7 +80,7 @@ export function useAuth(): UseAuthReturn {
       cachedUser = null;
       cacheTimestamp = 0;
       setUser(null);
-      localStorage.removeItem('auth_token');
+      clearAuthSession();
       sessionStorage.clear();
       const joinOrigin = localStorage.getItem('akademo_join_origin');
       window.location.href = joinOrigin || '/';

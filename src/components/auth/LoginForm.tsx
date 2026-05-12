@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PasswordInput } from '@/components/ui';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, setAuthSession } from '@/lib/api-client';
 
 interface LoginFormProps {
   onSuccess: (role: string) => void;
@@ -43,7 +43,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister, onForgotPassword, onC
 
       if (result.success) {
         if (result.data?.token) {
-          localStorage.setItem('auth_token', result.data.token);
+          await setAuthSession(result.data.token);
         }
 
         if (result.data?.role) {

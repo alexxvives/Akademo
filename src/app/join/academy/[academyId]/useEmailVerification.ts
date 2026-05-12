@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, setAuthSession } from '@/lib/api-client';
 
 interface VerificationParams {
   formData: { email: string; password: string; fullName: string; dni: string; isUnderage: boolean; guardianName: string; guardianDni: string };
@@ -89,7 +89,7 @@ export function useEmailVerification({
 
       if (regResult.success) {
         if (regResult.data.token) {
-          localStorage.setItem('auth_token', regResult.data.token);
+          await setAuthSession(regResult.data.token);
         }
         sessionStorage.setItem('akademo_new_user', '1');
 

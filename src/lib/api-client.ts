@@ -20,6 +20,30 @@ export interface ApiClientOptions extends RequestInit {
 // refresh promise so we don't rotate the refresh token multiple times.
 let _refreshPromise: Promise<boolean> | null = null;
 
+/**
+ * Store a session token in localStorage and set the middleware cookie via the
+ * same-origin Next.js API route. Always call this instead of writing to
+ * localStorage directly so that hard-reloads (especially on Safari iOS) don't
+ * lose the authenticated state.
+ */
+export async function setAuthSession(token: string): Promise<void> {
+  localStorage.setItem('auth_token', token);
+  // Fire-and-forget — cookie failure is non-fatal (localStorage auth still works).
+  fetch('/api/auth/set-session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token }),
+  }).catch(() => { /* non-fatal */ });
+}
+
+/**
+ * Remove the session token from localStorage and clear the middleware cookie.
+ */
+export function clearAuthSession(): void {
+  localStorage.removeItem('auth_token');
+  fetch('/api/auth/set-session', { method: 'DELETE' }).catch(() => { /* non-fatal */ });
+}
+
 async function _doRefresh(): Promise<boolean> {
   try {
     const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
@@ -30,7 +54,7 @@ async function _doRefresh(): Promise<boolean> {
     if (!res.ok) return false;
     const data = await res.json() as { success: boolean; data: { token: string } };
     if (!data.success || !data.data?.token) return false;
-    localStorage.setItem('auth_token', data.data.token);
+    await setAuthSession(data.data.token);
     return true;
   } catch {
     return false;
@@ -91,7 +115,7 @@ export async function apiClient(
       }
       // Refresh failed — session truly expired
       if (!skipAutoRedirect) {
-        localStorage.removeItem('auth_token');
+        clearAuthSession();
         window.location.href = '/?modal=login&expired=1';
       }
       return response;
