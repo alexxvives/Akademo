@@ -24,12 +24,23 @@ function useClock() {
   return time;
 }
 
-function randomCenterPos() {
-  // Keep within 25–75% so the large text doesn't clip at edges
-  return {
-    x: 25 + Math.random() * 50,
-    y: 25 + Math.random() * 50,
-  };
+// Bouncing DVD-logo style movement
+function useBounce(speed = 0.3) {
+  const [pos, setPos] = useState({ x: 30, y: 40 });
+  const ref = useRef({ x: 30, y: 40, dx: speed, dy: speed * 0.75 });
+  useEffect(() => {
+    const id = setInterval(() => {
+      const s = ref.current;
+      let { x, y, dx, dy } = s;
+      x += dx; y += dy;
+      if (x <= 10 || x >= 78) { dx = -dx; x = Math.max(10, Math.min(78, x)); }
+      if (y <= 10 || y >= 82) { dy = -dy; y = Math.max(10, Math.min(82, y)); }
+      ref.current = { x, y, dx, dy };
+      setPos({ x, y });
+    }, 50);
+    return () => clearInterval(id);
+  }, [speed]);
+  return pos;
 }
 
 const badge = {
@@ -49,17 +60,12 @@ const badge = {
   textShadow: '0 1px 3px rgba(0,0,0,0.8)',
 };
 
-export default function DailyWatermark({ name, email, userId, academyName, watermarkIntervalMins = 5 }: DailyWatermarkProps) {
+export default function DailyWatermark({ name, email, academyName, watermarkIntervalMins = 5 }: DailyWatermarkProps) {
   const clock = useClock();
-  const shortId = userId ? `#${userId.slice(0, 8).toUpperCase()}` : '';
+  const bouncePos = useBounce();
 
-  // Intermittent center watermark: show for first 60s, then 30s on / interval off
   const [showCenter, setShowCenter] = useState(true);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const initialPhaseRef = useRef(true);
-
-  // Moving position for the center watermark
-  const [centerPos, setCenterPos] = useState({ x: 50, y: 50 });
 
   const scheduleNext = useCallback((visible: boolean) => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -72,22 +78,12 @@ export default function DailyWatermark({ name, email, userId, academyName, water
 
   useEffect(() => {
     setShowCenter(true);
-    initialPhaseRef.current = true;
     timerRef.current = setTimeout(() => {
-      initialPhaseRef.current = false;
       setShowCenter(false);
       scheduleNext(false);
     }, 60000);
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [scheduleNext]);
-
-  // Move the center watermark to a new random position every 8 seconds
-  useEffect(() => {
-    const moveId = setInterval(() => {
-      setCenterPos(randomCenterPos());
-    }, 8000);
-    return () => clearInterval(moveId);
-  }, []);
 
   return (
     <div
@@ -106,24 +102,23 @@ export default function DailyWatermark({ name, email, userId, academyName, water
         <span style={badge}>{email}</span>
       </div>
 
-      {/* Top-right: Academy name (falls back to student name) */}
+      {/* Top-right: Academy name */}
       <div style={{ position: 'absolute', top: '8%', right: '8%' }}>
-        <span style={badge}>{academyName ? `Academia ${academyName}` : name}</span>
+        <span style={badge}>{academyName ? `Academia ${academyName}` : 'AKADEMO'}</span>
       </div>
 
-      {/* Center: large diagonal watermark — moves every 8s with smooth transition */}
+      {/* Center: bouncing watermark */}
       {showCenter && (
         <span
           style={{
             position: 'absolute',
-            top: `${centerPos.y}%`,
-            left: `${centerPos.x}%`,
-            transform: 'translate(-50%, -50%) rotate(-30deg)',
-            transition: 'top 2.5s ease-in-out, left 2.5s ease-in-out',
-            fontSize: 'clamp(3.2rem, 8vw, 6.4rem)',
+            top: `${bouncePos.y}%`,
+            left: `${bouncePos.x}%`,
+            transform: 'translate(-50%, -50%)',
+            fontSize: 'clamp(1.28rem, 3.2vw, 2.56rem)',
             fontWeight: 800,
             color: 'transparent',
-            WebkitTextStroke: '2px rgba(255,255,255,0.38)',
+            WebkitTextStroke: '1.5px rgba(255,255,255,0.38)',
             textTransform: 'uppercase',
             letterSpacing: '0.20em',
             whiteSpace: 'nowrap',
@@ -134,11 +129,6 @@ export default function DailyWatermark({ name, email, userId, academyName, water
           {name}
         </span>
       )}
-
-      {/* Bottom-left: User ID */}
-      <div style={{ position: 'absolute', bottom: '8%', left: '8%' }}>
-        <span style={badge}>ID: {shortId}</span>
-      </div>
 
       {/* Bottom-right: Live clock */}
       <div style={{ position: 'absolute', bottom: '8%', right: '8%' }}>

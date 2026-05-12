@@ -14,7 +14,6 @@ interface WatermarkOverlayProps {
   watermarkIntervalMins?: number;
 }
 
-// Shared badge style — identical to DailyWatermark
 const badge: React.CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
@@ -32,24 +31,36 @@ const badge: React.CSSProperties = {
   textShadow: '0 1px 3px rgba(0,0,0,0.8)',
 };
 
-function randomPos() {
-  return { x: 25 + Math.random() * 50, y: 25 + Math.random() * 50 };
+// Bouncing DVD-logo style movement
+function useBounce(speed = 0.3) {
+  const [pos, setPos] = useState({ x: 30, y: 40 });
+  const ref = useRef({ x: 30, y: 40, dx: speed, dy: speed * 0.75 });
+  useEffect(() => {
+    const id = setInterval(() => {
+      const s = ref.current;
+      let { x, y, dx, dy } = s;
+      x += dx; y += dy;
+      if (x <= 10 || x >= 78) { dx = -dx; x = Math.max(10, Math.min(78, x)); }
+      if (y <= 10 || y >= 82) { dy = -dy; y = Math.max(10, Math.min(82, y)); }
+      ref.current = { x, y, dx, dy };
+      setPos({ x, y });
+    }, 50);
+    return () => clearInterval(id);
+  }, [speed]);
+  return pos;
 }
 
 function VideoWatermarkContent({
   showWatermark,
   studentName,
   studentEmail,
-  studentId,
   academyName,
   watermarkIntervalMins = 5,
-}: Omit<WatermarkOverlayProps, 'plyrContainer' | 'isUnlimitedUser'>) {
-  const shortId = studentId ? `#${studentId.slice(0, 8).toUpperCase()}` : '';
+}: Omit<WatermarkOverlayProps, 'plyrContainer' | 'isUnlimitedUser' | 'studentId'>) {
+  const bouncePos = useBounce();
 
   const [showCenter, setShowCenter] = useState(true);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const [centerPos, setCenterPos] = useState({ x: 50, y: 50 });
 
   const scheduleNext = useCallback((visible: boolean) => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -69,12 +80,6 @@ function VideoWatermarkContent({
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [scheduleNext]);
 
-  useEffect(() => {
-    const id = setInterval(() => setCenterPos(randomPos()), 8000);
-    return () => clearInterval(id);
-  }, []);
-
-  // Don't render corner badges when watermark is fully off
   if (!showWatermark && !showCenter) return null;
 
   return (
@@ -94,19 +99,18 @@ function VideoWatermarkContent({
         <span style={badge}>{academyName ? `Academia ${academyName}` : 'AKADEMO'}</span>
       </div>
 
-      {/* Center: large diagonal — moves every 8s */}
+      {/* Center: bouncing watermark */}
       {showCenter && studentName && (
         <span
           style={{
             position: 'absolute',
-            top: `${centerPos.y}%`,
-            left: `${centerPos.x}%`,
-            transform: 'translate(-50%, -50%) rotate(-30deg)',
-            transition: 'top 2.5s ease-in-out, left 2.5s ease-in-out',
-            fontSize: 'clamp(3.2rem, 8vw, 6.4rem)',
+            top: `${bouncePos.y}%`,
+            left: `${bouncePos.x}%`,
+            transform: 'translate(-50%, -50%)',
+            fontSize: 'clamp(1.28rem, 3.2vw, 2.56rem)',
             fontWeight: 800,
             color: 'transparent',
-            WebkitTextStroke: '2px rgba(255,255,255,0.38)',
+            WebkitTextStroke: '1.5px rgba(255,255,255,0.38)',
             textTransform: 'uppercase',
             letterSpacing: '0.20em',
             whiteSpace: 'nowrap',
@@ -116,13 +120,6 @@ function VideoWatermarkContent({
         >
           {studentName}
         </span>
-      )}
-
-      {/* Bottom-left: User ID */}
-      {shortId && (
-        <div style={{ position: 'absolute', bottom: '8%', left: '8%' }}>
-          <span style={badge}>ID: {shortId}</span>
-        </div>
       )}
     </div>
   );
@@ -145,7 +142,6 @@ export function WatermarkOverlay({
       showWatermark={showWatermark}
       studentName={studentName}
       studentEmail={studentEmail}
-      studentId={studentId}
       academyName={academyName}
       watermarkIntervalMins={watermarkIntervalMins}
     />
@@ -154,7 +150,6 @@ export function WatermarkOverlay({
   return plyrContainer ? createPortal(content, plyrContainer) : content;
 }
 
-// Kept for backward compatibility — no longer needed as BrandWatermark is inside WatermarkOverlay
 export function BrandWatermark({ academyName }: { academyName?: string }) {
   return null;
 }
