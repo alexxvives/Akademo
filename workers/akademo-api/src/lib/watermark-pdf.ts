@@ -108,65 +108,53 @@ export async function addWatermarkToPdf(
     const size1Base = Math.max(28, shorter * 0.13);
     const size2Base = size1Base * 0.62;
 
-    // Perpendicular spacing between the two rows
-    const lineSpacing = size1Base * 0.85;
-
     const cx = width / 2;
     const cy = height / 2;
 
-    // Two lines centred symmetrically around the diagonal:
-    //   line2 (academy) → +lineSpacing offset (above diagonal)
-    //   line1 (email)   → -lineSpacing offset (below diagonal)
-    const bx1 = cx + lineSpacing * SQ, by1 = cy - lineSpacing * SQ; // email — below
-    const bx2 = cx - lineSpacing * SQ, by2 = cy + lineSpacing * SQ; // academy — above
+    // Perpendicular spacing between lines (only used when both lines present)
+    const lineSpacing = size1Base * 0.75;
 
-    // Max safe text width for a line centred at (bx, by): the text extends ±w/2 in both
-    // x and y (at 45°), so it must not exceed 2 * min(bx, width-bx, by, height-by) / SQ.
-    // Apply a 5% safety margin so text never grazes the edge.
-    const safeFor = (bx: number, by: number) =>
-      Math.min(2 * bx, 2 * (width - bx), 2 * by, 2 * (height - by)) / SQ * 0.95;
+    // Max safe text width for a line visually centred at (px, py):
+    // The text extends ±w/2 along the diagonal (each axis ±w*SQ/2), so it must fit.
+    const safeFor = (px: number, py: number) =>
+      Math.min(2 * px, 2 * (width - px), 2 * py, 2 * (height - py)) / SQ * 0.95;
 
-    const fitted = (text: string, font: typeof fontBold, base: number, bx: number, by: number): number => {
+    const fittedSize = (text: string, font: typeof fontBold, base: number, px: number, py: number): number => {
       if (!text) return base;
       const w = font.widthOfTextAtSize(text, base);
-      const safe = safeFor(bx, by);
+      const safe = safeFor(px, py);
       return w > safe ? base * (safe / w) : base;
     };
 
-    const size1 = fitted(line1, fontNormal, size1Base, bx1, by1);
-    const size2 = fitted(line2, fontBold,   size2Base, bx2, by2);
-
-    // Width of each text line for centering along the 45° baseline
-    const w1 = fontNormal.widthOfTextAtSize(line1, size1);
-    const w2 = line2 ? fontBold.widthOfTextAtSize(line2, size2) : 0;
-
-    const drawLine = (
-      text: string,
-      font: typeof fontBold,
-      size: number,
-      textWidth: number,
-      bx: number,
-      by: number,
-    ) => {
-      if (!text) return;
-      // pdf-lib draws text from the baseline start (bottom-left). For 45° text the
-      // visual center sits ~0.35*size ABOVE the baseline in text-local space.
-      // After rotation that shift maps to direction (-SQ, +SQ) in page space.
-      // To land the VISUAL center at (bx, by) we add the inverse offset (+SQ, -SQ).
-      const halfH = size * 0.35;
-      page.drawText(text, {
-        x: bx - (textWidth / 2) * SQ + halfH * SQ,
-        y: by - (textWidth / 2) * SQ - halfH * SQ,
-        size,
-        font,
-        color: textColor,
-        opacity: textOpacity,
-        rotate: degrees(45),
-      });
+    // Anchor (x, y) for pdf-lib so that the visual centre of the text lands at page point (px, py).
+    // In text-local coords the visual centre ≈ (w/2, size*0.35).
+    // After 45° CCW rotation: page offset = (localX*SQ − localY*SQ, localX*SQ + localY*SQ).
+    // Solving for the anchor: x = px − w/2*SQ + h*SQ,  y = py − w/2*SQ − h*SQ
+    const anchor = (font: typeof fontBold, size: number, text: string, px: number, py: number) => {
+      const w = font.widthOfTextAtSize(text, size);
+      const h = size * 0.35;
+      return { x: px - (w / 2) * SQ + h * SQ, y: py - (w / 2) * SQ - h * SQ };
     };
 
-    drawLine(line2, fontBold,   size2, w2, bx2, by2);   // academy — above
-    drawLine(line1, fontNormal, size1, w1, bx1, by1);   // email   — below
+    const drawAt = (text: string, font: typeof fontBold, size: number, px: number, py: number) => {
+      if (!text) return;
+      const a = anchor(font, size, text, px, py);
+      page.drawText(text, { x: a.x, y: a.y, size, font, color: textColor, opacity: textOpacity, rotate: degrees(45) });
+    };
+
+    if (line2) {
+      // Two lines: symmetric offset from page centre along the perpendicular direction
+      const c1 = { x: cx + lineSpacing * SQ, y: cy - lineSpacing * SQ }; // email  — below diagonal
+      const c2 = { x: cx - lineSpacing * SQ, y: cy + lineSpacing * SQ }; // academy — above diagonal
+      const size1 = fittedSize(line1, fontNormal, size1Base, c1.x, c1.y);
+      const size2 = fittedSize(line2, fontBold,   size2Base, c2.x, c2.y);
+      drawAt(line2, fontBold,   size2, c2.x, c2.y);
+      drawAt(line1, fontNormal, size1, c1.x, c1.y);
+    } else {
+      // Single line: visually centred at the exact page centre
+      const size1 = fittedSize(line1, fontNormal, size1Base, cx, cy);
+      drawAt(line1, fontNormal, size1, cx, cy);
+    }
   }
 
   return pdfDoc.save();

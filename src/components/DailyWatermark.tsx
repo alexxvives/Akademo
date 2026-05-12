@@ -24,39 +24,6 @@ function useClock() {
   return time;
 }
 
-// Pixel-based DVD-logo bounce — adapts to actual container size on every tick
-function useBounce(
-  containerRef: { current: HTMLElement | null },
-  textRef: { current: HTMLElement | null },
-  speed = 1.5
-) {
-  const [pos, setPos] = useState({ x: 50, y: 50 });
-  const stateRef = useRef({ x: 50, y: 50, dx: speed, dy: speed * 0.75 });
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      const cw = containerRef.current?.clientWidth ?? 600;
-      const ch = containerRef.current?.clientHeight ?? 400;
-      const tw = textRef.current?.offsetWidth ?? 120;
-      const th = textRef.current?.offsetHeight ?? 30;
-
-      const maxX = Math.max(0, cw - tw);
-      const maxY = Math.max(0, ch - th);
-
-      const s = stateRef.current;
-      let { x, y, dx, dy } = s;
-      x += dx; y += dy;
-      if (x <= 0 || x >= maxX) { dx = -dx; x = Math.max(0, Math.min(maxX, x)); }
-      if (y <= 0 || y >= maxY) { dy = -dy; y = Math.max(0, Math.min(maxY, y)); }
-      stateRef.current = { x, y, dx, dy };
-      setPos({ x, y });
-    }, 50);
-    return () => clearInterval(id);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  return pos;
-}
-
 function badgeStyle(fontPx: number) {
   return {
     display: 'inline-flex',
@@ -76,35 +43,43 @@ function badgeStyle(fontPx: number) {
   };
 }
 
-export default function DailyWatermark({ name, email, academyName, watermarkIntervalMins = 5 }: DailyWatermarkProps) {
+function randomPos() {
+  return {
+    x: `${(12 + Math.random() * 55).toFixed(1)}%`,
+    y: `${(12 + Math.random() * 55).toFixed(1)}%`,
+  };
+}
+
+export default function DailyWatermark({ name, email, watermarkIntervalMins = 5 }: DailyWatermarkProps) {
   const clock = useClock();
   const containerRef = useRef<HTMLDivElement>(null);
-  const textRef = useRef<HTMLSpanElement>(null);
-  const bouncePos = useBounce(containerRef, textRef);
 
-  const [fontSize, setFontSize] = useState(18);
   const [badgeFontPx, setBadgeFontPx] = useState(11);
+  const [centerFontPx, setCenterFontPx] = useState(18);
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
     const ro = new ResizeObserver(([entry]) => {
       const w = entry.contentRect.width;
-      setFontSize(Math.max(16, Math.min(54, w * 0.0375)));
       setBadgeFontPx(Math.max(11, Math.min(22, w * 0.012)));
+      setCenterFontPx(Math.max(14, Math.min(40, w * 0.028)));
     });
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
 
   const [showCenter, setShowCenter] = useState(true);
+  const [centerPos, setCenterPos] = useState(randomPos);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const scheduleNext = useCallback((visible: boolean) => {
     if (timerRef.current) clearTimeout(timerRef.current);
     const delay = visible ? 30000 : watermarkIntervalMins * 60 * 1000;
     timerRef.current = setTimeout(() => {
-      setShowCenter(!visible);
-      scheduleNext(!visible);
+      const nextVisible = !visible;
+      if (nextVisible) setCenterPos(randomPos());
+      setShowCenter(nextVisible);
+      scheduleNext(nextVisible);
     }, delay);
   }, [watermarkIntervalMins]);
 
@@ -113,7 +88,7 @@ export default function DailyWatermark({ name, email, academyName, watermarkInte
     timerRef.current = setTimeout(() => {
       setShowCenter(false);
       scheduleNext(false);
-    }, 60000);
+    }, 30000);
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [scheduleNext]);
 
@@ -130,37 +105,51 @@ export default function DailyWatermark({ name, email, academyName, watermarkInte
         overflow: 'hidden',
       }}
     >
-      {/* Top-left: Email */}
+      {/* Top-left: Name */}
       <div style={{ position: 'absolute', top: '8%', left: '8%' }}>
+        <span style={badgeStyle(badgeFontPx)}>{name}</span>
+      </div>
+
+      {/* Top-right: Email */}
+      <div style={{ position: 'absolute', top: '8%', right: '8%' }}>
         <span style={badgeStyle(badgeFontPx)}>{email}</span>
       </div>
 
-      {/* Top-right: Academy name */}
-      {academyName && (
-        <div style={{ position: 'absolute', top: '8%', right: '8%' }}>
-          <span style={badgeStyle(badgeFontPx)}>Academia {academyName}</span>
-        </div>
-      )}
-
-      {/* Center: bouncing watermark — pixel-positioned, always fully visible */}
+      {/* Center: random-position watermark with dark semi-transparent background */}
       {showCenter && (
-        <span
-          ref={textRef}
-          style={{
-            position: 'absolute',
-            top: bouncePos.y,
-            left: bouncePos.x,
-            fontSize: `${fontSize}px`,
+        <div style={{
+          position: 'absolute',
+          top: centerPos.y,
+          left: centerPos.x,
+          background: 'rgba(0,0,0,0.42)',
+          borderRadius: '8px',
+          padding: '10px 18px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '3px',
+          backdropFilter: 'blur(4px)',
+        }}>
+          <span style={{
+            color: 'rgba(255,255,255,0.92)',
             fontWeight: 800,
-            color: 'rgba(255,255,255,0.9)',
+            fontSize: `${centerFontPx}px`,
             textTransform: 'uppercase',
-            letterSpacing: '0.20em',
+            letterSpacing: '0.08em',
             whiteSpace: 'nowrap',
-            textShadow: '0 0 24px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.6)',
-          }}
-        >
-          {name}
-        </span>
+            textShadow: '0 1px 4px rgba(0,0,0,0.6)',
+          }}>
+            {name}
+          </span>
+          <span style={{
+            color: 'rgba(255,255,255,0.72)',
+            fontWeight: 500,
+            fontSize: `${Math.round(centerFontPx * 0.65)}px`,
+            whiteSpace: 'nowrap',
+          }}>
+            {email}
+          </span>
+        </div>
       )}
 
       {/* Bottom-right: Live clock */}
