@@ -56,6 +56,7 @@ export default function DailyWatermark({ name, email, watermarkIntervalMins = 5 
 
   const [badgeFontPx, setBadgeFontPx] = useState(11);
   const [centerFontPx, setCenterFontPx] = useState(18);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -65,8 +66,11 @@ export default function DailyWatermark({ name, email, watermarkIntervalMins = 5 
       setCenterFontPx(Math.max(14, Math.min(40, w * 0.028)));
     });
     ro.observe(el);
-    return () => ro.disconnect();
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => { ro.disconnect(); document.removeEventListener('fullscreenchange', onFsChange); };
   }, []);
+  const displayCenterFontPx = isFullscreen ? centerFontPx * 2 : centerFontPx;
 
   const [showCenter, setShowCenter] = useState(true);
   const [centerPos, setCenterPos] = useState(randomPos);
@@ -74,7 +78,7 @@ export default function DailyWatermark({ name, email, watermarkIntervalMins = 5 
 
   const scheduleNext = useCallback((visible: boolean) => {
     if (timerRef.current) clearTimeout(timerRef.current);
-    const delay = visible ? 30000 : watermarkIntervalMins * 60 * 1000;
+    const delay = visible ? 5000 : watermarkIntervalMins * 60 * 1000;
     timerRef.current = setTimeout(() => {
       const nextVisible = !visible;
       if (nextVisible) setCenterPos(randomPos());
@@ -88,7 +92,7 @@ export default function DailyWatermark({ name, email, watermarkIntervalMins = 5 
     timerRef.current = setTimeout(() => {
       setShowCenter(false);
       scheduleNext(false);
-    }, 30000);
+    }, 5000);
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [scheduleNext]);
 
@@ -133,7 +137,7 @@ export default function DailyWatermark({ name, email, watermarkIntervalMins = 5 
           <span style={{
             color: 'rgba(255,255,255,0.92)',
             fontWeight: 800,
-            fontSize: `${centerFontPx}px`,
+            fontSize: `${displayCenterFontPx}px`,
             textTransform: 'uppercase',
             letterSpacing: '0.08em',
             whiteSpace: 'nowrap',
@@ -144,7 +148,7 @@ export default function DailyWatermark({ name, email, watermarkIntervalMins = 5 
           <span style={{
             color: 'rgba(255,255,255,0.72)',
             fontWeight: 500,
-            fontSize: `${Math.round(centerFontPx * 0.65)}px`,
+            fontSize: `${Math.round(displayCenterFontPx * 0.65)}px`,
             whiteSpace: 'nowrap',
           }}>
             {email}
