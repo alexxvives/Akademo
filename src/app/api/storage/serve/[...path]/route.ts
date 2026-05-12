@@ -38,14 +38,14 @@ export async function GET(
     }
     
     // Stream the file response
-    return new NextResponse(response.body, {
-      status: response.status,
-      headers: {
-        'Content-Type': response.headers.get('Content-Type') || 'application/octet-stream',
-        'Content-Length': response.headers.get('Content-Length') || '0',
-        'Cache-Control': response.headers.get('Cache-Control') || 'public, max-age=31536000',
-      },
-    });
+    const resHeaders: Record<string, string> = {
+      'Content-Type': response.headers.get('Content-Type') || 'application/octet-stream',
+      'Content-Length': response.headers.get('Content-Length') || '0',
+      'Cache-Control': response.headers.get('Cache-Control') || 'public, max-age=31536000',
+    };
+    const cd = response.headers.get('Content-Disposition');
+    if (cd) resHeaders['Content-Disposition'] = cd;
+    return new NextResponse(response.body, { status: response.status, headers: resHeaders });
   } catch (error: unknown) {
     console.error('[Storage Proxy] Error:', error);
     return NextResponse.json(

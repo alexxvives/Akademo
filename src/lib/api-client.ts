@@ -116,7 +116,16 @@ export async function openDocument(storagePath: string): Promise<void> {
   const { token, expires, name, email, academyName } = json.data;
   const encodedKey = storagePath.split('/').map(encodeURIComponent).join('/');
   const qs = new URLSearchParams({ token, expires: String(expires), name: name ?? '', email: email ?? '', academyName: academyName ?? '' });
-  window.open(`/api/storage/serve/${encodedKey}?${qs}`, '_blank');
+  const url = `/api/storage/serve/${encodedKey}?${qs}`;
+
+  // PDFs open in the in-app viewer (no browser download toolbar)
+  if (storagePath.toLowerCase().endsWith('.pdf')) {
+    const rawName = storagePath.split('/').pop() ?? '';
+    const title = decodeURIComponent(rawName).replace(/\.[^.]+$/, '');
+    window.dispatchEvent(new CustomEvent('open-pdf', { detail: { url, title } }));
+  } else {
+    window.open(url, '_blank');
+  }
 }
 
 /**
