@@ -89,12 +89,12 @@ export function MobileSidebar({
 
       {/* Mobile Sidebar */}
       <aside
-        className={`lg:hidden fixed top-0 left-0 bottom-0 w-72 bg-white z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`lg:hidden fixed top-0 left-0 bottom-0 w-72 bg-[#1a1d29] z-50 flex flex-col transform transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* Logo & Close */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200">
+        <div className="flex-shrink-0 h-16 flex items-center justify-between px-4 border-b border-gray-700/50">
           <Link
             href={`/dashboard/${role.toLowerCase()}`}
             className="flex items-center gap-2"
@@ -107,23 +107,23 @@ export function MobileSidebar({
               height={28}
               className="h-7 w-auto object-contain"
             />
-            <span className="font-semibold text-gray-900 text-lg font-[family-name:var(--font-montserrat)]">
+            <span className="font-semibold text-gray-400 text-lg font-[family-name:var(--font-montserrat)]">
               AKADEMO
             </span>
           </Link>
           <button
             onClick={onClose}
-            className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-1.5 hover:bg-gray-700/60 rounded-lg transition-colors"
             aria-label="Close menu"
           >
-            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
         {/* Mobile Navigation */}
-        <nav className="px-3 py-4 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 180px)' }}>
+        <nav className="flex-1 min-h-0 px-3 py-4 overflow-y-auto">
           {(() => {
             const groups: { label: string | null; items: MenuItem[] }[] = [];
             for (const item of menuItems) {
@@ -139,7 +139,7 @@ export function MobileSidebar({
                   {group.label && (
                     <button
                       onClick={() => toggleGroup(group.label!)}
-                      className={`w-full flex items-center justify-between px-3 pb-1 text-[10px] font-semibold tracking-widest text-gray-400 hover:text-gray-600 uppercase transition-colors ${gi > 0 ? 'pt-4' : 'pt-1'}`}
+                      className={`w-full flex items-center justify-between px-3 pb-1 text-[10px] font-semibold tracking-widest text-gray-500 hover:text-gray-300 uppercase transition-colors ${gi > 0 ? 'pt-4' : 'pt-1'}`}
                     >
                       <span>{group.label}</span>
                       <svg className={`w-3 h-3 transition-transform ${isCollapsed ? '-rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -162,16 +162,19 @@ export function MobileSidebar({
                             key={item.href}
                             href={item.href}
                             onClick={onClose}
-                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
+                            className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group ${
                               isActive
-                                ? 'bg-brand-50 text-brand-700 font-medium shadow-sm'
-                                : 'text-gray-700 hover:bg-gray-50'
+                                ? 'bg-gray-800/50 text-white'
+                                : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'
                             }`}
                           >
-                            <span className={isActive ? 'text-brand-600' : 'text-gray-500'}>
+                            {isActive && (
+                              <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[#b1e787] rounded-r-full" />
+                            )}
+                            <span className={isActive ? 'text-[#b1e787]' : 'text-gray-400 group-hover:text-white'}>
                               {renderIcon(item)}
                             </span>
-                            <span className="text-sm">{item.label}</span>
+                            <span className="text-sm font-medium">{item.label}</span>
                             {showPulse && (
                               <span className="ml-auto w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
                             )}

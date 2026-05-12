@@ -39,13 +39,13 @@ export function MobileSidebarBottom({
   if (!user) return null;
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 border-t border-gray-200 p-4 bg-white">
+    <div className="flex-shrink-0 border-t border-gray-700/50 p-4 bg-[#1a1d29]">
       {/* Period selector */}
       {(role === 'ACADEMY' || role === 'TEACHER') && periods.length > 0 && (
         <div className="mb-3 relative">
           <button
             onClick={() => setPeriodDropdownOpen(prev => !prev)}
-            className="w-full flex items-center justify-between gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-lg text-xs border border-gray-200 transition-colors"
+            className="w-full flex items-center justify-between gap-2 px-3 py-2 bg-gray-800/40 hover:bg-gray-700/50 text-gray-300 rounded-lg text-xs border border-gray-700/50 transition-colors"
           >
             <div className="flex items-center gap-2 min-w-0">
               <span className="w-2 h-2 rounded-full flex-shrink-0 bg-green-500" />
@@ -58,11 +58,11 @@ export function MobileSidebarBottom({
             </svg>
           </button>
           {periodDropdownOpen && (
-            <div className="absolute bottom-full mb-1 left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-20">
+            <div className="absolute bottom-full mb-1 left-0 right-0 bg-[#252836] border border-gray-700/50 rounded-lg shadow-lg overflow-hidden z-20">
               <div className="py-1">
                 <button
                   onClick={() => { setActivePeriodId('all'); setPeriodDropdownOpen(false); }}
-                  className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors ${activePeriodId === 'all' ? 'text-gray-900 bg-gray-100 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
+                  className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors ${activePeriodId === 'all' ? 'text-white bg-gray-700/60 font-medium' : 'text-gray-400 hover:bg-gray-700/40'}`}
                 >
                   <span className={`w-2 h-2 rounded-full flex-shrink-0 ${activePeriodId === 'all' ? 'bg-green-500' : 'bg-gray-400'}`} />
                   <span className="truncate flex-1 text-left">Todos los períodos</span>
@@ -71,11 +71,11 @@ export function MobileSidebarBottom({
                   <button
                     key={p.id}
                     onClick={() => { setActivePeriodId(p.id); setPeriodDropdownOpen(false); }}
-                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors ${activePeriodId === p.id ? 'text-gray-900 bg-gray-100 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
+                    className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors ${activePeriodId === p.id ? 'text-white bg-gray-700/60 font-medium' : 'text-gray-400 hover:bg-gray-700/40'}`}
                   >
                     <span className={`w-2 h-2 rounded-full flex-shrink-0 ${activePeriodId === p.id ? 'bg-green-500' : 'bg-gray-400'}`} />
                     <span className="truncate flex-1 text-left">{p.name}</span>
-                    {activePeriodId === p.id && <span className="text-[10px] text-green-600 ml-auto flex-shrink-0">activo</span>}
+                    {activePeriodId === p.id && <span className="text-[10px] text-[#b1e787] ml-auto flex-shrink-0">activo</span>}
                   </button>
                 ))}
               </div>
@@ -89,28 +89,28 @@ export function MobileSidebarBottom({
           <Link
             href={`/dashboard/${role.toLowerCase()}/profile`}
             onClick={onClose}
-            className="flex items-center gap-3 flex-1 min-w-0 hover:bg-gray-50 rounded-lg p-1.5 -m-1.5 transition-colors group"
+            className="flex items-center gap-3 flex-1 min-w-0 hover:bg-gray-800/50 rounded-lg p-1.5 -m-1.5 transition-colors group"
           >
-            <div className="w-9 h-9 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center text-sm font-medium text-gray-700 flex-shrink-0">
+            <div className="w-9 h-9 bg-gradient-to-br from-gray-700 to-gray-600 rounded-full flex items-center justify-center text-sm font-medium text-gray-200 flex-shrink-0">
               {user.firstName[0]}{user.lastName[0]}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
+              <p className="text-sm font-medium text-white truncate">
                 {user.firstName} {user.lastName}
               </p>
-              <p className="text-[11.4px] text-gray-500 truncate">{user.email}</p>
+              <p className="text-[11.4px] text-gray-400 truncate">{user.email}</p>
             </div>
           </Link>
         ) : (
           <div className="flex items-center gap-3 flex-1 min-w-0 p-1.5 -m-1.5">
-            <div className="w-9 h-9 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center text-sm font-medium text-gray-700 flex-shrink-0">
+            <div className="w-9 h-9 bg-gradient-to-br from-gray-700 to-gray-600 rounded-full flex items-center justify-center text-sm font-medium text-gray-200 flex-shrink-0">
               {user.firstName[0]}{user.lastName[0]}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
+              <p className="text-sm font-medium text-white truncate">
                 {user.firstName} {user.lastName}
               </p>
-              <p className="text-[11.4px] text-gray-500 truncate">{user.email}</p>
+              <p className="text-[11.4px] text-gray-400 truncate">{user.email}</p>
             </div>
           </div>
         )}
@@ -120,7 +120,7 @@ export function MobileSidebarBottom({
             onMouseEnter={() => linkIconRef.current?.startAnimation()}
             onMouseLeave={() => linkIconRef.current?.stopAnimation()}
             title={linkCopied ? '¡Enlace copiado!' : 'Copiar enlace de invitación'}
-            className={`p-1 rounded-lg flex-shrink-0 transition-colors ${linkCopied ? 'text-green-600' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}
+            className={`p-1 rounded-lg flex-shrink-0 transition-colors ${linkCopied ? 'text-[#b1e787]' : 'text-gray-400 hover:text-white hover:bg-gray-700/50'}`}
           >
             <LinkIcon ref={linkIconRef} size={18} />
           </button>
@@ -130,7 +130,7 @@ export function MobileSidebarBottom({
         onClick={onLogout}
         onMouseEnter={() => logoutIconRef.current?.startAnimation()}
         onMouseLeave={() => logoutIconRef.current?.stopAnimation()}
-        className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+        className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-400 hover:bg-gray-800/50 hover:text-white rounded-lg transition-colors"
       >
         <LogoutIcon ref={logoutIconRef} size={16} />
         Cerrar Sesión
