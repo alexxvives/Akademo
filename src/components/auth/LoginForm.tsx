@@ -33,9 +33,9 @@ export function LoginForm({ onSuccess, onSwitchToRegister, onForgotPassword, onC
     setError('');
 
     try {
-      // Add 15s timeout for login requests to handle slow/unreliable networks
+      // Add 30s timeout for login requests to handle slow/unreliable networks and cold starts
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
 
       const response = await apiClient('/auth/login', {
         method: 'POST',
