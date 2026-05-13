@@ -150,6 +150,60 @@ webhooks.post('/zoom', async (c) => {
         .bind('ended', new Date().toISOString(), meetingId.toString())
         .run();
 
+      // Fetch authoritative participant count from Zoom REST API.
+      // This is more reliable than counting webhook events (which can be lost,
+      // arrive out of order, or be blocked by signature failures).
+      // Run async via waitUntil so webhook returns 200 fast and Zoom doesn't retry.
+      c.executionCtx.waitUntil((async () => {
+        try {
+          const stream = await c.env.DB
+            .prepare(`SELECT ls.id, c.zoomAccountId FROM LiveStream ls JOIN Class c ON ls.classId = c.id WHERE ls.zoomMeetingId = ?`)
+            .bind(meetingId.toString())
+            .first() as any;
+
+          if (!stream?.zoomAccountId) {
+            console.warn(`[Zoom Webhook] meeting.ended — no zoom account for meeting ${meetingId}`);
+            return;
+          }
+
+          // Refresh access token
+          let accessToken: string | null = null;
+          try {
+            accessToken = await refreshZoomToken(c, stream.zoomAccountId);
+          } catch (e: any) {
+            console.error('[Zoom Webhook] Token refresh failed for participant count:', e.message);
+          }
+          if (!accessToken) {
+            const acct = await c.env.DB.prepare('SELECT accessToken FROM ZoomAccount WHERE id = ?')
+              .bind(stream.zoomAccountId).first() as any;
+            accessToken = acct?.accessToken || null;
+          }
+          if (!accessToken) return;
+
+          // Zoom takes ~30s to make past_meetings data available
+          await new Promise(r => setTimeout(r, 30000));
+
+          const res = await fetch(`https://api.zoom.us/v2/past_meetings/${meetingId}`, {
+            headers: { 'Authorization': `Bearer ${accessToken}` },
+          });
+          if (!res.ok) {
+            console.warn(`[Zoom Webhook] past_meetings ${meetingId} returned ${res.status}: ${await res.text()}`);
+            return;
+          }
+          const past = await res.json() as any;
+          // participants_count = unique participants who joined (best metric)
+          const count = past.participants_count ?? past.total_minutes ?? null;
+          if (typeof count === 'number' && count > 0) {
+            await c.env.DB.prepare(
+              `UPDATE LiveStream SET participantCount = ?, currentCount = 0, participantsFetchedAt = ? WHERE id = ?`
+            ).bind(count, new Date().toISOString(), stream.id).run();
+            console.log(`[Zoom Webhook] Updated participantCount=${count} for stream ${stream.id}`);
+          }
+        } catch (e: any) {
+          console.error('[Zoom Webhook] Failed to fetch past_meetings participant count:', e.message);
+        }
+      })());
+
     } else if (event === 'meeting.deleted') {
       const meetingId = data.object.id;
 

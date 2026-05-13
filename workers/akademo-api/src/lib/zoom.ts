@@ -100,6 +100,7 @@ export async function createZoomMeeting(options: CreateMeetingOptions): Promise<
         auto_recording: 'cloud',
         embed_password_in_join_link: true,
         watermark: true,
+        add_watermark: true,
       },
     }),
   });
@@ -112,6 +113,14 @@ export async function createZoomMeeting(options: CreateMeetingOptions): Promise<
   }
 
   const meeting = await meetingResponse.json() as ZoomMeeting;
+
+  // Log watermark-related fields from Zoom's response to diagnose if account allows it.
+  // If watermark is missing or false here, the account doesn't support it via API.
+  console.log('[Zoom] Meeting created — settings echo:', JSON.stringify({
+    id: (meeting as any).id,
+    watermark: (meeting as any).settings?.watermark,
+    add_watermark: (meeting as any).settings?.add_watermark,
+  }));
   
   return meeting;
 }
