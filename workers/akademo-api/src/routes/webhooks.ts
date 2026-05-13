@@ -191,13 +191,15 @@ webhooks.post('/zoom', async (c) => {
             return;
           }
           const past = await res.json() as any;
-          // participants_count = unique participants who joined (best metric)
-          const count = past.participants_count ?? past.total_minutes ?? null;
-          if (typeof count === 'number' && count > 0) {
+          // participants_count includes the host — subtract 1 to get attendee/student count only.
+          // Zoom deduplicates rejoins, so a student who leaves and comes back is still counted once.
+          const rawCount = past.participants_count ?? null;
+          const count = typeof rawCount === 'number' && rawCount > 0 ? rawCount - 1 : rawCount;
+          if (typeof count === 'number' && count >= 0) {
             await c.env.DB.prepare(
               `UPDATE LiveStream SET participantCount = ?, currentCount = 0, participantsFetchedAt = ? WHERE id = ?`
             ).bind(count, new Date().toISOString(), stream.id).run();
-            console.log(`[Zoom Webhook] Updated participantCount=${count} for stream ${stream.id}`);
+            console.log(`[Zoom Webhook] Updated participantCount=${count} (raw=${rawCount}) for stream ${stream.id}`);
           }
         } catch (e: any) {
           console.error('[Zoom Webhook] Failed to fetch past_meetings participant count:', e.message);

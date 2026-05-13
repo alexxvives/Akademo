@@ -99,6 +99,7 @@ export async function createZoomMeeting(options: CreateMeetingOptions): Promise<
         mute_upon_entry: true,
         auto_recording: 'cloud',
         embed_password_in_join_link: true,
+        meeting_authentication: true, // Required for watermark to show attendee emails
         watermark: true,
         add_watermark: true,
       },
