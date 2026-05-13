@@ -99,9 +99,10 @@ export async function createZoomMeeting(options: CreateMeetingOptions): Promise<
         mute_upon_entry: true,
         auto_recording: 'cloud',
         embed_password_in_join_link: true,
-        meeting_authentication: true, // Required for watermark to show attendee emails
+        // meeting_authentication is handled at account level ("by default for all meetings" is ON)
+        // Setting it per-meeting without an authentication_option profile causes Zoom to silently
+        // discard all settings, including watermark. Relying on account defaults instead.
         watermark: true,
-        add_watermark: true,
       },
     }),
   });
@@ -115,12 +116,10 @@ export async function createZoomMeeting(options: CreateMeetingOptions): Promise<
 
   const meeting = await meetingResponse.json() as ZoomMeeting;
 
-  // Log watermark-related fields from Zoom's response to diagnose if account allows it.
-  // If watermark is missing or false here, the account doesn't support it via API.
-  console.log('[Zoom] Meeting created — settings echo:', JSON.stringify({
+  // Log full settings response to diagnose watermark and authentication issues.
+  console.log('[Zoom] Meeting created — full settings echo:', JSON.stringify({
     id: (meeting as any).id,
-    watermark: (meeting as any).settings?.watermark,
-    add_watermark: (meeting as any).settings?.add_watermark,
+    settings: (meeting as any).settings,
   }));
   
   return meeting;
