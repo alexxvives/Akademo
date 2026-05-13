@@ -432,8 +432,8 @@ webhooks.post('/zoom', async (c) => {
           await c.env.DB
             .prepare(`
               UPDATE LiveStream 
-              SET currentCount = currentCount + 1,
-                  participantCount = MAX(participantCount, currentCount + 1),
+              SET currentCount = COALESCE(currentCount, 0) + 1,
+                  participantCount = MAX(COALESCE(participantCount, 0), COALESCE(currentCount, 0) + 1),
                   participantsFetchedAt = ?
               WHERE id = ?
             `)

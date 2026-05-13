@@ -33,7 +33,7 @@ export function getBunnyThumbnailUrl(videoGuid: string, thumbnailFileName?: stri
 export function getBunnyEmbedUrl(videoGuid: string): string {
   const config = getConfig();
   const libraryId = config.BUNNY_STREAM_LIBRARY_ID || '571240'; // Fallback to known library ID
-  return `https://iframe.mediadelivery.net/embed/${libraryId}/${videoGuid}?autoplay=false`;
+  return `https://iframe.mediadelivery.net/embed/${libraryId}/${videoGuid}`;
 }
 
 // Get Bunny direct MP4 download URL (720p fallback)

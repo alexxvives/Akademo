@@ -929,55 +929,6 @@ payments.patch('/:id/approve-payment', async (c) => {
 
     await c.env.DB.batch(approvalBatch);
 
-    // Send confirmation email to student when payment is approved
-    if (approved) {
-      try {
-        const studentInfo: any = await c.env.DB
-          .prepare(`
-            SELECT u.email, u.firstName, u.lastName, c.name as className, p.amount, p.currency
-            FROM Payment p
-            JOIN User u ON p.payerId = u.id
-            JOIN Class c ON p.classId = c.id
-            WHERE p.id = ?
-          `)
-          .bind(paymentId)
-          .first();
-
-        if (studentInfo?.email) {
-          const studentName = `${studentInfo.firstName || ''} ${studentInfo.lastName || ''}`.trim() || 'Estudiante';
-          const amountDisplay = studentInfo.amount
-            ? `${studentInfo.amount} ${studentInfo.currency === 'EUR' ? '€' : studentInfo.currency}`
-            : '';
-
-          await sendEmail(c.env, {
-            from: 'AKADEMO <noreply@akademo-edu.com>',
-            to: studentInfo.email,
-            subject: `✅ Pago aprobado — ${studentInfo.className}`,
-            html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
-                  <div style="text-align: center; margin-bottom: 30px;">
-                    <img src="https://akademo-edu.com/logo/akademo-icon.png" alt="AKADEMO" style="height: 40px;" />
-                  </div>
-                  <h2 style="color: #111; margin-bottom: 8px;">¡Pago aprobado! 🎉</h2>
-                  <p style="color: #555; margin-bottom: 24px;">Hola <strong>${escapeHtml(studentName)}</strong>, tu pago ha sido aprobado por la academia.</p>
-                  <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
-                    <p style="margin: 0 0 8px 0;"><strong>Asignatura:</strong> ${escapeHtml(studentInfo.className || '')}</p>
-                    ${amountDisplay ? `<p style="margin: 0;"><strong>Importe:</strong> ${amountDisplay}</p>` : ''}
-                  </div>
-                  <p style="color: #555;">Ya puedes acceder a todo el contenido de la clase. ¡Buena suerte con tus estudios!</p>
-                  <div style="margin-top: 32px; text-align: center;">
-                    <a href="https://akademo-edu.com/dashboard/student/subjects" style="background: #111; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">Ir a mis asignaturas</a>
-                  </div>
-                  <p style="color: #aaa; font-size: 12px; margin-top: 32px; text-align: center;">AKADEMO · akademo-edu.com</p>
-                </div>
-              `,
-          });
-        }
-      } catch (emailErr) {
-        console.error('[Approve Payment] Email send failed (non-fatal):', emailErr);
-      }
-    }
-
     return c.json(successResponse({ message: approved ? 'Payment approved' : 'Payment rejected' }));
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
@@ -1723,7 +1674,7 @@ payments.post('/send-payment-reminder', async (c) => {
         const ok = await sendEmail(c.env, {
           from: 'AKADEMO <onboarding@akademo-edu.com>',
           to: email,
-          subject: `Recordatorio de pago — ${className} · ${academy.name}`,
+          subject: `Recordatorio de pago — ${academy.name}`,
           html: `
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: 0 auto; background-color: #f8fafc; padding: 24px;">
               <div style="background-color: #0f172a; padding: 32px 40px; border-radius: 12px 12px 0 0;">
@@ -1737,7 +1688,7 @@ payments.post('/send-payment-reminder', async (c) => {
                   <p style="margin: 0; color: #713f12; font-size: 13px; line-height: 1.5;">Por favor, realiza el pago lo antes posible para mantener tu acceso a los contenidos de la asignatura.</p>
                 </div>
                 <div style="text-align: center; margin-bottom: 36px;">
-                  <a href="https://akademo-edu.com/dashboard/student" style="display: inline-block; background-color: #0f172a; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-size: 15px; font-weight: 600;">Ir a mi cuenta →</a>
+                  <a href="https://akademo-edu.com/join/academy/${academy.id}" style="display: inline-block; background-color: #0f172a; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-size: 15px; font-weight: 600;">Ir a mi cuenta →</a>
                 </div>
                 <p style="color: #94a3b8; font-size: 13px; line-height: 1.6; margin: 0; padding-top: 24px; border-top: 1px solid #f1f5f9;">Saludos,<br><strong style="color: #475569;">Equipo de ${safeName}</strong></p>
               </div>

@@ -204,6 +204,8 @@ videos.post('/progress/admin-update', async (c) => {
       return c.json(errorResponse('studentId, videoId, and totalWatchTimeSeconds required'), 400);
     }
 
+    const safeTotalWatchTime = Math.max(0, Number(totalWatchTimeSeconds));
+
     // Get video and lesson details to check authorization
     const video = await c.env.DB
       .prepare(`
@@ -238,7 +240,7 @@ videos.post('/progress/admin-update', async (c) => {
       .first() as any;
 
     const maxWatchTime = (video.durationSeconds || 0) * (video.maxWatchTimeMultiplier || 2);
-    const newStatus = totalWatchTimeSeconds >= maxWatchTime ? 'BLOCKED' : 'ACTIVE';
+    const newStatus = safeTotalWatchTime >= maxWatchTime ? 'BLOCKED' : 'ACTIVE';
     const now = new Date().toISOString();
 
     if (existing) {
@@ -251,7 +253,7 @@ videos.post('/progress/admin-update', async (c) => {
               updatedAt = ?
           WHERE id = ?
         `)
-        .bind(totalWatchTimeSeconds, newStatus, now, existing.id)
+        .bind(safeTotalWatchTime, newStatus, now, existing.id)
         .run();
     } else {
       // Create new play state
@@ -267,7 +269,7 @@ videos.post('/progress/admin-update', async (c) => {
           playStateId,
           videoId,
           studentId,
-          totalWatchTimeSeconds,
+          safeTotalWatchTime,
           0,
           now,
           now,

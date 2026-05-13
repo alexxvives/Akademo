@@ -25,7 +25,7 @@ students.get('/progress', async (c) => {
             vps.studentId,
             l.classId,
             COUNT(DISTINCT v.lessonId) AS lessonsCompleted,
-            SUM(vps.totalWatchTimeSeconds) AS totalWatchTime
+            SUM(CASE WHEN vps.totalWatchTimeSeconds > 0 THEN vps.totalWatchTimeSeconds ELSE 0 END) AS totalWatchTime
           FROM VideoPlayState vps
           JOIN Video v ON v.id = vps.videoId
           JOIN Lesson l ON l.id = v.lessonId
@@ -95,7 +95,7 @@ students.get('/progress', async (c) => {
           (SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.payerId = u.id AND p.classId = c.id AND p.status IN ('PAID', 'COMPLETED')) as totalPaid,
           (SELECT COUNT(DISTINCT v2.lessonId) FROM VideoPlayState vps2 JOIN Video v2 ON v2.id = vps2.videoId JOIN Lesson l2 ON l2.id = v2.lessonId WHERE vps2.studentId = u.id AND l2.classId = c.id) as lessonsCompleted,
           (SELECT COUNT(*) FROM Lesson l3 WHERE l3.classId = c.id) as totalLessons,
-          (SELECT COALESCE(SUM(vps3.totalWatchTimeSeconds), 0) FROM VideoPlayState vps3 JOIN Video v3 ON v3.id = vps3.videoId JOIN Lesson l3b ON l3b.id = v3.lessonId WHERE vps3.studentId = u.id AND l3b.classId = c.id) as totalWatchTime,
+          (SELECT COALESCE(SUM(CASE WHEN vps3.totalWatchTimeSeconds > 0 THEN vps3.totalWatchTimeSeconds ELSE 0 END), 0) FROM VideoPlayState vps3 JOIN Video v3 ON v3.id = vps3.videoId JOIN Lesson l3b ON l3b.id = v3.lessonId WHERE vps3.studentId = u.id AND l3b.classId = c.id) as totalWatchTime,
           (SELECT COALESCE(AVG(lr.rating), 0) FROM LessonRating lr JOIN Lesson lrl ON lrl.id = lr.lessonId WHERE lr.studentId = u.id AND lrl.classId = c.id) as averageRating
         FROM User u
         JOIN ClassEnrollment e ON e.userId = u.id AND e.status = 'APPROVED'
@@ -117,7 +117,7 @@ students.get('/progress', async (c) => {
             vps.studentId,
             l.classId,
             COUNT(DISTINCT v.lessonId) AS lessonsCompleted,
-            SUM(vps.totalWatchTimeSeconds) AS totalWatchTime
+            SUM(CASE WHEN vps.totalWatchTimeSeconds > 0 THEN vps.totalWatchTimeSeconds ELSE 0 END) AS totalWatchTime
           FROM Lesson l
           JOIN Video v ON v.lessonId = l.id
           JOIN VideoPlayState vps ON vps.videoId = v.id

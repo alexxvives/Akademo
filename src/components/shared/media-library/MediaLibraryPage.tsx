@@ -162,6 +162,12 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
     loadArchived();
   }, [loadArchived]);
 
+  // Called when a video is permanently deleted from the Videos tab
+  const handleDelete = useCallback((videoId: string) => {
+    setVideos(prev => prev.filter(v => v.id !== videoId));
+    setTotalVideos(prev => Math.max(0, prev - 1));
+  }, []);
+
   // Pagination only applies to the videos tab; documents are loaded all at once
   const totalPages = tab === 'videos' ? Math.ceil(totalVideos / 50) : 0;
 
@@ -256,7 +262,7 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
         ) : loading ? (
           tab === 'videos' ? <SkeletonVideosGrid /> : <SkeletonTable rows={8} cols={5} />
         ) : tab === 'videos' ? (
-          <VideosGrid videos={videos} onArchive={handleArchive} />
+          <VideosGrid videos={videos} onArchive={handleArchive} onDelete={handleDelete} />
         ) : (
           <DocumentsTable documents={documents} />
         )}

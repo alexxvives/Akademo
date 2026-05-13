@@ -18,6 +18,7 @@ export function StudentsProgressTable({
   onBanStudent,
   onAlertStudent,
 }: StudentsProgressTableProps) {
+  const [tiempoTooltipPos, setTiempoTooltipPos] = useState<{ x: number; y: number } | null>(null);
   const [expandedStudents, setExpandedStudents] = useState<Set<string>>(new Set());
   const [visibleColumns, setVisibleColumns] = useState<VisibleColumns>({ asignatura: true, videosVistos: true, tiempoTotal: true, ultimaActividad: true, pagos: true, sospechas: true, acciones: false });
   const [columnDropdownOpen, setColumnDropdownOpen] = useState(false);
@@ -104,7 +105,7 @@ export function StudentsProgressTable({
         </div>
         <div className="overflow-x-auto max-h-[700px] overflow-y-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
+            <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10 overflow-visible">
               <tr>
                 <th className="text-left py-2 px-3 md:py-4 md:px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Estudiante
@@ -126,7 +127,33 @@ export function StudentsProgressTable({
                 )}
                 {visibleColumns.tiempoTotal && (
                 <th className="text-left py-2 px-3 md:py-4 md:px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Tiempo Total
+                  <span
+                    className="inline-flex items-center gap-1 cursor-help"
+                    onMouseEnter={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      setTiempoTooltipPos({ x: rect.left, y: rect.top });
+                    }}
+                    onMouseLeave={() => setTiempoTooltipPos(null)}
+                  >
+                    Tiempo Total
+                    <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </span>
+                  {tiempoTooltipPos && (
+                    <div
+                      style={{
+                        position: 'fixed',
+                        left: tiempoTooltipPos.x,
+                        top: tiempoTooltipPos.y,
+                        transform: 'translateY(calc(-100% - 8px))',
+                        zIndex: 9999,
+                      }}
+                      className="px-3 py-2 bg-gray-900 text-white text-xs rounded-lg w-72 normal-case tracking-normal leading-relaxed pointer-events-none"
+                    >
+                      Tiempo acumulado viendo vídeos. Puede aparecer en negativo si se han otorgado minutos extra que superan el tiempo ya consumido.
+                    </div>
+                  )}
                 </th>
                 )}
                 {visibleColumns.ultimaActividad && (
@@ -146,7 +173,7 @@ export function StudentsProgressTable({
                       <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <span className="absolute top-full right-0 mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 w-72 normal-case tracking-normal leading-relaxed whitespace-pre-line">
+                      <span className="absolute top-full right-0 mt-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-[100] w-72 normal-case tracking-normal leading-relaxed whitespace-pre-line">
                         {`Se incrementa en dos situaciones:\n\n• Viaje imposible: el alumno aparece en dos ubicaciones muy alejadas en muy poco tiempo (movimiento geográficamente imposible).\n\n• Sesión duplicada: alguien inició sesión con esta cuenta mientras ya había otra sesión activa (posible uso compartido de contraseña).`}
                       </span>
                     </span>

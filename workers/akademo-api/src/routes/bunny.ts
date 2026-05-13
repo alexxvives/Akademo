@@ -694,6 +694,79 @@ bunny.post('/videos/:videoId/archive', async (c) => {
   }
 });
 
+// DELETE /bunny/videos/:videoId — permanently delete a lesson video or stream recording from Bunny + DB
+bunny.delete('/videos/:videoId', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    if (!['ACADEMY', 'ADMIN', 'TEACHER'].includes(session.role)) {
+      return c.json(errorResponse('Not authorized'), 403);
+    }
+
+    const videoId = c.req.param('videoId');
+
+    // Try lesson video first
+    const lessonRow = await c.env.DB.prepare(`
+      SELECT v.id, v.title, up.bunnyGuid, cl.academyId, 'lesson' as source
+      FROM Video v
+      JOIN Upload up ON v.uploadId = up.id
+      JOIN Lesson l ON v.lessonId = l.id
+      JOIN Class cl ON l.classId = cl.id
+      WHERE v.id = ?
+    `).bind(videoId).first() as any;
+
+    // Fall back to stream recording
+    const recRow = !lessonRow ? await c.env.DB.prepare(`
+      SELECT ls.id, COALESCE(ls.title, 'Grabación') as title, ls.recordingId as bunnyGuid, c.academyId, 'recording' as source
+      FROM LiveStream ls
+      LEFT JOIN Class c ON ls.classId = c.id
+      WHERE ls.id = ?
+    `).bind(videoId).first() as any : null;
+
+    const row = lessonRow || recRow;
+    if (!row) return c.json(errorResponse('Video not found'), 404);
+
+    // Authorization
+    if (session.role === 'ACADEMY') {
+      const academy = await c.env.DB.prepare('SELECT id FROM Academy WHERE ownerId = ?').bind(session.id).first() as any;
+      if (!academy || academy.id !== row.academyId) return c.json(errorResponse('Forbidden'), 403);
+    } else if (session.role === 'TEACHER') {
+      const teacher = await c.env.DB.prepare('SELECT academyId FROM Teacher WHERE userId = ?').bind(session.id).first() as any;
+      if (!teacher || teacher.academyId !== row.academyId) return c.json(errorResponse('Forbidden'), 403);
+    }
+
+    const apiKey = c.env.BUNNY_STREAM_API_KEY;
+    const libraryId = c.env.BUNNY_STREAM_LIBRARY_ID;
+
+    // Delete from Bunny Stream (best-effort — don't fail if already gone)
+    if (row.bunnyGuid && apiKey && libraryId) {
+      try {
+        await fetch(`https://video.bunnycdn.com/library/${libraryId}/videos/${row.bunnyGuid}`, {
+          method: 'DELETE',
+          headers: { 'AccessKey': apiKey },
+        });
+      } catch (e) {
+        console.error('[Video Delete] Bunny delete failed (ignored):', e);
+      }
+    }
+
+    if (row.source === 'recording') {
+      await c.env.DB.prepare('DELETE FROM LiveStream WHERE id = ?').bind(videoId).run();
+    } else {
+      // Delete Video record (VideoPlayState cascades from Video)
+      await c.env.DB.prepare('DELETE FROM Video WHERE id = ?').bind(videoId).run();
+      if (row.bunnyGuid) {
+        await c.env.DB.prepare('DELETE FROM Upload WHERE bunnyGuid = ?').bind(row.bunnyGuid).run();
+      }
+    }
+
+    return c.json(successResponse({ deleted: true }));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Video Delete] Error:', error);
+    return c.json(errorResponse('Failed to delete video'), 500);
+  }
+});
+
 // GET /bunny/archive/:id/download — authenticated proxy download
 bunny.get('/archive/:id/download', async (c) => {
   try {
