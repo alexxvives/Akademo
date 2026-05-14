@@ -14,41 +14,102 @@ function pad(n: number) { return String(n).padStart(2, '0'); }
 const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const WDS = ['Lu','Ma','Mi','Ju','Vi','Sa','Do'];
 
-function MiniTimePicker({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
-  const hRef = useRef<HTMLDivElement>(null);
-  const mRef = useRef<HTMLDivElement>(null);
-  const [h, m] = (value || '09:00').split(':').map(Number);
-  const hrs  = Array.from({ length: 24 }, (_, i) => i);
-  const mins = Array.from({ length: 12 }, (_, i) => i * 5);
+/* ─── Dual-handle 24 h time range slider ─────────────────────────── */
+function TimeRangeSlider({
+  fromTime, untilTime, onFromTimeChange, onUntilTimeChange,
+}: { fromTime: string; untilTime: string; onFromTimeChange: (v: string) => void; onUntilTimeChange: (v: string) => void }) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const dragging = useRef<'from' | 'until' | null>(null);
+
+  const parseMins = (t: string, def: string) => {
+    const [h = 0, m = 0] = (t || def).split(':').map(Number);
+    return (h || 0) * 60 + (m || 0);
+  };
+  const toTime = (mins: number) => `${pad(Math.floor(mins / 60))}:${pad(mins % 60)}`;
+  const snap   = (v: number) => Math.round(v / 15) * 15;
+
+  const fMins = parseMins(fromTime,  '09:00');
+  const uMins = parseMins(untilTime, '18:00');
+
+  // Stable refs — let the single-mount effect always read fresh values
+  const fRef  = useRef(fMins);  fRef.current  = fMins;
+  const uRef  = useRef(uMins);  uRef.current  = uMins;
+  const cbF   = useRef(onFromTimeChange);  cbF.current  = onFromTimeChange;
+  const cbU   = useRef(onUntilTimeChange); cbU.current  = onUntilTimeChange;
+
   useEffect(() => {
-    requestAnimationFrame(() => {
-      (hRef.current?.querySelector('[data-s]') as HTMLElement | null)?.scrollIntoView({ block: 'center', behavior: 'instant' });
-      (mRef.current?.querySelector('[data-s]') as HTMLElement | null)?.scrollIntoView({ block: 'center', behavior: 'instant' });
-    });
-  }, []);
+    const getMins = (e: MouseEvent | TouchEvent) => {
+      if (!trackRef.current) return 0;
+      const rect = trackRef.current.getBoundingClientRect();
+      const cx = 'touches' in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
+      return snap(Math.round(Math.max(0, Math.min(1, (cx - rect.left) / rect.width)) * 1440));
+    };
+    const onMove = (e: MouseEvent | TouchEvent) => {
+      if (!dragging.current) return;
+      const mins = getMins(e);
+      if (dragging.current === 'from') {
+        cbF.current(toTime(Math.min(mins, uRef.current - 15)));
+      } else {
+        cbU.current(toTime(Math.max(mins, fRef.current + 15)));
+      }
+    };
+    const onUp = () => { dragging.current = null; };
+    document.addEventListener('mousemove',  onMove);
+    document.addEventListener('mouseup',    onUp);
+    document.addEventListener('touchmove',  onMove);
+    document.addEventListener('touchend',   onUp);
+    return () => {
+      document.removeEventListener('mousemove',  onMove);
+      document.removeEventListener('mouseup',    onUp);
+      document.removeEventListener('touchmove',  onMove);
+      document.removeEventListener('touchend',   onUp);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const fPct = (fMins / 1440) * 100;
+  const uPct = (uMins / 1440) * 100;
+
   return (
-    <div>
-      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">{label}</p>
-      <div className="flex border border-gray-200 rounded-lg overflow-hidden" style={{ height: 88 }}>
-        <div ref={hRef} className="flex-1 overflow-y-auto">
-          {hrs.map(hh => (
-            <button key={hh} type="button" data-s={hh === h ? '' : undefined}
-              onClick={() => onChange(`${pad(hh)}:${pad(m)}`)}
-              className={`w-full py-1 text-xs text-center transition-colors ${hh === h ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-gray-600 hover:bg-gray-50'}`}>
-              {pad(hh)}
-            </button>
-          ))}
+    <div className="px-4 pt-5 pb-3">
+      {/* Track */}
+      <div ref={trackRef} className="relative h-5">
+        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1.5 bg-gray-200 rounded-full" />
+        <div
+          className="absolute top-1/2 -translate-y-1/2 h-1.5 bg-blue-500 rounded-full pointer-events-none"
+          style={{ left: `${fPct}%`, right: `${100 - uPct}%` }}
+        />
+        {/* From handle */}
+        <div
+          className="absolute top-1/2 -translate-y-1/2 w-[18px] h-[18px] bg-white border-2 border-blue-500 rounded-full shadow cursor-grab select-none"
+          style={{ left: `calc(${fPct}% - 9px)`, zIndex: 3 }}
+          onMouseDown={e => { e.preventDefault(); dragging.current = 'from'; }}
+          onTouchStart={() => { dragging.current = 'from'; }}
+        >
+          <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 text-[10px] font-bold text-blue-700 whitespace-nowrap bg-white border border-blue-100 shadow-sm rounded px-1 pointer-events-none">
+            {toTime(fMins)}
+          </div>
         </div>
-        <div className="w-px bg-gray-100 self-stretch flex-shrink-0" />
-        <div ref={mRef} className="flex-1 overflow-y-auto">
-          {mins.map(mm => (
-            <button key={mm} type="button" data-s={mm === m ? '' : undefined}
-              onClick={() => onChange(`${pad(h)}:${pad(mm)}`)}
-              className={`w-full py-1 text-xs text-center transition-colors ${mm === m ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-gray-600 hover:bg-gray-50'}`}>
-              {pad(mm)}
-            </button>
-          ))}
+        {/* Until handle */}
+        <div
+          className="absolute top-1/2 -translate-y-1/2 w-[18px] h-[18px] bg-white border-2 border-blue-500 rounded-full shadow cursor-grab select-none"
+          style={{ left: `calc(${uPct}% - 9px)`, zIndex: 3 }}
+          onMouseDown={e => { e.preventDefault(); dragging.current = 'until'; }}
+          onTouchStart={() => { dragging.current = 'until'; }}
+        >
+          <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 text-[10px] font-bold text-blue-700 whitespace-nowrap bg-white border border-blue-100 shadow-sm rounded px-1 pointer-events-none">
+            {toTime(uMins)}
+          </div>
         </div>
+      </div>
+      {/* Hour ticks */}
+      <div className="relative mt-2" style={{ height: 12 }}>
+        {[0, 6, 12, 18, 24].map(h => (
+          <span
+            key={h}
+            className="absolute text-[9px] text-gray-400 -translate-x-1/2"
+            style={{ left: `${(h / 24) * 100}%` }}
+          >{h}h</span>
+        ))}
       </div>
     </div>
   );
@@ -176,10 +237,10 @@ export function DateRangePicker({ fromDate, fromTime, untilDate, untilTime, onFr
           return (
             <div key={ds} className={`relative flex items-center justify-center h-8 ${mid ? 'bg-blue-100' : ''}`}
               onMouseEnter={() => setHovered(ds)} onMouseLeave={() => setHovered(null)}>
-              {s && <span className="absolute inset-y-1 left-1/2 right-0 bg-blue-100" />}
-              {e && <span className="absolute inset-y-1 right-1/2 left-0 bg-blue-100" />}
+              {s && <span className="absolute inset-y-0 left-1/2 right-0 bg-blue-100" />}
+              {e && <span className="absolute inset-y-0 right-1/2 left-0 bg-blue-100" />}
               <button type="button" onClick={() => click(ds)}
-                className={`relative z-10 w-7 h-7 flex items-center justify-center rounded-full text-sm transition-colors ${circle}`}>
+                className={`relative z-10 w-8 h-8 flex items-center justify-center rounded-full text-sm transition-colors ${circle}`}>
                 {day}
               </button>
             </div>
@@ -187,10 +248,14 @@ export function DateRangePicker({ fromDate, fromTime, untilDate, untilTime, onFr
         })}
       </div>
 
-      {/* Inline time pickers */}
-      <div className="border-t border-gray-100 px-4 py-3 grid grid-cols-2 gap-3">
-        <MiniTimePicker label="Hora inicio" value={fromTime} onChange={onFromTimeChange} />
-        <MiniTimePicker label="Hora fin"    value={untilTime} onChange={onUntilTimeChange} />
+      {/* Time range slider */}
+      <div className="border-t border-gray-100">
+        <TimeRangeSlider
+          fromTime={fromTime}
+          untilTime={untilTime}
+          onFromTimeChange={onFromTimeChange}
+          onUntilTimeChange={onUntilTimeChange}
+        />
       </div>
     </div>
   );

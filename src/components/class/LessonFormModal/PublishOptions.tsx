@@ -81,21 +81,24 @@ export function PublishOptions({ formData, setFormData }: PublishOptionsProps) {
             </div>
           </div>
         )}
-      </div>
 
-      {/* Ventana: range date+time picker */}
-      {mode === 'window' && (
-        <DateRangePicker
-          fromDate={formData.availableFromDate}
-          fromTime={formData.availableFromTime}
-          untilDate={formData.availableUntilDate}
-          untilTime={formData.availableUntilTime}
-          onFromDateChange={v => setFormData(prev => ({ ...prev, availableFromDate: v }))}
-          onFromTimeChange={v => setFormData(prev => ({ ...prev, availableFromTime: v }))}
-          onUntilDateChange={v => setFormData(prev => ({ ...prev, availableUntilDate: v }))}
-          onUntilTimeChange={v => setFormData(prev => ({ ...prev, availableUntilTime: v }))}
-        />
-      )}
+        {/* Ventana: trigger de rango a la derecha de los botones */}
+        {mode === 'window' && (
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Disponibilidad</label>
+            <DateRangePicker
+              fromDate={formData.availableFromDate}
+              fromTime={formData.availableFromTime}
+              untilDate={formData.availableUntilDate}
+              untilTime={formData.availableUntilTime}
+              onFromDateChange={v => setFormData(prev => ({ ...prev, availableFromDate: v }))}
+              onFromTimeChange={v => setFormData(prev => ({ ...prev, availableFromTime: v }))}
+              onUntilDateChange={v => setFormData(prev => ({ ...prev, availableUntilDate: v }))}
+              onUntilTimeChange={v => setFormData(prev => ({ ...prev, availableUntilTime: v }))}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
