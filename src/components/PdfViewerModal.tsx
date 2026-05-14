@@ -26,13 +26,28 @@ function drawCanvasWatermark(canvas: HTMLCanvasElement, email: string, academyNa
   const line1 = email;
   const line2 = academyName ? `ACADEMIA ${academyName.toUpperCase()}` : '';
 
-  // Match server-side style: single centered diagonal watermark at 45°, grey semi-transparent
   const shorter = Math.min(width, height);
-  const size1Base = Math.max(28, shorter * 0.13);
-  const size2Base = size1Base * 0.62;
+  const SQ = Math.SQRT1_2;
   const cx = width / 2;
   const cy = height / 2;
-  const angle = Math.PI / 4; // 45° CCW
+  const angle = Math.PI / 4; // 45°
+
+  // Maximum text width so the rotated text stays inside the canvas with a 10% margin.
+  // At 45°, a text of width w occupies w*√2/2 on each axis, so safe width = shorter * 0.9.
+  const maxTextWidth = shorter * 0.9;
+
+  // Return the largest font size ≤ base such that ctx.measureText(text).width ≤ maxTextWidth.
+  const fittedSize = (text: string, font: string, base: number): number => {
+    if (!text) return base;
+    ctx.font = `${font} ${base}px Arial, sans-serif`;
+    const w = ctx.measureText(text).width;
+    return w > maxTextWidth ? base * (maxTextWidth / w) : base;
+  };
+
+  const size1Base = Math.max(20, shorter * 0.13);
+  const size2Base = size1Base * 0.62;
+  const size1 = fittedSize(line1, '', size1Base);
+  const size2 = fittedSize(line2, 'bold', size2Base);
 
   ctx.save();
   ctx.globalAlpha = 0.40;
@@ -42,29 +57,28 @@ function drawCanvasWatermark(canvas: HTMLCanvasElement, email: string, academyNa
 
   if (line2) {
     const lineSpacing = size1Base * 0.75;
-    const SQ = Math.SQRT1_2;
-    // email below diagonal, academy above — mirrors server offsets
     const c1 = { x: cx + lineSpacing * SQ, y: cy + lineSpacing * SQ };
     const c2 = { x: cx - lineSpacing * SQ, y: cy - lineSpacing * SQ };
 
     ctx.save();
     ctx.translate(c1.x, c1.y);
     ctx.rotate(-angle);
-    ctx.font = `${size1Base}px Arial, sans-serif`;
+    ctx.font = `${size1}px Arial, sans-serif`;
     ctx.fillText(line1, 0, 0);
     ctx.restore();
 
     ctx.save();
     ctx.translate(c2.x, c2.y);
     ctx.rotate(-angle);
-    ctx.font = `bold ${size2Base}px Arial, sans-serif`;
+    ctx.font = `bold ${size2}px Arial, sans-serif`;
     ctx.fillText(line2, 0, 0);
     ctx.restore();
   } else {
+    const size = fittedSize(line1 || line2, '', size1Base);
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate(-angle);
-    ctx.font = `${size1Base}px Arial, sans-serif`;
+    ctx.font = `${size}px Arial, sans-serif`;
     ctx.fillText(line1 || line2, 0, 0);
     ctx.restore();
   }
