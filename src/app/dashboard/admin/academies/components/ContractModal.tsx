@@ -2,6 +2,7 @@
 
 import { createPortal } from 'react-dom';
 import { useState } from 'react';
+import { CustomDatePicker } from '@/components/ui/CustomDatePicker';
 
 interface ContractFormData {
   contractNumber: string;
@@ -202,8 +203,10 @@ export function ContractModal({ academy, onClose }: ContractModalProps) {
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Fecha de inicio</label>
-              <input type="date" value={formData.startDate} onChange={set('startDate')}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+              <CustomDatePicker
+                value={formData.startDate}
+                onChange={v => setFormData(prev => ({ ...prev, startDate: v }))}
+              />
             </div>
           </div>
 

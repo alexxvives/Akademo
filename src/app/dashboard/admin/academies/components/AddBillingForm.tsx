@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { apiClient } from '@/lib/api-client';
 import type { BillingRecord } from '../types';
+import { CustomDatePicker } from '@/components/ui/CustomDatePicker';
 
 export function AddBillingForm({ academyId, onAdded }: { academyId: string; onAdded: (r: BillingRecord) => void }) {
   const today = new Date();
@@ -59,7 +60,7 @@ export function AddBillingForm({ academyId, onAdded }: { academyId: string; onAd
       </div>
       <div className="flex flex-col gap-0.5">
         <label className="text-[10px] text-gray-500 uppercase tracking-wide">Pagado el</label>
-        <input type="date" value={paidAt} onChange={e => setPaidAt(e.target.value)} className="text-xs border border-gray-200 rounded px-2 py-1" />
+        <CustomDatePicker value={paidAt} onChange={v => setPaidAt(v)} />
       </div>
       <button type="submit" disabled={saving} className="px-3 py-1.5 bg-brand-600 text-white text-xs font-medium rounded-lg hover:bg-brand-700 disabled:opacity-50 transition-colors">
         {saving ? '...' : 'Guardar'}

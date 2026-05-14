@@ -29,7 +29,7 @@ videos.post('/progress', validateBody(videoProgressSchema), async (c) => {
     // Get video details to check duration and max watch time
     const video = await c.env.DB
       .prepare(`
-        SELECT v.durationSeconds, l.maxWatchTimeMultiplier, l.classId
+        SELECT v.durationSeconds, l.maxWatchTimeMultiplier, l.classId, l.availableFrom
         FROM Video v
         JOIN Lesson l ON v.lessonId = l.id
         WHERE v.id = ?
@@ -61,6 +61,21 @@ videos.post('/progress', validateBody(videoProgressSchema), async (c) => {
       .prepare('SELECT * FROM VideoPlayState WHERE videoId = ? AND studentId = ?')
       .bind(videoId, session.id)
       .first() as any;
+
+    // Window fresh-start: if the lesson has availableFrom and the student last watched
+    // before the current window started, reset their watch time so they get a full slate.
+    if (existing && (video as any).availableFrom) {
+      const windowStart = new Date((video as any).availableFrom as string).getTime();
+      const lastWatched = existing.lastWatchedAt ? new Date(existing.lastWatchedAt).getTime() : 0;
+      if (lastWatched < windowStart) {
+        await c.env.DB
+          .prepare("UPDATE VideoPlayState SET totalWatchTimeSeconds = 0, status = 'ACTIVE', updatedAt = ? WHERE id = ?")
+          .bind(new Date().toISOString(), existing.id)
+          .run();
+        existing.totalWatchTimeSeconds = 0;
+        existing.status = 'ACTIVE';
+      }
+    }
 
     const maxWatchTime = (((video as any).durationSeconds as number) || 0) * (((video as any).maxWatchTimeMultiplier as number) || 2);
     const now = new Date().toISOString();

@@ -308,14 +308,7 @@ lessons.get('/:id', async (c) => {
       if (lesson.releaseDate && new Date(lesson.releaseDate as string) > new Date()) {
         return c.json(errorResponse('Lesson not yet available'), 403);
       }
-      // Block access if outside the availability window
-      const nowWin = new Date();
-      if (lesson.availableFrom && nowWin < new Date(lesson.availableFrom as string)) {
-        return c.json(errorResponse('Este vídeo aún no está disponible'), 403);
-      }
-      if (lesson.availableUntil && nowWin > new Date(lesson.availableUntil as string)) {
-        return c.json(errorResponse('El período de acceso ha finalizado'), 403);
-      }
+      // Window mode: lesson is always accessible — watch time resets automatically when a new window starts
     } else if (session.role === 'TEACHER') {
       if (!(await teacherCanAccessClass(c.env.DB, session.id, lesson.classId as string))) {
         return c.json(errorResponse('Not authorized'), 403);
