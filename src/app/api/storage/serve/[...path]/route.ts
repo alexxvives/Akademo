@@ -41,7 +41,8 @@ export async function GET(
     const resHeaders: Record<string, string> = {
       'Content-Type': response.headers.get('Content-Type') || 'application/octet-stream',
       'Content-Length': response.headers.get('Content-Length') || '0',
-      'Cache-Control': response.headers.get('Cache-Control') || 'public, max-age=31536000',
+      // Default to private, no-store — never publicly cache user-specific content (watermarked PDFs)
+      'Cache-Control': response.headers.get('Cache-Control') || 'private, no-store',
     };
     const cd = response.headers.get('Content-Disposition');
     if (cd) resHeaders['Content-Disposition'] = cd;

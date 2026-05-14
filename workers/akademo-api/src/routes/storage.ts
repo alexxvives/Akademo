@@ -422,6 +422,10 @@ async function buildFileResponse(
   const wmData = opts.overrideWatermark ?? null;
   const shouldWatermark = isPdf && object.size <= PDF_WATERMARK_SIZE_LIMIT && (wmData !== null || session !== null);
 
+  if (isPdf && object.size > PDF_WATERMARK_SIZE_LIMIT) {
+    console.warn(`[Watermark] Skipped — PDF too large: ${object.size} bytes (limit ${PDF_WATERMARK_SIZE_LIMIT}). Key: ${opts.fileKey ?? 'unknown'}`);
+  }
+
   if (shouldWatermark) {
     try {
       let email: string;
@@ -448,18 +452,20 @@ async function buildFileResponse(
         };
         if (contentDisposition) wHeaders['Content-Disposition'] = contentDisposition;
         return new Response(watermarked, { headers: wHeaders });
-      } catch {
+      } catch (err) {
         // Watermarking failed — serve original bytes (stream already consumed by arrayBuffer())
+        console.error('[Watermark] addWatermarkToPdf threw — serving original PDF:', err, 'key:', opts.fileKey ?? 'unknown', 'size:', object.size);
         const fbHeaders: Record<string, string> = {
           'Content-Type': 'application/pdf',
           'Content-Length': pdfBytes.byteLength.toString(),
-          'Cache-Control': opts.cacheControl,
+          'Cache-Control': 'private, no-store',
         };
         if (contentDisposition) fbHeaders['Content-Disposition'] = contentDisposition;
         return new Response(pdfBytes, { headers: fbHeaders });
       }
-    } catch {
-      // Watermark setup failed (e.g. DB error) — fall through to stream directly
+    } catch (err) {
+      // Watermark setup failed (e.g. DB error getting academy info) — fall through to stream directly
+      console.error('[Watermark] Setup failed — serving without watermark:', err, 'key:', opts.fileKey ?? 'unknown');
     }
   }
 
