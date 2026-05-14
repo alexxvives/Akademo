@@ -7,17 +7,23 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUploadWarning } from '@/hooks/useUploadWarning';
 import { useTranscodingPoll } from '@/hooks/useTranscodingPoll';
 import { loadDemoClassData } from './class-demo-loader';
-import type { Topic, Lesson, LessonDetail, LessonVideo, PendingEnrollment, LiveClass, StreamRecording, ClassData, LessonFeedback } from './types';
+import type { Topic, Lesson, LessonDetail, LessonVideo, PendingEnrollment, LiveClass, StreamRecording, ClassData, LessonFeedback, LessonFormData } from './types';
 
-const DEFAULT_FORM_DATA = () => ({
-  title: '', description: '', externalUrl: '',
-  releaseDate: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })(),
-  releaseTime: new Date().toTimeString().slice(0, 5),
-  publishImmediately: true, maxWatchTimeMultiplier: 2.0, watermarkIntervalMins: 5,
-  topicId: '' as string, videos: [] as { file: File; title: string; description: string; duration: number }[],
-  documents: [] as { file: File; title: string; description: string }[], selectedStreamRecordings: [] as string[],
-  links: [] as { title: string; url: string }[],
-});
+const DEFAULT_FORM_DATA = () => {
+  const today = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
+  return {
+    title: '', description: '', externalUrl: '',
+    releaseDate: today,
+    releaseTime: new Date().toTimeString().slice(0, 5),
+    publishImmediately: true, publishMode: 'immediate' as const,
+    availableFromDate: today, availableFromTime: '09:00',
+    availableUntilDate: today, availableUntilTime: '21:00',
+    maxWatchTimeMultiplier: 2.0, watermarkIntervalMins: 5,
+    topicId: '' as string, videos: [] as { file: File; title: string; description: string; duration: number }[],
+    documents: [] as { file: File; title: string; description: string }[], selectedStreamRecordings: [] as string[],
+    links: [] as { title: string; url: string }[],
+  };
+};
 
 export function useClassDetail(role: 'academy' | 'teacher' | 'admin') {
   const params = useParams();
@@ -45,7 +51,7 @@ export function useClassDetail(role: 'academy' | 'teacher' | 'admin') {
     documents: Array<{ id: string; title: string; fileName: string; storagePath: string }>;
     links: Array<{ id: string; title: string; url: string; orderIndex: number }>;
   } | null>(null);
-  const [lessonFormData, setLessonFormData] = useState(DEFAULT_FORM_DATA());
+  const [lessonFormData, setLessonFormData] = useState<LessonFormData>(DEFAULT_FORM_DATA());
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadSpeed, setUploadSpeed] = useState(0);

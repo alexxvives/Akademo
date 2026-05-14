@@ -9,9 +9,10 @@ interface Props {
   loading: boolean;
   canDelete: boolean;
   onDelete: (id: string) => void;
+  onUnarchive?: (id: string) => Promise<boolean>;
 }
 
-export function ArchivedVideosGrid({ videos, loading, canDelete, onDelete }: Props) {
+export function ArchivedVideosGrid({ videos, loading, canDelete, onDelete, onUnarchive }: Props) {
   if (loading) return <SkeletonTable rows={4} cols={1} />;
 
   if (!videos.length) {
@@ -36,6 +37,7 @@ export function ArchivedVideosGrid({ videos, loading, canDelete, onDelete }: Pro
           video={video}
           canDelete={canDelete}
           onDelete={onDelete}
+          onUnarchive={onUnarchive}
         />
       ))}
     </div>

@@ -5,14 +5,20 @@ import { uploadFilesToServices } from './class-upload-utils';
 import type { Lesson, LessonDetailResponse } from './types';
 import type { ClassDetailState } from './useClassDetail';
 
-const resetFormData = (defaults: { maxWatchTimeMultiplier: number; watermarkIntervalMins: number }) => ({
-  title: '', description: '', externalUrl: '',
-  releaseDate: new Date().toISOString().split('T')[0], releaseTime: '00:00', publishImmediately: true,
-  maxWatchTimeMultiplier: defaults.maxWatchTimeMultiplier, watermarkIntervalMins: defaults.watermarkIntervalMins,
-  topicId: '', videos: [] as { file: File; title: string; description: string; duration: number }[],
-  documents: [] as { file: File; title: string; description: string }[], selectedStreamRecordings: [] as string[],
-  links: [] as { title: string; url: string }[],
-});
+const resetFormData = (defaults: { maxWatchTimeMultiplier: number; watermarkIntervalMins: number }) => {
+  const today = new Date().toISOString().split('T')[0];
+  return {
+    title: '', description: '', externalUrl: '',
+    releaseDate: today, releaseTime: '00:00', publishImmediately: true,
+    publishMode: 'immediate' as const,
+    availableFromDate: today, availableFromTime: '09:00',
+    availableUntilDate: today, availableUntilTime: '21:00',
+    maxWatchTimeMultiplier: defaults.maxWatchTimeMultiplier, watermarkIntervalMins: defaults.watermarkIntervalMins,
+    topicId: '', videos: [] as { file: File; title: string; description: string; duration: number }[],
+    documents: [] as { file: File; title: string; description: string }[], selectedStreamRecordings: [] as string[],
+    links: [] as { title: string; url: string }[],
+  };
+};
 
 export function useLessonCreateEdit(s: ClassDetailState) {
   const handleLessonCreate = async (e: React.FormEvent) => {
@@ -28,7 +34,9 @@ export function useLessonCreateEdit(s: ClassDetailState) {
             title: s.lessonFormData.title || undefined, description: s.lessonFormData.description || undefined,
             topicId: s.lessonFormData.topicId || undefined, maxWatchTimeMultiplier: s.lessonFormData.maxWatchTimeMultiplier,
             watermarkIntervalMins: s.lessonFormData.watermarkIntervalMins,
-            releaseDate: s.lessonFormData.publishImmediately ? undefined : `${s.lessonFormData.releaseDate}T${s.lessonFormData.releaseTime}:00`,
+            releaseDate: s.lessonFormData.publishMode === 'immediate' ? undefined : `${s.lessonFormData.releaseDate}T${s.lessonFormData.releaseTime}:00`,
+            availableFrom: s.lessonFormData.publishMode === 'window' ? `${s.lessonFormData.availableFromDate}T${s.lessonFormData.availableFromTime}:00` : undefined,
+            availableUntil: s.lessonFormData.publishMode === 'window' ? `${s.lessonFormData.availableUntilDate}T${s.lessonFormData.availableUntilTime}:00` : undefined,
           }),
         });
         const result = await response.json();
@@ -47,9 +55,15 @@ export function useLessonCreateEdit(s: ClassDetailState) {
       return alert('Agrega al menos un video, documento o enlace, o selecciona una grabación de stream');
     }
 
-    const releaseTimestamp = s.lessonFormData.publishImmediately
+    const releaseTimestamp = s.lessonFormData.publishMode === 'immediate'
       ? new Date().toISOString()
       : new Date(`${s.lessonFormData.releaseDate}T${s.lessonFormData.releaseTime}:00`).toISOString();
+    const availableFrom = s.lessonFormData.publishMode === 'window'
+      ? new Date(`${s.lessonFormData.availableFromDate}T${s.lessonFormData.availableFromTime}:00`).toISOString()
+      : undefined;
+    const availableUntil = s.lessonFormData.publishMode === 'window'
+      ? new Date(`${s.lessonFormData.availableUntilDate}T${s.lessonFormData.availableUntilTime}:00`).toISOString()
+      : undefined;
 
     const tempLessonId = `temp_${Date.now()}`;
     const tempLesson: Lesson = {
@@ -89,6 +103,7 @@ export function useLessonCreateEdit(s: ClassDetailState) {
           description: s.lessonFormData.description, releaseDate: releaseTimestamp, topicId: s.lessonFormData.topicId || null,
           maxWatchTimeMultiplier: s.lessonFormData.maxWatchTimeMultiplier, watermarkIntervalMins: s.lessonFormData.watermarkIntervalMins, videos, documents,
           links: s.lessonFormData.links.length > 0 ? s.lessonFormData.links : undefined,
+          availableFrom, availableUntil,
         }),
         signal: abortController.signal,
       });
@@ -109,7 +124,10 @@ export function useLessonCreateEdit(s: ClassDetailState) {
       s.setEditingLessonMedia({ videos: [], documents: [], links: [] });
       s.setLessonFormData({
         title: lesson.title, description: lesson.description || '', externalUrl: '', releaseDate: lesson.releaseDate.split('T')[0],
-        releaseTime: '00:00', publishImmediately: true, maxWatchTimeMultiplier: lesson.maxWatchTimeMultiplier,
+        releaseTime: '00:00', publishImmediately: true, publishMode: 'immediate',
+        availableFromDate: new Date().toISOString().split('T')[0], availableFromTime: '09:00',
+        availableUntilDate: new Date().toISOString().split('T')[0], availableUntilTime: '21:00',
+        maxWatchTimeMultiplier: lesson.maxWatchTimeMultiplier,
         watermarkIntervalMins: lesson.watermarkIntervalMins, topicId: lesson.topicId || '', videos: [], documents: [], selectedStreamRecordings: [], links: [],
       });
       s.setEditingLessonId(lesson.id); s.setShowLessonForm(true); return;
@@ -124,9 +142,17 @@ export function useLessonCreateEdit(s: ClassDetailState) {
         documents: (detail.documents || []).map(d => ({ id: d.id, title: d.title || d.upload?.fileName || 'Document', fileName: d.upload?.fileName || 'Unknown', storagePath: d.upload?.storagePath || '' })),
         links: (detail.links || []).map((l: { id: string; title: string; url: string; orderIndex: number }) => ({ id: l.id, title: l.title, url: l.url, orderIndex: l.orderIndex })),
       });
+      const existingFrom = detail.availableFrom ? new Date(detail.availableFrom) : null;
+      const existingUntil = detail.availableUntil ? new Date(detail.availableUntil) : null;
+      const existingMode = existingFrom || existingUntil ? 'window' : 'immediate';
       s.setLessonFormData({
         title: detail.title, description: detail.description || '', externalUrl: detail.externalUrl || '', releaseDate: detail.releaseDate.split('T')[0],
-        releaseTime: '00:00', publishImmediately: true, maxWatchTimeMultiplier: detail.maxWatchTimeMultiplier,
+        releaseTime: '00:00', publishImmediately: true, publishMode: existingMode,
+        availableFromDate: existingFrom ? existingFrom.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        availableFromTime: existingFrom ? existingFrom.toTimeString().slice(0, 5) : '09:00',
+        availableUntilDate: existingUntil ? existingUntil.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        availableUntilTime: existingUntil ? existingUntil.toTimeString().slice(0, 5) : '21:00',
+        maxWatchTimeMultiplier: detail.maxWatchTimeMultiplier,
         watermarkIntervalMins: detail.watermarkIntervalMins, topicId: detail.topicId || '', videos: [], documents: [], selectedStreamRecordings: [], links: [],
       });
       s.setEditingLessonId(lesson.id); s.setShowLessonForm(true);
@@ -139,7 +165,10 @@ export function useLessonCreateEdit(s: ClassDetailState) {
     try {
       const res = await apiClient(`/lessons/${s.editingLessonId}`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: s.lessonFormData.title, description: s.lessonFormData.description, maxWatchTimeMultiplier: s.lessonFormData.maxWatchTimeMultiplier, watermarkIntervalMins: s.lessonFormData.watermarkIntervalMins, topicId: s.lessonFormData.topicId || null }),
+        body: JSON.stringify({ title: s.lessonFormData.title, description: s.lessonFormData.description, maxWatchTimeMultiplier: s.lessonFormData.maxWatchTimeMultiplier, watermarkIntervalMins: s.lessonFormData.watermarkIntervalMins, topicId: s.lessonFormData.topicId || null,
+          availableFrom: s.lessonFormData.publishMode === 'window' ? `${s.lessonFormData.availableFromDate}T${s.lessonFormData.availableFromTime}:00` : null,
+          availableUntil: s.lessonFormData.publishMode === 'window' ? `${s.lessonFormData.availableUntilDate}T${s.lessonFormData.availableUntilTime}:00` : null,
+        }),
       });
       const result = await res.json();
       if (!result.success) { alert(result.error || 'Failed to update lesson'); return; }

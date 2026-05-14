@@ -29,5 +29,17 @@ export function useArchivedVideos(role: string, selectedAcademy: string, selecte
     } catch { /* ignore */ }
   }, []);
 
-  return { archivedVideos, loadingArchived, showUploadModal, setShowUploadModal, loadArchived, deleteArchived };
+  const unarchiveArchived = useCallback(async (id: string): Promise<boolean> => {
+    try {
+      const res = await apiClient(`/bunny/archived/${id}/unarchive`, { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        setArchivedVideos(prev => prev.filter(v => v.id !== id));
+        return true;
+      }
+      return false;
+    } catch { return false; }
+  }, []);
+
+  return { archivedVideos, loadingArchived, showUploadModal, setShowUploadModal, loadArchived, deleteArchived, unarchiveArchived };
 }

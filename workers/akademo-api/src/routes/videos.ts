@@ -204,7 +204,12 @@ videos.post('/progress/admin-update', async (c) => {
       return c.json(errorResponse('studentId, videoId, and totalWatchTimeSeconds required'), 400);
     }
 
-    const safeTotalWatchTime = Math.max(0, Number(totalWatchTimeSeconds));
+    // Allow negative values so admins can grant extra time beyond the normal limit.
+    // Negative totalWatchTimeSeconds means the student has a "credit" of extra viewing time.
+    const safeTotalWatchTime = Number(totalWatchTimeSeconds);
+    if (!Number.isFinite(safeTotalWatchTime)) {
+      return c.json(errorResponse('Invalid totalWatchTimeSeconds value'), 400);
+    }
 
     // Get video and lesson details to check authorization
     const video = await c.env.DB

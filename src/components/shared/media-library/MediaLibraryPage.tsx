@@ -28,7 +28,7 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(1);
   const { activePeriodId, isClassInPeriod } = usePeriod();
-  const { archivedVideos, loadingArchived, showUploadModal, setShowUploadModal, loadArchived, deleteArchived } = useArchivedVideos(role, selectedAcademy, selectedClass);
+  const { archivedVideos, loadingArchived, showUploadModal, setShowUploadModal, loadArchived, deleteArchived, unarchiveArchived } = useArchivedVideos(role, selectedAcademy, selectedClass);
   const [academyName, setAcademyName] = useState('');
   const [showExportModal, setShowExportModal] = useState(false);
 
@@ -168,6 +168,16 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
     setTotalVideos(prev => Math.max(0, prev - 1));
   }, []);
 
+  // Called when an archived video is restored to its lesson
+  const handleUnarchive = useCallback(async (id: string): Promise<boolean> => {
+    const ok = await unarchiveArchived(id);
+    if (ok) {
+      // Refresh active videos list if we're on that tab
+      if (tab === 'videos') loadData();
+    }
+    return ok;
+  }, [unarchiveArchived, tab, loadData]);
+
   // Pagination only applies to the videos tab; documents are loaded all at once
   const totalPages = tab === 'videos' ? Math.ceil(totalVideos / 50) : 0;
 
@@ -258,7 +268,7 @@ export function MediaLibraryPage({ role }: { role: 'ACADEMY' | 'ADMIN' | 'TEACHE
       {/* Content */}
       <div className="max-h-[600px] overflow-y-auto rounded-xl">
         {tab === 'archived' ? (
-          <ArchivedVideosGrid videos={archivedVideos} loading={loadingArchived} canDelete={role === 'ACADEMY' || role === 'ADMIN'} onDelete={deleteArchived} />
+          <ArchivedVideosGrid videos={archivedVideos} loading={loadingArchived} canDelete={role === 'ACADEMY' || role === 'ADMIN'} onDelete={deleteArchived} onUnarchive={handleUnarchive} />
         ) : loading ? (
           tab === 'videos' ? <SkeletonVideosGrid /> : <SkeletonTable rows={8} cols={5} />
         ) : tab === 'videos' ? (

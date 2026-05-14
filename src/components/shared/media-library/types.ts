@@ -50,6 +50,8 @@ export interface ArchivedVideoItem {
   uploadedById: string;
   uploaderName: string | null;
   createdAt: string;
+  lessonId: string | null;
+  liveStreamId: string | null;
 }
 
 export type Tab = 'videos' | 'documents' | 'archived';

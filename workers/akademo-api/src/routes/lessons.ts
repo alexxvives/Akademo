@@ -145,6 +145,12 @@ lessons.get('/', async (c) => {
       // Only show lessons that have been released (releaseDate in the past or null)
       const now = new Date().toISOString();
       filteredLessons = filteredLessons.filter((l: any) => !l.releaseDate || l.releaseDate <= now);
+      // Enforce availability window: if availableFrom or availableUntil are set, hide outside the window
+      filteredLessons = filteredLessons.filter((l: any) => {
+        if (l.availableFrom && now < l.availableFrom) return false;
+        if (l.availableUntil && now > l.availableUntil) return false;
+        return true;
+      });
       // If academy has hideCompletedLessons enabled, hide lessons where all videos are BLOCKED
       if ((classRecord as any).hideCompletedLessons === 1) {
         filteredLessons = filteredLessons.filter((l: any) => l.allVideosBlocked !== 1);
@@ -301,6 +307,14 @@ lessons.get('/:id', async (c) => {
       // Block access if lesson is scheduled for the future
       if (lesson.releaseDate && new Date(lesson.releaseDate as string) > new Date()) {
         return c.json(errorResponse('Lesson not yet available'), 403);
+      }
+      // Block access if outside the availability window
+      const nowWin = new Date();
+      if (lesson.availableFrom && nowWin < new Date(lesson.availableFrom as string)) {
+        return c.json(errorResponse('Este vídeo aún no está disponible'), 403);
+      }
+      if (lesson.availableUntil && nowWin > new Date(lesson.availableUntil as string)) {
+        return c.json(errorResponse('El período de acceso ha finalizado'), 403);
       }
     } else if (session.role === 'TEACHER') {
       if (!(await teacherCanAccessClass(c.env.DB, session.id, lesson.classId as string))) {
@@ -502,6 +516,15 @@ lessons.patch('/:id', validateBody(updateLessonSchema), async (c) => {
     if (body.topicId !== undefined) {
       updates.push('topicId = ?');
       values.push(body.topicId || null);
+    }
+    // Availability window — pass null to clear
+    if ('availableFrom' in body) {
+      updates.push('availableFrom = ?');
+      values.push(body.availableFrom || null);
+    }
+    if ('availableUntil' in body) {
+      updates.push('availableUntil = ?');
+      values.push(body.availableUntil || null);
     }
 
     if (updates.length === 0) {
@@ -822,6 +845,7 @@ lessons.post('/create-with-uploaded', validateBody(createLessonSchema), async (c
       classId, title, description, releaseDate, 
       maxWatchTimeMultiplier, watermarkIntervalMins,
       videos, documents, topicId, links,
+      availableFrom, availableUntil,
     } = body;
 
     // Verify access to the class
@@ -863,8 +887,8 @@ lessons.post('/create-with-uploaded', validateBody(createLessonSchema), async (c
     // Create lesson with topicId support
     const lessonId = crypto.randomUUID();
     await c.env.DB.prepare(`
-      INSERT INTO Lesson (id, title, description, classId, releaseDate, maxWatchTimeMultiplier, watermarkIntervalMins, topicId)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO Lesson (id, title, description, classId, releaseDate, maxWatchTimeMultiplier, watermarkIntervalMins, topicId, availableFrom, availableUntil)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       lessonId, 
       title, 
@@ -873,7 +897,9 @@ lessons.post('/create-with-uploaded', validateBody(createLessonSchema), async (c
       releaseDate || null,
       maxWatchTimeMultiplier ?? 2.0,
       watermarkIntervalMins ?? 5,
-      topicId || null
+      topicId || null,
+      availableFrom || null,
+      availableUntil || null
     ).run();
 
     // Process videos - create Upload and Video records

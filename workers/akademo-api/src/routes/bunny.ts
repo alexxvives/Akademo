@@ -580,6 +580,102 @@ bunny.delete('/archive/:id', async (c) => {
   }
 });
 
+// POST /bunny/archived/:id/unarchive — restore an archived video back to its original lesson
+// Only works for videos that were archived from a lesson (lessonId is set).
+// Recreates Upload + Video records and removes the ArchivedVideo record.
+bunny.post('/archived/:id/unarchive', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    if (!['ACADEMY', 'ADMIN', 'TEACHER'].includes(session.role)) {
+      return c.json(errorResponse('Not authorized'), 403);
+    }
+
+    const id = c.req.param('id');
+    const archived = await c.env.DB.prepare('SELECT * FROM ArchivedVideo WHERE id = ?').bind(id).first() as any;
+    if (!archived) return c.json(errorResponse('Archived video not found'), 404);
+
+    // Authorization
+    if (session.role === 'ACADEMY') {
+      const academy = await c.env.DB.prepare('SELECT id FROM Academy WHERE ownerId = ?').bind(session.id).first() as any;
+      if (!academy || academy.id !== archived.academyId) return c.json(errorResponse('Forbidden'), 403);
+    } else if (session.role === 'TEACHER') {
+      const teacher = await c.env.DB.prepare('SELECT academyId FROM Teacher WHERE userId = ?').bind(session.id).first() as any;
+      if (!teacher || teacher.academyId !== archived.academyId) return c.json(errorResponse('Forbidden'), 403);
+    }
+
+    if (!archived.storageKey?.startsWith('bunnystream:')) {
+      return c.json(errorResponse('Solo se pueden restaurar videos de Bunny Stream.'), 400);
+    }
+
+    if (!archived.lessonId && !archived.liveStreamId) {
+      return c.json(errorResponse('Este video fue subido manualmente y no puede restaurarse automáticamente.'), 400);
+    }
+
+    const bunnyGuid = archived.storageKey.replace('bunnystream:', '');
+
+    // Case A: restore stream recording back to LiveStream
+    if (archived.liveStreamId) {
+      const ls = await c.env.DB.prepare('SELECT id FROM LiveStream WHERE id = ?').bind(archived.liveStreamId).first() as any;
+      if (!ls) {
+        return c.json(errorResponse('El stream original ya no existe. No se puede restaurar la grabación.'), 404);
+      }
+      // Restore recording + ensure status stays ended
+      await c.env.DB.prepare(
+        'UPDATE LiveStream SET recordingId = ?, status = \'ended\', endedAt = COALESCE(endedAt, datetime(\'now\')) WHERE id = ?'
+      ).bind(bunnyGuid, archived.liveStreamId).run();
+      await c.env.DB.prepare('DELETE FROM ArchivedVideo WHERE id = ?').bind(id).run();
+      return c.json(successResponse({ liveStreamId: archived.liveStreamId }));
+    }
+
+    // Case B: restore lesson video
+    const lesson = await c.env.DB.prepare('SELECT id FROM Lesson WHERE id = ?').bind(archived.lessonId).first() as any;
+    if (!lesson) {
+      return c.json(errorResponse('La lección original ya no existe. No se puede restaurar el video.'), 404);
+    }
+
+    const uploadId = crypto.randomUUID();
+    const restoredVideoId = crypto.randomUUID();
+    const now = new Date().toISOString();
+
+    // Recreate Upload record
+    await c.env.DB.prepare(
+      'INSERT INTO Upload (id, fileName, fileSize, mimeType, storagePath, uploadedById, createdAt, bunnyGuid, bunnyStatus, storageType) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).bind(
+      uploadId,
+      archived.fileName,
+      archived.fileSize ?? 0,
+      'video/mp4',
+      bunnyGuid,
+      session.id,
+      now,
+      bunnyGuid,
+      3, // Finished
+      'bunny',
+    ).run();
+
+    // Recreate Video record linked to original lesson
+    await c.env.DB.prepare(
+      'INSERT INTO Video (id, title, lessonId, uploadId, durationSeconds, createdAt) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(
+      restoredVideoId,
+      archived.title,
+      archived.lessonId,
+      uploadId,
+      archived.durationSeconds ?? null,
+      now,
+    ).run();
+
+    // Remove from archive
+    await c.env.DB.prepare('DELETE FROM ArchivedVideo WHERE id = ?').bind(id).run();
+
+    return c.json(successResponse({ videoId: restoredVideoId, uploadId, lessonId: archived.lessonId }));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Unarchive Video] Error:', error);
+    return c.json(errorResponse('Failed to unarchive video'), 500);
+  }
+});
+
 // GET /bunny/video/:guid/download-url — return authenticated CDN download URL
 bunny.get('/video/:guid/download-url', async (c) => {
   try {
@@ -648,12 +744,13 @@ bunny.post('/videos/:videoId/archive', async (c) => {
 
     const videoId = c.req.param('videoId');
 
-    // Fetch video + upload + lesson + class in one query
-    const row = await c.env.DB.prepare(`
+    // Try lesson video first
+    const lessonRow = await c.env.DB.prepare(`
       SELECT v.id, v.title, v.durationSeconds,
              up.bunnyGuid, up.fileName, up.fileSize, up.mimeType,
              l.id AS lessonId, l.classId,
-             cl.name AS className, cl.academyId
+             cl.name AS className, cl.academyId,
+             'lesson' as source
       FROM Video v
       JOIN Upload up ON v.uploadId = up.id
       JOIN Lesson l ON v.lessonId = l.id
@@ -661,6 +758,19 @@ bunny.post('/videos/:videoId/archive', async (c) => {
       WHERE v.id = ?
     `).bind(videoId).first() as any;
 
+    // Fall back to stream recording
+    const recRow = !lessonRow ? await c.env.DB.prepare(`
+      SELECT ls.id, COALESCE(ls.title, 'Grabación') as title, NULL as durationSeconds,
+             ls.recordingId as bunnyGuid, NULL as fileName, NULL as fileSize, NULL as mimeType,
+             NULL as lessonId, ls.classId,
+             c.name as className, c.academyId,
+             'recording' as source
+      FROM LiveStream ls
+      LEFT JOIN Class c ON ls.classId = c.id
+      WHERE ls.id = ? AND ls.recordingId IS NOT NULL
+    `).bind(videoId).first() as any : null;
+
+    const row = lessonRow || recRow;
     if (!row) return c.json(errorResponse('Video not found'), 404);
     if (!row.bunnyGuid) return c.json(errorResponse('Video has no Bunny Stream GUID'), 400);
 
@@ -675,16 +785,24 @@ bunny.post('/videos/:videoId/archive', async (c) => {
 
     const newId = crypto.randomUUID();
     const storageKey = `bunnystream:${row.bunnyGuid}`;
+    const liveStreamId = row.source === 'recording' ? videoId : null;
 
     // Create ArchivedVideo pointing to the existing Bunny Stream video
     await c.env.DB.prepare(
-      'INSERT INTO ArchivedVideo (id, academyId, classId, className, title, fileName, fileSize, mimeType, storageKey, durationSeconds, uploadedById) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    ).bind(newId, row.academyId, row.classId, row.className, row.title, row.fileName || `${row.title}.mp4`, row.fileSize, 'video/stream', storageKey, row.durationSeconds, session.id).run();
+      'INSERT INTO ArchivedVideo (id, academyId, classId, className, title, fileName, fileSize, mimeType, storageKey, durationSeconds, uploadedById, lessonId, liveStreamId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    ).bind(newId, row.academyId, row.classId, row.className, row.title, row.fileName || `${row.title}.mp4`, row.fileSize, 'video/stream', storageKey, row.durationSeconds, session.id, row.lessonId, liveStreamId).run();
 
-    // Delete Video record (VideoPlayState cascades automatically)
-    await c.env.DB.prepare('DELETE FROM Video WHERE id = ?').bind(videoId).run();
-    // Delete Upload record (no cascade from Video deletion)
-    await c.env.DB.prepare('DELETE FROM Upload WHERE bunnyGuid = ?').bind(row.bunnyGuid).run();
+    if (row.source === 'recording') {
+      // Clear recording + ensure stream is marked ended (may still be 'scheduled' if Zoom webhook fired before the ended event)
+      await c.env.DB.prepare(
+        'UPDATE LiveStream SET recordingId = NULL, status = \'ended\', endedAt = COALESCE(endedAt, datetime(\'now\')) WHERE id = ?'
+      ).bind(videoId).run();
+    } else {
+      // Delete Video record (VideoPlayState cascades automatically)
+      await c.env.DB.prepare('DELETE FROM Video WHERE id = ?').bind(videoId).run();
+      // Delete Upload record (no cascade from Video deletion)
+      await c.env.DB.prepare('DELETE FROM Upload WHERE bunnyGuid = ?').bind(row.bunnyGuid).run();
+    }
 
     return c.json(successResponse({ archivedId: newId }));
   } catch (error: any) {

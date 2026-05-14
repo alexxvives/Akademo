@@ -79,7 +79,28 @@ export interface CreateMeetingOptions {
 // Create a new Zoom meeting
 export async function createZoomMeeting(options: CreateMeetingOptions): Promise<ZoomMeeting> {
   const token = await getAccessToken(options.config);
-  
+
+  // Fetch the account's authentication profiles to get the correct profile ID.
+  // meeting_authentication: true is silently ignored by Zoom without a valid authentication_option ID.
+  let authenticationOption: string | null = null;
+  try {
+    const profilesRes = await fetch('https://api.zoom.us/v2/accounts/me/settings/meeting_authentication', {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (profilesRes.ok) {
+      const profilesData = await profilesRes.json() as any;
+      const profiles: any[] = profilesData.authentication_options ?? [];
+      // Prefer a profile that allows any Zoom user (not restricted to specific domains)
+      const profile = profiles.find((p: any) => p.type === 'enforce_login') ?? profiles[0] ?? null;
+      authenticationOption = profile?.id ?? null;
+      console.log('[Zoom] Auth profiles:', JSON.stringify(profiles.map((p: any) => ({ id: p.id, type: p.type, name: p.name }))));
+    } else {
+      console.warn('[Zoom] Could not fetch auth profiles:', profilesRes.status, await profilesRes.text());
+    }
+  } catch (e: any) {
+    console.warn('[Zoom] Failed to fetch auth profiles:', e.message);
+  }
+
   // Create meeting using /users/me/meetings (OAuth user-managed app)
   // This works with meeting:write:meeting scope (no :admin needed)
   const meetingResponse = await fetch('https://api.zoom.us/v2/users/me/meetings', {
@@ -99,10 +120,10 @@ export async function createZoomMeeting(options: CreateMeetingOptions): Promise<
         mute_upon_entry: true,
         auto_recording: 'cloud',
         embed_password_in_join_link: true,
-        // meeting_authentication is handled at account level ("by default for all meetings" is ON)
-        // Setting it per-meeting without an authentication_option profile causes Zoom to silently
-        // discard all settings, including watermark. Relying on account defaults instead.
         watermark: true,
+        enforce_login: true,
+        meeting_authentication: true,
+        ...(authenticationOption ? { authentication_option: authenticationOption } : {}),
       },
     }),
   });

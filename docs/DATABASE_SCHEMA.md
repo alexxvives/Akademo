@@ -297,7 +297,7 @@ Generic file metadata for both R2 and Bunny Stream.
 
 ### 13. ArchivedVideo
 
-Academy-level video library (not linked to lessons).
+Academy-level video library. Videos archived from lessons retain `lessonId` so they can be fully restored.
 
 | Column | Type | Nullable | Default | Notes |
 |---|---|---|---|---|
@@ -306,12 +306,13 @@ Academy-level video library (not linked to lessons).
 | title | TEXT | NO | — | |
 | fileName | TEXT | NO | — | |
 | fileSize | INTEGER | YES | NULL | Bytes |
-| mimeType | TEXT | YES | `'video/mp4'` | |
-| storageKey | TEXT | NO | — | R2 or Bunny path |
+| mimeType | TEXT | YES | `'video/mp4'` | `'video/stream'` for Bunny Stream |
+| storageKey | TEXT | NO | — | R2 path or `bunnystream:<guid>` |
 | durationSeconds | INTEGER | YES | NULL | |
 | uploadedById | TEXT | NO | — | FK → User.id |
 | classId | TEXT | YES | NULL | FK → Class.id (optional class tag) |
 | className | TEXT | YES | NULL | Denormalized class name |
+| lessonId | TEXT | YES | NULL | FK → Lesson.id — set when archived from a lesson; enables `POST /bunny/archived/:id/unarchive` |
 | createdAt | TEXT | YES | datetime('now') | |
 
 ---

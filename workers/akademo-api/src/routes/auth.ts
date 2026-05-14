@@ -19,6 +19,28 @@ auth.get('/me', async (c) => {
     return c.json(errorResponse('Not authenticated'), 401);
   }
 
+  // For STUDENT role, resolve their primary academyId so the frontend can
+  // keep akademo_join_origin in localStorage up-to-date (fixes stale redirect on logout).
+  if (session.role === 'STUDENT') {
+    try {
+      const row = await c.env.DB
+        .prepare(`
+          SELECT c.academyId
+          FROM ClassEnrollment ce
+          JOIN Class c ON ce.classId = c.id
+          WHERE ce.userId = ? AND ce.status = 'APPROVED'
+          LIMIT 1
+        `)
+        .bind(session.id)
+        .first<{ academyId: string }>();
+      if (row?.academyId) {
+        return c.json(successResponse({ ...session, academyId: row.academyId }));
+      }
+    } catch {
+      // Non-fatal — still return session without academyId
+    }
+  }
+
   return c.json(successResponse(session));
 });
 

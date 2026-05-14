@@ -1438,7 +1438,7 @@ live.post('/create-lesson', async (c) => {
       return c.json(errorResponse('Not authorized'), 403);
     }
 
-    const { streamId, title, description, topicId, releaseDate, classId: targetClassId, maxWatchTimeMultiplier, watermarkIntervalMins } = await c.req.json();
+    const { streamId, title, description, topicId, releaseDate, classId: targetClassId, maxWatchTimeMultiplier, watermarkIntervalMins, availableFrom, availableUntil } = await c.req.json();
 
     if (!streamId) {
       return c.json(errorResponse('streamId is required'), 400);
@@ -1574,8 +1574,8 @@ live.post('/create-lesson', async (c) => {
 
     // Create Lesson record first
     await c.env.DB.prepare(`
-      INSERT INTO Lesson (id, title, description, classId, topicId, releaseDate, maxWatchTimeMultiplier, watermarkIntervalMins, createdAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO Lesson (id, title, description, classId, topicId, releaseDate, maxWatchTimeMultiplier, watermarkIntervalMins, availableFrom, availableUntil, createdAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       lessonId,
       lessonTitle,
@@ -1585,6 +1585,8 @@ live.post('/create-lesson', async (c) => {
       releaseDate || now,
       maxWatchTimeMultiplier ?? 2.0,
       watermarkIntervalMins ?? 5,
+      availableFrom || null,
+      availableUntil || null,
       now
     ).run();
 

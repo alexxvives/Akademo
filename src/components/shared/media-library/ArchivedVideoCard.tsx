@@ -21,10 +21,12 @@ interface Props {
   video: ArchivedVideoItem;
   canDelete: boolean;
   onDelete: (id: string) => void;
+  onUnarchive?: (id: string) => Promise<boolean>;
 }
 
-export function ArchivedVideoCard({ video, canDelete, onDelete }: Props) {
+export function ArchivedVideoCard({ video, canDelete, onDelete, onUnarchive }: Props) {
   const [downloading, setDownloading] = useState(false);
+  const [unarchiving, setUnarchiving] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [showStreamPlayer, setShowStreamPlayer] = useState(false);
   const [loadingPreview, setLoadingPreview] = useState(false);
@@ -63,6 +65,15 @@ export function ArchivedVideoCard({ video, canDelete, onDelete }: Props) {
     if (window.confirm(`¿Eliminar "${video.title}"? Esta acción no se puede deshacer.`)) onDelete(video.id);
   };
 
+  const handleUnarchive = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!onUnarchive) return;
+    setUnarchiving(true);
+    const ok = await onUnarchive(video.id);
+    if (!ok) alert('No se pudo restaurar el video. Es posible que la lección original ya no exista.');
+    setUnarchiving(false);
+  };
+
   const handleDownload = async () => {
     setDownloading(true);
     try {
@@ -89,34 +100,53 @@ export function ArchivedVideoCard({ video, canDelete, onDelete }: Props) {
         {thumbnailUrl && !imgError && (
           <Image src={thumbnailUrl} alt={video.title} fill className="object-cover" unoptimized onError={() => setImgError(true)} />
         )}
+        {/* Buttons top-right: delete → download → restore */}
+        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 z-20">
+          {canDelete && (
+            <button onClick={(e) => { e.stopPropagation(); handleDelete(); }}
+              className="p-1.5 rounded-lg bg-black/50 hover:bg-red-600 text-white transition-colors"
+              title="Eliminar">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          )}
+          <button onClick={(e) => { e.stopPropagation(); handleDownload(); }} disabled={downloading}
+            className="p-1.5 rounded-lg bg-black/50 hover:bg-black/70 text-white transition-colors disabled:opacity-50"
+            title="Descargar">
+            {downloading ? (
+              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+              </svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+            )}
+          </button>
+          {onUnarchive && (video.lessonId || video.liveStreamId) && (
+            <button onClick={handleUnarchive} disabled={unarchiving}
+              className="p-1.5 rounded-lg bg-black/50 hover:bg-brand-600 text-white transition-colors disabled:opacity-50"
+              title="Restaurar">
+              {unarchiving ? (
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                </svg>
+              )}
+            </button>
+          )}
+        </div>
         {video.className && (
           <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/60 text-white text-xs rounded font-medium truncate max-w-[calc(100%-3rem)] z-10">
             {video.className}
           </div>
         )}
-        {canDelete && (
-          <button onClick={(e) => { e.stopPropagation(); handleDelete(); }}
-            className="absolute top-2 left-2 p-1.5 bg-black/40 text-white/70 hover:bg-red-600 hover:text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all z-20"
-            title="Eliminar">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-          </button>
-        )}
-        <button onClick={(e) => { e.stopPropagation(); handleDownload(); }} disabled={downloading}
-          className="absolute top-2 right-2 p-1.5 bg-black/40 text-white/70 hover:bg-brand-600 hover:text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all z-10 disabled:opacity-50"
-          title="Descargar">
-          {downloading ? (
-            <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-            </svg>
-          ) : (
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-          )}
-        </button>
         {loadingPreview ? (
           <svg className="w-10 h-10 text-white/60 animate-spin" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
@@ -173,14 +203,16 @@ export function ArchivedVideoCard({ video, canDelete, onDelete }: Props) {
         </div>
       )}
 
-      <div className="p-3 flex flex-col gap-2 flex-1">
-        <div>
-          <p className="text-sm font-semibold text-gray-900 truncate" title={video.title}>{video.title}</p>
-          <p className="text-xs text-gray-400 truncate" title={video.fileName}>{video.fileName}</p>
+      <div className="p-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <h3 className="text-sm font-medium text-gray-900 truncate" title={video.title}>{video.title}</h3>
+            <p className="text-xs text-gray-500 mt-0.5 truncate">{video.className || '—'}</p>
+          </div>
         </div>
-        <div className="flex items-center justify-between text-xs text-gray-500">
-          <span>{formatBytes(video.fileSize)}</span>
+        <div className="flex items-center justify-between mt-2 text-xs text-gray-400">
           <span>{formatDate(video.createdAt)}</span>
+          {video.fileSize ? <span>{formatBytes(video.fileSize)}</span> : null}
         </div>
       </div>
     </div>

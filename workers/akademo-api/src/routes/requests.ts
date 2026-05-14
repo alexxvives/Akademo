@@ -81,7 +81,7 @@ requests.post('/student', async (c) => {
             SET status = ?, nextPaymentDue = NULL, stripeSubscriptionId = NULL
             WHERE userId = ? AND classId = ?
           `)
-          .bind('PENDING', now, session.id, classId)
+          .bind('PENDING', session.id, classId)
           .run();
         return c.json(successResponse({ message: 'Re-enrollment request submitted. Waiting for approval.' }));
       }

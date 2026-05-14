@@ -180,17 +180,25 @@ webhooks.post('/zoom', async (c) => {
           }
           if (!accessToken) return;
 
-          // Zoom takes ~30s to make past_meetings data available
-          await new Promise(r => setTimeout(r, 30000));
-
-          const res = await fetch(`https://api.zoom.us/v2/past_meetings/${meetingId}`, {
-            headers: { 'Authorization': `Bearer ${accessToken}` },
-          });
-          if (!res.ok) {
-            console.warn(`[Zoom Webhook] past_meetings ${meetingId} returned ${res.status}: ${await res.text()}`);
+          // Zoom needs a few seconds to make past_meetings data available after meeting.ended.
+          // We retry up to 5 times with 5s gaps (25s total) rather than one 30s sleep,
+          // since Cloudflare Workers cancels waitUntil tasks that exceed the wall-clock budget.
+          let past: any = null;
+          for (let attempt = 0; attempt < 5; attempt++) {
+            await new Promise(r => setTimeout(r, 5000));
+            const res = await fetch(`https://api.zoom.us/v2/past_meetings/${meetingId}`, {
+              headers: { 'Authorization': `Bearer ${accessToken}` },
+            });
+            if (res.ok) {
+              past = await res.json();
+              break;
+            }
+            console.warn(`[Zoom Webhook] past_meetings attempt ${attempt + 1} returned ${res.status}`);
+          }
+          if (!past) {
+            console.warn(`[Zoom Webhook] past_meetings ${meetingId} not available after retries`);
             return;
           }
-          const past = await res.json() as any;
           // participants_count includes the host — subtract 1 to get attendee/student count only.
           // Zoom deduplicates rejoins, so a student who leaves and comes back is still counted once.
           const rawCount = past.participants_count ?? null;

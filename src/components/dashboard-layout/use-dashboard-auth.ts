@@ -51,6 +51,10 @@ export function useDashboardAuth(role: string) {
           userRole === 'ADMIN';
         if (hasAccess) {
           setUser(result.data);
+          // Keep akademo_join_origin fresh so logout always redirects to the correct academy join page.
+          if (userRole === 'STUDENT' && result.data.academyId) {
+            localStorage.setItem('akademo_join_origin', `/join/academy/${result.data.academyId}`);
+          }
         } else {
           router.push('/?modal=login');
         }

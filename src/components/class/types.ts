@@ -11,6 +11,8 @@ export interface Lesson {
   title: string;
   description: string | null;
   releaseDate: string;
+  availableFrom?: string | null;
+  availableUntil?: string | null;
   topicId: string | null;
   topicName?: string;
   maxWatchTimeMultiplier: number;
@@ -65,6 +67,8 @@ export interface LessonDetailResponse {
   description: string | null;
   externalUrl: string | null;
   releaseDate: string;
+  availableFrom?: string | null;
+  availableUntil?: string | null;
   maxWatchTimeMultiplier: number;
   watermarkIntervalMins: number;
   topicId?: string | null;
@@ -146,6 +150,12 @@ export interface LessonFormData {
   releaseDate: string;
   releaseTime: string;
   publishImmediately: boolean;
+  // 'window' mode: lesson is visible only between availableFrom and availableUntil
+  publishMode: 'immediate' | 'scheduled' | 'window';
+  availableFromDate: string;
+  availableFromTime: string;
+  availableUntilDate: string;
+  availableUntilTime: string;
   maxWatchTimeMultiplier: number;
   watermarkIntervalMins: number;
   topicId: string;
