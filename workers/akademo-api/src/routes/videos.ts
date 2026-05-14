@@ -29,7 +29,7 @@ videos.post('/progress', validateBody(videoProgressSchema), async (c) => {
     // Get video details to check duration and max watch time
     const video = await c.env.DB
       .prepare(`
-        SELECT v.durationSeconds, l.maxWatchTimeMultiplier, l.classId, l.availableFrom
+        SELECT v.durationSeconds, l.maxWatchTimeMultiplier, l.classId, l.availableFrom, l.availableUntil
         FROM Video v
         JOIN Lesson l ON v.lessonId = l.id
         WHERE v.id = ?
@@ -62,8 +62,22 @@ videos.post('/progress', validateBody(videoProgressSchema), async (c) => {
       .bind(videoId, session.id)
       .first() as any;
 
-    // Window fresh-start: if the lesson has availableFrom and the student last watched
-    // before the current window started, reset their watch time so they get a full slate.
+    // Window expiry: if past availableUntil, block this student immediately
+    if ((video as any).availableUntil) {
+      const windowEnd = new Date((video as any).availableUntil as string).getTime();
+      if (Date.now() > windowEnd) {
+        if (existing && existing.status !== 'BLOCKED') {
+          await c.env.DB
+            .prepare("UPDATE VideoPlayState SET status = 'BLOCKED', updatedAt = ? WHERE id = ?")
+            .bind(new Date().toISOString(), existing.id)
+            .run();
+        }
+        return c.json(errorResponse('El período de acceso ha finalizado'), 403);
+      }
+    }
+
+    // Window fresh-start: if a new window has started since the student last watched,
+    // reset their watch time so they get a full slate for the new period.
     if (existing && (video as any).availableFrom) {
       const windowStart = new Date((video as any).availableFrom as string).getTime();
       const lastWatched = existing.lastWatchedAt ? new Date(existing.lastWatchedAt).getTime() : 0;
