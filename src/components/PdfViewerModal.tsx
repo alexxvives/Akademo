@@ -22,32 +22,53 @@ function drawCanvasWatermark(canvas: HTMLCanvasElement, email: string, academyNa
   const ctx = canvas.getContext('2d');
   if (!ctx || (!email && !academyName)) return;
   const { width, height } = canvas;
-  const fontSize = Math.max(14, Math.min(22, width / 28));
+
   const line1 = email;
   const line2 = academyName ? `ACADEMIA ${academyName.toUpperCase()}` : '';
-  const angle = -Math.PI / 5;
-  const spacingX = width * 0.55;
-  const spacingY = height * 0.22;
+
+  // Match server-side style: single centered diagonal watermark at 45°, grey semi-transparent
+  const shorter = Math.min(width, height);
+  const size1Base = Math.max(28, shorter * 0.13);
+  const size2Base = size1Base * 0.62;
+  const cx = width / 2;
+  const cy = height / 2;
+  const angle = Math.PI / 4; // 45° CCW
 
   ctx.save();
-  ctx.globalAlpha = 0.13;
-  ctx.fillStyle = '#1a1a1a';
-  ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+  ctx.globalAlpha = 0.40;
+  ctx.fillStyle = 'rgb(140,140,140)';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
-  for (let xi = -2; xi <= 3; xi++) {
-    for (let yi = -2; yi <= 6; yi++) {
-      const cx = xi * spacingX + (yi % 2 === 0 ? 0 : spacingX / 2);
-      const cy = yi * spacingY;
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.rotate(angle);
-      if (line1) ctx.fillText(line1, 0, line2 ? -fontSize * 0.7 : 0);
-      if (line2) ctx.fillText(line2, 0, line1 ? fontSize * 0.7 : 0);
-      ctx.restore();
-    }
+  if (line2) {
+    const lineSpacing = size1Base * 0.75;
+    const SQ = Math.SQRT1_2;
+    // email below diagonal, academy above — mirrors server offsets
+    const c1 = { x: cx + lineSpacing * SQ, y: cy + lineSpacing * SQ };
+    const c2 = { x: cx - lineSpacing * SQ, y: cy - lineSpacing * SQ };
+
+    ctx.save();
+    ctx.translate(c1.x, c1.y);
+    ctx.rotate(-angle);
+    ctx.font = `${size1Base}px Arial, sans-serif`;
+    ctx.fillText(line1, 0, 0);
+    ctx.restore();
+
+    ctx.save();
+    ctx.translate(c2.x, c2.y);
+    ctx.rotate(-angle);
+    ctx.font = `bold ${size2Base}px Arial, sans-serif`;
+    ctx.fillText(line2, 0, 0);
+    ctx.restore();
+  } else {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(-angle);
+    ctx.font = `${size1Base}px Arial, sans-serif`;
+    ctx.fillText(line1 || line2, 0, 0);
+    ctx.restore();
   }
+
   ctx.restore();
 }
 
