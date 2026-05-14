@@ -198,20 +198,6 @@ export function DateRangePicker({ fromDate, fromTime, untilDate, untilTime, onFr
       style={{ position: 'fixed', top: dropPos.top, left: dropPos.left, width: Math.min(dropPos.width, 360), zIndex: 9999 }}
       className="bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden"
     >
-      {/* Stage pills */}
-      <div className="flex items-center gap-1.5 px-4 pt-3 pb-2">
-        <button type="button" onClick={() => setStage('from')}
-          className={`text-xs px-2.5 py-1 rounded-full font-semibold transition-colors ${stage === 'from' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
-          Inicio
-        </button>
-        <svg className="w-3 h-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-        <button type="button" onClick={() => { if (fromDate) setStage('until'); }}
-          className={`text-xs px-2.5 py-1 rounded-full font-semibold transition-colors ${stage === 'until' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
-          Fin
-        </button>
-        <span className="ml-auto text-[11px] text-gray-400">{stage === 'from' ? 'Elige inicio' : 'Elige fin'}</span>
-      </div>
-
       {/* Month nav */}
       <div className="flex items-center justify-between px-4 pb-1">
         <button type="button" onClick={() => goMonth(-1)} className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
@@ -262,34 +248,30 @@ export function DateRangePicker({ fromDate, fromTime, untilDate, untilTime, onFr
 
   return (
     <div ref={triggerRef} className="relative">
-      {/* Trigger bar */}
-      <div className="flex items-stretch border border-gray-200 rounded-xl overflow-hidden bg-white hover:border-gray-300 transition-colors">
+      {/* Trigger bar — h-[38px] matches Publicación buttons */}
+      <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden bg-white hover:border-gray-300 transition-colors h-[38px]">
         <button type="button" onClick={() => openAt('from')}
-          className={`flex-1 flex items-center gap-2.5 px-3.5 py-2.5 transition-colors ${open && stage === 'from' ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
+          className={`flex-1 flex items-center gap-2 px-3 h-full transition-colors ${open && stage === 'from' ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
           <svg className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-          <div className="text-left min-w-0">
-            <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Desde</p>
-            {fromDate
-              ? <p className="text-sm font-medium text-gray-900">{fmt(fromDate)} <span className="font-normal text-gray-500">· {fromTime}</span></p>
-              : <p className="text-sm text-gray-400">Selecciona fecha</p>}
-          </div>
+          <span className="text-xs font-semibold text-gray-400 flex-shrink-0">Desde</span>
+          {fromDate
+            ? <span className="text-sm font-medium text-gray-900 truncate">{fmt(fromDate)}<span className="font-normal text-gray-500"> · {fromTime}</span></span>
+            : <span className="text-sm text-gray-400">—</span>}
         </button>
 
-        <div className="w-px bg-gray-200 self-stretch flex-shrink-0" />
+        <div className="w-px bg-gray-200 h-full flex-shrink-0" />
         <div className="flex items-center px-2 text-gray-300 flex-shrink-0">
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
         </div>
-        <div className="w-px bg-gray-200 self-stretch flex-shrink-0" />
+        <div className="w-px bg-gray-200 h-full flex-shrink-0" />
 
         <button type="button" onClick={() => openAt('until')}
-          className={`flex-1 flex items-center gap-2.5 px-3.5 py-2.5 transition-colors ${open && stage === 'until' ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
+          className={`flex-1 flex items-center gap-2 px-3 h-full transition-colors ${open && stage === 'until' ? 'bg-blue-50' : 'hover:bg-gray-50'}`}>
           <svg className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-          <div className="text-left min-w-0">
-            <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Hasta</p>
-            {untilDate
-              ? <p className="text-sm font-medium text-gray-900">{fmt(untilDate)} <span className="font-normal text-gray-500">· {untilTime}</span></p>
-              : <p className="text-sm text-gray-400">Selecciona fecha</p>}
-          </div>
+          <span className="text-xs font-semibold text-gray-400 flex-shrink-0">Hasta</span>
+          {untilDate
+            ? <span className="text-sm font-medium text-gray-900 truncate">{fmt(untilDate)}<span className="font-normal text-gray-500"> · {untilTime}</span></span>
+            : <span className="text-sm text-gray-400">—</span>}
         </button>
       </div>
 
