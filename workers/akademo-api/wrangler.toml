@@ -28,7 +28,7 @@ BUNNY_DEMO_VIDEO_GUID = "912efe98-e6af-4c29-ada3-2617f0ff6674"
 
 # Cron Triggers
 [triggers]
-crons = ["0 0 1 * *", "0 3 * * *"]  # Monthly payment generation (1st of month) + daily orphan R2 cleanup (3am)
+crons = ["0 3 * * *"]  # Daily orphan R2 cleanup (3am)
 
 # Secrets (configured via: wrangler secret put NAME)
 # Bunny Stream (for video hosting)
