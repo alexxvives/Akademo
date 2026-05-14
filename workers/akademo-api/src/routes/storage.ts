@@ -719,6 +719,18 @@ storage.get('/serve/*', async (c) => {
               if (!hasAccess) {
                 return c.json(errorResponse('Forbidden'), 403);
               }
+            } else if (session.role === 'STUDENT') {
+              // Uploader accessing their own file — still enforce payment/document-signing block.
+              // Find the class via assignment submission (the only path where students are uploaders).
+              const submission = await c.env.DB.prepare(`
+                SELECT a.classId FROM AssignmentSubmission sub
+                JOIN Assignment a ON a.id = sub.assignmentId
+                WHERE sub.uploadId = ?
+                LIMIT 1
+              `).bind(upload.id).first<{ classId: string }>();
+              if (submission && await isAccessBlocked(c.env.DB, session.id, submission.classId)) {
+                return c.json(errorResponse('Acceso bloqueado. Firma el documento y regulariza tu situación de pago.'), 403);
+              }
             }
           }
           // No Upload record found — deny access (no backward-compat fallback)
