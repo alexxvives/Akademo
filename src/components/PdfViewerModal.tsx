@@ -86,7 +86,7 @@ export default function PdfViewerModal() {
   const pdfDocRef = useRef<PDFDocumentProxy | null>(null);
   const renderTaskRef = useRef<RenderTask | null>(null);
   const scaleRef = useRef(1.5);
-  const watermarkRef = useRef<{ email: string; academyName: string }>({ email: '', academyName: '' });
+  const watermarkRef = useRef<{ email: string; academyName: string; serverWm: boolean }>({ email: '', academyName: '', serverWm: false });
 
   useEffect(() => { scaleRef.current = scale; }, [scale]);
 
@@ -107,8 +107,8 @@ export default function PdfViewerModal() {
     renderTaskRef.current = task;
     try {
       await task.promise;
-      const { email, academyName } = watermarkRef.current;
-      drawCanvasWatermark(canvas, email, academyName);
+      const { email, academyName, serverWm } = watermarkRef.current;
+      if (!serverWm) drawCanvasWatermark(canvas, email, academyName);
     } catch (e: unknown) {
       if ((e as Error)?.name !== 'RenderingCancelledException') throw e;
     }
@@ -139,16 +139,17 @@ export default function PdfViewerModal() {
 
   // Listen for open-pdf custom event
   useEffect(() => {
-    const handler = (e: CustomEvent<{ url: string; title?: string }>) => {
+    const handler = (e: CustomEvent<{ url: string; title?: string; serverWm?: boolean }>) => {
       // Extract watermark data from signed URL query params
       try {
         const urlObj = new URL(e.detail.url, window.location.origin);
         watermarkRef.current = {
           email: urlObj.searchParams.get('email') ?? '',
           academyName: urlObj.searchParams.get('academyName') ?? '',
+          serverWm: e.detail.serverWm ?? false,
         };
       } catch {
-        watermarkRef.current = { email: '', academyName: '' };
+        watermarkRef.current = { email: '', academyName: '', serverWm: false };
       }
       // Push a history entry so the browser back button closes the modal
       history.pushState({ pdfModal: true }, '');

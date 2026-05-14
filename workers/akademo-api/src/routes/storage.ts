@@ -791,6 +791,17 @@ storage.get('/signed-url', async (c) => {
     const academyInfo = await getAcademyInfoForSession(c.env.DB, session);
     const academyName = academyInfo?.name ?? '';
 
+    // Check if the file is a PDF small enough for server-side watermarking.
+    // Tells the client whether a canvas overlay is needed.
+    const isPdf = key.toLowerCase().endsWith('.pdf');
+    let serverWm = false;
+    if (isPdf) {
+      try {
+        const obj = await c.env.STORAGE.head(key);
+        serverWm = obj !== null && obj.size <= PDF_WATERMARK_SIZE_LIMIT;
+      } catch { /* if head fails, assume no server watermark → canvas fallback */ }
+    }
+
     // Sign key + expires + user identity together so params cannot be tampered with.
     // Format: key|expires|name|email|academyName  (pipe-delimited, each field b64url-encoded)
     const b64url = (s: string) => btoa(unescape(encodeURIComponent(s)))
@@ -805,7 +816,7 @@ storage.get('/signed-url', async (c) => {
     const sig = await crypto.subtle.sign('HMAC', hmacKey, encoder.encode(payload));
     const token = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
 
-    return c.json(successResponse({ token, expires, name: fullName, email, academyName }));
+    return c.json(successResponse({ token, expires, name: fullName, email, academyName, serverWm }));
   } catch (error: unknown) {
     if (error instanceof Error && (error.message === 'Unauthorized' || error.message === 'Forbidden')) throw error;
     console.error('[Signed URL] Error:', error);

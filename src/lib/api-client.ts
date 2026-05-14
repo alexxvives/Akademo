@@ -135,9 +135,9 @@ export async function apiClient(
 export async function openDocument(storagePath: string): Promise<void> {
   const res = await apiClient(`/storage/signed-url?key=${encodeURIComponent(storagePath)}`);
   if (!res.ok) throw new Error('Failed to get signed URL');
-  const json = await res.json() as { success: boolean; data: { token: string; expires: number; name: string; email: string; academyName: string } };
+  const json = await res.json() as { success: boolean; data: { token: string; expires: number; name: string; email: string; academyName: string; serverWm: boolean } };
   if (!json.success) throw new Error('Failed to get signed URL');
-  const { token, expires, name, email, academyName } = json.data;
+  const { token, expires, name, email, academyName, serverWm } = json.data;
   const encodedKey = storagePath.split('/').map(encodeURIComponent).join('/');
   const qs = new URLSearchParams({ token, expires: String(expires), name: name ?? '', email: email ?? '', academyName: academyName ?? '' });
   const url = `/api/storage/serve/${encodedKey}?${qs}`;
@@ -146,7 +146,7 @@ export async function openDocument(storagePath: string): Promise<void> {
   if (storagePath.toLowerCase().endsWith('.pdf')) {
     const rawName = storagePath.split('/').pop() ?? '';
     const title = decodeURIComponent(rawName).replace(/\.[^.]+$/, '');
-    window.dispatchEvent(new CustomEvent('open-pdf', { detail: { url, title } }));
+    window.dispatchEvent(new CustomEvent('open-pdf', { detail: { url, title, serverWm: serverWm ?? false } }));
   } else {
     window.open(url, '_blank');
   }
