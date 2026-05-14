@@ -18,6 +18,39 @@ async function getPdfJs(): Promise<PdfJsLib> {
   return cachedPdfJs;
 }
 
+function drawCanvasWatermark(canvas: HTMLCanvasElement, email: string, academyName: string) {
+  const ctx = canvas.getContext('2d');
+  if (!ctx || (!email && !academyName)) return;
+  const { width, height } = canvas;
+  const fontSize = Math.max(14, Math.min(22, width / 28));
+  const line1 = email;
+  const line2 = academyName ? `ACADEMIA ${academyName.toUpperCase()}` : '';
+  const angle = -Math.PI / 5;
+  const spacingX = width * 0.55;
+  const spacingY = height * 0.22;
+
+  ctx.save();
+  ctx.globalAlpha = 0.13;
+  ctx.fillStyle = '#1a1a1a';
+  ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  for (let xi = -2; xi <= 3; xi++) {
+    for (let yi = -2; yi <= 6; yi++) {
+      const cx = xi * spacingX + (yi % 2 === 0 ? 0 : spacingX / 2);
+      const cy = yi * spacingY;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(angle);
+      if (line1) ctx.fillText(line1, 0, line2 ? -fontSize * 0.7 : 0);
+      if (line2) ctx.fillText(line2, 0, line1 ? fontSize * 0.7 : 0);
+      ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+
 export default function PdfViewerModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -32,10 +65,11 @@ export default function PdfViewerModal() {
   const pdfDocRef = useRef<PDFDocumentProxy | null>(null);
   const renderTaskRef = useRef<RenderTask | null>(null);
   const scaleRef = useRef(1.5);
+  const watermarkRef = useRef<{ email: string; academyName: string }>({ email: '', academyName: '' });
 
   useEffect(() => { scaleRef.current = scale; }, [scale]);
 
-  const renderPage = useCallback(async (pageNum: number, pageScale: number) => {
+    const renderPage = useCallback(async (pageNum: number, pageScale: number) => {
     if (!pdfDocRef.current || !canvasRef.current) return;
     if (renderTaskRef.current) {
       renderTaskRef.current.cancel();
@@ -52,6 +86,8 @@ export default function PdfViewerModal() {
     renderTaskRef.current = task;
     try {
       await task.promise;
+      const { email, academyName } = watermarkRef.current;
+      drawCanvasWatermark(canvas, email, academyName);
     } catch (e: unknown) {
       if ((e as Error)?.name !== 'RenderingCancelledException') throw e;
     }
@@ -83,6 +119,16 @@ export default function PdfViewerModal() {
   // Listen for open-pdf custom event
   useEffect(() => {
     const handler = (e: CustomEvent<{ url: string; title?: string }>) => {
+      // Extract watermark data from signed URL query params
+      try {
+        const urlObj = new URL(e.detail.url, window.location.origin);
+        watermarkRef.current = {
+          email: urlObj.searchParams.get('email') ?? '',
+          academyName: urlObj.searchParams.get('academyName') ?? '',
+        };
+      } catch {
+        watermarkRef.current = { email: '', academyName: '' };
+      }
       // Push a history entry so the browser back button closes the modal
       history.pushState({ pdfModal: true }, '');
       setPdfUrl(e.detail.url);
