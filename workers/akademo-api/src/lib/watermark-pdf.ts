@@ -74,11 +74,11 @@ export async function addWatermarkToPdf(
   cfg: WatermarkConfig,
 ): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
-
-  // If the PDF is password-protected we cannot write to it — return original bytes untouched.
-  if (pdfDoc.isEncrypted) {
-    return new Uint8Array(pdfBytes);
-  }
+  // Note: pdfDoc.isEncrypted may be true for permission-only PDFs (no open password) that
+  // Moodle-imported content commonly uses. Since we loaded with ignoreEncryption: true, pdf-lib
+  // has already bypassed the encryption dict and CAN modify + save the file. The encryption
+  // dict is stripped on save(), so the watermark is applied correctly.
+  // We do NOT early-return here — any actual save failures are caught by the caller.
 
   // Set document title from the original filename (makes browser tab show a readable name
   // instead of the hash-based URL segment).
