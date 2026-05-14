@@ -1,5 +1,8 @@
 'use client';
 
+import { CustomDatePicker } from '@/components/ui/CustomDatePicker';
+import { CustomTimePicker } from '@/components/ui/CustomTimePicker';
+import { DateRangePicker } from './DateRangePicker';
 import type { LessonFormData } from '../types';
 
 interface PublishOptionsProps {
@@ -20,9 +23,7 @@ export function PublishOptions({ formData, setFormData }: PublishOptionsProps) {
               type="button"
               onClick={() => setFormData(prev => ({ ...prev, publishMode: 'immediate', publishImmediately: true }))}
               className={`flex-1 h-[38px] px-3 py-2 rounded-xl border text-sm font-medium transition-all ${
-                mode === 'immediate'
-                  ? 'border-brand-500 bg-brand-50 text-brand-700'
-                  : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                mode === 'immediate' ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
               }`}
             >
               <div className="flex items-center justify-center gap-1.5">
@@ -36,9 +37,7 @@ export function PublishOptions({ formData, setFormData }: PublishOptionsProps) {
               type="button"
               onClick={() => setFormData(prev => ({ ...prev, publishMode: 'scheduled', publishImmediately: false }))}
               className={`flex-1 h-[38px] px-3 py-2 rounded-xl border text-sm font-medium transition-all ${
-                mode === 'scheduled'
-                  ? 'border-brand-500 bg-brand-50 text-brand-700'
-                  : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                mode === 'scheduled' ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
               }`}
             >
               <div className="flex items-center justify-center gap-1.5">
@@ -52,9 +51,7 @@ export function PublishOptions({ formData, setFormData }: PublishOptionsProps) {
               type="button"
               onClick={() => setFormData(prev => ({ ...prev, publishMode: 'window', publishImmediately: false }))}
               className={`flex-1 h-[38px] px-3 py-2 rounded-xl border text-sm font-medium transition-all ${
-                mode === 'window'
-                  ? 'border-orange-500 bg-orange-50 text-orange-700'
-                  : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                mode === 'window' ? 'border-brand-500 bg-brand-50 text-brand-700' : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
               }`}
               title="El vídeo solo es accesible entre dos fechas y horas concretas"
             >
@@ -68,72 +65,38 @@ export function PublishOptions({ formData, setFormData }: PublishOptionsProps) {
           </div>
         </div>
 
-        {/* Scheduled: single date+time */}
+        {/* Programar: custom date + time pickers */}
         {mode === 'scheduled' && (
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Fecha y Hora</label>
             <div className="grid grid-cols-2 gap-2">
-              <input
-                type="date"
+              <CustomDatePicker
                 value={formData.releaseDate}
-                onChange={e => setFormData(prev => ({ ...prev, releaseDate: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors"
+                onChange={v => setFormData(prev => ({ ...prev, releaseDate: v }))}
               />
-              <input
-                type="time"
+              <CustomTimePicker
                 value={formData.releaseTime}
-                onChange={e => setFormData(prev => ({ ...prev, releaseTime: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors"
+                onChange={v => setFormData(prev => ({ ...prev, releaseTime: v }))}
               />
             </div>
           </div>
         )}
       </div>
 
-      {/* Window mode: from → until */}
+      {/* Ventana: range date+time picker */}
       {mode === 'window' && (
-        <div className="rounded-xl border border-orange-200 bg-orange-50 p-4 space-y-3">
-          <p className="text-xs text-orange-700 font-medium">
-            El vídeo solo será accesible entre estas dos fechas y horas. Fuera de ese rango aparecerá bloqueado.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-orange-700 mb-1.5">Desde</label>
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="date"
-                  value={formData.availableFromDate}
-                  onChange={e => setFormData(prev => ({ ...prev, availableFromDate: e.target.value }))}
-                  className="w-full px-3 py-2 border border-orange-200 rounded-lg text-sm bg-white focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-colors"
-                />
-                <input
-                  type="time"
-                  value={formData.availableFromTime}
-                  onChange={e => setFormData(prev => ({ ...prev, availableFromTime: e.target.value }))}
-                  className="w-full px-3 py-2 border border-orange-200 rounded-lg text-sm bg-white focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-colors"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-orange-700 mb-1.5">Hasta</label>
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="date"
-                  value={formData.availableUntilDate}
-                  onChange={e => setFormData(prev => ({ ...prev, availableUntilDate: e.target.value }))}
-                  className="w-full px-3 py-2 border border-orange-200 rounded-lg text-sm bg-white focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-colors"
-                />
-                <input
-                  type="time"
-                  value={formData.availableUntilTime}
-                  onChange={e => setFormData(prev => ({ ...prev, availableUntilTime: e.target.value }))}
-                  className="w-full px-3 py-2 border border-orange-200 rounded-lg text-sm bg-white focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-colors"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
+        <DateRangePicker
+          fromDate={formData.availableFromDate}
+          fromTime={formData.availableFromTime}
+          untilDate={formData.availableUntilDate}
+          untilTime={formData.availableUntilTime}
+          onFromDateChange={v => setFormData(prev => ({ ...prev, availableFromDate: v }))}
+          onFromTimeChange={v => setFormData(prev => ({ ...prev, availableFromTime: v }))}
+          onUntilDateChange={v => setFormData(prev => ({ ...prev, availableUntilDate: v }))}
+          onUntilTimeChange={v => setFormData(prev => ({ ...prev, availableUntilTime: v }))}
+        />
       )}
     </div>
   );
 }
+
