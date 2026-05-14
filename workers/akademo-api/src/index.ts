@@ -1,6 +1,5 @@
 import * as Sentry from '@sentry/cloudflare';
 import { Hono } from 'hono';
-import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import authRoutes from './routes/auth';
 import classRoutes from './routes/classes';
@@ -36,6 +35,13 @@ import { requireAuth } from './lib/auth';
 import { successResponse, errorResponse } from './lib/utils';
 import { csrfProtection } from './lib/csrf';
 
+const CORS_ALLOWED_ORIGINS = [
+  'https://akademo-edu.com',
+  'https://www.akademo-edu.com',
+  'https://akademo.alexxvives.workers.dev',
+  'http://localhost:3000',
+];
+
 const app = new Hono<{ Bindings: Bindings }>();
 
 // Global error handler - map auth errors to proper status codes
@@ -63,8 +69,7 @@ app.onError((err, c) => {
     user: userCtx,
   });
   const origin = c.req.header('Origin') || '';
-  const allowedOrigins = ['https://akademo-edu.com', 'https://www.akademo-edu.com', 'https://akademo.alexxvives.workers.dev', 'http://localhost:3000'];
-  const corsOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+  const corsOrigin = CORS_ALLOWED_ORIGINS.includes(origin) ? origin : CORS_ALLOWED_ORIGINS[0];
   c.header('Access-Control-Allow-Origin', corsOrigin);
   c.header('Access-Control-Allow-Credentials', 'true');
   if (err.message === 'Unauthorized') {
@@ -110,15 +115,7 @@ app.use('*', async (c, next) => {
   return runWithEnv(c.env as unknown as CloudflareEnv, () => next());
 });
 
-// Outermost CORS safety-net: ensures Access-Control-Allow-Origin is always
-// present on every response for allowed origins, even if an inner middleware
-// short-circuits or the worker throws before the cors() middleware can add it.
-const CORS_ALLOWED_ORIGINS = [
-  'https://akademo-edu.com',
-  'https://www.akademo-edu.com',
-  'https://akademo.alexxvives.workers.dev',
-  'http://localhost:3000',
-];
+// CORS: handles OPTIONS preflight and adds headers to all responses.
 app.use('*', async (c, next) => {
   const origin = c.req.header('Origin') || '';
   if (c.req.method === 'OPTIONS') {
@@ -141,14 +138,6 @@ app.use('*', async (c, next) => {
     c.res.headers.set('Access-Control-Allow-Credentials', 'true');
   }
 });
-
-app.use('*', cors({
-  origin: (origin) => CORS_ALLOWED_ORIGINS.includes(origin) ? origin : null,
-  credentials: true,
-  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization', 'Cookie', 'Cache-Control', 'Pragma', 'X-Requested-With'],
-  exposeHeaders: [],
-}));
 
 // CSRF protection: validate Origin + custom header on state-changing requests
 app.use('*', csrfProtection());
