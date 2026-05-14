@@ -339,24 +339,6 @@ async function handleOrphanCleanup(env: Bindings) {
   }
 }
 
-async function handleWindowExpiry(env: Bindings) {
-  const now = new Date().toISOString();
-  const result = await env.DB
-    .prepare(`
-      UPDATE VideoPlayState
-      SET status = 'BLOCKED', updatedAt = ?
-      WHERE status != 'BLOCKED'
-        AND videoId IN (
-          SELECT v.id FROM Video v
-          JOIN Lesson l ON v.lessonId = l.id
-          WHERE l.availableUntil IS NOT NULL AND l.availableUntil < ?
-        )
-    `)
-    .bind(now, now)
-    .run();
-  console.log(`[WindowExpiry] Blocked ${result.meta.changes} play state(s) for expired windows`);
-}
-
 // Export handler that supports both HTTP requests and scheduled events
 export default Sentry.withSentry(
   (env: Bindings) => ({
@@ -367,10 +349,7 @@ export default Sentry.withSentry(
   {
     fetch: app.fetch,
     scheduled: async (_event: unknown, env: Bindings, ctx: ExecutionContext) => {
-      ctx.waitUntil(Promise.all([
-        handleOrphanCleanup(env),
-        handleWindowExpiry(env),
-      ]));
+      ctx.waitUntil(handleOrphanCleanup(env));
     },
   } satisfies ExportedHandler<Bindings>,
 );
