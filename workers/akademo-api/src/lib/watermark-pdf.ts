@@ -114,10 +114,13 @@ export async function addWatermarkToPdf(
     // Perpendicular spacing between lines (only used when both lines present)
     const lineSpacing = size1Base * 0.75;
 
-    // Max safe text width for a line visually centred at (px, py):
-    // The text extends ±w/2 along the diagonal (each axis ±w*SQ/2), so it must fit.
+    // Max safe text width for a line visually centred at (px, py).
+    // Cap at shorter*0.85 so text never overflows on any page size or position.
     const safeFor = (px: number, py: number) =>
-      Math.min(2 * px, 2 * (width - px), 2 * py, 2 * (height - py)) / SQ * 0.95;
+      Math.min(
+        Math.min(2 * px, 2 * (width - px), 2 * py, 2 * (height - py)) / SQ * 0.85,
+        shorter * 0.85,
+      );
 
     const fittedSize = (text: string, font: typeof fontBold, base: number, px: number, py: number): number => {
       if (!text) return base;

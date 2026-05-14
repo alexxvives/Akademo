@@ -32,9 +32,9 @@ function drawCanvasWatermark(canvas: HTMLCanvasElement, email: string, academyNa
   const cy = height / 2;
   const angle = Math.PI / 4; // 45°
 
-  // Maximum text width so the rotated text stays inside the canvas with a 10% margin.
-  // At 45°, a text of width w occupies w*√2/2 on each axis, so safe width = shorter * 0.9.
-  const maxTextWidth = shorter * 0.9;
+  // Maximum text width so the rotated text stays inside the canvas.
+  // Matches server-side cap: shorter * 0.85.
+  const maxTextWidth = shorter * 0.85;
 
   // Return the largest font size ≤ base such that ctx.measureText(text).width ≤ maxTextWidth.
   const fittedSize = (text: string, font: string, base: number): number => {
