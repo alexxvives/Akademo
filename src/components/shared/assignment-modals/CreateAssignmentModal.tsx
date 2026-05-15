@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { nanoid } from 'nanoid';
+import { parseQuizTxt } from '@/components/shared/QuizQuestionBuilder';
 import { apiClient } from '@/lib/api-client';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 import { CustomDatePicker } from '@/components/ui/CustomDatePicker';
@@ -41,6 +42,22 @@ export function CreateAssignmentModal(props: AssignmentModalsProps) {
   } = props;
 
   const [showQuizBuilder, setShowQuizBuilder] = useState(false);
+  const txtImportRef = useRef<HTMLInputElement>(null);
+
+  const handleTxtImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const parsed = parseQuizTxt(text, (n) => nanoid(n));
+      if (parsed.length === 0) { alert('No se pudo leer ninguna pregunta del archivo. Revisa el formato.'); return; }
+      setQuizQuestions(parsed);
+      setAssignmentType('quiz');
+      setUploadFiles([]);
+      setShowQuizBuilder(true);
+    } catch { alert('Error leyendo el archivo.'); }
+    finally { if (txtImportRef.current) txtImportRef.current.value = ''; }
+  };
   const [dueDatePart, setDueDatePart] = useState(() => newDueDate ? newDueDate.slice(0, 10) : '');
   const [dueTimePart, setDueTimePart] = useState(() => newDueDate ? newDueDate.slice(11, 16) : '');
   const [lessons, setLessons] = useState<LessonOption[]>([]);
@@ -208,26 +225,46 @@ export function CreateAssignmentModal(props: AssignmentModalsProps) {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Cuestionario</label>
-                <button type="button" onClick={openQuizBuilder}
-                  className={`w-full h-[38px] px-3 text-sm border rounded-lg transition-colors flex items-center justify-center gap-2 ${
-                    quizReady ? 'border-green-400 bg-green-50 text-green-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
-                  }`}>
-                  {quizReady ? (
-                    <>
-                      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <div className="flex gap-1.5">
+                  <button type="button" onClick={openQuizBuilder}
+                    className={`flex-1 h-[38px] px-3 text-sm border rounded-lg transition-colors flex items-center justify-center gap-2 ${
+                      quizReady ? 'border-green-400 bg-green-50 text-green-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                    }`}>
+                    {quizReady ? (
+                      <>
+                        <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        {quizQuestions.length} pregunta(s) ✓
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Crear cuestionario
+                      </>
+                    )}
+                  </button>
+                  <div className="relative group">
+                    <input ref={txtImportRef} type="file" accept=".txt" className="hidden" onChange={handleTxtImport} />
+                    <button
+                      type="button"
+                      onClick={() => txtImportRef.current?.click()}
+                      className="h-[38px] w-[38px] flex items-center justify-center border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors"
+                      aria-label="Importar preguntas desde .txt"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                       </svg>
-                      {quizQuestions.length} pregunta(s) ✓
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      Crear cuestionario
-                    </>
-                  )}
-                </button>
+                    </button>
+                    <div className="absolute bottom-full right-0 mb-2 w-64 bg-gray-900 text-white text-xs rounded-lg px-3 py-2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+                      <p className="font-semibold mb-1">Importar desde .txt</p>
+                      <p className="text-gray-300 leading-relaxed">Una pregunta por bloque separado por línea en blanco:<br/><span className="font-mono text-gray-200">Q: ¿Pregunta?<br/>A) Opción<br/>B) Correcta *<br/>E: Explicación (opcional)</span></p>
+                      <p className="text-gray-400 mt-1">Marca la correcta con <span className="font-mono text-gray-200">*</span> al final.</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 

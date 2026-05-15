@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import { nanoid } from 'nanoid';
 import { CustomDatePicker } from '@/components/ui/CustomDatePicker';
 import { CustomTimePicker } from '@/components/ui/CustomTimePicker';
-import { QuizQuestionBuilder, createEmptyQuestion } from '@/components/shared/QuizQuestionBuilder';
+import { QuizQuestionBuilder, createEmptyQuestion, parseQuizTxt } from '@/components/shared/QuizQuestionBuilder';
 import type { AssignmentModalsProps } from './types';
 
 export function EditAssignmentModal(props: AssignmentModalsProps) {
@@ -17,6 +18,20 @@ export function EditAssignmentModal(props: AssignmentModalsProps) {
   } = props;
 
   const [showQuizBuilder, setShowQuizBuilder] = useState(false);
+  const txtImportRef = useRef<HTMLInputElement>(null);
+
+  const handleTxtImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const parsed = parseQuizTxt(text, (n) => nanoid(n));
+      if (parsed.length === 0) { alert('No se pudo leer ninguna pregunta del archivo. Revisa el formato.'); return; }
+      setEditQuizQuestions(parsed);
+      setShowQuizBuilder(true);
+    } catch { alert('Error leyendo el archivo.'); }
+    finally { if (txtImportRef.current) txtImportRef.current.value = ''; }
+  };
 
   const confirmEditQuiz = () => {
     for (const q of editQuizQuestions) {
@@ -103,26 +118,46 @@ export function EditAssignmentModal(props: AssignmentModalsProps) {
             {isQuiz && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Preguntas del cuestionario</label>
-                <button type="button" onClick={() => setShowQuizBuilder(true)}
-                  className={`w-full h-[38px] px-3 text-sm border rounded-lg transition-colors flex items-center justify-center gap-2 ${
-                    quizReady ? 'border-green-400 bg-green-50 text-green-700' : 'border-gray-300 text-gray-600 hover:bg-gray-50'
-                  }`}>
-                  {quizReady ? (
-                    <>
-                      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <div className="flex gap-1.5">
+                  <button type="button" onClick={() => setShowQuizBuilder(true)}
+                    className={`flex-1 h-[38px] px-3 text-sm border rounded-lg transition-colors flex items-center justify-center gap-2 ${
+                      quizReady ? 'border-green-400 bg-green-50 text-green-700' : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                    }`}>
+                    {quizReady ? (
+                      <>
+                        <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        {editQuizQuestions.length} pregunta(s) ✓
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                        Editar preguntas
+                      </>
+                    )}
+                  </button>
+                  <div className="relative group">
+                    <input ref={txtImportRef} type="file" accept=".txt" className="hidden" onChange={handleTxtImport} />
+                    <button
+                      type="button"
+                      onClick={() => txtImportRef.current?.click()}
+                      className="h-[38px] w-[38px] flex items-center justify-center border border-gray-300 rounded-lg text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors"
+                      aria-label="Importar preguntas desde .txt"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                       </svg>
-                      {editQuizQuestions.length} pregunta(s) ✓
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                      </svg>
-                      Editar preguntas
-                    </>
-                  )}
-                </button>
+                    </button>
+                    <div className="absolute bottom-full right-0 mb-2 w-64 bg-gray-900 text-white text-xs rounded-lg px-3 py-2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+                      <p className="font-semibold mb-1">Importar desde .txt</p>
+                      <p className="text-gray-300 leading-relaxed">Una pregunta por bloque separado por línea en blanco:<br/><span className="font-mono text-gray-200">Q: ¿Pregunta?<br/>A) Opción<br/>B) Correcta *<br/>E: Explicación (opcional)</span></p>
+                      <p className="text-gray-400 mt-1">Marca la correcta con <span className="font-mono text-gray-200">*</span> al final.</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
