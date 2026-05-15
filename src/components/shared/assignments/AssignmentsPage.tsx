@@ -196,6 +196,9 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
           assignmentType={data.assignmentType} setAssignmentType={data.setAssignmentType}
           quizQuestions={data.quizQuestions} setQuizQuestions={data.setQuizQuestions}
           showEditModal={data.showEditModal} setShowEditModal={data.setShowEditModal}
+          editClassId={data.editClassId} setEditClassId={data.setEditClassId}
+          editTopicId={data.editTopicId} setEditTopicId={data.setEditTopicId}
+          editLessonId={data.editLessonId} setEditLessonId={data.setEditLessonId}
           editTitle={data.editTitle} setEditTitle={data.setEditTitle}
           editDescription={data.editDescription} setEditDescription={data.setEditDescription}
           editDueDate={data.editDueDate} setEditDueDate={data.setEditDueDate}

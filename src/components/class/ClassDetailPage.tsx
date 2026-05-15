@@ -11,6 +11,7 @@ import StreamNameModal from '@/components/class/StreamNameModal';
 import { useClassDetail } from './useClassDetail';
 import { useClassActions } from './useClassActions';
 import { useLessonCreateEdit } from './useLessonCreateEdit';
+import { ClassAssignmentsSection } from './ClassAssignmentsSection';
 
 export interface ClassDetailPageProps {
   role: 'academy' | 'teacher' | 'admin';
@@ -159,6 +160,8 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
             onLessonsUpdate={setLessons}
             dashboardBase={basePath}
           />
+
+          <ClassAssignmentsSection classId={classId} basePath={basePath} />
 
           {showRescheduleModal && reschedulingLesson && (
             <RescheduleModal

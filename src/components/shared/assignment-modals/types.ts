@@ -7,6 +7,7 @@ export interface Assignment {
   submissionCount: number; gradedCount: number; attachmentName?: string; className?: string;
   academyName?: string; createdAt: string; classId?: string;
   uploadId?: string; attachmentIds?: string; type?: string;
+  topicId?: string | null; lessonId?: string | null;
 }
 
 export interface Submission {
@@ -44,6 +45,9 @@ export interface AssignmentModalsProps {
   // Edit
   showEditModal: boolean;
   setShowEditModal: (v: boolean) => void;
+  editClassId?: string; setEditClassId?: (v: string) => void;
+  editTopicId?: string; setEditTopicId?: (v: string) => void;
+  editLessonId?: string; setEditLessonId?: (v: string) => void;
   editTitle: string; setEditTitle: (v: string) => void;
   editDescription: string; setEditDescription: (v: string) => void;
   editDueDate: string; setEditDueDate: (v: string) => void;

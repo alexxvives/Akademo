@@ -930,7 +930,7 @@ assignments.patch('/:id', async (c) => {
     }
 
     const assignmentId = c.req.param('id');
-    const { title, description, dueDate, maxScore, uploadId, uploadIds, solutionUploadId, questions } = await c.req.json();
+    const { title, description, dueDate, maxScore, uploadId, uploadIds, solutionUploadId, questions, classId: newClassId, topicId: newTopicId, lessonId: newLessonId } = await c.req.json();
 
     // Verify assignment exists
     const assignment = await c.env.DB.prepare(`
@@ -994,7 +994,30 @@ assignments.patch('/:id', async (c) => {
       updateFields.push('solutionUploadId = ?');
       bindings.push(solutionUploadId);
     }
-
+    if (newClassId !== undefined && newClassId !== null && newClassId !== '') {
+      // Verify access to the new class before updating
+      if (session.role === 'TEACHER') {
+        const newClassCheck = await c.env.DB.prepare(
+          `SELECT id FROM Class WHERE id = ? AND teacherId = ?`
+        ).bind(newClassId, session.id).first();
+        if (!newClassCheck) return c.json(errorResponse('No tienes acceso a esta asignatura'), 403);
+      } else if (session.role === 'ACADEMY') {
+        const newClassCheck = await c.env.DB.prepare(
+          `SELECT c.id FROM Class c JOIN Academy a ON c.academyId = a.id WHERE c.id = ? AND a.ownerId = ?`
+        ).bind(newClassId, session.id).first();
+        if (!newClassCheck) return c.json(errorResponse('No tienes acceso a esta asignatura'), 403);
+      }
+      updateFields.push('classId = ?');
+      bindings.push(newClassId);
+    }
+    if (newTopicId !== undefined) {
+      updateFields.push('topicId = ?');
+      bindings.push(newTopicId === '' ? null : newTopicId);
+    }
+    if (newLessonId !== undefined) {
+      updateFields.push('lessonId = ?');
+      bindings.push(newLessonId === '' ? null : newLessonId);
+    }
     updateFields.push('updatedAt = ?');
     bindings.push(updatedAt);
     bindings.push(assignmentId);

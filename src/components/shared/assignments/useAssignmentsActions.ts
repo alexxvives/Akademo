@@ -185,6 +185,9 @@ export function useAssignmentsActions(data: AssignmentsDataReturn) {
         body: JSON.stringify({
           title: data.editTitle, description: data.editDescription,
           dueDate: data.editDueDate || undefined,
+          ...(data.editClassId ? { classId: data.editClassId } : {}),
+          topicId: data.editTopicId || null,
+          lessonId: data.editLessonId || null,
           ...(uploadIds.length > 0 && { uploadIds }),
           ...(data.selectedAssignment.type === 'quiz' && data.editQuizQuestions.length > 0
             && { questions: data.editQuizQuestions }),
@@ -234,6 +237,9 @@ export function useAssignmentsActions(data: AssignmentsDataReturn) {
     } else {
       data.setEditQuizQuestions([]);
     }
+    data.setEditClassId(assignment.classId || '');
+    data.setEditTopicId(assignment.topicId || '');
+    data.setEditLessonId(assignment.lessonId || '');
     data.setShowEditModal(true);
   };
 

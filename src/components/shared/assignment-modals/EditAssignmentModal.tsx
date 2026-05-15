@@ -1,16 +1,26 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { nanoid } from 'nanoid';
 import { CustomDatePicker } from '@/components/ui/CustomDatePicker';
 import { CustomTimePicker } from '@/components/ui/CustomTimePicker';
 import { QuizQuestionBuilder, createEmptyQuestion, parseQuizTxt } from '@/components/shared/QuizQuestionBuilder';
+import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
+import { LessonSearchDropdown } from '@/components/ui/LessonSearchDropdown';
+import { apiClient } from '@/lib/api-client';
 import type { AssignmentModalsProps } from './types';
+
+interface TopicOption { id: string; name: string; }
+interface LessonOption { id: string; title: string; topicId: string | null; }
 
 export function EditAssignmentModal(props: AssignmentModalsProps) {
   const {
+    classes,
     selectedAssignment,
     showEditModal, setShowEditModal,
+    editClassId = '', setEditClassId,
+    editTopicId = '', setEditTopicId,
+    editLessonId = '', setEditLessonId,
     editTitle, setEditTitle, editDescription, setEditDescription,
     editDueDate, setEditDueDate, editUploadFiles, setEditUploadFiles,
     editQuizQuestions, setEditQuizQuestions,
@@ -19,6 +29,27 @@ export function EditAssignmentModal(props: AssignmentModalsProps) {
 
   const [showQuizBuilder, setShowQuizBuilder] = useState(false);
   const txtImportRef = useRef<HTMLInputElement>(null);
+  const [topics, setTopics] = useState<TopicOption[]>([]);
+  const [lessons, setLessons] = useState<LessonOption[]>([]);
+
+  useEffect(() => {
+    if (!showEditModal || !editClassId) { setTopics([]); setLessons([]); return; }
+    Promise.all([
+      apiClient(`/topics?classId=${editClassId}`).then(r => r.json()),
+      apiClient(`/lessons?classId=${editClassId}`).then(r => r.json()),
+    ]).then(([topicsData, lessonsData]) => {
+      if (topicsData.success) setTopics(topicsData.data || []);
+      if (lessonsData.success) setLessons(lessonsData.data || []);
+    }).catch(() => {});
+  }, [showEditModal, editClassId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleClassChange = (newClassId: string) => {
+    setEditClassId?.(newClassId);
+    setEditTopicId?.('');
+    setEditLessonId?.('');
+    setTopics([]);
+    setLessons([]);
+  };
 
   const handleTxtImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -69,6 +100,46 @@ export function EditAssignmentModal(props: AssignmentModalsProps) {
             </h2>
           </div>
           <form onSubmit={handleUpdateAssignment} className="p-6 space-y-4">
+            {classes && classes.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Asignatura</label>
+                <ClassSearchDropdown
+                  classes={classes}
+                  value={editClassId}
+                  onChange={handleClassChange}
+                  placeholder="Seleccionar asignatura..."
+                  className="w-full"
+                />
+              </div>
+            )}
+            {editClassId && topics.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tema <span className="text-gray-400 font-normal">(opcional)</span>
+                </label>
+                <select
+                  value={editTopicId}
+                  onChange={e => setEditTopicId?.(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm bg-white"
+                >
+                  <option value="">Sin tema</option>
+                  {topics.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                </select>
+              </div>
+            )}
+            {editClassId && lessons.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Clase <span className="text-gray-400 font-normal">(opcional)</span>
+                </label>
+                <LessonSearchDropdown
+                  lessons={lessons}
+                  value={editLessonId}
+                  onChange={(id) => setEditLessonId?.(id)}
+                  className="w-full"
+                />
+              </div>
+            )}
             <div>
               <label htmlFor="edit-title" className="block text-sm font-medium text-gray-700 mb-1">Título</label>
               <input id="edit-title" type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} required
