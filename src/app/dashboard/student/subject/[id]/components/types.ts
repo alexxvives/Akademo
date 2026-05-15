@@ -19,6 +19,7 @@ export interface Document {
   id: string;
   title: string;
   description: string | null;
+  allowDownload?: number | boolean;
   upload: {
     fileName: string;
     storagePath: string;

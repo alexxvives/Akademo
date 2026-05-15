@@ -364,7 +364,7 @@ lessons.get('/:id', async (c) => {
     // Get documents
     const documents = await c.env.DB
       .prepare(`
-        SELECT d.id, d.title, d.lessonId, d.uploadId, d.createdAt, 
+        SELECT d.id, d.title, d.lessonId, d.uploadId, d.createdAt, d.allowDownload,
                u.fileName, u.fileSize, u.mimeType, u.storagePath, u.storageType
         FROM Document d
         LEFT JOIN Upload u ON d.uploadId = u.id
@@ -417,6 +417,7 @@ lessons.get('/:id', async (c) => {
       title: d.title,
       lessonId: d.lessonId,
       uploadId: d.uploadId,
+      allowDownload: d.allowDownload === 1,
       createdAt: d.createdAt,
       updatedAt: d.updatedAt,
       upload: {
@@ -787,6 +788,50 @@ lessons.delete('/document/:id', async (c) => {
   }
 });
 
+// PATCH /lessons/document/:id - Toggle allowDownload on a document
+lessons.patch('/document/:id', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    const documentId = c.req.param('id');
+
+    if (!['ADMIN', 'TEACHER', 'ACADEMY'].includes(session.role)) {
+      return c.json(errorResponse('Not authorized'), 403);
+    }
+
+    const body = await c.req.json() as { allowDownload?: boolean };
+    if (typeof body.allowDownload !== 'boolean') {
+      return c.json(errorResponse('allowDownload (boolean) is required'), 400);
+    }
+
+    const document = await c.env.DB.prepare(`
+      SELECT d.id, d.lessonId, l.classId, c.teacherId, a.ownerId
+      FROM Document d
+      JOIN Lesson l ON d.lessonId = l.id
+      JOIN Class c ON l.classId = c.id
+      JOIN Academy a ON c.academyId = a.id
+      WHERE d.id = ?
+    `).bind(documentId).first();
+
+    if (!document) return c.json(errorResponse('Document not found'), 404);
+
+    if (session.role === 'TEACHER' && !(await teacherCanAccessClass(c.env.DB, session.id, document.classId as string))) {
+      return c.json(errorResponse('Not authorized'), 403);
+    }
+    if (session.role === 'ACADEMY' && document.ownerId !== session.id) {
+      return c.json(errorResponse('Not authorized'), 403);
+    }
+
+    await c.env.DB.prepare('UPDATE Document SET allowDownload = ? WHERE id = ?')
+      .bind(body.allowDownload ? 1 : 0, documentId).run();
+
+    return c.json(successResponse({ allowDownload: body.allowDownload }));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Patch Document] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
+
 // DELETE /lessons/video/:id - Delete video from lesson
 lessons.delete('/video/:id', async (c) => {
   try {
@@ -980,13 +1025,14 @@ lessons.post('/create-with-uploaded', validateBody(createLessonSchema), async (c
       // Create Document record
       const documentId = crypto.randomUUID();
       await c.env.DB.prepare(`
-        INSERT INTO Document (id, title, lessonId, uploadId)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO Document (id, title, lessonId, uploadId, allowDownload)
+        VALUES (?, ?, ?, ?, ?)
       `).bind(
         documentId,
         doc.title || doc.fileName,
         lessonId,
-        uploadId
+        uploadId,
+        doc.allowDownload ? 1 : 0
       ).run();
 
       createdDocuments.push({
@@ -1331,13 +1377,14 @@ lessons.post('/:id/add-files', async (c) => {
 
         // Create Document record
         await c.env.DB.prepare(`
-          INSERT INTO Document (id, lessonId, uploadId, title)
-          VALUES (?, ?, ?, ?)
+          INSERT INTO Document (id, lessonId, uploadId, title, allowDownload)
+          VALUES (?, ?, ?, ?, ?)
         `).bind(
           documentId,
           lessonId,
           uploadId,
-          doc.title || doc.fileName
+          doc.title || doc.fileName,
+          doc.allowDownload ? 1 : 0
         ).run();
 
         addedDocuments++;

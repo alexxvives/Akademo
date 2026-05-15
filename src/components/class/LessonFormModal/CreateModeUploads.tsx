@@ -84,6 +84,22 @@ export function CreateModeUploads({
                 </div>
                 <button
                   type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, documents: prev.documents.map((doc, j) => j === i ? { ...doc, allowDownload: !doc.allowDownload } : doc) }))}
+                  className={`p-1.5 rounded-lg transition-all border ${d.allowDownload ? 'bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100' : 'bg-gray-100 text-gray-400 border-gray-200 hover:bg-gray-200'}`}
+                  title={d.allowDownload ? 'Descarga permitida — click para bloquear' : 'Descarga bloqueada — click para permitir'}
+                >
+                  {d.allowDownload ? (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                  )}
+                </button>
+                <button
+                  type="button"
                   onClick={() => setFormData(prev => ({ ...prev, documents: prev.documents.filter((_, j) => j !== i) }))}
                   className="text-xs text-red-600 bg-red-100 hover:bg-red-200 px-2 py-1 rounded transition-colors"
                 >

@@ -57,7 +57,7 @@ export interface LessonDetail {
     upload?: { storageType?: string; bunnyGuid?: string };
     bunnyGuid?: string;
   }>;
-  documents: Array<{ id: string; title: string; description: string | null; upload: { storagePath: string; fileName: string; mimeType?: string } }>;
+  documents: Array<{ id: string; title: string; description: string | null; allowDownload?: number | boolean; upload: { storagePath: string; fileName: string; mimeType?: string } }>;
   links?: LessonLink[];
 }
 
@@ -73,7 +73,7 @@ export interface LessonDetailResponse {
   watermarkIntervalMins: number;
   topicId?: string | null;
   videos?: Array<{ id: string; title?: string; durationSeconds: number | null; upload?: { bunnyGuid?: string; storageType?: string } }>;
-  documents?: Array<{ id: string; title?: string; upload?: { fileName?: string; storagePath?: string } }>;
+  documents?: Array<{ id: string; title?: string; allowDownload?: number | boolean; upload?: { fileName?: string; storagePath?: string } }>;
   links?: Array<{ id: string; title: string; url: string; orderIndex: number }>;
 }
 
@@ -160,14 +160,14 @@ export interface LessonFormData {
   watermarkIntervalMins: number;
   topicId: string;
   videos: { file: File; title: string; description: string; duration: number }[];
-  documents: { file: File; title: string; description: string }[];
+  documents: { file: File; title: string; description: string; allowDownload?: boolean }[];
   selectedStreamRecordings: string[];
   links: { title: string; url: string }[];
 }
 
 export interface EditingLessonMedia {
   videos: Array<{ id: string; title: string; durationSeconds: number | null; bunnyGuid?: string }>;
-  documents: Array<{ id: string; title: string; fileName: string; storagePath: string }>;
+  documents: Array<{ id: string; title: string; fileName: string; storagePath: string; allowDownload?: boolean }>;
   links: Array<{ id: string; title: string; url: string; orderIndex: number }>;
 }
 

@@ -41,7 +41,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
     createLiveClass, confirmCreateStream, deleteLiveClass,
     handleEnrollmentAction, handleDeleteLesson, handleToggleRelease, handleBulkToggleRelease,
     handleLessonMove, handleRescheduleLesson, handleRescheduleSubmit, handleHideLesson,
-    addVideoToForm, addDocumentToForm, handleDeleteVideo, handleDeleteDocument,
+    addVideoToForm, addDocumentToForm, handleDeleteVideo, handleDeleteDocument, handleToggleDocumentDownload,
   } = useClassActions(s);
 
   const { handleLessonCreate, handleEditLesson, handleUpdateLesson, handleAddLink, handleDeleteLink } = useLessonCreateEdit(s);
@@ -129,6 +129,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
               onClose={() => { setShowLessonForm(false); setEditingLessonId(null); setEditingLessonMedia(null); router.push(`${basePath}/subject/${classId}`); }}
               onDeleteVideo={handleDeleteVideo}
               onDeleteDocument={handleDeleteDocument}
+              onToggleDocumentDownload={handleToggleDocumentDownload}
               onAddVideo={addVideoToForm}
               onAddDocument={addDocumentToForm}
               onAddLink={handleAddLink}

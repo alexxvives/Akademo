@@ -139,7 +139,7 @@ export function useLessonCreateEdit(s: ClassDetailState) {
       const detail: LessonDetailResponse = result.data;
       s.setEditingLessonMedia({
         videos: (detail.videos || []).map(v => ({ id: v.id, title: v.title || 'Video', durationSeconds: v.durationSeconds, bunnyGuid: v.upload?.bunnyGuid })),
-        documents: (detail.documents || []).map(d => ({ id: d.id, title: d.title || d.upload?.fileName || 'Document', fileName: d.upload?.fileName || 'Unknown', storagePath: d.upload?.storagePath || '' })),
+        documents: (detail.documents || []).map(d => ({ id: d.id, title: d.title || d.upload?.fileName || 'Document', fileName: d.upload?.fileName || 'Unknown', storagePath: d.upload?.storagePath || '', allowDownload: d.allowDownload === 1 || d.allowDownload === true })),
         links: (detail.links || []).map((l: { id: string; title: string; url: string; orderIndex: number }) => ({ id: l.id, title: l.title, url: l.url, orderIndex: l.orderIndex })),
       });
       const existingFrom = detail.availableFrom ? new Date(detail.availableFrom) : null;

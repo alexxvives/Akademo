@@ -188,7 +188,7 @@ export default function LessonContentView({
                   href="#"
                   rel="noopener noreferrer"
                   className="flex items-center gap-3 p-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors group"
-                  onClick={async (e) => { e.preventDefault(); try { await openDocument(doc.upload.storagePath); } catch { alert('Error al abrir'); } }}
+                  onClick={async (e) => { e.preventDefault(); try { await openDocument(doc.upload.storagePath, !!doc.allowDownload); } catch { alert('Error al abrir'); } }}
                 >
                   <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
                     <svg className="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">

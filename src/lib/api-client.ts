@@ -132,7 +132,7 @@ export async function apiClient(
  * (not cookies), and the server-side proxy cannot forward credentials cross-worker.
  * This gets a short-lived signed URL from the API (using JS auth) and opens it directly.
  */
-export async function openDocument(storagePath: string): Promise<void> {
+export async function openDocument(storagePath: string, allowDownload = false): Promise<void> {
   const res = await apiClient(`/storage/signed-url?key=${encodeURIComponent(storagePath)}`);
   if (!res.ok) throw new Error('Failed to get signed URL');
   const json = await res.json() as { success: boolean; data: { token: string; expires: number; name: string; email: string; academyName: string; serverWm: boolean } };
@@ -142,8 +142,8 @@ export async function openDocument(storagePath: string): Promise<void> {
   const qs = new URLSearchParams({ token, expires: String(expires), name: name ?? '', email: email ?? '', academyName: academyName ?? '' });
   const url = `/api/storage/serve/${encodedKey}?${qs}`;
 
-  // PDFs open in the in-app viewer (no browser download toolbar)
-  if (storagePath.toLowerCase().endsWith('.pdf')) {
+  // PDFs open in the in-app viewer (no browser download toolbar) unless allowDownload is set
+  if (storagePath.toLowerCase().endsWith('.pdf') && !allowDownload) {
     const rawName = storagePath.split('/').pop() ?? '';
     const title = decodeURIComponent(rawName).replace(/\.[^.]+$/, '');
     window.dispatchEvent(new CustomEvent('open-pdf', { detail: { url, title, serverWm: serverWm ?? false } }));

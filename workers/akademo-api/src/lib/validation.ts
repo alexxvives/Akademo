@@ -138,6 +138,7 @@ export const createLessonSchema = z.object({
     storagePath: z.string(),
     title: z.string().optional(),
     uploadId: z.string().optional(),
+    allowDownload: z.boolean().optional(),
   })).optional(),
   links: z.array(z.object({
     title: z.string().min(1).max(200),

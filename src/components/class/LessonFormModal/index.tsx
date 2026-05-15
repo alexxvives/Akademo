@@ -26,6 +26,7 @@ interface LessonFormModalProps {
   onClose: () => void;
   onDeleteVideo: (id: string) => void;
   onDeleteDocument: (id: string) => void;
+  onToggleDocumentDownload: (id: string, allowDownload: boolean) => Promise<void>;
   onAddVideo: (file: File) => void;
   onAddDocument: (file: File) => void;
   onAddLink: (title: string, url: string) => Promise<void>;
@@ -49,6 +50,7 @@ export default function LessonFormModal({
   onClose,
   onDeleteVideo,
   onDeleteDocument,
+  onToggleDocumentDownload,
   onAddVideo,
   onAddDocument,
   onAddLink,
@@ -141,6 +143,7 @@ export default function LessonFormModal({
               availableStreamRecordings={availableStreamRecordings}
               onDeleteVideo={onDeleteVideo}
               onDeleteDocument={onDeleteDocument}
+              onToggleDocumentDownload={onToggleDocumentDownload}
               onAddVideo={onAddVideo}
               onAddDocument={onAddDocument}
               onAddLink={onAddLink}

@@ -11,6 +11,7 @@ interface EditModeMediaProps {
   availableStreamRecordings: Array<{ id: string; title: string; createdAt: string }>;
   onDeleteVideo: (id: string) => void;
   onDeleteDocument: (id: string) => void;
+  onToggleDocumentDownload: (id: string, allowDownload: boolean) => Promise<void>;
   onAddVideo: (file: File) => void;
   onAddDocument: (file: File) => void;
   onAddLink: (title: string, url: string) => Promise<void>;
@@ -24,6 +25,7 @@ export function EditModeMedia({
   availableStreamRecordings,
   onDeleteVideo,
   onDeleteDocument,
+  onToggleDocumentDownload,
   onAddVideo,
   onAddDocument,
   onAddLink,
@@ -87,6 +89,22 @@ export function EditModeMedia({
                   <p className="text-sm font-medium text-gray-900 truncate">{d.title || d.fileName}</p>
                   <p className="text-xs text-gray-500 truncate">{d.fileName}</p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => onToggleDocumentDownload(d.id, !d.allowDownload)}
+                  className={`p-1.5 rounded-lg transition-all border ${d.allowDownload ? 'bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100' : 'bg-gray-100 text-gray-400 border-gray-200 hover:bg-gray-200'}`}
+                  title={d.allowDownload ? 'Descarga permitida — click para bloquear' : 'Descarga bloqueada — click para permitir'}
+                >
+                  {d.allowDownload ? (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                  )}
+                </button>
                 <button type="button" onClick={() => onDeleteDocument(d.id)} className="text-xs text-red-600 bg-red-100 hover:bg-red-200 px-2 py-1 rounded transition-colors">
                   Eliminar
                 </button>
@@ -175,6 +193,22 @@ export function EditModeMedia({
                 {formData.documents.map((d, i) => (
                   <div key={`doc-${i}-${d.file.name}`} className="relative p-2 bg-green-50 border border-green-200 rounded-lg flex items-center gap-2">
                     <span className="text-xs text-gray-700 truncate flex-1">{d.file.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, documents: prev.documents.map((doc, j) => j === i ? { ...doc, allowDownload: !doc.allowDownload } : doc) }))}
+                      className={`p-1 rounded transition-all border ${d.allowDownload ? 'bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-100' : 'bg-white text-gray-400 border-gray-200 hover:bg-gray-100'}`}
+                      title={d.allowDownload ? 'Descarga permitida — click para bloquear' : 'Descarga bloqueada — click para permitir'}
+                    >
+                      {d.allowDownload ? (
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                        </svg>
+                      ) : (
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                      )}
+                    </button>
                     <button type="button" onClick={() => setFormData(prev => ({ ...prev, documents: prev.documents.filter((_, j) => j !== i) }))} className="w-5 h-5 flex items-center justify-center text-red-500 hover:text-red-700 rounded">
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

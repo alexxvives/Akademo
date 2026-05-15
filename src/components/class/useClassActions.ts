@@ -241,7 +241,7 @@ export function useClassActions(s: ClassDetailState) {
   };
 
   const addVideoToForm = (file: File) => createVideoFormEntry(file, (entry) => s.setLessonFormData(p => ({ ...p, videos: [...p.videos, entry] })));
-  const addDocumentToForm = (file: File) => s.setLessonFormData(p => ({ ...p, documents: [...p.documents, { file, title: '', description: '' }] }));
+  const addDocumentToForm = (file: File) => s.setLessonFormData(p => ({ ...p, documents: [...p.documents, { file, title: '', description: '', allowDownload: false }] }));
 
   const handleDeleteVideo = async (videoId: string) => {
     if (!confirm('¿Estás seguro de eliminar este video?')) return;
@@ -263,11 +263,21 @@ export function useClassActions(s: ClassDetailState) {
     } catch { alert('Error de conexión'); }
   };
 
+  const handleToggleDocumentDownload = async (documentId: string, allowDownload: boolean) => {
+    try {
+      const res = await apiClient(`/lessons/document/${documentId}`, { method: 'PATCH', body: JSON.stringify({ allowDownload }) });
+      const result = await res.json();
+      if (result.success) {
+        s.setEditingLessonMedia(prev => prev ? ({ ...prev, documents: prev.documents.map(d => d.id === documentId ? { ...d, allowDownload } : d) }) : null);
+      } else alert(result.error || 'Error al actualizar documento');
+    } catch { alert('Error de conexión'); }
+  };
+
   return {
     selectLesson, goBackToLessons, selectVideoInLesson,
     createLiveClass, confirmCreateStream, deleteLiveClass,
     handleEnrollmentAction, handleDeleteLesson, handleToggleRelease, handleBulkToggleRelease,
     handleLessonMove, handleRescheduleLesson, handleRescheduleSubmit, handleHideLesson,
-    addVideoToForm, addDocumentToForm, handleDeleteVideo, handleDeleteDocument,
+    addVideoToForm, addDocumentToForm, handleDeleteVideo, handleDeleteDocument, handleToggleDocumentDownload,
   };
 }

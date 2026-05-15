@@ -26,6 +26,7 @@ interface UploadedDocument {
   mimeType: string;
   title: string;
   description: string;
+  allowDownload: boolean;
 }
 
 interface UploadResult {
@@ -35,7 +36,7 @@ interface UploadResult {
 
 export async function uploadFilesToServices(
   videos: Array<{ file: File; title: string; description: string; duration: number }>,
-  documents: Array<{ file: File; title: string; description: string }>,
+  documents: Array<{ file: File; title: string; description: string; allowDownload?: boolean }>,
   collectionName: string | undefined,
   parentCollectionName: string | undefined,
   tempLessonId: string,
@@ -106,6 +107,7 @@ export async function uploadFilesToServices(
     uploadedDocuments.push({
       storagePath, fileName: doc.file.name, fileSize: doc.file.size,
       mimeType: doc.file.type, title: doc.title, description: doc.description,
+      allowDownload: doc.allowDownload ?? false,
     });
   }
 
