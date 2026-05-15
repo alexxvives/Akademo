@@ -19,6 +19,8 @@ interface TopicSectionProps {
   onTopicDragEnd?: () => void;
   onDeleteTopic?: () => void;
   onHideAllLessons?: () => void;
+  onToggleTopicHidden?: () => void;
+  topicHidden?: boolean;
   renderLesson: (lesson: Lesson) => ReactNode;
   viewMode?: 'cards' | 'rows';
   quizCount?: number;
@@ -29,7 +31,7 @@ interface TopicSectionProps {
 export function TopicSection({
   topicId, topicName, topicLessons, isExpanded, isDragOver, isDraggingThis,
   onToggle, onDragOver, onDrop, onTopicDragStart, onTopicDragEnd,
-  onDeleteTopic, onHideAllLessons, renderLesson, viewMode = 'cards',
+  onDeleteTopic, onHideAllLessons, onToggleTopicHidden, topicHidden, renderLesson, viewMode = 'cards',
   quizCount, dashboardBase, classId,
 }: TopicSectionProps) {
   return (
@@ -86,7 +88,7 @@ export function TopicSection({
         </div>
         {topicId && (
           <div className="flex items-center gap-1">
-            {onHideAllLessons && (
+            {onHideAllLessons && topicLessons.length > 0 && (
               <div className="relative group/hidetopic">
                 <button
                   onClick={(e) => { e.stopPropagation(); onHideAllLessons(); }}
@@ -106,6 +108,29 @@ export function TopicSection({
                 <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 px-3 py-2 bg-slate-800 text-slate-200 text-xs rounded-lg shadow-xl border border-slate-700 opacity-0 invisible group-hover/hidetopic:opacity-100 group-hover/hidetopic:visible transition-all duration-200 whitespace-nowrap z-20">
                   <div className="absolute top-1/2 -translate-y-1/2 -right-1 w-2 h-2 bg-slate-800 border-r border-b border-slate-700 rotate-45"></div>
                   {topicLessons.some(l => new Date(l.releaseDate) <= new Date()) ? 'Ocultar todas las Clases de este tema' : 'Mostrar todas las Clases de este tema'}
+                </div>
+              </div>
+            )}
+            {onToggleTopicHidden && topicLessons.length === 0 && (
+              <div className="relative group/hidetopic">
+                <button
+                  onClick={(e) => { e.stopPropagation(); onToggleTopicHidden(); }}
+                  className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 rounded-lg transition-all duration-200"
+                >
+                  {topicHidden ? (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  )}
+                </button>
+                <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 px-3 py-2 bg-slate-800 text-slate-200 text-xs rounded-lg shadow-xl border border-slate-700 opacity-0 invisible group-hover/hidetopic:opacity-100 group-hover/hidetopic:visible transition-all duration-200 whitespace-nowrap z-20">
+                  <div className="absolute top-1/2 -translate-y-1/2 -right-1 w-2 h-2 bg-slate-800 border-r border-b border-slate-700 rotate-45"></div>
+                  {topicHidden ? 'Mostrar tema a los estudiantes' : 'Ocultar tema a los estudiantes'}
                 </div>
               </div>
             )}

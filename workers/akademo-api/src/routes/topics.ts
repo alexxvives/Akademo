@@ -49,14 +49,16 @@ topics.get('/', async (c) => {
       return c.json(errorResponse(`No access to class ${classId}`), 403);
     }
 
-    // Get topics with lesson count and quiz count
+    // Get topics with lesson count and quiz count.
+    // Students don't see hidden topics.
+    const hiddenFilter = session.role === 'STUDENT' ? 'AND COALESCE(t.hidden, 0) = 0' : '';
     const topicsResult = await c.env.DB.prepare(`
       SELECT 
         t.*,
         (SELECT COUNT(*) FROM Lesson l WHERE l.topicId = t.id) as lessonCount,
         (SELECT COUNT(*) FROM Assignment a WHERE a.topicId = t.id) as quizCount
       FROM Topic t
-      WHERE t.classId = ?
+      WHERE t.classId = ? ${hiddenFilter}
       ORDER BY t.orderIndex ASC, t.createdAt ASC
     `).bind(classId).all();
 
@@ -141,7 +143,7 @@ topics.put('/:id', async (c) => {
       return c.json(errorResponse('Not authorized'), 403);
     }
 
-    const { name, orderIndex } = await c.req.json();
+    const { name, orderIndex, hidden } = await c.req.json();
 
     // Get topic and verify access
     const topic = await c.env.DB.prepare(`
@@ -169,9 +171,10 @@ topics.put('/:id', async (c) => {
     await c.env.DB.prepare(`
       UPDATE Topic 
       SET name = COALESCE(?, name), 
-          orderIndex = COALESCE(?, orderIndex)
+          orderIndex = COALESCE(?, orderIndex),
+          hidden = COALESCE(?, hidden)
       WHERE id = ?
-    `).bind(name || null, orderIndex ?? null, topicId).run();
+    `).bind(name || null, orderIndex ?? null, hidden === undefined ? null : (hidden ? 1 : 0), topicId).run();
 
     const updated = await c.env.DB.prepare(`
       SELECT * FROM Topic WHERE id = ?

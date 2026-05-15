@@ -10,7 +10,7 @@ import { StudentTimeModal } from './StudentTimeModal';
 export default function TopicsLessonsList({
   lessons, topics, classId, totalStudents, expandTopicId, highlightLessonId,
   paymentStatus, onSelectLesson, onEditLesson, onDeleteLesson, onRescheduleLesson,
-  onTopicsChange, onTopicsUpdate, onLessonsUpdate, onLessonMove, onToggleRelease, onBulkToggleRelease,
+  onTopicsChange, onTopicsUpdate, onLessonsUpdate, onLessonMove, onToggleRelease, onBulkToggleRelease, onToggleTopicHidden,
   dashboardBase,
 }: TopicsLessonsListProps) {
   const h = useTopicsLessons({
@@ -176,6 +176,8 @@ export default function TopicsLessonsList({
                 onTopicDragEnd={h.handleTopicDragEnd}
                 onDeleteTopic={() => h.handleDeleteTopic(topic.id)}
                 onHideAllLessons={() => onBulkToggleRelease(h.lessonsByTopic.get(topic.id) || [])}
+                onToggleTopicHidden={onToggleTopicHidden ? () => onToggleTopicHidden(topic.id, !(topic.hidden === 1 || topic.hidden === true)) : undefined}
+                topicHidden={topic.hidden === 1 || topic.hidden === true}
                 renderLesson={renderLesson}
                 viewMode={viewMode}
                 quizCount={topic.quizCount}
@@ -214,6 +216,8 @@ export default function TopicsLessonsList({
                 onTopicDragEnd={h.handleTopicDragEnd}
                 onDeleteTopic={() => h.handleDeleteTopic(topic.id)}
                 onHideAllLessons={() => onBulkToggleRelease(h.lessonsByTopic.get(topic.id) || [])}
+                onToggleTopicHidden={onToggleTopicHidden ? () => onToggleTopicHidden(topic.id, !(topic.hidden === 1 || topic.hidden === true)) : undefined}
+                topicHidden={topic.hidden === 1 || topic.hidden === true}
                 renderLesson={renderLesson}
                 viewMode={viewMode}
                 quizCount={topic.quizCount}

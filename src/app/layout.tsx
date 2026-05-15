@@ -3,6 +3,7 @@ import { Montserrat } from 'next/font/google';
 import Script from 'next/script';
 import "./globals.css";
 import PdfViewerModal from '@/components/PdfViewerModal';
+import OfficeViewerModal from '@/components/OfficeViewerModal';
 
 const montserrat = Montserrat({ 
   subsets: ['latin'],
@@ -179,6 +180,7 @@ export default function RootLayout({
       <body className="antialiased overflow-x-hidden">
         <main>{children}</main>
         <PdfViewerModal />
+        <OfficeViewerModal />
       </body>
     </html>
   );

@@ -42,6 +42,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
     handleEnrollmentAction, handleDeleteLesson, handleToggleRelease, handleBulkToggleRelease,
     handleLessonMove, handleRescheduleLesson, handleRescheduleSubmit, handleHideLesson,
     addVideoToForm, addDocumentToForm, handleDeleteVideo, handleDeleteDocument, handleToggleDocumentDownload,
+    handleToggleTopicHidden,
   } = useClassActions(s);
 
   const { handleLessonCreate, handleEditLesson, handleUpdateLesson, handleAddLink, handleDeleteLink } = useLessonCreateEdit(s);
@@ -153,6 +154,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
             onLessonMove={handleLessonMove}
             onToggleRelease={handleToggleRelease}
             onBulkToggleRelease={handleBulkToggleRelease}
+            onToggleTopicHidden={handleToggleTopicHidden}
             onTopicsUpdate={setTopics}
             onLessonsUpdate={setLessons}
             dashboardBase={basePath}

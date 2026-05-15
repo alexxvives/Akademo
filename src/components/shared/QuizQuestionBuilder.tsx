@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { nanoid } from 'nanoid';
 
 export interface QuizOption {
@@ -32,7 +32,79 @@ function createEmptyQuestion(): QuizQuestionForm {
 }
 
 export function QuizQuestionBuilder({ questions, setQuestions }: QuizQuestionBuilderProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const addQuestion = () => setQuestions([...questions, createEmptyQuestion()]);
+
+  /**
+   * Parser de TXT para crear preguntas en bloque.
+   *
+   * Formato esperado (separa preguntas con una línea en blanco):
+   *   Q: ¿Texto de la pregunta?
+   *   A) Opción incorrecta
+   *   B) Opción correcta *
+   *   C) Otra opción
+   *   D) Otra opción
+   *   E: Explicación opcional
+   *
+   * - Se admite "Q:", "P:" o número ("1.") como inicio de pregunta.
+   * - Se admite "A)", "A.", "A:", "-" o "*" como inicio de opción.
+   * - Una opción marcada con "*" al final (o prefijo "[x]") se considera correcta.
+   * - Se permiten varias correctas.
+   */
+  const parseQuizTxt = (text: string): QuizQuestionForm[] => {
+    const blocks = text.replace(/\r\n/g, '\n').split(/\n\s*\n+/);
+    const result: QuizQuestionForm[] = [];
+    for (const block of blocks) {
+      const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
+      if (lines.length === 0) continue;
+      let questionText = '';
+      let explanation = '';
+      const opts: { text: string; correct: boolean }[] = [];
+      for (const line of lines) {
+        const qMatch = line.match(/^(?:Q|P|Pregunta)\s*[:\.\)]\s*(.*)$/i) || line.match(/^\d+\s*[\.\)]\s*(.*)$/);
+        const eMatch = line.match(/^(?:E|Explicaci[oó]n|Explanation)\s*[:\.\)]\s*(.*)$/i);
+        const oMatch = line.match(/^(?:\[(x| )\]\s*)?(?:[A-Fa-f]\s*[:\.\)]|[-*])\s*(.*)$/);
+        if (qMatch && !questionText) {
+          questionText = qMatch[1].trim();
+        } else if (eMatch) {
+          explanation = eMatch[1].trim();
+        } else if (oMatch) {
+          let txt = oMatch[2].trim();
+          let correct = false;
+          if (oMatch[1] && oMatch[1].toLowerCase() === 'x') correct = true;
+          if (txt.endsWith('*')) { correct = true; txt = txt.slice(0, -1).trim(); }
+          opts.push({ text: txt, correct });
+        } else if (!questionText) {
+          questionText = line;
+        }
+      }
+      if (!questionText || opts.length < 2) continue;
+      const optionObjs = opts.map(o => ({ id: nanoid(6), text: o.text }));
+      const correctIds = opts.map((o, i) => o.correct ? optionObjs[i].id : '').filter(Boolean);
+      result.push({ questionText, options: optionObjs, correctOptionIds: correctIds, explanation });
+    }
+    return result;
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const parsed = parseQuizTxt(text);
+      if (parsed.length === 0) {
+        alert('No se pudo leer ninguna pregunta del archivo. Revisa el formato.');
+        return;
+      }
+      const hasContent = questions.some(q => q.questionText.trim() !== '' || q.options.some(o => o.text.trim() !== ''));
+      const append = hasContent ? confirm(`Se han leído ${parsed.length} preguntas. ¿Añadirlas a las existentes? (Cancelar = reemplazar todo)`) : false;
+      setQuestions(append ? [...questions, ...parsed] : parsed);
+    } catch {
+      alert('Error leyendo el archivo.');
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   const removeQuestion = (idx: number) => {
     if (questions.length <= 1) return;
@@ -85,6 +157,22 @@ export function QuizQuestionBuilder({ questions, setQuestions }: QuizQuestionBui
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg px-4 py-3">
+        <div className="text-xs text-blue-900">
+          <p className="font-semibold mb-1">¿Muchas preguntas? Importa desde un archivo .txt</p>
+          <p className="text-blue-700">
+            Formato: <code className="bg-white px-1 rounded">Q: pregunta</code>, opciones con <code className="bg-white px-1 rounded">A) ...</code> y marca las correctas con <code className="bg-white px-1 rounded">*</code> al final. Separa preguntas con una línea en blanco.
+          </p>
+        </div>
+        <input ref={fileInputRef} type="file" accept=".txt" className="hidden" onChange={handleFileUpload} />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="ml-3 shrink-0 px-3 py-2 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Subir .txt
+        </button>
+      </div>
       {questions.map((q, qIdx) => (
         <div key={qIdx} className="border border-gray-200 rounded-lg p-4 space-y-3 bg-gray-50">
           <div className="flex items-center justify-between">

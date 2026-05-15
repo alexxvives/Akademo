@@ -143,10 +143,19 @@ export async function openDocument(storagePath: string, allowDownload = false): 
   const url = `/api/storage/serve/${encodedKey}?${qs}`;
 
   // PDFs open in the in-app viewer (no browser download toolbar) unless allowDownload is set
-  if (storagePath.toLowerCase().endsWith('.pdf') && !allowDownload) {
+  const lower = storagePath.toLowerCase();
+  const isPdf = lower.endsWith('.pdf');
+  const isOffice = /\.(docx?|xlsx?|pptx?)$/.test(lower);
+  if (!allowDownload && (isPdf || isOffice)) {
     const rawName = storagePath.split('/').pop() ?? '';
     const title = decodeURIComponent(rawName).replace(/\.[^.]+$/, '');
-    window.dispatchEvent(new CustomEvent('open-pdf', { detail: { url, title, serverWm: serverWm ?? false } }));
+    if (isPdf) {
+      window.dispatchEvent(new CustomEvent('open-pdf', { detail: { url, title, serverWm: serverWm ?? false } }));
+    } else {
+      // Office viewer requires an absolute URL; build it here.
+      const absolute = new URL(url, window.location.origin).toString();
+      window.dispatchEvent(new CustomEvent('open-office', { detail: { url: absolute, title } }));
+    }
   } else {
     window.open(url, '_blank');
   }

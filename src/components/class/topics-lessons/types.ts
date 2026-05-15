@@ -31,6 +31,7 @@ export interface Topic {
   orderIndex: number;
   lessonCount: number;
   quizCount?: number;
+  hidden?: number | boolean;
 }
 
 export interface StudentVideoTime {
@@ -65,5 +66,6 @@ export interface TopicsLessonsListProps {
   onLessonMove: (lessonId: string, topicId: string | null) => void;
   onToggleRelease: (lesson: Lesson) => void;
   onBulkToggleRelease: (lessons: Lesson[]) => void;
+  onToggleTopicHidden?: (topicId: string, hidden: boolean) => void;
   dashboardBase?: string;
 }

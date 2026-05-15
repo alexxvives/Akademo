@@ -273,11 +273,22 @@ export function useClassActions(s: ClassDetailState) {
     } catch { alert('Error de conexión'); }
   };
 
+  const handleToggleTopicHidden = async (topicId: string, hidden: boolean) => {
+    try {
+      const res = await apiClient(`/topics/${topicId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ hidden }) });
+      const result = await res.json();
+      if (result.success) {
+        s.setTopics(prev => prev.map(t => t.id === topicId ? { ...t, hidden: hidden ? 1 : 0 } : t));
+      } else alert(result.error || 'Error al actualizar el tema');
+    } catch { alert('Error de conexión'); }
+  };
+
   return {
     selectLesson, goBackToLessons, selectVideoInLesson,
     createLiveClass, confirmCreateStream, deleteLiveClass,
     handleEnrollmentAction, handleDeleteLesson, handleToggleRelease, handleBulkToggleRelease,
     handleLessonMove, handleRescheduleLesson, handleRescheduleSubmit, handleHideLesson,
     addVideoToForm, addDocumentToForm, handleDeleteVideo, handleDeleteDocument, handleToggleDocumentDownload,
+    handleToggleTopicHidden,
   };
 }
