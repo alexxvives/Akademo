@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
 import { SkeletonForm } from '@/components/ui/SkeletonLoader';
 import { useAcademyJoin } from './useAcademyJoin';
@@ -7,6 +8,7 @@ import { AuthForm } from './components/AuthForm';
 import { ClassSelection } from './components/ClassSelection';
 
 export default function AcademyJoinPage() {
+  const [logoError, setLogoError] = useState(false);
   const {
     academy, loading, error, isLoggedIn, router,
     authFormProps, classSelectionProps,
@@ -45,7 +47,7 @@ export default function AcademyJoinPage() {
           <p className="text-gray-600">Únete a las clases de</p>
           {academy && (
             <div className="flex flex-col items-center mt-2 gap-2">
-              {academy.logoUrl && (
+              {academy.logoUrl && !logoError && (
                 <Image
                   src={`/api/storage/serve/${academy.logoUrl}`}
                   alt={academy.name}
@@ -53,6 +55,7 @@ export default function AcademyJoinPage() {
                   height={64}
                   unoptimized
                   className="w-16 h-16 rounded-xl object-contain"
+                  onError={() => setLogoError(true)}
                 />
               )}
               <p className="text-xl font-semibold text-gray-900">

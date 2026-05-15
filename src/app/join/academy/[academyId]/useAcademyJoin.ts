@@ -141,7 +141,17 @@ export function useAcademyJoin() {
           if (result.data?.suspicionWarning) {
             sessionStorage.setItem('akademo_suspicion_warning', '1');
           }
-          router.push('/dashboard/student');
+          // Redirect to the correct dashboard based on role
+          const userRole = result.data?.role;
+          if (userRole === 'ACADEMY') {
+            router.push('/dashboard/academy');
+          } else if (userRole === 'TEACHER') {
+            router.push('/dashboard/teacher');
+          } else if (userRole === 'ADMIN') {
+            router.push('/dashboard/admin');
+          } else {
+            router.push('/dashboard/student');
+          }
           return;
         } else {
           setAuthError(result.error || 'Credenciales incorrectas');
