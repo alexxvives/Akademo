@@ -28,6 +28,15 @@ export default function TopicsLessonsList({
     return map;
   }, [assignments]);
 
+  const nullTopicAssignments = useMemo(() => assignmentsByTopic.get(null) || [], [assignmentsByTopic]);
+
+  // Auto-expand 'uncategorized' when assignments with no topic are present
+  useEffect(() => {
+    if (nullTopicAssignments.length > 0 && !h.expandedTopics.has('uncategorized')) {
+      h.toggleTopic('uncategorized');
+    }
+  }, [nullTopicAssignments.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const [viewMode, setViewMode] = useState<'cards' | 'rows'>('cards');
   useEffect(() => {
     const saved = localStorage.getItem('lessons-view');
@@ -150,7 +159,7 @@ export default function TopicsLessonsList({
         )}
       </div>
 
-      {lessons.length === 0 && topics.length === 0 ? (
+      {lessons.length === 0 && topics.length === 0 && nullTopicAssignments.length === 0 ? (
         <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
           <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -200,6 +209,22 @@ export default function TopicsLessonsList({
               )}
             </div>
           ))}
+          {nullTopicAssignments.length > 0 && (
+            <TopicSection
+              topicId={null}
+              topicName="Sin tema"
+              topicLessons={[]}
+              isExpanded={h.expandedTopics.has('uncategorized')}
+              isDragOver={false}
+              onToggle={() => h.toggleTopic('uncategorized')}
+              onDragOver={(e) => h.handleDragOver(e, null)}
+              onDrop={(e) => h.handleDrop(e, null)}
+              renderLesson={renderLesson}
+              viewMode={viewMode}
+              topicAssignments={nullTopicAssignments}
+              dashboardBase={dashboardBase}
+            />
+          )}
         </div>
       ) : (
         <div ref={h.scrollContainerRef} className="max-h-[calc(100dvh-14rem)] overflow-y-auto space-y-3 scroll-smooth py-2">

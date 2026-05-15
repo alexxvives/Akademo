@@ -112,19 +112,26 @@ export function EditAssignmentModal(props: AssignmentModalsProps) {
                 />
               </div>
             )}
-            {editClassId && topics.length > 0 && (
+            {editClassId && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Tema <span className="text-gray-400 font-normal">(opcional)</span>
                 </label>
-                <select
-                  value={editTopicId}
-                  onChange={e => setEditTopicId?.(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm bg-white"
-                >
-                  <option value="">Sin tema</option>
-                  {topics.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                </select>
+                <div className="relative">
+                  <select
+                    value={editTopicId}
+                    onChange={e => setEditTopicId?.(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm bg-white appearance-none pr-8"
+                  >
+                    <option value="">Sin tema</option>
+                    {topics.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-gray-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
               </div>
             )}
             {editClassId && lessons.length > 0 && (
@@ -143,12 +150,12 @@ export function EditAssignmentModal(props: AssignmentModalsProps) {
             <div>
               <label htmlFor="edit-title" className="block text-sm font-medium text-gray-700 mb-1">Título</label>
               <input id="edit-title" type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} required
-                className="w-full h-[38px] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500" />
+                className="w-full h-[38px] px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
               <textarea value={editDescription} onChange={(e) => setEditDescription(e.target.value)} rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-y focus:ring-2 focus:ring-brand-500" />
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg resize-y focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de entrega</label>

@@ -78,6 +78,11 @@ export function TopicSection({
           <span className="text-xs text-gray-600 bg-gray-200 px-2.5 py-1 rounded-full font-medium">
             {topicLessons.length} {topicLessons.length === 1 ? 'clase' : 'clases'}
           </span>
+          {!topicId && topicAssignments.length > 0 && (
+            <span className="text-xs text-green-700 bg-green-100 px-2.5 py-1 rounded-full font-medium">
+              {topicAssignments.length} {topicAssignments.length === 1 ? 'ejercicio' : 'ejercicios'}
+            </span>
+          )}
           {topicId && dashboardBase && classId && quizCount != null && quizCount > 0 && (
             <Link
               href={`${dashboardBase}/assignments?tab=quiz&classId=${classId}`}
