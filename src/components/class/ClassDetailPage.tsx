@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { SkeletonClassDetail } from '@/components/ui/SkeletonLoader';
 import { ClassHeader, PendingEnrollments, TopicsLessonsList } from '@/components/class';
@@ -11,7 +12,8 @@ import StreamNameModal from '@/components/class/StreamNameModal';
 import { useClassDetail } from './useClassDetail';
 import { useClassActions } from './useClassActions';
 import { useLessonCreateEdit } from './useLessonCreateEdit';
-import { ClassAssignmentsSection } from './ClassAssignmentsSection';
+import { apiClient } from '@/lib/api-client';
+import type { TopicAssignment } from '@/components/class/topics-lessons/types';
 
 export interface ClassDetailPageProps {
   role: 'academy' | 'teacher' | 'admin';
@@ -47,6 +49,15 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
   } = useClassActions(s);
 
   const { handleLessonCreate, handleEditLesson, handleUpdateLesson, handleAddLink, handleDeleteLink } = useLessonCreateEdit(s);
+
+  const [assignments, setAssignments] = useState<TopicAssignment[]>([]);
+  useEffect(() => {
+    if (!classId) return;
+    apiClient(`/assignments?classId=${classId}`)
+      .then(r => r.json())
+      .then(data => { if (data.success) setAssignments(data.data || []); })
+      .catch(() => {});
+  }, [classId]);
 
   if (loading) {
     return <SkeletonClassDetail />;
@@ -159,9 +170,8 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
             onTopicsUpdate={setTopics}
             onLessonsUpdate={setLessons}
             dashboardBase={basePath}
+            assignments={assignments}
           />
-
-          <ClassAssignmentsSection classId={classId} basePath={basePath} />
 
           {showRescheduleModal && reschedulingLesson && (
             <RescheduleModal

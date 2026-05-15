@@ -3,7 +3,8 @@
 import { DragEvent, ReactNode } from 'react';
 import Link from 'next/link';
 import { DeleteIcon } from '@/components/ui/DeleteIcon';
-import type { Lesson } from './types';
+import { AssignmentCard } from './AssignmentCard';
+import type { Lesson, TopicAssignment } from './types';
 
 interface TopicSectionProps {
   topicId: string | null;
@@ -26,13 +27,14 @@ interface TopicSectionProps {
   quizCount?: number;
   dashboardBase?: string;
   classId?: string;
+  topicAssignments?: TopicAssignment[];
 }
 
 export function TopicSection({
   topicId, topicName, topicLessons, isExpanded, isDragOver, isDraggingThis,
   onToggle, onDragOver, onDrop, onTopicDragStart, onTopicDragEnd,
   onDeleteTopic, onHideAllLessons, onToggleTopicHidden, topicHidden, renderLesson, viewMode = 'cards',
-  quizCount, dashboardBase, classId,
+  quizCount, dashboardBase, classId, topicAssignments = [],
 }: TopicSectionProps) {
   return (
     <div
@@ -152,10 +154,10 @@ export function TopicSection({
         )}
       </div>
 
-      {/* Lessons Grid */}
+      {/* Lessons + Assignments Grid */}
       {isExpanded && (
         <div className="px-4 pb-4">
-          {topicLessons.length === 0 ? (
+          {topicLessons.length === 0 && topicAssignments.length === 0 ? (
             <div className="text-center py-8 text-slate-400 border-2 border-dashed border-slate-500/40 rounded-lg">
               <svg className="w-8 h-8 mx-auto mb-2 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
@@ -165,6 +167,9 @@ export function TopicSection({
           ) : (
             <div className={viewMode === 'rows' ? 'flex flex-col gap-2 p-2' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-2'}>
               {topicLessons.map(renderLesson)}
+              {topicAssignments.map(a => (
+                <AssignmentCard key={a.id} assignment={a} viewMode={viewMode} dashboardBase={dashboardBase} />
+              ))}
             </div>
           )}
         </div>

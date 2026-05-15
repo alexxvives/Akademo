@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import type { Lesson, TopicsLessonsListProps } from './types';
+import { useState, useEffect, useMemo } from 'react';
+import type { Lesson, TopicAssignment, TopicsLessonsListProps } from './types';
 import { useTopicsLessons } from './useTopicsLessons';
 import { LessonCard } from './LessonCard';
 import { TopicSection } from './TopicSection';
@@ -11,12 +11,22 @@ export default function TopicsLessonsList({
   lessons, topics, classId, totalStudents, expandTopicId, highlightLessonId,
   paymentStatus, onSelectLesson, onEditLesson, onDeleteLesson, onRescheduleLesson,
   onTopicsChange, onTopicsUpdate, onLessonsUpdate, onLessonMove, onToggleRelease, onBulkToggleRelease, onToggleTopicHidden,
-  dashboardBase,
+  dashboardBase, assignments = [],
 }: TopicsLessonsListProps) {
   const h = useTopicsLessons({
     lessons, topics, classId, expandTopicId, highlightLessonId, paymentStatus,
     onTopicsChange, onTopicsUpdate, onLessonsUpdate, onLessonMove,
   });
+
+  const assignmentsByTopic = useMemo(() => {
+    const map = new Map<string | null, TopicAssignment[]>();
+    for (const a of assignments) {
+      const key = a.topicId || null;
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(a);
+    }
+    return map;
+  }, [assignments]);
 
   const [viewMode, setViewMode] = useState<'cards' | 'rows'>('cards');
   useEffect(() => {
@@ -183,6 +193,7 @@ export default function TopicsLessonsList({
                 quizCount={topic.quizCount}
                 dashboardBase={dashboardBase}
                 classId={classId}
+                topicAssignments={assignmentsByTopic.get(topic.id) || []}
               />
               {h.draggedTopicId && h.draggedTopicId !== topic.id && h.topicInsertIndex === index + 1 && index === topics.length - 1 && (
                 <div className="absolute -bottom-2 left-0 right-0 h-0.5 bg-blue-400 rounded-full z-20 shadow-[0_0_6px_2px_rgba(96,165,250,0.6)]" />
@@ -223,6 +234,7 @@ export default function TopicsLessonsList({
                 quizCount={topic.quizCount}
                 dashboardBase={dashboardBase}
                 classId={classId}
+                topicAssignments={assignmentsByTopic.get(topic.id) || []}
               />
               {h.draggedTopicId && h.draggedTopicId !== topic.id && h.topicInsertIndex === index + 1 && index === topics.length - 1 && (
                 <div className="absolute -bottom-2 left-0 right-0 h-0.5 bg-blue-400 rounded-full z-20 shadow-[0_0_6px_2px_rgba(96,165,250,0.6)]" />
@@ -240,6 +252,8 @@ export default function TopicsLessonsList({
             onDrop={(e) => h.handleDrop(e, null)}
             renderLesson={renderLesson}
             viewMode={viewMode}
+            topicAssignments={assignmentsByTopic.get(null) || []}
+            dashboardBase={dashboardBase}
           />
         </div>
       )}

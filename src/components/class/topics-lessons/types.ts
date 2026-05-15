@@ -48,6 +48,15 @@ export interface StudentTimeData {
   videos: StudentVideoTime[];
 }
 
+export interface TopicAssignment {
+  id: string;
+  title: string;
+  type: 'file' | 'quiz';
+  topicId?: string | null;
+  dueDate?: string | null;
+  submissionCount?: number;
+}
+
 export interface TopicsLessonsListProps {
   lessons: Lesson[];
   topics: Topic[];
@@ -68,4 +77,5 @@ export interface TopicsLessonsListProps {
   onBulkToggleRelease: (lessons: Lesson[]) => void;
   onToggleTopicHidden?: (topicId: string, hidden: boolean) => void;
   dashboardBase?: string;
+  assignments?: TopicAssignment[];
 }
