@@ -24,6 +24,8 @@ export interface ClassHeaderProps {
   showPendingRequests: boolean;
   /** Payment status - when 'NOT PAID', streaming is disabled */
   paymentStatus?: string;
+  /** When true, disables the Nueva Clase button (upload in progress) */
+  uploading?: boolean;
   onCreateLesson: () => void;
   onCreateStream: () => void;
   onTogglePendingRequests: () => void;
@@ -35,6 +37,7 @@ export default function ClassHeader({
   creatingStream,
   showPendingRequests: _showPendingRequests,
   paymentStatus: _paymentStatus = 'PAID',
+  uploading = false,
   onCreateLesson,
   onCreateStream,
   onTogglePendingRequests: _onTogglePendingRequests,
@@ -59,7 +62,9 @@ export default function ClassHeader({
         <div className="flex gap-2 sm:gap-3 flex-wrap">
           <button
             onClick={onCreateLesson}
-            className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-all"
+            disabled={uploading}
+            className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            title={uploading ? 'Espera a que termine la subida actual' : ''}
           >
             + Nueva Clase
           </button>

@@ -23,7 +23,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const searchParams = useSearchParams();
 
-  // Read tab and topicId from URL params on mount
+  // Read tab from URL params on mount
   useEffect(() => {
     const tabParam = searchParams.get('tab');
     if (tabParam === 'quiz' || tabParam === 'file') setActiveTab(tabParam);
@@ -31,12 +31,17 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
 
   if (data.loading) return <AssignmentsLoadingSkeleton />;
 
-  const topicIdParam = searchParams.get('topicId');
   const lowerSearch = searchQuery.trim().toLowerCase();
   const filteredAssignments = data.visibleAssignments.filter(a => {
-    if (topicIdParam && a.topicId !== topicIdParam) return false;
+    if (data.topicIdFilter && a.topicId !== data.topicIdFilter) return false;
     if (lowerSearch && !a.title.toLowerCase().includes(lowerSearch)) return false;
     return true;
+  });
+
+  const sortedAssignments = [...filteredAssignments].sort((a, b) => {
+    const classComp = (a.className || '').localeCompare(b.className || '', 'es');
+    if (classComp !== 0) return classComp;
+    return (a.topicName || '').localeCompare(b.topicName || '', 'es');
   });
 
   const triggerSolutionUpload = (assignmentId: string) => {
@@ -83,7 +88,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
               <ClassSearchDropdown
                 classes={data.filteredClasses}
                 value={(data.isAcademy || data.isTeacher) ? data.selectedClassId : data.selectedClass}
-                onChange={(v) => (data.isAcademy || data.isTeacher) ? data.setSelectedClassId(v) : data.setSelectedClass(v)}
+                onChange={(v) => (data.isAcademy || data.isTeacher) ? data.handleClassChange(v) : data.setSelectedClass(v)}
                 allLabel="Todas las asignaturas"
                 allValue=""
                 className="w-full sm:w-56"
@@ -106,16 +111,16 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
         <div className="flex justify-center">
           <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
             <button onClick={() => setActiveTab('file')} className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'file' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-              Ejercicios ({filteredAssignments.filter(a => a.type !== 'quiz').length})
+              Ejercicios ({sortedAssignments.filter(a => a.type !== 'quiz').length})
             </button>
             <button onClick={() => setActiveTab('quiz')} className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'quiz' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-              Cuestionarios ({filteredAssignments.filter(a => a.type === 'quiz').length})
+              Cuestionarios ({sortedAssignments.filter(a => a.type === 'quiz').length})
             </button>
           </div>
         </div>
 
         {/* Empty state or table */}
-        {filteredAssignments.length === 0 ? (
+        {sortedAssignments.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
             <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -149,7 +154,7 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
               <div className="overflow-x-auto max-h-[700px] overflow-y-auto">
                 <AssignmentsTable
-                  assignments={filteredAssignments}
+                  assignments={sortedAssignments}
                   isAdmin={data.isAdmin}
                   isAcademy={data.isAcademy}
                   isTeacher={data.isTeacher}

@@ -24,6 +24,8 @@ export function useAssignmentsData(role: AssignmentsPageProps['role']) {
   const highlightRef = useRef<HTMLTableRowElement | null>(null);
   const classIdFromUrl = searchParams.get('classId') || '';
   const [selectedClassId, setSelectedClassId] = useState(classIdFromUrl);
+  const [topicIdFilter, setTopicIdFilter] = useState(searchParams.get('topicId') || '');
+  const handleClassChange = (v: string) => { setSelectedClassId(v); setTopicIdFilter(''); };
   const [selectedClassForCreate, setSelectedClassForCreate] = useState('');
   const [selectedLessonForCreate, setSelectedLessonForCreate] = useState('');
   const [selectedTopicForCreate, setSelectedTopicForCreate] = useState('');
@@ -237,7 +239,8 @@ export function useAssignmentsData(role: AssignmentsPageProps['role']) {
     isAcademy, isAdmin, isTeacher, canManage: isAcademy || isTeacher || isAdmin,
     classes, assignments, setAssignments, loading,
     deletingAssignmentId, setDeletingAssignmentId, glowId, highlightRef,
-    selectedClassId, setSelectedClassId, selectedClassForCreate, setSelectedClassForCreate,
+    selectedClassId, setSelectedClassId, handleClassChange, topicIdFilter, setTopicIdFilter,
+    selectedClassForCreate, setSelectedClassForCreate,
     selectedLessonForCreate, setSelectedLessonForCreate,
     selectedTopicForCreate, setSelectedTopicForCreate,
     academyName, paymentStatus, userEmail,

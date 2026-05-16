@@ -83,6 +83,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
           creatingStream={creatingStream}
           showPendingRequests={showPendingRequests}
           paymentStatus={paymentStatus}
+          uploading={uploading}
           onCreateLesson={() => { router.push(`${basePath}/subject/${classId}?action=create`); }}
           onCreateStream={createLiveClass}
           onTogglePendingRequests={() => setShowPendingRequests(!showPendingRequests)}
