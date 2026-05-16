@@ -197,6 +197,7 @@ export default function StudentAssignments() {
           assignmentTitle={selectedAssignment.title}
           maxScore={selectedAssignment.maxScore}
           alreadyAttempted={!!selectedAssignment.quizAttemptId}
+          feedbackMode={(selectedAssignment.feedbackMode as 'at_end' | 'after_each') || 'at_end'}
           onClose={() => { setShowQuizModal(false); setSelectedAssignment(null); }}
           onCompleted={() => loadAssignments()}
         />

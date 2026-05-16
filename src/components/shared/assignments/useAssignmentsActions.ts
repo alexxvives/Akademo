@@ -154,6 +154,7 @@ export function useAssignmentsActions(data: AssignmentsDataReturn) {
         ...(data.selectedLessonForCreate ? { lessonId: data.selectedLessonForCreate } : {}),
         ...(data.selectedTopicForCreate ? { topicId: data.selectedTopicForCreate } : {}),
         ...(data.assignmentType === 'file' ? { uploadIds } : { questions: data.quizQuestions }),
+        ...(data.assignmentType === 'quiz' ? { feedbackMode: data.feedbackMode } : {}),
       });
       const result = await res.json();
       if (result.success) { data.setShowCreateModal(false); resetForm(); data.loadAcademyAssignments(); }
@@ -191,6 +192,7 @@ export function useAssignmentsActions(data: AssignmentsDataReturn) {
           ...(uploadIds.length > 0 && { uploadIds }),
           ...(data.selectedAssignment.type === 'quiz' && data.editQuizQuestions.length > 0
             && { questions: data.editQuizQuestions }),
+          ...(data.selectedAssignment.type === 'quiz' ? { feedbackMode: data.editFeedbackMode } : {}),
         }),
       });
       const result = await res.json();
@@ -207,12 +209,13 @@ export function useAssignmentsActions(data: AssignmentsDataReturn) {
     data.setUploadFiles([]); data.setUploadProgress(0); data.setSelectedClassForCreate('');
     data.setSelectedLessonForCreate?.('');
     data.setSelectedTopicForCreate?.('');
-    data.setAssignmentType('file'); data.setQuizQuestions([createEmptyQuestion()]);
+    data.setAssignmentType('file'); data.setFeedbackMode('at_end'); data.setQuizQuestions([createEmptyQuestion()]);
   };
 
   const openEditAssignment = async (assignment: Assignment) => {
     data.setSelectedAssignment(assignment);
     data.setEditTitle(assignment.title);
+    data.setEditFeedbackMode?.((assignment.feedbackMode as 'at_end' | 'after_each') || 'at_end');
     data.setEditDescription(assignment.description || '');
     data.setEditDueDate(assignment.dueDate ? assignment.dueDate.slice(0, 16) : '');
     data.setEditUploadFiles([]);

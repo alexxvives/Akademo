@@ -61,6 +61,8 @@ export function useAssignmentsData(role: AssignmentsPageProps['role']) {
   const solutionFileRef = useRef<HTMLInputElement>(null);
   const solutionAssignmentRef = useRef<string | null>(null);
   const [assignmentType, setAssignmentType] = useState<'file' | 'quiz'>('file');
+  const [feedbackMode, setFeedbackMode] = useState<'at_end' | 'after_each'>('at_end');
+  const [editFeedbackMode, setEditFeedbackMode] = useState<'at_end' | 'after_each'>('at_end');
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestionForm[]>([createEmptyQuestion()]);
   const [academies, setAcademies] = useState<Academy[]>([]);
   const [selectedAcademy, setSelectedAcademy] = useState('');
@@ -256,7 +258,7 @@ export function useAssignmentsData(role: AssignmentsPageProps['role']) {
     gradeScore, setGradeScore, gradeFeedback, setGradeFeedback, creating, setCreating,
     requireGrading, uploadingSolutionId, setUploadingSolutionId,
     solutionFileRef, solutionAssignmentRef,
-    assignmentType, setAssignmentType, quizQuestions, setQuizQuestions,
+    assignmentType, setAssignmentType, feedbackMode, setFeedbackMode, editFeedbackMode, setEditFeedbackMode, quizQuestions, setQuizQuestions,
     academies, selectedAcademy, setSelectedAcademy, selectedClass, setSelectedClass,
     filteredClasses, visibleAssignments, loadAcademyAssignments,
   };

@@ -25,6 +25,7 @@ export function EditAssignmentModal(props: AssignmentModalsProps) {
     editDueDate, setEditDueDate, editUploadFiles, setEditUploadFiles,
     editQuizQuestions, setEditQuizQuestions,
     updating, handleUpdateAssignment,
+    editFeedbackMode, setEditFeedbackMode,
   } = props;
 
   const [showQuizBuilder, setShowQuizBuilder] = useState(false);
@@ -235,6 +236,22 @@ export function EditAssignmentModal(props: AssignmentModalsProps) {
                       <p className="text-gray-400 mt-1">Marca la correcta con <span className="font-mono text-gray-200">*</span> al final.</p>
                     </div>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {quizReady && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mostrar respuestas</label>
+                <div className="flex rounded-lg border border-gray-200 overflow-hidden text-sm">
+                  <button type="button" onClick={() => setEditFeedbackMode?.('at_end')}
+                    className={`flex-1 py-2 transition-colors ${editFeedbackMode !== 'after_each' ? 'bg-gray-900 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
+                    Al final
+                  </button>
+                  <button type="button" onClick={() => setEditFeedbackMode?.('after_each')}
+                    className={`flex-1 py-2 transition-colors ${editFeedbackMode === 'after_each' ? 'bg-gray-900 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
+                    Tras cada pregunta
+                  </button>
                 </div>
               </div>
             )}

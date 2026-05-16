@@ -21,7 +21,7 @@ assignments.get('/all', async (c) => {
       query = `
         SELECT 
           a.id, a.classId, a.teacherId, a.topicId, a.title, a.description, a.type,
-          a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt, a.updatedAt,
+          a.dueDate, a.maxScore, a.feedbackMode, a.uploadId, a.solutionUploadId, a.createdAt, a.updatedAt,
           c.name as className,
           t.name as topicName,
           GROUP_CONCAT(DISTINCT aa.uploadId) as attachmentIds,
@@ -43,7 +43,7 @@ assignments.get('/all', async (c) => {
       query = `
         SELECT 
           a.id, a.classId, a.teacherId, a.topicId, a.title, a.description, a.type,
-          a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt, a.updatedAt,
+          a.dueDate, a.maxScore, a.feedbackMode, a.uploadId, a.solutionUploadId, a.createdAt, a.updatedAt,
           c.name as className,
           t.name as topicName,
           GROUP_CONCAT(DISTINCT aa.uploadId) as attachmentIds,
@@ -66,7 +66,7 @@ assignments.get('/all', async (c) => {
       query = `
         SELECT 
           a.id, a.classId, a.teacherId, a.topicId, a.title, a.description, a.type,
-          a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt, a.updatedAt,
+          a.dueDate, a.maxScore, a.feedbackMode, a.uploadId, a.solutionUploadId, a.createdAt, a.updatedAt,
           c.name as className,
           ac.name as academyName,
           t.name as topicName,
@@ -113,7 +113,7 @@ assignments.get('/', async (c) => {
       const query = `
         SELECT 
           a.id, a.classId, a.title, a.description, a.type,
-          a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt,
+          a.dueDate, a.maxScore, a.feedbackMode, a.uploadId, a.solutionUploadId, a.createdAt,
           c.name as className,
           s.id as submissionId,
           s.uploadId as submissionUploadId,
@@ -170,7 +170,7 @@ assignments.get('/', async (c) => {
       query = `
         SELECT 
           a.id, a.classId, a.teacherId, a.lessonId, a.topicId, a.title, a.description, a.type,
-          a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt, a.updatedAt,
+          a.dueDate, a.maxScore, a.feedbackMode, a.uploadId, a.solutionUploadId, a.createdAt, a.updatedAt,
           c.name as className,
           t.name as topicName,
           GROUP_CONCAT(DISTINCT aa.uploadId) as attachmentIds,
@@ -193,7 +193,7 @@ assignments.get('/', async (c) => {
       query = `
         SELECT 
           a.id, a.classId, a.teacherId, a.lessonId, a.topicId, a.title, a.description, a.type,
-          a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt, a.updatedAt,
+          a.dueDate, a.maxScore, a.feedbackMode, a.uploadId, a.solutionUploadId, a.createdAt, a.updatedAt,
           c.name as className,
           ac.name as academyName,
           t.name as topicName,
@@ -230,7 +230,7 @@ assignments.get('/', async (c) => {
       query = `
         SELECT 
           a.id, a.classId, a.lessonId, a.topicId, a.title, a.description, a.type,
-          a.dueDate, a.maxScore, a.uploadId, a.solutionUploadId, a.createdAt,
+          a.dueDate, a.maxScore, a.feedbackMode, a.uploadId, a.solutionUploadId, a.createdAt,
           c.name as className,
           s.id as submissionId,
           s.uploadId as submissionUploadId,
@@ -289,7 +289,7 @@ assignments.post('/', async (c) => {
       }));
       return c.json({ success: false, error: 'Validation failed', details: errors }, 400);
     }
-    const { classId, lessonId: assignmentLessonId, topicId: assignmentTopicId, title, description, dueDate, maxScore, uploadId, uploadIds, type, questions } = body;
+    const { classId, lessonId: assignmentLessonId, topicId: assignmentTopicId, title, description, dueDate, maxScore, uploadId, uploadIds, type, questions, feedbackMode } = body;
 
     // Validate quiz-specific fields
     if (type === 'quiz') {
@@ -339,8 +339,8 @@ assignments.post('/', async (c) => {
     // Build all statements for atomic batch insert
     const statements: D1PreparedStatement[] = [
       c.env.DB.prepare(`
-        INSERT INTO Assignment (id, classId, teacherId, lessonId, topicId, title, description, dueDate, maxScore, uploadId, attachmentIds, type)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO Assignment (id, classId, teacherId, lessonId, topicId, title, description, dueDate, maxScore, feedbackMode, uploadId, attachmentIds, type)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         assignmentId,
         classId,
@@ -351,6 +351,7 @@ assignments.post('/', async (c) => {
         description || null,
         dueDate || null,
         maxScore || 100,
+        (type === 'quiz' ? (feedbackMode || 'at_end') : 'at_end'),
         allUploadIds.length > 0 ? allUploadIds[0] : null,
         '[]',
         type || 'file'
@@ -930,7 +931,7 @@ assignments.patch('/:id', async (c) => {
     }
 
     const assignmentId = c.req.param('id');
-    const { title, description, dueDate, maxScore, uploadId, uploadIds, solutionUploadId, questions, classId: newClassId, topicId: newTopicId, lessonId: newLessonId } = await c.req.json();
+    const { title, description, dueDate, maxScore, uploadId, uploadIds, solutionUploadId, questions, classId: newClassId, topicId: newTopicId, lessonId: newLessonId, feedbackMode } = await c.req.json();
 
     // Verify assignment exists
     const assignment = await c.env.DB.prepare(`
@@ -1017,6 +1018,10 @@ assignments.patch('/:id', async (c) => {
     if (newLessonId !== undefined) {
       updateFields.push('lessonId = ?');
       bindings.push(newLessonId === '' ? null : newLessonId);
+    }
+    if (feedbackMode !== undefined) {
+      updateFields.push('feedbackMode = ?');
+      bindings.push(feedbackMode);
     }
     updateFields.push('updatedAt = ?');
     bindings.push(updatedAt);
@@ -1204,6 +1209,57 @@ assignments.get('/:id/questions', async (c) => {
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Quiz questions GET] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
+
+// POST /assignments/:id/quiz-check-question - Check single answer without recording (for after_each feedback mode)
+assignments.post('/:id/quiz-check-question', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    if (session.role !== 'STUDENT') {
+      return c.json(errorResponse('Only students can check answers'), 403);
+    }
+
+    const assignmentId = c.req.param('id');
+    const { questionId, selectedOptionIds } = await c.req.json();
+
+    if (!questionId || !Array.isArray(selectedOptionIds)) {
+      return c.json(errorResponse('questionId and selectedOptionIds are required'), 400);
+    }
+
+    const assignment = await c.env.DB.prepare(
+      `SELECT a.classId FROM Assignment a WHERE a.id = ? AND a.type = 'quiz'`
+    ).bind(assignmentId).first() as any;
+    if (!assignment) return c.json(errorResponse('Quiz not found'), 404);
+
+    const enrollment = await c.env.DB.prepare(
+      `SELECT id FROM ClassEnrollment WHERE userId = ? AND classId = ? AND status = 'APPROVED'`
+    ).bind(session.id, assignment.classId).first();
+    if (!enrollment) return c.json(errorResponse('No estás matriculado en esta clase'), 403);
+
+    const question = await c.env.DB.prepare(
+      `SELECT id, correctOptionId, explanation FROM QuizQuestion WHERE id = ? AND assignmentId = ?`
+    ).bind(questionId, assignmentId).first() as any;
+    if (!question) return c.json(errorResponse('Pregunta no encontrada'), 404);
+
+    let correctOptionIds: string[] = [];
+    try {
+      const parsed = JSON.parse(question.correctOptionId);
+      correctOptionIds = Array.isArray(parsed) ? parsed : [question.correctOptionId];
+    } catch {
+      correctOptionIds = question.correctOptionId ? [question.correctOptionId] : [];
+    }
+
+    const correct =
+      selectedOptionIds.length > 0 &&
+      selectedOptionIds.every((id: string) => correctOptionIds.includes(id)) &&
+      correctOptionIds.every((id: string) => selectedOptionIds.includes(id));
+
+    return c.json(successResponse({ correct, correctOptionIds, explanation: question.explanation || null }));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Quiz check question] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
 });

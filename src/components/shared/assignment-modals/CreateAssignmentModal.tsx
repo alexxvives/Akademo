@@ -38,6 +38,7 @@ export function CreateAssignmentModal(props: AssignmentModalsProps) {
     newTitle, setNewTitle, newDescription, setNewDescription, newDueDate, setNewDueDate,
     uploadFiles, setUploadFiles, uploadProgress, creating, handleCreateAssignment, resetForm,
     assignmentType, setAssignmentType, quizQuestions, setQuizQuestions,
+    feedbackMode, setFeedbackMode,
     requireGrading = true,
   } = props;
 
@@ -308,6 +309,22 @@ export function CreateAssignmentModal(props: AssignmentModalsProps) {
                 </div>
               </div>
             </div>
+
+            {quizReady && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mostrar respuestas</label>
+                <div className="flex rounded-lg border border-gray-200 overflow-hidden text-sm">
+                  <button type="button" onClick={() => setFeedbackMode?.('at_end')}
+                    className={`flex-1 py-2 transition-colors ${feedbackMode !== 'after_each' ? 'bg-gray-900 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
+                    Al final
+                  </button>
+                  <button type="button" onClick={() => setFeedbackMode?.('after_each')}
+                    className={`flex-1 py-2 transition-colors ${feedbackMode === 'after_each' ? 'bg-gray-900 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}>
+                    Tras cada pregunta
+                  </button>
+                </div>
+              </div>
+            )}
 
             {uploadProgress > 0 && uploadProgress < 100 && (
               <div className="w-full bg-gray-200 rounded-full h-2">

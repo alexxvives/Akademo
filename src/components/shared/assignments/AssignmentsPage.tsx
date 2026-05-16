@@ -200,6 +200,8 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
           handleCreateAssignment={actions.handleCreateAssignment} resetForm={actions.resetForm}
           assignmentType={data.assignmentType} setAssignmentType={data.setAssignmentType}
           quizQuestions={data.quizQuestions} setQuizQuestions={data.setQuizQuestions}
+          feedbackMode={data.feedbackMode} setFeedbackMode={data.setFeedbackMode}
+          editFeedbackMode={data.editFeedbackMode} setEditFeedbackMode={data.setEditFeedbackMode}
           showEditModal={data.showEditModal} setShowEditModal={data.setShowEditModal}
           editClassId={data.editClassId} setEditClassId={data.setEditClassId}
           editTopicId={data.editTopicId} setEditTopicId={data.setEditTopicId}

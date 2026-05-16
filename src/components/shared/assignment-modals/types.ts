@@ -7,7 +7,7 @@ export interface Assignment {
   submissionCount: number; gradedCount: number; attachmentName?: string; className?: string;
   academyName?: string; createdAt: string; classId?: string;
   uploadId?: string; attachmentIds?: string; type?: string;
-  topicId?: string | null; lessonId?: string | null;
+  topicId?: string | null; lessonId?: string | null; feedbackMode?: string;
 }
 
 export interface Submission {
@@ -42,6 +42,10 @@ export interface AssignmentModalsProps {
   setAssignmentType: (v: 'file' | 'quiz') => void;
   quizQuestions: QuizQuestionForm[];
   setQuizQuestions: (q: QuizQuestionForm[]) => void;
+  feedbackMode?: 'at_end' | 'after_each';
+  setFeedbackMode?: (v: 'at_end' | 'after_each') => void;
+  editFeedbackMode?: 'at_end' | 'after_each';
+  setEditFeedbackMode?: (v: 'at_end' | 'after_each') => void;
   // Edit
   showEditModal: boolean;
   setShowEditModal: (v: boolean) => void;

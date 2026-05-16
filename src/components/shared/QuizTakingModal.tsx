@@ -40,15 +40,18 @@ interface Props {
   alreadyAttempted?: boolean;
   onClose: () => void;
   onCompleted: () => void;
+  feedbackMode?: 'at_end' | 'after_each';
 }
 
-export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScore, alreadyAttempted, onClose, onCompleted }: Props) {
+export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScore, alreadyAttempted, onClose, onCompleted, feedbackMode = 'at_end' }: Props) {
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [answers, setAnswers] = useState<Record<string, string[]>>({});
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<QuizResult | null>(null);
+  const [immediateResults, setImmediateResults] = useState<Record<string, { correct: boolean; correctOptionIds: string[]; explanation: string | null }>>({});
+  const [confirming, setConfirming] = useState(false);
   const [officialResult, setOfficialResult] = useState<QuizResult | null>(null);
   const [error, setError] = useState('');
   const [showRetryNotice, setShowRetryNotice] = useState(!!alreadyAttempted);
@@ -125,6 +128,35 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
       return { ...prev, [questionId]: updated };
     });
   };
+
+  async function handleConfirmAnswer() {
+    if (!currentQuestion || currentAnswers.length === 0 || confirming) return;
+    setConfirming(true);
+    setError('');
+    try {
+      const res = await apiPost(`/assignments/${assignmentId}/quiz-check-question`, {
+        questionId: currentQuestion.id,
+        selectedOptionIds: currentAnswers,
+      });
+      const data = await res.json();
+      if (data.success) {
+        setImmediateResults(prev => ({
+          ...prev,
+          [currentQuestion.id]: {
+            correct: data.data.correct,
+            correctOptionIds: data.data.correctOptionIds,
+            explanation: data.data.explanation,
+          },
+        }));
+      } else {
+        setError(data.error || 'Error al verificar respuesta');
+      }
+    } catch {
+      setError('Error al verificar respuesta');
+    } finally {
+      setConfirming(false);
+    }
+  }
 
   async function handleSubmit() {
     const unanswered = questions.filter(q => !(answers[q.id] || []).length);
@@ -232,11 +264,16 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
     );
   }
 
-  // Quiz taking view â€” one question at a time
+  // Quiz taking view — one question at a time
+  const isAfterEach = feedbackMode === 'after_each';
   const currentQuestion = questions[currentIndex];
   const currentAnswers = answers[currentQuestion?.id] || [];
+  const currentResult = isAfterEach ? immediateResults[currentQuestion?.id] : undefined;
+  const currentConfirmed = isAfterEach ? !!currentResult : true;
   const totalAnswered = questions.filter(q => (answers[q.id] || []).length > 0).length;
+  const totalConfirmed = isAfterEach ? Object.keys(immediateResults).length : totalAnswered;
   const allAnswered = totalAnswered === questions.length;
+  const allConfirmed = isAfterEach ? totalConfirmed === questions.length : allAnswered;
   const isLast = currentIndex === questions.length - 1;
 
   return (
@@ -292,45 +329,70 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
           <div className="p-5 bg-gray-50 rounded-xl mb-5">
             <p className="font-semibold text-gray-900 mb-4">{decodeHtmlEntities(currentQuestion.questionText)}</p>
             <div className="space-y-2">
-              {currentQuestion.options.map(opt => (
-                <label
-                  key={opt.id}
-                  className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                    currentAnswers.includes(opt.id)
-                      ? 'border-gray-900 bg-gray-100'
-                      : 'border-gray-200 bg-white hover:bg-gray-50'
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={currentAnswers.includes(opt.id)}
-                    onChange={() => toggleAnswer(currentQuestion.id, opt.id)}
-                    className="w-4 h-4 rounded text-gray-900 focus:ring-gray-900 accent-black"
-                  />
-                  <span className="text-sm text-gray-700">{decodeHtmlEntities(opt.text)}</span>
-                </label>
-              ))}
+              {currentQuestion.options.map(opt => {
+                const isSelected = currentAnswers.includes(opt.id);
+                const isConfirmedQ = isAfterEach && !!currentResult;
+                const isCorrectOpt = isConfirmedQ ? currentResult!.correctOptionIds.includes(opt.id) : false;
+                let optClass = '';
+                if (isConfirmedQ) {
+                  if (isCorrectOpt) optClass = 'border-green-500 bg-green-50';
+                  else if (isSelected) optClass = 'border-red-400 bg-red-50';
+                  else optClass = 'border-gray-200 bg-white opacity-50';
+                } else {
+                  optClass = isSelected ? 'border-gray-900 bg-gray-100' : 'border-gray-200 bg-white hover:bg-gray-50';
+                }
+                return (
+                  <label
+                    key={opt.id}
+                    className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${isConfirmedQ ? 'cursor-default' : 'cursor-pointer'} ${optClass}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => { if (!isConfirmedQ) toggleAnswer(currentQuestion.id, opt.id); }}
+                      disabled={isConfirmedQ}
+                      className="w-4 h-4 rounded text-gray-900 focus:ring-gray-900 accent-black"
+                    />
+                    <span className={`text-sm flex items-center gap-1 ${
+                      isConfirmedQ && isSelected && !isCorrectOpt ? 'line-through text-red-500' :
+                      isConfirmedQ && isCorrectOpt ? 'text-green-700 font-medium' :
+                      'text-gray-700'
+                    }`}>
+                      {isConfirmedQ && isCorrectOpt && <span>✓</span>}
+                      {isConfirmedQ && isSelected && !isCorrectOpt && <span>✗</span>}
+                      {decodeHtmlEntities(opt.text)}
+                    </span>
+                  </label>
+                );
+              })}
             </div>
+            {isAfterEach && currentResult && (
+              <div className={`mt-3 p-3 rounded-lg text-sm border ${currentResult.correct ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
+                {currentResult.correct ? '¡Respuesta correcta!' : 'Respuesta incorrecta'}
+                {!currentResult.correct && currentResult.explanation && (
+                  <p className="mt-1 text-gray-700"><span className="font-medium">Explicación:</span> {decodeHtmlEntities(currentResult.explanation)}</p>
+                )}
+              </div>
+            )}
           </div>
         )}
 
         {/* Question dots nav */}
         <div className="flex flex-wrap justify-center gap-1.5 mb-5">
-          {questions.map((q, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrentIndex(i)}
-              className={`w-7 h-7 rounded-full text-xs font-medium transition-colors ${
-                i === currentIndex
-                  ? 'bg-black text-white'
-                  : (answers[q.id] || []).length > 0
-                  ? 'bg-green-200 text-green-800 hover:bg-green-300'
-                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-              }`}
-            >
-              {i + 1}
-            </button>
-          ))}
+          {questions.map((q, i) => {
+            const qResult = isAfterEach ? immediateResults[q.id] : undefined;
+            let dotClass = '';
+            if (i === currentIndex) dotClass = 'bg-black text-white';
+            else if (qResult) dotClass = qResult.correct ? 'bg-green-200 text-green-800 hover:bg-green-300' : 'bg-red-200 text-red-800 hover:bg-red-300';
+            else if ((answers[q.id] || []).length > 0) dotClass = isAfterEach ? 'bg-amber-200 text-amber-800 hover:bg-amber-300' : 'bg-green-200 text-green-800 hover:bg-green-300';
+            else dotClass = 'bg-gray-100 text-gray-500 hover:bg-gray-200';
+            return (
+              <button key={i} onClick={() => setCurrentIndex(i)}
+                className={`w-7 h-7 rounded-full text-xs font-medium transition-colors ${dotClass}`}>
+                {i + 1}
+              </button>
+            );
+          })}
         </div>
 
         {/* Navigation */}
@@ -343,7 +405,15 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
             ← Anterior
           </button>
           <div className="flex-1" />
-          {!isLast ? (
+          {isAfterEach && !currentConfirmed ? (
+            <button
+              onClick={handleConfirmAnswer}
+              disabled={currentAnswers.length === 0 || confirming}
+              className="px-4 py-2 bg-black text-white rounded-lg text-sm hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {confirming ? 'Verificando...' : 'Confirmar respuesta'}
+            </button>
+          ) : !isLast ? (
             <button
               onClick={() => setCurrentIndex(i => Math.min(i + 1, questions.length - 1))}
               className="px-4 py-2 bg-black text-white rounded-lg text-sm hover:bg-gray-800 transition-colors"
@@ -353,7 +423,7 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
           ) : (
             <button
               onClick={handleSubmit}
-              disabled={submitting || !allAnswered}
+              disabled={submitting || !allConfirmed}
               className="px-4 py-2 bg-black text-white rounded-lg text-sm hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {submitting ? 'Enviando...' : 'Enviar Cuestionario'}
@@ -361,9 +431,12 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
           )}
         </div>
 
-        {isLast && !allAnswered && (
+        {isLast && !allConfirmed && (
           <p className="text-center text-xs text-amber-600 mt-3">
-            Faltan {questions.length - totalAnswered} pregunta{questions.length - totalAnswered !== 1 ? 's' : ''} por responder
+            {isAfterEach
+              ? `Faltan ${questions.length - totalConfirmed} pregunta${questions.length - totalConfirmed !== 1 ? 's' : ''} por confirmar`
+              : `Faltan ${questions.length - totalAnswered} pregunta${questions.length - totalAnswered !== 1 ? 's' : ''} por responder`
+            }
           </p>
         )}
       </div>

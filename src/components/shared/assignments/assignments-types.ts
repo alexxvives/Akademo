@@ -28,6 +28,7 @@ export interface Assignment {
   topicId?: string | null;
   topicName?: string | null;
   lessonId?: string | null;
+  feedbackMode?: string;
 }
 
 export interface Submission {

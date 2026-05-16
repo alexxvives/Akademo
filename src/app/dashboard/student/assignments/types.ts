@@ -29,4 +29,5 @@ export interface Assignment {
   quizScore?: number;
   quizTotalQuestions?: number;
   quizCorrectAnswers?: number;
+  feedbackMode?: string;
 }
