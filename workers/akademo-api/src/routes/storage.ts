@@ -576,8 +576,12 @@ storage.get('/serve/*', async (c) => {
         }
         // Apply watermark if user identity is available (new-format signed URLs)
         if (signedName && signedEmail) {
+          const fileContentType = object.httpMetadata?.contentType || '';
+          const fileIsPdf = fileContentType === 'application/pdf';
           return buildFileResponse(object, {
-            cacheControl: 'private, no-store',
+            // PDFs: no-store (watermarked bytes are unique per user).
+            // Non-PDFs: allow browser caching (stable signed URL + max-age lets second open be instant).
+            cacheControl: fileIsPdf ? 'private, no-store' : 'private, max-age=300',
             session: null,
             env: c.env,
             fileKey: key,
@@ -802,11 +806,20 @@ storage.get('/signed-url', async (c) => {
       } catch { /* if head fails, assume no server watermark → canvas fallback */ }
     }
 
+    // Non-PDF files: bucket expires to 5-minute windows so the signed URL is stable
+    // within a window → browser can cache the response (avoids re-fetching on every open).
+    // PDF files keep a fresh TTL (watermarked bytes are per-user, Cache-Control: no-store).
+    const nowSec = Math.floor(Date.now() / 1000);
+    const BUCKET = 300; // 5-minute window
+    const stableExpires = isPdf
+      ? nowSec + BUCKET
+      : Math.ceil((nowSec + 60) / BUCKET) * BUCKET; // at least 60s, rounded to next 5-min boundary
+
     // Sign key + expires + user identity together so params cannot be tampered with.
     // Format: key|expires|name|email|academyName  (pipe-delimited, each field b64url-encoded)
     const b64url = (s: string) => btoa(unescape(encodeURIComponent(s)))
       .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-    const payload = [key, String(expires), fullName, email, academyName].map(b64url).join('|');
+    const payload = [key, String(stableExpires), fullName, email, academyName].map(b64url).join('|');
 
     const encoder = new TextEncoder();
     const hmacKey = await crypto.subtle.importKey(
@@ -816,7 +829,7 @@ storage.get('/signed-url', async (c) => {
     const sig = await crypto.subtle.sign('HMAC', hmacKey, encoder.encode(payload));
     const token = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
 
-    return c.json(successResponse({ token, expires, name: fullName, email, academyName, serverWm }));
+    return c.json(successResponse({ token, expires: stableExpires, name: fullName, email, academyName, serverWm }));
   } catch (error: unknown) {
     if (error instanceof Error && (error.message === 'Unauthorized' || error.message === 'Forbidden')) throw error;
     console.error('[Signed URL] Error:', error);

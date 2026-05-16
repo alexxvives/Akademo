@@ -64,11 +64,27 @@ export function useClassActions(s: ClassDetailState) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [s.searchParams, s.lessons, s.setHighlightLessonId]);
 
+  const freshFormData = () => {
+    const today = new Date().toISOString().split('T')[0];
+    return {
+      title: '', description: '', externalUrl: '',
+      releaseDate: today, releaseTime: '00:00', publishImmediately: true, publishMode: 'immediate' as const,
+      availableFromDate: today, availableFromTime: '09:00',
+      availableUntilDate: today, availableUntilTime: '21:00',
+      maxWatchTimeMultiplier: s.academyDefaults.maxWatchTimeMultiplier,
+      watermarkIntervalMins: s.academyDefaults.watermarkIntervalMins,
+      topicId: '', videos: [] as { file: File; title: string; description: string; duration: number }[],
+      documents: [] as { file: File; title: string; description: string }[],
+      selectedStreamRecordings: [] as string[], links: [] as { title: string; url: string }[],
+    };
+  };
+
   useEffect(() => {
     const createFromStreamId = s.searchParams.get('createFromStream');
     if (createFromStreamId) {
       s.loadAvailableStreamRecordings().then((recordings) => {
-        s.setShowLessonForm(true); s.setEditingLessonId(null);
+        s.setEditingLessonId(null); s.setEditingLessonMedia(null); s.setLessonFormData(freshFormData());
+        s.setShowLessonForm(true);
         if (recordings && recordings.length > 0) {
           const match = recordings.find((r: StreamRecording) => r.id === createFromStreamId);
           if (match) s.setLessonFormData(prev => ({ ...prev, selectedStreamRecordings: [match.id], title: match.title || 'Nueva Lección' }));
@@ -83,7 +99,8 @@ export function useClassActions(s: ClassDetailState) {
     if (actionParam === 'create' || actionParam === 'create-lesson') {
       const recordingId = s.searchParams.get('recordingId');
       const streamTitle = s.searchParams.get('streamTitle');
-      s.setShowLessonForm(true); s.setEditingLessonId(null);
+      s.setEditingLessonId(null); s.setEditingLessonMedia(null); s.setLessonFormData(freshFormData());
+      s.setShowLessonForm(true);
       s.loadAvailableStreamRecordings().then((recordings) => {
         if (recordingId && streamTitle && recordings) {
           const match = recordings.find((r: StreamRecording) => r.recordingId === recordingId);
@@ -159,11 +176,22 @@ export function useClassActions(s: ClassDetailState) {
   // --- Lesson CRUD ---
   const handleDeleteLesson = async (lessonId: string) => {
     if (!confirm('¿Eliminar esta lección?\n\n⚠️ IMPORTANTE: Los videos de esta lección serán eliminados permanentemente de la plataforma y no podrán recuperarse.\n\nNota: Las grabaciones de streams no se ven afectadas.\n\n¿Estás seguro?')) return;
+    // Optimistic removal — user sees it disappear immediately
+    const removedLesson = s.lessons.find(l => l.id === lessonId);
+    s.setLessons(prev => prev.filter(l => l.id !== lessonId));
     try {
       const res = await apiClient(`/lessons/${lessonId}`, { method: 'DELETE' });
       const result = await res.json();
-      if (result.success) s.loadData(); else alert(result.error || 'Failed to delete');
-    } catch { alert('Error occurred'); }
+      if (result.success) {
+        s.loadData();
+      } else {
+        if (removedLesson) s.setLessons(prev => [...prev, removedLesson]);
+        alert(result.error || 'Failed to delete');
+      }
+    } catch {
+      if (removedLesson) s.setLessons(prev => [...prev, removedLesson]);
+      alert('Error occurred');
+    }
   };
 
   const handleToggleRelease = async (lesson: Lesson) => {
