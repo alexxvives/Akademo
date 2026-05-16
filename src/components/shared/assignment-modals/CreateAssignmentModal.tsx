@@ -42,7 +42,19 @@ export function CreateAssignmentModal(props: AssignmentModalsProps) {
   } = props;
 
   const [showQuizBuilder, setShowQuizBuilder] = useState(false);
+  const [topicDropdownOpen, setTopicDropdownOpen] = useState(false);
   const txtImportRef = useRef<HTMLInputElement>(null);
+  const topicDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (topicDropdownRef.current && !topicDropdownRef.current.contains(e.target as Node)) {
+        setTopicDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const handleTxtImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -151,22 +163,44 @@ export function CreateAssignmentModal(props: AssignmentModalsProps) {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Tema <span className="text-gray-400 font-normal">(opcional)</span>
                 </label>
-                <div className="relative">
-                  <select
-                    value={selectedTopic}
-                    onChange={e => { setSelectedTopic(e.target.value); setSelectedTopicForCreate?.(e.target.value); }}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm bg-white appearance-none pr-8"
+                <div className="relative" ref={topicDropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setTopicDropdownOpen(prev => !prev)}
+                    className="w-full flex items-center justify-between px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 text-sm bg-white text-left"
                   >
-                    <option value="">Sin tema</option>
-                    {topics.map(t => (
-                      <option key={t.id} value={t.id}>{t.name}</option>
-                    ))}
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-gray-400">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <span className={selectedTopic ? 'text-gray-900' : 'text-gray-400'}>
+                      {selectedTopic ? topics.find(t => t.id === selectedTopic)?.name ?? 'Sin tema' : 'Sin tema'}
+                    </span>
+                    <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
-                  </div>
+                  </button>
+                  {topicDropdownOpen && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      <button
+                        type="button"
+                        onClick={() => { setSelectedTopic(''); setSelectedTopicForCreate?.(''); setTopicDropdownOpen(false); }}
+                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 transition-colors ${
+                          !selectedTopic ? 'bg-brand-50 text-brand-700 font-medium' : 'text-gray-500'
+                        }`}
+                      >
+                        Sin tema
+                      </button>
+                      {topics.map(t => (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => { setSelectedTopic(t.id); setSelectedTopicForCreate?.(t.id); setTopicDropdownOpen(false); }}
+                          className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 transition-colors ${
+                            selectedTopic === t.id ? 'bg-brand-50 text-brand-700 font-medium' : 'text-gray-900'
+                          }`}
+                        >
+                          {t.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
