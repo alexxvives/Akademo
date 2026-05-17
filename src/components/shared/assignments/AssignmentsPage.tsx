@@ -20,7 +20,6 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
   const subActions = useSubmissionActions(data);
   const [viewingQuiz, setViewingQuiz] = useState<Assignment | null>(null);
   const [activeTab, setActiveTab] = useState<'file' | 'quiz'>('quiz');
-  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [searchQuery, setSearchQuery] = useState('');
   const searchParams = useSearchParams();
 
@@ -107,22 +106,14 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
           </div>
         </div>
 
-        {/* Tabs + view toggle */}
-        <div className="flex items-center justify-center gap-3">
+        {/* Tabs */}
+        <div className="flex items-center justify-center">
           <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
             <button onClick={() => setActiveTab('quiz')} className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'quiz' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
               Cuestionarios ({sortedAssignments.filter(a => a.type === 'quiz').length})
             </button>
             <button onClick={() => setActiveTab('file')} className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'file' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
               Ejercicios ({sortedAssignments.filter(a => a.type !== 'quiz').length})
-            </button>
-          </div>
-          <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
-            <button onClick={() => setViewMode('table')} title="Vista tabla" className={`p-2 rounded-md transition-colors ${viewMode === 'table' ? 'bg-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
-            </button>
-            <button onClick={() => setViewMode('cards')} title="Vista tarjetas" className={`p-2 rounded-md transition-colors ${viewMode === 'cards' ? 'bg-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
             </button>
           </div>
         </div>
@@ -160,31 +151,6 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
               }}
             />
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-              {viewMode === 'cards' ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-2">
-                  {sortedAssignments.filter(a => activeTab === 'quiz' ? a.type === 'quiz' : a.type !== 'quiz').map((assignment) => (
-                    <div
-                      key={assignment.id}
-                      onClick={() => data.canManage ? actions.openEditAssignment(assignment) : subActions.openSubmissions(assignment)}
-                      className="bg-white border border-gray-200 rounded-xl p-4 cursor-pointer hover:border-gray-400 hover:shadow-sm transition-all flex flex-col gap-2"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="text-sm font-medium text-gray-900 line-clamp-2">{assignment.title}</p>
-                        <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${assignment.type === 'quiz' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
-                          {assignment.type === 'quiz' ? 'Quiz' : 'Ejercicio'}
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {assignment.className && (
-                          <span className="text-xs text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full">{assignment.className}</span>
-                        )}
-                        <span className="text-xs text-gray-600 bg-gray-200 px-2.5 py-1 rounded-full font-medium">{assignment.topicName || 'Sin tema'}</span>
-                      </div>
-                      <p className="text-xs text-gray-400 mt-auto">{assignment.submissionCount} {assignment.type === 'quiz' ? 'realizados' : 'entregas'}</p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
               <div className="overflow-x-auto max-h-[700px] overflow-y-auto">
                 <AssignmentsTable
                   assignments={sortedAssignments}
@@ -211,7 +177,6 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
                   activeTab={activeTab}
                 />
               </div>
-              )}
             </div>
           </>
         )}
