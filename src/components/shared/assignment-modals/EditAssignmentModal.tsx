@@ -256,11 +256,11 @@ export function EditAssignmentModal(props: AssignmentModalsProps) {
               </div>
             )}
 
-            <div className="flex gap-4 justify-center pt-4">
+            <div className="flex gap-3 pt-4">
               <button type="button" onClick={() => setShowEditModal(false)} disabled={updating}
-                className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Cancelar</button>
+                className="flex-1 px-4 py-2 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">Cancelar</button>
               <button type="submit" disabled={updating}
-                className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50">
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium">
                 {updating ? 'Actualizando...' : 'Guardar Cambios'}
               </button>
             </div>
