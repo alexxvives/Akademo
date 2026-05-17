@@ -205,19 +205,6 @@ export function CreateAssignmentModal(props: AssignmentModalsProps) {
                 </div>
               </div>
             )}
-            {selectedClassForCreate && lessons.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Clase <span className="text-gray-400 font-normal">(opcional)</span>
-                </label>
-                <LessonSearchDropdown
-                  lessons={lessons}
-                  value={selectedLesson}
-                  onChange={handleLessonChange}
-                  className="w-full"
-                />
-              </div>
-            )}
             <div>
               <label htmlFor="create-title" className="block text-sm font-medium text-gray-700 mb-1">Título *</label>
               <input id="create-title" type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} required

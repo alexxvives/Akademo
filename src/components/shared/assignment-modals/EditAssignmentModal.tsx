@@ -135,19 +135,6 @@ export function EditAssignmentModal(props: AssignmentModalsProps) {
                 </div>
               </div>
             )}
-            {editClassId && lessons.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Clase <span className="text-gray-400 font-normal">(opcional)</span>
-                </label>
-                <LessonSearchDropdown
-                  lessons={lessons}
-                  value={editLessonId}
-                  onChange={(id) => setEditLessonId?.(id)}
-                  className="w-full"
-                />
-              </div>
-            )}
             <div>
               <label htmlFor="edit-title" className="block text-sm font-medium text-gray-700 mb-1">Título</label>
               <input id="edit-title" type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} required

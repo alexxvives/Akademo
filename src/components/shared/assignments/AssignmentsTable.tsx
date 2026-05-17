@@ -113,11 +113,7 @@ function FileAssignmentsTable({ assignments, isAdmin, isDemo, canManage, require
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assignment.academyName || 'N/A'}</td>
             )}
             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assignment.className || 'N/A'}</td>
-            <td className="px-6 py-4 text-sm max-w-xs">
-              <span className="text-xs text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full font-medium hover:bg-blue-100 transition-colors">
-                {assignment.topicName || 'Sin tema'}
-              </span>
-            </td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assignment.topicName || '—'}</td>
             <td className="px-6 py-4 whitespace-nowrap">
               {(() => {
                 const fileCount = assignment.attachmentIds ? assignment.attachmentIds.split(',').filter(Boolean).length : 0;
@@ -296,11 +292,7 @@ function QuizAssignmentsTable({ assignments, isAdmin, isDemo, canManage, require
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assignment.academyName || 'N/A'}</td>
             )}
             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assignment.className || 'N/A'}</td>
-            <td className="px-6 py-4 text-sm max-w-xs">
-              <span className="text-xs text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full font-medium hover:bg-blue-100 transition-colors">
-                {assignment.topicName || 'Sin tema'}
-              </span>
-            </td>
+            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assignment.topicName || '—'}</td>
             {requireGrading && (
               <td className={`px-6 py-4 whitespace-nowrap text-sm ${getDueDateColor(assignment.dueDate)}`}>
                 {assignment.dueDate ? (
