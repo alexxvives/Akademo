@@ -5,6 +5,7 @@ import { apiClient } from '@/lib/api-client';
 import { createVideoFormEntry } from './class-upload-utils';
 import type { Lesson, StreamRecording } from './types';
 import type { ClassDetailState } from './useClassDetail';
+import { parseD1Date, isReleased } from '@/lib/formatters';
 
 export function useClassActions(s: ClassDetailState) {
   // --- Effects ---
@@ -195,7 +196,7 @@ export function useClassActions(s: ClassDetailState) {
   };
 
   const handleToggleRelease = async (lesson: Lesson) => {
-    const isReleasedNow = new Date(lesson.releaseDate) <= new Date();
+    const isReleasedNow = isReleased(lesson.releaseDate);
     const msg = isReleasedNow ? `¿Estás seguro de que deseas ocultar la lección "${lesson.title}"? Los estudiantes perderán el acceso inmediatamente.` : `¿Estás seguro de que deseas publicar la lección "${lesson.title}"? Los estudiantes tendrán acceso inmediatamente.`;
     if (!window.confirm(msg)) return;
     try {
@@ -211,8 +212,7 @@ export function useClassActions(s: ClassDetailState) {
   // If any lesson in the group is currently released → hide all released ones.
   // If all are already hidden → show all of them.
   const handleBulkToggleRelease = async (lessons: Lesson[]) => {
-    const now = new Date();
-    const releasedLessons = lessons.filter(l => new Date(l.releaseDate) <= now);
+    const releasedLessons = lessons.filter(l => isReleased(l.releaseDate));
     const toToggle = releasedLessons.length > 0 ? releasedLessons : lessons;
     await Promise.all(toToggle.map(async (lesson) => {
       const newReleaseDate = releasedLessons.length > 0 ? '2099-12-31T23:59:59Z' : (lesson.createdAt || new Date().toISOString());
@@ -246,7 +246,7 @@ export function useClassActions(s: ClassDetailState) {
     if (!s.reschedulingLesson) return;
     try {
       const newReleaseDate = new Date(`${newDate}T${newTime}:00`);
-      const movingToFuture = newReleaseDate > new Date(s.reschedulingLesson.releaseDate);
+      const movingToFuture = newReleaseDate > parseD1Date(s.reschedulingLesson.releaseDate);
       const res = await apiClient(`/lessons/${s.reschedulingLesson.id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ releaseDate: newReleaseDate.toISOString(), resetTimers: movingToFuture }) });
       const result = await res.json();
       if (result.success) {

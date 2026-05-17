@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { DeleteIcon } from '@/components/ui/DeleteIcon';
 import { AssignmentCard } from './AssignmentCard';
 import type { Lesson, TopicAssignment } from './types';
+import { isReleased } from '@/lib/formatters';
 
 interface TopicSectionProps {
   topicId: string | null;
@@ -105,7 +106,7 @@ export function TopicSection({
                   onClick={(e) => { e.stopPropagation(); onHideAllLessons(); }}
                   className="p-1.5 text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 rounded-lg transition-all duration-200"
                 >
-                  {topicLessons.some(l => new Date(l.releaseDate) <= new Date()) ? (
+                  {topicLessons.some(l => isReleased(l.releaseDate)) ? (
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
                     </svg>
@@ -118,7 +119,7 @@ export function TopicSection({
                 </button>
                 <div className="absolute right-full top-1/2 -translate-y-1/2 mr-2 px-3 py-2 bg-slate-800 text-slate-200 text-xs rounded-lg shadow-xl border border-slate-700 opacity-0 invisible group-hover/hidetopic:opacity-100 group-hover/hidetopic:visible transition-all duration-200 whitespace-nowrap z-20">
                   <div className="absolute top-1/2 -translate-y-1/2 -right-1 w-2 h-2 bg-slate-800 border-r border-b border-slate-700 rotate-45"></div>
-                  {topicLessons.some(l => new Date(l.releaseDate) <= new Date()) ? 'Ocultar todas las Clases de este tema' : 'Mostrar todas las Clases de este tema'}
+                  {topicLessons.some(l => isReleased(l.releaseDate)) ? 'Ocultar todas las Clases de este tema' : 'Mostrar todas las Clases de este tema'}
                 </div>
               </div>
             )}

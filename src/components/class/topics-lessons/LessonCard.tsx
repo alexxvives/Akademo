@@ -1,7 +1,7 @@
 'use client';
 
 import { DragEvent } from 'react';
-import { isReleased } from '@/lib/formatters';
+import { isReleased, parseD1Date } from '@/lib/formatters';
 import { DeleteIcon } from '@/components/ui/DeleteIcon';
 import type { Lesson } from './types';
 import { LessonCardThumbnail } from './LessonCardThumbnail';
@@ -32,7 +32,7 @@ export function LessonCard({
   const released = isReleased(lesson.releaseDate);
 
   if (viewMode === 'rows') {
-    const isSentinelDate = new Date(lesson.releaseDate).getFullYear() >= 2099;
+    const isSentinelDate = parseD1Date(lesson.releaseDate).getFullYear() >= 2099;
     const hasVideo = (lesson.videoCount || 0) > 0;
     const hasAssignment = (lesson.assignmentCount || 0) > 0;
     return (
@@ -71,7 +71,7 @@ export function LessonCard({
         {/* Hidden/schedule badge */}
         {!released && !isSentinelDate && (
           <span className="text-xs px-1.5 py-0.5 bg-violet-900/50 text-violet-300 rounded flex-shrink-0 hidden sm:block">
-            {new Date(lesson.releaseDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+            {parseD1Date(lesson.releaseDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
           </span>
         )}
         {!released && isSentinelDate && (

@@ -4,6 +4,7 @@ import Script from 'next/script';
 import "./globals.css";
 import PdfViewerModal from '@/components/PdfViewerModal';
 import OfficeViewerModal from '@/components/OfficeViewerModal';
+import ImageViewerModal from '@/components/ImageViewerModal';
 
 const montserrat = Montserrat({ 
   subsets: ['latin'],
@@ -181,6 +182,7 @@ export default function RootLayout({
         <main>{children}</main>
         <PdfViewerModal />
         <OfficeViewerModal />
+        <ImageViewerModal />
       </body>
     </html>
   );

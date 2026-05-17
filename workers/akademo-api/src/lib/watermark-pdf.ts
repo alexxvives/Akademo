@@ -96,7 +96,7 @@ export async function addWatermarkToPdf(
     : '';
 
   const textColor = rgb(0.55, 0.55, 0.55);
-  const textOpacity = 0.40;
+  const textOpacity = 0.5;
   // cos/sin of 45° — used for projecting text positions
   const SQ = Math.SQRT1_2;
 

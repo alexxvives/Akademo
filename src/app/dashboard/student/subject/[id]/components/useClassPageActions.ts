@@ -3,6 +3,7 @@
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { apiClient } from '@/lib/api-client';
 import type { Video, Lesson } from './types';
+import { parseD1Date } from '@/lib/formatters';
 
 interface ActionDeps {
   classId: string;
@@ -33,7 +34,7 @@ export function useClassPageActions(deps: ActionDeps) {
   } = deps;
 
   const selectLesson = async (lesson: Lesson) => {
-    const isReleased = new Date(lesson.releaseDate) <= new Date();
+    const isReleased = parseD1Date(lesson.releaseDate) <= new Date();
     if (!isReleased) return;
 
     if (!isDemo) {

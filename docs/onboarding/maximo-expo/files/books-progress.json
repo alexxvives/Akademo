@@ -1,0 +1,2242 @@
+{
+  " SISTEMA DIGESTIVO PRESENTACION": {
+    "title": " SISTEMA DIGESTIVO PRESENTACION",
+    "course": "Histología",
+    "section_name": "TEMA 10- SISTEMA DIGESTIVO",
+    "r2Key": "maximo-expo/books/sistema-digestivo-presentacion.pdf",
+    "pdfFilename": "sistema-digestivo-presentacion.pdf",
+    "pdfSize": 12159653,
+    "uploadId": "up_089686d94475c2854f",
+    "lessonId": "les_f3d4f97bb48187168f",
+    "docId": "doc_455ced1c77a31f7e99",
+    "done": true
+  },
+  " SISTEMA INMUNE PRESENTACION": {
+    "title": " SISTEMA INMUNE PRESENTACION",
+    "course": "Histología",
+    "section_name": "TEMA 14 - SISTEMA INMUNE",
+    "r2Key": "maximo-expo/books/sistema-inmune-presentacion.pdf",
+    "pdfFilename": "sistema-inmune-presentacion.pdf",
+    "pdfSize": 4247831,
+    "uploadId": "up_7286915bf5d36bd088",
+    "lessonId": "les_3d1c86dbce65209a27",
+    "docId": "doc_92e5f49c6c19f0176d",
+    "done": true
+  },
+  " SISTEMA TEGUMENTARIO": {
+    "title": " SISTEMA TEGUMENTARIO",
+    "course": "Histología",
+    "section_name": "TEMA 15 - SISTEMA TEGUMENTARIO",
+    "type": "interactive",
+    "lessonId": "les_352ddf3fafc13a63c2",
+    "chapters": [
+      {
+        "title": "CORPÚSCULO MEISSNER",
+        "slug": "corpusculo-meissner",
+        "r2Key": "maximo-expo/books/sistema-tegumentario/corpusculo-meissner.pdf",
+        "pdfFilename": "corpusculo-meissner.pdf",
+        "pdfSize": 772658,
+        "uploadId": "up_5712b7f61ce4fa039e",
+        "docId": "doc_9a3d6119574011de56",
+        "order": 0
+      },
+      {
+        "title": "CORPÚSCULO PACINI",
+        "slug": "corpusculo-pacini",
+        "r2Key": "maximo-expo/books/sistema-tegumentario/corpusculo-pacini.pdf",
+        "pdfFilename": "corpusculo-pacini.pdf",
+        "pdfSize": 656384,
+        "uploadId": "up_e38e489011f52e53d1",
+        "docId": "doc_e4a8c9752e4423b3ff",
+        "order": 1
+      },
+      {
+        "title": "DERMIS",
+        "slug": "dermis",
+        "r2Key": "maximo-expo/books/sistema-tegumentario/dermis.pdf",
+        "pdfFilename": "dermis.pdf",
+        "pdfSize": 1173815,
+        "uploadId": "up_c30854e0bec44368a7",
+        "docId": "doc_e1ae129476b50192bb",
+        "order": 2
+      },
+      {
+        "title": "EPIDERMIS",
+        "slug": "epidermis",
+        "r2Key": "maximo-expo/books/sistema-tegumentario/epidermis.pdf",
+        "pdfFilename": "epidermis.pdf",
+        "pdfSize": 2076286,
+        "uploadId": "up_d756e995e49e088ba3",
+        "docId": "doc_65bfa9e08e4be564f6",
+        "order": 3
+      },
+      {
+        "title": "FOLÍCULO PILOSO",
+        "slug": "foliculo-piloso",
+        "r2Key": "maximo-expo/books/sistema-tegumentario/foliculo-piloso.pdf",
+        "pdfFilename": "foliculo-piloso.pdf",
+        "pdfSize": 1183359,
+        "uploadId": "up_bf40787b1508fd8ea6",
+        "docId": "doc_f116dd3d6c957b4bdb",
+        "order": 4
+      },
+      {
+        "title": "GLÁNDULA SEBÁCEA",
+        "slug": "glandula-sebacea",
+        "r2Key": "maximo-expo/books/sistema-tegumentario/glandula-sebacea.pdf",
+        "pdfFilename": "glandula-sebacea.pdf",
+        "pdfSize": 642075,
+        "uploadId": "up_30235d9fd571808384",
+        "docId": "doc_b141b507c10d012771",
+        "order": 5
+      },
+      {
+        "title": "GLÁNDULA SUDORÍPARA",
+        "slug": "glandula-sudoripara",
+        "r2Key": "maximo-expo/books/sistema-tegumentario/glandula-sudoripara.pdf",
+        "pdfFilename": "glandula-sudoripara.pdf",
+        "pdfSize": 1786273,
+        "uploadId": "up_d7062c580c3aa68f36",
+        "docId": "doc_54e4f09e6dcc87328c",
+        "order": 6
+      },
+      {
+        "title": "PIEL FINA - PIEL GRUESA",
+        "slug": "piel-fina-piel-gruesa",
+        "r2Key": "maximo-expo/books/sistema-tegumentario/piel-fina-piel-gruesa.pdf",
+        "pdfFilename": "piel-fina-piel-gruesa.pdf",
+        "pdfSize": 3676092,
+        "uploadId": "up_2afc5f07d1578ae0d3",
+        "docId": "doc_2b22bd0aac59550d0e",
+        "order": 7
+      },
+      {
+        "title": "UÑA",
+        "slug": "una",
+        "r2Key": "maximo-expo/books/sistema-tegumentario/una.pdf",
+        "pdfFilename": "una.pdf",
+        "pdfSize": 290698,
+        "uploadId": "up_3662d0c3c3e8d401ef",
+        "docId": "doc_9fb7ee0d04018400c1",
+        "order": 8
+      }
+    ],
+    "oldUploadId": "up_3dbe514b3b53bca672",
+    "oldDocId": "doc_173aeb1945611ec576",
+    "done": true
+  },
+  "EJIDO CONECTIVO PRESENTACION": {
+    "title": "EJIDO CONECTIVO PRESENTACION",
+    "course": "Histología",
+    "section_name": "TEMA 3 - TEJIDO CONECTIVO",
+    "r2Key": "maximo-expo/books/ejido-conectivo-presentacion.pdf",
+    "pdfFilename": "ejido-conectivo-presentacion.pdf",
+    "pdfSize": 4023771,
+    "uploadId": "up_630fd47c11c31723c6",
+    "lessonId": "les_545003db1a6ff05be1",
+    "docId": "doc_2e822fc0aaa7640245",
+    "done": true
+  },
+  "EJIDO GLANDULAR PRESENTACION": {
+    "title": "EJIDO GLANDULAR PRESENTACION",
+    "course": "Histología",
+    "section_name": "TEMA 2 - TEJIDO GLANDULAR",
+    "r2Key": "maximo-expo/books/ejido-glandular-presentacion.pdf",
+    "pdfFilename": "ejido-glandular-presentacion.pdf",
+    "pdfSize": 6285743,
+    "uploadId": "up_ca6b560912a10a6812",
+    "lessonId": "les_5c8caed180e0f68c36",
+    "docId": "doc_9d1fde3c76fe9886a1",
+    "done": true
+  },
+  "ISTEMA REPRODUCTOR FEMENINO PRESENTACION": {
+    "title": "ISTEMA REPRODUCTOR FEMENINO PRESENTACION",
+    "course": "Histología",
+    "section_name": "TEMA 16 - SISTEMA REPRODUCTOR FEMENINO",
+    "r2Key": "maximo-expo/books/istema-reproductor-femenino-presentacion.pdf",
+    "pdfFilename": "istema-reproductor-femenino-presentacion.pdf",
+    "pdfSize": 5714800,
+    "uploadId": "up_81365a4e437702e336",
+    "lessonId": "les_896334928042077ec0",
+    "docId": "doc_2a0f33f300ba8e4d5a",
+    "done": true
+  },
+  "ISTEMA RESPIRATORIO PRESENTACION": {
+    "title": "ISTEMA RESPIRATORIO PRESENTACION",
+    "course": "Histología",
+    "section_name": "TEMA 11- SISTEMA RESPIRATORIO",
+    "r2Key": "maximo-expo/books/istema-respiratorio-presentacion.pdf",
+    "pdfFilename": "istema-respiratorio-presentacion.pdf",
+    "pdfSize": 5482420,
+    "uploadId": "up_0b155269437fef0ade",
+    "lessonId": "les_79cc7585a2677eda63",
+    "docId": "doc_1e4c758b8248336823",
+    "done": true
+  },
+  "REPRODUCTOR FEMENINO": {
+    "title": "REPRODUCTOR FEMENINO",
+    "course": "Histología",
+    "section_name": "TEMA 16 - SISTEMA REPRODUCTOR FEMENINO",
+    "type": "interactive",
+    "lessonId": "les_8dccf2f426549090c1",
+    "chapters": [
+      {
+        "title": "CERVIX",
+        "slug": "cervix",
+        "r2Key": "maximo-expo/books/reproductor-femenino/cervix.pdf",
+        "pdfFilename": "cervix.pdf",
+        "pdfSize": 1022378,
+        "uploadId": "up_be9aa37dea4ba822c7",
+        "docId": "doc_c2be6d6fc0be337412",
+        "order": 0
+      },
+      {
+        "title": "CUERPO ALBICANS",
+        "slug": "cuerpo-albicans",
+        "r2Key": "maximo-expo/books/reproductor-femenino/cuerpo-albicans.pdf",
+        "pdfFilename": "cuerpo-albicans.pdf",
+        "pdfSize": 1056917,
+        "uploadId": "up_dd2e086ade34f7c56f",
+        "docId": "doc_623b17f2eab71c512b",
+        "order": 1
+      },
+      {
+        "title": "CUERPO LÚTEO",
+        "slug": "cuerpo-luteo",
+        "r2Key": "maximo-expo/books/reproductor-femenino/cuerpo-luteo.pdf",
+        "pdfFilename": "cuerpo-luteo.pdf",
+        "pdfSize": 1088598,
+        "uploadId": "up_bf4f628dc2e01ae71a",
+        "docId": "doc_790b2ff1172c475326",
+        "order": 2
+      },
+      {
+        "title": "FOLICULOS PRIMARIOS",
+        "slug": "foliculos-primarios",
+        "r2Key": "maximo-expo/books/reproductor-femenino/foliculos-primarios.pdf",
+        "pdfFilename": "foliculos-primarios.pdf",
+        "pdfSize": 976438,
+        "uploadId": "up_e2730bf304b104db2d",
+        "docId": "doc_be261220fcc20fd4b6",
+        "order": 3
+      },
+      {
+        "title": "FOLICULOS PRIMORDIALES",
+        "slug": "foliculos-primordiales",
+        "r2Key": "maximo-expo/books/reproductor-femenino/foliculos-primordiales.pdf",
+        "pdfFilename": "foliculos-primordiales.pdf",
+        "pdfSize": 843830,
+        "uploadId": "up_5d272833299ba7e8b3",
+        "docId": "doc_4aeded0528b2b2d8c0",
+        "order": 4
+      },
+      {
+        "title": "FOLICULOS SECUNDARIOS",
+        "slug": "foliculos-secundarios",
+        "r2Key": "maximo-expo/books/reproductor-femenino/foliculos-secundarios.pdf",
+        "pdfFilename": "foliculos-secundarios.pdf",
+        "pdfSize": 1240230,
+        "uploadId": "up_0dfb8734b8c3b615af",
+        "docId": "doc_c282d08e8616011705",
+        "order": 5
+      },
+      {
+        "title": "FOLICULOS TERCIARIOS",
+        "slug": "foliculos-terciarios",
+        "r2Key": "maximo-expo/books/reproductor-femenino/foliculos-terciarios.pdf",
+        "pdfFilename": "foliculos-terciarios.pdf",
+        "pdfSize": 1512659,
+        "uploadId": "up_d9f93cecf7af5f911a",
+        "docId": "doc_256a95e681e525a27d",
+        "order": 6
+      },
+      {
+        "title": "MAMAS",
+        "slug": "mamas",
+        "r2Key": "maximo-expo/books/reproductor-femenino/mamas.pdf",
+        "pdfFilename": "mamas.pdf",
+        "pdfSize": 3783787,
+        "uploadId": "up_413564bbc3b1356758",
+        "docId": "doc_385cc197d814fde403",
+        "order": 7
+      },
+      {
+        "title": "OVARIO",
+        "slug": "ovario",
+        "r2Key": "maximo-expo/books/reproductor-femenino/ovario.pdf",
+        "pdfFilename": "ovario.pdf",
+        "pdfSize": 2349399,
+        "uploadId": "up_317a5852e6b394cc00",
+        "docId": "doc_1ae5c7a2b793d60947",
+        "order": 8
+      },
+      {
+        "title": "ÚTERO",
+        "slug": "utero",
+        "r2Key": "maximo-expo/books/reproductor-femenino/utero.pdf",
+        "pdfFilename": "utero.pdf",
+        "pdfSize": 6728885,
+        "uploadId": "up_48b22efb3a7f1c7800",
+        "docId": "doc_96ccee6a87d1cf1348",
+        "order": 9
+      },
+      {
+        "title": "TROMPAS DE FALOPIO",
+        "slug": "trompas-de-falopio",
+        "r2Key": "maximo-expo/books/reproductor-femenino/trompas-de-falopio.pdf",
+        "pdfFilename": "trompas-de-falopio.pdf",
+        "pdfSize": 2609696,
+        "uploadId": "up_75da3996600395bacb",
+        "docId": "doc_79be374c23a2c1c0f4",
+        "order": 10
+      },
+      {
+        "title": "VAGINA",
+        "slug": "vagina",
+        "r2Key": "maximo-expo/books/reproductor-femenino/vagina.pdf",
+        "pdfFilename": "vagina.pdf",
+        "pdfSize": 3159659,
+        "uploadId": "up_d45147ab75eb8bdffb",
+        "docId": "doc_488e7244b67714ec00",
+        "order": 11
+      }
+    ],
+    "oldUploadId": "up_d5e225fbd7bd2ec8b5",
+    "oldDocId": "doc_cd1b91722b2f87e108",
+    "done": true
+  },
+  "REPRODUCTOR MASCULINO": {
+    "title": "REPRODUCTOR MASCULINO",
+    "course": "Histología",
+    "section_name": "TEMA 17 - SISTEMA REPRODUCTOR MASCULINO",
+    "type": "interactive",
+    "lessonId": "les_f4da76db54c41b4f98",
+    "chapters": [
+      {
+        "title": "CONDUCTO DEFERENTE",
+        "slug": "conducto-deferente",
+        "r2Key": "maximo-expo/books/reproductor-masculino/conducto-deferente.pdf",
+        "pdfFilename": "conducto-deferente.pdf",
+        "pdfSize": 864081,
+        "uploadId": "up_cca63ed57d84d74622",
+        "docId": "doc_f4ef159bf9ae8aecc5",
+        "order": 0
+      },
+      {
+        "title": "EPIDIDIMO",
+        "slug": "epididimo",
+        "r2Key": "maximo-expo/books/reproductor-masculino/epididimo.pdf",
+        "pdfFilename": "epididimo.pdf",
+        "pdfSize": 3510391,
+        "uploadId": "up_112d1fbb592520e8a9",
+        "docId": "doc_241ebd9eaae82c2a73",
+        "order": 1
+      },
+      {
+        "title": "PENE",
+        "slug": "pene",
+        "r2Key": "maximo-expo/books/reproductor-masculino/pene.pdf",
+        "pdfFilename": "pene.pdf",
+        "pdfSize": 2583739,
+        "uploadId": "up_ea8e6124753d4d24b0",
+        "docId": "doc_0b1b93a0d62495ae0a",
+        "order": 2
+      },
+      {
+        "title": "PROSTATA",
+        "slug": "prostata",
+        "r2Key": "maximo-expo/books/reproductor-masculino/prostata.pdf",
+        "pdfFilename": "prostata.pdf",
+        "pdfSize": 3363942,
+        "uploadId": "up_5bd756a090cad87942",
+        "docId": "doc_71f0748c684f0067f6",
+        "order": 3
+      },
+      {
+        "title": "TÉSTICULO",
+        "slug": "testiculo",
+        "r2Key": "maximo-expo/books/reproductor-masculino/testiculo.pdf",
+        "pdfFilename": "testiculo.pdf",
+        "pdfSize": 3206937,
+        "uploadId": "up_9281db1711f9d737a2",
+        "docId": "doc_e294e067c6c416a7ba",
+        "order": 4
+      },
+      {
+        "title": "TUBULO SEMINÍFERO",
+        "slug": "tubulo-seminifero",
+        "r2Key": "maximo-expo/books/reproductor-masculino/tubulo-seminifero.pdf",
+        "pdfFilename": "tubulo-seminifero.pdf",
+        "pdfSize": 3404927,
+        "uploadId": "up_cb91ea8428045ac924",
+        "docId": "doc_51628ea0316256db06",
+        "order": 5
+      },
+      {
+        "title": "VESÍCULA SEMINAL",
+        "slug": "vesicula-seminal",
+        "r2Key": "maximo-expo/books/reproductor-masculino/vesicula-seminal.pdf",
+        "pdfFilename": "vesicula-seminal.pdf",
+        "pdfSize": 3218190,
+        "uploadId": "up_14325eaf858aead1bc",
+        "docId": "doc_b9e967a0a910d7a13b",
+        "order": 6
+      }
+    ],
+    "oldUploadId": "up_955edc965d31cc3b3e",
+    "oldDocId": "doc_8bf3a2acc4f578f817",
+    "done": true
+  },
+  "SISTEMA AUDITIVO": {
+    "title": "SISTEMA AUDITIVO",
+    "course": "Histología",
+    "section_name": "TEMA 18 - SISTEMA AUDITIVO",
+    "type": "interactive",
+    "lessonId": "les_5c36fbf77273377526",
+    "chapters": [
+      {
+        "title": "CÓCLEA",
+        "slug": "coclea",
+        "r2Key": "maximo-expo/books/sistema-auditivo/coclea.pdf",
+        "pdfFilename": "coclea.pdf",
+        "pdfSize": 601431,
+        "uploadId": "up_317820a402261119c7",
+        "docId": "doc_fc9821699792b65d6e",
+        "order": 0
+      },
+      {
+        "title": "CONDUCTOS SEMICIRCULARES - AMPULA",
+        "slug": "conductos-semicirculares-ampula",
+        "r2Key": "maximo-expo/books/sistema-auditivo/conductos-semicirculares-ampula.pdf",
+        "pdfFilename": "conductos-semicirculares-ampula.pdf",
+        "pdfSize": 283518,
+        "uploadId": "up_40fa25bb2025d8d5d1",
+        "docId": "doc_a169977a409d8af7e4",
+        "order": 1
+      },
+      {
+        "title": "OREJA",
+        "slug": "oreja",
+        "r2Key": "maximo-expo/books/sistema-auditivo/oreja.pdf",
+        "pdfFilename": "oreja.pdf",
+        "pdfSize": 1791292,
+        "uploadId": "up_37a3659e27d293452e",
+        "docId": "doc_afae13df91c49f3dc4",
+        "order": 2
+      },
+      {
+        "title": "ORGANO DE CORTI",
+        "slug": "organo-de-corti",
+        "r2Key": "maximo-expo/books/sistema-auditivo/organo-de-corti.pdf",
+        "pdfFilename": "organo-de-corti.pdf",
+        "pdfSize": 1774118,
+        "uploadId": "up_78d53289dbd73e9b53",
+        "docId": "doc_3d0d346a642aae35d6",
+        "order": 3
+      },
+      {
+        "title": "SISTEMA VESTIBULAR - SÁCULO Y UTRÍCULO",
+        "slug": "sistema-vestibular-saculo-y-utriculo",
+        "r2Key": "maximo-expo/books/sistema-auditivo/sistema-vestibular-saculo-y-utriculo.pdf",
+        "pdfFilename": "sistema-vestibular-saculo-y-utriculo.pdf",
+        "pdfSize": 1383408,
+        "uploadId": "up_b7f24cce5ebde4d519",
+        "docId": "doc_2d2effbcdaeb3afe62",
+        "order": 4
+      }
+    ],
+    "oldUploadId": "up_79824bdee968953820",
+    "oldDocId": "doc_95ade1ecac366c6657",
+    "done": true
+  },
+  "SISTEMA AUDITIVO PRESENTACION": {
+    "title": "SISTEMA AUDITIVO PRESENTACION",
+    "course": "Histología",
+    "section_name": "TEMA 18 - SISTEMA AUDITIVO",
+    "r2Key": "maximo-expo/books/sistema-auditivo-presentacion.pdf",
+    "pdfFilename": "sistema-auditivo-presentacion.pdf",
+    "pdfSize": 2359692,
+    "uploadId": "up_eb47c5f682f7f6d3ac",
+    "lessonId": "les_924ebd38a3b93b7068",
+    "docId": "doc_df62974e699cb7b2cb",
+    "done": true
+  },
+  "SISTEMA CARDIOVASCULAR": {
+    "title": "SISTEMA CARDIOVASCULAR",
+    "course": "Histología",
+    "section_name": "TEMA 9 - SISTEMA CARDIOVASCULAR",
+    "type": "interactive",
+    "lessonId": "les_5ec2e2177af1c34ca6",
+    "chapters": [
+      {
+        "title": "ARTERIA ELÁSTICA",
+        "slug": "arteria-elastica",
+        "r2Key": "maximo-expo/books/sistema-cardiovascular/arteria-elastica.pdf",
+        "pdfFilename": "arteria-elastica.pdf",
+        "pdfSize": 2357595,
+        "uploadId": "up_03163bd2fb79b85ff1",
+        "docId": "doc_c4b8f8e11c0194b45c",
+        "order": 0
+      },
+      {
+        "title": "ARTERIA MUSCULAR",
+        "slug": "arteria-muscular",
+        "r2Key": "maximo-expo/books/sistema-cardiovascular/arteria-muscular.pdf",
+        "pdfFilename": "arteria-muscular.pdf",
+        "pdfSize": 2110449,
+        "uploadId": "up_a82aa651ce694dde5f",
+        "docId": "doc_e389a3e4be83c2d92a",
+        "order": 1
+      },
+      {
+        "title": "ARTERIAS US VENAS",
+        "slug": "arterias-us-venas",
+        "r2Key": "maximo-expo/books/sistema-cardiovascular/arterias-us-venas.pdf",
+        "pdfFilename": "arterias-us-venas.pdf",
+        "pdfSize": 1330368,
+        "uploadId": "up_593308633939b61986",
+        "docId": "doc_4c72caa084f5aa1f69",
+        "order": 2
+      },
+      {
+        "title": "ARTERIOLA",
+        "slug": "arteriola",
+        "r2Key": "maximo-expo/books/sistema-cardiovascular/arteriola.pdf",
+        "pdfFilename": "arteriola.pdf",
+        "pdfSize": 863086,
+        "uploadId": "up_d6f54e63dc874a2da5",
+        "docId": "doc_3cff251798e5218e15",
+        "order": 3
+      },
+      {
+        "title": "CAPILARES",
+        "slug": "capilares",
+        "r2Key": "maximo-expo/books/sistema-cardiovascular/capilares.pdf",
+        "pdfFilename": "capilares.pdf",
+        "pdfSize": 961796,
+        "uploadId": "up_7a6b2183e1aed70005",
+        "docId": "doc_863998b3a07f64c8fd",
+        "order": 4
+      },
+      {
+        "title": "CORAZÓN",
+        "slug": "corazon",
+        "r2Key": "maximo-expo/books/sistema-cardiovascular/corazon.pdf",
+        "pdfFilename": "corazon.pdf",
+        "pdfSize": 25927,
+        "uploadId": "up_ee8628c112f437ac8b",
+        "docId": "doc_cb1d9072cf5c314d79",
+        "order": 5
+      },
+      {
+        "title": "ENDOCARDIO",
+        "slug": "endocardio",
+        "r2Key": "maximo-expo/books/sistema-cardiovascular/endocardio.pdf",
+        "pdfFilename": "endocardio.pdf",
+        "pdfSize": 1280159,
+        "uploadId": "up_553c6f709b09951f4b",
+        "docId": "doc_f451874bcfea7fac68",
+        "order": 6
+      },
+      {
+        "title": "MIOCARDIO",
+        "slug": "miocardio",
+        "r2Key": "maximo-expo/books/sistema-cardiovascular/miocardio.pdf",
+        "pdfFilename": "miocardio.pdf",
+        "pdfSize": 1702749,
+        "uploadId": "up_035aade98c464b5830",
+        "docId": "doc_9a9b62e6e767cca506",
+        "order": 7
+      },
+      {
+        "title": "PERICARDIO",
+        "slug": "pericardio",
+        "r2Key": "maximo-expo/books/sistema-cardiovascular/pericardio.pdf",
+        "pdfFilename": "pericardio.pdf",
+        "pdfSize": 233131,
+        "uploadId": "up_942050bfef277261de",
+        "docId": "doc_5d7051cdb397d19b9e",
+        "order": 8
+      },
+      {
+        "title": "SISTEMA DE CONDUCCIÓN",
+        "slug": "sistema-de-conduccion",
+        "r2Key": "maximo-expo/books/sistema-cardiovascular/sistema-de-conduccion.pdf",
+        "pdfFilename": "sistema-de-conduccion.pdf",
+        "pdfSize": 1616291,
+        "uploadId": "up_dba3046be8560bda4d",
+        "docId": "doc_843c5c79bd35136b2e",
+        "order": 9
+      },
+      {
+        "title": "VASOS SANGUÍNEOS",
+        "slug": "vasos-sanguineos",
+        "r2Key": "maximo-expo/books/sistema-cardiovascular/vasos-sanguineos.pdf",
+        "pdfFilename": "vasos-sanguineos.pdf",
+        "pdfSize": 33416,
+        "uploadId": "up_a9352d02113f2a8c2d",
+        "docId": "doc_b8faade5da673e4f6c",
+        "order": 10
+      },
+      {
+        "title": "VENAS",
+        "slug": "venas",
+        "r2Key": "maximo-expo/books/sistema-cardiovascular/venas.pdf",
+        "pdfFilename": "venas.pdf",
+        "pdfSize": 3064731,
+        "uploadId": "up_1ccdf142a93d1949b2",
+        "docId": "doc_7d195e2a2dfc54c00e",
+        "order": 11
+      },
+      {
+        "title": "VENULAS",
+        "slug": "venulas",
+        "r2Key": "maximo-expo/books/sistema-cardiovascular/venulas.pdf",
+        "pdfFilename": "venulas.pdf",
+        "pdfSize": 389222,
+        "uploadId": "up_8a3997392cdb45d065",
+        "docId": "doc_5f3279ba42cb94b33a",
+        "order": 12
+      }
+    ],
+    "oldUploadId": "up_1963902ac9cb427a63",
+    "oldDocId": "doc_fe8bee4ab9175a7195",
+    "done": true
+  },
+  "SISTEMA CARDIOVASCULAR PRESENTACION": {
+    "title": "SISTEMA CARDIOVASCULAR PRESENTACION",
+    "course": "Histología",
+    "section_name": "TEMA 9 - SISTEMA CARDIOVASCULAR",
+    "r2Key": "maximo-expo/books/sistema-cardiovascular-presentacion.pdf",
+    "pdfFilename": "sistema-cardiovascular-presentacion.pdf",
+    "pdfSize": 5009949,
+    "uploadId": "up_f2119d14533e8ab1ee",
+    "lessonId": "les_b2fcb114bde3529930",
+    "docId": "doc_65a42bcb59056ed955",
+    "done": true
+  },
+  "SISTEMA DIGESTIVO": {
+    "title": "SISTEMA DIGESTIVO",
+    "course": "Histología",
+    "section_name": "TEMA 10- SISTEMA DIGESTIVO",
+    "type": "interactive",
+    "lessonId": "les_33230de2008b071ac7",
+    "chapters": [
+      {
+        "title": "CALICIFORMES",
+        "slug": "caliciformes",
+        "r2Key": "maximo-expo/books/sistema-digestivo/caliciformes.pdf",
+        "pdfFilename": "caliciformes.pdf",
+        "pdfSize": 1858711,
+        "uploadId": "up_0cb98e36c05165f448",
+        "docId": "doc_4a9d460126495a4927",
+        "order": 0
+      },
+      {
+        "title": "CARDIAS",
+        "slug": "cardias",
+        "r2Key": "maximo-expo/books/sistema-digestivo/cardias.pdf",
+        "pdfFilename": "cardias.pdf",
+        "pdfSize": 1217895,
+        "uploadId": "up_6728d5607f3fb3de2b",
+        "docId": "doc_eddbaafbc23c5a2b78",
+        "order": 1
+      },
+      {
+        "title": "CÉLULAS DE PANETH",
+        "slug": "celulas-de-paneth",
+        "r2Key": "maximo-expo/books/sistema-digestivo/celulas-de-paneth.pdf",
+        "pdfFilename": "celulas-de-paneth.pdf",
+        "pdfSize": 536785,
+        "uploadId": "up_ab198c17b1c35eeb43",
+        "docId": "doc_4a619dcaecfa65e1b5",
+        "order": 2
+      },
+      {
+        "title": "COLON",
+        "slug": "colon",
+        "r2Key": "maximo-expo/books/sistema-digestivo/colon.pdf",
+        "pdfFilename": "colon.pdf",
+        "pdfSize": 2321744,
+        "uploadId": "up_53342d361899944cc6",
+        "docId": "doc_bb9d30eba274f9da05",
+        "order": 3
+      },
+      {
+        "title": "CORPÚSCULOS GUSTATIVOS",
+        "slug": "corpusculos-gustativos",
+        "r2Key": "maximo-expo/books/sistema-digestivo/corpusculos-gustativos.pdf",
+        "pdfFilename": "corpusculos-gustativos.pdf",
+        "pdfSize": 555458,
+        "uploadId": "up_f4501498dbd07fdd60",
+        "docId": "doc_0733957a9382f4ce5f",
+        "order": 4
+      },
+      {
+        "title": "DIENTE",
+        "slug": "diente",
+        "r2Key": "maximo-expo/books/sistema-digestivo/diente.pdf",
+        "pdfFilename": "diente.pdf",
+        "pdfSize": 684765,
+        "uploadId": "up_5d7f2a34d7701ae2af",
+        "docId": "doc_a7b586788cdca52ad0",
+        "order": 5
+      },
+      {
+        "title": "DUODENO",
+        "slug": "duodeno",
+        "r2Key": "maximo-expo/books/sistema-digestivo/duodeno.pdf",
+        "pdfFilename": "duodeno.pdf",
+        "pdfSize": 1152975,
+        "uploadId": "up_afe4d977c34d498ef3",
+        "docId": "doc_48e9551c1ea0bdb79a",
+        "order": 6
+      },
+      {
+        "title": "EPITELIO BOCA",
+        "slug": "epitelio-boca",
+        "r2Key": "maximo-expo/books/sistema-digestivo/epitelio-boca.pdf",
+        "pdfFilename": "epitelio-boca.pdf",
+        "pdfSize": 812663,
+        "uploadId": "up_7f1487934ee335b2de",
+        "docId": "doc_3a37476faf82cf58a6",
+        "order": 7
+      },
+      {
+        "title": "ESÓFAGO",
+        "slug": "esofago",
+        "r2Key": "maximo-expo/books/sistema-digestivo/esofago.pdf",
+        "pdfFilename": "esofago.pdf",
+        "pdfSize": 6255136,
+        "uploadId": "up_b8510df84cdc14efe7",
+        "docId": "doc_f8cda4027b9507bb76",
+        "order": 8
+      },
+      {
+        "title": "FILIFORMES",
+        "slug": "filiformes",
+        "r2Key": "maximo-expo/books/sistema-digestivo/filiformes.pdf",
+        "pdfFilename": "filiformes.pdf",
+        "pdfSize": 458047,
+        "uploadId": "up_4d41d4f422c72fbd41",
+        "docId": "doc_fc58152d3fc25775ba",
+        "order": 9
+      },
+      {
+        "title": "FOLIADAS",
+        "slug": "foliadas",
+        "r2Key": "maximo-expo/books/sistema-digestivo/foliadas.pdf",
+        "pdfFilename": "foliadas.pdf",
+        "pdfSize": 1193027,
+        "uploadId": "up_be0a636f2eba770d5b",
+        "docId": "doc_2e351e364f53528b4c",
+        "order": 10
+      },
+      {
+        "title": "FUNDUS",
+        "slug": "fundus",
+        "r2Key": "maximo-expo/books/sistema-digestivo/fundus.pdf",
+        "pdfFilename": "fundus.pdf",
+        "pdfSize": 1766984,
+        "uploadId": "up_7be448f26e6a77bb29",
+        "docId": "doc_78ae58072e4e6ea49e",
+        "order": 11
+      },
+      {
+        "title": "FUNGICAS",
+        "slug": "fungicas",
+        "r2Key": "maximo-expo/books/sistema-digestivo/fungicas.pdf",
+        "pdfFilename": "fungicas.pdf",
+        "pdfSize": 632493,
+        "uploadId": "up_6e86c5cd4b0e04d525",
+        "docId": "doc_c4742747a036c33547",
+        "order": 12
+      },
+      {
+        "title": "G. PARÓTIDA",
+        "slug": "g-parotida",
+        "r2Key": "maximo-expo/books/sistema-digestivo/g-parotida.pdf",
+        "pdfFilename": "g-parotida.pdf",
+        "pdfSize": 2082476,
+        "uploadId": "up_fcf478e65feff1698d",
+        "docId": "doc_a4c5f4a46350404070",
+        "order": 13
+      },
+      {
+        "title": "G. SUBLINGUAL",
+        "slug": "g-sublingual",
+        "r2Key": "maximo-expo/books/sistema-digestivo/g-sublingual.pdf",
+        "pdfFilename": "g-sublingual.pdf",
+        "pdfSize": 1278718,
+        "uploadId": "up_f7befa7cddf7e070c4",
+        "docId": "doc_adf7df100398e21083",
+        "order": 14
+      },
+      {
+        "title": "G. SUBMAXILAR",
+        "slug": "g-submaxilar",
+        "r2Key": "maximo-expo/books/sistema-digestivo/g-submaxilar.pdf",
+        "pdfFilename": "g-submaxilar.pdf",
+        "pdfSize": 1886004,
+        "uploadId": "up_1a7a646553b92f3fcf",
+        "docId": "doc_7c53c6e56297c3200d",
+        "order": 15
+      },
+      {
+        "title": "HÍGADO",
+        "slug": "higado",
+        "r2Key": "maximo-expo/books/sistema-digestivo/higado.pdf",
+        "pdfFilename": "higado.pdf",
+        "pdfSize": 6663435,
+        "uploadId": "up_bf821400b749df8cb2",
+        "docId": "doc_300e2a5e1606ff8e3f",
+        "order": 16
+      },
+      {
+        "title": "ILEON",
+        "slug": "ileon",
+        "r2Key": "maximo-expo/books/sistema-digestivo/ileon.pdf",
+        "pdfFilename": "ileon.pdf",
+        "pdfSize": 1012116,
+        "uploadId": "up_b7631b3d87cf273fa3",
+        "docId": "doc_3728f846f0d9f17b28",
+        "order": 17
+      },
+      {
+        "title": "LENGUA",
+        "slug": "lengua",
+        "r2Key": "maximo-expo/books/sistema-digestivo/lengua.pdf",
+        "pdfFilename": "lengua.pdf",
+        "pdfSize": 1314241,
+        "uploadId": "up_724f692f1a1f3f5b12",
+        "docId": "doc_2bdd57c5267675e95e",
+        "order": 18
+      },
+      {
+        "title": "MALT",
+        "slug": "malt",
+        "r2Key": "maximo-expo/books/sistema-digestivo/malt.pdf",
+        "pdfFilename": "malt.pdf",
+        "pdfSize": 499522,
+        "uploadId": "up_8a101d216900cfdadc",
+        "docId": "doc_640f2381891bbaa773",
+        "order": 19
+      },
+      {
+        "title": "MUSCOSA GÁSTIRICA",
+        "slug": "muscosa-gastirica",
+        "r2Key": "maximo-expo/books/sistema-digestivo/muscosa-gastirica.pdf",
+        "pdfFilename": "muscosa-gastirica.pdf",
+        "pdfSize": 3933772,
+        "uploadId": "up_67b947a3c995d606d8",
+        "docId": "doc_59c292f72487e2ba07",
+        "order": 20
+      },
+      {
+        "title": "PÍLORO",
+        "slug": "piloro",
+        "r2Key": "maximo-expo/books/sistema-digestivo/piloro.pdf",
+        "pdfFilename": "piloro.pdf",
+        "pdfSize": 1389589,
+        "uploadId": "up_8ed58a973e4519b17d",
+        "docId": "doc_303e4f23fde2d5bea2",
+        "order": 21
+      },
+      {
+        "title": "PÁNCREAS ENDOCRINO",
+        "slug": "pancreas-endocrino",
+        "r2Key": "maximo-expo/books/sistema-digestivo/pancreas-endocrino.pdf",
+        "pdfFilename": "pancreas-endocrino.pdf",
+        "pdfSize": 1656417,
+        "uploadId": "up_0e6771ee49b275f3e1",
+        "docId": "doc_1e3455f289a053f6e7",
+        "order": 22
+      },
+      {
+        "title": "PÁNCREAS EXOCRINO",
+        "slug": "pancreas-exocrino",
+        "r2Key": "maximo-expo/books/sistema-digestivo/pancreas-exocrino.pdf",
+        "pdfFilename": "pancreas-exocrino.pdf",
+        "pdfSize": 2278350,
+        "uploadId": "up_70e39dfe2992585e3e",
+        "docId": "doc_1311f2623ae6fcad9e",
+        "order": 23
+      },
+      {
+        "title": "UNIÓN ESOFÁGIA",
+        "slug": "union-esofagia",
+        "r2Key": "maximo-expo/books/sistema-digestivo/union-esofagia.pdf",
+        "pdfFilename": "union-esofagia.pdf",
+        "pdfSize": 1079127,
+        "uploadId": "up_45501c1c8e73d98d83",
+        "docId": "doc_830cacb0c74272928a",
+        "order": 24
+      },
+      {
+        "title": "UNIÓN GASTRICA-DUODENO",
+        "slug": "union-gastrica-duodeno",
+        "r2Key": "maximo-expo/books/sistema-digestivo/union-gastrica-duodeno.pdf",
+        "pdfFilename": "union-gastrica-duodeno.pdf",
+        "pdfSize": 374926,
+        "uploadId": "up_8a663063174440f3ab",
+        "docId": "doc_bba027f4051988cdcf",
+        "order": 25
+      },
+      {
+        "title": "UNION ANO-RECTAL",
+        "slug": "union-ano-rectal",
+        "r2Key": "maximo-expo/books/sistema-digestivo/union-ano-rectal.pdf",
+        "pdfFilename": "union-ano-rectal.pdf",
+        "pdfSize": 1088118,
+        "uploadId": "up_0fb073fd62463c9c4c",
+        "docId": "doc_ebb384fd61a4ef4f87",
+        "order": 26
+      },
+      {
+        "title": "VESICULA BILIAR",
+        "slug": "vesicula-biliar",
+        "r2Key": "maximo-expo/books/sistema-digestivo/vesicula-biliar.pdf",
+        "pdfFilename": "vesicula-biliar.pdf",
+        "pdfSize": 1548713,
+        "uploadId": "up_1dcfb232995cf2da62",
+        "docId": "doc_924720ccd692db0882",
+        "order": 27
+      },
+      {
+        "title": "YEYUNO",
+        "slug": "yeyuno",
+        "r2Key": "maximo-expo/books/sistema-digestivo/yeyuno.pdf",
+        "pdfFilename": "yeyuno.pdf",
+        "pdfSize": 1020250,
+        "uploadId": "up_4277f9401ac4d02af7",
+        "docId": "doc_0c2e731f057ee6b204",
+        "order": 28
+      }
+    ],
+    "oldUploadId": "up_8416201e835c9487b1",
+    "oldDocId": "doc_065da591789e3e563a",
+    "done": true
+  },
+  "SISTEMA ENDOCRINO PRESENTACION": {
+    "title": "SISTEMA ENDOCRINO PRESENTACION",
+    "course": "Histología",
+    "section_name": "TEMA 12 - SISTEMA ENDOCRINO",
+    "r2Key": "maximo-expo/books/sistema-endocrino-presentacion.pdf",
+    "pdfFilename": "sistema-endocrino-presentacion.pdf",
+    "pdfSize": 3896564,
+    "uploadId": "up_7bed769aa907020c05",
+    "lessonId": "les_831acc8cdc2b8f8161",
+    "docId": "doc_441ccdb59ee817ed3d",
+    "done": true
+  },
+  "SISTEMA INMUNE": {
+    "title": "SISTEMA INMUNE",
+    "course": "Histología",
+    "section_name": "TEMA 14 - SISTEMA INMUNE",
+    "type": "interactive",
+    "lessonId": "les_dec860c45d3ed2f1b7",
+    "chapters": [
+      {
+        "title": "AMÍGDALAS",
+        "slug": "amigdalas",
+        "r2Key": "maximo-expo/books/sistema-inmune/amigdalas.pdf",
+        "pdfFilename": "amigdalas.pdf",
+        "pdfSize": 1821270,
+        "uploadId": "up_5a0dc419053252854e",
+        "docId": "doc_9b27e0f2df58bec64c",
+        "order": 0
+      },
+      {
+        "title": "BAZO",
+        "slug": "bazo",
+        "r2Key": "maximo-expo/books/sistema-inmune/bazo.pdf",
+        "pdfFilename": "bazo.pdf",
+        "pdfSize": 7540183,
+        "uploadId": "up_042aea83e9498dec64",
+        "docId": "doc_efeb62dea1d46c721c",
+        "order": 1
+      },
+      {
+        "title": "GANGLIO LINFATICO",
+        "slug": "ganglio-linfatico",
+        "r2Key": "maximo-expo/books/sistema-inmune/ganglio-linfatico.pdf",
+        "pdfFilename": "ganglio-linfatico.pdf",
+        "pdfSize": 3877877,
+        "uploadId": "up_3249cd13a59c31ec65",
+        "docId": "doc_1b64e9b182dee23653",
+        "order": 2
+      },
+      {
+        "title": "TIMO",
+        "slug": "timo",
+        "r2Key": "maximo-expo/books/sistema-inmune/timo.pdf",
+        "pdfFilename": "timo.pdf",
+        "pdfSize": 4744761,
+        "uploadId": "up_7058cafafe55366d3f",
+        "docId": "doc_6a31ac30bf28912262",
+        "order": 3
+      }
+    ],
+    "oldUploadId": "up_2f12f02f2ed0d2691b",
+    "oldDocId": "doc_981e08f8c4b643bf9a",
+    "done": true
+  },
+  "SISTEMA NERVIOSO": {
+    "title": "SISTEMA NERVIOSO",
+    "course": "Histología",
+    "section_name": "TEMA 20 - SISTEMA NERVIOSO",
+    "type": "interactive",
+    "lessonId": "les_ab7c79a19c12a587cd",
+    "chapters": [
+      {
+        "title": "CEREBELO",
+        "slug": "cerebelo",
+        "r2Key": "maximo-expo/books/sistema-nervioso/cerebelo.pdf",
+        "pdfFilename": "cerebelo.pdf",
+        "pdfSize": 2633768,
+        "uploadId": "up_e30d2d61d29bb7257d",
+        "docId": "doc_d527507a2d1fb95619",
+        "order": 0
+      },
+      {
+        "title": "CONDUCTO EPENDIMARIO",
+        "slug": "conducto-ependimario",
+        "r2Key": "maximo-expo/books/sistema-nervioso/conducto-ependimario.pdf",
+        "pdfFilename": "conducto-ependimario.pdf",
+        "pdfSize": 343287,
+        "uploadId": "up_6f93679f9cec7a4396",
+        "docId": "doc_dc434ba7fa7ce96a11",
+        "order": 1
+      },
+      {
+        "title": "CORTEZA CEREBRAL",
+        "slug": "corteza-cerebral",
+        "r2Key": "maximo-expo/books/sistema-nervioso/corteza-cerebral.pdf",
+        "pdfFilename": "corteza-cerebral.pdf",
+        "pdfSize": 392818,
+        "uploadId": "up_585f909837f4a86b59",
+        "docId": "doc_43256c4aac80dcd611",
+        "order": 2
+      },
+      {
+        "title": "GANGLIO NERVIOSO",
+        "slug": "ganglio-nervioso",
+        "r2Key": "maximo-expo/books/sistema-nervioso/ganglio-nervioso.pdf",
+        "pdfFilename": "ganglio-nervioso.pdf",
+        "pdfSize": 2558466,
+        "uploadId": "up_ed5f9686481a4f053b",
+        "docId": "doc_c8e460f20e3327691a",
+        "order": 3
+      },
+      {
+        "title": "MÉDULA",
+        "slug": "medula",
+        "r2Key": "maximo-expo/books/sistema-nervioso/medula.pdf",
+        "pdfFilename": "medula.pdf",
+        "pdfSize": 2490172,
+        "uploadId": "up_418da498747c1ad671",
+        "docId": "doc_e40afc559bae13b464",
+        "order": 4
+      },
+      {
+        "title": "MENINGES",
+        "slug": "meninges",
+        "r2Key": "maximo-expo/books/sistema-nervioso/meninges.pdf",
+        "pdfFilename": "meninges.pdf",
+        "pdfSize": 948489,
+        "uploadId": "up_20971896b019f4d2a8",
+        "docId": "doc_114149cd28e0b14696",
+        "order": 5
+      },
+      {
+        "title": "NERVIOS",
+        "slug": "nervios",
+        "r2Key": "maximo-expo/books/sistema-nervioso/nervios.pdf",
+        "pdfFilename": "nervios.pdf",
+        "pdfSize": 1261159,
+        "uploadId": "up_a2ed7fbbecb3530def",
+        "docId": "doc_edd4dbe8f4339ece27",
+        "order": 6
+      },
+      {
+        "title": "PLEXO COROIDEO",
+        "slug": "plexo-coroideo",
+        "r2Key": "maximo-expo/books/sistema-nervioso/plexo-coroideo.pdf",
+        "pdfFilename": "plexo-coroideo.pdf",
+        "pdfSize": 344778,
+        "uploadId": "up_17a10fd8578f7de08c",
+        "docId": "doc_81f070ec885aae4e11",
+        "order": 7
+      }
+    ],
+    "oldUploadId": "up_b8484c4779092e5284",
+    "oldDocId": "doc_642494386c6894a410",
+    "done": true
+  },
+  "SISTEMA NERVIOSO PRESENTACION": {
+    "title": "SISTEMA NERVIOSO PRESENTACION",
+    "course": "Histología",
+    "section_name": "TEMA 20 - SISTEMA NERVIOSO",
+    "r2Key": "maximo-expo/books/sistema-nervioso-presentacion.pdf",
+    "pdfFilename": "sistema-nervioso-presentacion.pdf",
+    "pdfSize": 4730328,
+    "uploadId": "up_e775194bc6372095dc",
+    "lessonId": "les_e3ddfda0a331406447",
+    "docId": "doc_82abd1c3004814f2e1",
+    "done": true
+  },
+  "SISTEMA REPRODUCTOR MASCULINO PRESENTACION": {
+    "title": "SISTEMA REPRODUCTOR MASCULINO PRESENTACION",
+    "course": "Histología",
+    "section_name": "TEMA 17 - SISTEMA REPRODUCTOR MASCULINO",
+    "r2Key": "maximo-expo/books/sistema-reproductor-masculino-presentacion.pdf",
+    "pdfFilename": "sistema-reproductor-masculino-presentacion.pdf",
+    "pdfSize": 3662248,
+    "uploadId": "up_804f9b9cdccf587f13",
+    "lessonId": "les_593151e78892d57b52",
+    "docId": "doc_a86a39afb4de837f83",
+    "done": true
+  },
+  "SISTEMA RESPIRATORIO": {
+    "title": "SISTEMA RESPIRATORIO",
+    "course": "Histología",
+    "section_name": "TEMA 11- SISTEMA RESPIRATORIO",
+    "type": "interactive",
+    "lessonId": "les_a4c2d6e7abd6ff6d1d",
+    "chapters": [
+      {
+        "title": "ALVEOLOS",
+        "slug": "alveolos",
+        "r2Key": "maximo-expo/books/sistema-respiratorio/alveolos.pdf",
+        "pdfFilename": "alveolos.pdf",
+        "pdfSize": 1261225,
+        "uploadId": "up_34585df8737560c090",
+        "docId": "doc_572e8e840d83414b08",
+        "order": 0
+      },
+      {
+        "title": "BRONQUIOLOS",
+        "slug": "bronquiolos",
+        "r2Key": "maximo-expo/books/sistema-respiratorio/bronquiolos.pdf",
+        "pdfFilename": "bronquiolos.pdf",
+        "pdfSize": 3081593,
+        "uploadId": "up_96e10bb21c05d38078",
+        "docId": "doc_cfdfa6b79ff917b218",
+        "order": 1
+      },
+      {
+        "title": "BRONQUIOS",
+        "slug": "bronquios",
+        "r2Key": "maximo-expo/books/sistema-respiratorio/bronquios.pdf",
+        "pdfFilename": "bronquios.pdf",
+        "pdfSize": 2413330,
+        "uploadId": "up_3fb25ee2e7fba11ac5",
+        "docId": "doc_5662b6cab1c8969724",
+        "order": 2
+      },
+      {
+        "title": "EPIGLOTIS",
+        "slug": "epiglotis",
+        "r2Key": "maximo-expo/books/sistema-respiratorio/epiglotis.pdf",
+        "pdfFilename": "epiglotis.pdf",
+        "pdfSize": 1790884,
+        "uploadId": "up_0bd9846d6997df2667",
+        "docId": "doc_18b66ea9b9a3fd3b6f",
+        "order": 3
+      },
+      {
+        "title": "EPITELIO RESPIRATORIO",
+        "slug": "epitelio-respiratorio",
+        "r2Key": "maximo-expo/books/sistema-respiratorio/epitelio-respiratorio.pdf",
+        "pdfFilename": "epitelio-respiratorio.pdf",
+        "pdfSize": 869091,
+        "uploadId": "up_3c597bdc170484db74",
+        "docId": "doc_6272d2c41cc63b8f5b",
+        "order": 4
+      },
+      {
+        "title": "LARINGE",
+        "slug": "laringe",
+        "r2Key": "maximo-expo/books/sistema-respiratorio/laringe.pdf",
+        "pdfFilename": "laringe.pdf",
+        "pdfSize": 769291,
+        "uploadId": "up_8fd06174d7acc1d32b",
+        "docId": "doc_3646fa61981ca28a1a",
+        "order": 5
+      },
+      {
+        "title": "NASAL",
+        "slug": "nasal",
+        "r2Key": "maximo-expo/books/sistema-respiratorio/nasal.pdf",
+        "pdfFilename": "nasal.pdf",
+        "pdfSize": 1429966,
+        "uploadId": "up_afbd8fb874070108f5",
+        "docId": "doc_f2beb5555405bead7e",
+        "order": 6
+      },
+      {
+        "title": "PLEURA",
+        "slug": "pleura",
+        "r2Key": "maximo-expo/books/sistema-respiratorio/pleura.pdf",
+        "pdfFilename": "pleura.pdf",
+        "pdfSize": 360618,
+        "uploadId": "up_97ce539bf68887cab0",
+        "docId": "doc_c1052a7923dbc990ec",
+        "order": 7
+      },
+      {
+        "title": "TRAQUEA",
+        "slug": "traquea",
+        "r2Key": "maximo-expo/books/sistema-respiratorio/traquea.pdf",
+        "pdfFilename": "traquea.pdf",
+        "pdfSize": 1839092,
+        "uploadId": "up_9ecfadb98351144e2c",
+        "docId": "doc_759aba62d8bca3eab3",
+        "order": 8
+      }
+    ],
+    "oldUploadId": "up_1075049a13a6448bbd",
+    "oldDocId": "doc_43bd49be058d590b66",
+    "done": true
+  },
+  "SISTEMA TEGUMENTARIO PRESENTACION": {
+    "title": "SISTEMA TEGUMENTARIO PRESENTACION",
+    "course": "Histología",
+    "section_name": "TEMA 15 - SISTEMA TEGUMENTARIO",
+    "r2Key": "maximo-expo/books/sistema-tegumentario-presentacion.pdf",
+    "pdfFilename": "sistema-tegumentario-presentacion.pdf",
+    "pdfSize": 2988220,
+    "uploadId": "up_ba465a9070a67f0334",
+    "lessonId": "les_ea657d63374ad8b12c",
+    "docId": "doc_70df9b7d8cc3b2478d",
+    "done": true
+  },
+  "SISTEMA URINARIO PRESETACION": {
+    "title": "SISTEMA URINARIO PRESETACION",
+    "course": "Histología",
+    "section_name": "TEMA 13- SISTEMA URINARIO",
+    "type": "interactive",
+    "lessonId": "les_4166cbdcb2d2efe3bb",
+    "chapters": [
+      {
+        "title": "Inicio",
+        "slug": "inicio",
+        "r2Key": "maximo-expo/books/sistema-urinario-presetacion/inicio.pdf",
+        "pdfFilename": "inicio.pdf",
+        "pdfSize": 5349442,
+        "uploadId": "up_df953b4e79cc9b56cc",
+        "docId": "doc_b2ce31d8fed49a6d8d",
+        "order": 0
+      }
+    ],
+    "oldUploadId": "up_65d7eac19380f0b374",
+    "oldDocId": "doc_b0065a92b039c2ae31",
+    "done": true
+  },
+  "SISTEMA VISUAL": {
+    "title": "SISTEMA VISUAL",
+    "course": "Histología",
+    "section_name": "TEMA 19- SISTEMA VISUAL",
+    "type": "interactive",
+    "lessonId": "les_a48eaed05abf69873c",
+    "chapters": [
+      {
+        "title": "ANEXOS",
+        "slug": "anexos",
+        "r2Key": "maximo-expo/books/sistema-visual/anexos.pdf",
+        "pdfFilename": "anexos.pdf",
+        "pdfSize": 1173787,
+        "uploadId": "up_053bafe9cef6cc9572",
+        "docId": "doc_0d4a53f4e413dadcb6",
+        "order": 0
+      },
+      {
+        "title": "CORNEA",
+        "slug": "cornea",
+        "r2Key": "maximo-expo/books/sistema-visual/cornea.pdf",
+        "pdfFilename": "cornea.pdf",
+        "pdfSize": 1072797,
+        "uploadId": "up_8e68fecd0325753618",
+        "docId": "doc_c8bfb7b032f0ea703f",
+        "order": 1
+      },
+      {
+        "title": "CRISTALINO",
+        "slug": "cristalino",
+        "r2Key": "maximo-expo/books/sistema-visual/cristalino.pdf",
+        "pdfFilename": "cristalino.pdf",
+        "pdfSize": 643130,
+        "uploadId": "up_78fbf9c529b5e41e8e",
+        "docId": "doc_3a46c8df0576620c7c",
+        "order": 2
+      },
+      {
+        "title": "CUERPOS CILIARES",
+        "slug": "cuerpos-ciliares",
+        "r2Key": "maximo-expo/books/sistema-visual/cuerpos-ciliares.pdf",
+        "pdfFilename": "cuerpos-ciliares.pdf",
+        "pdfSize": 1105774,
+        "uploadId": "up_3cb1fa457b866bb914",
+        "docId": "doc_d7f672a9832f5a4200",
+        "order": 3
+      },
+      {
+        "title": "ESCLERÓTICA",
+        "slug": "esclerotica",
+        "r2Key": "maximo-expo/books/sistema-visual/esclerotica.pdf",
+        "pdfFilename": "esclerotica.pdf",
+        "pdfSize": 937810,
+        "uploadId": "up_4ad1da00f33ea1d3b3",
+        "docId": "doc_dac7052430a1e5a4f2",
+        "order": 4
+      },
+      {
+        "title": "IRIS",
+        "slug": "iris",
+        "r2Key": "maximo-expo/books/sistema-visual/iris.pdf",
+        "pdfFilename": "iris.pdf",
+        "pdfSize": 882290,
+        "uploadId": "up_cf911fc42ad252017e",
+        "docId": "doc_9f5ddb6f6fb166aecc",
+        "order": 5
+      },
+      {
+        "title": "OJO",
+        "slug": "ojo",
+        "r2Key": "maximo-expo/books/sistema-visual/ojo.pdf",
+        "pdfFilename": "ojo.pdf",
+        "pdfSize": 471786,
+        "uploadId": "up_b7130ae99290a0d98f",
+        "docId": "doc_5153b91316026026ab",
+        "order": 6
+      },
+      {
+        "title": "RETINA",
+        "slug": "retina",
+        "r2Key": "maximo-expo/books/sistema-visual/retina.pdf",
+        "pdfFilename": "retina.pdf",
+        "pdfSize": 1315431,
+        "uploadId": "up_d6c971e46b8330d00e",
+        "docId": "doc_ed748ead8ba37130de",
+        "order": 7
+      }
+    ],
+    "oldUploadId": "up_88ab110ad31ce56d80",
+    "oldDocId": "doc_278db0fa83859a7476",
+    "done": true
+  },
+  "SISTEMA VISUAL PRESENTACION": {
+    "title": "SISTEMA VISUAL PRESENTACION",
+    "course": "Histología",
+    "section_name": "TEMA 19- SISTEMA VISUAL",
+    "r2Key": "maximo-expo/books/sistema-visual-presentacion.pdf",
+    "pdfFilename": "sistema-visual-presentacion.pdf",
+    "pdfSize": 2764046,
+    "uploadId": "up_c4695e6ef93fb4b92b",
+    "lessonId": "les_5708488cdb185185d0",
+    "docId": "doc_b7c89ec7196e21cdb2",
+    "done": true
+  },
+  "TEJIDO CARTILAGINOSO PRESENTACION": {
+    "title": "TEJIDO CARTILAGINOSO PRESENTACION",
+    "course": "Histología",
+    "section_name": "TEMA 4- TEJIDO  CARTILAGINOSO",
+    "r2Key": "maximo-expo/books/tejido-cartilaginoso-presentacion.pdf",
+    "pdfFilename": "tejido-cartilaginoso-presentacion.pdf",
+    "pdfSize": 1561829,
+    "uploadId": "up_891c207186eb62e876",
+    "lessonId": "les_9cd32d7f4a7efa6374",
+    "docId": "doc_58637698de612c63bd",
+    "done": true
+  },
+  "TEJIDO ENDOCRINO": {
+    "title": "TEJIDO ENDOCRINO",
+    "course": "Histología",
+    "section_name": "TEMA 12 - SISTEMA ENDOCRINO",
+    "type": "interactive",
+    "lessonId": "les_18b66c8a9dd1f1aa3f",
+    "chapters": [
+      {
+        "title": "ADENOHIPOFISIS",
+        "slug": "adenohipofisis",
+        "r2Key": "maximo-expo/books/tejido-endocrino/adenohipofisis.pdf",
+        "pdfFilename": "adenohipofisis.pdf",
+        "pdfSize": 2844764,
+        "uploadId": "up_bc524c3ca872330f16",
+        "docId": "doc_850ef7f940ce9d1e64",
+        "order": 0
+      },
+      {
+        "title": "HIPOFISIS",
+        "slug": "hipofisis",
+        "r2Key": "maximo-expo/books/tejido-endocrino/hipofisis.pdf",
+        "pdfFilename": "hipofisis.pdf",
+        "pdfSize": 1899316,
+        "uploadId": "up_3a8f1c0d24b4e6b7cc",
+        "docId": "doc_d7731122f8d463d9cd",
+        "order": 1
+      },
+      {
+        "title": "NEUROHIPOFISIS",
+        "slug": "neurohipofisis",
+        "r2Key": "maximo-expo/books/tejido-endocrino/neurohipofisis.pdf",
+        "pdfFilename": "neurohipofisis.pdf",
+        "pdfSize": 1569632,
+        "uploadId": "up_38dcb635d909bc4961",
+        "docId": "doc_a45345961f4a8e08ea",
+        "order": 2
+      },
+      {
+        "title": "PARATIROIDES",
+        "slug": "paratiroides",
+        "r2Key": "maximo-expo/books/tejido-endocrino/paratiroides.pdf",
+        "pdfFilename": "paratiroides.pdf",
+        "pdfSize": 3595585,
+        "uploadId": "up_a21d3f1a71553983eb",
+        "docId": "doc_8cc30b31f31fe7340d",
+        "order": 3
+      },
+      {
+        "title": "SUPRARERENALES",
+        "slug": "suprarerenales",
+        "r2Key": "maximo-expo/books/tejido-endocrino/suprarerenales.pdf",
+        "pdfFilename": "suprarerenales.pdf",
+        "pdfSize": 4115363,
+        "uploadId": "up_09eec7ab72981a9f7d",
+        "docId": "doc_a97dd669b69541f8b7",
+        "order": 4
+      },
+      {
+        "title": "TIROIDES",
+        "slug": "tiroides",
+        "r2Key": "maximo-expo/books/tejido-endocrino/tiroides.pdf",
+        "pdfFilename": "tiroides.pdf",
+        "pdfSize": 3066927,
+        "uploadId": "up_2d139913a230b40262",
+        "docId": "doc_142a1eb53418bbf391",
+        "order": 5
+      }
+    ],
+    "oldUploadId": "up_f65f5f3220c7d1eec8",
+    "oldDocId": "doc_01bfc63fa3c47aff10",
+    "done": true
+  },
+  "TEJIDO EPITELIAL PRESENTACION": {
+    "title": "TEJIDO EPITELIAL PRESENTACION",
+    "course": "Histología",
+    "section_name": "TEMA 1 - TEJIDO EPITELIAL",
+    "r2Key": "maximo-expo/books/tejido-epitelial-presentacion.pdf",
+    "pdfFilename": "tejido-epitelial-presentacion.pdf",
+    "pdfSize": 2880036,
+    "uploadId": "up_d745fb0be36c2edbec",
+    "lessonId": "les_6e0d49800d7fdb0688",
+    "docId": "doc_8f0dca4d0cbd003c9d",
+    "done": true
+  },
+  "TEJIDO MUSCULAR PRESENTACION": {
+    "title": "TEJIDO MUSCULAR PRESENTACION",
+    "course": "Histología",
+    "section_name": "TEMA 6 - TEJIDO MUSCULAR",
+    "r2Key": "maximo-expo/books/tejido-muscular-presentacion.pdf",
+    "pdfFilename": "tejido-muscular-presentacion.pdf",
+    "pdfSize": 2321787,
+    "uploadId": "up_3471442f03f0e2f71c",
+    "lessonId": "les_72dc224477d49cf656",
+    "docId": "doc_db370871b490f5d32d",
+    "done": true
+  },
+  "TEJIDO OSEO PRESENTACION": {
+    "title": "TEJIDO OSEO PRESENTACION",
+    "course": "Histología",
+    "section_name": "TEMA 7 - TEJIDO  OSEO",
+    "r2Key": "maximo-expo/books/tejido-oseo-presentacion.pdf",
+    "pdfFilename": "tejido-oseo-presentacion.pdf",
+    "pdfSize": 2813461,
+    "uploadId": "up_046bc3e81a9d12ab6f",
+    "lessonId": "les_18aae5b9db20fb40e0",
+    "docId": "doc_962e8c7ce3faf5feaa",
+    "done": true
+  },
+  "TEJIDO SANGUÍNEO": {
+    "title": "TEJIDO SANGUÍNEO",
+    "course": "Histología",
+    "section_name": "TEMA 8- TEJIDO SANGUÍNEO",
+    "type": "interactive",
+    "lessonId": "les_4007d9b74a1b74d56f",
+    "chapters": [
+      {
+        "title": "Basófilo",
+        "slug": "basofilo",
+        "r2Key": "maximo-expo/books/tejido-sanguineo/basofilo.pdf",
+        "pdfFilename": "basofilo.pdf",
+        "pdfSize": 367151,
+        "uploadId": "up_ff327c09a16ffbcea6",
+        "docId": "doc_59cdc8f6f6797c88bd",
+        "order": 0
+      },
+      {
+        "title": "Clasificación",
+        "slug": "clasificacion",
+        "r2Key": "maximo-expo/books/tejido-sanguineo/clasificacion.pdf",
+        "pdfFilename": "clasificacion.pdf",
+        "pdfSize": 97709,
+        "uploadId": "up_63909af7d0df52e0ea",
+        "docId": "doc_9324abbea7e7c26889",
+        "order": 1
+      },
+      {
+        "title": "Eosinófilo",
+        "slug": "eosinofilo",
+        "r2Key": "maximo-expo/books/tejido-sanguineo/eosinofilo.pdf",
+        "pdfFilename": "eosinofilo.pdf",
+        "pdfSize": 1804375,
+        "uploadId": "up_9011668a4e108a8455",
+        "docId": "doc_a7e7038584ae39b299",
+        "order": 2
+      },
+      {
+        "title": "Eritrocito",
+        "slug": "eritrocito",
+        "r2Key": "maximo-expo/books/tejido-sanguineo/eritrocito.pdf",
+        "pdfFilename": "eritrocito.pdf",
+        "pdfSize": 365464,
+        "uploadId": "up_e5a0e71b12c5fc49d6",
+        "docId": "doc_62e4c5c2ae798e88cf",
+        "order": 3
+      },
+      {
+        "title": "Linfocito",
+        "slug": "linfocito",
+        "r2Key": "maximo-expo/books/tejido-sanguineo/linfocito.pdf",
+        "pdfFilename": "linfocito.pdf",
+        "pdfSize": 506901,
+        "uploadId": "up_26e248bfce55a8b02b",
+        "docId": "doc_448f21e97f1edf7f20",
+        "order": 4
+      },
+      {
+        "title": "Medula ósea",
+        "slug": "medula-osea",
+        "r2Key": "maximo-expo/books/tejido-sanguineo/medula-osea.pdf",
+        "pdfFilename": "medula-osea.pdf",
+        "pdfSize": 1293880,
+        "uploadId": "up_12744a767ce852330f",
+        "docId": "doc_fcfe2d71b327c4a07e",
+        "order": 5
+      },
+      {
+        "title": "Monocito",
+        "slug": "monocito",
+        "r2Key": "maximo-expo/books/tejido-sanguineo/monocito.pdf",
+        "pdfFilename": "monocito.pdf",
+        "pdfSize": 585336,
+        "uploadId": "up_813bdc71bde6cc7aa1",
+        "docId": "doc_6145e3406ba55e9cf4",
+        "order": 6
+      },
+      {
+        "title": "Neutrófilo",
+        "slug": "neutrofilo",
+        "r2Key": "maximo-expo/books/tejido-sanguineo/neutrofilo.pdf",
+        "pdfFilename": "neutrofilo.pdf",
+        "pdfSize": 1060393,
+        "uploadId": "up_514f513440fe0d3624",
+        "docId": "doc_63256382e20e1e0bdb",
+        "order": 7
+      },
+      {
+        "title": "Plaquetas",
+        "slug": "plaquetas",
+        "r2Key": "maximo-expo/books/tejido-sanguineo/plaquetas.pdf",
+        "pdfFilename": "plaquetas.pdf",
+        "pdfSize": 157795,
+        "uploadId": "up_309d5870df35f1e502",
+        "docId": "doc_e35ae2bf887637843c",
+        "order": 8
+      }
+    ],
+    "oldUploadId": "up_f87795dddab8770e9b",
+    "oldDocId": "doc_9ecbd16fc302785ef0",
+    "done": true
+  },
+  "TEJIDO SANGUÍNEO PRESENTACION": {
+    "title": "TEJIDO SANGUÍNEO PRESENTACION",
+    "course": "Histología",
+    "section_name": "TEMA 8- TEJIDO SANGUÍNEO",
+    "r2Key": "maximo-expo/books/tejido-sanguineo-presentacion.pdf",
+    "pdfFilename": "tejido-sanguineo-presentacion.pdf",
+    "pdfSize": 2373228,
+    "uploadId": "up_3e361233b5c5bc6ea5",
+    "lessonId": "les_a6e4b60ecaff7e6b79",
+    "docId": "doc_23ef279844f74528bf",
+    "done": true
+  },
+  "TEJIDO URINARIO": {
+    "title": "TEJIDO URINARIO",
+    "course": "Histología",
+    "section_name": "TEMA 13- SISTEMA URINARIO",
+    "type": "interactive",
+    "lessonId": "les_0b5c4e4ba2164b2039",
+    "chapters": [
+      {
+        "title": "APARATO YUXTAGLOMERULAR",
+        "slug": "aparato-yuxtaglomerular",
+        "r2Key": "maximo-expo/books/tejido-urinario/aparato-yuxtaglomerular.pdf",
+        "pdfFilename": "aparato-yuxtaglomerular.pdf",
+        "pdfSize": 523707,
+        "uploadId": "up_700aba19a4b6e58f33",
+        "docId": "doc_53be4f9c201b21cb97",
+        "order": 0
+      },
+      {
+        "title": "ASA DE HENLE",
+        "slug": "asa-de-henle",
+        "r2Key": "maximo-expo/books/tejido-urinario/asa-de-henle.pdf",
+        "pdfFilename": "asa-de-henle.pdf",
+        "pdfSize": 530803,
+        "uploadId": "up_012d1c852f9b242825",
+        "docId": "doc_568e16665be2c835ec",
+        "order": 1
+      },
+      {
+        "title": "CORTEZA RENAL",
+        "slug": "corteza-renal",
+        "r2Key": "maximo-expo/books/tejido-urinario/corteza-renal.pdf",
+        "pdfFilename": "corteza-renal.pdf",
+        "pdfSize": 668536,
+        "uploadId": "up_1ad673cdf514d8a0a6",
+        "docId": "doc_4e09e05f35d186e95b",
+        "order": 2
+      },
+      {
+        "title": "GLOMÉRULO RENAL",
+        "slug": "glomerulo-renal",
+        "r2Key": "maximo-expo/books/tejido-urinario/glomerulo-renal.pdf",
+        "pdfFilename": "glomerulo-renal.pdf",
+        "pdfSize": 3685680,
+        "uploadId": "up_20fa9e39fe2505719f",
+        "docId": "doc_cef693232dfb64b281",
+        "order": 3
+      },
+      {
+        "title": "MÉDULA RENAL – TUBULO COLECTOR",
+        "slug": "medula-renal-tubulo-colector",
+        "r2Key": "maximo-expo/books/tejido-urinario/medula-renal-tubulo-colector.pdf",
+        "pdfFilename": "medula-renal-tubulo-colector.pdf",
+        "pdfSize": 1723041,
+        "uploadId": "up_88b3d4fcfc7b9c14f0",
+        "docId": "doc_98e2f758e3169ae042",
+        "order": 4
+      },
+      {
+        "title": "PAPILAS",
+        "slug": "papilas",
+        "r2Key": "maximo-expo/books/tejido-urinario/papilas.pdf",
+        "pdfFilename": "papilas.pdf",
+        "pdfSize": 1161493,
+        "uploadId": "up_aa4537103c1de0e324",
+        "docId": "doc_200fba5423d9b1463c",
+        "order": 5
+      },
+      {
+        "title": "RIÑON",
+        "slug": "rinon",
+        "r2Key": "maximo-expo/books/tejido-urinario/rinon.pdf",
+        "pdfFilename": "rinon.pdf",
+        "pdfSize": 1948298,
+        "uploadId": "up_9909d4eff9d29cfdaf",
+        "docId": "doc_1a4f0699270806bf9a",
+        "order": 6
+      },
+      {
+        "title": "TUBULOS CONTORNEADOS",
+        "slug": "tubulos-contorneados",
+        "r2Key": "maximo-expo/books/tejido-urinario/tubulos-contorneados.pdf",
+        "pdfFilename": "tubulos-contorneados.pdf",
+        "pdfSize": 1405894,
+        "uploadId": "up_222b854c0a6339f58f",
+        "docId": "doc_be147645ca1a6ef003",
+        "order": 7
+      },
+      {
+        "title": "URETER",
+        "slug": "ureter",
+        "r2Key": "maximo-expo/books/tejido-urinario/ureter.pdf",
+        "pdfFilename": "ureter.pdf",
+        "pdfSize": 1591250,
+        "uploadId": "up_f88fc16b9f6c1e90f7",
+        "docId": "doc_66498683efcb542050",
+        "order": 8
+      },
+      {
+        "title": "URETRA",
+        "slug": "uretra",
+        "r2Key": "maximo-expo/books/tejido-urinario/uretra.pdf",
+        "pdfFilename": "uretra.pdf",
+        "pdfSize": 925225,
+        "uploadId": "up_d8be4cc09820662c2e",
+        "docId": "doc_c50f4d545ada5449b3",
+        "order": 9
+      },
+      {
+        "title": "VEJIGA",
+        "slug": "vejiga",
+        "r2Key": "maximo-expo/books/tejido-urinario/vejiga.pdf",
+        "pdfFilename": "vejiga.pdf",
+        "pdfSize": 3007269,
+        "uploadId": "up_cd2e2cbd9fe9e22b26",
+        "docId": "doc_7e8342dfabf1e8fcdc",
+        "order": 10
+      }
+    ],
+    "oldUploadId": "up_e9489da29c30e64b77",
+    "oldDocId": "doc_40270560504d677b70",
+    "done": true
+  },
+  "TIPOS DE CARTILAGO": {
+    "title": "TIPOS DE CARTILAGO",
+    "course": "Histología",
+    "section_name": "TEMA 4- TEJIDO  CARTILAGINOSO",
+    "type": "interactive",
+    "lessonId": "les_31761e88afc122decc",
+    "chapters": [
+      {
+        "title": "Elástico",
+        "slug": "elastico",
+        "r2Key": "maximo-expo/books/tipos-de-cartilago/elastico.pdf",
+        "pdfFilename": "elastico.pdf",
+        "pdfSize": 4757620,
+        "uploadId": "up_509e106ab290ff1ab0",
+        "docId": "doc_a939c7c4bd42caa339",
+        "order": 0
+      },
+      {
+        "title": "Fibroso",
+        "slug": "fibroso",
+        "r2Key": "maximo-expo/books/tipos-de-cartilago/fibroso.pdf",
+        "pdfFilename": "fibroso.pdf",
+        "pdfSize": 2657902,
+        "uploadId": "up_b230d045f96eb32418",
+        "docId": "doc_fee8c4576456b78c91",
+        "order": 1
+      },
+      {
+        "title": "Hialino",
+        "slug": "hialino",
+        "r2Key": "maximo-expo/books/tipos-de-cartilago/hialino.pdf",
+        "pdfFilename": "hialino.pdf",
+        "pdfSize": 2419532,
+        "uploadId": "up_bb98089d8349d2bdf1",
+        "docId": "doc_3980b8cc7bb42548e3",
+        "order": 2
+      },
+      {
+        "title": "Tipos cartilago",
+        "slug": "tipos-cartilago",
+        "r2Key": "maximo-expo/books/tipos-de-cartilago/tipos-cartilago.pdf",
+        "pdfFilename": "tipos-cartilago.pdf",
+        "pdfSize": 226180,
+        "uploadId": "up_9b7755e0043b985517",
+        "docId": "doc_73c796a7127f833d10",
+        "order": 3
+      }
+    ],
+    "oldUploadId": "up_ee989529aa66e0c78c",
+    "oldDocId": "doc_d514f89a0344dff78d",
+    "done": true
+  },
+  "TIPOS DE EPITELIOS": {
+    "title": "TIPOS DE EPITELIOS",
+    "course": "Histología",
+    "section_name": "TEMA 1 - TEJIDO EPITELIAL",
+    "type": "interactive",
+    "lessonId": "les_8698c3ce7fd862a40f",
+    "chapters": [
+      {
+        "title": "Cúbico estratificado",
+        "slug": "cubico-estratificado",
+        "r2Key": "maximo-expo/books/tipos-de-epitelios/cubico-estratificado.pdf",
+        "pdfFilename": "cubico-estratificado.pdf",
+        "pdfSize": 764725,
+        "uploadId": "up_26ee5c6f8981843d59",
+        "docId": "doc_7cacbe9841d472380f",
+        "order": 0
+      },
+      {
+        "title": "Cúbico simple",
+        "slug": "cubico-simple",
+        "r2Key": "maximo-expo/books/tipos-de-epitelios/cubico-simple.pdf",
+        "pdfFilename": "cubico-simple.pdf",
+        "pdfSize": 1482777,
+        "uploadId": "up_d16759355c9a918970",
+        "docId": "doc_31cc06bc5fa3220f63",
+        "order": 1
+      },
+      {
+        "title": "Columnar estratificado",
+        "slug": "columnar-estratificado",
+        "r2Key": "maximo-expo/books/tipos-de-epitelios/columnar-estratificado.pdf",
+        "pdfFilename": "columnar-estratificado.pdf",
+        "pdfSize": 1564977,
+        "uploadId": "up_77c6f7f6a629b7c14a",
+        "docId": "doc_5cc8429903f282b39c",
+        "order": 2
+      },
+      {
+        "title": "Columnar simple",
+        "slug": "columnar-simple",
+        "r2Key": "maximo-expo/books/tipos-de-epitelios/columnar-simple.pdf",
+        "pdfFilename": "columnar-simple.pdf",
+        "pdfSize": 2267223,
+        "uploadId": "up_e2fe808af002bc745d",
+        "docId": "doc_f19cd68c14dd32759c",
+        "order": 3
+      },
+      {
+        "title": "Descamativo estratificado no queratinizado",
+        "slug": "descamativo-estratificado-no-queratinizado",
+        "r2Key": "maximo-expo/books/tipos-de-epitelios/descamativo-estratificado-no-queratinizado.pdf",
+        "pdfFilename": "descamativo-estratificado-no-queratinizado.pdf",
+        "pdfSize": 854927,
+        "uploadId": "up_161da599ac7b5da052",
+        "docId": "doc_3ee73944bbc84e7c9b",
+        "order": 4
+      },
+      {
+        "title": "Descamativo estratificado queratinizado",
+        "slug": "descamativo-estratificado-queratinizado",
+        "r2Key": "maximo-expo/books/tipos-de-epitelios/descamativo-estratificado-queratinizado.pdf",
+        "pdfFilename": "descamativo-estratificado-queratinizado.pdf",
+        "pdfSize": 1022717,
+        "uploadId": "up_187eeca8ed9d2b1bb4",
+        "docId": "doc_26c6586548bd71cf6e",
+        "order": 5
+      },
+      {
+        "title": "Epitelio de transición",
+        "slug": "epitelio-de-transicion",
+        "r2Key": "maximo-expo/books/tipos-de-epitelios/epitelio-de-transicion.pdf",
+        "pdfFilename": "epitelio-de-transicion.pdf",
+        "pdfSize": 230893,
+        "uploadId": "up_12af470feff6a5492f",
+        "docId": "doc_52360fc82ebd2d49a1",
+        "order": 6
+      },
+      {
+        "title": "Plano simple",
+        "slug": "plano-simple",
+        "r2Key": "maximo-expo/books/tipos-de-epitelios/plano-simple.pdf",
+        "pdfFilename": "plano-simple.pdf",
+        "pdfSize": 2148530,
+        "uploadId": "up_861a2f32fa185d2af2",
+        "docId": "doc_1f015b7ba242486859",
+        "order": 7
+      },
+      {
+        "title": "Pseudoestratificado",
+        "slug": "pseudoestratificado",
+        "r2Key": "maximo-expo/books/tipos-de-epitelios/pseudoestratificado.pdf",
+        "pdfFilename": "pseudoestratificado.pdf",
+        "pdfSize": 1398505,
+        "uploadId": "up_db503c6a3788336eb1",
+        "docId": "doc_a94315b62fb90733d0",
+        "order": 8
+      }
+    ],
+    "oldUploadId": "up_73ff6075a264fd5660",
+    "oldDocId": "doc_fed187a33548cf8b19",
+    "done": true
+  },
+  "TIPOS DE GLANDULAS SEGUN SU ESTRUCTURA": {
+    "title": "TIPOS DE GLANDULAS SEGUN SU ESTRUCTURA",
+    "course": "Histología",
+    "section_name": "TEMA 2 - TEJIDO GLANDULAR",
+    "type": "interactive",
+    "lessonId": "les_9c6fc23d4ad34c982a",
+    "chapters": [
+      {
+        "title": "Acinar compuesta",
+        "slug": "acinar-compuesta",
+        "r2Key": "maximo-expo/books/tipos-de-glandulas-segun-su-estructura/acinar-compuesta.pdf",
+        "pdfFilename": "acinar-compuesta.pdf",
+        "pdfSize": 2291256,
+        "uploadId": "up_11dc3504989abd63ca",
+        "docId": "doc_696b54a365725e6d7e",
+        "order": 0
+      },
+      {
+        "title": "Laminar",
+        "slug": "laminar",
+        "r2Key": "maximo-expo/books/tipos-de-glandulas-segun-su-estructura/laminar.pdf",
+        "pdfFilename": "laminar.pdf",
+        "pdfSize": 501983,
+        "uploadId": "up_658b48872675a1ae67",
+        "docId": "doc_b0b5872c6b0b67519a",
+        "order": 1
+      },
+      {
+        "title": "Tubular enrollada",
+        "slug": "tubular-enrollada",
+        "r2Key": "maximo-expo/books/tipos-de-glandulas-segun-su-estructura/tubular-enrollada.pdf",
+        "pdfFilename": "tubular-enrollada.pdf",
+        "pdfSize": 1073084,
+        "uploadId": "up_00747531fac542a865",
+        "docId": "doc_730933074293b7101d",
+        "order": 2
+      },
+      {
+        "title": "Tubular ramificada",
+        "slug": "tubular-ramificada",
+        "r2Key": "maximo-expo/books/tipos-de-glandulas-segun-su-estructura/tubular-ramificada.pdf",
+        "pdfFilename": "tubular-ramificada.pdf",
+        "pdfSize": 289648,
+        "uploadId": "up_9c0c6bb83741def1d8",
+        "docId": "doc_52ea133151d8bc6319",
+        "order": 3
+      },
+      {
+        "title": "Tubular simple",
+        "slug": "tubular-simple",
+        "r2Key": "maximo-expo/books/tipos-de-glandulas-segun-su-estructura/tubular-simple.pdf",
+        "pdfFilename": "tubular-simple.pdf",
+        "pdfSize": 793171,
+        "uploadId": "up_9d14490c7c422cd555",
+        "docId": "doc_a9c2b0fdbca673f317",
+        "order": 4
+      },
+      {
+        "title": "Tubuloacinar compuesta",
+        "slug": "tubuloacinar-compuesta",
+        "r2Key": "maximo-expo/books/tipos-de-glandulas-segun-su-estructura/tubuloacinar-compuesta.pdf",
+        "pdfFilename": "tubuloacinar-compuesta.pdf",
+        "pdfSize": 3524865,
+        "uploadId": "up_8be6c35d6c7702aa02",
+        "docId": "doc_f3c6ef363de88b67c8",
+        "order": 5
+      },
+      {
+        "title": "Unicelular",
+        "slug": "unicelular",
+        "r2Key": "maximo-expo/books/tipos-de-glandulas-segun-su-estructura/unicelular.pdf",
+        "pdfFilename": "unicelular.pdf",
+        "pdfSize": 363648,
+        "uploadId": "up_673e8097301aa7ba41",
+        "docId": "doc_1815e66f745b6b79be",
+        "order": 6
+      }
+    ],
+    "oldUploadId": "up_31dc6ea1f62edeed18",
+    "oldDocId": "doc_89470d1289d801ab01",
+    "done": true
+  },
+  "TIPOS DE HUESOS": {
+    "title": "TIPOS DE HUESOS",
+    "course": "Histología",
+    "section_name": "TEMA 7 - TEJIDO  OSEO",
+    "type": "interactive",
+    "lessonId": "les_662d804c8df7a08510",
+    "chapters": [
+      {
+        "title": "Crecimiento intramembranoso",
+        "slug": "crecimiento-intramembranoso",
+        "r2Key": "maximo-expo/books/tipos-de-huesos/crecimiento-intramembranoso.pdf",
+        "pdfFilename": "crecimiento-intramembranoso.pdf",
+        "pdfSize": 482366,
+        "uploadId": "up_e3741861e0e4a70eba",
+        "docId": "doc_9b344a66ec5be2d705",
+        "order": 0
+      },
+      {
+        "title": "Disco epifisiario",
+        "slug": "disco-epifisiario",
+        "r2Key": "maximo-expo/books/tipos-de-huesos/disco-epifisiario.pdf",
+        "pdfFilename": "disco-epifisiario.pdf",
+        "pdfSize": 1880781,
+        "uploadId": "up_c5ee0feccfc1ab0eb4",
+        "docId": "doc_269d4264e531df1f3a",
+        "order": 1
+      },
+      {
+        "title": "Hueso compacto",
+        "slug": "hueso-compacto",
+        "r2Key": "maximo-expo/books/tipos-de-huesos/hueso-compacto.pdf",
+        "pdfFilename": "hueso-compacto.pdf",
+        "pdfSize": 2441169,
+        "uploadId": "up_65bff3c78608e6b98c",
+        "docId": "doc_3453a9d41df35c97ea",
+        "order": 2
+      },
+      {
+        "title": "Hueso esponjoso",
+        "slug": "hueso-esponjoso",
+        "r2Key": "maximo-expo/books/tipos-de-huesos/hueso-esponjoso.pdf",
+        "pdfFilename": "hueso-esponjoso.pdf",
+        "pdfSize": 2787159,
+        "uploadId": "up_d9d55a661a621759f6",
+        "docId": "doc_94d721193940ad2a24",
+        "order": 3
+      },
+      {
+        "title": "Osificación endocondral",
+        "slug": "osificacion-endocondral",
+        "r2Key": "maximo-expo/books/tipos-de-huesos/osificacion-endocondral.pdf",
+        "pdfFilename": "osificacion-endocondral.pdf",
+        "pdfSize": 2960244,
+        "uploadId": "up_ae53a77753276b7e94",
+        "docId": "doc_2420048537a24974be",
+        "order": 4
+      },
+      {
+        "title": "Otras",
+        "slug": "otras",
+        "r2Key": "maximo-expo/books/tipos-de-huesos/otras.pdf",
+        "pdfFilename": "otras.pdf",
+        "pdfSize": 501057,
+        "uploadId": "up_ca35ba92dff5e02544",
+        "docId": "doc_0a5fd96323a2e10968",
+        "order": 5
+      }
+    ],
+    "oldUploadId": "up_2a5d9a09e0c58833c8",
+    "oldDocId": "doc_76ab25587db8a878e0",
+    "done": true
+  },
+  "TIPOS DE TEJIDO ADIPOSO": {
+    "title": "TIPOS DE TEJIDO ADIPOSO",
+    "course": "Histología",
+    "section_name": "TEMA 5- TEJIDO ADIPOSO",
+    "type": "interactive",
+    "lessonId": "les_ed4071e022d9fb6b31",
+    "chapters": [
+      {
+        "title": "ADIPOSO BLANCO UNILOCULAR",
+        "slug": "adiposo-blanco-unilocular",
+        "r2Key": "maximo-expo/books/tipos-de-tejido-adiposo/adiposo-blanco-unilocular.pdf",
+        "pdfFilename": "adiposo-blanco-unilocular.pdf",
+        "pdfSize": 1484971,
+        "uploadId": "up_9f8d893ef3159e2746",
+        "docId": "doc_8eb7f6c9b6bc12eff2",
+        "order": 0
+      },
+      {
+        "title": "ADIPOSO BLANCO Y PARDO",
+        "slug": "adiposo-blanco-y-pardo",
+        "r2Key": "maximo-expo/books/tipos-de-tejido-adiposo/adiposo-blanco-y-pardo.pdf",
+        "pdfFilename": "adiposo-blanco-y-pardo.pdf",
+        "pdfSize": 633184,
+        "uploadId": "up_e489b8a517f260afef",
+        "docId": "doc_7a4d53367ed5259487",
+        "order": 1
+      },
+      {
+        "title": "ADIPOSO PARDO MULTILOCULAR",
+        "slug": "adiposo-pardo-multilocular",
+        "r2Key": "maximo-expo/books/tipos-de-tejido-adiposo/adiposo-pardo-multilocular.pdf",
+        "pdfFilename": "adiposo-pardo-multilocular.pdf",
+        "pdfSize": 720149,
+        "uploadId": "up_86aaa0335ee0fcd320",
+        "docId": "doc_507950165e1f5b7bc6",
+        "order": 2
+      }
+    ],
+    "oldUploadId": "up_32124dbdb13374fc5e",
+    "oldDocId": "doc_02c03a39ad6a5e5bf7",
+    "done": true
+  },
+  "TIPOS DE TEJIDO CONECTIVO": {
+    "title": "TIPOS DE TEJIDO CONECTIVO",
+    "course": "Histología",
+    "section_name": "TEMA 3 - TEJIDO CONECTIVO",
+    "type": "interactive",
+    "lessonId": "les_730f72a526c5a834cf",
+    "chapters": [
+      {
+        "title": "CONJUNTIVO DENSO IRREGULAR",
+        "slug": "conjuntivo-denso-irregular",
+        "r2Key": "maximo-expo/books/tipos-de-tejido-conectivo/conjuntivo-denso-irregular.pdf",
+        "pdfFilename": "conjuntivo-denso-irregular.pdf",
+        "pdfSize": 2461867,
+        "uploadId": "up_1aacfb149dbc1a642a",
+        "docId": "doc_670bf2c7e30be213c7",
+        "order": 0
+      },
+      {
+        "title": "CONJUNTIVO DENSO REGULAR",
+        "slug": "conjuntivo-denso-regular",
+        "r2Key": "maximo-expo/books/tipos-de-tejido-conectivo/conjuntivo-denso-regular.pdf",
+        "pdfFilename": "conjuntivo-denso-regular.pdf",
+        "pdfSize": 1056064,
+        "uploadId": "up_30ff9ded9325eae051",
+        "docId": "doc_572e032770978f55f7",
+        "order": 1
+      },
+      {
+        "title": "CONJUNTIVO ELÁSTICO",
+        "slug": "conjuntivo-elastico",
+        "r2Key": "maximo-expo/books/tipos-de-tejido-conectivo/conjuntivo-elastico.pdf",
+        "pdfFilename": "conjuntivo-elastico.pdf",
+        "pdfSize": 576415,
+        "uploadId": "up_36c453cce6a1310685",
+        "docId": "doc_e293d7ef6462b568ca",
+        "order": 2
+      },
+      {
+        "title": "CONJUNTIVO LAXO-AREOLAR",
+        "slug": "conjuntivo-laxo-areolar",
+        "r2Key": "maximo-expo/books/tipos-de-tejido-conectivo/conjuntivo-laxo-areolar.pdf",
+        "pdfFilename": "conjuntivo-laxo-areolar.pdf",
+        "pdfSize": 3480798,
+        "uploadId": "up_f9904367883f218b85",
+        "docId": "doc_4b4fb1bfb7b5fb4835",
+        "order": 3
+      },
+      {
+        "title": "CONJUNTIVO RETICULAR",
+        "slug": "conjuntivo-reticular",
+        "r2Key": "maximo-expo/books/tipos-de-tejido-conectivo/conjuntivo-reticular.pdf",
+        "pdfFilename": "conjuntivo-reticular.pdf",
+        "pdfSize": 1332103,
+        "uploadId": "up_0c40f978ccd2f083e1",
+        "docId": "doc_187af9488e6b016dd1",
+        "order": 4
+      },
+      {
+        "title": "EMBRIONARIO MESENQUIMAL",
+        "slug": "embrionario-mesenquimal",
+        "r2Key": "maximo-expo/books/tipos-de-tejido-conectivo/embrionario-mesenquimal.pdf",
+        "pdfFilename": "embrionario-mesenquimal.pdf",
+        "pdfSize": 398566,
+        "uploadId": "up_83854e1d37a080c5bd",
+        "docId": "doc_354a9ae0a2e1a6453c",
+        "order": 5
+      }
+    ],
+    "oldUploadId": "up_084200fe3856491736",
+    "oldDocId": "doc_ade7b6f10c10ae6f00",
+    "done": true
+  },
+  "TIPOS DE TEJIDO MUSCULAR": {
+    "title": "TIPOS DE TEJIDO MUSCULAR",
+    "course": "Histología",
+    "section_name": "TEMA 6 - TEJIDO MUSCULAR",
+    "type": "interactive",
+    "lessonId": "les_5496c9b8ae0eeee466",
+    "chapters": [
+      {
+        "title": "CARDIACO",
+        "slug": "cardiaco",
+        "r2Key": "maximo-expo/books/tipos-de-tejido-muscular/cardiaco.pdf",
+        "pdfFilename": "cardiaco.pdf",
+        "pdfSize": 2966871,
+        "uploadId": "up_d7bc51a6ac4b03df7c",
+        "docId": "doc_e9ed9e51e9847fa525",
+        "order": 0
+      },
+      {
+        "title": "ESQUELÉTICO",
+        "slug": "esqueletico",
+        "r2Key": "maximo-expo/books/tipos-de-tejido-muscular/esqueletico.pdf",
+        "pdfFilename": "esqueletico.pdf",
+        "pdfSize": 3326283,
+        "uploadId": "up_fdfad7e08d404e0462",
+        "docId": "doc_9f4cb3a9efc6322c0d",
+        "order": 1
+      },
+      {
+        "title": "LISO",
+        "slug": "liso",
+        "r2Key": "maximo-expo/books/tipos-de-tejido-muscular/liso.pdf",
+        "pdfFilename": "liso.pdf",
+        "pdfSize": 2825541,
+        "uploadId": "up_26a208b5d7a25d7f19",
+        "docId": "doc_adf8cc48359fbbd605",
+        "order": 2
+      },
+      {
+        "title": "TIPOS DE TEJIDO MUSCULAR",
+        "slug": "tipos-de-tejido-muscular",
+        "r2Key": "maximo-expo/books/tipos-de-tejido-muscular/tipos-de-tejido-muscular.pdf",
+        "pdfFilename": "tipos-de-tejido-muscular.pdf",
+        "pdfSize": 1262609,
+        "uploadId": "up_e0e687ab6da8cb5512",
+        "docId": "doc_4908a8d148a484d97c",
+        "order": 3
+      }
+    ],
+    "oldUploadId": "up_4a80e6d43d7d157149",
+    "oldDocId": "doc_ce0a5b650d9ea36ad8",
+    "done": true
+  },
+  "TIPOS GLANDULAS EXOCRINAS": {
+    "title": "TIPOS GLANDULAS EXOCRINAS",
+    "course": "Histología",
+    "section_name": "TEMA 2 - TEJIDO GLANDULAR",
+    "type": "interactive",
+    "lessonId": "les_e96c93d236bd586dbe",
+    "chapters": [
+      {
+        "title": "GLÁNDULA PARÓTIDA",
+        "slug": "glandula-parotida",
+        "r2Key": "maximo-expo/books/tipos-glandulas-exocrinas/glandula-parotida.pdf",
+        "pdfFilename": "glandula-parotida.pdf",
+        "pdfSize": 896871,
+        "uploadId": "up_27fd8dd1455c31ba47",
+        "docId": "doc_99865f67ecda258f91",
+        "order": 0
+      },
+      {
+        "title": "GLÁNDULA SUBLINGUAL",
+        "slug": "glandula-sublingual",
+        "r2Key": "maximo-expo/books/tipos-glandulas-exocrinas/glandula-sublingual.pdf",
+        "pdfFilename": "glandula-sublingual.pdf",
+        "pdfSize": 1439017,
+        "uploadId": "up_96d54d81a26ab4ff7a",
+        "docId": "doc_6c6a461673736845fc",
+        "order": 1
+      },
+      {
+        "title": "GLÁNDULA SUBMANDIBULAR",
+        "slug": "glandula-submandibular",
+        "r2Key": "maximo-expo/books/tipos-glandulas-exocrinas/glandula-submandibular.pdf",
+        "pdfFilename": "glandula-submandibular.pdf",
+        "pdfSize": 924747,
+        "uploadId": "up_59edb562077c0f770b",
+        "docId": "doc_c655917b65c5aac55f",
+        "order": 2
+      },
+      {
+        "title": "SEBÁCEAS",
+        "slug": "sebaceas",
+        "r2Key": "maximo-expo/books/tipos-glandulas-exocrinas/sebaceas.pdf",
+        "pdfFilename": "sebaceas.pdf",
+        "pdfSize": 5293000,
+        "uploadId": "up_381b9e611f1cba71f6",
+        "docId": "doc_6331284696290b6711",
+        "order": 3
+      },
+      {
+        "title": "Sección",
+        "slug": "seccion",
+        "r2Key": "maximo-expo/books/tipos-glandulas-exocrinas/seccion.pdf",
+        "pdfFilename": "seccion.pdf",
+        "pdfSize": 24745,
+        "uploadId": "up_562248d6c427b26b9c",
+        "docId": "doc_8dec8ecf8d58e306bb",
+        "order": 4
+      },
+      {
+        "title": "SUDORÍPARAS APOCRINAS",
+        "slug": "sudoriparas-apocrinas",
+        "r2Key": "maximo-expo/books/tipos-glandulas-exocrinas/sudoriparas-apocrinas.pdf",
+        "pdfFilename": "sudoriparas-apocrinas.pdf",
+        "pdfSize": 4626412,
+        "uploadId": "up_b19ccf01221bde72b2",
+        "docId": "doc_5207bf77d5dade0544",
+        "order": 5
+      }
+    ],
+    "oldUploadId": "up_24ea0da0e4aa08551a",
+    "oldDocId": "doc_b9e4962c5873fb1bf4",
+    "done": true
+  }
+}

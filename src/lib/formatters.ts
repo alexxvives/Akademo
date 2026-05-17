@@ -52,8 +52,18 @@ export function formatDate(dateString: string | null | undefined, fallback = '')
  * @param dateString - ISO date string
  * @returns true if the date is now or in the past
  */
+/** Normalize a D1 date string (stored as UTC without 'Z') to a proper UTC Date. */
+export function parseD1Date(dateString: string): Date {
+  // D1 stores CURRENT_TIMESTAMP as "YYYY-MM-DD HH:MM:SS" (UTC, no 'Z').
+  // Without 'Z', browsers parse it as LOCAL time → wrong result for non-UTC timezones.
+  const normalized = dateString.endsWith('Z') || dateString.includes('+')
+    ? dateString
+    : dateString.replace(' ', 'T') + 'Z';
+  return new Date(normalized);
+}
+
 export function isReleased(dateString: string): boolean {
-  return new Date(dateString) <= new Date();
+  return parseD1Date(dateString) <= new Date();
 }
 
 /**

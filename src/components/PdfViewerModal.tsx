@@ -50,7 +50,7 @@ function drawCanvasWatermark(canvas: HTMLCanvasElement, email: string, academyNa
   const size2 = fittedSize(line2, 'bold', size2Base);
 
   ctx.save();
-  ctx.globalAlpha = 0.40;
+  ctx.globalAlpha = 0.5;
   ctx.fillStyle = 'rgb(140,140,140)';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -92,7 +92,7 @@ export default function PdfViewerModal() {
   const [title, setTitle] = useState('');
   const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [scale, setScale] = useState(1.5);
+  const [scale, setScale] = useState(1.0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

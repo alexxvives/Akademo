@@ -68,7 +68,8 @@ export function useAcademyLogo() {
 
     const loadLogo = async () => {
       if (!user) {
-        if (isMounted) setLoading(false);
+        // Don't set loading=false here — keep skeleton until user is known
+        // to avoid flashing the AKADEMO fallback logo while auth initialises.
         return;
       }
 

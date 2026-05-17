@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { getBunnyThumbnailUrl } from '@/lib/bunny-stream';
-import { formatDateWithMonth, formatDateTimeWithMonth } from '@/lib/formatters';
+import { formatDateWithMonth, formatDateTimeWithMonth, parseD1Date } from '@/lib/formatters';
 import type { Lesson } from './types';
 
 interface LessonCardThumbnailProps {
@@ -18,7 +18,7 @@ export function LessonCardThumbnail({ lesson, released, onToggleRelease }: Lesso
   const linkCount = lesson.linkCount || 0;
   const bunnyGuid = lesson.firstVideoBunnyGuid || lesson.firstVideoUpload?.bunnyGuid;
 
-  const isSentinelDate = new Date(lesson.releaseDate).getFullYear() >= 2099;
+  const isSentinelDate = parseD1Date(lesson.releaseDate).getFullYear() >= 2099;
 
   const DateBadge = () => {
     if (!lesson.releaseDate) return null;

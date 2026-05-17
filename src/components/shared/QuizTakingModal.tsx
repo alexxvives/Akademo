@@ -55,6 +55,7 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
   const [officialResult, setOfficialResult] = useState<QuizResult | null>(null);
   const [error, setError] = useState('');
   const [showRetryNotice, setShowRetryNotice] = useState(!!alreadyAttempted);
+  const [showNoBackWarning, setShowNoBackWarning] = useState(false);
   const restored = useRef(false);
   const storageKey = `quiz-progress-${assignmentId}`;
 
@@ -386,9 +387,11 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
             else if (qResult) dotClass = qResult.correct ? 'bg-green-200 text-green-800 hover:bg-green-300' : 'bg-red-200 text-red-800 hover:bg-red-300';
             else if ((answers[q.id] || []).length > 0) dotClass = isAfterEach ? 'bg-amber-200 text-amber-800 hover:bg-amber-300' : 'bg-green-200 text-green-800 hover:bg-green-300';
             else dotClass = 'bg-gray-100 text-gray-500 hover:bg-gray-200';
+            const isPast = i < currentIndex;
             return (
-              <button key={i} onClick={() => setCurrentIndex(i)}
-                className={`w-7 h-7 rounded-full text-xs font-medium transition-colors ${dotClass}`}>
+              <button key={i} onClick={() => !isPast && setCurrentIndex(i)}
+                disabled={isPast}
+                className={`w-7 h-7 rounded-full text-xs font-medium transition-colors ${isPast ? 'cursor-not-allowed opacity-60' : ''} ${dotClass}`}>
                 {i + 1}
               </button>
             );
@@ -397,13 +400,6 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
 
         {/* Navigation */}
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setCurrentIndex(i => Math.max(i - 1, 0))}
-            disabled={currentIndex === 0}
-            className="px-4 py-2 border border-gray-300 rounded-lg text-sm disabled:opacity-40 hover:bg-gray-50 transition-colors"
-          >
-            ← Anterior
-          </button>
           <div className="flex-1" />
           {isAfterEach && !currentConfirmed ? (
             <button
@@ -415,7 +411,7 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
             </button>
           ) : !isLast ? (
             <button
-              onClick={() => setCurrentIndex(i => Math.min(i + 1, questions.length - 1))}
+              onClick={() => setShowNoBackWarning(true)}
               className="px-4 py-2 bg-black text-white rounded-lg text-sm hover:bg-gray-800 transition-colors"
             >
               Siguiente →
@@ -440,6 +436,35 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
           </p>
         )}
       </div>
+
+      {/* No-back confirmation modal */}
+      {showNoBackWarning && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6">
+            <h3 className="text-base font-bold text-gray-900 mb-2">¿Continuar a la siguiente pregunta?</h3>
+            <p className="text-sm text-gray-600 mb-5">
+              Una vez avances <span className="font-semibold text-gray-900">no podrás volver</span> a modificar tu respuesta anterior.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowNoBackWarning(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Revisar respuesta
+              </button>
+              <button
+                onClick={() => {
+                  setShowNoBackWarning(false);
+                  setCurrentIndex(i => Math.min(i + 1, questions.length - 1));
+                }}
+                className="flex-1 px-4 py-2 bg-black text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors"
+              >
+                Continuar →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

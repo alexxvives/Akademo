@@ -79,7 +79,7 @@ export async function apiClient(
   path: string,
   options: ApiClientOptions = {}
 ): Promise<Response> {
-  const { skipCredentials, skipAutoRedirect, _isRetry, ...fetchOptions } = options;
+  const { skipCredentials, skipAutoRedirect, _isRetry, signal: callerSignal, ...fetchOptions } = options;
   
   const url = `${API_BASE_URL}${path}`;
   
@@ -88,18 +88,31 @@ export async function apiClient(
   if (typeof window !== 'undefined') {
       token = localStorage.getItem('auth_token') || '';
   }
-  
-  const response = await fetch(url, {
-    ...fetchOptions,
-    credentials: skipCredentials ? 'omit' : 'include', // Include cookies for auth
-    headers: {
-      // Don't set Content-Type for FormData (it sets its own with boundary)
-      ...(fetchOptions.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
-      'X-Requested-With': 'XMLHttpRequest',
-      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-      ...fetchOptions.headers,
-    },
-  });
+
+  // Timeout of 30s to prevent fetch from hanging indefinitely on bad connections
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30_000);
+  if (callerSignal) {
+    callerSignal.addEventListener('abort', () => controller.abort());
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...fetchOptions,
+      signal: controller.signal,
+      credentials: skipCredentials ? 'omit' : 'include', // Include cookies for auth
+      headers: {
+        // Don't set Content-Type for FormData (it sets its own with boundary)
+        ...(fetchOptions.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
+        'X-Requested-With': 'XMLHttpRequest',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        ...fetchOptions.headers,
+      },
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   // Global 401 handler: attempt silent token refresh first, then decide what to do on failure.
   // Skip for: auth endpoints (avoid loops), retried requests.
@@ -115,8 +128,10 @@ export async function apiClient(
       }
       // Refresh failed — session truly expired
       if (!skipAutoRedirect) {
+        const hadToken = !!localStorage.getItem('auth_token');
         clearAuthSession();
-        window.location.href = '/?modal=login&expired=1';
+        // Only show 'expired' banner if we actually had a token (not a manual logout race)
+        window.location.href = hadToken ? '/?modal=login&expired=1' : '/?modal=login';
       }
       return response;
     }
@@ -146,11 +161,14 @@ export async function openDocument(storagePath: string, allowDownload = false): 
   const lower = storagePath.toLowerCase();
   const isPdf = lower.endsWith('.pdf');
   const isOffice = /\.(docx?|xlsx?|pptx?)$/.test(lower);
-  if (!allowDownload && (isPdf || isOffice)) {
+  const isImage = /\.(jpe?g|png|gif|webp)$/i.test(lower);
+  if (!allowDownload && (isPdf || isOffice || isImage)) {
     const rawName = storagePath.split('/').pop() ?? '';
     const title = decodeURIComponent(rawName).replace(/\.[^.]+$/, '');
     if (isPdf) {
       window.dispatchEvent(new CustomEvent('open-pdf', { detail: { url, title, serverWm: serverWm ?? false } }));
+    } else if (isImage) {
+      window.dispatchEvent(new CustomEvent('open-image', { detail: { url, title } }));
     } else {
       // Office viewer requires an absolute URL; build it here.
       const absolute = new URL(url, window.location.origin).toString();
