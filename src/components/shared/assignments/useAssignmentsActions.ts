@@ -125,7 +125,11 @@ export function useAssignmentsActions(data: AssignmentsDataReturn) {
   const handleCreateAssignment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!data.selectedClassForCreate) { alert('Por favor, selecciona una asignatura'); return; }
+    if (data.assignmentType === 'file' && data.uploadFiles.length === 0) {
+      alert('Debes adjuntar al menos un archivo o crear un cuestionario'); return;
+    }
     if (data.assignmentType === 'quiz') {
+      if (data.quizQuestions.length === 0) { alert('Debes añadir al menos una pregunta al cuestionario'); return; }
       for (const q of data.quizQuestions) {
         if (!q.questionText.trim()) { alert('Todas las preguntas deben tener texto'); return; }
         if (q.options.some(o => !o.text.trim())) { alert('Todas las opciones deben tener texto'); return; }
@@ -157,7 +161,12 @@ export function useAssignmentsActions(data: AssignmentsDataReturn) {
         ...(data.assignmentType === 'quiz' ? { feedbackMode: data.feedbackMode } : {}),
       });
       const result = await res.json();
-      if (result.success) { data.setShowCreateModal(false); resetForm(); data.loadAcademyAssignments(); }
+      if (result.success) {
+        data.setShowCreateModal(false);
+        resetForm();
+        data.setTopicIdFilter('');
+        data.loadAcademyAssignments();
+      }
       else alert('Error: ' + result.error);
     } catch (error) {
       console.error('Failed to create assignment:', error);

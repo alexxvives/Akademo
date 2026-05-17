@@ -81,7 +81,7 @@ export function TopicSection({
           </span>
           {!topicId && dashboardBase && classId && quizCount != null && quizCount > 0 && (
             <Link
-              href={`${dashboardBase}/assignments?tab=quiz&classId=${classId}`}
+              href={`${dashboardBase}/assignments?classId=${classId}`}
               onClick={(e) => e.stopPropagation()}
               className="text-xs text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full font-medium hover:bg-blue-100 transition-colors"
             >

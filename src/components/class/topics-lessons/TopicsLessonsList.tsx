@@ -30,7 +30,7 @@ export default function TopicsLessonsList({
   }, [assignments]);
 
   const nullTopicAssignments = useMemo(() => assignmentsByTopic.get(null) || [], [assignmentsByTopic]);
-  const nullTopicQuizCount = useMemo(() => (assignmentsByTopic.get(null) || []).filter(a => a.type === 'quiz').length, [assignmentsByTopic]);
+  const nullTopicAssignmentCount = useMemo(() => (assignmentsByTopic.get(null) || []).length, [assignmentsByTopic]);
 
   // Auto-expand 'uncategorized' when assignments with no topic are present
   useEffect(() => {
@@ -223,9 +223,9 @@ export default function TopicsLessonsList({
               onDrop={(e) => h.handleDrop(e, null)}
               renderLesson={renderLesson}
               viewMode={viewMode}
-              quizCount={nullTopicQuizCount}
+              quizCount={nullTopicAssignmentCount}
               classId={classId}
-              topicAssignments={nullTopicAssignments}
+              topicAssignments={assignmentsByTopic.get(null) || []}
               dashboardBase={dashboardBase}
             />
           )}
@@ -281,7 +281,7 @@ export default function TopicsLessonsList({
             onDrop={(e) => h.handleDrop(e, null)}
             renderLesson={renderLesson}
             viewMode={viewMode}
-            quizCount={nullTopicQuizCount}
+            quizCount={nullTopicAssignmentCount}
             classId={classId}
             topicAssignments={assignmentsByTopic.get(null) || []}
             dashboardBase={dashboardBase}
