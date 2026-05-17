@@ -113,8 +113,10 @@ function FileAssignmentsTable({ assignments, isAdmin, isDemo, canManage, require
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assignment.academyName || 'N/A'}</td>
             )}
             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assignment.className || 'N/A'}</td>
-            <td className="px-6 py-4 text-sm text-gray-400 max-w-xs">
-              <div className="truncate" title={assignment.topicName || undefined}>{assignment.topicName || '—'}</div>
+            <td className="px-6 py-4 text-sm max-w-xs">
+              <span className="text-xs text-gray-600 bg-gray-200 px-2.5 py-1 rounded-full font-medium">
+                {assignment.topicName || 'Sin tema'}
+              </span>
             </td>
             <td className="px-6 py-4 whitespace-nowrap">
               {(() => {
@@ -294,8 +296,10 @@ function QuizAssignmentsTable({ assignments, isAdmin, isDemo, canManage, require
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assignment.academyName || 'N/A'}</td>
             )}
             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assignment.className || 'N/A'}</td>
-            <td className="px-6 py-4 text-sm text-gray-400 max-w-xs">
-              <div className="truncate" title={assignment.topicName || undefined}>{assignment.topicName || '—'}</div>
+            <td className="px-6 py-4 text-sm max-w-xs">
+              <span className="text-xs text-gray-600 bg-gray-200 px-2.5 py-1 rounded-full font-medium">
+                {assignment.topicName || 'Sin tema'}
+              </span>
             </td>
             {requireGrading && (
               <td className={`px-6 py-4 whitespace-nowrap text-sm ${getDueDateColor(assignment.dueDate)}`}>

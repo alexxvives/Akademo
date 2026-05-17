@@ -43,6 +43,15 @@ interface Props {
   feedbackMode?: 'at_end' | 'after_each';
 }
 
+function getStorageUserId(): string {
+  try {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    if (!token) return 'anon';
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return String(payload.sub || payload.userId || 'anon');
+  } catch { return 'anon'; }
+}
+
 export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScore, alreadyAttempted, onClose, onCompleted, feedbackMode = 'at_end' }: Props) {
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [answers, setAnswers] = useState<Record<string, string[]>>({});
@@ -57,7 +66,8 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
   const [showRetryNotice, setShowRetryNotice] = useState(!!alreadyAttempted);
   const [showNoBackWarning, setShowNoBackWarning] = useState(false);
   const restored = useRef(false);
-  const storageKey = `quiz-progress-${assignmentId}`;
+  const [userId] = useState(() => getStorageUserId());
+  const storageKey = `quiz-progress-${userId}-${assignmentId}`;
 
   useEffect(() => {
     const init = async () => {
@@ -387,11 +397,13 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
             else if (qResult) dotClass = qResult.correct ? 'bg-green-200 text-green-800 hover:bg-green-300' : 'bg-red-200 text-red-800 hover:bg-red-300';
             else if ((answers[q.id] || []).length > 0) dotClass = isAfterEach ? 'bg-amber-200 text-amber-800 hover:bg-amber-300' : 'bg-green-200 text-green-800 hover:bg-green-300';
             else dotClass = 'bg-gray-100 text-gray-500 hover:bg-gray-200';
-            const isPast = i < currentIndex;
+            // Locked = already answered (and not the current question)
+            const isAnswered = isAfterEach ? !!immediateResults[q.id] : (answers[q.id] || []).length > 0;
+            const isLocked = isAnswered && i !== currentIndex;
             return (
-              <button key={i} onClick={() => !isPast && setCurrentIndex(i)}
-                disabled={isPast}
-                className={`w-7 h-7 rounded-full text-xs font-medium transition-colors ${isPast ? 'cursor-not-allowed opacity-60' : ''} ${dotClass}`}>
+              <button key={i} onClick={() => !isLocked && setCurrentIndex(i)}
+                disabled={isLocked}
+                className={`w-7 h-7 rounded-full text-xs font-medium transition-colors ${isLocked ? 'cursor-not-allowed opacity-60' : ''} ${dotClass}`}>
                 {i + 1}
               </button>
             );
@@ -411,7 +423,13 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
             </button>
           ) : !isLast ? (
             <button
-              onClick={() => setShowNoBackWarning(true)}
+              onClick={() => {
+                if (currentAnswers.length > 0) {
+                  setShowNoBackWarning(true);
+                } else {
+                  setCurrentIndex(i => Math.min(i + 1, questions.length - 1));
+                }
+              }}
               className="px-4 py-2 bg-black text-white rounded-lg text-sm hover:bg-gray-800 transition-colors"
             >
               Siguiente →
