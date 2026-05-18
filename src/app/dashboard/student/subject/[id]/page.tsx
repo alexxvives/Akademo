@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { SkeletonStudentClass } from '@/components/ui/SkeletonLoader';
 import StudentTopicsLessonsList from './components/StudentTopicsLessonsList';
 import ClassHeader from './components/ClassHeader';
@@ -8,6 +9,10 @@ import { AccessLockedView, ClassNotStartedView } from './components/AccessBlocke
 import { useClassPageData } from './components/useClassPageData';
 import { useClassPageActions } from './components/useClassPageActions';
 import { parseDateString } from '@/lib/formatters';
+import { UploadModal } from '@/app/dashboard/student/assignments/UploadModal';
+import QuizTakingModal from '@/components/shared/QuizTakingModal';
+import { apiClient, apiPost } from '@/lib/api-client';
+import type { StudentAssignment } from './components/StudentTopicsLessonsTypes';
 
 export default function ClassPage() {
   const data = useClassPageData();
@@ -29,6 +34,70 @@ export default function ClassPage() {
     feedbackText: data.feedbackText,
     tempRating: data.tempRating,
   });
+
+  const [modalAssignment, setModalAssignment] = useState<StudentAssignment | null>(null);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showQuizModal, setShowQuizModal] = useState(false);
+  const [uploadFiles, setUploadFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+
+  const handleOpenAssignment = (assignment: StudentAssignment) => {
+    setModalAssignment(assignment);
+    if (assignment.type === 'quiz') {
+      setShowQuizModal(true);
+    } else {
+      setShowUploadModal(true);
+    }
+  };
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') setDragActive(true);
+    else if (e.type === 'dragleave') setDragActive(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      setUploadFiles(prev => [...prev, ...Array.from(e.dataTransfer.files)]);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (uploadFiles.length === 0 || !modalAssignment) return;
+    setUploading(true);
+    try {
+      const uploadIds: string[] = [];
+      for (const file of uploadFiles) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('type', 'assignment_submission');
+        const uploadRes = await apiClient('/storage/upload', { method: 'POST', body: formData });
+        const uploadResult = await uploadRes.json();
+        if (!uploadResult.success) throw new Error(uploadResult.error || 'Error al subir archivo');
+        uploadIds.push(uploadResult.data.uploadId);
+      }
+      const res = await apiPost(`/assignments/${modalAssignment.id}/submit`, { uploadIds });
+      const result = await res.json();
+      if (result.success) {
+        setShowUploadModal(false);
+        setUploadFiles([]);
+        setModalAssignment(null);
+        data.loadData();
+      } else {
+        throw new Error(result.error || 'Error al entregar ejercicio');
+      }
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : 'Error al entregar ejercicio');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   if (data.loading) return <SkeletonStudentClass />;
 
@@ -76,9 +145,36 @@ export default function ClassPage() {
             expandedTopics={data.expandedTopics}
             setExpandedTopics={data.setExpandedTopics}
             onSelectLesson={actions.selectLesson}
+            onOpenAssignment={handleOpenAssignment}
           />
         )}
       </div>
+
+      {showUploadModal && modalAssignment && (
+        <UploadModal
+          assignment={modalAssignment as any}
+          uploadFiles={uploadFiles}
+          setUploadFiles={setUploadFiles}
+          uploading={uploading}
+          dragActive={dragActive}
+          onDrag={handleDrag}
+          onDrop={handleDrop}
+          onSubmit={handleSubmit}
+          onClose={() => { setShowUploadModal(false); setUploadFiles([]); setModalAssignment(null); }}
+        />
+      )}
+
+      {showQuizModal && modalAssignment && (
+        <QuizTakingModal
+          assignmentId={modalAssignment.id}
+          assignmentTitle={modalAssignment.title}
+          maxScore={modalAssignment.maxScore ?? 10}
+          alreadyAttempted={modalAssignment.completed}
+          feedbackMode={modalAssignment.feedbackMode}
+          onClose={() => { setShowQuizModal(false); setModalAssignment(null); }}
+          onCompleted={() => { setShowQuizModal(false); setModalAssignment(null); data.loadData(); }}
+        />
+      )}
     </>
   );
 }

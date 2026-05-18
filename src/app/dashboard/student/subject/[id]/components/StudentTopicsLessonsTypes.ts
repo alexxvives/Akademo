@@ -52,6 +52,9 @@ export interface StudentAssignment {
   topicId: string | null;
   dueDate: string | null;
   completed?: boolean;
+  submittedAt?: string | null;
+  maxScore?: number;
+  feedbackMode?: 'at_end' | 'after_each';
 }
 
 export interface Topic {
@@ -70,6 +73,7 @@ export interface StudentTopicsLessonsListProps {
   expandedTopics: Set<string>;
   setExpandedTopics: React.Dispatch<React.SetStateAction<Set<string>>>;
   onSelectLesson: (lesson: Lesson) => void;
+  onOpenAssignment?: (assignment: StudentAssignment) => void;
 }
 
 export interface LessonCardProps {
@@ -85,5 +89,6 @@ export interface TopicSectionProps {
   isExpanded: boolean;
   onToggle: () => void;
   onSelectLesson: (lesson: Lesson) => void;
+  onOpenAssignment?: (assignment: StudentAssignment) => void;
   quizCount?: number;
 }

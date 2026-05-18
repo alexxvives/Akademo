@@ -10,6 +10,7 @@ export default function StudentTopicSection({
   isExpanded,
   onToggle,
   onSelectLesson,
+  onOpenAssignment,
   quizCount,
 }: TopicSectionProps) {
   if (lessons.length === 0 && assignments.length === 0) return null;
@@ -69,6 +70,7 @@ export default function StudentTopicSection({
                 totalStudents={0}
                 isStudentView={true}
                 completed={assignment.completed}
+                onOpen={onOpenAssignment ? () => onOpenAssignment(assignment) : undefined}
               />
             ))}
           </div>

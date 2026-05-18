@@ -14,6 +14,7 @@ interface AssignmentCardProps {
   isDisabled?: boolean;
   isStudentView?: boolean;
   completed?: boolean;
+  onOpen?: (assignment: TopicAssignment) => void;
   onEditAssignment?: (assignmentId: string) => void;
   onDeleteAssignment?: (assignmentId: string, title: string) => void;
   onToggleRelease?: (assignment: TopicAssignment) => void;
@@ -21,7 +22,7 @@ interface AssignmentCardProps {
 
 export function AssignmentCard({
   assignment, viewMode = 'cards', dashboardBase, classId,
-  totalStudents = 0, isDisabled, isStudentView, completed, onEditAssignment, onDeleteAssignment, onToggleRelease,
+  totalStudents = 0, isDisabled, isStudentView, completed, onOpen, onEditAssignment, onDeleteAssignment, onToggleRelease,
 }: AssignmentCardProps) {
   const router = useRouter();
   const isQuiz = assignment.type === 'quiz';
@@ -123,6 +124,7 @@ export function AssignmentCard({
       onClick={(e) => {
         const target = e.target as HTMLElement;
         if (target.closest('[data-action-buttons]')) return;
+        if (onOpen) { onOpen(assignment); return; }
         if (href !== '#') router.push(href);
       }}
       className={`bg-[#1a1d29] rounded-xl overflow-hidden transition-all duration-300 group border shadow-sm h-full border-gray-700 hover:border-accent-500 hover:shadow-xl hover:shadow-accent-500/20 cursor-pointer hover:scale-[1.03] ${!released ? 'opacity-70 grayscale sepia-[.2]' : ''}`}
@@ -211,11 +213,13 @@ export function AssignmentCard({
         {/* Footer — ratings + progress bar (non-student) or completion status (student) */}
         <div className="p-4">
           {isStudentView ? (
-            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
-              completed ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
-            }`}>
-              {completed ? 'Completado' : 'Pendiente'}
-            </span>
+            <div className="flex justify-center">
+              <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                completed ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
+              }`}>
+                {completed ? 'Completado' : 'Pendiente'}
+              </span>
+            </div>
           ) : (
             <>
               <div className="flex items-center justify-between text-sm mb-2">

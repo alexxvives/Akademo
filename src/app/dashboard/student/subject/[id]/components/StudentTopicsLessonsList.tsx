@@ -10,6 +10,7 @@ export default function StudentTopicsLessonsList({
   expandedTopics,
   setExpandedTopics,
   onSelectLesson,
+  onOpenAssignment,
 }: StudentTopicsLessonsListProps) {
   const toggleTopic = (topicId: string) => {
     setExpandedTopics(prev => {
@@ -71,6 +72,7 @@ export default function StudentTopicsLessonsList({
               isExpanded={expandedTopics.has(topic.id)}
               onToggle={() => toggleTopic(topic.id)}
               onSelectLesson={onSelectLesson}
+              onOpenAssignment={onOpenAssignment}
               quizCount={topic.quizCount}
             />
           ))}
@@ -82,6 +84,7 @@ export default function StudentTopicsLessonsList({
             isExpanded={expandedTopics.has('uncategorized')}
             onToggle={() => toggleTopic('uncategorized')}
             onSelectLesson={onSelectLesson}
+            onOpenAssignment={onOpenAssignment}
           />
         </div>
       )}
