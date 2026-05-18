@@ -37,13 +37,13 @@ export default function StudentTopicSection({
           <span className="text-xs text-gray-600 bg-gray-200 px-2.5 py-1 rounded-full font-medium">
             {lessons.length} {lessons.length === 1 ? 'lección' : 'Clases'}
           </span>
-          {quizCount != null && quizCount > 0 && (
+          {assignments.length > 0 && (
             <a
               href="/dashboard/student/assignments"
               onClick={e => e.stopPropagation()}
-              className="text-xs text-purple-700 bg-purple-100 px-2.5 py-1 rounded-full font-medium hover:bg-purple-200 transition-colors"
+              className="text-xs text-blue-700 bg-blue-100 px-2.5 py-1 rounded-full font-medium hover:bg-blue-200 transition-colors"
             >
-              {quizCount} {quizCount === 1 ? 'cuestionario' : 'cuestionarios'}
+              {assignments.length} {assignments.length === 1 ? 'ejercicio' : 'ejercicios'}
             </a>
           )}
         </div>
@@ -67,6 +67,8 @@ export default function StudentTopicSection({
                 viewMode="cards"
                 dashboardBase="/dashboard/student"
                 totalStudents={0}
+                isStudentView={true}
+                completed={assignment.completed}
               />
             ))}
           </div>

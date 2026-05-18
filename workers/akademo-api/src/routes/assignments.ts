@@ -112,9 +112,10 @@ assignments.get('/', async (c) => {
       // Get all assignments from all enrolled classes
       const query = `
         SELECT 
-          a.id, a.classId, a.title, a.description, a.type,
+          a.id, a.classId, a.topicId, a.title, a.description, a.type,
           a.dueDate, a.maxScore, a.feedbackMode, a.uploadId, a.solutionUploadId, a.createdAt,
           c.name as className,
+          t.name as topicName,
           s.id as submissionId,
           s.uploadId as submissionUploadId,
           up.storagePath as submissionStoragePath,
@@ -133,6 +134,7 @@ assignments.get('/', async (c) => {
         FROM Assignment a
         JOIN Class c ON a.classId = c.id
         JOIN ClassEnrollment e ON c.id = e.classId
+        LEFT JOIN Topic t ON a.topicId = t.id
         LEFT JOIN AssignmentAttachment aa ON a.id = aa.assignmentId
         LEFT JOIN AssignmentSubmission s ON a.id = s.assignmentId AND s.studentId = ?
         LEFT JOIN Upload up ON s.uploadId = up.id
@@ -240,6 +242,7 @@ assignments.get('/', async (c) => {
           a.id, a.classId, a.lessonId, a.topicId, a.title, a.description, a.type,
           a.dueDate, a.maxScore, a.feedbackMode, a.uploadId, a.solutionUploadId, a.createdAt,
           c.name as className,
+          t.name as topicName,
           s.id as submissionId,
           s.uploadId as submissionUploadId,
           up.storagePath as submissionStoragePath,
@@ -255,6 +258,7 @@ assignments.get('/', async (c) => {
           qa.correctAnswers as quizCorrectAnswers
         FROM Assignment a
         JOIN Class c ON a.classId = c.id
+        LEFT JOIN Topic t ON a.topicId = t.id
         LEFT JOIN AssignmentAttachment aa ON a.id = aa.assignmentId
         LEFT JOIN AssignmentSubmission s ON a.id = s.assignmentId AND s.studentId = ?
         LEFT JOIN Upload up ON s.uploadId = up.id

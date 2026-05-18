@@ -51,6 +51,7 @@ export interface StudentAssignment {
   type: 'file' | 'quiz';
   topicId: string | null;
   dueDate: string | null;
+  completed?: boolean;
 }
 
 export interface Topic {

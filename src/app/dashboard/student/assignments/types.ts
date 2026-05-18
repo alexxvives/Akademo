@@ -21,6 +21,7 @@ export interface Assignment {
   createdAt: string;
   className?: string;
   classId?: string;
+  topicName?: string;
   uploadId?: string;
   attachmentIds?: string;
   submissionUploadId?: string;

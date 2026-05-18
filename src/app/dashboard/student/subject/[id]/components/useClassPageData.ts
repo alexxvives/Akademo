@@ -111,7 +111,13 @@ export function useClassPageData() {
 
       if (topicsResult.success) setTopics(topicsResult.data || []);
       if (lessonsResult.success) setLessons(lessonsResult.data);
-      if (assignmentsResult.success) setAssignments(assignmentsResult.data || []);
+      if (assignmentsResult.success) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setAssignments((assignmentsResult.data || []).map((a: any) => ({
+          ...a,
+          completed: a.type === 'quiz' ? !!a.quizAttemptId : !!a.submittedAt,
+        })));
+      }
     } catch (error) {
       console.error('[Student Class] Failed to load data:', error);
     } finally {

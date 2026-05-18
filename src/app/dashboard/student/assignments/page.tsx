@@ -104,6 +104,7 @@ export default function StudentAssignments() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Título</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Asignatura</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tema</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ejercicios</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Entrega</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha límite</th>
@@ -151,6 +152,7 @@ export default function StudentAssignments() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Título</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Asignatura</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tema</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nota</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha límite</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acción</th>
@@ -172,6 +174,7 @@ export default function StudentAssignments() {
                         </td>
                         <td className="px-6 py-4"><div className="text-sm font-medium text-gray-900">{assignment.title}</div></td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assignment.className || '—'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assignment.topicName || '—'}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {attempted ? (
                             <span className={`text-sm font-medium ${scoreColor}`}>{assignment.quizScore ?? 0}/{assignment.maxScore}</span>
