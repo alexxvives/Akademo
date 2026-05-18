@@ -34,12 +34,22 @@ export interface Topic {
   hidden?: number | boolean;
 }
 
+export interface VideoExtension {
+  id: string;
+  extraSeconds: number;
+  validFrom: string;
+  validUntil: string;
+  isActive: boolean;
+}
+
 export interface StudentVideoTime {
   videoId: string;
   videoTitle: string;
   totalWatchTimeSeconds: number;
   maxWatchTimeSeconds: number;
+  effectiveMaxWatchTimeSeconds?: number;
   status: string;
+  extensions?: VideoExtension[];
 }
 
 export interface StudentTimeData {

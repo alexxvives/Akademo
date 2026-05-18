@@ -1544,18 +1544,44 @@ lessons.get('/:id/student-times', async (c) => {
       const key = `${(ps as any).videoId}:${(ps as any).studentId}`;
       playStateMap.set(key, ps);
     }
-    
+
+    // Fetch all extensions for these videos and students in one batch query
+    const nowStr = new Date().toISOString();
+    let extensionMap = new Map<string, any[]>();
+    if (videoIds.length > 0 && studentIds.length > 0) {
+      const extensionResults = await c.env.DB
+        .prepare(`SELECT id, videoId, studentId, extraSeconds, validFrom, validUntil FROM VideoPlayExtension WHERE videoId IN (${placeholdersV}) AND studentId IN (${placeholdersS}) ORDER BY createdAt DESC`)
+        .bind(...videoIds, ...studentIds)
+        .all();
+      for (const ext of (extensionResults.results || [])) {
+        const key = `${(ext as any).videoId}:${(ext as any).studentId}`;
+        if (!extensionMap.has(key)) extensionMap.set(key, []);
+        extensionMap.get(key)!.push(ext);
+      }
+    }
+
     const studentTimesData = students.results.map((student: any) => {
       const videoTimes = videos.results.map((video: any) => {
         const playState = playStateMap.get(`${video.id}:${student.id}`);
         const maxWatchTimeSeconds = (video.durationSeconds || 0) * (lesson.maxWatchTimeMultiplier || 2.0);
-        
+        const extensions = extensionMap.get(`${video.id}:${student.id}`) || [];
+        const activeExtensionSeconds = extensions
+          .filter((e: any) => e.validFrom <= nowStr && e.validUntil >= nowStr)
+          .reduce((sum: number, e: any) => sum + (e.extraSeconds as number), 0);
         return {
           videoId: video.id,
           videoTitle: video.title,
           totalWatchTimeSeconds: playState?.totalWatchTimeSeconds || 0,
           maxWatchTimeSeconds,
+          effectiveMaxWatchTimeSeconds: maxWatchTimeSeconds + activeExtensionSeconds,
           status: playState?.status || 'ACTIVE',
+          extensions: extensions.map((e: any) => ({
+            id: e.id,
+            extraSeconds: e.extraSeconds,
+            validFrom: e.validFrom,
+            validUntil: e.validUntil,
+            isActive: e.validFrom <= nowStr && e.validUntil >= nowStr,
+          })),
         };
       });
       

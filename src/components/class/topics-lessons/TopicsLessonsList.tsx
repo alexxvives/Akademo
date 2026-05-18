@@ -329,6 +329,8 @@ export default function TopicsLessonsList({
         studentData={h.studentTimesData}
         isDisabled={h.isDisabled}
         onUpdateTime={h.handleUpdateStudentTime}
+        onAddExtension={h.handleAddExtension}
+        onDeleteExtension={h.handleDeleteExtension}
         onClose={h.closeTimeModal}
       />
     </div>

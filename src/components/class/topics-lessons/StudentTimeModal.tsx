@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import type { Lesson, StudentTimeData } from './types';
 
 interface StudentTimeModalProps {
@@ -11,12 +12,34 @@ interface StudentTimeModalProps {
   studentData: StudentTimeData[];
   isDisabled: boolean;
   onUpdateTime: (studentId: string, videoId: string, newTimeSeconds: number) => void;
+  onAddExtension: (studentId: string, videoId: string, extraMinutes: number, validFrom: string, validUntil: string) => Promise<void>;
+  onDeleteExtension: (extensionId: string) => Promise<void>;
   onClose: () => void;
 }
 
 export function StudentTimeModal({
-  show, lesson, isLoading, searchQuery, onSearchChange, studentData, isDisabled, onUpdateTime, onClose,
+  show, lesson, isLoading, searchQuery, onSearchChange, studentData, isDisabled, onUpdateTime, onAddExtension, onDeleteExtension, onClose,
 }: StudentTimeModalProps) {
+  const [extFormKey, setExtFormKey] = useState<string | null>(null);
+  const defaultFrom = () => { const d = new Date(); d.setSeconds(0, 0); return d.toISOString().slice(0, 16); };
+  const defaultUntil = () => { const d = new Date(Date.now() + 2 * 3600000); d.setSeconds(0, 0); return d.toISOString().slice(0, 16); };
+  const [extForm, setExtForm] = useState({ extraMinutes: 60, validFrom: defaultFrom(), validUntil: defaultUntil() });
+  const [savingExt, setSavingExt] = useState(false);
+
+  const openExtForm = (studentId: string, videoId: string) => {
+    setExtFormKey(`${studentId}:${videoId}`);
+    setExtForm({ extraMinutes: 60, validFrom: defaultFrom(), validUntil: defaultUntil() });
+  };
+
+  const handleExtSubmit = async (studentId: string, videoId: string) => {
+    setSavingExt(true);
+    try {
+      await onAddExtension(studentId, videoId, extForm.extraMinutes, extForm.validFrom + ':00', extForm.validUntil + ':00');
+      setExtFormKey(null);
+    } finally {
+      setSavingExt(false);
+    }
+  };
   if (!show || !lesson) return null;
 
   const hasNoVideos = studentData.length > 0 && studentData.every(s => s.videos.length === 0);
@@ -102,7 +125,10 @@ export function StudentTimeModal({
                                 </span>
                                 <span className="text-xs text-gray-400">/</span>
                                 <span className="text-xs text-gray-600">
-                                  Máximo: {Math.floor(video.maxWatchTimeSeconds / 60)}:{String(Math.floor(video.maxWatchTimeSeconds % 60)).padStart(2, '0')}
+                                  Máx: {Math.floor((video.effectiveMaxWatchTimeSeconds ?? video.maxWatchTimeSeconds) / 60)}:{String(Math.floor((video.effectiveMaxWatchTimeSeconds ?? video.maxWatchTimeSeconds) % 60)).padStart(2, '0')}
+                                  {video.effectiveMaxWatchTimeSeconds && video.effectiveMaxWatchTimeSeconds > video.maxWatchTimeSeconds && (
+                                    <span className="ml-1 text-emerald-600 font-semibold">(+{Math.round((video.effectiveMaxWatchTimeSeconds - video.maxWatchTimeSeconds) / 60)}min extra)</span>
+                                  )}
                                 </span>
                                 <span className={`text-xs px-2 py-0.5 rounded-full ${
                                   video.status === 'BLOCKED'
@@ -146,8 +172,77 @@ export function StudentTimeModal({
                               >
                                 +1hr
                               </button>
+                              <button
+                                onClick={() => extFormKey === `${student.studentId}:${video.videoId}` ? setExtFormKey(null) : openExtForm(student.studentId, video.videoId)}
+                                disabled={isDisabled}
+                                className="px-2 py-1 bg-emerald-600 text-white rounded text-xs hover:bg-emerald-700 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                                title={isDisabled ? 'Active su academia para modificar tiempos' : 'Dar tiempo extra con ventana de acceso'}
+                              >
+                                ⊕ Extra
+                              </button>
                             </div>
                           </div>
+
+                          {/* Existing extensions */}
+                          {(video.extensions ?? []).length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                              {(video.extensions ?? []).map(ext => (
+                                <span key={ext.id} className={`inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full border ${
+                                  ext.isActive ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-50 text-gray-500 border-gray-200'
+                                }`}>
+                                  {ext.isActive && <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>}
+                                  +{Math.round(ext.extraSeconds / 60)}min · {new Date(ext.validFrom).toLocaleString('es', { dateStyle: 'short', timeStyle: 'short' })}–{new Date(ext.validUntil).toLocaleTimeString('es', { timeStyle: 'short' })}
+                                  <button onClick={() => onDeleteExtension(ext.id)} className="ml-0.5 text-gray-400 hover:text-red-500 leading-none" title="Eliminar extensión">×</button>
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Extension form */}
+                          {extFormKey === `${student.studentId}:${video.videoId}` && (
+                            <div className="mt-3 p-3 bg-emerald-50 rounded-lg border border-emerald-200 space-y-2">
+                              <p className="text-xs font-semibold text-emerald-800">Tiempo extra con ventana de acceso</p>
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                <div>
+                                  <label className="block text-xs text-gray-600 mb-0.5">Minutos extra</label>
+                                  <input
+                                    type="number" min={1} max={600}
+                                    value={extForm.extraMinutes}
+                                    onChange={e => setExtForm(f => ({ ...f, extraMinutes: Number(e.target.value) }))}
+                                    className="w-full text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs text-gray-600 mb-0.5">Válido desde</label>
+                                  <input
+                                    type="datetime-local"
+                                    value={extForm.validFrom}
+                                    onChange={e => setExtForm(f => ({ ...f, validFrom: e.target.value }))}
+                                    className="w-full text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-xs text-gray-600 mb-0.5">Válido hasta</label>
+                                  <input
+                                    type="datetime-local"
+                                    value={extForm.validUntil}
+                                    onChange={e => setExtForm(f => ({ ...f, validUntil: e.target.value }))}
+                                    className="w-full text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleExtSubmit(student.studentId, video.videoId)}
+                                  disabled={savingExt}
+                                  className="px-3 py-1 bg-emerald-600 text-white text-xs rounded hover:bg-emerald-700 disabled:opacity-50"
+                                >
+                                  {savingExt ? 'Guardando...' : 'Guardar'}
+                                </button>
+                                <button onClick={() => setExtFormKey(null)} className="px-3 py-1 bg-gray-200 text-gray-700 text-xs rounded hover:bg-gray-300">Cancelar</button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>

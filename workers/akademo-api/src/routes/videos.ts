@@ -91,7 +91,14 @@ videos.post('/progress', validateBody(videoProgressSchema), async (c) => {
       }
     }
 
-    const maxWatchTime = (((video as any).durationSeconds as number) || 0) * (((video as any).maxWatchTimeMultiplier as number) || 2);
+    // Check for active time extensions for this student
+    const nowExtCheck = new Date().toISOString();
+    const extRow = await c.env.DB
+      .prepare(`SELECT COALESCE(SUM(extraSeconds), 0) as total FROM VideoPlayExtension WHERE videoId = ? AND studentId = ? AND validFrom <= ? AND validUntil >= ?`)
+      .bind(videoId, session.id, nowExtCheck, nowExtCheck)
+      .first() as any;
+    const extensionSeconds = Number(extRow?.total) || 0;
+    const maxWatchTime = (((video as any).durationSeconds as number) || 0) * (((video as any).maxWatchTimeMultiplier as number) || 2) + extensionSeconds;
     const now = new Date().toISOString();
 
     // Server-side clamp: cap watchTimeElapsed to a reasonable interval.
@@ -273,7 +280,13 @@ videos.post('/progress/admin-update', async (c) => {
       .bind(videoId, studentId)
       .first() as any;
 
-    const maxWatchTime = (video.durationSeconds || 0) * (video.maxWatchTimeMultiplier || 2);
+    const nowExtAdm = new Date().toISOString();
+    const extRowAdm = await c.env.DB
+      .prepare(`SELECT COALESCE(SUM(extraSeconds), 0) as total FROM VideoPlayExtension WHERE videoId = ? AND studentId = ? AND validFrom <= ? AND validUntil >= ?`)
+      .bind(videoId, studentId, nowExtAdm, nowExtAdm)
+      .first() as any;
+    const extSecondsAdm = Number(extRowAdm?.total) || 0;
+    const maxWatchTime = (video.durationSeconds || 0) * (video.maxWatchTimeMultiplier || 2) + extSecondsAdm;
     const newStatus = safeTotalWatchTime >= maxWatchTime ? 'BLOCKED' : 'ACTIVE';
     const now = new Date().toISOString();
 
@@ -318,6 +331,97 @@ videos.post('/progress/admin-update', async (c) => {
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Admin Update Time] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
+
+// POST /videos/extensions - Grant extra watch time to a student within a time window
+videos.post('/extensions', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    if (!['ADMIN', 'TEACHER', 'ACADEMY'].includes(session.role)) {
+      return c.json(errorResponse('Not authorized'), 403);
+    }
+    const { videoId, studentId, extraMinutes, validFrom, validUntil } = await c.req.json();
+    if (!videoId || !studentId || !extraMinutes || !validFrom || !validUntil) {
+      return c.json(errorResponse('videoId, studentId, extraMinutes, validFrom, validUntil required'), 400);
+    }
+    const extraSeconds = Math.round(Number(extraMinutes) * 60);
+    if (!Number.isFinite(extraSeconds) || extraSeconds <= 0) {
+      return c.json(errorResponse('extraMinutes must be a positive number'), 400);
+    }
+    if (new Date(validFrom) >= new Date(validUntil)) {
+      return c.json(errorResponse('validFrom must be before validUntil'), 400);
+    }
+    const video = await c.env.DB
+      .prepare(`SELECT v.id, l.classId, c.teacherId, a.ownerId FROM Video v JOIN Lesson l ON v.lessonId = l.id JOIN Class c ON l.classId = c.id JOIN Academy a ON c.academyId = a.id WHERE v.id = ?`)
+      .bind(videoId).first() as any;
+    if (!video) return c.json(errorResponse('Video not found'), 404);
+    if (session.role === 'TEACHER' && !(await teacherCanAccessClass(c.env.DB, session.id, video.classId as string))) {
+      return c.json(errorResponse('Not authorized'), 403);
+    }
+    if (session.role === 'ACADEMY' && video.ownerId !== session.id) {
+      return c.json(errorResponse('Not authorized'), 403);
+    }
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    await c.env.DB
+      .prepare(`INSERT INTO VideoPlayExtension (id, videoId, studentId, extraSeconds, validFrom, validUntil, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)`)
+      .bind(id, videoId, studentId, extraSeconds, validFrom, validUntil, now)
+      .run();
+    // If student is currently BLOCKED but is now within extension window, unblock them
+    const nowCheck = new Date().toISOString();
+    if (validFrom <= nowCheck && validUntil >= nowCheck) {
+      const playState = await c.env.DB
+        .prepare(`SELECT id, totalWatchTimeSeconds, status FROM VideoPlayState WHERE videoId = ? AND studentId = ?`)
+        .bind(videoId, studentId).first() as any;
+      if (playState && playState.status === 'BLOCKED') {
+        const videoInfo = await c.env.DB
+          .prepare(`SELECT v.durationSeconds, l.maxWatchTimeMultiplier FROM Video v JOIN Lesson l ON v.lessonId = l.id WHERE v.id = ?`)
+          .bind(videoId).first() as any;
+        const baseMax = (videoInfo?.durationSeconds || 0) * (videoInfo?.maxWatchTimeMultiplier || 2);
+        const allExtRow = await c.env.DB
+          .prepare(`SELECT COALESCE(SUM(extraSeconds), 0) as total FROM VideoPlayExtension WHERE videoId = ? AND studentId = ? AND validFrom <= ? AND validUntil >= ?`)
+          .bind(videoId, studentId, nowCheck, nowCheck).first() as any;
+        const effectiveMax = baseMax + (Number(allExtRow?.total) || 0);
+        if (playState.totalWatchTimeSeconds < effectiveMax) {
+          await c.env.DB
+            .prepare(`UPDATE VideoPlayState SET status = 'ACTIVE', updatedAt = ? WHERE id = ?`)
+            .bind(nowCheck, playState.id).run();
+        }
+      }
+    }
+    return c.json(successResponse({ id, extraSeconds, validFrom, validUntil }));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Extensions] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
+
+// DELETE /videos/extensions/:id - Remove an extension
+videos.delete('/extensions/:id', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    if (!['ADMIN', 'TEACHER', 'ACADEMY'].includes(session.role)) {
+      return c.json(errorResponse('Not authorized'), 403);
+    }
+    const extId = c.req.param('id');
+    const ext = await c.env.DB
+      .prepare(`SELECT vpe.id, vpe.videoId, vpe.studentId, l.classId, a.ownerId FROM VideoPlayExtension vpe JOIN Video v ON vpe.videoId = v.id JOIN Lesson l ON v.lessonId = l.id JOIN Class c ON l.classId = c.id JOIN Academy a ON c.academyId = a.id WHERE vpe.id = ?`)
+      .bind(extId).first() as any;
+    if (!ext) return c.json(errorResponse('Extension not found'), 404);
+    if (session.role === 'TEACHER' && !(await teacherCanAccessClass(c.env.DB, session.id, ext.classId as string))) {
+      return c.json(errorResponse('Not authorized'), 403);
+    }
+    if (session.role === 'ACADEMY' && ext.ownerId !== session.id) {
+      return c.json(errorResponse('Not authorized'), 403);
+    }
+    await c.env.DB.prepare(`DELETE FROM VideoPlayExtension WHERE id = ?`).bind(extId).run();
+    return c.json(successResponse({ message: 'Extension deleted' }));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Extensions Delete] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
 });

@@ -73,6 +73,45 @@ export function useStudentTimes(isDisabled: boolean) {
     }
   };
 
+  const handleAddExtension = async (studentId: string, videoId: string, extraMinutes: number, validFrom: string, validUntil: string) => {
+    try {
+      const res = await apiClient('/videos/extensions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ videoId, studentId, extraMinutes, validFrom, validUntil }),
+      });
+      const result = await res.json();
+      if (!result.success) {
+        alert(result.error || 'Error al añadir tiempo extra');
+        return;
+      }
+      // Reload student times to reflect the new extension
+      if (selectedLessonForTime) {
+        await handleManageStudentTimes(selectedLessonForTime);
+      }
+    } catch (error) {
+      console.error('Failed to add extension:', error);
+      alert('Error al añadir tiempo extra');
+    }
+  };
+
+  const handleDeleteExtension = async (extensionId: string) => {
+    try {
+      const res = await apiClient(`/videos/extensions/${extensionId}`, { method: 'DELETE' });
+      const result = await res.json();
+      if (!result.success) {
+        alert(result.error || 'Error al eliminar extensión');
+        return;
+      }
+      if (selectedLessonForTime) {
+        await handleManageStudentTimes(selectedLessonForTime);
+      }
+    } catch (error) {
+      console.error('Failed to delete extension:', error);
+      alert('Error al eliminar extensión');
+    }
+  };
+
   const closeTimeModal = () => {
     setShowTimeModal(false);
     setSelectedLessonForTime(null);
@@ -89,6 +128,8 @@ export function useStudentTimes(isDisabled: boolean) {
     studentTimesData,
     handleManageStudentTimes,
     handleUpdateStudentTime,
+    handleAddExtension,
+    handleDeleteExtension,
     closeTimeModal,
   };
 }
