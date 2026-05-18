@@ -20,8 +20,6 @@ interface ClassesHeaderProps {
   onCreateClass: () => void;
   activePeriodId: string;
   isClassInPeriod: (startDate?: string | null) => boolean;
-  viewMode: 'cards' | 'rows';
-  onViewModeChange: (mode: 'cards' | 'rows') => void;
 }
 
 export function ClassesHeader({
@@ -30,7 +28,6 @@ export function ClassesHeader({
   selectedClassId, setSelectedClassId,
   selectedTeacherId, setSelectedTeacherId,
   onCreateClass, activePeriodId, isClassInPeriod,
-  viewMode, onViewModeChange,
 }: ClassesHeaderProps) {
   // Derive unique teachers from classes (for ADMIN, scoped to selected academy)
   const teacherOptions = useMemo(() => {

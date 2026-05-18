@@ -2,7 +2,7 @@
 
 import { countNewDemoSubmissions } from '@/lib/demo-data';
 import { DeleteIcon } from '@/components/ui/DeleteIcon';
-import { getDueDateColor, getFileCount } from './assignments-types';
+import { getDueDateColor } from './assignments-types';
 import type { Assignment } from './assignments-types';
 
 interface AssignmentsTableProps {

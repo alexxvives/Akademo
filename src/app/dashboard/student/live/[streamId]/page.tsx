@@ -63,19 +63,6 @@ export default function StudentLivePage() {
 
   const backUrl = stream ? `/dashboard/student/subject/${stream.classSlug || stream.classId}` : '/dashboard/student/live';
 
-  if (error) {
-    return (
-      <div className="fixed inset-0 bg-gray-950 flex items-center justify-center">
-        <div className="text-center text-white space-y-4">
-          <p className="text-red-400 text-lg">{error}</p>
-          <button onClick={() => router.back()} className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm transition-colors">
-            ← Volver
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   // Listen for Daily.co left-meeting event so students are redirected when host ends the session
   useEffect(() => {
     if (!embedUrl) return;
@@ -91,6 +78,19 @@ export default function StudentLivePage() {
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
   }, [embedUrl, backUrl, router]);
+
+  if (error) {
+    return (
+      <div className="fixed inset-0 bg-gray-950 flex items-center justify-center">
+        <div className="text-center text-white space-y-4">
+          <p className="text-red-400 text-lg">{error}</p>
+          <button onClick={() => router.back()} className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm transition-colors">
+            ← Volver
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const displayName = user ? `${user.firstName} ${user.lastName}`.trim() : '';
   const displayEmail = user?.email || '';

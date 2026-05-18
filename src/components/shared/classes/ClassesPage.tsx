@@ -58,8 +58,6 @@ export function ClassesPage({ role }: ClassesPageProps) {
           onCreateClass={crud.openCreateModal}
           activePeriodId={data.activePeriodId}
           isClassInPeriod={data.isClassInPeriod}
-          viewMode={viewMode}
-          onViewModeChange={handleViewModeChange}
         />
 
         {data.filteredClasses.length === 0 ? (

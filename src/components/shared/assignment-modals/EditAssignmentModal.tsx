@@ -6,12 +6,10 @@ import { CustomDatePicker } from '@/components/ui/CustomDatePicker';
 import { CustomTimePicker } from '@/components/ui/CustomTimePicker';
 import { QuizQuestionBuilder, createEmptyQuestion, parseQuizTxt } from '@/components/shared/QuizQuestionBuilder';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
-import { LessonSearchDropdown } from '@/components/ui/LessonSearchDropdown';
 import { apiClient } from '@/lib/api-client';
 import type { AssignmentModalsProps } from './types';
 
 interface TopicOption { id: string; name: string; }
-interface LessonOption { id: string; title: string; topicId: string | null; }
 
 export function EditAssignmentModal(props: AssignmentModalsProps) {
   const {
@@ -20,7 +18,7 @@ export function EditAssignmentModal(props: AssignmentModalsProps) {
     showEditModal, setShowEditModal,
     editClassId = '', setEditClassId,
     editTopicId = '', setEditTopicId,
-    editLessonId = '', setEditLessonId,
+    setEditLessonId,
     editTitle, setEditTitle, editDescription, setEditDescription,
     editDueDate, setEditDueDate, editUploadFiles, setEditUploadFiles,
     editQuizQuestions, setEditQuizQuestions,
@@ -31,17 +29,12 @@ export function EditAssignmentModal(props: AssignmentModalsProps) {
   const [showQuizBuilder, setShowQuizBuilder] = useState(false);
   const txtImportRef = useRef<HTMLInputElement>(null);
   const [topics, setTopics] = useState<TopicOption[]>([]);
-  const [lessons, setLessons] = useState<LessonOption[]>([]);
 
   useEffect(() => {
-    if (!showEditModal || !editClassId) { setTopics([]); setLessons([]); return; }
-    Promise.all([
-      apiClient(`/topics?classId=${editClassId}`).then(r => r.json()),
-      apiClient(`/lessons?classId=${editClassId}`).then(r => r.json()),
-    ]).then(([topicsData, lessonsData]) => {
-      if (topicsData.success) setTopics(topicsData.data || []);
-      if (lessonsData.success) setLessons(lessonsData.data || []);
-    }).catch(() => {});
+    if (!showEditModal || !editClassId) { setTopics([]); return; }
+    apiClient(`/topics?classId=${editClassId}`).then(r => r.json())
+      .then(topicsData => { if (topicsData.success) setTopics(topicsData.data || []); })
+      .catch(() => {});
   }, [showEditModal, editClassId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleClassChange = (newClassId: string) => {
@@ -49,7 +42,6 @@ export function EditAssignmentModal(props: AssignmentModalsProps) {
     setEditTopicId?.('');
     setEditLessonId?.('');
     setTopics([]);
-    setLessons([]);
   };
 
   const handleTxtImport = async (e: React.ChangeEvent<HTMLInputElement>) => {

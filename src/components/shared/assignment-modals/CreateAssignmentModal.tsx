@@ -9,19 +9,11 @@ import { CustomDatePicker } from '@/components/ui/CustomDatePicker';
 import { CustomTimePicker } from '@/components/ui/CustomTimePicker';
 import { QuizQuestionBuilder } from '@/components/shared/QuizQuestionBuilder';
 import type { QuizQuestionForm } from '@/components/shared/QuizQuestionBuilder';
-import { LessonSearchDropdown } from '@/components/ui/LessonSearchDropdown';
 import type { AssignmentModalsProps } from './types';
 
 function emptyQuestion(): QuizQuestionForm {
   const o1 = nanoid(6); const o2 = nanoid(6);
   return { questionText: '', options: [{ id: o1, text: '' }, { id: o2, text: '' }], correctOptionIds: [], explanation: '' };
-}
-
-interface LessonOption {
-  id: string;
-  title: string;
-  topicId: string | null;
-  topicName?: string;
 }
 
 interface TopicOption {
@@ -33,7 +25,6 @@ export function CreateAssignmentModal(props: AssignmentModalsProps) {
   const {
     classes, paymentStatus,
     showCreateModal, setShowCreateModal, selectedClassForCreate, setSelectedClassForCreate,
-    selectedLessonForCreate, setSelectedLessonForCreate,
     selectedTopicForCreate, setSelectedTopicForCreate,
     newTitle, setNewTitle, newDescription, setNewDescription, newDueDate, setNewDueDate,
     uploadFiles, setUploadFiles, uploadProgress, creating, handleCreateAssignment, resetForm,
@@ -73,38 +64,19 @@ export function CreateAssignmentModal(props: AssignmentModalsProps) {
   };
   const [dueDatePart, setDueDatePart] = useState(() => newDueDate ? newDueDate.slice(0, 10) : '');
   const [dueTimePart, setDueTimePart] = useState(() => newDueDate ? newDueDate.slice(11, 16) : '');
-  const [lessons, setLessons] = useState<LessonOption[]>([]);
   const [topics, setTopics] = useState<TopicOption[]>([]);
-  const [selectedLesson, setSelectedLesson] = useState(selectedLessonForCreate || '');
   const [selectedTopic, setSelectedTopic] = useState(selectedTopicForCreate || '');
 
   useEffect(() => {
-    setSelectedLesson('');
-    setSelectedLessonForCreate?.('');
     setSelectedTopic('');
     setSelectedTopicForCreate?.('');
-    setLessons([]);
     setTopics([]);
     if (!selectedClassForCreate) return;
-    apiClient(`/lessons?classId=${selectedClassForCreate}`)
-      .then(r => r.json())
-      .then(data => { if (data.success) setLessons(data.data || []); })
-      .catch(() => {});
     apiClient(`/topics?classId=${selectedClassForCreate}`)
       .then(r => r.json())
       .then(data => { if (data.success) setTopics(data.data || []); })
       .catch(() => {});
   }, [selectedClassForCreate]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleLessonChange = (id: string) => {
-    setSelectedLesson(id);
-    setSelectedLessonForCreate?.(id);
-    // Auto-select topic from lesson's topicId
-    const lesson = lessons.find(l => l.id === id);
-    const autoTopic = lesson?.topicId || '';
-    setSelectedTopic(autoTopic);
-    setSelectedTopicForCreate?.(autoTopic);
-  };
 
   const handleDueDateChange = (date: string) => {
     setDueDatePart(date);
