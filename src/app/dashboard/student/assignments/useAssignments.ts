@@ -18,6 +18,8 @@ export function useAssignments() {
   const [dragActive, setDragActive] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<string>('PAID');
   const [showQuizModal, setShowQuizModal] = useState(false);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [ratingAssignmentId, setRatingAssignmentId] = useState<string | null>(null);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [dropdownFiles, setDropdownFiles] = useState<{ uploadId: string; name: string; storagePath: string }[]>([]);
   const [loadingDropdown, setLoadingDropdown] = useState(false);
@@ -151,9 +153,12 @@ export function useAssignments() {
       const res = await apiPost(`/assignments/${selectedAssignment.id}/submit`, { uploadIds });
       const result = await res.json();
       if (result.success) {
+        const submittedId = selectedAssignment.id;
         setShowUploadModal(false);
         setUploadFiles([]);
         loadAssignments();
+        setRatingAssignmentId(submittedId);
+        setShowRatingModal(true);
       } else {
         throw new Error(result.error || 'Error al entregar ejercicio');
       }
@@ -166,6 +171,14 @@ export function useAssignments() {
   };
 
   const openUploadModal = (assignment: Assignment) => { setSelectedAssignment(assignment); setShowUploadModal(true); };
+  const closeRatingModal = () => { setShowRatingModal(false); setRatingAssignmentId(null); };
+  const handleSubmitRating = async (rating: number) => {
+    if (!ratingAssignmentId) return;
+    try {
+      await apiPost(`/assignments/${ratingAssignmentId}/rate`, { rating });
+    } catch { /* silent */ }
+    closeRatingModal();
+  };
   const closeDropdown = () => setOpenDropdown(null);
 
   const handleEjerciciosClick = async (assignment: Assignment, e: React.MouseEvent) => {
@@ -240,6 +253,7 @@ export function useAssignments() {
     uploadFiles, setUploadFiles,
     uploading, dragActive,
     showQuizModal, setShowQuizModal,
+    showRatingModal, ratingAssignmentId, closeRatingModal, handleSubmitRating,
     openDropdown, dropdownFiles, loadingDropdown, dropdownRef,
     closeDropdown,
     isPastDue, getDueDateColor,

@@ -65,6 +65,9 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
   const [error, setError] = useState('');
   const [showRetryNotice, setShowRetryNotice] = useState(!!alreadyAttempted);
   const [showNoBackWarning, setShowNoBackWarning] = useState(false);
+  const hasShownWarningRef = useRef(false);
+  const [quizRating, setQuizRating] = useState(0);
+  const [quizRatingSubmitted, setQuizRatingSubmitted] = useState(false);
   const restored = useRef(false);
   const [userId] = useState(() => getStorageUserId());
   const storageKey = `quiz-progress-${userId}-${assignmentId}`;
@@ -265,6 +268,32 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
             </div>
           )}
 
+          {!isRetry && (
+            <div className="border-t border-gray-100 pt-4 mb-4">
+              <p className="text-sm text-gray-600 text-center mb-3">¿Cómo valorarías este cuestionario?</p>
+              {quizRatingSubmitted ? (
+                <p className="text-center text-sm text-green-600 font-medium">¡Gracias por tu valoración!</p>
+              ) : (
+                <div className="flex justify-center gap-2">
+                  {[1,2,3,4,5].map(star => (
+                    <button
+                      key={star}
+                      onClick={async () => {
+                        setQuizRating(star);
+                        try {
+                          await apiPost(`/assignments/${assignmentId}/rate`, { rating: star });
+                          setQuizRatingSubmitted(true);
+                        } catch { /* silent */ }
+                      }}
+                      className={`text-2xl transition-transform hover:scale-110 ${star <= quizRating ? 'text-yellow-400' : 'text-gray-300'}`}
+                    >
+                      ★
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           <div className="flex justify-end">
             <button onClick={onClose} className="px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors">
               Cerrar
@@ -424,7 +453,8 @@ export default function QuizTakingModal({ assignmentId, assignmentTitle, maxScor
           ) : !isLast ? (
             <button
               onClick={() => {
-                if (currentAnswers.length > 0) {
+                if (currentAnswers.length > 0 && !hasShownWarningRef.current) {
+                  hasShownWarningRef.current = true;
                   setShowNoBackWarning(true);
                 } else {
                   setCurrentIndex(i => Math.min(i + 1, questions.length - 1));

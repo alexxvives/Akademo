@@ -12,7 +12,7 @@ export default function TopicsLessonsList({
   lessons, topics, classId, totalStudents, expandTopicId, highlightLessonId,
   paymentStatus, onSelectLesson, onEditLesson, onDeleteLesson, onRescheduleLesson,
   onTopicsChange, onTopicsUpdate, onLessonsUpdate, onLessonMove, onToggleRelease, onBulkToggleRelease, onToggleTopicHidden,
-  dashboardBase, assignments = [],
+  dashboardBase, assignments = [], onEditAssignment, onDeleteAssignment, onToggleAssignmentRelease,
 }: TopicsLessonsListProps) {
   const h = useTopicsLessons({
     lessons, topics, classId, expandTopicId, highlightLessonId, paymentStatus,
@@ -39,10 +39,18 @@ export default function TopicsLessonsList({
   }, [nullTopicAssignments.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [viewMode, setViewMode] = useState<'cards' | 'rows'>('cards');
+  const [sinTemaHidden, setSinTemaHidden] = useState(false);
   useEffect(() => {
     const saved = localStorage.getItem('lessons-view');
     if (saved === 'cards' || saved === 'rows') setViewMode(saved);
-  }, []);
+    const sinTemaKey = `sinTemaHidden_${classId}`;
+    setSinTemaHidden(localStorage.getItem(sinTemaKey) === 'true');
+  }, [classId]);
+  const toggleSinTemaHidden = () => {
+    const next = !sinTemaHidden;
+    setSinTemaHidden(next);
+    localStorage.setItem(`sinTemaHidden_${classId}`, String(next));
+  };;
   const handleViewModeChange = (mode: 'cards' | 'rows') => {
     setViewMode(mode);
     localStorage.setItem('lessons-view', mode);
@@ -204,6 +212,11 @@ export default function TopicsLessonsList({
                 dashboardBase={dashboardBase}
                 classId={classId}
                 topicAssignments={assignmentsByTopic.get(topic.id) || []}
+                totalStudents={totalStudents}
+                onEditAssignment={onEditAssignment}
+                onDeleteAssignment={onDeleteAssignment}
+                onToggleAssignmentRelease={onToggleAssignmentRelease}
+                isDisabled={h.isDisabled}
               />
               {h.draggedTopicId && h.draggedTopicId !== topic.id && h.topicInsertIndex === index + 1 && index === topics.length - 1 && (
                 <div className="absolute -bottom-2 left-0 right-0 h-0.5 bg-blue-400 rounded-full z-20 shadow-[0_0_6px_2px_rgba(96,165,250,0.6)]" />
@@ -226,6 +239,13 @@ export default function TopicsLessonsList({
               classId={classId}
               topicAssignments={nullTopicAssignments}
               dashboardBase={dashboardBase}
+              topicHidden={sinTemaHidden}
+              onToggleTopicHidden={toggleSinTemaHidden}
+              totalStudents={totalStudents}
+              onEditAssignment={onEditAssignment}
+              onDeleteAssignment={onDeleteAssignment}
+              onToggleAssignmentRelease={onToggleAssignmentRelease}
+              isDisabled={h.isDisabled}
             />
           )}
         </div>
@@ -263,6 +283,11 @@ export default function TopicsLessonsList({
                 dashboardBase={dashboardBase}
                 classId={classId}
                 topicAssignments={assignmentsByTopic.get(topic.id) || []}
+                totalStudents={totalStudents}
+                onEditAssignment={onEditAssignment}
+                onDeleteAssignment={onDeleteAssignment}
+                onToggleAssignmentRelease={onToggleAssignmentRelease}
+                isDisabled={h.isDisabled}
               />
               {h.draggedTopicId && h.draggedTopicId !== topic.id && h.topicInsertIndex === index + 1 && index === topics.length - 1 && (
                 <div className="absolute -bottom-2 left-0 right-0 h-0.5 bg-blue-400 rounded-full z-20 shadow-[0_0_6px_2px_rgba(96,165,250,0.6)]" />
@@ -284,6 +309,13 @@ export default function TopicsLessonsList({
             classId={classId}
             topicAssignments={nullTopicAssignments}
             dashboardBase={dashboardBase}
+            topicHidden={sinTemaHidden}
+            onToggleTopicHidden={toggleSinTemaHidden}
+            totalStudents={totalStudents}
+            onEditAssignment={onEditAssignment}
+            onDeleteAssignment={onDeleteAssignment}
+            onToggleAssignmentRelease={onToggleAssignmentRelease}
+            isDisabled={h.isDisabled}
           />
         </div>
       )}

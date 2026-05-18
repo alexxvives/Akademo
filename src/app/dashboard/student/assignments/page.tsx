@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { SkeletonAssignments } from '@/components/ui/SkeletonLoader';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 import QuizTakingModal from '@/components/shared/QuizTakingModal';
+import { apiPost } from '@/lib/api-client';
 import { useAssignments } from './useAssignments';
 import { AssignmentRow } from './AssignmentRow';
 import { UploadModal } from './UploadModal';
@@ -17,6 +18,7 @@ export default function StudentAssignments() {
     uploadFiles, setUploadFiles,
     uploading, dragActive,
     showQuizModal, setShowQuizModal,
+    showRatingModal, ratingAssignmentId, closeRatingModal, handleSubmitRating,
     openDropdown, dropdownFiles, loadingDropdown, dropdownRef,
     closeDropdown,
     isPastDue, getDueDateColor,
@@ -202,6 +204,57 @@ export default function StudentAssignments() {
           onCompleted={() => loadAssignments()}
         />
       )}
+
+      {showRatingModal && ratingAssignmentId && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-xs w-full p-6 text-center">
+            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-1">¡Ejercicio entregado!</h3>
+            <p className="text-sm text-gray-500 mb-4">¿Cómo valorarías este ejercicio?</p>
+            <RatingStars assignmentId={ratingAssignmentId} onDone={closeRatingModal} />
+            <button onClick={closeRatingModal} className="mt-4 text-xs text-gray-400 hover:text-gray-600 transition-colors">
+              Omitir
+            </button>
+          </div>
+        </div>
+      )}
     </>
+  );
+}
+
+function RatingStars({ assignmentId, onDone }: { assignmentId: string; onDone: () => void }) {
+  const [rating, setRating] = useState(0);
+  const [hover, setHover] = useState(0);
+  const [submitted, setSubmitted] = useState(false);
+  if (submitted) {
+    return <p className="text-sm text-green-600 font-medium py-2">¡Gracias por tu valoración!</p>;
+  }
+  return (
+    <div className="flex justify-center gap-2">
+      {[1,2,3,4,5].map(star => (
+        <button
+          key={star}
+          onMouseEnter={() => setHover(star)}
+          onMouseLeave={() => setHover(0)}
+          onClick={async () => {
+            setRating(star);
+            setSubmitted(true);
+            try {
+              await apiPost(`/assignments/${assignmentId}/rate`, { rating: star });
+            } catch { /* silent */ }
+            setTimeout(onDone, 800);
+          }}
+          className={`text-3xl transition-transform hover:scale-110 ${
+            star <= (hover || rating) ? 'text-yellow-400' : 'text-gray-200'
+          }`}
+        >
+          ★
+        </button>
+      ))}
+    </div>
   );
 }

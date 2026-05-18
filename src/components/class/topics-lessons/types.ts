@@ -54,7 +54,10 @@ export interface TopicAssignment {
   type: 'file' | 'quiz';
   topicId?: string | null;
   dueDate?: string | null;
+  releaseDate?: string | null;
   submissionCount?: number;
+  avgRating?: number;
+  ratingCount?: number;
 }
 
 export interface TopicsLessonsListProps {
@@ -78,4 +81,7 @@ export interface TopicsLessonsListProps {
   onToggleTopicHidden?: (topicId: string, hidden: boolean) => void;
   dashboardBase?: string;
   assignments?: TopicAssignment[];
+  onEditAssignment?: (assignmentId: string) => void;
+  onDeleteAssignment?: (assignmentId: string, title: string) => void;
+  onToggleAssignmentRelease?: (assignment: TopicAssignment) => void;
 }

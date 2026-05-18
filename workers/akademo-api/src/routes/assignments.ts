@@ -171,17 +171,21 @@ assignments.get('/', async (c) => {
         SELECT 
           a.id, a.classId, a.teacherId, a.lessonId, a.topicId, a.title, a.description, a.type,
           a.dueDate, a.maxScore, a.feedbackMode, a.uploadId, a.solutionUploadId, a.createdAt, a.updatedAt,
+          a.releaseDate,
           c.name as className,
           t.name as topicName,
           GROUP_CONCAT(DISTINCT aa.uploadId) as attachmentIds,
           COUNT(DISTINCT aa.id) as attachmentCount,
           COUNT(DISTINCT s.id) as submissionCount,
-          COUNT(DISTINCT CASE WHEN s.gradedAt IS NOT NULL THEN s.id END) as gradedCount
+          COUNT(DISTINCT CASE WHEN s.gradedAt IS NOT NULL THEN s.id END) as gradedCount,
+          COALESCE(AVG(ar.rating), 0) as avgRating,
+          COUNT(DISTINCT ar.id) as ratingCount
         FROM Assignment a
         JOIN Class c ON a.classId = c.id
         LEFT JOIN Topic t ON a.topicId = t.id
         LEFT JOIN AssignmentAttachment aa ON a.id = aa.assignmentId
         LEFT JOIN AssignmentSubmission s ON a.id = s.assignmentId
+        LEFT JOIN AssignmentRating ar ON a.id = ar.assignmentId
         WHERE a.classId = ? AND (a.teacherId = ? OR c.teacherId = ?) ${lessonWhere}
         GROUP BY a.id
         ORDER BY a.dueDate DESC, a.createdAt DESC
@@ -194,19 +198,23 @@ assignments.get('/', async (c) => {
         SELECT 
           a.id, a.classId, a.teacherId, a.lessonId, a.topicId, a.title, a.description, a.type,
           a.dueDate, a.maxScore, a.feedbackMode, a.uploadId, a.solutionUploadId, a.createdAt, a.updatedAt,
+          a.releaseDate,
           c.name as className,
           ac.name as academyName,
           t.name as topicName,
           GROUP_CONCAT(DISTINCT aa.uploadId) as attachmentIds,
           COUNT(DISTINCT aa.id) as attachmentCount,
           COUNT(DISTINCT s.id) as submissionCount,
-          COUNT(DISTINCT CASE WHEN s.gradedAt IS NOT NULL THEN s.id END) as gradedCount
+          COUNT(DISTINCT CASE WHEN s.gradedAt IS NOT NULL THEN s.id END) as gradedCount,
+          COALESCE(AVG(ar.rating), 0) as avgRating,
+          COUNT(DISTINCT ar.id) as ratingCount
         FROM Assignment a
         JOIN Class c ON a.classId = c.id
         JOIN Academy ac ON c.academyId = ac.id
         LEFT JOIN Topic t ON a.topicId = t.id
         LEFT JOIN AssignmentAttachment aa ON a.id = aa.assignmentId
         LEFT JOIN AssignmentSubmission s ON a.id = s.assignmentId
+        LEFT JOIN AssignmentRating ar ON a.id = ar.assignmentId
         WHERE a.classId = ? ${ownerFilter} ${lessonWhere}
         GROUP BY a.id
         ORDER BY a.dueDate DESC, a.createdAt DESC
@@ -931,7 +939,7 @@ assignments.patch('/:id', async (c) => {
     }
 
     const assignmentId = c.req.param('id');
-    const { title, description, dueDate, maxScore, uploadId, uploadIds, solutionUploadId, questions, classId: newClassId, topicId: newTopicId, lessonId: newLessonId, feedbackMode } = await c.req.json();
+    const { title, description, dueDate, maxScore, uploadId, uploadIds, solutionUploadId, questions, classId: newClassId, topicId: newTopicId, lessonId: newLessonId, feedbackMode, releaseDate } = await c.req.json();
 
     // Verify assignment exists
     const assignment = await c.env.DB.prepare(`
@@ -1023,6 +1031,10 @@ assignments.patch('/:id', async (c) => {
       updateFields.push('feedbackMode = ?');
       bindings.push(feedbackMode);
     }
+    if (releaseDate !== undefined) {
+      updateFields.push('releaseDate = ?');
+      bindings.push(releaseDate === null ? null : releaseDate);
+    }
     updateFields.push('updatedAt = ?');
     bindings.push(updatedAt);
     bindings.push(assignmentId);
@@ -1062,6 +1074,47 @@ assignments.patch('/:id', async (c) => {
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
     console.error('[Assignments/:id PATCH] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
+
+// POST /assignments/:id/rate - Student rates an assignment after completing it
+assignments.post('/:id/rate', async (c) => {
+  try {
+    const session = await requireAuth(c);
+    if (session.role !== 'STUDENT') {
+      return c.json(errorResponse('Only students can rate assignments'), 403);
+    }
+    const assignmentId = c.req.param('id');
+    const { rating } = await c.req.json();
+    if (!rating || rating < 1 || rating > 5) {
+      return c.json(errorResponse('Rating must be between 1 and 5'), 400);
+    }
+    // Verify the student has submitted or completed this assignment
+    const completed = await c.env.DB.prepare(`
+      SELECT 1 FROM AssignmentSubmission WHERE assignmentId = ? AND studentId = ?
+      UNION ALL
+      SELECT 1 FROM QuizAttempt WHERE assignmentId = ? AND studentId = ?
+      LIMIT 1
+    `).bind(assignmentId, session.id, assignmentId, session.id).first();
+    if (!completed) {
+      return c.json(errorResponse('Debes completar el ejercicio antes de valorarlo'), 403);
+    }
+    const now = new Date().toISOString();
+    const existing = await c.env.DB.prepare(
+      'SELECT id FROM AssignmentRating WHERE assignmentId = ? AND studentId = ?'
+    ).bind(assignmentId, session.id).first();
+    if (existing) {
+      await c.env.DB.prepare('UPDATE AssignmentRating SET rating = ? WHERE id = ?').bind(rating, existing.id).run();
+    } else {
+      await c.env.DB.prepare(
+        'INSERT INTO AssignmentRating (id, assignmentId, studentId, rating, createdAt) VALUES (?, ?, ?, ?, ?)'
+      ).bind(crypto.randomUUID(), assignmentId, session.id, rating, now).run();
+    }
+    return c.json(successResponse({ message: 'Valoración guardada', rating }));
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Assignment rate] Error:', error);
     return c.json(errorResponse('Internal server error'), 500);
   }
 });

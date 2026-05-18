@@ -311,12 +311,39 @@ export function useClassActions(s: ClassDetailState) {
     } catch { alert('Error de conexión'); }
   };
 
+  const handleDeleteAssignment = async (assignmentId: string, title: string) => {
+    if (!window.confirm(`¿Eliminar el ejercicio "${title}"?`)) return;
+    try {
+      const res = await apiClient(`/assignments/${assignmentId}`, { method: 'DELETE' });
+      const result = await res.json();
+      if (result.success) {
+        s.setAssignments(prev => prev.filter(a => a.id !== assignmentId));
+      } else alert(result.error || 'Error al eliminar ejercicio');
+    } catch { alert('Error de conexión'); }
+  };
+
+  const handleToggleAssignmentRelease = async (assignment: { id: string; releaseDate?: string | null }) => {
+    const releasedNow = !assignment.releaseDate || new Date(assignment.releaseDate) <= new Date();
+    const newReleaseDate = releasedNow ? '2099-12-31T23:59:59Z' : new Date().toISOString();
+    try {
+      const res = await apiClient(`/assignments/${assignment.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ releaseDate: newReleaseDate }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        s.setAssignments(prev => prev.map(a => a.id === assignment.id ? { ...a, releaseDate: newReleaseDate } : a));
+      } else alert(result.error || 'Error al actualizar ejercicio');
+    } catch { alert('Error de conexión'); }
+  };
+
   return {
     selectLesson, goBackToLessons, selectVideoInLesson,
     createLiveClass, confirmCreateStream, deleteLiveClass,
     handleEnrollmentAction, handleDeleteLesson, handleToggleRelease, handleBulkToggleRelease,
     handleLessonMove, handleRescheduleLesson, handleRescheduleSubmit, handleHideLesson,
     addVideoToForm, addDocumentToForm, handleDeleteVideo, handleDeleteDocument, handleToggleDocumentDownload,
-    handleToggleTopicHidden,
+    handleToggleTopicHidden, handleDeleteAssignment, handleToggleAssignmentRelease,
   };
 }

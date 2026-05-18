@@ -43,7 +43,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
     handleEnrollmentAction, handleDeleteLesson, handleToggleRelease, handleBulkToggleRelease,
     handleLessonMove, handleRescheduleLesson, handleRescheduleSubmit, handleHideLesson,
     addVideoToForm, addDocumentToForm, handleDeleteVideo, handleDeleteDocument, handleToggleDocumentDownload,
-    handleToggleTopicHidden,
+    handleToggleTopicHidden, handleDeleteAssignment, handleToggleAssignmentRelease,
   } = useClassActions(s);
 
   const { handleLessonCreate, handleEditLesson, handleUpdateLesson, handleAddLink, handleDeleteLink } = useLessonCreateEdit(s);
@@ -161,6 +161,14 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
             onLessonsUpdate={setLessons}
             dashboardBase={basePath}
             assignments={assignments}
+            onDeleteAssignment={handleDeleteAssignment}
+            onToggleAssignmentRelease={handleToggleAssignmentRelease}
+            onEditAssignment={(assignmentId) => {
+              const a = assignments.find(x => x.id === assignmentId);
+              if (!a) return;
+              const tab = a.type === 'quiz' ? 'tab=quiz' : 'tab=file';
+              router.push(`${basePath}/assignments?${tab}&classId=${classData?.id || ''}${a.topicId ? `&topicId=${a.topicId}` : ''}`);
+            }}
           />
 
           {showRescheduleModal && reschedulingLesson && (
