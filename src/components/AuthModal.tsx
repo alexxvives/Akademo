@@ -10,9 +10,10 @@ interface AuthModalProps {
   defaultRole?: string;
   onClose: () => void;
   sessionExpired?: boolean;
+  redirectTo?: string;
 }
 
-export default function AuthModal({ mode, defaultRole, onClose, sessionExpired }: AuthModalProps) {
+export default function AuthModal({ mode, defaultRole, onClose, sessionExpired, redirectTo }: AuthModalProps) {
   const [view, setView] = useState<'login' | 'register' | 'forgot'>(mode);
 
   useEffect(() => {
@@ -70,6 +71,7 @@ export default function AuthModal({ mode, defaultRole, onClose, sessionExpired }
             onSwitchToRegister={switchToRegister}
             onForgotPassword={switchToForgot}
             onClose={onClose}
+            redirectTo={redirectTo}
           />
         )}
         {view === 'register' && (

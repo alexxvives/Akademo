@@ -56,6 +56,7 @@ function HomePageContent() {
   }, [searchParams]);
 
   const isExpired = searchParams.get('expired') === '1';
+  const nextRedirect = searchParams.get('next') || undefined;
 
   const [modalDefaultRole, setModalDefaultRole] = useState<string | undefined>();
 
@@ -73,7 +74,7 @@ function HomePageContent() {
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
-      {showModal && <AuthModal mode={modalMode} defaultRole={modalDefaultRole} onClose={closeModal} sessionExpired={isExpired} />}
+      {showModal && <AuthModal mode={modalMode} defaultRole={modalDefaultRole} onClose={closeModal} sessionExpired={isExpired} redirectTo={nextRedirect} />}
 
       <Navbar 
         t={t}

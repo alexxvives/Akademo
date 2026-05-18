@@ -41,7 +41,7 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Public paths that don't require authentication
-  const publicPaths = ['/', '/login', '/register', '/api/auth', '/join', '/api/join'];
+  const publicPaths = ['/', '/login', '/register', '/api/auth', '/join', '/api/join', '/docs', '/pricing', '/blog'];
 
   if (publicPaths.some(path => pathname.startsWith(path))) {
     return applySecurityHeaders(NextResponse.next());
@@ -51,7 +51,10 @@ export function middleware(request: NextRequest) {
   const sessionCookie = request.cookies.get('academy_session');
 
   if (!sessionCookie || !hasValidCookieFormat(sessionCookie.value)) {
-    return NextResponse.redirect(new URL('/login', request.url));
+    const loginUrl = new URL('/', request.url);
+    loginUrl.searchParams.set('modal', 'login');
+    loginUrl.searchParams.set('next', pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
   return applySecurityHeaders(NextResponse.next());

@@ -10,9 +10,10 @@ interface LoginFormProps {
   onSwitchToRegister: () => void;
   onForgotPassword: () => void;
   onClose: () => void;
+  redirectTo?: string;
 }
 
-export function LoginForm({ onSuccess, onSwitchToRegister, onForgotPassword, onClose }: LoginFormProps) {
+export function LoginForm({ onSuccess, onSwitchToRegister, onForgotPassword, onClose, redirectTo }: LoginFormProps) {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -24,7 +25,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister, onForgotPassword, onC
 
   const doRedirect = (role: string) => {
     onSuccess(role);
-    router.push(`/dashboard/${role}`);
+    router.push(redirectTo || `/dashboard/${role}`);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
