@@ -55,7 +55,7 @@ export function AssignmentCard({ assignment, viewMode = 'cards', dashboardBase }
   return (
     <Link
       href={href}
-      className="bg-[#1a1d29] rounded-xl overflow-hidden transition-all duration-300 group border shadow-sm border-gray-700 hover:border-accent-500 hover:shadow-xl hover:shadow-accent-500/20 cursor-pointer hover:scale-[1.03] flex flex-col no-underline"
+      className="bg-[#1a1d29] rounded-xl overflow-hidden transition-all duration-300 group border shadow-sm border-gray-700 hover:border-accent-500 hover:shadow-xl hover:shadow-accent-500/20 cursor-pointer hover:scale-[1.03] flex flex-col no-underline h-full"
     >
       <div className="flex flex-col h-full">
         {/* Header */}
