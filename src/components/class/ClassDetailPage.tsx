@@ -51,13 +51,14 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
   const { handleLessonCreate, handleEditLesson, handleUpdateLesson, handleAddLink, handleDeleteLink } = useLessonCreateEdit(s);
 
   const [assignments, setAssignments] = useState<TopicAssignment[]>([]);
+  const actualClassId = classData?.id;
   useEffect(() => {
-    if (!classId) return;
-    apiClient(`/assignments?classId=${classId}`)
+    if (!actualClassId) return;
+    apiClient(`/assignments?classId=${actualClassId}`)
       .then(r => r.json())
       .then(data => { if (data.success) setAssignments(data.data || []); })
       .catch(() => {});
-  }, [classId]);
+  }, [actualClassId]);
 
   if (loading) {
     return <SkeletonClassDetail />;
