@@ -7,12 +7,16 @@ interface AssignmentCardProps {
   assignment: TopicAssignment;
   viewMode?: 'cards' | 'rows';
   dashboardBase?: string;
+  classId?: string;
 }
 
-export function AssignmentCard({ assignment, viewMode = 'cards', dashboardBase }: AssignmentCardProps) {
+export function AssignmentCard({ assignment, viewMode = 'cards', dashboardBase, classId }: AssignmentCardProps) {
   const isQuiz = assignment.type === 'quiz';
   const label = isQuiz ? 'Cuestionario' : 'Ejercicio';
-  const href = dashboardBase ? `${dashboardBase}/assignments` : '#';
+  const tabParam = isQuiz ? 'tab=quiz' : 'tab=file';
+  const href = dashboardBase && classId
+    ? `${dashboardBase}/assignments?${tabParam}&classId=${classId}${assignment.topicId ? `&topicId=${assignment.topicId}` : ''}`
+    : '#';
 
   const QuizIcon = ({ className }: { className: string }) => (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -64,7 +68,7 @@ export function AssignmentCard({ assignment, viewMode = 'cards', dashboardBase }
         </div>
 
         {/* Icon area */}
-        <div className="relative" style={{ height: '120px' }}>
+        <div className="relative flex-1 min-h-[120px]">
           <div className="absolute inset-0 bg-gradient-to-br from-green-900/40 to-gray-800 flex items-center justify-center">
             <Icon className="w-12 h-12 text-green-500/60" />
           </div>
@@ -80,7 +84,7 @@ export function AssignmentCard({ assignment, viewMode = 'cards', dashboardBase }
         </div>
 
         {/* Footer */}
-        <div className="p-4 flex-1">
+        <div className="p-4">
           {assignment.dueDate && (
             <p className="text-gray-400 text-sm">
               Entrega: {new Date(assignment.dueDate).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}

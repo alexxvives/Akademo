@@ -113,7 +113,7 @@ function FileAssignmentsTable({ assignments, isAdmin, isDemo, canManage, require
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assignment.academyName || 'N/A'}</td>
             )}
             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assignment.className || 'N/A'}</td>
-            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assignment.topicName || '—'}</td>
+            <td className="px-6 py-4 text-sm text-gray-500 max-w-[10rem]"><span className="truncate block" title={assignment.topicName || undefined}>{assignment.topicName || '—'}</span></td>
             <td className="px-6 py-4 whitespace-nowrap">
               {(() => {
                 const fileCount = assignment.attachmentIds ? assignment.attachmentIds.split(',').filter(Boolean).length : 0;
@@ -292,7 +292,7 @@ function QuizAssignmentsTable({ assignments, isAdmin, isDemo, canManage, require
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assignment.academyName || 'N/A'}</td>
             )}
             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assignment.className || 'N/A'}</td>
-            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{assignment.topicName || '—'}</td>
+            <td className="px-6 py-4 text-sm text-gray-500 max-w-[10rem]"><span className="truncate block" title={assignment.topicName || undefined}>{assignment.topicName || '—'}</span></td>
             {requireGrading && (
               <td className={`px-6 py-4 whitespace-nowrap text-sm ${getDueDateColor(assignment.dueDate)}`}>
                 {assignment.dueDate ? (

@@ -178,7 +178,7 @@ export function TopicSection({
             <div className={viewMode === 'rows' ? 'flex flex-col gap-2 p-2' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-2'}>
               {topicLessons.map(renderLesson)}
               {topicAssignments.map(a => (
-                <AssignmentCard key={a.id} assignment={a} viewMode={viewMode} dashboardBase={dashboardBase} />
+                <AssignmentCard key={a.id} assignment={a} viewMode={viewMode} dashboardBase={dashboardBase} classId={classId} />
               ))}
             </div>
           )}
