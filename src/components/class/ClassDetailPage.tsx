@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { SkeletonClassDetail } from '@/components/ui/SkeletonLoader';
 import { ClassHeader, PendingEnrollments, TopicsLessonsList } from '@/components/class';
@@ -12,8 +12,6 @@ import StreamNameModal from '@/components/class/StreamNameModal';
 import { useClassDetail } from './useClassDetail';
 import { useClassActions } from './useClassActions';
 import { useLessonCreateEdit } from './useLessonCreateEdit';
-import { apiClient } from '@/lib/api-client';
-import type { TopicAssignment } from '@/components/class/topics-lessons/types';
 
 export interface ClassDetailPageProps {
   role: 'academy' | 'teacher' | 'admin';
@@ -23,7 +21,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
   const s = useClassDetail(role);
   const {
     router, classId, basePath, currentUser,
-    classData, lessons, topics,
+    classData, lessons, topics, assignments,
     selectedLesson, selectedVideo,
     loading, lessonFeedback, highlightLessonId,
     showLessonForm, setShowLessonForm, editingLessonId, setEditingLessonId,
@@ -49,16 +47,6 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
   } = useClassActions(s);
 
   const { handleLessonCreate, handleEditLesson, handleUpdateLesson, handleAddLink, handleDeleteLink } = useLessonCreateEdit(s);
-
-  const [assignments, setAssignments] = useState<TopicAssignment[]>([]);
-  const actualClassId = classData?.id;
-  useEffect(() => {
-    if (!actualClassId) return;
-    apiClient(`/assignments?classId=${actualClassId}`)
-      .then(r => r.json())
-      .then(data => { if (data.success) setAssignments(data.data || []); })
-      .catch(() => {});
-  }, [actualClassId]);
 
   if (loading) {
     return <SkeletonClassDetail />;

@@ -8,6 +8,7 @@ import { useUploadWarning } from '@/hooks/useUploadWarning';
 import { useTranscodingPoll } from '@/hooks/useTranscodingPoll';
 import { loadDemoClassData } from './class-demo-loader';
 import type { Topic, Lesson, LessonDetail, LessonVideo, PendingEnrollment, LiveClass, StreamRecording, ClassData, LessonFeedback, LessonFormData } from './types';
+import type { TopicAssignment } from './topics-lessons/types';
 
 const DEFAULT_FORM_DATA = () => {
   const today = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
@@ -37,6 +38,7 @@ export function useClassDetail(role: 'academy' | 'teacher' | 'admin') {
   const [classData, setClassData] = useState<ClassData | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);
+  const [assignments, setAssignments] = useState<TopicAssignment[]>([]);
   const [selectedLesson, setSelectedLesson] = useState<LessonDetail | null>(null);
   const [selectedVideo, setSelectedVideo] = useState<LessonVideo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -213,12 +215,14 @@ export function useClassDetail(role: 'academy' | 'teacher' | 'admin') {
         }
       } catch (e) { console.error('Failed to load academy defaults:', e); }
 
-      const [lessonsRes, topicsRes, pendingRes] = await Promise.all([
+      const [lessonsRes, topicsRes, pendingRes, assignmentsRes] = await Promise.all([
         apiClient(`/lessons?classId=${actualClassId}`), apiClient(`/topics?classId=${actualClassId}`), apiClient('/enrollments/pending'),
+        apiClient(`/assignments?classId=${actualClassId}`),
       ]);
-      const [lessonsResult, topicsResult, pendingResult] = await Promise.all([lessonsRes.json(), topicsRes.json(), pendingRes.json()]);
+      const [lessonsResult, topicsResult, pendingResult, assignmentsResult] = await Promise.all([lessonsRes.json(), topicsRes.json(), pendingRes.json(), assignmentsRes.json()]);
       if (lessonsResult.success) setLessons(lessonsResult.data || []);
       if (topicsResult.success) setTopics(topicsResult.data || []);
+      if (assignmentsResult.success) setAssignments(assignmentsResult.data || []);
       if (pendingResult.success) {
         setPendingEnrollments((pendingResult.data || []).filter((e: PendingEnrollment) => e.classId === actualClassId));
       }
@@ -232,7 +236,7 @@ export function useClassDetail(role: 'academy' | 'teacher' | 'admin') {
 
   return {
     router, searchParams, classId, basePath, currentUser,
-    classData, setClassData, lessons, setLessons, topics, setTopics,
+    classData, setClassData, lessons, setLessons, topics, setTopics, assignments, setAssignments,
     selectedLesson, setSelectedLesson, selectedVideo, setSelectedVideo,
     loading, lessonFeedback, highlightLessonId, setHighlightLessonId,
     showLessonForm, setShowLessonForm, editingLessonId, setEditingLessonId,
