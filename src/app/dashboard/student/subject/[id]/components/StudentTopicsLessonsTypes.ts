@@ -45,6 +45,14 @@ export interface Lesson {
   totalWatchedSeconds?: number;
 }
 
+export interface StudentAssignment {
+  id: string;
+  title: string;
+  type: 'file' | 'quiz';
+  topicId: string | null;
+  dueDate: string | null;
+}
+
 export interface Topic {
   id: string;
   name: string;
@@ -57,6 +65,7 @@ export interface Topic {
 export interface StudentTopicsLessonsListProps {
   lessons: Lesson[];
   topics: Topic[];
+  assignments: StudentAssignment[];
   expandedTopics: Set<string>;
   setExpandedTopics: React.Dispatch<React.SetStateAction<Set<string>>>;
   onSelectLesson: (lesson: Lesson) => void;
@@ -71,6 +80,7 @@ export interface TopicSectionProps {
   topicId: string | null;
   topicName: string;
   lessons: Lesson[];
+  assignments: StudentAssignment[];
   isExpanded: boolean;
   onToggle: () => void;
   onSelectLesson: (lesson: Lesson) => void;

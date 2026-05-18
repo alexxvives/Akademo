@@ -91,6 +91,10 @@ export function CreateAssignmentModal(props: AssignmentModalsProps) {
   if (!showCreateModal) return null;
 
   const openQuizBuilder = () => {
+    if (uploadFiles.length > 0) {
+      if (!window.confirm('Si creas un cuestionario, el archivo adjunto se eliminará. ¿Continuar?')) return;
+      setUploadFiles([]);
+    }
     if (quizQuestions.length === 0) setQuizQuestions([emptyQuestion()]);
     setShowQuizBuilder(true);
   };
@@ -219,6 +223,12 @@ export function CreateAssignmentModal(props: AssignmentModalsProps) {
                   <input type="file" multiple className="hidden"
                     onChange={(e) => {
                       const files = Array.from(e.target.files || []);
+                      if (files.length > 0 && quizReady) {
+                        if (!window.confirm('Si adjuntas un archivo, el cuestionario creado se eliminará. ¿Continuar?')) {
+                          e.target.value = '';
+                          return;
+                        }
+                      }
                       setUploadFiles(files);
                       if (files.length > 0) { setAssignmentType('file'); setQuizQuestions([]); }
                     }} />

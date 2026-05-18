@@ -1,16 +1,18 @@
 import StudentLessonCard from './StudentLessonCard';
+import { AssignmentCard } from '@/components/class/topics-lessons/AssignmentCard';
 import type { TopicSectionProps } from './StudentTopicsLessonsTypes';
 
 export default function StudentTopicSection({
   topicId,
   topicName,
   lessons,
+  assignments,
   isExpanded,
   onToggle,
   onSelectLesson,
   quizCount,
 }: TopicSectionProps) {
-  if (lessons.length === 0) return null;
+  if (lessons.length === 0 && assignments.length === 0) return null;
 
   return (
     <div
@@ -47,7 +49,7 @@ export default function StudentTopicSection({
         </div>
       </div>
 
-      {/* Lessons Grid */}
+      {/* Lessons + Assignments Grid */}
       {isExpanded && (
         <div className="px-4 pb-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-2">
@@ -56,6 +58,15 @@ export default function StudentTopicSection({
                 key={lesson.id}
                 lesson={lesson}
                 onSelectLesson={onSelectLesson}
+              />
+            ))}
+            {assignments.map(assignment => (
+              <AssignmentCard
+                key={assignment.id}
+                assignment={assignment}
+                viewMode="cards"
+                dashboardBase="/dashboard/student"
+                totalStudents={0}
               />
             ))}
           </div>

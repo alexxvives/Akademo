@@ -1,11 +1,12 @@
 'use client';
 
 import StudentTopicSection from './StudentTopicSection';
-import type { Lesson, StudentTopicsLessonsListProps } from './StudentTopicsLessonsTypes';
+import type { Lesson, StudentAssignment, StudentTopicsLessonsListProps } from './StudentTopicsLessonsTypes';
 
 export default function StudentTopicsLessonsList({
   lessons,
   topics,
+  assignments,
   expandedTopics,
   setExpandedTopics,
   onSelectLesson,
@@ -32,6 +33,16 @@ export default function StudentTopicsLessonsList({
     lessonsByTopic.get(key)!.push(lesson);
   });
 
+  // Group assignments by topic
+  const assignmentsByTopic = new Map<string | null, StudentAssignment[]>();
+  assignments.forEach(assignment => {
+    const key = assignment.topicId || null;
+    if (!assignmentsByTopic.has(key)) {
+      assignmentsByTopic.set(key, []);
+    }
+    assignmentsByTopic.get(key)!.push(assignment);
+  });
+
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
@@ -56,6 +67,7 @@ export default function StudentTopicsLessonsList({
               topicId={topic.id}
               topicName={topic.name}
               lessons={lessonsByTopic.get(topic.id) || []}
+              assignments={assignmentsByTopic.get(topic.id) || []}
               isExpanded={expandedTopics.has(topic.id)}
               onToggle={() => toggleTopic(topic.id)}
               onSelectLesson={onSelectLesson}
@@ -66,6 +78,7 @@ export default function StudentTopicsLessonsList({
             topicId={null}
             topicName="Sin tema"
             lessons={lessonsByTopic.get(null) || []}
+            assignments={assignmentsByTopic.get(null) || []}
             isExpanded={expandedTopics.has('uncategorized')}
             onToggle={() => toggleTopic('uncategorized')}
             onSelectLesson={onSelectLesson}

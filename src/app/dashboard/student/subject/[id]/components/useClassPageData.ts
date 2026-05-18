@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { apiClient } from '@/lib/api-client';
 import { generateDemoStudentLessons, generateDemoClasses } from '@/lib/demo-data';
 import type { Video, Lesson, Topic, ClassData, ActiveStream } from './types';
+import type { StudentAssignment } from './StudentTopicsLessonsTypes';
 
 export function useClassPageData() {
   const params = useParams();
@@ -32,6 +33,7 @@ export function useClassPageData() {
   const [academyFeedbackEnabled, setAcademyFeedbackEnabled] = useState<boolean>(true);
   const [isDemo, setIsDemo] = useState(false);
   const [accessLocked, setAccessLocked] = useState(false);
+  const [assignments, setAssignments] = useState<StudentAssignment[]>([]);
 
   const loadData = async () => {
     try {
@@ -96,17 +98,20 @@ export function useClassPageData() {
       }
 
       const resolvedClassId = classResult.data.id;
-      const [lessonsRes, topicsRes] = await Promise.all([
+      const [lessonsRes, topicsRes, assignmentsRes] = await Promise.all([
         apiClient(`/lessons?classId=${resolvedClassId}`),
         apiClient(`/topics?classId=${resolvedClassId}`),
+        apiClient(`/assignments?classId=${resolvedClassId}`),
       ]);
-      const [lessonsResult, topicsResult] = await Promise.all([
+      const [lessonsResult, topicsResult, assignmentsResult] = await Promise.all([
         lessonsRes.json(),
         topicsRes.json(),
+        assignmentsRes.json(),
       ]);
 
       if (topicsResult.success) setTopics(topicsResult.data || []);
       if (lessonsResult.success) setLessons(lessonsResult.data);
+      if (assignmentsResult.success) setAssignments(assignmentsResult.data || []);
     } catch (error) {
       console.error('[Student Class] Failed to load data:', error);
     } finally {
@@ -199,7 +204,7 @@ export function useClassPageData() {
   }, [lessonParam, watchVideoId, lessons.length]);
 
   return {
-    classId, user, classData, lessons, topics,
+    classId, user, classData, lessons, topics, assignments,
     expandedTopics, setExpandedTopics,
     selectedLesson, setSelectedLesson, setLessons,
     selectedVideo, setSelectedVideo,

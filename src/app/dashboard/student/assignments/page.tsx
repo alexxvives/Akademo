@@ -29,7 +29,7 @@ export default function StudentAssignments() {
     loadAssignments,
   } = useAssignments();
 
-  const [activeTab, setActiveTab] = useState<'ejercicios' | 'cuestionarios'>('ejercicios');
+  const [activeTab, setActiveTab] = useState<'ejercicios' | 'cuestionarios'>('cuestionarios');
   const fileAssignments = assignments.filter(a => (a.type || 'file') !== 'quiz');
   const quizAssignments = assignments.filter(a => a.type === 'quiz');
   const searchParams = useSearchParams();
@@ -75,13 +75,13 @@ export default function StudentAssignments() {
         <div className="flex justify-center">
           <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
             <button
-              onClick={() => setActiveTab('ejercicios')}
-              className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'ejercicios' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-            >{`Ejercicios${fileAssignments.length > 0 ? ` (${fileAssignments.length})` : ''}`}</button>
-            <button
               onClick={() => setActiveTab('cuestionarios')}
               className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'cuestionarios' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >{`Cuestionarios${quizAssignments.length > 0 ? ` (${quizAssignments.length})` : ''}`}</button>
+            <button
+              onClick={() => setActiveTab('ejercicios')}
+              className={`px-5 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'ejercicios' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            >{`Ejercicios${fileAssignments.length > 0 ? ` (${fileAssignments.length})` : ''}`}</button>
           </div>
         </div>
 

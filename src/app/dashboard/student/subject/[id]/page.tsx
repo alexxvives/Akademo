@@ -72,6 +72,7 @@ export default function ClassPage() {
           <StudentTopicsLessonsList
             lessons={data.lessons}
             topics={data.topics}
+            assignments={data.assignments}
             expandedTopics={data.expandedTopics}
             setExpandedTopics={data.setExpandedTopics}
             onSelectLesson={actions.selectLesson}
