@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAssignmentsData } from './useAssignmentsData';
 import { useAssignmentsActions } from './useAssignmentsActions';
@@ -22,11 +22,29 @@ export function AssignmentsPage({ role }: AssignmentsPageProps) {
   const [activeTab, setActiveTab] = useState<'file' | 'quiz'>('quiz');
   const [searchQuery, setSearchQuery] = useState('');
   const searchParams = useSearchParams();
+  const hasAutoOpened = useRef(false);
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
     if (tabParam === 'quiz' || tabParam === 'file') setActiveTab(tabParam);
   }, [searchParams]);
+
+  useEffect(() => {
+    if (data.loading || hasAutoOpened.current) return;
+    const openId = searchParams.get('open');
+    const editId = searchParams.get('edit');
+    if (!openId && !editId) return;
+    hasAutoOpened.current = true;
+    if (openId && data.canManage) {
+      const a = data.assignments.find(x => x.id === openId);
+      if (a) subActions.openSubmissions(a);
+    }
+    if (editId && data.canManage) {
+      const a = data.assignments.find(x => x.id === editId);
+      if (a) actions.openEditAssignment(a);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.loading, data.assignments]);
 
   if (data.loading) return <AssignmentsLoadingSkeleton />;
 

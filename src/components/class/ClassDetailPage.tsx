@@ -164,10 +164,7 @@ export default function ClassDetailPage({ role }: ClassDetailPageProps) {
             onDeleteAssignment={handleDeleteAssignment}
             onToggleAssignmentRelease={handleToggleAssignmentRelease}
             onEditAssignment={(assignmentId) => {
-              const a = assignments.find(x => x.id === assignmentId);
-              if (!a) return;
-              const tab = a.type === 'quiz' ? 'tab=quiz' : 'tab=file';
-              router.push(`${basePath}/assignments?${tab}&classId=${classData?.id || ''}${a.topicId ? `&topicId=${a.topicId}` : ''}`);
+              router.push(`${basePath}/assignments?edit=${assignmentId}`);
             }}
           />
 

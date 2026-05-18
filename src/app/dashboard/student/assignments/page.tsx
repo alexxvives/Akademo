@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { SkeletonAssignments } from '@/components/ui/SkeletonLoader';
 import { ClassSearchDropdown } from '@/components/ui/ClassSearchDropdown';
 import QuizTakingModal from '@/components/shared/QuizTakingModal';
@@ -31,6 +32,24 @@ export default function StudentAssignments() {
   const [activeTab, setActiveTab] = useState<'ejercicios' | 'cuestionarios'>('ejercicios');
   const fileAssignments = assignments.filter(a => (a.type || 'file') !== 'quiz');
   const quizAssignments = assignments.filter(a => a.type === 'quiz');
+  const searchParams = useSearchParams();
+  const hasAutoOpened = useRef(false);
+
+  useEffect(() => {
+    if (loading || hasAutoOpened.current) return;
+    const openId = searchParams.get('open');
+    if (!openId) return;
+    hasAutoOpened.current = true;
+    const a = assignments.find(x => x.id === openId);
+    if (!a) return;
+    if (a.type === 'quiz') {
+      setSelectedAssignment(a);
+      setShowQuizModal(true);
+    } else {
+      openUploadModal(a);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, assignments]);
 
   if (loading) return <SkeletonAssignments />;
 
