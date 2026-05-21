@@ -157,24 +157,23 @@ zoomAccounts.post('/oauth/callback', async (c) => {
     const accountName = userInfo.email || `${userInfo.first_name} ${userInfo.last_name}`;
     const expiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
 
-    // Check if account already exists (upsert pattern)
+    // Check if account already exists for this academy (upsert pattern)
     const existingAccount = await c.env.DB.prepare(`
-      SELECT id FROM ZoomAccount WHERE accountId = ?
-    `).bind(userInfo.account_id).first() as any;
+      SELECT id FROM ZoomAccount WHERE accountId = ? AND academyId = ?
+    `).bind(userInfo.account_id, academyId).first() as any;
 
     if (existingAccount) {
-      // Update existing account
+      // Update tokens for existing connection
       await c.env.DB.prepare(`
         UPDATE ZoomAccount 
-        SET accountName = ?, accessToken = ?, refreshToken = ?, expiresAt = ?, academyId = ?
-        WHERE accountId = ?
+        SET accountName = ?, accessToken = ?, refreshToken = ?, expiresAt = ?
+        WHERE id = ?
       `).bind(
         accountName,
         tokens.access_token,
         tokens.refresh_token,
         expiresAt,
-        academyId,
-        userInfo.account_id
+        existingAccount.id
       ).run();
       
       return c.json({ success: true, data: { id: existingAccount.id } });
@@ -356,24 +355,22 @@ zoomAccounts.post('/oauth/callback/gtm', async (c) => {
     const accountId = tokens.organizer_key || tokens.account_key || crypto.randomUUID();
     const expiresAt = new Date(Date.now() + (tokens.expires_in || 3600) * 1000).toISOString();
 
-    // Check if account already exists (upsert pattern)
+    // Check if account already exists for this academy (upsert pattern)
     const existingAccount = await c.env.DB.prepare(
-      'SELECT id FROM ZoomAccount WHERE accountId = ? AND provider = ?'
-    ).bind(accountId, 'gotomeeting').first() as any;
+      'SELECT id FROM ZoomAccount WHERE accountId = ? AND academyId = ? AND provider = ?'
+    ).bind(accountId, academyId, 'gotomeeting').first() as any;
 
     if (existingAccount) {
       await c.env.DB.prepare(`
         UPDATE ZoomAccount
-        SET accountName = ?, accessToken = ?, refreshToken = ?, expiresAt = ?, academyId = ?
-        WHERE accountId = ? AND provider = ?
+        SET accountName = ?, accessToken = ?, refreshToken = ?, expiresAt = ?
+        WHERE id = ?
       `).bind(
         accountName,
         tokens.access_token,
         tokens.refresh_token,
         expiresAt,
-        academyId,
-        accountId,
-        'gotomeeting'
+        existingAccount.id
       ).run();
 
       return c.json({ success: true, data: { id: existingAccount.id } });

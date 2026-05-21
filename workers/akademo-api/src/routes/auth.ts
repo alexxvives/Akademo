@@ -212,7 +212,7 @@ auth.post('/register', registerRateLimit, validateBody(registerSchema), async (c
         .run();
     }
 
-    // Create short-lived access token (15 min) with embedded exp
+    // Create access token (8h) with embedded exp
     const iat = Math.floor(Date.now() / 1000);
     const sessionData = JSON.stringify({ userId, deviceSessionId, iat, exp: iat + ACCESS_TOKEN_MAX_AGE });
     const sessionId = await createSignedSession(sessionData, c.env);
@@ -377,7 +377,7 @@ auth.post('/login', loginRateLimit, validateBody(loginSchema), async (c) => {
         .run();
     }
     
-    // Create short-lived access token (15 min) with embedded exp
+    // Create access token (8h) with embedded exp
     const iat = Math.floor(Date.now() / 1000);
     const sessionData = JSON.stringify({ userId: user.id, deviceSessionId, iat, exp: iat + ACCESS_TOKEN_MAX_AGE });
     const sessionId = await createSignedSession(sessionData, c.env);
