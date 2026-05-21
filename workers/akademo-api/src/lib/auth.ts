@@ -28,7 +28,7 @@ export interface SessionUser {
 }
 
 export async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, 12);
+  return bcrypt.hash(password, 8);
 }
 
 /**

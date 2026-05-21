@@ -20,14 +20,9 @@ interface UseAuthReturn {
 // Module-level cache to share across components
 let cachedUser: User | null = null;
 let cacheTimestamp: number = 0;
+let cachedToken: string | null = null;
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-/**
- * Hook for managing authentication state
- * 
- * Caches the user data to prevent redundant API calls.
- * All components using this hook share the same cached data.
- */
 export function useAuth(): UseAuthReturn {
   const [user, setUser] = useState<User | null>(cachedUser);
   const [loading, setLoading] = useState(!cachedUser);
@@ -35,7 +30,15 @@ export function useAuth(): UseAuthReturn {
 
   const fetchUser = useCallback(async (force = false): Promise<void> => {
     const now = Date.now();
-    
+    const currentToken = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+
+    // Invalidate cache if the token has changed (e.g. different user logged in)
+    if (cachedToken !== currentToken) {
+      cachedUser = null;
+      cacheTimestamp = 0;
+      cachedToken = currentToken;
+    }
+
     // Return cached user if still valid and not forcing refresh
     if (!force && cachedUser && (now - cacheTimestamp) < CACHE_TTL) {
       setUser(cachedUser);
@@ -46,13 +49,14 @@ export function useAuth(): UseAuthReturn {
     try {
       setLoading(true);
       setError(null);
-      
+
       const res = await apiClient('/auth/me');
       const result: ApiResponse<User> = await res.json();
-      
+
       if (result.success && result.data) {
         cachedUser = result.data;
         cacheTimestamp = now;
+        cachedToken = currentToken;
         setUser(result.data);
       } else {
         cachedUser = null;
@@ -79,6 +83,7 @@ export function useAuth(): UseAuthReturn {
     } finally {
       cachedUser = null;
       cacheTimestamp = 0;
+      cachedToken = null;
       setUser(null);
       clearAuthSession();
       sessionStorage.clear();
@@ -120,5 +125,3 @@ export function clearAuthCache(): void {
   cachedUser = null;
   cacheTimestamp = 0;
 }
-
-
