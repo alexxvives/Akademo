@@ -43,11 +43,12 @@ export function PaymentMethodList({
 
       <div className="space-y-3">
         {/* Stripe Payment */}
+        {allowedPaymentMethods.includes('stripe') && (
         <button
           onClick={handleStripePayment}
-          disabled={processing || !paymentFrequency || !allowedPaymentMethods.includes('stripe')}
+          disabled={processing || !paymentFrequency}
           className={`w-full p-4 rounded-lg text-left transition-all ${
-            !paymentFrequency || !allowedPaymentMethods.includes('stripe')
+            !paymentFrequency
               ? 'bg-gray-50 border-2 border-gray-200 opacity-50 cursor-not-allowed'
               : 'bg-gray-50 border-2 border-gray-300 hover:border-gray-400 hover:shadow-md'
           }`}
@@ -63,28 +64,24 @@ export function PaymentMethodList({
               <p className="text-sm text-gray-600">Pago seguro con Stripe</p>
             </div>
             <div className="flex-shrink-0">
-              {!allowedPaymentMethods.includes('stripe') ? (
-                <span className="inline-block text-xs font-medium text-gray-500 bg-gray-200 px-3 py-1 rounded-full">
-                  No disponible
-                </span>
-              ) : (
-                <span className="inline-block text-xs font-medium text-white bg-violet-800 px-3 py-1 rounded-full">
-                  Instantáneo
-                </span>
-              )}
+              <span className="inline-block text-xs font-medium text-white bg-violet-800 px-3 py-1 rounded-full">
+                Instantáneo
+              </span>
             </div>
           </div>
         </button>
+        )}
 
         {/* Transferencia */}
+        {transferenciaAvailable && (
         <div
           role="button"
           aria-label="Pagar con transferencia bancaria"
-          tabIndex={!processing && !!paymentFrequency && transferenciaAvailable ? 0 : -1}
-          onClick={!processing && !!paymentFrequency && transferenciaAvailable ? handleTransferenciaPayment : undefined}
-          onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && !processing && !!paymentFrequency && transferenciaAvailable) handleTransferenciaPayment(); }}
+          tabIndex={!processing && !!paymentFrequency ? 0 : -1}
+          onClick={!processing && !!paymentFrequency ? handleTransferenciaPayment : undefined}
+          onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && !processing && !!paymentFrequency) handleTransferenciaPayment(); }}
           className={`w-full p-4 rounded-lg text-left transition-all ${
-            !paymentFrequency || !transferenciaAvailable
+            !paymentFrequency
               ? 'bg-gray-50 border-2 border-gray-200 opacity-50 cursor-not-allowed'
               : 'bg-gray-50 border-2 border-gray-300 hover:border-gray-500 hover:shadow-md cursor-pointer'
           }`}
@@ -124,11 +121,7 @@ export function PaymentMethodList({
               )}
             </div>
             <div className="flex-shrink-0">
-              {!transferenciaAvailable ? (
-                <span className="inline-block text-xs font-medium text-gray-500 bg-gray-200 px-3 py-1 rounded-full">
-                  No disponible
-                </span>
-              ) : currentPaymentStatus === 'PENDING' && currentPaymentMethod === 'transferencia' ? (
+              {currentPaymentStatus === 'PENDING' && currentPaymentMethod === 'transferencia' ? (
                 <span className="inline-block text-xs font-medium px-3 py-1 rounded-full bg-[#b0e788] text-[#1a1c29]">
                   Pendiente aprobación
                 </span>
@@ -140,16 +133,18 @@ export function PaymentMethodList({
             </div>
           </div>
         </div>
+        )}
 
         {/* Bizum */}
+        {bizumAvailable && (
         <div
           role="button"
           aria-label="Pagar con Bizum"
-          tabIndex={!processing && !!paymentFrequency && bizumAvailable ? 0 : -1}
-          onClick={!processing && !!paymentFrequency && bizumAvailable ? handleBizumPayment : undefined}
-          onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && !processing && !!paymentFrequency && bizumAvailable) handleBizumPayment(); }}
+          tabIndex={!processing && !!paymentFrequency ? 0 : -1}
+          onClick={!processing && !!paymentFrequency ? handleBizumPayment : undefined}
+          onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && !processing && !!paymentFrequency) handleBizumPayment(); }}
           className={`w-full p-4 rounded-lg text-left transition-all ${
-            !paymentFrequency || !bizumAvailable
+            !paymentFrequency
               ? 'bg-gray-50 border-2 border-gray-200 opacity-50 cursor-not-allowed'
               : 'bg-gray-50 border-2 border-gray-300 hover:border-gray-400 hover:shadow-md cursor-pointer'
           }`}
@@ -189,11 +184,7 @@ export function PaymentMethodList({
               )}
             </div>
             <div className="flex-shrink-0">
-              {!bizumAvailable ? (
-                <span className="inline-block text-xs font-medium text-gray-500 bg-gray-200 px-3 py-1 rounded-full">
-                  No disponible
-                </span>
-              ) : currentPaymentStatus === 'PENDING' && currentPaymentMethod === 'bizum' ? (
+              {currentPaymentStatus === 'PENDING' && currentPaymentMethod === 'bizum' ? (
                 <span className="inline-block text-xs font-medium px-3 py-1 rounded-full bg-[#b0e788] text-[#1a1c29]">
                   Pendiente aprobación
                 </span>
@@ -205,13 +196,15 @@ export function PaymentMethodList({
             </div>
           </div>
         </div>
+        )}
 
         {/* Cash Payment */}
+        {allowedPaymentMethods.includes('cash') && (
         <button
           onClick={handleCashPayment}
-          disabled={processing || !paymentFrequency || !allowedPaymentMethods.includes('cash')}
+          disabled={processing || !paymentFrequency}
           className={`w-full p-4 rounded-lg text-left transition-all ${
-            !paymentFrequency || !allowedPaymentMethods.includes('cash')
+            !paymentFrequency
               ? 'bg-gray-50 border-2 border-gray-200 opacity-50 cursor-not-allowed'
               : 'bg-gray-50 border-2 border-gray-300 hover:border-gray-400 hover:shadow-md'
           }`}
@@ -227,11 +220,7 @@ export function PaymentMethodList({
               <p className="text-sm text-gray-600">Paga directamente en la academia</p>
             </div>
             <div className="flex-shrink-0">
-              {!allowedPaymentMethods.includes('cash') ? (
-                <span className="inline-block text-xs font-medium text-gray-500 bg-gray-200 px-3 py-1 rounded-full">
-                  No disponible
-                </span>
-              ) : currentPaymentStatus === 'PENDING' && currentPaymentMethod === 'cash' ? (
+              {currentPaymentStatus === 'PENDING' && currentPaymentMethod === 'cash' ? (
                 <span className="inline-block text-xs font-medium px-3 py-1 rounded-full bg-[#b0e788] text-[#1a1c29]">
                   Pendiente aprobación
                 </span>
@@ -243,6 +232,7 @@ export function PaymentMethodList({
             </div>
           </div>
         </button>
+        )}
       </div>
     </div>
   );
