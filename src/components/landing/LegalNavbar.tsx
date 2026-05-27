@@ -23,12 +23,12 @@ export function LegalNavbar() {
             </Link>
 
             <div className="flex items-center gap-2">
-              <Link
-                href="/?modal=login"
+              <button
+                onClick={() => { window.location.href = '/?modal=login'; }}
                 className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
               >
                 Iniciar sesión
-              </Link>
+              </button>
               <Link
                 href="/pricing"
                 className="px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium bg-gray-900 text-white hover:bg-gray-800 transition-all shadow-sm"

@@ -687,6 +687,10 @@ academies.patch('/:id', async (c) => {
       updates.push('hideCompletedLessons = ?');
       values.push(body.hideCompletedLessons);
     }
+    if (body.teachersCanExpel !== undefined) {
+      updates.push('teachersCanExpel = ?');
+      values.push(body.teachersCanExpel);
+    }
     if (body.hiddenMenuItems !== undefined) {
       updates.push('hiddenMenuItems = ?');
       values.push(typeof body.hiddenMenuItems === 'string' ? body.hiddenMenuItems : JSON.stringify(body.hiddenMenuItems));

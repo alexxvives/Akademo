@@ -25,6 +25,7 @@ export function AdvancedSettingsCard({ s, actions }: { s: ProfileState; actions:
           <ToggleSetting label="Calificación obligatoria" desc="Requiere que los profesores califiquen los ejercicios" checked={formData.requireGrading} onToggle={() => actions.handleSettingChange('requireGrading', formData.requireGrading ? 0 : 1)} />
           <SelectSetting label="Límite de visualización" desc="Veces que puede ver el contenido" value={formData.defaultMaxWatchTimeMultiplier} options={MULTIPLIER_OPTIONS} onChange={(v) => actions.handleSettingChange('defaultMaxWatchTimeMultiplier', parseFloat(v))} />
           <ToggleSetting label="Ocultar lecciones completadas" desc="Oculta automáticamente las lecciones cuando el estudiante ha agotado el tiempo de todos sus videos" checked={formData.hideCompletedLessons} onToggle={() => actions.handleSettingChange('hideCompletedLessons', formData.hideCompletedLessons ? 0 : 1)} />
+          <ToggleSetting label="Profesores pueden expulsar estudiantes" desc="Permite a los profesores expulsar estudiantes desde su panel de progreso" checked={formData.teachersCanExpel} onToggle={() => actions.handleSettingChange('teachersCanExpel', formData.teachersCanExpel ? 0 : 1)} />
         </div>
       </div>
     </div>

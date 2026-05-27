@@ -1,5 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async redirects() {
+    return [
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'www.akademo-edu.com' }],
+        destination: 'https://akademo-edu.com/:path*',
+        permanent: true,
+      },
+    ];
+  },
   eslint: {
     // Disable ESLint during builds
     ignoreDuringBuilds: true,

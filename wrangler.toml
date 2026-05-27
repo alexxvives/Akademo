@@ -31,7 +31,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = "pk_test_51Sr91MGnG2OZ2dGGUw3ObiVNKVVFUmbvm
 NEXT_PUBLIC_API_URL = "https://api.akademo-edu.com"
 
 # Zoom OAuth client ID (public, for OAuth redirects)
-NEXT_PUBLIC_ZOOM_CLIENT_ID = "W2jPo9CJR0uZbFnEWtBF7Q"
+NEXT_PUBLIC_ZOOM_CLIENT_ID = "_W8bhQh6Q_OVMmKhSqIVvg"
 
 # Google Maps API key (public, for address autocomplete)
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY = "AIzaSyDUn8h1Aw7RwCYRxHiPl3hfOLfcKqrqsmM"

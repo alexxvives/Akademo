@@ -30,6 +30,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
     pendingWelcomeStudents,
     sendingWelcome,
     sendStudentWelcomeEmails,
+    teachersCanExpel,
   } = useStudentsData(role);
 
   const [welcomeResult, setWelcomeResult] = useState<{ sent: number; failed: number } | null>(null);
@@ -132,9 +133,9 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
         searchQuery={searchQuery}
         selectedClass={selectedClass}
         showTeacherColumn={role === 'ACADEMY'}
-        showBanButton={role === 'ACADEMY' || role === 'ADMIN'}
+        showBanButton={role === 'ACADEMY' || role === 'ADMIN' || (role === 'TEACHER' && teachersCanExpel)}
         disableBanButton={paymentStatus === 'NOT PAID' && userEmail.toLowerCase().includes('demo')}
-        onBanStudent={role === 'ACADEMY' || role === 'ADMIN' ? handleBanStudent : undefined}
+        onBanStudent={role === 'ACADEMY' || role === 'ADMIN' || (role === 'TEACHER' && teachersCanExpel) ? handleBanStudent : undefined}
         onAlertStudent={role === 'ACADEMY' || role === 'ADMIN' ? async (studentId: string, studentName: string) => {
           try {
             const res = await apiClient(`/students/${studentId}/warn`, { method: 'PATCH' });

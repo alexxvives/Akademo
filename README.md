@@ -85,7 +85,7 @@ AKADEMO/
 ├── workers/
 │   └── akademo-api/         # Backend API Worker
 │       ├── src/
-│       │   ├── routes/      # 17 API route groups
+│       │   ├── routes/      # 20+ API route groups
 │       │   ├── lib/         # Auth, DB, Storage utilities
 │       │   ├── index.ts     # Hono app entry
 │       │   └── types.ts     # TypeScript definitions
@@ -159,7 +159,7 @@ AKADEMO/
 
 ## 📊 Database (Cloudflare D1)
 
-**14 Tables** - See [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) for complete details
+**31 Tables** - See [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) for complete details
 
 ### Core Tables
 - **User** - All users (ADMIN, ACADEMY, TEACHER, STUDENT roles)
@@ -282,7 +282,7 @@ npx wrangler secret list
 
 **Base URL:** https://akademo-api.alexxvives.workers.dev
 
-**17 Route Groups** with 64+ endpoints:
+**20+ Route Groups** with 80+ endpoints:
 
 - `/auth` - Authentication & email verification
 - `/academies` - Academy management

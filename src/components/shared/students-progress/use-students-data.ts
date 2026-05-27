@@ -19,6 +19,7 @@ export function useStudentsData(role: 'TEACHER' | 'ACADEMY' | 'ADMIN') {
   const [userEmail, setUserEmail] = useState<string>('');
   const [pendingWelcomeStudents, setPendingWelcomeStudents] = useState(0);
   const [sendingWelcome, setSendingWelcome] = useState(false);
+  const [teachersCanExpel, setTeachersCanExpel] = useState(false);
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -71,6 +72,7 @@ export function useStudentsData(role: 'TEACHER' | 'ACADEMY' | 'ADMIN') {
           const academy = teacherAcademyData.data?.academy;
           if (academy) {
             setAcademyName(academy.name || '');
+            setTeachersCanExpel(academy.teachersCanExpel === 1);
             const status = academy.paymentStatus || 'PAID';
             setPaymentStatus(status);
             if (status === 'NOT PAID') {
@@ -239,5 +241,6 @@ export function useStudentsData(role: 'TEACHER' | 'ACADEMY' | 'ADMIN') {
     pendingWelcomeStudents,
     sendingWelcome,
     sendStudentWelcomeEmails,
+    teachersCanExpel,
   };
 }

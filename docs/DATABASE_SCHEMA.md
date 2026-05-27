@@ -30,21 +30,21 @@
 | 15 | [LessonRating](#15-lessonrating) | Student lesson ratings |
 | 16 | [LiveStream](#16-livestream) | Live class sessions (Zoom/Daily) |
 | 17 | [Assignment](#17-assignment) | Class assignments & quizzes |
-| 32 | [LessonLink](#32-lessonlink) | External links attached to lessons |
-| 18 | [AssignmentAttachment](#18-assignmentattachment) | Files attached to assignments |
-| 19 | [AssignmentSubmission](#19-assignmentsubmission) | Student assignment submissions |
-| 20 | [QuizQuestion](#20-quizquestion) | Quiz questions |
-| 21 | [QuizAttempt](#21-quizattempt) | Student quiz attempts |
-| 22 | [Payment](#22-payment) | Financial transactions |
-| 23 | [CalendarScheduledEvent](#23-calendarscheduledevent) | Calendar events |
-| 24 | [DailyTestRoom](#24-dailytestroom) | Daily.co test rooms |
-| 25 | [DeviceSession](#25-devicesession) | Active device sessions |
-| 26 | [LoginEvent](#26-loginevent) | Login location history |
-| 27 | [RateLimit](#27-ratelimit) | API rate limiting |
-| 28 | [VerificationCode](#28-verificationcode) | Email verification codes |
-| 29 | [Lead](#29-lead) | Sales leads (potential academies) |
-| 30 | [ZoomAccount](#30-zoomaccount) | Zoom OAuth accounts |
-| 31 | [AuditLog](#31-auditlog) | Admin action audit trail |
+| 18 | [LessonLink](#18-lessonlink) | External links attached to lessons |
+| 19 | [AssignmentAttachment](#19-assignmentattachment) | Files attached to assignments |
+| 20 | [AssignmentSubmission](#20-assignmentsubmission) | Student assignment submissions |
+| 21 | [QuizQuestion](#21-quizquestion) | Quiz questions |
+| 22 | [QuizAttempt](#22-quizattempt) | Student quiz attempts |
+| 23 | [Payment](#23-payment) | Financial transactions |
+| 24 | [CalendarScheduledEvent](#24-calendarscheduledevent) | Calendar events |
+| 25 | [DailyTestRoom](#25-dailytestroom) | Daily.co test rooms |
+| 26 | [DeviceSession](#26-devicesession) | Active device sessions |
+| 27 | [LoginEvent](#27-loginevent) | Login location history |
+| 28 | [RateLimit](#28-ratelimit) | API rate limiting |
+| 29 | [VerificationCode](#29-verificationcode) | Email verification codes |
+| 30 | [Lead](#30-lead) | Sales leads (potential academies) |
+| 31 | [ZoomAccount](#31-zoomaccount) | Zoom OAuth accounts |
+| 32 | [AuditLog](#32-auditlog) | Admin action audit trail |
 
 ---
 

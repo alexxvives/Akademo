@@ -45,6 +45,7 @@ export function useProfileData() {
     allowedPaymentMethods: [...DEFAULT_ALLOWED_PAYMENT_METHODS],
     transferenciaIban: '', bizumPhone: '', requireGrading: true, hiddenMenuItems: [],
     hideCompletedLessons: false,
+    teachersCanExpel: false,
   });
 
   const loadData = useCallback(async () => {
@@ -83,6 +84,7 @@ export function useProfileData() {
           requireGrading: d.requireGrading !== 0,
           hiddenMenuItems: (() => { try { return JSON.parse(d.hiddenMenuItems || '[]'); } catch { return []; } })(),
           hideCompletedLessons: d.hideCompletedLessons !== 0,
+          teachersCanExpel: d.teachersCanExpel !== 0,
         });
         setOriginalEmail((d.email as string | undefined) || user?.email || '');
       }

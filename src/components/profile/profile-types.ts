@@ -33,6 +33,7 @@ export interface Academy {
   requireGrading?: number;
   hiddenMenuItems?: string;
   hideCompletedLessons?: number;
+  teachersCanExpel?: number;
 }
 
 export interface AcademicYear {
@@ -59,6 +60,7 @@ export interface ProfileFormData {
   requireGrading: boolean;
   hiddenMenuItems: string[];
   hideCompletedLessons: boolean;
+  teachersCanExpel: boolean;
 }
 
 export const WATERMARK_OPTIONS = [
