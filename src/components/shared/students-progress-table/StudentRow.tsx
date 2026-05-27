@@ -14,6 +14,7 @@ interface StudentRowProps {
   showBanButton: boolean;
   disableBanButton: boolean;
   onBanStudent?: (enrollmentId: string) => void;
+  onReadmitStudent?: (enrollmentId: string) => void;
   onAlertStudent?: (studentId: string, studentName: string) => void;
 }
 
@@ -26,11 +27,13 @@ export function StudentRow({
   showBanButton,
   disableBanButton,
   onBanStudent,
+  onReadmitStudent,
   onAlertStudent,
 }: StudentRowProps) {
   const progress = student.totalVideos > 0 ? (student.videosWatched / student.totalVideos) * 100 : 0;
   const activityStatus = getActivityStatus(student.lastActive);
   const hasBreakdown = student.classBreakdown && student.classBreakdown.length > 1;
+  const isBanned = student.enrollmentStatus === 'BANNED';
 
   return (
     <React.Fragment key={`${student.id}-${student.classId}`}>
@@ -53,6 +56,11 @@ export function StudentRow({
             <div>
               <p className="text-sm font-medium text-gray-900">{student.name}</p>
               <p className="text-xs text-gray-500">{student.email}</p>
+              {isBanned && (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700 mt-0.5">
+                  Expulsado
+                </span>
+              )}
             </div>
           </div>
         </td>
@@ -165,23 +173,43 @@ export function StudentRow({
         {showBanButton && visibleColumns.acciones && (
           <td className="py-2 px-3 md:py-4 md:px-6">
             {!hasBreakdown ? (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (!disableBanButton && window.confirm(`¿Estás seguro de que deseas expulsar a ${student.name} de ${student.className}? Esta acción no se puede deshacer.`)) {
-                    onBanStudent?.(student.enrollmentId!);
-                  }
-                }}
-                disabled={disableBanButton}
-                className={`px-3 py-1.5 text-xs font-medium text-white rounded-lg transition-colors ${
-                  disableBanButton
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-red-600 hover:bg-red-700'
-                }`}
-                title={disableBanButton ? 'No disponible en modo demostración' : 'Expulsar estudiante'}
-              >
-                Expulsar
-              </button>
+              isBanned ? (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!disableBanButton && window.confirm(`¿Readmitir a ${student.name} en ${student.className}?`)) {
+                      onReadmitStudent?.(student.enrollmentId!);
+                    }
+                  }}
+                  disabled={disableBanButton}
+                  className={`px-3 py-1.5 text-xs font-medium text-white rounded-lg transition-colors ${
+                    disableBanButton
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-green-600 hover:bg-green-700'
+                  }`}
+                  title={disableBanButton ? 'No disponible en modo demostración' : 'Readmitir estudiante'}
+                >
+                  Readmitir
+                </button>
+              ) : (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!disableBanButton && window.confirm(`¿Estás seguro de que deseas expulsar a ${student.name} de ${student.className}? Esta acción no se puede deshacer.`)) {
+                      onBanStudent?.(student.enrollmentId!);
+                    }
+                  }}
+                  disabled={disableBanButton}
+                  className={`px-3 py-1.5 text-xs font-medium text-white rounded-lg transition-colors ${
+                    disableBanButton
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-red-600 hover:bg-red-700'
+                  }`}
+                  title={disableBanButton ? 'No disponible en modo demostración' : 'Expulsar estudiante'}
+                >
+                  Expulsar
+                </button>
+              )
             ) : (
               <span className="text-xs text-gray-400 italic">Ver detalle ↓</span>
             )}
@@ -198,6 +226,7 @@ export function StudentRow({
           showBanButton={showBanButton}
           disableBanButton={disableBanButton}
           onBanStudent={onBanStudent}
+          onReadmitStudent={onReadmitStudent}
         />
       ))}
     </React.Fragment>

@@ -27,6 +27,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
     activePeriodId,
     isClassInPeriod,
     handleBanStudent,
+    handleReadmitStudent,
     pendingWelcomeStudents,
     sendingWelcome,
     sendStudentWelcomeEmails,
@@ -136,6 +137,7 @@ export function StudentsProgressPage({ role }: StudentsProgressPageProps) {
         showBanButton={role === 'ACADEMY' || role === 'ADMIN' || (role === 'TEACHER' && teachersCanExpel)}
         disableBanButton={paymentStatus === 'NOT PAID' && userEmail.toLowerCase().includes('demo')}
         onBanStudent={role === 'ACADEMY' || role === 'ADMIN' || (role === 'TEACHER' && teachersCanExpel) ? handleBanStudent : undefined}
+        onReadmitStudent={role === 'ACADEMY' || role === 'ADMIN' || (role === 'TEACHER' && teachersCanExpel) ? handleReadmitStudent : undefined}
         onAlertStudent={role === 'ACADEMY' || role === 'ADMIN' ? async (studentId: string, studentName: string) => {
           try {
             const res = await apiClient(`/students/${studentId}/warn`, { method: 'PATCH' });

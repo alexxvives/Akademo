@@ -45,6 +45,7 @@ export interface StudentProgressApiRecord {
   totalLessons?: number | null;
   lastActive?: string | null;
   enrollmentId?: string | null;
+  enrollmentStatus?: string | null;
   paymentFrequency?: string | null;
   monthlyPrice?: number | null;
   oneTimePrice?: number | null;

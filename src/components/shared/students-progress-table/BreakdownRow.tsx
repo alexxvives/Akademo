@@ -12,11 +12,13 @@ export interface BreakdownRowProps {
   showBanButton: boolean;
   disableBanButton: boolean;
   onBanStudent?: (enrollmentId: string) => void;
+  onReadmitStudent?: (enrollmentId: string) => void;
 }
 
-export function BreakdownRow({ cls, studentName, visibleColumns, showTeacherColumn, showBanButton, disableBanButton, onBanStudent }: BreakdownRowProps) {
+export function BreakdownRow({ cls, studentName, visibleColumns, showTeacherColumn, showBanButton, disableBanButton, onBanStudent, onReadmitStudent }: BreakdownRowProps) {
   const clsProgress = cls.totalVideos > 0 ? (cls.videosWatched / cls.totalVideos) * 100 : 0;
   const clsActivity = getActivityStatus(cls.lastActive);
+  const isBanned = cls.enrollmentStatus === 'BANNED';
 
   return (
     <tr className="bg-gray-50/70">
@@ -98,22 +100,41 @@ export function BreakdownRow({ cls, studentName, visibleColumns, showTeacherColu
       {showBanButton && visibleColumns.acciones && (
         <td className="py-2 px-3 md:py-3 md:px-6">
           {cls.enrollmentId && (
-            <button
-              onClick={() => {
-                if (!disableBanButton && window.confirm(`¿Estás seguro de que deseas expulsar a ${studentName} de ${cls.className}? Esta acción no se puede deshacer.`)) {
-                  onBanStudent?.(cls.enrollmentId!);
-                }
-              }}
-              disabled={disableBanButton}
-              className={`px-2 py-1 text-xs font-medium text-white rounded-lg transition-colors ${
-                disableBanButton
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-red-500 hover:bg-red-600'
-              }`}
-              title={disableBanButton ? 'No disponible en modo demostración' : `Expulsar de ${cls.className}`}
-            >
-              Expulsar
-            </button>
+            isBanned ? (
+              <button
+                onClick={() => {
+                  if (!disableBanButton && window.confirm(`¿Readmitir a ${studentName} en ${cls.className}?`)) {
+                    onReadmitStudent?.(cls.enrollmentId!);
+                  }
+                }}
+                disabled={disableBanButton}
+                className={`px-2 py-1 text-xs font-medium text-white rounded-lg transition-colors ${
+                  disableBanButton
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-green-500 hover:bg-green-600'
+                }`}
+                title={disableBanButton ? 'No disponible en modo demostración' : `Readmitir en ${cls.className}`}
+              >
+                Readmitir
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  if (!disableBanButton && window.confirm(`¿Estás seguro de que deseas expulsar a ${studentName} de ${cls.className}? Esta acción no se puede deshacer.`)) {
+                    onBanStudent?.(cls.enrollmentId!);
+                  }
+                }}
+                disabled={disableBanButton}
+                className={`px-2 py-1 text-xs font-medium text-white rounded-lg transition-colors ${
+                  disableBanButton
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-red-500 hover:bg-red-600'
+                }`}
+                title={disableBanButton ? 'No disponible en modo demostración' : `Expulsar de ${cls.className}`}
+              >
+                Expulsar
+              </button>
+            )
           )}
         </td>
       )}

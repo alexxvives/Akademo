@@ -7,6 +7,7 @@ export interface ClassBreakdownItem {
   totalVideos: number;
   lastActive: string | null;
   enrollmentId?: string;
+  enrollmentStatus?: string;
   paymentStatus?: 'UP_TO_DATE' | 'BEHIND' | 'FREE';
   monthsBehind?: number;
 }
@@ -23,6 +24,7 @@ export interface StudentProgress {
   totalVideos: number;
   lastActive: string | null;
   enrollmentId?: string;
+  enrollmentStatus?: string;
   classBreakdown?: ClassBreakdownItem[];
   paymentStatus?: 'UP_TO_DATE' | 'BEHIND' | 'FREE';
   monthsBehind?: number;
@@ -38,6 +40,7 @@ export interface StudentsProgressTableProps {
   showBanButton?: boolean;
   disableBanButton?: boolean;
   onBanStudent?: (enrollmentId: string) => void;
+  onReadmitStudent?: (enrollmentId: string) => void;
   onAlertStudent?: (studentId: string, studentName: string) => void;
 }
 

@@ -4,7 +4,7 @@ import { SkeletonStudentClass } from '@/components/ui/SkeletonLoader';
 import StudentTopicsLessonsList from './components/StudentTopicsLessonsList';
 import ClassHeader from './components/ClassHeader';
 import LessonContentView from './components/LessonContentView';
-import { AccessLockedView, ClassNotStartedView } from './components/AccessBlockedViews';
+import { AccessLockedView, BannedView, ClassNotStartedView } from './components/AccessBlockedViews';
 import { useClassPageData } from './components/useClassPageData';
 import { useClassPageActions } from './components/useClassPageActions';
 import { parseDateString } from '@/lib/formatters';
@@ -32,7 +32,10 @@ export default function ClassPage() {
 
   if (data.loading) return <SkeletonStudentClass />;
 
-  if (data.accessLocked) return <AccessLockedView classData={data.classData} />;
+  if (data.accessLocked) {
+    if (data.isBanned) return <BannedView classData={data.classData} />;
+    return <AccessLockedView classData={data.classData} />;
+  }
 
   if (data.classData?.startDate) {
     const startDate = parseDateString(data.classData.startDate);

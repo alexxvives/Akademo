@@ -63,6 +63,7 @@ export async function fetchStudentProgress(role: 'TEACHER' | 'ACADEMY' | 'ADMIN'
         totalVideos: student.totalLessons ?? 0,
         lastActive: student.lastActive ?? null,
         enrollmentId: student.enrollmentId ?? undefined,
+        enrollmentStatus: student.enrollmentStatus ?? undefined,
         paymentStatus: paymentResult.status,
         monthsBehind: paymentResult.monthsBehind,
       };
@@ -131,6 +132,7 @@ export async function fetchStudentProgress(role: 'TEACHER' | 'ACADEMY' | 'ADMIN'
         totalVideos: student.totalLessons,
         lastActive: student.lastActive ?? null,
         enrollmentId: student.enrollmentIds[0],
+        enrollmentStatus: student.perClassRecords[0]?.enrollmentStatus,
         classBreakdown: student.perClassRecords.length > 1 ? student.perClassRecords : undefined,
         paymentStatus: aggregatePaymentStatus,
         monthsBehind: totalMonthsBehind,

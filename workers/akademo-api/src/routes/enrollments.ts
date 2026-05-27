@@ -635,6 +635,72 @@ enrollments.post('/leave', async (c) => {
   }
 });
 
+// PATCH /enrollments/readmit/:id - Readmit a banned student (ACADEMY, ADMIN, or TEACHER if academy allows it)
+enrollments.patch('/readmit/:id', async (c) => {
+  try {
+    const session = await requireAuth(c);
+
+    if (session.role !== 'ACADEMY' && session.role !== 'ADMIN' && session.role !== 'TEACHER') {
+      return c.json(errorResponse('Not authorized'), 403);
+    }
+
+    const enrollmentId = c.req.param('id');
+
+    const enrollment: any = await c.env.DB
+      .prepare(`
+        SELECT e.id, e.classId, e.userId, e.status, c.academyId, a.ownerId, a.teachersCanExpel
+        FROM ClassEnrollment e
+        JOIN Class c ON e.classId = c.id
+        JOIN Academy a ON c.academyId = a.id
+        WHERE e.id = ?
+      `)
+      .bind(enrollmentId)
+      .first();
+
+    if (!enrollment) {
+      return c.json(errorResponse('Enrollment not found'), 404);
+    }
+
+    if (enrollment.status !== 'BANNED') {
+      return c.json(errorResponse('Student is not banned'), 400);
+    }
+
+    if (session.role === 'ACADEMY' && enrollment.ownerId !== session.id) {
+      return c.json(errorResponse('Not authorized to readmit students from this academy'), 403);
+    }
+
+    if (session.role === 'TEACHER') {
+      if (!enrollment.teachersCanExpel) {
+        return c.json(errorResponse('This academy has not enabled teachers to manage students'), 403);
+      }
+      const teacher = await c.env.DB
+        .prepare('SELECT id FROM Teacher WHERE userId = ? AND academyId = ?')
+        .bind(session.id, enrollment.academyId)
+        .first();
+      if (!teacher) {
+        return c.json(errorResponse('Not authorized to readmit students from this academy'), 403);
+      }
+    }
+
+    await c.env.DB
+      .prepare(`
+        UPDATE ClassEnrollment
+        SET status = 'APPROVED',
+            documentSigned = 1
+        WHERE id = ?
+      `)
+      .bind(enrollmentId)
+      .run();
+
+    return c.json(successResponse({ message: 'Student readmitted successfully', enrollmentId }));
+
+  } catch (error: any) {
+    if (error.message === 'Unauthorized' || error.message === 'Forbidden') throw error;
+    console.error('[Readmit Student] Error:', error);
+    return c.json(errorResponse('Internal server error'), 500);
+  }
+});
+
 // DELETE /enrollments/:id - Ban student from class (ACADEMY, ADMIN, or TEACHER if academy allows it)
 enrollments.delete('/:id', async (c) => {
   try {

@@ -16,6 +16,7 @@ export function StudentsProgressTable({
   showBanButton = false,
   disableBanButton = false,
   onBanStudent,
+  onReadmitStudent,
   onAlertStudent,
 }: StudentsProgressTableProps) {
   const [tiempoTooltipPos, setTiempoTooltipPos] = useState<{ x: number; y: number } | null>(null);
@@ -228,6 +229,7 @@ export function StudentsProgressTable({
                     showBanButton={showBanButton}
                     disableBanButton={disableBanButton}
                     onBanStudent={onBanStudent}
+                    onReadmitStudent={onReadmitStudent}
                     onAlertStudent={onAlertStudent}
                   />
                 ))

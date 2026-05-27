@@ -33,6 +33,7 @@ export function useClassPageData() {
   const [academyFeedbackEnabled, setAcademyFeedbackEnabled] = useState<boolean>(true);
   const [isDemo, setIsDemo] = useState(false);
   const [accessLocked, setAccessLocked] = useState(false);
+  const [isBanned, setIsBanned] = useState(false);
   const [assignments, setAssignments] = useState<StudentAssignment[]>([]);
 
   const loadData = async () => {
@@ -80,6 +81,7 @@ export function useClassPageData() {
       setClassData(classResult.data);
 
       if (classResult.data.accessLocked === true) {
+        setIsBanned(classResult.data.enrollmentStatus === 'BANNED');
         setAccessLocked(true);
         setLoading(false);
         return;
@@ -219,7 +221,7 @@ export function useClassPageData() {
     activeStream, showRatingSuccess, setShowRatingSuccess,
     feedbackText, setFeedbackText,
     tempRating, setTempRating,
-    academyFeedbackEnabled, isDemo, accessLocked,
+    academyFeedbackEnabled, isDemo, accessLocked, isBanned,
     router, loadData,
   };
 }

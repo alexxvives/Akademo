@@ -26,6 +26,28 @@ export function AccessLockedView({ classData }: { classData: ClassData | null })
   );
 }
 
+export function BannedView({ classData }: { classData: ClassData | null }) {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+      <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-6">
+        <svg className="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+        </svg>
+      </div>
+      <h2 className="text-2xl font-semibold text-gray-900 mb-2">Acceso restringido</h2>
+      <p className="text-gray-500 mb-2">
+        Tu acceso a <span className="font-semibold text-gray-700">{classData?.name}</span> ha sido suspendido.
+      </p>
+      <p className="text-gray-500 mb-6">
+        Contacta con tu academia para regularizar tu situación.
+      </p>
+      <Link href="/dashboard/student/subjects" className="px-5 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium">
+        ← Volver a mis asignaturas
+      </Link>
+    </div>
+  );
+}
+
 export function ClassNotStartedView({ classData }: { classData: ClassData }) {
   const startDate = parseDateString(classData.startDate!);
   return (

@@ -156,6 +156,22 @@ export function useStudentsData(role: 'TEACHER' | 'ACADEMY' | 'ADMIN') {
     }
   };
 
+  const handleReadmitStudent = async (enrollmentId: string) => {
+    try {
+      const res = await apiClient(`/enrollments/readmit/${enrollmentId}`, { method: 'PATCH' });
+      const result = await res.json();
+      if (result.success) {
+        alert('Estudiante readmitido exitosamente');
+        loadProgress();
+      } else {
+        alert('Error: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Failed to readmit student:', error);
+      alert('Error al readmitir estudiante');
+    }
+  };
+
   // Filter students by academy and period
   const visibleStudents = useMemo(() => {
     let filtered = students;
@@ -238,6 +254,7 @@ export function useStudentsData(role: 'TEACHER' | 'ACADEMY' | 'ADMIN') {
     activePeriodId,
     isClassInPeriod,
     handleBanStudent,
+    handleReadmitStudent,
     pendingWelcomeStudents,
     sendingWelcome,
     sendStudentWelcomeEmails,
