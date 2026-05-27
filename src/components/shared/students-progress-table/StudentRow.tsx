@@ -68,7 +68,14 @@ export function StudentRow({
         </td>
         {visibleColumns.asignatura && (
         <td className="py-2 px-3 md:py-4 md:px-6">
-          <span className="text-sm text-gray-900">{student.className}</span>
+          <span className="text-sm text-gray-900 flex items-center gap-1.5">
+            {student.className}
+            {isBanned && (
+              <span className="inline-flex items-center justify-center w-4 h-4 rounded text-xs font-bold bg-red-100 text-red-700 leading-none flex-shrink-0">
+                E
+              </span>
+            )}
+          </span>
         </td>
         )}
         {showTeacherColumn && (

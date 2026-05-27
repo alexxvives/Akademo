@@ -29,7 +29,14 @@ export function BreakdownRow({ cls, studentName, visibleColumns, showTeacherColu
       </td>
       {visibleColumns.asignatura && (
       <td className="py-2 px-3 md:py-3 md:px-6">
-        <span className="text-xs font-medium text-indigo-600">{cls.className}</span>
+        <span className="text-xs font-medium text-indigo-600 flex items-center gap-1.5">
+          {cls.className}
+          {isBanned && (
+            <span className="inline-flex items-center justify-center w-4 h-4 rounded text-xs font-bold bg-red-100 text-red-700 leading-none flex-shrink-0">
+              E
+            </span>
+          )}
+        </span>
       </td>
       )}
       {showTeacherColumn && (
