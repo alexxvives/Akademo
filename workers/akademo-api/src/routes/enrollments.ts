@@ -635,12 +635,12 @@ enrollments.post('/leave', async (c) => {
   }
 });
 
-// DELETE /enrollments/:id - Ban student from class (ACADEMY or ADMIN only)
+// DELETE /enrollments/:id - Ban student from class (ACADEMY, ADMIN, or TEACHER if academy allows it)
 enrollments.delete('/:id', async (c) => {
   try {
     const session = await requireAuth(c);
     
-    if (session.role !== 'ACADEMY' && session.role !== 'ADMIN') {
+    if (session.role !== 'ACADEMY' && session.role !== 'ADMIN' && session.role !== 'TEACHER') {
       return c.json(errorResponse('Only academy owners can ban students'), 403);
     }
 
@@ -649,7 +649,7 @@ enrollments.delete('/:id', async (c) => {
     // Get enrollment details
     const enrollment: any = await c.env.DB
       .prepare(`
-        SELECT e.id, e.classId, e.userId, e.stripeSubscriptionId, c.academyId, a.ownerId
+        SELECT e.id, e.classId, e.userId, e.stripeSubscriptionId, c.academyId, a.ownerId, a.teachersCanExpel
         FROM ClassEnrollment e
         JOIN Class c ON e.classId = c.id
         JOIN Academy a ON c.academyId = a.id
@@ -665,6 +665,20 @@ enrollments.delete('/:id', async (c) => {
     // Verify academy owner
     if (session.role === 'ACADEMY' && enrollment.ownerId !== session.id) {
       return c.json(errorResponse('Not authorized to ban students from this academy'), 403);
+    }
+
+    // Verify teacher belongs to this academy and academy allows it
+    if (session.role === 'TEACHER') {
+      if (!enrollment.teachersCanExpel) {
+        return c.json(errorResponse('This academy has not enabled teachers to expel students'), 403);
+      }
+      const teacher = await c.env.DB
+        .prepare('SELECT id FROM Teacher WHERE userId = ? AND academyId = ?')
+        .bind(session.id, enrollment.academyId)
+        .first();
+      if (!teacher) {
+        return c.json(errorResponse('Not authorized to ban students from this academy'), 403);
+      }
     }
 
     // Cancel Stripe subscription if exists
