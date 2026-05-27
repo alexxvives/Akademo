@@ -54,13 +54,15 @@ export function StudentRow({
               <div className="w-4 h-4 flex-shrink-0" />
             )}
             <div>
-              <p className="text-sm font-medium text-gray-900">{student.name}</p>
+              <p className="text-sm font-medium text-gray-900 flex items-center gap-1.5">
+                {student.name}
+                {isBanned && (
+                  <span className="inline-flex items-center justify-center w-4 h-4 rounded text-xs font-bold bg-red-100 text-red-700 leading-none flex-shrink-0">
+                    E
+                  </span>
+                )}
+              </p>
               <p className="text-xs text-gray-500">{student.email}</p>
-              {isBanned && (
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700 mt-0.5">
-                  Expulsado
-                </span>
-              )}
             </div>
           </div>
         </td>

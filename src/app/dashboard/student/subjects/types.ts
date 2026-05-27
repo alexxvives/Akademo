@@ -12,7 +12,7 @@ export interface EnrolledClass {
   studentCount: number;
   createdAt: string;
   startDate?: string | null;
-  enrollmentStatus?: 'PENDING' | 'APPROVED';
+  enrollmentStatus?: 'PENDING' | 'APPROVED' | 'BANNED';
   documentSigned: number;
   whatsappGroupLink?: string;
   university?: string | null;
