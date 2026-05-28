@@ -197,7 +197,7 @@ export default function PdfViewerModal() {
           serverWm: e.detail.serverWm ?? false,
         };
       } catch {
-        watermarkRef.current = { email: '', academyName: '', serverWm: false };
+        watermarkRef.current = { email: '', academyName: '', userName: '', serverWm: false };
       }
       // Push a history entry so the browser back button closes the modal
       history.pushState({ pdfModal: true }, '');
