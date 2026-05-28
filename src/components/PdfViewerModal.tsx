@@ -59,7 +59,7 @@ function drawCanvasWatermark(canvas: HTMLCanvasElement, email: string, academyNa
 
   if (line2) {
     const hasThree = !!line3;
-    const spacing = (hasThree ? size1Base * 0.75 * 0.7 : size1Base * 0.75);
+    const spacing = (hasThree ? size1Base * 0.75 * 1.1 : size1Base * 0.75);
     // academy above, email centre, name below (along 45° diagonal)
     const c2 = { x: cx - spacing * SQ, y: cy - spacing * SQ }; // academy — above
     const c1 = { x: cx, y: cy };                                 // email   — centre
@@ -89,7 +89,7 @@ function drawCanvasWatermark(canvas: HTMLCanvasElement, email: string, academyNa
     }
   } else if (line3) {
     // email + name, no academy
-    const spacing = size1Base * 0.75 * 0.7;
+    const spacing = size1Base * 0.75;
     const c1 = { x: cx - spacing * SQ, y: cy - spacing * SQ };
     const c3 = { x: cx + spacing * SQ, y: cy + spacing * SQ };
 

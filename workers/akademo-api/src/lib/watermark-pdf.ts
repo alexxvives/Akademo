@@ -151,9 +151,8 @@ export async function addWatermarkToPdf(
 
     if (line2) {
       // Three potential lines: academy (top), email (middle), name (bottom)
-      // Use tighter spacing when three lines are present
       const hasThree = !!line3;
-      const spacing = hasThree ? lineSpacing * 0.7 : lineSpacing;
+      const spacing = hasThree ? lineSpacing * 1.1 : lineSpacing;
       const c2 = { x: cx - spacing * SQ, y: cy + spacing * SQ }; // academy — above diagonal
       const c1 = { x: cx, y: cy };                                 // email   — centre
       const c3 = { x: cx + spacing * SQ, y: cy - spacing * SQ }; // name    — below diagonal
@@ -167,7 +166,7 @@ export async function addWatermarkToPdf(
       }
     } else if (line3) {
       // No academy name but user name present: email + name
-      const spacing = lineSpacing * 0.7;
+      const spacing = lineSpacing;
       const c1 = { x: cx - spacing * SQ, y: cy + spacing * SQ }; // email — above
       const c3 = { x: cx + spacing * SQ, y: cy - spacing * SQ }; // name  — below
       const size1 = fittedSize(line1, fontNormal, size1Base, c1.x, c1.y);
