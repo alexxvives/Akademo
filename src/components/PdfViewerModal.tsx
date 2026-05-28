@@ -18,13 +18,14 @@ async function getPdfJs(): Promise<PdfJsLib> {
   return cachedPdfJs;
 }
 
-function drawCanvasWatermark(canvas: HTMLCanvasElement, email: string, academyName: string) {
+function drawCanvasWatermark(canvas: HTMLCanvasElement, email: string, academyName: string, userName?: string) {
   const ctx = canvas.getContext('2d');
   if (!ctx || (!email && !academyName)) return;
   const { width, height } = canvas;
 
   const line1 = email;
   const line2 = academyName ? `ACADEMIA ${academyName.toUpperCase()}` : '';
+  const line3 = userName ?? '';
 
   const shorter = Math.min(width, height);
   const SQ = Math.SQRT1_2;
@@ -48,6 +49,7 @@ function drawCanvasWatermark(canvas: HTMLCanvasElement, email: string, academyNa
   const size2Base = size1Base * 0.62;
   const size1 = fittedSize(line1, '', size1Base);
   const size2 = fittedSize(line2, 'bold', size2Base);
+  const size3 = fittedSize(line3, '', size1Base * 0.85);
 
   ctx.save();
   ctx.globalAlpha = 0.5;
@@ -56,9 +58,40 @@ function drawCanvasWatermark(canvas: HTMLCanvasElement, email: string, academyNa
   ctx.textBaseline = 'middle';
 
   if (line2) {
-    const lineSpacing = size1Base * 0.75;
-    const c1 = { x: cx + lineSpacing * SQ, y: cy + lineSpacing * SQ };
-    const c2 = { x: cx - lineSpacing * SQ, y: cy - lineSpacing * SQ };
+    const hasThree = !!line3;
+    const spacing = (hasThree ? size1Base * 0.75 * 0.7 : size1Base * 0.75);
+    // academy above, email centre, name below (along 45° diagonal)
+    const c2 = { x: cx - spacing * SQ, y: cy - spacing * SQ }; // academy — above
+    const c1 = { x: cx, y: cy };                                 // email   — centre
+    const c3 = { x: cx + spacing * SQ, y: cy + spacing * SQ }; // name    — below
+
+    ctx.save();
+    ctx.translate(c2.x, c2.y);
+    ctx.rotate(-angle);
+    ctx.font = `bold ${size2}px Arial, sans-serif`;
+    ctx.fillText(line2, 0, 0);
+    ctx.restore();
+
+    ctx.save();
+    ctx.translate(c1.x, c1.y);
+    ctx.rotate(-angle);
+    ctx.font = `${size1}px Arial, sans-serif`;
+    ctx.fillText(line1, 0, 0);
+    ctx.restore();
+
+    if (hasThree) {
+      ctx.save();
+      ctx.translate(c3.x, c3.y);
+      ctx.rotate(-angle);
+      ctx.font = `${size3}px Arial, sans-serif`;
+      ctx.fillText(line3, 0, 0);
+      ctx.restore();
+    }
+  } else if (line3) {
+    // email + name, no academy
+    const spacing = size1Base * 0.75 * 0.7;
+    const c1 = { x: cx - spacing * SQ, y: cy - spacing * SQ };
+    const c3 = { x: cx + spacing * SQ, y: cy + spacing * SQ };
 
     ctx.save();
     ctx.translate(c1.x, c1.y);
@@ -68,10 +101,10 @@ function drawCanvasWatermark(canvas: HTMLCanvasElement, email: string, academyNa
     ctx.restore();
 
     ctx.save();
-    ctx.translate(c2.x, c2.y);
+    ctx.translate(c3.x, c3.y);
     ctx.rotate(-angle);
-    ctx.font = `bold ${size2}px Arial, sans-serif`;
-    ctx.fillText(line2, 0, 0);
+    ctx.font = `${size3}px Arial, sans-serif`;
+    ctx.fillText(line3, 0, 0);
     ctx.restore();
   } else {
     const size = fittedSize(line1 || line2, '', size1Base);
@@ -100,7 +133,7 @@ export default function PdfViewerModal() {
   const pdfDocRef = useRef<PDFDocumentProxy | null>(null);
   const renderTaskRef = useRef<RenderTask | null>(null);
   const scaleRef = useRef(1.5);
-  const watermarkRef = useRef<{ email: string; academyName: string; serverWm: boolean }>({ email: '', academyName: '', serverWm: false });
+  const watermarkRef = useRef<{ email: string; academyName: string; userName: string; serverWm: boolean }>({ email: '', academyName: '', userName: '', serverWm: false });
 
   useEffect(() => { scaleRef.current = scale; }, [scale]);
 
@@ -121,8 +154,8 @@ export default function PdfViewerModal() {
     renderTaskRef.current = task;
     try {
       await task.promise;
-      const { email, academyName, serverWm } = watermarkRef.current;
-      if (!serverWm) drawCanvasWatermark(canvas, email, academyName);
+      const { email, academyName, userName, serverWm } = watermarkRef.current;
+      if (!serverWm) drawCanvasWatermark(canvas, email, academyName, userName);
     } catch (e: unknown) {
       if ((e as Error)?.name !== 'RenderingCancelledException') throw e;
     }
@@ -160,6 +193,7 @@ export default function PdfViewerModal() {
         watermarkRef.current = {
           email: urlObj.searchParams.get('email') ?? '',
           academyName: urlObj.searchParams.get('academyName') ?? '',
+          userName: urlObj.searchParams.get('name') ?? '',
           serverWm: e.detail.serverWm ?? false,
         };
       } catch {

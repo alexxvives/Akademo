@@ -395,7 +395,7 @@ async function buildFileResponse(
     session: SessionUser | null;
     env: Bindings;
     /** Pre-resolved watermark data (used for signed-URL path where session may not exist). */
-    overrideWatermark?: { email: string; academyName?: string };
+    overrideWatermark?: { email: string; userName?: string; academyName?: string };
     /** R2 key — used to resolve the original filename for Content-Disposition and PDF title */
     fileKey?: string;
   },
@@ -444,7 +444,7 @@ async function buildFileResponse(
 
       const pdfBytes = await object.arrayBuffer();
       try {
-        const watermarked = await addWatermarkToPdf(pdfBytes, { email, academyName, fileName: displayFileName });
+        const watermarked = await addWatermarkToPdf(pdfBytes, { email, userName: wmData?.userName ?? (session ? `${session.firstName} ${session.lastName}` : undefined), academyName, fileName: displayFileName });
         const wHeaders: Record<string, string> = {
           'Content-Type': 'application/pdf',
           'Content-Length': watermarked.byteLength.toString(),
@@ -585,7 +585,7 @@ storage.get('/serve/*', async (c) => {
             session: null,
             env: c.env,
             fileKey: key,
-            overrideWatermark: { email: signedEmail, academyName: signedAcademyName },
+            overrideWatermark: { email: signedEmail, userName: signedName || undefined, academyName: signedAcademyName },
           });
         }
         return new Response(object.body, {

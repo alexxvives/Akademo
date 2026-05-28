@@ -152,7 +152,7 @@ export function StudentTimeModal({
                                 onClick={() => onUpdateTime(student.studentId, video.videoId, video.totalWatchTimeSeconds - 900)}
                                 disabled={isDisabled}
                                 className="px-2 py-1 bg-gray-900 text-white rounded text-xs hover:bg-gray-800 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-                                title={isDisabled ? 'Active su academia para modificar tiempos' : 'Reducir 15 minutos'}
+                                title={isDisabled ? 'Active su academia para modificar tiempos' : 'Añadir 15 minutos'}
                               >
                                 +15min
                               </button>
@@ -160,7 +160,7 @@ export function StudentTimeModal({
                                 onClick={() => onUpdateTime(student.studentId, video.videoId, video.totalWatchTimeSeconds - 1800)}
                                 disabled={isDisabled}
                                 className="px-2 py-1 bg-gray-900 text-white rounded text-xs hover:bg-gray-800 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-                                title={isDisabled ? 'Active su academia para modificar tiempos' : 'Reducir 30 minutos'}
+                                title={isDisabled ? 'Active su academia para modificar tiempos' : 'Añadir 30 minutos'}
                               >
                                 +30min
                               </button>
@@ -168,9 +168,21 @@ export function StudentTimeModal({
                                 onClick={() => onUpdateTime(student.studentId, video.videoId, video.totalWatchTimeSeconds - 3600)}
                                 disabled={isDisabled}
                                 className="px-2 py-1 bg-gray-900 text-white rounded text-xs hover:bg-gray-800 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
-                                title={isDisabled ? 'Active su academia para modificar tiempos' : 'Reducir 1 hora'}
+                                title={isDisabled ? 'Active su academia para modificar tiempos' : 'Añadir 1 hora'}
                               >
                                 +1hr
+                              </button>
+                              <button
+                                onClick={() => {
+                                  const mult = lesson?.maxWatchTimeMultiplier || 2;
+                                  const videoDuration = Math.round(video.maxWatchTimeSeconds / mult);
+                                  onUpdateTime(student.studentId, video.videoId, video.totalWatchTimeSeconds - videoDuration);
+                                }}
+                                disabled={isDisabled}
+                                className="px-2 py-1 bg-gray-900 text-white rounded text-xs hover:bg-gray-800 whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
+                                title={isDisabled ? 'Active su academia para modificar tiempos' : 'Añade la longitud del video al tiempo disponible del estudiante'}
+                              >
+                                +1mult
                               </button>
                               <button
                                 onClick={() => extFormKey === `${student.studentId}:${video.videoId}` ? setExtFormKey(null) : openExtForm(student.studentId, video.videoId)}

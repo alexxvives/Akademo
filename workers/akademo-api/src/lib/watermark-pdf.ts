@@ -3,7 +3,7 @@ import type { D1Database } from '@cloudflare/workers-types';
 import type { SessionUser } from '../lib/auth';
 
 /** Skip watermarking for PDFs larger than this (memory guard for CF Workers). */
-export const PDF_WATERMARK_SIZE_LIMIT = 15 * 1024 * 1024; // 15 MB
+export const PDF_WATERMARK_SIZE_LIMIT = 40 * 1024 * 1024; // 40 MB
 
 export interface AcademyInfo {
   name: string;
@@ -59,6 +59,8 @@ export async function getAcademyInfoForSession(
 export interface WatermarkConfig {
   /** User's email address */
   email: string;
+  /** User's full name (optional) */
+  userName?: string;
   /** Academy name (optional) */
   academyName?: string;
   /** Original filename — used to set the PDF document title so browsers show a readable tab title */
@@ -90,6 +92,8 @@ export async function addWatermarkToPdf(
   const fontBold   = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
   const line1 = winAnsi(cfg.email);
+  // User's name line (below email)
+  const line3 = cfg.userName ? winAnsi(cfg.userName) : '';
   // Academy label: "ACADEMIA [NAME]" in uppercase, preserving accented chars (within Latin-1)
   const line2 = cfg.academyName
     ? winAnsi('ACADEMIA ' + cfg.academyName.toUpperCase())
@@ -146,13 +150,30 @@ export async function addWatermarkToPdf(
     };
 
     if (line2) {
-      // Two lines: symmetric offset from page centre along the perpendicular direction
-      const c1 = { x: cx + lineSpacing * SQ, y: cy - lineSpacing * SQ }; // email  — below diagonal
-      const c2 = { x: cx - lineSpacing * SQ, y: cy + lineSpacing * SQ }; // academy — above diagonal
-      const size1 = fittedSize(line1, fontNormal, size1Base, c1.x, c1.y);
+      // Three potential lines: academy (top), email (middle), name (bottom)
+      // Use tighter spacing when three lines are present
+      const hasThree = !!line3;
+      const spacing = hasThree ? lineSpacing * 0.7 : lineSpacing;
+      const c2 = { x: cx - spacing * SQ, y: cy + spacing * SQ }; // academy — above diagonal
+      const c1 = { x: cx, y: cy };                                 // email   — centre
+      const c3 = { x: cx + spacing * SQ, y: cy - spacing * SQ }; // name    — below diagonal
       const size2 = fittedSize(line2, fontBold,   size2Base, c2.x, c2.y);
+      const size1 = fittedSize(line1, fontNormal, size1Base, c1.x, c1.y);
       drawAt(line2, fontBold,   size2, c2.x, c2.y);
       drawAt(line1, fontNormal, size1, c1.x, c1.y);
+      if (hasThree) {
+        const size3 = fittedSize(line3, fontNormal, size1Base * 0.85, c3.x, c3.y);
+        drawAt(line3, fontNormal, size3, c3.x, c3.y);
+      }
+    } else if (line3) {
+      // No academy name but user name present: email + name
+      const spacing = lineSpacing * 0.7;
+      const c1 = { x: cx - spacing * SQ, y: cy + spacing * SQ }; // email — above
+      const c3 = { x: cx + spacing * SQ, y: cy - spacing * SQ }; // name  — below
+      const size1 = fittedSize(line1, fontNormal, size1Base, c1.x, c1.y);
+      const size3 = fittedSize(line3, fontNormal, size1Base * 0.85, c3.x, c3.y);
+      drawAt(line1, fontNormal, size1, c1.x, c1.y);
+      drawAt(line3, fontNormal, size3, c3.x, c3.y);
     } else {
       // Single line: visually centred at the exact page centre
       const size1 = fittedSize(line1, fontNormal, size1Base, cx, cy);
