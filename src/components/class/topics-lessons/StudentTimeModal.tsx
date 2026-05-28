@@ -25,6 +25,27 @@ export function StudentTimeModal({
   const defaultUntil = () => { const d = new Date(Date.now() + 2 * 3600000); d.setSeconds(0, 0); return d.toISOString().slice(0, 16); };
   const [extForm, setExtForm] = useState({ extraMinutes: 60, validFrom: defaultFrom(), validUntil: defaultUntil() });
   const [savingExt, setSavingExt] = useState(false);
+  const [editTimeKey, setEditTimeKey] = useState<string | null>(null);
+  const [editTimeValue, setEditTimeValue] = useState('');
+
+  const openTimeEdit = (studentId: string, videoId: string, currentSeconds: number) => {
+    if (isDisabled) return;
+    const abs = Math.abs(currentSeconds);
+    const mm = Math.floor(abs / 60);
+    const ss = String(Math.floor(abs % 60)).padStart(2, '0');
+    setEditTimeValue(`${mm}:${ss}`);
+    setEditTimeKey(`${studentId}:${videoId}`);
+  };
+
+  const commitTimeEdit = (studentId: string, videoId: string) => {
+    const parts = editTimeValue.trim().split(':');
+    const mm = parseInt(parts[0] ?? '0', 10);
+    const ss = parseInt(parts[1] ?? '0', 10);
+    if (!isNaN(mm) && !isNaN(ss)) {
+      onUpdateTime(studentId, videoId, mm * 60 + ss);
+    }
+    setEditTimeKey(null);
+  };
 
   const openExtForm = (studentId: string, videoId: string) => {
     setExtFormKey(`${studentId}:${videoId}`);
@@ -121,7 +142,32 @@ export function StudentTimeModal({
                               <p className="font-medium text-gray-900 text-sm">Video {videoIndex + 1}</p>
                               <div className="flex items-center gap-2">
                                 <span className="text-xs text-gray-600">
-                                  Tiempo usado: {video.totalWatchTimeSeconds < 0 ? '-' : ''}{Math.floor(Math.abs(video.totalWatchTimeSeconds) / 60)}:{String(Math.floor(Math.abs(video.totalWatchTimeSeconds) % 60)).padStart(2, '0')}
+                                  Tiempo usado:
+                                  {editTimeKey === `${student.studentId}:${video.videoId}` ? (
+                                    <input
+                                      autoFocus
+                                      type="text"
+                                      value={editTimeValue}
+                                      onChange={e => setEditTimeValue(e.target.value)}
+                                      onBlur={() => commitTimeEdit(student.studentId, video.videoId)}
+                                      onKeyDown={e => {
+                                        if (e.key === 'Enter') commitTimeEdit(student.studentId, video.videoId);
+                                        if (e.key === 'Escape') setEditTimeKey(null);
+                                      }}
+                                      className="ml-1 w-16 text-xs border border-blue-400 rounded px-1 py-0 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
+                                      placeholder="MM:SS"
+                                    />
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      disabled={isDisabled}
+                                      onClick={() => openTimeEdit(student.studentId, video.videoId, video.totalWatchTimeSeconds)}
+                                      className="ml-1 font-mono hover:underline hover:text-blue-600 disabled:cursor-default disabled:hover:no-underline disabled:hover:text-gray-600 transition-colors"
+                                      title={isDisabled ? 'Active su academia para modificar tiempos' : 'Clic para editar'}
+                                    >
+                                      {video.totalWatchTimeSeconds < 0 ? '-' : ''}{Math.floor(Math.abs(video.totalWatchTimeSeconds) / 60)}:{String(Math.floor(Math.abs(video.totalWatchTimeSeconds) % 60)).padStart(2, '0')}
+                                    </button>
+                                  )}
                                 </span>
                                 <span className="text-xs text-gray-400">/</span>
                                 <span className="text-xs text-gray-600">
