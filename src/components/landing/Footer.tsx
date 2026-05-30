@@ -31,6 +31,7 @@ export function Footer({ t, lang }: FooterProps) {
             <ul className="space-y-2">
               <li><Link href="/pricing" className="text-gray-400 hover:text-white text-sm transition-colors">{lang === 'es' ? 'Precios' : 'Pricing'}</Link></li>
               <li><Link href="/blog" className="text-gray-400 hover:text-white text-sm transition-colors">Blog</Link></li>
+              <li><Link href="/docs/zoom" className="text-gray-400 hover:text-white text-sm transition-colors">{lang === 'es' ? 'Integración Zoom' : 'Zoom Integration'}</Link></li>
             </ul>
           </div>
 

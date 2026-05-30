@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 
 export const metadata: Metadata = {
   title: 'Zoom Integration — Akademo',
@@ -20,10 +21,8 @@ export default function ZoomDocsPage() {
       <main className="max-w-3xl mx-auto px-6 py-12">
         {/* Title */}
         <div className="flex items-center gap-4 mb-10">
-          <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center flex-shrink-0">
-            <svg className="w-8 h-8 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm6 16.8L8.4 12 18 7.2V16.8z"/>
-            </svg>
+          <div className="w-14 h-14 flex items-center justify-center flex-shrink-0">
+            <Image src="/images/zoom_logo.png" alt="Zoom" width={56} height={56} className="w-14 h-14 object-contain" />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Zoom Integration</h1>
@@ -94,20 +93,45 @@ export default function ZoomDocsPage() {
               <span className="w-7 h-7 rounded-full bg-blue-600 text-white text-sm flex items-center justify-center font-bold">3</span>
               Removing the Integration
             </h2>
-            <div className="bg-gray-50 rounded-xl p-5 space-y-3 text-sm text-gray-700">
-              <p><strong>From Akademo:</strong></p>
-              <ol className="list-decimal list-inside space-y-2 pl-1">
-                <li>Go to <strong>Dashboard → Profile → Integraciones</strong>.</li>
-                <li>Click the <strong>trash / disconnect icon</strong> next to the Zoom account you want to remove.</li>
-                <li>Confirm the action. The connection is immediately removed from Akademo.</li>
-              </ol>
-              <p className="mt-3"><strong>From Zoom Marketplace (full revocation):</strong></p>
-              <ol className="list-decimal list-inside space-y-2 pl-1">
-                <li>Go to <a href="https://marketplace.zoom.us/user/installed" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">marketplace.zoom.us/user/installed</a>.</li>
-                <li>Find <strong>Akademo</strong> and click <strong>Remove</strong>.</li>
-                <li>This revokes all OAuth tokens and removes Akademo&#39;s access to your Zoom account permanently.</li>
-              </ol>
-              <p className="text-gray-500 mt-3">After removing, any classes that used the disconnected Zoom account will fall back to the platform&#39;s default Zoom settings.</p>
+            <div className="space-y-4 text-sm text-gray-700">
+              <div className="bg-gray-50 rounded-xl p-5 space-y-3">
+                <h3 className="font-semibold text-gray-900">Option A — Remove from Akademo</h3>
+                <ol className="list-decimal list-inside space-y-2 pl-1">
+                  <li>Log in to your Akademo academy account at <a href="https://akademo-edu.com" className="text-blue-600 hover:underline">akademo-edu.com</a>.</li>
+                  <li>Go to <strong>Dashboard → Profile → Integraciones</strong>.</li>
+                  <li>Click the <strong>disconnect icon</strong> next to the Zoom account you want to remove.</li>
+                  <li>Confirm the action. The connection is immediately removed from Akademo.</li>
+                </ol>
+              </div>
+
+              <div className="bg-gray-50 rounded-xl p-5 space-y-3">
+                <h3 className="font-semibold text-gray-900">Option B — Remove from Zoom Marketplace</h3>
+                <ol className="list-decimal list-inside space-y-2 pl-1">
+                  <li>Log in to your Zoom account and navigate to the <a href="https://marketplace.zoom.us" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">Zoom App Marketplace</a>.</li>
+                  <li>Click <strong>Manage</strong>, then <strong>Added Apps</strong>, or search for <strong>&quot;Akademo&quot;</strong>.</li>
+                  <li>Select the <strong>Akademo</strong> app.</li>
+                  <li>Click <strong>Remove</strong> and confirm. This immediately revokes all OAuth tokens and removes Akademo&#39;s access to your Zoom account.</li>
+                </ol>
+              </div>
+
+              <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 space-y-2">
+                <p className="font-semibold text-amber-900">Implications of removal</p>
+                <ul className="list-disc list-inside space-y-1 text-amber-800">
+                  <li>Any classes assigned to the disconnected Zoom account will stop being able to create new live sessions until a different Zoom account is assigned.</li>
+                  <li>Scheduled or in-progress live sessions using that account will be interrupted.</li>
+                  <li>New cloud recordings will no longer be automatically retrieved from Zoom.</li>
+                </ul>
+              </div>
+
+              <div className="bg-gray-50 rounded-xl p-5 space-y-2">
+                <p className="font-semibold text-gray-900">How your data is handled after removal</p>
+                <ul className="list-disc list-inside space-y-1 text-gray-700">
+                  <li>Akademo immediately deletes the stored OAuth access token and refresh token from its database upon disconnection.</li>
+                  <li>Recordings that were already downloaded and saved to the class content library remain accessible to students — they are stored on Akademo&#39;s infrastructure, not on Zoom.</li>
+                  <li>No Zoom account credentials or personal data are retained after removal.</li>
+                  <li>To request deletion of all associated data, contact <a href="mailto:hola@akademo-edu.com" className="text-blue-600 hover:underline">hola@akademo-edu.com</a>.</li>
+                </ul>
+              </div>
             </div>
           </section>
 

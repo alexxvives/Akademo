@@ -39,7 +39,7 @@ export default function ConnectZoomPage() {
   }, []);
 
   const handleConnect = () => {
-    const clientId = 'W2jPo9CJR0uZbFnEWtBF7Q';
+    const clientId = process.env.NEXT_PUBLIC_ZOOM_CLIENT_ID;
     const redirectUri = encodeURIComponent(`${window.location.origin}/api/zoom/oauth/callback`);
     window.location.href = `https://zoom.us/oauth/authorize?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&state=connect-zoom-page`;
   };
