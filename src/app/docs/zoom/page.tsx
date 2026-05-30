@@ -8,19 +8,18 @@ export const metadata: Metadata = {
 export default function ZoomDocsPage() {
   return (
     <div className="min-h-screen bg-white">
-      <main className="max-w-3xl mx-auto px-6 pt-32 sm:pt-36 pb-20">
-        {/* Title */}
-        <div className="flex items-center gap-4 mb-10">
-          <div className="w-14 h-14 flex items-center justify-center flex-shrink-0">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/images/zoom_logo.png" alt="Zoom" width={56} height={56} className="w-14 h-14 object-contain" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Zoom Integration</h1>
-            <p className="text-gray-500 text-sm mt-0.5">Connect your Zoom account to run live classes and auto-save recordings.</p>
-          </div>
+      {/* Hero */}
+      <section className="pt-32 sm:pt-40 pb-14 sm:pb-20 px-4 sm:px-6 bg-gray-950" data-section-dark="false">
+        <div className="max-w-3xl mx-auto">
+          <p className="text-sm font-medium text-indigo-400 uppercase tracking-widest mb-4">Documentation</p>
+          <h1 className="text-4xl sm:text-5xl font-bold text-white leading-tight mb-5">Zoom Integration</h1>
+          <p className="text-lg text-gray-400 max-w-xl leading-relaxed">
+            How to add, use, and remove the Zoom integration in Akademo.
+          </p>
         </div>
+      </section>
 
+      <main className="max-w-3xl mx-auto px-6 py-16">
         <div className="space-y-10">
           {/* Section 1 — Adding */}
           <section>
