@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 
 export const metadata: Metadata = {
   title: 'Zoom Integration — Akademo',
@@ -9,20 +8,12 @@ export const metadata: Metadata = {
 export default function ZoomDocsPage() {
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="border-b border-gray-100 py-4 px-6">
-        <div className="max-w-3xl mx-auto flex items-center gap-3">
-          <a href="/" className="text-xl font-bold text-gray-900 tracking-tight">AKADEMO</a>
-          <span className="text-gray-300">/</span>
-          <span className="text-gray-600 text-sm">Zoom Integration</span>
-        </div>
-      </header>
-
-      <main className="max-w-3xl mx-auto px-6 py-12">
+      <main className="max-w-3xl mx-auto px-6 pt-32 sm:pt-36 pb-20">
         {/* Title */}
         <div className="flex items-center gap-4 mb-10">
           <div className="w-14 h-14 flex items-center justify-center flex-shrink-0">
-            <Image src="/images/zoom_logo.png" alt="Zoom" width={56} height={56} className="w-14 h-14 object-contain" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/zoom_logo.png" alt="Zoom" width={56} height={56} className="w-14 h-14 object-contain" />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Zoom Integration</h1>
