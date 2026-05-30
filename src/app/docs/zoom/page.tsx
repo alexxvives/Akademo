@@ -9,7 +9,7 @@ export default function ZoomDocsPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero */}
-      <section className="pt-32 sm:pt-40 pb-14 sm:pb-20 px-4 sm:px-6 bg-gray-950" data-section-dark="false">
+      <section className="pt-32 sm:pt-40 pb-14 sm:pb-20 px-4 sm:px-6 bg-gray-950" data-section-dark="true">
         <div className="max-w-3xl mx-auto">
           <p className="text-sm font-medium text-indigo-400 uppercase tracking-widest mb-4">Documentation</p>
           <h1 className="text-4xl sm:text-5xl font-bold text-white leading-tight mb-5">Zoom Integration</h1>
